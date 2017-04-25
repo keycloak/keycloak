@@ -18,21 +18,19 @@ package org.keycloak.testsuite.console.page.clients.authorization.policy;
 
 import static org.openqa.selenium.By.tagName;
 
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
-import org.jboss.arquillian.graphene.fragment.Root;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
+import org.keycloak.testsuite.console.page.fragment.AbstractMultipleSelect2;
 import org.keycloak.testsuite.page.Form;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
-import org.openqa.selenium.Keys;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
 
@@ -54,13 +52,13 @@ public class RolePolicyForm extends Form {
     private WebElement deleteButton;
 
     @FindBy(id = "s2id_roles")
-    private RolesInput realmRolesInput;
+    private RoleMultipleSelect2 realmRoleSelect;
 
     @FindBy(id = "clients")
     private Select clientsSelect;
 
     @FindBy(id = "s2id_clientRoles")
-    private ClientRolesInput clientRolesInput;
+    private ClientRoleSelect clientRoleSelect;
 
     @FindBy(xpath = ACTIVE_DIV_XPATH + "/button[text()='Delete']")
     private WebElement confirmDelete;
@@ -78,16 +76,16 @@ public class RolePolicyForm extends Form {
             if (clientRole) {
                 String[] parts = role.getId().split("/");
                 clientsSelect.selectByVisibleText(parts[0]);
-                clientRolesInput.select(parts[1], driver);
-                clientRolesInput.setRequired(parts[1], role);
+                clientRoleSelect.select(role);
+                clientRoleSelect.setRequired(role);
             } else {
-                realmRolesInput.select(role.getId(), driver);
-                realmRolesInput.setRequired(role.getId(), role);
+                realmRoleSelect.select(role);
+                realmRoleSelect.setRequired(role);
             }
         }
 
-        unSelect(roles, realmRolesInput.getSelected());
-        unSelect(roles, clientRolesInput.getSelected());
+        unSelect(roles, realmRoleSelect.getSelected());
+        unSelect(roles, clientRoleSelect.getSelected());
 
         save();
     }
@@ -107,9 +105,9 @@ public class RolePolicyForm extends Form {
                 boolean clientRole = selected.getId().indexOf('/') != -1;
 
                 if (clientRole) {
-                    clientRolesInput.unSelect(selected.getId().split("/")[1], driver);
+                    clientRoleSelect.deselect(selected);
                 } else {
-                    realmRolesInput.unSelect(selected.getId(), driver);
+                    realmRoleSelect.deselect(selected);
                 }
             }
         }
@@ -127,144 +125,58 @@ public class RolePolicyForm extends Form {
         representation.setDescription(getInputValue(description));
         representation.setLogic(Logic.valueOf(logic.getFirstSelectedOption().getText().toUpperCase()));
 
-        Set<RolePolicyRepresentation.RoleDefinition> roles = realmRolesInput.getSelected();
+        Set<RolePolicyRepresentation.RoleDefinition> roles = realmRoleSelect.getSelected();
 
-        roles.addAll(clientRolesInput.getSelected());
+        roles.addAll(clientRoleSelect.getSelected());
 
         representation.setRoles(roles);
 
         return representation;
     }
 
-    public class RolesInput extends AbstractRolesInput {
-        @Override
-        protected RolePolicyRepresentation.RoleDefinition getSelectedRoles(List<WebElement> tds) {
-            RolePolicyRepresentation.RoleDefinition selectedRole = new RolePolicyRepresentation.RoleDefinition();
-            selectedRole.setId(tds.get(0).getText());
-            selectedRole.setRequired(tds.get(1).findElement(By.tagName("input")).isSelected());
-            return selectedRole;
-        }
+    public class RoleMultipleSelect2 extends AbstractMultipleSelect2<RolePolicyRepresentation.RoleDefinition> {
 
         @Override
-        protected WebElement getRemoveButton(List<WebElement> tds) {
-            return tds.get(2);
+        protected Function<RolePolicyRepresentation.RoleDefinition, String> identity() {
+            return role -> {
+                String id = role.getId();
+                return id.indexOf('/') != -1 ? id.split("/")[1] : id;
+            };
         }
 
         @Override
         protected List<WebElement> getSelectedElements() {
-            return root.findElements(By.xpath("(//table[@id='selected-realm-roles'])/tbody/tr"));
+            return getRoot().findElements(By.xpath("(//table[@id='selected-realm-roles'])/tbody/tr")).stream()
+                    .filter(webElement -> webElement.findElements(tagName("td")).size() > 1)
+                    .collect(Collectors.toList());
         }
 
         @Override
-        protected WebElement getRequiredColumn(List<WebElement> tds) {
-            return tds.get(1);
-        }
-    }
+        protected Function<WebElement, RolePolicyRepresentation.RoleDefinition> representation() {
+            return webElement -> {
+                List<WebElement> tds = webElement.findElements(tagName("td"));
+                RolePolicyRepresentation.RoleDefinition selectedRole = new RolePolicyRepresentation.RoleDefinition();
+                boolean clientRole = tds.size() == 4;
 
-    public class ClientRolesInput extends AbstractRolesInput {
-        @Override
-        protected WebElement getRemoveButton(List<WebElement> tds) {
-            return tds.get(3);
-        }
+                selectedRole.setId(clientRole ? tds.get(1).getText() + "/" + tds.get(0).getText() : tds.get(0).getText());
+                selectedRole.setRequired(tds.get(clientRole ? 2 : 1).findElement(By.tagName("input")).isSelected());
 
-        @Override
-        protected RolePolicyRepresentation.RoleDefinition getSelectedRoles(List<WebElement> tds) {
-            RolePolicyRepresentation.RoleDefinition selectedRole = new RolePolicyRepresentation.RoleDefinition();
-            selectedRole.setId(tds.get(1).getText() + "/" + tds.get(0).getText());
-            selectedRole.setRequired(tds.get(2).findElement(By.tagName("input")).isSelected());
-            return selectedRole;
+                return selectedRole;
+            };
         }
 
-        @Override
-        protected List<WebElement> getSelectedElements() {
-            return root.findElements(By.xpath("(//table[@id='selected-client-roles'])/tbody/tr"));
-        }
-
-        @Override
-        protected WebElement getRequiredColumn(List<WebElement> tds) {
-            return tds.get(2);
-        }
-    }
-
-    public abstract class AbstractRolesInput {
-
-        @Root
-        protected WebElement root;
-
-        @FindBy(xpath = "//div[contains(@class,'select2-result-label')]")
-        private List<WebElement> result;
-
-        @FindBy(xpath = "//li[contains(@class,'select2-search-choice')]")
-        private List<WebElement> selection;
-
-        public void select(String roleId, WebDriver driver) {
-            root.click();
-            WaitUtils.pause(1000);
-
-            Actions actions = new Actions(driver);
-
-            actions.sendKeys(roleId).perform();
-            WaitUtils.pause(1000);
-
-            if (result.isEmpty()) {
-                actions.sendKeys(Keys.ESCAPE).perform();
-                return;
-            }
-
-            for (WebElement result : result) {
-                if (result.getText().equalsIgnoreCase(roleId)) {
-                    result.click();
-                    return;
-                }
-            }
-        }
-
-        public Set<RolePolicyRepresentation.RoleDefinition> getSelected() {
-            List<WebElement> realmRoles = getSelectedElements();
-            Set<RolePolicyRepresentation.RoleDefinition> values = new HashSet<>();
-
-            for (WebElement realmRole : realmRoles) {
-                List<WebElement> tds = realmRole.findElements(tagName("td"));
-                if (!(tds.isEmpty() || tds.get(0).getText().isEmpty())) {
-                    values.add(getSelectedRoles(tds));
-                }
-            }
-
-            return values;
-        }
-
-        protected abstract RolePolicyRepresentation.RoleDefinition getSelectedRoles(List<WebElement> tds);
-
-        protected abstract List<WebElement> getSelectedElements();
-
-        public void unSelect(String name, WebDriver driver) {
+        public void setRequired(RolePolicyRepresentation.RoleDefinition role) {
             Iterator<WebElement> iterator = getSelectedElements().iterator();
 
             while (iterator.hasNext()) {
                 WebElement realmRole = iterator.next();
                 List<WebElement> tds = realmRole.findElements(tagName("td"));
+                boolean clientRole = role.getId().indexOf("/") != -1;
+                WebElement roleName = tds.get(0);
 
-                if (!(tds.isEmpty() || tds.get(0).getText().isEmpty())) {
-                    if (tds.get(0).getText().equals(name)) {
-                        getRemoveButton(tds).findElement(By.tagName("button")).click();
-                        return;
-                    }
-                }
-            }
-        }
-
-        protected abstract WebElement getRemoveButton(List<WebElement> tds);
-
-        public void setRequired(String name, RolePolicyRepresentation.RoleDefinition role) {
-            Iterator<WebElement> iterator = getSelectedElements().iterator();
-
-            while (iterator.hasNext()) {
-                WebElement realmRole = iterator.next();
-                List<WebElement> tds = realmRole.findElements(tagName("td"));
-
-                if (!(tds.isEmpty() || tds.get(0).getText().isEmpty())) {
-                    if (tds.get(0).getText().equals(name)) {
-                        WebElement required = getRequiredColumn(tds).findElement(By.tagName("input"));
+                if (!roleName.getText().isEmpty()) {
+                    if (roleName.getText().equals(getRoleId(role, clientRole))) {
+                        WebElement required = tds.get(clientRole ? 2 : 1).findElement(By.tagName("input"));
 
                         if (required.isSelected() && role.isRequired()) {
                             return;
@@ -279,6 +191,34 @@ public class RolePolicyForm extends Form {
             }
         }
 
-        protected abstract WebElement getRequiredColumn(List<WebElement> tds);
+        @Override
+        protected BiFunction<WebElement, RolePolicyRepresentation.RoleDefinition, Boolean> deselect() {
+            return (webElement, roleDefinition) -> {
+                List<WebElement> tds = webElement.findElements(tagName("td"));
+                boolean clientRole = tds.size() == 4;
+
+                if (!tds.get(0).getText().isEmpty()) {
+                    if (tds.get(0).getText().equals(getRoleId(roleDefinition, clientRole))) {
+                        tds.get(clientRole ? 3 : 2).findElement(By.tagName("button")).click();
+                        return true;
+                    }
+                }
+
+                return false;
+            };
+        }
+
+        private String getRoleId(RolePolicyRepresentation.RoleDefinition roleDefinition, boolean clientRole) {
+            return clientRole ? roleDefinition.getId().split("/")[1] : roleDefinition.getId();
+        }
+    }
+
+    public class ClientRoleSelect extends RoleMultipleSelect2 {
+        @Override
+        protected List<WebElement> getSelectedElements() {
+            return getRoot().findElements(By.xpath("(//table[@id='selected-client-roles'])/tbody/tr")).stream()
+                    .filter(webElement -> webElement.findElements(tagName("td")).size() > 1)
+                    .collect(Collectors.toList());
+        }
     }
 }

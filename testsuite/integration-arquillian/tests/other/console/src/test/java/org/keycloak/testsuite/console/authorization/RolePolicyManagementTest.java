@@ -55,7 +55,7 @@ public class RolePolicyManagementTest extends AbstractAuthorizationSettingsTest 
         authorizationPage.navigateTo();
         RolePolicyRepresentation expected = new RolePolicyRepresentation();
 
-        expected.setName("Test Realm Role Policy");
+        expected.setName("Test Update Realm Role Policy");
         expected.setDescription("description");
         expected.addRole("Realm Role A");
         expected.addRole("Realm Role B");
@@ -100,7 +100,7 @@ public class RolePolicyManagementTest extends AbstractAuthorizationSettingsTest 
         authorizationPage.navigateTo();
         RolePolicyRepresentation expected = new RolePolicyRepresentation();
 
-        expected.setName("Test Client Role Policy");
+        expected.setName("Test Update Client Role Policy");
         expected.setDescription("description");
 
         String clientId = newClient.getClientId();
@@ -113,7 +113,7 @@ public class RolePolicyManagementTest extends AbstractAuthorizationSettingsTest 
 
         String previousName = expected.getName();
 
-        expected.setName("Changed Test Client Role Policy");
+        expected.setName("Changed Test Update Client Role Policy");
         expected.setDescription("Changed description");
 
         expected.setRoles(expected.getRoles().stream().filter(roleDefinition -> !roleDefinition.getId().contains("Client Role B")).collect(Collectors.toSet()));
@@ -190,11 +190,11 @@ public class RolePolicyManagementTest extends AbstractAuthorizationSettingsTest 
     }
 
     @Test
-    public void testDeletePolicy() throws InterruptedException {
+    public void testDelete() throws InterruptedException {
         authorizationPage.navigateTo();
         RolePolicyRepresentation expected = new RolePolicyRepresentation();
 
-        expected.setName("Test Realm Role Policy");
+        expected.setName("Test Delete Role Policy");
         expected.setDescription("description");
         expected.addRole("Realm Role A");
         expected.addRole("Realm Role B");
@@ -224,7 +224,7 @@ public class RolePolicyManagementTest extends AbstractAuthorizationSettingsTest 
         assertNotNull(actual.getRoles());
         assertEquals(expected.getRoles().size(), actual.getRoles().size());
         assertEquals(0, actual.getRoles().stream().filter(actualDefinition -> !expected.getRoles().stream()
-                .filter(roleDefinition -> actualDefinition.getId().contains(roleDefinition.getId()) && actualDefinition.isRequired() == roleDefinition.isRequired())
+                .filter(roleDefinition -> actualDefinition.getId().contains(roleDefinition.getId().indexOf("/") != -1 ? roleDefinition.getId().split("/")[1] : roleDefinition.getId()) && actualDefinition.isRequired() == roleDefinition.isRequired())
                 .findFirst().isPresent())
                 .count());
         return actual;

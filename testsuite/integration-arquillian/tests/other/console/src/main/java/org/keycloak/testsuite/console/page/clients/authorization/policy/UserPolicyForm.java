@@ -18,21 +18,17 @@ package org.keycloak.testsuite.console.page.clients.authorization.policy;
 
 import static org.openqa.selenium.By.tagName;
 
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
-import org.jboss.arquillian.graphene.fragment.Root;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
+import org.keycloak.testsuite.console.page.fragment.MultipleStringSelect2;
 import org.keycloak.testsuite.page.Form;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
-import org.openqa.selenium.Keys;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
 
@@ -54,7 +50,7 @@ public class UserPolicyForm extends Form {
     private WebElement deleteButton;
 
     @FindBy(id = "s2id_users")
-    private UsersInput usersInput;
+    private UserSelect usersInput;
 
     @FindBy(xpath = ACTIVE_DIV_XPATH + "/button[text()='Delete']")
     private WebElement confirmDelete;
@@ -64,32 +60,9 @@ public class UserPolicyForm extends Form {
         setInputValue(description, expected.getDescription());
         logic.selectByValue(expected.getLogic().name());
 
-        Set<String> users = expected.getUsers();
-
-        for (String user : users) {
-            usersInput.select(user, driver);
-        }
-
-        unSelect(users, usersInput.getSelected());
+        usersInput.update(expected.getUsers());
 
         save();
-    }
-
-    private void unSelect(Set<String> users, Set<String> selection) {
-        for (String selected : selection) {
-            boolean isSelected = false;
-
-            for (String user : users) {
-                if (selected.equals(user)) {
-                    isSelected = true;
-                    break;
-                }
-            }
-
-            if (!isSelected) {
-                usersInput.unSelect(selected, driver);
-            }
-        }
     }
 
     public void delete() {
@@ -108,83 +81,34 @@ public class UserPolicyForm extends Form {
         return representation;
     }
 
-    public class UsersInput extends AbstractUserInput {
-        @Override
-        protected WebElement getRemoveButton(List<WebElement> tds) {
-            return tds.get(1);
-        }
+    public class UserSelect extends MultipleStringSelect2 {
 
         @Override
         protected List<WebElement> getSelectedElements() {
-            return root.findElements(By.xpath("(//table[@id='selected-users'])/tbody/tr"));
-        }
-    }
-
-    public abstract class AbstractUserInput {
-
-        @Root
-        protected WebElement root;
-
-        @FindBy(xpath = "//div[contains(@class,'select2-result-label')]")
-        private List<WebElement> result;
-
-        @FindBy(xpath = "//li[contains(@class,'select2-search-choice')]")
-        private List<WebElement> selection;
-
-        public void select(String roleId, WebDriver driver) {
-            root.click();
-            WaitUtils.pause(1000);
-
-            Actions actions = new Actions(driver);
-
-            actions.sendKeys(roleId).perform();
-            WaitUtils.pause(1000);
-
-            if (result.isEmpty()) {
-                actions.sendKeys(Keys.ESCAPE).perform();
-                return;
-            }
-
-            for (WebElement result : result) {
-                if (result.getText().equalsIgnoreCase(roleId)) {
-                    result.click();
-                    return;
-                }
-            }
+            return getRoot().findElements(By.xpath("(//table[@id='selected-users'])/tbody/tr")).stream()
+                    .filter(webElement -> webElement.findElements(tagName("td")).size() > 1)
+                    .collect(Collectors.toList());
         }
 
-        public Set<String> getSelected() {
-            List<WebElement> users = getSelectedElements();
-            Set<String> values = new HashSet<>();
+        @Override
+        protected BiFunction<WebElement, String, Boolean> deselect() {
+            return (webElement, name) -> {
+                List<WebElement> tds = webElement.findElements(tagName("td"));
 
-            for (WebElement user : users) {
-                List<WebElement> tds = user.findElements(tagName("td"));
-                if (!(tds.isEmpty() || tds.get(0).getText().isEmpty())) {
-                    values.add(tds.get(0).getText());
-                }
-            }
-
-            return values;
-        }
-
-        protected abstract List<WebElement> getSelectedElements();
-
-        public void unSelect(String name, WebDriver driver) {
-            Iterator<WebElement> iterator = getSelectedElements().iterator();
-
-            while (iterator.hasNext()) {
-                WebElement realmRole = iterator.next();
-                List<WebElement> tds = realmRole.findElements(tagName("td"));
-
-                if (!(tds.isEmpty() || tds.get(0).getText().isEmpty())) {
+                if (!tds.get(0).getText().isEmpty()) {
                     if (tds.get(0).getText().equals(name)) {
-                        getRemoveButton(tds).findElement(By.tagName("button")).click();
-                        return;
+                        tds.get(1).findElement(By.tagName("button")).click();
+                        return true;
                     }
                 }
-            }
+
+                return false;
+            };
         }
 
-        protected abstract WebElement getRemoveButton(List<WebElement> tds);
+        @Override
+        protected Function<WebElement, String> representation() {
+            return webElement -> webElement.findElements(tagName("td")).get(0).getText();
+        }
     }
 }

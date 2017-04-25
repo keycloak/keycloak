@@ -79,7 +79,7 @@ public class AggregatePolicyManagementTest extends AbstractAuthorizationSettings
         authorizationPage.navigateTo();
         AggregatePolicyRepresentation expected = new AggregatePolicyRepresentation();
 
-        expected.setName("Test Aggregate Policy");
+        expected.setName("Test Update Aggregate Policy");
         expected.setDescription("description");
         expected.addPolicy("Policy A");
         expected.addPolicy("Policy B");
@@ -89,11 +89,11 @@ public class AggregatePolicyManagementTest extends AbstractAuthorizationSettings
 
         String previousName = expected.getName();
 
-        expected.setName("Changed Test Aggregate Policy");
+        expected.setName("Changed Test Update Aggregate Policy");
         expected.setDescription("Changed description");
         expected.setLogic(Logic.NEGATIVE);
-
-        expected.setPolicies(expected.getPolicies().stream().filter(policy -> !policy.equals("Policy B")).collect(Collectors.toSet()));
+        expected.getPolicies().clear();
+        expected.addPolicy("Policy A", "Policy C");
 
         authorizationPage.navigateTo();
         authorizationPage.authorizationTabs().policies().update(previousName, expected);
@@ -106,11 +106,11 @@ public class AggregatePolicyManagementTest extends AbstractAuthorizationSettings
     }
 
     @Test
-    public void testDeletePolicy() throws InterruptedException {
+    public void testDelete() throws InterruptedException {
         authorizationPage.navigateTo();
         AggregatePolicyRepresentation expected = new AggregatePolicyRepresentation();
 
-        expected.setName("Test Aggregate Policy");
+        expected.setName("Test Delete Aggregate Policy");
         expected.setDescription("description");
         expected.addPolicy("Policy C");
 

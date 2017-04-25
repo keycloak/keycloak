@@ -58,7 +58,7 @@ public class JSPolicyManagementTest extends AbstractAuthorizationSettingsTest {
     }
 
     @Test
-    public void testDeletePolicy() throws InterruptedException {
+    public void testDelete() throws InterruptedException {
         authorizationPage.navigateTo();
         JSPolicyRepresentation expected = new JSPolicyRepresentation();
 
