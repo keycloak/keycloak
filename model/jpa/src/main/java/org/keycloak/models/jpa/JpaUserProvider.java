@@ -427,6 +427,18 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                 .setParameter("realmId", realm.getId())
                 .setParameter("link", storageProviderId)
                 .executeUpdate();
+        num = em.createNamedQuery("deleteUserConsentProtMappersByRealmAndLink")
+                .setParameter("realmId", realm.getId())
+                .setParameter("link", storageProviderId)
+                .executeUpdate();
+        num = em.createNamedQuery("deleteUserConsentRolesByRealmAndLink")
+                .setParameter("realmId", realm.getId())
+                .setParameter("link", storageProviderId)
+                .executeUpdate();
+        num = em.createNamedQuery("deleteUserConsentsByRealmAndLink")
+                .setParameter("realmId", realm.getId())
+                .setParameter("link", storageProviderId)
+                .executeUpdate();
         num = em.createNamedQuery("deleteUsersByRealmAndLink")
                 .setParameter("realmId", realm.getId())
                 .setParameter("link", storageProviderId)

@@ -34,6 +34,7 @@ import java.io.Serializable;
  */
 @NamedQueries({
         @NamedQuery(name="deleteUserConsentRolesByRealm", query="delete from UserConsentRoleEntity grantedRole where grantedRole.userConsent IN (select consent from UserConsentEntity consent where consent.user IN (select user from UserEntity user where user.realmId = :realmId))"),
+        @NamedQuery(name="deleteUserConsentRolesByRealmAndLink", query="delete from UserConsentRoleEntity grantedRole where grantedRole.userConsent IN (select consent from UserConsentEntity consent where consent.user IN (select u from UserEntity u where u.realmId=:realmId and u.federationLink=:link))"),
         @NamedQuery(name="deleteUserConsentRolesByUser", query="delete from UserConsentRoleEntity grantedRole where grantedRole.userConsent IN (select consent from UserConsentEntity consent where consent.user = :user)"),
         @NamedQuery(name="deleteUserConsentRolesByRole", query="delete from UserConsentRoleEntity grantedRole where grantedRole.roleId = :roleId)"),
         @NamedQuery(name="deleteUserConsentRolesByClient", query="delete from UserConsentRoleEntity grantedRole where grantedRole.userConsent IN (select consent from UserConsentEntity consent where consent.clientId = :clientId)"),

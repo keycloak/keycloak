@@ -63,6 +63,7 @@ import org.keycloak.testsuite.pages.AccountPasswordPage;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.LDAPRule;
@@ -152,6 +153,9 @@ public class LDAPProvidersIntegrationTest {
 
     @WebResource
     protected AccountPasswordPage changePasswordPage;
+
+    @WebResource
+    protected OAuthGrantPage grantPage;
 
 //    @Test
 //    @Ignore
@@ -316,8 +320,18 @@ public class LDAPProvidersIntegrationTest {
     }
 
     @Test
-    public void deleteFederationLink() {
-        loginLdap();
+    public void deleteFederationLink() throws Exception {
+        // KEYCLOAK-4789: Login in client, which requires consent
+        oauth.clientId("third-party");
+        loginPage.open();
+        loginPage.login("johnkeycloak", "Password1");
+
+        grantPage.assertCurrent();
+        grantPage.accept();
+
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+
         {
             KeycloakSession session = keycloakRule.startSession();
             try {
@@ -349,6 +363,9 @@ public class LDAPProvidersIntegrationTest {
                 keycloakRule.stopSession(session, true);
             }
         }
+
+        oauth.clientId("test-app");
+
         loginLdap();
 
     }
