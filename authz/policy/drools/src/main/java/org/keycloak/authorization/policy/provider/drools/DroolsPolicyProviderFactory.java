@@ -13,8 +13,8 @@ import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.representations.idm.authorization.RulePolicyRepresentation;
 import org.kie.api.KieServices;
 import org.kie.api.KieServices.Factory;
 import org.kie.api.runtime.KieContainer;
@@ -22,7 +22,7 @@ import org.kie.api.runtime.KieContainer;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class DroolsPolicyProviderFactory implements PolicyProviderFactory {
+public class DroolsPolicyProviderFactory implements PolicyProviderFactory<RulePolicyRepresentation> {
 
     private KieServices ks;
     private final Map<String, DroolsPolicy> containers = Collections.synchronizedMap(new HashMap<>());
@@ -61,12 +61,14 @@ public class DroolsPolicyProviderFactory implements PolicyProviderFactory {
     }
 
     @Override
-    public void onCreate(Policy policy, AbstractPolicyRepresentation representation, AuthorizationProvider authorization) {
+    public void onCreate(Policy policy, RulePolicyRepresentation representation, AuthorizationProvider authorization) {
+        updateConfig(policy, representation);
         update(policy);
     }
 
     @Override
-    public void onUpdate(Policy policy, AbstractPolicyRepresentation representation, AuthorizationProvider authorization) {
+    public void onUpdate(Policy policy, RulePolicyRepresentation representation, AuthorizationProvider authorization) {
+        updateConfig(policy, representation);
         update(policy);
     }
 
@@ -78,6 +80,23 @@ public class DroolsPolicyProviderFactory implements PolicyProviderFactory {
     @Override
     public void onRemove(Policy policy, AuthorizationProvider authorization) {
         remove(policy);
+    }
+
+    @Override
+    public RulePolicyRepresentation toRepresentation(Policy policy, RulePolicyRepresentation representation) {
+        representation.setArtifactGroupId(policy.getConfig().get("mavenArtifactGroupId"));
+        representation.setArtifactId(policy.getConfig().get("mavenArtifactId"));
+        representation.setArtifactVersion(policy.getConfig().get("mavenArtifactVersion"));
+        representation.setScannerPeriod(policy.getConfig().get("scannerPeriod"));
+        representation.setScannerPeriodUnit(policy.getConfig().get("scannerPeriodUnit"));
+        representation.setSessionName(policy.getConfig().get("sessionName"));
+        representation.setModuleName(policy.getConfig().get("moduleName"));
+        return representation;
+    }
+
+    @Override
+    public Class<RulePolicyRepresentation> getRepresentationType() {
+        return RulePolicyRepresentation.class;
     }
 
     @Override
@@ -98,6 +117,20 @@ public class DroolsPolicyProviderFactory implements PolicyProviderFactory {
     @Override
     public String getId() {
         return "rules";
+    }
+
+    private void updateConfig(Policy policy, RulePolicyRepresentation representation) {
+        Map<String, String> config = policy.getConfig();
+
+        config.put("mavenArtifactGroupId", representation.getArtifactGroupId());
+        config.put("mavenArtifactId", representation.getArtifactId());
+        config.put("mavenArtifactVersion", representation.getArtifactVersion());
+        config.put("scannerPeriod", representation.getScannerPeriod());
+        config.put("scannerPeriodUnit", representation.getScannerPeriodUnit());
+        config.put("sessionName", representation.getSessionName());
+        config.put("moduleName", representation.getModuleName());
+
+        policy.setConfig(config);
     }
 
     void update(Policy policy) {

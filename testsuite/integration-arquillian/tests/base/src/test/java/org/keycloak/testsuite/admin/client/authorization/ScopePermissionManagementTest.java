@@ -33,7 +33,7 @@ import org.keycloak.representations.idm.authorization.ScopePermissionRepresentat
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class ScopePermissionManagementTest extends AbstractPermissionManagementTest {
+public class ScopePermissionManagementTest extends AbstractPolicyManagementTest {
 
     @Test
     public void testCreateResourceScopePermission() {

@@ -24,6 +24,7 @@ import org.keycloak.representations.idm.authorization.AggregatePolicyRepresentat
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
+import org.keycloak.representations.idm.authorization.RulePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testsuite.page.Form;
@@ -58,6 +59,9 @@ public class Policies extends Form {
     @Page
     private TimePolicy timePolicy;
 
+    @Page
+    private RulePolicy rulePolicy;
+
     public PoliciesTable policies() {
         return table;
     }
@@ -87,6 +91,10 @@ public class Policies extends Form {
             timePolicy.form().populate((TimePolicyRepresentation) expected);
             timePolicy.form().save();
             return (P) timePolicy;
+        } else if ("rules".equals(type)) {
+            rulePolicy.form().populate((RulePolicyRepresentation) expected);
+            rulePolicy.form().save();
+            return (P) rulePolicy;
         }
 
         return null;
@@ -110,6 +118,8 @@ public class Policies extends Form {
                     jsPolicy.form().populate((JSPolicyRepresentation) representation);
                 } else if ("time".equals(type)) {
                     timePolicy.form().populate((TimePolicyRepresentation) representation);
+                } else if ("rules".equals(type)) {
+                    rulePolicy.form().populate((RulePolicyRepresentation) representation);
                 }
 
                 return;
@@ -134,6 +144,8 @@ public class Policies extends Form {
                     return (P) jsPolicy;
                 } else if ("time".equals(type)) {
                     return (P) timePolicy;
+                } else if ("rules".equals(type)) {
+                    return (P) rulePolicy;
                 }
             }
         }
@@ -159,6 +171,8 @@ public class Policies extends Form {
                     jsPolicy.form().delete();
                 } else if ("time".equals(type)) {
                     timePolicy.form().delete();
+                } else if ("rules".equals(type)) {
+                    rulePolicy.form().delete();
                 }
 
                 return;

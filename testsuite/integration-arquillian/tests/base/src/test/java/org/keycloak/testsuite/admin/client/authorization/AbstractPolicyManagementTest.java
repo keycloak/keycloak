@@ -47,7 +47,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public abstract class AbstractPermissionManagementTest extends AbstractKeycloakTest {
+public abstract class AbstractPolicyManagementTest extends AbstractKeycloakTest {
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
