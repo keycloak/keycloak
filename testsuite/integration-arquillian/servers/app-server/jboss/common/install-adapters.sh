@@ -23,10 +23,20 @@ do
         echo "Server is running. Installing adapter."
 
         ./jboss-cli.sh -c --file="adapter-install.cli"
+
+        if [ "$ELYTRON_SUPPORTED" = true ]; then
+            ./jboss-cli.sh -c --file="adapter-elytron-install.cli"
+        fi
+
         if [ $? -ne 0 ]; then RESULT=1; fi
 
         if [ "$SAML_SUPPORTED" = true ]; then
             ./jboss-cli.sh -c --file="adapter-install-saml.cli"
+
+            if [ "$ELYTRON_SUPPORTED" = true ]; then
+                ./jboss-cli.sh -c --file="adapter-elytron-install-saml.cli"
+            fi
+
             if [ $? -ne 0 ]; then RESULT=1; fi
         fi
 

@@ -26,7 +26,8 @@
         <property name="browser">${browser}</property>
         <property name="htmlUnit.version">${htmlUnitBrowserVersion}</property>
         <property name="firefox_binary">${firefox_binary}</property>
-        <property name="phantomjs.cli.args">${phantomjs.cli.args}</property>
+        <property name="chromeArguments">${chromeArguments}</property>
+        <property name="phantomjs.cli.args">${phantomjs.cli.args} --ssl-certificates-path=${client.certificate.ca.path} --ssl-client-certificate-file=${client.certificate.file} --ssl-client-key-file=${client.key.file} --ssl-client-key-passphrase=${client.key.passphrase}</property>
     </extension>
     
     <extension qualifier="graphene">

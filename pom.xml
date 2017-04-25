@@ -1,3 +1,4 @@
+<?xml version="1.0"?>
 <!--
 ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
 ~ and other contributors as indicated by the @author tags.
@@ -32,22 +33,26 @@
     </description>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-parent</artifactId>
-    <version>3.0.0.Final</version>
+    <version>3.1.0.CR1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <properties>
-        <product.name>Keycloak</product.name>
-        <product.name-html>\u003Cdiv class="kc-logo-text"\u003E\u003Cspan\u003EKeycloak\u003C\u002Fspan\u003E\u003C\u002Fdiv\u003E</product.name-html>
-        <product.version>${project.version}</product.version>
         <product.build-time>${timestamp}</product.build-time>
-        <product.default-profile>community</product.default-profile>
 
         <!-- WildFly -->
-        <eap.version>7.0.0.Beta</eap.version>
         <jboss.as.version>7.2.0.Final</jboss.as.version>
         <wildfly.version>10.0.0.Final</wildfly.version>
+        <wildfly.build-tools.version>1.1.3.Final</wildfly.build-tools.version>
+        <wildfly11.version>11.0.0.Alpha1</wildfly11.version> <!-- for testing with wf11 pre-releases -->
+        <wildfly11.build-tools.version>1.1.8.Final</wildfly11.build-tools.version>
+        <eap.version>7.1.0.Alpha1-redhat-16</eap.version>
+        <eap.build-tools.version>1.1.8.Final</eap.build-tools.version>
+        <wildfly.core.version>2.0.10.Final</wildfly.core.version>
 
-        <aesh.version>0.66.12</aesh.version>
+        <version.org.wildfly.security.wildfly-elytron>1.1.0.Beta32</version.org.wildfly.security.wildfly-elytron>
+        <version.org.wildfly.security.elytron-web.undertow-server>1.0.0.Beta14</version.org.wildfly.security.elytron-web.undertow-server>
+
+        <aesh.version>0.66.15</aesh.version>
         <apache.httpcomponents.version>4.5</apache.httpcomponents.version>
         <apache.httpcomponents.httpcore.version>4.4.1</apache.httpcomponents.httpcore.version>
         <apache.mime4j.version>0.6</apache.mime4j.version>
@@ -75,8 +80,6 @@
         <sun.jaxb.version>2.2.11</sun.jaxb.version>
         <sun.xsom.version>20140925</sun.xsom.version>
         <undertow.version>1.3.15.Final</undertow.version>
-        <wildfly.core.version>2.0.10.Final</wildfly.core.version>
-        <wildfly.build-tools.version>1.1.0.Final</wildfly.build-tools.version>
         <xmlsec.version>2.0.5</xmlsec.version>
 
         <!-- Authorization Drools Policy Provider -->
@@ -112,6 +115,7 @@
         <!-- Maven Plugins -->
         <enforcer.plugin.version>1.4</enforcer.plugin.version>
         <replacer.plugin.version>1.3.5</replacer.plugin.version>
+        <jar.plugin.version>3.0.2</jar.plugin.version>
         <jboss.as.plugin.version>7.5.Final</jboss.as.plugin.version>
         <jmeter.plugin.version>1.9.0</jmeter.plugin.version>
         <jmeter.analysis.plugin.version>1.0.4</jmeter.analysis.plugin.version>
@@ -178,7 +182,6 @@
         <module>server-spi-private</module>
         <module>saml-core-api</module>
         <module>saml-core</module>
-        <module>proxy</module>
         <module>federation</module>
         <module>services</module>
         <module>themes</module>
@@ -360,6 +363,7 @@
                 <groupId>log4j</groupId>
                 <artifactId>log4j</artifactId>
                 <version>${log4j.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>junit</groupId>
@@ -620,6 +624,16 @@
                 <groupId>org.wildfly</groupId>
                 <artifactId>wildfly-web-common</artifactId>
                 <version>${wildfly.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.security</groupId>
+                <artifactId>wildfly-elytron</artifactId>
+                <version>${version.org.wildfly.security.wildfly-elytron}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.security.elytron-web</groupId>
+                <artifactId>undertow-server</artifactId>
+                <version>${version.org.wildfly.security.elytron-web.undertow-server}</version>
             </dependency>
             <dependency>
                 <groupId>org.infinispan</groupId>
@@ -919,6 +933,16 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-wildfly-adapter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-wildfly-elytron-oidc-adapter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-saml-wildfly-elytron-adapter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -1371,6 +1395,13 @@
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-assembly-plugin</artifactId>
+                    <configuration>
+                        <tarLongFileMode>posix</tarLongFileMode>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-release-plugin</artifactId>
                     <version>2.5.2</version>
                     <configuration>
@@ -1385,6 +1416,11 @@
                         <forkMode>once</forkMode>
                         <argLine>${surefire.memory.settings}</argLine>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>${jar.plugin.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>com.google.code.maven-replacer-plugin</groupId>
@@ -1436,11 +1472,6 @@
                 </plugin>
                 <plugin>
                     <groupId>org.wildfly.build</groupId>
-                    <artifactId>wildfly-feature-pack-build-maven-plugin</artifactId>
-                    <version>${wildfly.build-tools.version}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.wildfly.build</groupId>
                     <artifactId>wildfly-server-provisioning-maven-plugin</artifactId>
                     <version>${wildfly.build-tools.version}</version>
                 </plugin>
@@ -1474,6 +1505,46 @@
     </build>
 
     <profiles>
+        <profile>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!product</name>
+                </property>
+            </activation>
+            <properties>
+                <product.name>Keycloak</product.name>
+                <product.name.full>Keycloak</product.name.full>
+                <product.slot>keycloak</product.slot>
+                <product.wildfly.console.slot>main</product.wildfly.console.slot>
+                <product.name-html>\u003Cdiv class="kc-logo-text"\u003E\u003Cspan\u003EKeycloak\u003C\u002Fspan\u003E\u003C\u002Fdiv\u003E</product.name-html>
+                <product.version>${project.version}</product.version>
+                <product.default-profile>community</product.default-profile>
+            </properties>
+            <modules>
+                <module>proxy</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>product</id>
+            <activation>
+                <property>
+                    <name>product</name>
+                </property>
+            </activation>
+            <properties>
+                <product.name.full>Red Hat Single Sign-On</product.name.full>
+                <product.name>rh-sso</product.name>
+                <product.slot>rh-sso</product.slot>
+                <product.wildfly.console.slot>eap</product.wildfly.console.slot>
+                <product.name-html>\u003Cstrong\u003ERed Hat\u003C\u002Fstrong\u003E\u003Csup\u003E\u00AE\u003C\u002Fsup\u003E Single Sign On</product.name-html>
+                <product.version>${project.version}</product.version>
+                <product.default-profile>product</product.default-profile>
+                <product.filename.version>7.1</product.filename.version>
+            </properties>
+        </profile>
+
         <profile>
             <id>distribution</id>
             <modules>

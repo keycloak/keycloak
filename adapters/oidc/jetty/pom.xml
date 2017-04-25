@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.0.0.Final</version>
+        <version>3.1.0.CR1-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
     <name>Keycloak Jetty Integration</name>
@@ -33,9 +33,22 @@
     <modules>
         <module>jetty-core</module>
         <module>jetty8.1</module>
-        <module>jetty9.1</module>
         <module>jetty9.2</module>
-        <module>jetty9.3</module>
-        <module>jetty9.4</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!product</name>
+                </property>
+            </activation>
+            <modules>
+                <module>jetty9.1</module>
+                <module>jetty9.3</module>
+                <module>jetty9.4</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

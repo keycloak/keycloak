@@ -35,19 +35,23 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleContainerModel.RoleRemovedEvent;
 import org.keycloak.models.RoleModel;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class RolePolicyProviderFactory implements PolicyProviderFactory {
+public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePolicyRepresentation> {
 
     private RolePolicyProvider provider = new RolePolicyProvider();
 
@@ -67,13 +71,114 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory {
     }
 
     @Override
-    public PolicyProviderAdminService getAdminResource(ResourceServer resourceServer) {
+    public PolicyProviderAdminService getAdminResource(ResourceServer resourceServer, AuthorizationProvider authorization) {
         return null;
     }
 
     @Override
     public PolicyProvider create(KeycloakSession session) {
         return new RolePolicyProvider();
+    }
+
+    @Override
+    public RolePolicyRepresentation toRepresentation(Policy policy, RolePolicyRepresentation representation) {
+        try {
+            representation.setRoles(JsonSerialization.readValue(policy.getConfig().get("roles"), Set.class));
+        } catch (IOException cause) {
+            throw new RuntimeException("Failed to deserialize roles", cause);
+        }
+        return representation;
+    }
+
+    @Override
+    public Class<RolePolicyRepresentation> getRepresentationType() {
+        return RolePolicyRepresentation.class;
+    }
+
+    @Override
+    public void onCreate(Policy policy, RolePolicyRepresentation representation, AuthorizationProvider authorization) {
+        updateRoles(policy, representation, authorization);
+    }
+
+    @Override
+    public void onUpdate(Policy policy, RolePolicyRepresentation representation, AuthorizationProvider authorization) {
+        updateRoles(policy, representation, authorization);
+    }
+
+    @Override
+    public void onImport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization) {
+        try {
+            updateRoles(policy, authorization, new HashSet<>(Arrays.asList(JsonSerialization.readValue(representation.getConfig().get("roles"), RolePolicyRepresentation.RoleDefinition[].class))));
+        } catch (IOException cause) {
+            throw new RuntimeException("Failed to deserialize roles during import", cause);
+        }
+    }
+
+    private void updateRoles(Policy policy, RolePolicyRepresentation representation, AuthorizationProvider authorization) {
+        updateRoles(policy, authorization, representation.getRoles());
+    }
+
+    private void updateRoles(Policy policy, AuthorizationProvider authorization, Set<RolePolicyRepresentation.RoleDefinition> roles) {
+        try {
+            RealmModel realm = authorization.getRealm();
+            Set<RolePolicyRepresentation.RoleDefinition> updatedRoles = new HashSet<>();
+
+            if (roles != null) {
+                for (RolePolicyRepresentation.RoleDefinition definition : roles) {
+                    String roleName = definition.getId();
+                    String clientId = null;
+                    int clientIdSeparator = roleName.indexOf("/");
+
+                    if (clientIdSeparator != -1) {
+                        clientId = roleName.substring(0, clientIdSeparator);
+                        roleName = roleName.substring(clientIdSeparator + 1);
+                    }
+
+                    RoleModel role;
+
+                    if (clientId == null) {
+                        role = realm.getRole(roleName);
+
+                        if (role == null) {
+                            role = realm.getRoleById(roleName);
+                        }
+                    } else {
+                        ClientModel client = realm.getClientByClientId(clientId);
+
+                        if (client == null) {
+                            throw new RuntimeException("Client with id [" + clientId + "] not found.");
+                        }
+
+                        role = client.getRole(roleName);
+                    }
+
+                    // fallback to find any client role with the given name
+                    if (role == null) {
+                        String finalRoleName = roleName;
+                        role = realm.getClients().stream().map(clientModel -> clientModel.getRole(finalRoleName)).filter(roleModel -> roleModel != null)
+                                .findFirst().orElse(null);
+                    }
+
+                    if (role == null) {
+                        throw new RuntimeException("Error while importing configuration. Role [" + roleName + "] could not be found.");
+                    }
+
+                    definition.setId(role.getId());
+
+                    updatedRoles.add(definition);
+                }
+                try {
+                } catch (Exception e) {
+                    throw new RuntimeException("Error while updating policy [" + policy.getName() + "].", e);
+                }
+            }
+
+            Map<String, String> config = policy.getConfig();
+            config.put("roles", JsonSerialization.writeValueAsString(updatedRoles));
+            policy.setConfig(config);
+        } catch (IOException cause) {
+            throw new RuntimeException("Failed to deserialize roles", cause);
+        }
     }
 
     @Override
@@ -125,12 +230,6 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory {
 
                 try {
                     if (roles.isEmpty()) {
-                        policyStore.findDependentPolicies(policy.getId(), resourceServer.getId()).forEach(dependentPolicy -> {
-                            dependentPolicy.removeAssociatedPolicy(policy);
-                            if (dependentPolicy.getAssociatedPolicies().isEmpty()) {
-                                policyStore.delete(dependentPolicy.getId());
-                            }
-                        });
                         policyStore.delete(policy.getId());
                     } else {
                         Map<String, String> config = policy.getConfig();

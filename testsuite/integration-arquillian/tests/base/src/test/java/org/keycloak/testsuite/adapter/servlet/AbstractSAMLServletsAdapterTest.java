@@ -60,6 +60,7 @@ import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.page.BadAssertionSalesPostSig;
 import org.keycloak.testsuite.adapter.page.BadClientSalesPostSigServlet;
 import org.keycloak.testsuite.adapter.page.BadRealmSalesPostSigServlet;
+import org.keycloak.testsuite.adapter.page.DifferentCookieNameServlet;
 import org.keycloak.testsuite.adapter.page.Employee2Servlet;
 import org.keycloak.testsuite.adapter.page.EmployeeServlet;
 import org.keycloak.testsuite.adapter.page.EmployeeSigFrontServlet;
@@ -206,6 +207,9 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
     protected EmployeeServlet employeeServletPage;
 
     @Page
+    protected DifferentCookieNameServlet differentCookieNameServletPage;
+
+    @Page
     private InputPortal inputPortalPage;
 
     @Page
@@ -301,6 +305,11 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
     @Deployment(name = SalesPost2Servlet.DEPLOYMENT_NAME)
     protected static WebArchive salesPost2() {
         return samlServletDeployment(SalesPost2Servlet.DEPLOYMENT_NAME, SendUsernameServlet.class);
+    }
+
+    @Deployment(name = DifferentCookieNameServlet.DEPLOYMENT_NAME)
+    protected static WebArchive differentCokieName() {
+        return samlServletDeployment(DifferentCookieNameServlet.DEPLOYMENT_NAME, "different-cookie-name/WEB-INF/web.xml", SendUsernameServlet.class);
     }
 
     @Deployment(name = SalesPostAssertionAndResponseSig.DEPLOYMENT_NAME)
@@ -1067,6 +1076,18 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
                 try { response.close(); } catch (IOException ex) { }
             }
         }
+    }
+
+    @Test
+    // KEYCLOAK-4141
+    public void testDifferentCookieName() {
+        assertSuccessfulLogin(differentCookieNameServletPage, bburkeUser, testRealmSAMLPostLoginPage, "principal=bburke");
+
+        assertThat(driver.manage().getCookieNamed("DIFFERENT_SESSION_ID"), notNullValue());
+        assertThat(driver.manage().getCookieNamed("JSESSIONID"), nullValue());
+
+        salesPost2ServletPage.logout();
+        checkLoggedOut(differentCookieNameServletPage, testRealmSAMLPostLoginPage);
     }
 
     private URI getAuthServerSamlEndpoint(String realm) throws IllegalArgumentException, UriBuilderException {

@@ -1111,6 +1111,12 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
         } else if ($scope.clientEdit.bearerOnly) {
             $scope.clientEdit.serviceAccountsEnabled = false;
         }
+        if ($scope.client.authorizationServicesEnabled && !$scope.clientEdit.authorizationServicesEnabled) {
+            Dialog.confirm("Disable Authorization Settings", "Are you sure you want to disable authorization ? Once you save your changes, all authorization settings associated with this client will be removed. This operation can not be reverted.", function () {
+            }, function () {
+                $scope.clientEdit.authorizationServicesEnabled = true;
+            });
+        }
     }
 
     $scope.$watch('clientEdit', function() {

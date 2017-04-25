@@ -142,6 +142,10 @@ public class ProvidersTest extends AbstractAuthenticationTest {
         addProviderInfo(result, "auth-spnego", "Kerberos", "Initiates the SPNEGO protocol.  Most often used with Kerberos.");
         addProviderInfo(result, "auth-username-password-form", "Username Password Form",
                 "Validates a username and password from login form.");
+        addProviderInfo(result, "auth-x509-client-username-form", "X509/Validate Username Form",
+                "Validates username and password from X509 client certificate received as a part of mutual SSL handshake.");
+        addProviderInfo(result, "direct-grant-auth-x509-username", "X509/Validate Username",
+                "Validates username and password from X509 client certificate received as a part of mutual SSL handshake.");
         addProviderInfo(result, "direct-grant-validate-otp", "OTP", "Validates the one time password supplied as a 'totp' form parameter in direct grant request");
         addProviderInfo(result, "direct-grant-validate-password", "Password",
                 "Validates the password supplied as a 'password' form parameter in direct grant request");
@@ -171,6 +175,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Testsuite Dummy authenticator.  Just passes through and is hardcoded to a specific user");
         addProviderInfo(result, "testsuite-dummy-registration", "Testsuite Dummy Pass Thru",
                 "Testsuite Dummy authenticator.  Just passes through and is hardcoded to a specific user");
+
         return result;
     }
 

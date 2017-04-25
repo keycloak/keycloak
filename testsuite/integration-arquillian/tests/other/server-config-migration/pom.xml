@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests-other</artifactId>
-        <version>3.0.0.Final</version>
+        <version>3.1.0.CR1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     
@@ -35,6 +35,7 @@
 
     <properties>
         <jbossHome>${project.build.directory}/keycloak-${project.version}</jbossHome>
+        <migrated.version>1.8.1</migrated.version>
     </properties>
 
     <dependencies>
@@ -64,7 +65,7 @@
                 <executions>
                     <execution>
                         <id>unpack</id>
-                        <phase>compile</phase>
+                        <phase>process-resources</phase>
                         <goals>
                             <goal>unpack</goal>
                         </goals>
@@ -89,7 +90,7 @@
                 <executions>
                     <execution>
                         <id>copy-standalone</id>
-                        <phase>generate-test-sources</phase>
+                        <phase>compile</phase>
                         <goals>
                             <goal>copy-resources</goal>
                         </goals>
@@ -106,7 +107,7 @@
                     </execution>
                     <execution>
                         <id>copy-domain</id>
-                        <phase>generate-test-sources</phase>
+                        <phase>compile</phase>
                         <goals>
                             <goal>copy-resources</goal>
                         </goals>
@@ -120,6 +121,36 @@
                                 </resource>
                             </resources>              
                         </configuration>            
+                    </execution>
+                </executions>
+            </plugin>
+            
+            <plugin>
+                <groupId>com.coderplus.maven.plugins</groupId>
+                <artifactId>copy-rename-maven-plugin</artifactId>
+                <version>1.0.1</version>
+                <executions>
+                    <execution>
+                        <id>rename-keycloak-server-json-standalone</id>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>rename</goal>
+                        </goals>
+                        <configuration>
+                            <sourceFile>${jbossHome}/standalone/configuration/keycloak-server-${migrated.version}.json</sourceFile>
+                            <destinationFile>${jbossHome}/standalone/configuration/keycloak-server.json</destinationFile>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>rename-keycloak-server-json-domain</id>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>rename</goal>
+                        </goals>
+                        <configuration>
+                            <sourceFile>${jbossHome}/domain/configuration/keycloak-server-${migrated.version}.json</sourceFile>
+                            <destinationFile>${jbossHome}/domain/configuration/keycloak-server.json</destinationFile>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -185,7 +216,7 @@
                             <goal>shutdown</goal>
                         </goals>
                         <configuration>
-                            <serverConfig>standalone-1.8.1.xml</serverConfig>
+                            <serverConfig>standalone-${migrated.version}.xml</serverConfig>
                             <java-opts>
                                 <java-opt>-Djboss.socket.binding.port-offset=1000</java-opt>
                             </java-opts>
@@ -205,14 +236,14 @@
                             <goal>shutdown</goal>
                         </goals>
                         <configuration>
-                            <serverConfig>standalone-1.8.1.xml</serverConfig>
+                            <serverConfig>standalone-${migrated.version}.xml</serverConfig>
                             <java-opts>
                                 <java-opt>-Djboss.socket.binding.port-offset=1000</java-opt>
                             </java-opts>
                             <execute-commands>
                                 <commands>
-                                    <command>echo Reading subsystems for migrated standalone-1.8.1.xml</command>
-                                    <command>/subsystem=*/:read-resource(recursive=true)>${project.build.directory}/migrated-standalone-1.8.1.txt</command>
+                                    <command>echo Reading subsystems for migrated standalone-${migrated.version}.xml</command>
+                                    <command>/subsystem=*/:read-resource(recursive=true)>${project.build.directory}/migrated-standalone-${migrated.version}.txt</command>
                                 </commands>
                             </execute-commands>
                         </configuration>
@@ -249,7 +280,7 @@
                             <goal>shutdown</goal>
                         </goals>
                         <configuration>
-                            <serverConfig>standalone-ha-1.8.1.xml</serverConfig>
+                            <serverConfig>standalone-ha-${migrated.version}.xml</serverConfig>
                             <java-opts>
                                 <java-opt>-Djboss.socket.binding.port-offset=1000</java-opt>
                             </java-opts>
@@ -269,14 +300,14 @@
                             <goal>shutdown</goal>
                         </goals>
                         <configuration>
-                            <serverConfig>standalone-ha-1.8.1.xml</serverConfig>
+                            <serverConfig>standalone-ha-${migrated.version}.xml</serverConfig>
                             <java-opts>
                                 <java-opt>-Djboss.socket.binding.port-offset=1000</java-opt>
                             </java-opts>
                             <execute-commands>
                                 <commands>
-                                    <command>echo Reading subsystems for migrated standalone-ha-1.8.1.xml</command>
-                                    <command>/subsystem=*/:read-resource(recursive=true)>${project.build.directory}/migrated-standalone-ha-1.8.1.txt</command>
+                                    <command>echo Reading subsystems for migrated standalone-ha-${migrated.version}.xml</command>
+                                    <command>/subsystem=*/:read-resource(recursive=true)>${project.build.directory}/migrated-standalone-ha-${migrated.version}.txt</command>
                                 </commands>
                             </execute-commands>
                         </configuration>
@@ -314,9 +345,9 @@
                         </goals>
                         <configuration>
                             <serverType>DOMAIN</serverType>
-                            <domainConfig>domain-1.8.1.xml</domainConfig>
+                            <domainConfig>domain-${migrated.version}.xml</domainConfig>
                             <server-args>
-                                <server-arg>--host-config=host-master-1.8.1.xml</server-arg>
+                                <server-arg>--host-config=host-master-${migrated.version}.xml</server-arg>
                             </server-args>
                             <!-- jboss.server.config.dir is set to trick the migrate-json operation into -->
                             <!-- finding keycloak-server.json.  Normally, that would be uploaded using   -->
@@ -345,9 +376,9 @@
                         </goals>
                         <configuration>
                             <serverType>DOMAIN</serverType>
-                            <domainConfig>domain-1.8.1.xml</domainConfig>
+                            <domainConfig>domain-${migrated.version}.xml</domainConfig>
                             <server-args>
-                                <server-arg>--host-config=host-master-1.8.1.xml</server-arg>
+                                <server-arg>--host-config=host-master-${migrated.version}.xml</server-arg>
                             </server-args>
                             <java-opts>
                                 <java-opt>-Djboss.management.http.port=10990</java-opt>
@@ -355,9 +386,9 @@
                             </java-opts>
                             <execute-commands>
                                 <commands>
-                                    <command>echo Reading subsystems for migrated domain-1.8.1.xml</command>
-                                    <command>/profile=auth-server-standalone/subsystem=*/:read-resource(recursive=true)>${project.build.directory}/migrated-domain-standalone-1.8.1.txt</command>
-                                    <command>/profile=auth-server-clustered/subsystem=*/:read-resource(recursive=true)>${project.build.directory}/migrated-domain-clustered-1.8.1.txt</command>
+                                    <command>echo Reading subsystems for migrated domain-${migrated.version}.xml</command>
+                                    <command>/profile=auth-server-standalone/subsystem=*/:read-resource(recursive=true)>${project.build.directory}/migrated-domain-standalone-${migrated.version}.txt</command>
+                                    <command>/profile=auth-server-clustered/subsystem=*/:read-resource(recursive=true)>${project.build.directory}/migrated-domain-clustered-${migrated.version}.txt</command>
                                 </commands>
                             </execute-commands>
                         </configuration>
@@ -394,7 +425,51 @@
             
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <migrated.version>${migrated.version}</migrated.version>
+                    </systemPropertyVariables>
+                </configuration>
             </plugin>
         </plugins>
     </build>
+    
+    <profiles>
+        <profile>
+            <id>product</id>
+            <properties>
+                <jbossHome>${project.build.directory}/rh-sso-7.1</jbossHome>
+                <migrated.version>1.9.8.Final-redhat-1</migrated.version>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>unpack</id>
+                                <phase>compile</phase>
+                                <goals>
+                                    <goal>unpack</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.keycloak</groupId>
+                                            <artifactId>keycloak-server-dist</artifactId>
+                                            <version>2.5.4.Final-redhat-1</version>
+                                            <type>zip</type>
+                                            <overWrite>true</overWrite>
+                                            <outputDirectory>${project.build.directory}</outputDirectory>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

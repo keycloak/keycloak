@@ -160,7 +160,7 @@ public class CachedPolicy implements Policy, Serializable {
 
     @Override
     public void removeResource(Resource resource) {
-        this.resourcesIds.add(resource.getId());
+        this.resourcesIds.remove(resource.getId());
     }
 
     @Override

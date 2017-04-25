@@ -31,10 +31,10 @@
                 <kc-tooltip>{{:: 'authz-policy-description.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="reqActions">{{:: 'authz-policy-apply-policy' | translate}} <span class="required">*</span></label>
+                <label class="col-md-2 control-label" for="policies">{{:: 'authz-policy-apply-policy' | translate}} <span class="required">*</span></label>
 
                 <div class="col-md-6">
-                    <input type="hidden" ui-select2="policiesUiSelect" id="reqActions" data-ng-model="policy.config.applyPolicies" data-placeholder="{{:: 'authz-select-a-policy' | translate}}..." multiple required />
+                    <input type="hidden" ui-select2="policiesUiSelect" id="policies" data-ng-model="selectedPolicies" data-placeholder="{{:: 'authz-select-a-policy' | translate}}..." multiple required />
                 </div>
                 <kc-tooltip>{{:: 'authz-policy-apply-policy.tooltip' | translate}}</kc-tooltip>
             </div>
@@ -54,10 +54,10 @@
                 <kc-tooltip>{{:: 'authz-policy-decision-strategy.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="policy.logic">{{:: 'authz-policy-logic' | translate}}</label>
+                <label class="col-md-2 control-label" for="logic">{{:: 'authz-policy-logic' | translate}}</label>
 
                 <div class="col-sm-1">
-                    <select class="form-control" id="policy.logic"
+                    <select class="form-control" id="logic" name="logic"
                             data-ng-model="policy.logic">
                         <option value="POSITIVE">{{:: 'authz-policy-logic-positive' | translate}}</option>
                         <option value="NEGATIVE">{{:: 'authz-policy-logic-negative' | translate}}</option>

@@ -29,9 +29,13 @@ public class DefaultScriptingProviderFactory implements ScriptingProviderFactory
 
     static final String ID = "script-based-auth";
 
+    private ScriptEngineManager scriptEngineManager;
+
     @Override
     public ScriptingProvider create(KeycloakSession session) {
-        return new DefaultScriptingProvider(ScriptEngineManagerHolder.SCRIPT_ENGINE_MANAGER);
+        lazyInit();
+
+        return new DefaultScriptingProvider(scriptEngineManager);
     }
 
     @Override
@@ -54,11 +58,14 @@ public class DefaultScriptingProviderFactory implements ScriptingProviderFactory
         return ID;
     }
 
-    /**
-     * Holder class for lazy initialization of {@link ScriptEngineManager}.
-     */
-    private static class ScriptEngineManagerHolder {
-
-        private static final ScriptEngineManager SCRIPT_ENGINE_MANAGER = new ScriptEngineManager();
+    private void lazyInit() {
+        if (scriptEngineManager == null) {
+            synchronized (this) {
+                if (scriptEngineManager == null) {
+                    scriptEngineManager = new ScriptEngineManager();
+                }
+            }
+        }
     }
+
 }

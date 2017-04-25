@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-distribution-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.0.0.Final</version>
+        <version>3.1.0.CR1-SNAPSHOT</version>
     </parent>
 
     <artifactId>keycloak-server-dist</artifactId>
@@ -38,12 +38,11 @@
     </dependencies>
 
     <build>
-        <finalName>keycloak-${project.version}</finalName>
-
         <plugins>
             <plugin>
                 <groupId>org.wildfly.build</groupId>
                 <artifactId>wildfly-server-provisioning-maven-plugin</artifactId>
+                <version>${build-tools.version}</version>
                 <executions>
                     <execution>
                         <id>server-provisioning</id>
@@ -69,14 +68,13 @@
                         </goals>
                         <configuration>
                             <descriptors>
-                                <descriptor>assembly.xml</descriptor>
+                                <descriptor>${assemblyFile}</descriptor>
                             </descriptors>
                             <recompressZippedFiles>true</recompressZippedFiles>
                             <finalName>${project.build.finalName}</finalName>
                             <appendAssemblyId>false</appendAssemblyId>
                             <outputDirectory>${project.build.directory}</outputDirectory>
                             <workDirectory>${project.build.directory}/assembly/work</workDirectory>
-                            <tarLongFileMode>gnu</tarLongFileMode>
                         </configuration>
                     </execution>
                 </executions>
@@ -106,5 +104,54 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!product</name>
+                </property>
+            </activation>
+            <properties>
+                <build-tools.version>${wildfly.build-tools.version}</build-tools.version>
+                <assemblyFile>assembly.xml</assemblyFile>
+            </properties>
+            <build>
+                <finalName>keycloak-${project.version}</finalName>
+            </build>
+        </profile>
+
+        <profile>
+            <id>wf11</id>
+            <properties>
+                <build-tools.version>${wildfly11.build-tools.version}</build-tools.version>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>product</id>
+            <activation>
+                <property>
+                    <name>product</name>
+                </property>
+            </activation>
+            <properties>
+                <build-tools.version>${eap.build-tools.version}</build-tools.version>
+                <assemblyFile>assembly.xml</assemblyFile>
+                <profileExcludes>%regex[(providers.*)|(docs/contrib.*)|(docs/examples.*)|(docs/schema.*)]</profileExcludes>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.wildfly</groupId>
+                    <artifactId>wildfly-dist</artifactId>
+                    <type>zip</type>
+                </dependency>
+            </dependencies>
+            <build>
+                <finalName>${product.name}-${product.filename.version}</finalName>
+            </build>
+        </profile>
+    </profiles>
 
 </project>

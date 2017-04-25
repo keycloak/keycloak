@@ -157,7 +157,7 @@
                     processCallback(callback, initPromise);
                     return;
                 } else if (initOptions) {
-                    if (initOptions.refreshToken) {
+                    if (initOptions.token && initOptions.refreshToken) {
                         setToken(initOptions.token, initOptions.refreshToken, initOptions.idToken);
 
                         if (loginIframe.enable) {
@@ -832,11 +832,16 @@
             document.body.appendChild(iframe);
 
             var messageCallback = function(event) {
-                if (event.origin !== loginIframe.iframeOrigin) {
+                if ((event.origin !== loginIframe.iframeOrigin) || (loginIframe.iframe.contentWindow !== event.source)) {
                     return;
                 }
 
-                if (event.data != "unchanged") {
+                if (!(event.data == 'unchanged' || event.data == 'changed' || event.data == 'error')) {
+                    return;
+                }
+
+
+                if (event.data != 'unchanged') {
                     kc.clearToken();
                 }
 
@@ -844,7 +849,7 @@
 
                 for (var i = callbacks.length - 1; i >= 0; --i) {
                     var promise = callbacks[i];
-                    if (event.data == "unchanged") {
+                    if (event.data == 'unchanged') {
                         promise.setSuccess();
                     } else {
                         promise.setError();
@@ -1223,7 +1228,7 @@
                             break;
                         default:
                             if (responseMode != 'query' || !handleQueryParam(param, queryParams[param], oauth)) {
-                                oauth.newUrl += (oauth.newUrl.indexOf('?') == -1 ? '?' : '&') + param + '=' + queryParams[param];
+                                oauth.newUrl += (oauth.newUrl.indexOf('?') == -1 ? '?' : '&') + param + '=' + encodeURIComponent(queryParams[param]);
                             }
                             break;
                     }

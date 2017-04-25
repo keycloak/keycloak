@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Common Adapter configuration
@@ -58,7 +59,7 @@ public class BaseAdapterConfig extends BaseRealmConfig {
     @JsonProperty("public-client")
     protected boolean publicClient;
     @JsonProperty("credentials")
-    protected Map<String, Object> credentials = new HashMap<>();
+    protected Map<String, Object> credentials = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
 
     public boolean isUseResourceRoleMappings() {

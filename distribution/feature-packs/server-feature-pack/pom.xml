@@ -19,7 +19,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>feature-packs-parent</artifactId>
-        <version>3.0.0.Final</version>
+        <version>3.1.0.CR1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -47,27 +47,33 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-wildfly-server-subsystem</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.wildfly</groupId>
-            <artifactId>wildfly-feature-pack</artifactId>
-            <type>zip</type>
-            <!-- Need to exlcude that in order to use the right guava version for drools -->
-            <exclusions>
-                <exclusion>
-                    <groupId>com.google.guava</groupId>
-                    <artifactId>guava</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
     </dependencies>
 
     <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-                <executions></executions>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack-theme</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-themes</artifactId>
+                                    <outputDirectory>target/unpacked-themes</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
+
             <plugin>
                 <groupId>org.wildfly.build</groupId>
                 <artifactId>wildfly-feature-pack-build-maven-plugin</artifactId>
@@ -84,6 +90,7 @@
                     </execution>
                 </executions>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
@@ -99,11 +106,9 @@
                                 <descriptor>assembly.xml</descriptor>
                             </descriptors>
                             <recompressZippedFiles>true</recompressZippedFiles>
-                            <finalName>${project.build.finalName}</finalName>
                             <appendAssemblyId>false</appendAssemblyId>
                             <outputDirectory>target/</outputDirectory>
                             <workDirectory>target/assembly/work</workDirectory>
-                            <tarLongFileMode>gnu</tarLongFileMode>
                         </configuration>
                     </execution>
                 </executions>
@@ -111,4 +116,126 @@
         </plugins>
     </build>
 
+    <profiles>
+        <profile>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!product</name>
+                </property>
+            </activation>
+
+            <properties>
+                <build-tools.version>${wildfly.build-tools.version}</build-tools.version>
+                <feature.parent>org.wildfly:wildfly-feature-pack</feature.parent>
+                <configDir>src/main/resources/configuration</configDir>
+            </properties>
+
+            <dependencies>
+                <dependency>
+                    <groupId>org.wildfly</groupId>
+                    <artifactId>wildfly-feature-pack</artifactId>
+                    <type>zip</type>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <!-- Temporary profile to test with WildFly 11 -->
+        <profile>
+            <id>wf11</id>
+
+            <properties>
+                <build-tools.version>${wildfly11.build-tools.version}</build-tools.version>
+                <feature.parent>org.wildfly:wildfly-feature-pack</feature.parent>
+                <configDir>src/main/resources-wf11/configuration</configDir>
+            </properties>
+
+            <dependencies>
+                <dependency>
+                    <groupId>org.wildfly</groupId>
+                    <artifactId>wildfly-feature-pack</artifactId>
+                    <version>${wildfly11.version}</version>
+                    <type>zip</type>
+                </dependency>
+            </dependencies>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-configuration-wf11</id>
+                                <phase>validate</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>target/resources/configuration</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>src/main/resources-wf11/configuration</directory>
+                                            <filtering>true</filtering>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>product</id>
+            <activation>
+                <property>
+                    <name>product</name>
+                </property>
+            </activation>
+
+            <properties>
+                <build-tools.version>${eap.build-tools.version}</build-tools.version>
+                <feature.parent>org.jboss.eap:wildfly-feature-pack</feature.parent>
+                <configDir>src/main/resources-wf11/configuration</configDir>
+            </properties>
+
+            <dependencies>
+                <dependency>
+                    <groupId>org.jboss.eap</groupId>
+                    <artifactId>wildfly-feature-pack</artifactId>
+                    <version>${eap.version}</version>
+                    <type>zip</type>
+                </dependency>
+            </dependencies>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-configuration-wf11</id>
+                                <phase>validate</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>target/resources/configuration</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>src/main/resources-wf11/configuration</directory>
+                                            <filtering>true</filtering>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
 </project>
+

@@ -19,6 +19,8 @@
 package org.keycloak.models.authorization.infinispan;
 
 import org.keycloak.Config;
+import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.cache.authorization.CachedStoreFactoryProvider;

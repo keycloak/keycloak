@@ -19,7 +19,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>feature-packs-parent</artifactId>
-        <version>3.0.0.Final</version>
+        <version>3.1.0.CR1-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -79,6 +79,7 @@
             <plugin>
                 <groupId>org.wildfly.build</groupId>
                 <artifactId>wildfly-feature-pack-build-maven-plugin</artifactId>
+                <version>${wildfly.build-tools.version}</version>
                 <executions>
                     <execution>
                         <id>feature-pack-build</id>
@@ -111,7 +112,6 @@
                             <appendAssemblyId>false</appendAssemblyId>
                             <outputDirectory>target/</outputDirectory>
                             <workDirectory>target/assembly/work</workDirectory>
-                            <tarLongFileMode>gnu</tarLongFileMode>
                         </configuration>
                     </execution>
                 </executions>

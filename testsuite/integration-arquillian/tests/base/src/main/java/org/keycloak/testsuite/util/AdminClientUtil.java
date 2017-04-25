@@ -26,7 +26,10 @@ import java.security.cert.CertificateException;
 
 import javax.net.ssl.SSLContext;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.ssl.SSLContexts;
+import org.jboss.resteasy.plugins.providers.jackson.ResteasyJackson2Provider;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.models.Constants;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
@@ -38,7 +41,7 @@ import static org.keycloak.testsuite.util.IOUtil.PROJECT_BUILD_DIRECTORY;
 
 public class AdminClientUtil {
 
-    public static Keycloak createAdminClient() throws Exception {
+    public static Keycloak createAdminClient(boolean ignoreUnknownProperties) throws Exception {
         SSLContext ssl = null;
         if ("true".equals(System.getProperty("auth.server.ssl.required"))) {
             File trustore = new File(PROJECT_BUILD_DIRECTORY, "dependency/keystore/keycloak.truststore");
@@ -47,10 +50,24 @@ public class AdminClientUtil {
             System.setProperty("javax.net.ssl.trustStore", trustore.getAbsolutePath());
         }
 
+        ResteasyJackson2Provider jacksonProvider = null;
+
+        // We need to ignore unknown JSON properties e.g. in the adapter configuration representation
+        // during adapter backward compatibility testing
+        if (ignoreUnknownProperties) {
+            jacksonProvider = new ResteasyJackson2Provider();
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+            jacksonProvider.setMapper(objectMapper);
+        }
+
         return Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
-                MASTER, ADMIN, ADMIN, Constants.ADMIN_CLI_CLIENT_ID, null, ssl);
+                MASTER, ADMIN, ADMIN, Constants.ADMIN_CLI_CLIENT_ID, null, ssl, jacksonProvider);
     }
 
+    public static Keycloak createAdminClient() throws Exception {
+        return createAdminClient(false);
+    }
 
     private static SSLContext getSSLContextWithTrustore(File file, String password) throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
         if (!file.isFile()) {

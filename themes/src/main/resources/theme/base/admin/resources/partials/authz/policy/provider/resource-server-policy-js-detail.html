@@ -33,17 +33,17 @@
                 <kc-tooltip>{{:: 'authz-policy-description.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="description">{{:: 'authz-policy-js-code' | translate}} </label>
+                <label class="col-md-2 control-label" for="code">{{:: 'authz-policy-js-code' | translate}} </label>
                 <div class="col-sm-6">
-                    <div ui-ace="{ onLoad : initEditor }" data-ng-model="policy.config.code"></div>
+                    <div ui-ace="{ onLoad : initEditor }" id="code" data-ng-model="policy.code"></div>
                 </div>
                 <kc-tooltip>{{:: 'authz-policy-js-code.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="policy.logic">{{:: 'authz-policy-logic' | translate}}</label>
+                <label class="col-md-2 control-label" for="logic">{{:: 'authz-policy-logic' | translate}}</label>
 
                 <div class="col-sm-1">
-                    <select class="form-control" id="policy.logic"
+                    <select class="form-control" id="logic"
                             data-ng-model="policy.logic">
                         <option value="POSITIVE">{{:: 'authz-policy-logic-positive' | translate}}</option>
                         <option value="NEGATIVE">{{:: 'authz-policy-logic-negative' | translate}}</option>

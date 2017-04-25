@@ -337,7 +337,7 @@ public class ExportUtils {
         RealmModel realm = authorizationProvider.getRealm();
         StoreFactory storeFactory = authorizationProvider.getStoreFactory();
         try {
-            PolicyRepresentation rep = toRepresentation(policy);
+            PolicyRepresentation rep = toRepresentation(policy, PolicyRepresentation.class, authorizationProvider);
 
             rep.setId(null);
 

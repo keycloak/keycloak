@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-distribution-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.0.0.Final</version>
+        <version>3.1.0.CR1-SNAPSHOT</version>
     </parent>
 
     <artifactId>keycloak-examples-dist</artifactId>
@@ -29,77 +29,85 @@
     <name>Keycloak Examples Distribution</name>
     <description/>
 
-    <dependencies>
-    </dependencies>
-    <build>
-        <finalName>keycloak-examples-${project.version}</finalName>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-deploy-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <inherited>false</inherited>
-                <executions>
-                    <execution>
-                        <id>build-example</id>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <phase>compile</phase>
+    <profiles>
+        <profile>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!product</name>
+                </property>
+            </activation>
+            <build>
+                <finalName>keycloak-examples-${project.version}</finalName>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-deploy-plugin</artifactId>
                         <configuration>
-                            <target>
-                                <ant antfile="build.xml" inheritRefs="true">
-                                    <target name="all"/>
-                                </ant>
-                            </target>
+                            <skip>true</skip>
                         </configuration>
-                    </execution>
-                </executions>
-                <dependencies>
-                    <dependency>
-                        <groupId>ant-contrib</groupId>
-                        <artifactId>ant-contrib</artifactId>
-                        <version>1.0b3</version>
-                        <exclusions>
-                            <exclusion>
-                                <groupId>ant</groupId>
-                                <artifactId>ant</artifactId>
-                            </exclusion>
-                        </exclusions>
-                    </dependency>
-                </dependencies>
-            </plugin>
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>assemble</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                        <configuration>
-                            <descriptors>
-                                <descriptor>assembly.xml</descriptor>
-                            </descriptors>
-                            <outputDirectory>
-                                target
-                            </outputDirectory>
-                            <workDirectory>
-                                target/assembly/work
-                            </workDirectory>
-                            <appendAssemblyId>false</appendAssemblyId>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <inherited>false</inherited>
+                        <executions>
+                            <execution>
+                                <id>build-example</id>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <phase>compile</phase>
+                                <configuration>
+                                    <target>
+                                        <ant antfile="build.xml" inheritRefs="true">
+                                            <target name="all"/>
+                                        </ant>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                        <dependencies>
+                            <dependency>
+                                <groupId>ant-contrib</groupId>
+                                <artifactId>ant-contrib</artifactId>
+                                <version>1.0b3</version>
+                                <exclusions>
+                                    <exclusion>
+                                        <groupId>ant</groupId>
+                                        <artifactId>ant</artifactId>
+                                    </exclusion>
+                                </exclusions>
+                            </dependency>
+                        </dependencies>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>assemble</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                                <configuration>
+                                    <descriptors>
+                                        <descriptor>assembly.xml</descriptor>
+                                    </descriptors>
+                                    <outputDirectory>
+                                        target
+                                    </outputDirectory>
+                                    <workDirectory>
+                                        target/assembly/work
+                                    </workDirectory>
+                                    <appendAssemblyId>false</appendAssemblyId>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>

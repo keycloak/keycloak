@@ -178,7 +178,7 @@ public class AuthServerTestEnricher {
         }
     }
 
-    public void runPreMigrationTask(@Observes(precedence = 2) StartSuiteContainers event) {
+    public void runPreMigrationTask(@Observes(precedence = 2) StartSuiteContainers event) throws Exception {
         if (suiteContext.isAuthServerMigrationEnabled()) {
             log.info("\n\n### Run preMigration task on keycloak " + System.getProperty("migrated.auth.server.version", "- previous") + " ###\n\n");
             suiteContext.getMigrationContext().runPreMigrationTask();

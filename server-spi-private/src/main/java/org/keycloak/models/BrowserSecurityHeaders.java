@@ -34,11 +34,15 @@ public class BrowserSecurityHeaders {
         headerMap.put("xFrameOptions", "X-Frame-Options");
         headerMap.put("contentSecurityPolicy", "Content-Security-Policy");
         headerMap.put("xContentTypeOptions", "X-Content-Type-Options");
+        headerMap.put("xRobotsTag", "X-Robots-Tag");
+        headerMap.put("xXSSProtection", "X-XSS-Protection");
 
         Map<String, String> dh = new HashMap<>();
         dh.put("xFrameOptions", "SAMEORIGIN");
         dh.put("contentSecurityPolicy", "frame-src 'self'");
         dh.put("xContentTypeOptions", "nosniff");
+        dh.put("xRobotsTag", "none");
+        dh.put("xXSSProtection", "1; mode=block");
 
         defaultHeaders = Collections.unmodifiableMap(dh);
         headerAttributeMap = Collections.unmodifiableMap(headerMap);

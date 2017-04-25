@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-testsuite-pom</artifactId>
-        <version>3.0.0.Final</version>
+        <version>3.1.0.CR1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     
@@ -43,7 +43,7 @@
         <!--component versions-->
         <arquillian-core.version>1.1.11.Final</arquillian-core.version>
         <selenium.version>2.53.0</selenium.version>
-        <arquillian-drone.version>2.0.0.Beta1</arquillian-drone.version>
+        <arquillian-drone.version>2.0.1.Final</arquillian-drone.version>
         <arquillian-graphene.version>2.1.0.Alpha3</arquillian-graphene.version>
         <arquillian-wildfly-container.version>2.0.0.Final</arquillian-wildfly-container.version>
         <version.shrinkwrap.resolvers>2.2.2</version.shrinkwrap.resolvers>
@@ -52,7 +52,7 @@
         <!--migration properties-->
         <migration.70.version>1.9.8.Final</migration.70.version>
         <migration.70.authz.version>2.2.1.Final</migration.70.authz.version>
-        <!--<migration.71.version>2.5.1.Final</migration.71.version>-->
+        <migration.71.version>2.5.5.Final</migration.71.version>
         
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.source>1.8</maven.compiler.source>
@@ -176,7 +176,7 @@
                 </pluginManagement>
             </build>
         </profile>
-<!--        <profile>
+        <profile>
             <id>test-71-migration</id>
             <properties>
                 <migrated.auth.server.version>${migration.71.version}</migrated.auth.server.version>
@@ -195,7 +195,7 @@
                     </plugins>
                 </pluginManagement>
             </build>
-        </profile>-->
+        </profile>
     </profiles>
 
 </project>

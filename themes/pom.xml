@@ -1,15 +1,54 @@
 <?xml version="1.0"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-	<parent>
-		<artifactId>keycloak-parent</artifactId>
-		<groupId>org.keycloak</groupId>
-		<version>3.0.0.Final</version>
-	</parent>
-	<modelVersion>4.0.0</modelVersion>
+    <parent>
+        <artifactId>keycloak-parent</artifactId>
+        <groupId>org.keycloak</groupId>
+        <version>3.1.0.CR1-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
 
-	<artifactId>keycloak-themes</artifactId>
-	<name>Keycloak Themes</name>
-	<description />
+    <artifactId>keycloak-themes</artifactId>
+    <name>Keycloak Themes</name>
+    <description/>
+
+    <profiles>
+        <profile>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!product</name>
+                </property>
+            </activation>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources</directory>
+                    </resource>
+                    <resource>
+                        <directory>src/main/resources-community</directory>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+        <profile>
+            <id>product</id>
+            <activation>
+                <property>
+                    <name>product</name>
+                </property>
+            </activation>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources</directory>
+                    </resource>
+                    <resource>
+                        <directory>src/main/resources-product</directory>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+    </profiles>
 
 </project>

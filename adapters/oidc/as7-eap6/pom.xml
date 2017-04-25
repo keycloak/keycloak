@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.0.0.Final</version>
+        <version>3.1.0.CR1-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
     <name>Keycloak AS7 / JBoss EAP 6 Integration</name>
@@ -29,6 +29,18 @@
 
     <artifactId>keycloak-as7-integration-pom</artifactId>
     <packaging>pom</packaging>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.jboss.as</groupId>
+                <artifactId>jboss-as-parent</artifactId>
+                <version>${jboss.as.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <modules>
         <module>as7-adapter-spi</module>

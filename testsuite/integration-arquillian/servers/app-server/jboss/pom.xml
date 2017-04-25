@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-app-server</artifactId>
-        <version>3.0.0.Final</version>
+        <version>3.1.0.CR1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -200,6 +200,7 @@
                                         <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
                                         <JBOSS_HOME>${app.server.jboss.home}</JBOSS_HOME>
                                         <SAML_SUPPORTED>${app.server.saml.adapter.supported}</SAML_SUPPORTED>
+                                        <ELYTRON_SUPPORTED>${app.server.elytron.adapter.supported}</ELYTRON_SUPPORTED>
                                     </environmentVariables>
                                 </configuration>
                             </execution>
@@ -443,6 +444,17 @@
             <modules>
                 <module>eap6-fuse</module>
             </modules>
+        </profile>
+
+        <profile>
+            <id>app-server-wildfly-elytron</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <wildfly.version>${elytron.wildfly.version}</wildfly.version>
+                <app.server.elytron.adapter.supported>true</app.server.elytron.adapter.supported>
+            </properties>
         </profile>
     </profiles>    
 

@@ -16,7 +16,9 @@
  */
 package org.keycloak.subsystem.server.extension;
 
+import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.ee.component.EEModuleDescription;
+import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
@@ -38,13 +40,15 @@ import java.util.List;
  */
 public class KeycloakServerDeploymentProcessor implements DeploymentUnitProcessor {
 
+    private static final String[] CACHES = new String[] {
+        "realms", "users","sessions","offlineSessions","loginFailures","work","authorization","keys"
+    };
+
     // This param name is defined again in Keycloak Services class
     // org.keycloak.services.resources.KeycloakApplication.  We have this value in
     // two places to avoid dependency between Keycloak Subsystem and Keyclaok Services module.
     public static final String KEYCLOAK_CONFIG_PARAM_NAME = "org.keycloak.server-subsystem.Config";
-    
-    private static final ServiceName cacheContainerService = ServiceName.of("jboss", "infinispan", "keycloak");
-    
+
     @Override
     public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
         DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
@@ -80,7 +84,7 @@ public class KeycloakServerDeploymentProcessor implements DeploymentUnitProcesso
 
         List<ParamValueMetaData> contextParams = webMetaData.getContextParams();
         if (contextParams == null) {
-            contextParams = new ArrayList<ParamValueMetaData>();
+            contextParams = new ArrayList<>();
         }
 
         ParamValueMetaData param = new ParamValueMetaData();
@@ -92,17 +96,22 @@ public class KeycloakServerDeploymentProcessor implements DeploymentUnitProcesso
     }
 
     private void addInfinispanCaches(DeploymentPhaseContext context) {
-        if (context.getServiceRegistry().getService(cacheContainerService) != null) {
+        // TODO Can be removed once we upgrade to WildFly 11
+        ServiceName wf10CacheContainerService = ServiceName.of("jboss", "infinispan", "keycloak");
+        boolean legacy = context.getServiceRegistry().getService(wf10CacheContainerService) != null;
+
+        if (!legacy) {
             ServiceTarget st = context.getServiceTarget();
-            st.addDependency(cacheContainerService);
-            st.addDependency(cacheContainerService.append("realms"));
-            st.addDependency(cacheContainerService.append("users"));
-            st.addDependency(cacheContainerService.append("sessions"));
-            st.addDependency(cacheContainerService.append("offlineSessions"));
-            st.addDependency(cacheContainerService.append("loginFailures"));
-            st.addDependency(cacheContainerService.append("work"));
-            st.addDependency(cacheContainerService.append("authorization"));
-            st.addDependency(cacheContainerService.append("keys"));
+            CapabilityServiceSupport support = context.getDeploymentUnit().getAttachment(Attachments.CAPABILITY_SERVICE_SUPPORT);
+            for (String c : CACHES) {
+                ServiceName sn = support.getCapabilityServiceName("org.wildfly.clustering.infinispan.cache.keycloak." + c);
+                st.addDependency(sn);
+            }
+        } else {
+            ServiceTarget st = context.getServiceTarget();
+            for (String c : CACHES) {
+                st.addDependency(wf10CacheContainerService.append(c));
+            }
         }
     }
 

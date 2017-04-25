@@ -45,6 +45,7 @@ import java.util.Collection;
         @NamedQuery(name="userConsentByUserAndClient", query="select consent from UserConsentEntity consent where consent.user.id = :userId and consent.clientId = :clientId"),
         @NamedQuery(name="userConsentsByUser", query="select consent from UserConsentEntity consent where consent.user.id = :userId"),
         @NamedQuery(name="deleteUserConsentsByRealm", query="delete from UserConsentEntity consent where consent.user IN (select user from UserEntity user where user.realmId = :realmId)"),
+        @NamedQuery(name="deleteUserConsentsByRealmAndLink", query="delete from UserConsentEntity consent where consent.user IN (select u from UserEntity u where u.realmId=:realmId and u.federationLink=:link)"),
         @NamedQuery(name="deleteUserConsentsByUser", query="delete from UserConsentEntity consent where consent.user = :user"),
         @NamedQuery(name="deleteUserConsentsByClient", query="delete from UserConsentEntity consent where consent.clientId = :clientId"),
 })

@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-distribution-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.0.0.Final</version>
+        <version>3.1.0.CR1-SNAPSHOT</version>
     </parent>
 
     <artifactId>keycloak-dist-downloads</artifactId>
@@ -34,44 +34,54 @@
         <maven.compiler.source>1.8</maven.compiler.source>
     </properties>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>${maven.compiler.source}</source>
-                    <target>${maven.compiler.target}</target>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-deploy-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>server-downloads</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>java</goal>
-                        </goals>
+    <profiles>
+        <profile>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!product</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
                         <configuration>
-                            <mainClass>CopyDependencies</mainClass>
-                            <arguments>
-                                <argument>${settings.localRepository}</argument>
-                                <argument>${project.build.directory}</argument>
-                                <argument>${project.version}</argument>
-                            </arguments>
+                            <source>${maven.compiler.source}</source>
+                            <target>${maven.compiler.target}</target>
                         </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-deploy-plugin</artifactId>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>server-downloads</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                                <configuration>
+                                    <mainClass>CopyDependencies</mainClass>
+                                    <arguments>
+                                        <argument>${settings.localRepository}</argument>
+                                        <argument>${project.build.directory}</argument>
+                                        <argument>${project.version}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

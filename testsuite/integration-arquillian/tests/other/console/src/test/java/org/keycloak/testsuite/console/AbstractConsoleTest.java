@@ -76,6 +76,12 @@ public abstract class AbstractConsoleTest extends AbstractAuthTest {
         }
     }
 
+    // TODO: Fix the tests so this workaround is not necessary
+    @Override
+    protected boolean isImportAfterEachMethod() {
+        return true;
+    }
+
     public void loginToMasterRealmAdminConsoleAs(UserRepresentation user) {
         loginToAdminConsoleAs(adminConsolePage, loginPage, user);
     }

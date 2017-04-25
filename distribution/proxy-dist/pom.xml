@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-distribution-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.0.0.Final</version>
+        <version>3.1.0.CR1-SNAPSHOT</version>
     </parent>
 
     <artifactId>keycloak-proxy-dist</artifactId>
@@ -29,45 +29,55 @@
     <name>Proxy Distro</name>
     <description/>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>launcher</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-proxy-server</artifactId>
-        </dependency>
-    </dependencies>
+    <profiles>
+        <profile>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!product</name>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>launcher</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-proxy-server</artifactId>
+                </dependency>
+            </dependencies>
 
-    <build>
-        <finalName>keycloak-proxy-${project.version}</finalName>
-        <plugins>
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>assemble</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                        <configuration>
-                            <descriptors>
-                                <descriptor>assembly.xml</descriptor>
-                            </descriptors>
-                            <outputDirectory>
-                                target
-                            </outputDirectory>
-                            <workDirectory>
-                                target/assembly/work
-                            </workDirectory>
-                            <appendAssemblyId>false</appendAssemblyId>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
+            <build>
+                <finalName>keycloak-proxy-${project.version}</finalName>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>assemble</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                                <configuration>
+                                    <descriptors>
+                                        <descriptor>assembly.xml</descriptor>
+                                    </descriptors>
+                                    <outputDirectory>
+                                        target
+                                    </outputDirectory>
+                                    <workDirectory>
+                                        target/assembly/work
+                                    </workDirectory>
+                                    <appendAssemblyId>false</appendAssemblyId>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>

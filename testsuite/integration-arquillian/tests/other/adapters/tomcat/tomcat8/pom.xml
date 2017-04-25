@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests-adapters-tomcat</artifactId>
-        <version>3.0.0.Final</version>
+        <version>3.1.0.CR1-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-adapters-tomcat8</artifactId>

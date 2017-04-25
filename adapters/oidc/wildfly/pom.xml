@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.0.0.Final</version>
+        <version>3.1.0.CR1-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
     <name>Keycloak WildFly Integration</name>
@@ -32,7 +32,20 @@
 
     <modules>
         <module>wildfly-adapter</module>
-        <module>wf8-subsystem</module>
         <module>wildfly-subsystem</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!product</name>
+                </property>
+            </activation>
+            <modules>
+                <module>wf8-subsystem</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

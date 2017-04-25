@@ -139,7 +139,7 @@ public class EntitlementService {
                             .allowedOrigins(identity.getAccessToken())
                             .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build());
                 } else {
-                    asyncResponse.resume(Cors.add(request, Response.ok().entity(new EntitlementResponse(createRequestingPartyToken(entitlements)))).allowedOrigins(identity.getAccessToken()).allowedMethods("GET").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build());
+                    asyncResponse.resume(Cors.add(request, Response.ok().entity(new EntitlementResponse(createRequestingPartyToken(entitlements, identity.getAccessToken())))).allowedOrigins(identity.getAccessToken()).allowedMethods("GET").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build());
                 }
             }
         });
@@ -192,7 +192,7 @@ public class EntitlementService {
                                 .allowedOrigins(identity.getAccessToken())
                                 .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build());
                     } else {
-                        asyncResponse.resume(Cors.add(request, Response.ok().entity(new EntitlementResponse(createRequestingPartyToken(entitlements)))).allowedOrigins(identity.getAccessToken()).allowedMethods("GET").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build());
+                        asyncResponse.resume(Cors.add(request, Response.ok().entity(new EntitlementResponse(createRequestingPartyToken(entitlements, identity.getAccessToken())))).allowedOrigins(identity.getAccessToken()).allowedMethods("GET").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build());
                     }
                 }
             });
@@ -207,8 +207,7 @@ public class EntitlementService {
         }
     }
 
-    private String createRequestingPartyToken(List<Permission> permissions) {
-        AccessToken accessToken = Tokens.getAccessToken(this.authorization.getKeycloakSession());
+    private String createRequestingPartyToken(List<Permission> permissions, AccessToken accessToken) {
         RealmModel realm = this.authorization.getKeycloakSession().getContext().getRealm();
         AccessToken.Authorization authorization = new AccessToken.Authorization();
 

@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.0.0.Final</version>
+        <version>3.1.0.CR1-SNAPSHOT</version>
         <relativePath>../../../../pom.xml</relativePath>
     </parent>
 
@@ -89,5 +89,19 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>product</id>
+            <activation>
+                <property>
+                    <name>product</name>
+                </property>
+            </activation>
+            <build>
+                <finalName>${product.name}-${product.filename.version}-eap7-adapter</finalName>
+            </build>
+        </profile>
+    </profiles>
 
 </project>

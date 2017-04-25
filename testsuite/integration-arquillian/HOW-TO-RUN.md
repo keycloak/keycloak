@@ -165,10 +165,10 @@ Assumed you downloaded `jboss-fuse-karaf-6.3.0.redhat-229.zip`
 ### DB migration test
 
 This test will:
- - start Keycloak 1.9.8
+ - start Keycloak 1.9.8 (replace with the other version if needed)
  - import realm and some data to MySQL DB
  - stop Keycloak 1.9.8
- - start latest KEycloak, which automatically updates DB from 1.9.8
+ - start latest Keycloak, which automatically updates DB from 1.9.8
  - Do some test that data are correct
  
 
@@ -191,7 +191,41 @@ This test will:
       -Dkeycloak.connectionsJpa.url=jdbc:mysql://$DB_HOST/keycloak \
       -Dkeycloak.connectionsJpa.user=keycloak \
       -Dkeycloak.connectionsJpa.password=keycloak
+      
+### DB migration test with manual mode
+      
+Same test as above, but it uses manual migration mode. During startup of the new Keycloak server, Liquibase won't automatically perform DB update, but it 
+just exports the needed SQL into the script. This SQL script then needs to be manually executed against the DB.
 
+1) Prepare MySQL DB (Same as above)
+
+2) Run the test (Update according to your DB connection, versions etc). This step will end with failure, but that's expected:
+
+    mvn -f testsuite/integration-arquillian/pom.xml \
+      clean install \
+      -Pauth-server-wildfly,jpa,clean-jpa,auth-server-migration \
+      -Dtest=MigrationTest \
+      -Dmigration.mode=manual \
+      -Dmigrated.auth.server.version=1.9.8.Final \
+      -Djdbc.mvn.groupId=mysql \
+      -Djdbc.mvn.version=5.1.29 \
+      -Djdbc.mvn.artifactId=mysql-connector-java \
+      -Dkeycloak.connectionsJpa.url=jdbc:mysql://$DB_HOST/keycloak \
+      -Dkeycloak.connectionsJpa.user=keycloak \
+      -Dkeycloak.connectionsJpa.password=keycloak
+      
+3) Manually execute the SQL script against your DB. With Mysql, you can use this command (KEYCLOAK_SRC points to the directory with the Keycloak codebase):
+       
+    mysql -h $DB_HOST -u keycloak -pkeycloak < $KEYCLOAK_SRC/testsuite/integration-arquillian/tests/base/target/containers/auth-server-wildfly/keycloak-database-update.sql       
+
+4) Finally run the migration test, which will verify that DB migration was successful. This should end with success:
+ 
+    mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
+      clean install \
+      -Pauth-server-wildfly \
+      -Dskip.add.user.json=true \
+      -Dmigrated.auth.server.version=1.9.8.Final \
+      -Dtest=MigrationTest   
 
 ### JSON export/import migration test
 This will start latest Keycloak and import the realm JSON file, which was previously exported from Keycloak 1.9.8.Final
@@ -296,3 +330,15 @@ To run the tests run:
 * **Supported version:** 11
 * **Driver download required:** [Internet Explorer Driver Server](http://www.seleniumhq.org/download/); recommended version [2.53.1 32-bit](http://selenium-release.storage.googleapis.com/2.53/IEDriverServer_Win32_2.53.1.zip)
 * **Run with:** `-Dbrowser=internetExplorer -Dwebdriver.ie.driver=path/to/IEDriverServer.exe`
+ 
+## Run X.509 tests
+
+To run the X.509 client certificate authentication tests:
+
+    mvn -f testsuite/integration-arquillian/pom.xml \
+          clean install \
+	  -Pauth-server-wildfly \
+	  -Dauth.server.ssl.required \
+	  -Dbrowser=phantomjs \
+	  "-Dtest=*.x509.*"
+

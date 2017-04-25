@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.keycloak.bom</groupId>
         <artifactId>keycloak-bom-parent</artifactId>
-        <version>3.0.0.Final</version>
+        <version>3.1.0.CR1-SNAPSHOT</version>
     </parent>
 
     <groupId>org.keycloak.bom</groupId>
@@ -37,87 +37,87 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-core</artifactId>
-                <version>3.0.0.Final</version>
+                <version>3.1.0.CR1-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-adapter-core</artifactId>
-                <version>3.0.0.Final</version>
+                <version>3.1.0.CR1-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-adapter-spi</artifactId>
-                <version>3.0.0.Final</version>
+                <version>3.1.0.CR1-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-wildfly-adapter-dist</artifactId>
-                <version>3.0.0.Final</version>
+                <version>3.1.0.CR1-SNAPSHOT</version>
             </dependency>    
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-saml-adapter-core</artifactId>
-                <version>3.0.0.Final</version>
+                <version>3.1.0.CR1-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-saml-adapter-api-public</artifactId>
-                <version>3.0.0.Final</version>
+                <version>3.1.0.CR1-SNAPSHOT</version>
             </dependency>
              <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-tomcat8-adapter</artifactId>
-                 <version>3.0.0.Final</version>
+                 <version>3.1.0.CR1-SNAPSHOT</version>
             </dependency>
              <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-tomcat7-adapter</artifactId>
-                 <version>3.0.0.Final</version>
+                 <version>3.1.0.CR1-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-tomcat6-adapter</artifactId>
-                <version>3.0.0.Final</version>
+                <version>3.1.0.CR1-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-jetty81-adapter</artifactId>
-                <version>3.0.0.Final</version>
+                <version>3.1.0.CR1-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-jetty91-adapter</artifactId>
-                <version>3.0.0.Final</version>
+                <version>3.1.0.CR1-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-jetty92-adapter</artifactId>
-                <version>3.0.0.Final</version>
+                <version>3.1.0.CR1-SNAPSHOT</version>
             </dependency>
              <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-jetty93-adapter</artifactId>
-                 <version>3.0.0.Final</version>
+                 <version>3.1.0.CR1-SNAPSHOT</version>
             </dependency>
              <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-undertow-adapter</artifactId>
-                 <version>3.0.0.Final</version>
+                 <version>3.1.0.CR1-SNAPSHOT</version>
             </dependency>
              <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-spring-boot-adapter</artifactId>
-                 <version>3.0.0.Final</version>
+                 <version>3.1.0.CR1-SNAPSHOT</version>
             </dependency>
              <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-spring-security-adapter</artifactId>
-                 <version>3.0.0.Final</version>
+                 <version>3.1.0.CR1-SNAPSHOT</version>
             </dependency>
             <dependency>
                <groupId>org.keycloak</groupId>
                <artifactId>keycloak-default-spring-boot-starter</artifactId>
-                <version>3.0.0.Final</version>
+                <version>3.1.0.CR1-SNAPSHOT</version>
            </dependency>
         </dependencies>
     </dependencyManagement>

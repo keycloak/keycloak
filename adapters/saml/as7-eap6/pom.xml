@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.0.0.Final</version>
+        <version>3.1.0.CR1-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
     <name>Keycloak SAML EAP Integration</name>
@@ -29,6 +29,18 @@
 
     <artifactId>keycloak-saml-eap-integration-pom</artifactId>
     <packaging>pom</packaging>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.jboss.as</groupId>
+                <artifactId>jboss-as-parent</artifactId>
+                <version>${jboss.as.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <modules>
         <module>adapter</module>

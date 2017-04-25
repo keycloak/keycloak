@@ -226,6 +226,38 @@ public class UserStorageTest {
     }
 
     @Test
+    public void testMaxLifespanEviction() {
+        UserStorageProviderModel model = new UserStorageProviderModel(writableProvider);
+        model.setCachePolicy(UserStorageProviderModel.CachePolicy.MAX_LIFESPAN);
+        model.setMaxLifespan(600000); // Lifetime is 10 minutes
+
+        KeycloakSession session = keycloakRule.startSession();
+        RealmModel realm = session.realms().getRealmByName("test");
+        CachedUserModel thor = (CachedUserModel)session.users().getUserByUsername("thor", realm);
+        realm.updateComponent(model);
+        keycloakRule.stopSession(session, true);
+
+        Time.setOffset(60 * 5); // 5 minutes in future, should be cached still
+
+        session = keycloakRule.startSession();
+        realm = session.realms().getRealmByName("test");
+        // test still
+        UserModel thor2 = session.users().getUserByUsername("thor", realm);
+        Assert.assertTrue(thor2 instanceof CachedUserModel);
+        keycloakRule.stopSession(session, true);
+        Time.setOffset(60 * 20); // 20 minutes into future, cache will be invalidated
+
+        session = keycloakRule.startSession();
+        realm = session.realms().getRealmByName("test");
+        thor2 = session.users().getUserByUsername("thor", realm);
+        Assert.assertFalse(thor2 instanceof CachedUserModel);
+        model.getConfig().remove("cachePolicy");
+        model.getConfig().remove("maxLifespan");
+        realm.updateComponent(model);
+        keycloakRule.stopSession(session, true);
+    }
+
+    @Test
     public void testNoCache() {
         UserStorageProviderModel model = new UserStorageProviderModel(writableProvider);
         model.setCachePolicy(UserStorageProviderModel.CachePolicy.NO_CACHE);

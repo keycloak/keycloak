@@ -59,6 +59,18 @@ public class AccountFields extends Form {
         return this;
     }
 
+    public String getEmail() {
+        return Form.getInputValue(emailInput);
+    }
+
+    public String getFirstName() {
+        return Form.getInputValue(firstNameInput);
+    }
+
+    public String getLastName() {
+        return Form.getInputValue(lastNameInput);
+    }
+
     public void setValues(UserRepresentation user) {
         setUsername(user.getUsername());
         setEmail(user.getEmail());

@@ -1,0 +1,127 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<!--
+  Runs an HTTP Loadbalancer that balances to two separate auth server instances.  The first auth server instance
+  is also started by this host controller file.  The other instance must be started
+  via host-slave.xml
+-->
+
+<host name="master" xmlns="urn:jboss:domain:4.0">
+    <extensions>
+        <?EXTENSIONS?>
+    </extensions>
+
+    <management>
+        <security-realms>
+            <security-realm name="ManagementRealm">
+                <authentication>
+                    <local default-user="$local" skip-group-loading="true"/>
+                    <properties path="mgmt-users.properties" relative-to="jboss.domain.config.dir"/>
+                </authentication>
+                <authorization map-groups-to-roles="false">
+                    <properties path="mgmt-groups.properties" relative-to="jboss.domain.config.dir"/>
+                </authorization>
+            </security-realm>
+            <security-realm name="ApplicationRealm">
+                <authentication>
+                    <local default-user="$local" allowed-users="*" skip-group-loading="true"/>
+                    <properties path="application-users.properties" relative-to="jboss.domain.config.dir"/>
+                </authentication>
+                <authorization>
+                    <properties path="application-roles.properties" relative-to="jboss.domain.config.dir"/>
+                </authorization>
+            </security-realm>
+        </security-realms>
+        <audit-log>
+            <formatters>
+                <json-formatter name="json-formatter"/>
+            </formatters>
+            <handlers>
+                <file-handler name="host-file" formatter="json-formatter" relative-to="jboss.domain.data.dir" path="audit-log.log"/>
+                <file-handler name="server-file" formatter="json-formatter" relative-to="jboss.server.data.dir" path="audit-log.log"/>
+            </handlers>
+            <logger log-boot="true" log-read-only="false" enabled="false">
+                <handlers>
+                    <handler name="host-file"/>
+                </handlers>
+            </logger>
+            <server-logger log-boot="true" log-read-only="false" enabled="false">
+                <handlers>
+                    <handler name="server-file"/>
+                </handlers>
+            </server-logger>
+        </audit-log>
+        <management-interfaces>
+            <native-interface security-realm="ManagementRealm">
+                <socket interface="management" port="${jboss.management.native.port:9999}"/>
+            </native-interface>
+            <http-interface security-realm="ManagementRealm" http-upgrade-enabled="true">
+                <socket interface="management" port="${jboss.management.http.port:9990}"/>
+            </http-interface>
+        </management-interfaces>
+    </management>
+
+    <domain-controller>
+        <local/>
+    </domain-controller>
+
+    <interfaces>
+        <interface name="management">
+            <inet-address value="${jboss.bind.address.management:127.0.0.1}"/>
+        </interface>
+        <interface name="public">
+            <inet-address value="${jboss.bind.address:127.0.0.1}"/>
+        </interface>
+
+        <?INTERFACES?>
+
+    </interfaces>
+
+    <jvms>
+        <jvm name="default">
+            <heap size="64m" max-size="256m"/>
+            <jvm-options>
+                <option value="-server"/>
+            </jvm-options>
+        </jvm>
+    </jvms>
+
+    <servers>
+        <!-- load-balancer should be removed in production systems and replaced with a better softare or hardare based one -->
+        <server name="load-balancer" group="load-balancer-group">
+        </server>
+        <server name="server-one" group="auth-server-group" auto-start="true">
+            <!-- Remote JPDA debugging for a specific server
+            <jvm name="default">
+              <jvm-options>
+                <option value="-agentlib:jdwp=transport=dt_socket,address=8787,server=y,suspend=n"/>
+              </jvm-options>
+           </jvm>
+           -->
+            <!-- server-two avoids port conflicts by incrementing the ports in
+                 the default socket-group declared in the server-group -->
+            <socket-bindings port-offset="150"/>
+        </server>
+    </servers>
+
+    <profile>
+        <?SUBSYSTEMS socket-binding-group="standard-sockets"?>
+    </profile>
+</host>

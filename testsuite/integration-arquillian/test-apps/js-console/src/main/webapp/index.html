@@ -43,12 +43,18 @@
     <button onclick="createBearerRequest()">Create Bearer Request</button>
     <button onclick="output(showTime())">Show current time</button>
     <button onclick="cert()">Cert request</button>
-    <input id="timeSkewInput"/>
     <button onclick="addToTimeSkew()">timeSkew offset</button>
     <button onclick="refreshTimeSkew()">refresh timeSkew</button>
     <button onclick="sendBearerToKeycloak()">Bearer to keycloak</button>
     <button onclick="createUser()">Create user</button>
     <button onclick="reentrancyCallback()">Reentrancy callback</button>
+    <button onclick='initWithDifferentRealmName(getInput())'>Init with different realm name</button>
+    <button onclick='keycloakInit(null, {refreshToken: getInput2()})'>Init with refresh token</button>
+    <button onclick='keycloakInit(null, {token: getInput(), refreshToken: getInput2()})'>Init with both tokens</button>
+    <button onclick='keycloakInit(null, {token: getInput(), refreshToken: getInput2(), timeSkew:  parseInt(getInput3())})'>Init with TimeSkew</button>
+    <input id="inputField" value="input"/>
+    <input id="inputField2" value="input2"/>
+    <input id="inputField3" value="input3"/>
 
 
     <select id="flowSelect">
@@ -78,6 +84,15 @@ TimeSkew:
 
 
 <script>
+    function getInput() {
+        return document.getElementById("inputField").value;
+    }
+    function getInput2() {
+        return document.getElementById("inputField2").value;
+    }
+    function getInput3() {
+        return document.getElementById("inputField3").value;
+    }
     function loadProfile() {
         keycloak.loadUserProfile().success(function (profile) {
             output(profile);
@@ -150,8 +165,7 @@ TimeSkew:
     }
 
     function addToTimeSkew() {
-        var offset = document.getElementById("timeSkewInput").value;
-        keycloak.timeSkew += parseInt(offset);
+        keycloak.timeSkew += parseInt(getInput());
         document.getElementById("timeSkew").innerHTML = keycloak.timeSkew;
     }
 
@@ -194,9 +208,6 @@ TimeSkew:
     function sendBearerToKeycloak() {
         var url = 'http://localhost:8180/auth/admin/realms/example/roles';
         if (window.location.href.indexOf("8643") > -1) {
-            url = url.replace("8180","8543");
-            url = url.replace("http","https");
-        if (window.location.href.indexOf("8543") > -1) {
             url = url.replace("8180", "8543");
             url = url.replace("http", "https");
         }
@@ -284,10 +295,28 @@ TimeSkew:
         );
     }
 
+    function initWithDifferentRealmName(realmName) {
+        var url = 'http://localhost:8180/auth';
+        if (window.location.href.indexOf("8643") > -1) {
+            url = url.replace("8180","8543");
+            url = url.replace("http","https");
+        }
+
+        keycloakInit({
+            url: url,
+            realm: realmName,
+            clientId: 'js-console'
+        });
+
+    }
+
     var keycloak;
 
-    function keycloakInit() {
-        keycloak = Keycloak();
+    function keycloakInit(configuration, initOptions) {
+        if (!configuration)
+            keycloak = Keycloak();
+        else
+            keycloak = Keycloak(configuration);
 
         keycloak.onAuthSuccess = function () {
             event('Auth Success');
@@ -314,11 +343,14 @@ TimeSkew:
             event('Access token expired.');
         };
 
-        var initOptions = {
-            onLoad: document.getElementById("onLoad").value,
-            flow: document.getElementById("flowSelect").value,
-            responseMode: document.getElementById("responseModeSelect").value
-        };
+        if (!initOptions) {
+            var initOptions = {
+                onLoad: document.getElementById("onLoad").value,
+                flow: document.getElementById("flowSelect").value,
+                responseMode: document.getElementById("responseModeSelect").value
+            };
+        }
+
         keycloak.init(initOptions).success(function (authenticated) {
             output('Init Success (' + (authenticated ? 'Authenticated' : 'Not Authenticated') + ')');
         }).error(function () {

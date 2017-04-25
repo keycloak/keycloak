@@ -37,7 +37,7 @@ import org.keycloak.social.google.GoogleIdentityProvider;
 import org.keycloak.social.google.GoogleIdentityProviderFactory;
 import org.keycloak.social.linkedin.LinkedInIdentityProvider;
 import org.keycloak.social.linkedin.LinkedInIdentityProviderFactory;
-import org.keycloak.social.openshift.OpenshifV3IdentityProviderConfig;
+import org.keycloak.social.openshift.OpenshiftV3IdentityProviderConfig;
 import org.keycloak.social.openshift.OpenshiftV3IdentityProvider;
 import org.keycloak.social.openshift.OpenshiftV3IdentityProviderFactory;
 import org.keycloak.social.stackoverflow.StackOverflowIdentityProviderConfig;
@@ -290,7 +290,7 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
 
     private void assertOpenshiftIdentityProviderConfig(IdentityProviderModel identityProvider) {
         OpenshiftV3IdentityProvider osoIdentityProvider = new OpenshiftV3IdentityProviderFactory().create(session, identityProvider);
-        OpenshifV3IdentityProviderConfig config = osoIdentityProvider.getConfig();
+        OpenshiftV3IdentityProviderConfig config = osoIdentityProvider.getConfig();
 
         assertEquals("model-openshift-v3", config.getAlias());
         assertEquals(OpenshiftV3IdentityProviderFactory.PROVIDER_ID, config.getProviderId());

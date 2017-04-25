@@ -5,7 +5,7 @@
     <parent>
         <artifactId>keycloak-misc-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.0.0.Final</version>
+        <version>3.1.0.CR1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <groupId>org.keycloak</groupId>
@@ -17,12 +17,12 @@
              <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-client-registration-api</artifactId>
-                <version>3.0.0.Final</version>
+                <version>3.1.0.CR1-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-admin-client</artifactId>
-                <version>3.0.0.Final</version>
+                <version>3.1.0.CR1-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.resteasy</groupId>

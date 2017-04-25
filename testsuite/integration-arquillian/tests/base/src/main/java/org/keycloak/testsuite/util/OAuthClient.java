@@ -32,8 +32,10 @@ import org.apache.http.message.BasicNameValuePair;
 import org.junit.Assert;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.RSATokenVerifier;
+import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.jose.jwk.JSONWebKeySet;
@@ -61,12 +63,9 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
+import java.security.KeyStore;
 import java.security.PublicKey;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -76,6 +75,7 @@ public class OAuthClient {
     public static final String SERVER_ROOT = AuthServerTestEnricher.getAuthServerContextRoot();
     public static final String AUTH_SERVER_ROOT = SERVER_ROOT + "/auth";
     public static final String APP_ROOT = AUTH_SERVER_ROOT + "/realms/master/app";
+    private static final boolean sslRequired = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required"));
 
     private Keycloak adminClient;
 
@@ -112,6 +112,11 @@ public class OAuthClient {
     private String requestUri;
 
     private Map<String, PublicKey> publicKeys = new HashMap<>();
+
+    // https://tools.ietf.org/html/rfc7636#section-4
+    private String codeVerifier;
+    private String codeChallenge;
+    private String codeChallengeMethod;
 
     public class LogoutUrlBuilder {
         private final UriBuilder b = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(baseUrl));
@@ -166,6 +171,10 @@ public class OAuthClient {
         nonce = null;
         request = null;
         requestUri = null;
+        // https://tools.ietf.org/html/rfc7636#section-4
+        codeVerifier = null;
+        codeChallenge = null;
+        codeChallengeMethod = null;
     }
 
     public AuthorizationEndpointResponse doLogin(String username, String password) {
@@ -192,8 +201,38 @@ public class OAuthClient {
         fillLoginForm(username, password);
     }
 
+    private static CloseableHttpClient newCloseableHttpClient() {
+        if (sslRequired) {
+            KeyStore keystore = null;
+            // load the keystore containing the client certificate - keystore type is probably jks or pkcs12
+            String keyStorePath = System.getProperty("client.certificate.keystore");
+            String keyStorePassword = System.getProperty("client.certificate.keystore.passphrase");
+            try {
+                keystore = KeystoreUtil.loadKeyStore(keyStorePath, keyStorePassword);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            // load the trustore
+            KeyStore truststore = null;
+            String trustStorePath = System.getProperty("client.truststore");
+            String trustStorePassword = System.getProperty("client.truststore.passphrase");
+            try {
+                truststore = KeystoreUtil.loadKeyStore(trustStorePath, trustStorePassword);
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+            return (DefaultHttpClient)new HttpClientBuilder()
+                    .keyStore(keystore, keyStorePassword)
+                    .trustStore(truststore)
+                    .hostnameVerification(HttpClientBuilder.HostnameVerificationPolicy.ANY)
+                    .build();
+        }
+        return new DefaultHttpClient();
+    }
+
     public AccessTokenResponse doAccessTokenRequest(String code, String password) {
-        CloseableHttpClient client = new DefaultHttpClient();
+        CloseableHttpClient client = newCloseableHttpClient();
         try {
             HttpPost post = new HttpPost(getAccessTokenUrl());
 
@@ -219,6 +258,11 @@ public class OAuthClient {
 
             if (clientSessionHost != null) {
                 parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_HOST, clientSessionHost));
+            }
+
+            // https://tools.ietf.org/html/rfc7636#section-4.5
+            if (codeVerifier != null) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_VERIFIER, codeVerifier));
             }
 
             UrlEncodedFormEntity formEntity = null;
@@ -296,7 +340,7 @@ public class OAuthClient {
 
     public AccessTokenResponse doGrantAccessTokenRequest(String realm, String username, String password, String totp,
                                                          String clientId, String clientSecret) throws Exception {
-        CloseableHttpClient client = new DefaultHttpClient();
+        CloseableHttpClient client = newCloseableHttpClient();
         try {
             HttpPost post = new HttpPost(getResourceOwnerPasswordCredentialGrantUrl(realm));
 
@@ -585,6 +629,13 @@ public class OAuthClient {
         if (requestUri != null) {
             b.queryParam(OIDCLoginProtocol.REQUEST_URI_PARAM, requestUri);
         }
+        // https://tools.ietf.org/html/rfc7636#section-4.3
+        if (codeChallenge != null) {
+            b.queryParam(OAuth2Constants.CODE_CHALLENGE, codeChallenge);
+        }
+        if (codeChallengeMethod != null) {
+            b.queryParam(OAuth2Constants.CODE_CHALLENGE_METHOD, codeChallengeMethod);
+        }  
         return b.build(realm).toString();
     }
 
@@ -698,6 +749,20 @@ public class OAuthClient {
 
     public String getRealm() {
         return realm;
+    }
+
+    // https://tools.ietf.org/html/rfc7636#section-4
+    public OAuthClient codeVerifier(String codeVerifier) {
+    	this.codeVerifier = codeVerifier;
+    	return this;
+    }
+    public OAuthClient codeChallenge(String codeChallenge) {
+    	this.codeChallenge = codeChallenge;
+    	return this;
+    }
+    public OAuthClient codeChallengeMethod(String codeChallengeMethod) {
+    	this.codeChallengeMethod = codeChallengeMethod;
+    	return this;
     }
 
     public static class AuthorizationEndpointResponse {

@@ -23,6 +23,7 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.UserCredentialStore;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -284,9 +285,25 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
         Collection<UserConsentProtocolMapperEntity> grantedProtocolMapperEntities = entity.getGrantedProtocolMappers();
         if (grantedProtocolMapperEntities != null) {
+
+            ClientTemplateModel clientTemplate = null;
+            if (client.useTemplateMappers()) {
+                clientTemplate = client.getClientTemplate();
+            }
+
             for (UserConsentProtocolMapperEntity grantedProtMapper : grantedProtocolMapperEntities) {
                 ProtocolMapperModel protocolMapper = client.getProtocolMapperById(grantedProtMapper.getProtocolMapperId());
-                model.addGrantedProtocolMapper(protocolMapper );
+
+                // Fallback to client template
+                if (protocolMapper == null) {
+                    if (clientTemplate != null) {
+                        protocolMapper = clientTemplate.getProtocolMapperById(grantedProtMapper.getProtocolMapperId());
+                    }
+                }
+
+                if (protocolMapper != null) {
+                    model.addGrantedProtocolMapper(protocolMapper);
+                }
             }
         }
 
@@ -407,6 +424,18 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                 .setParameter("link", storageProviderId)
                 .executeUpdate();
         num = em.createNamedQuery("deleteUserGroupMembershipsByRealmAndLink")
+                .setParameter("realmId", realm.getId())
+                .setParameter("link", storageProviderId)
+                .executeUpdate();
+        num = em.createNamedQuery("deleteUserConsentProtMappersByRealmAndLink")
+                .setParameter("realmId", realm.getId())
+                .setParameter("link", storageProviderId)
+                .executeUpdate();
+        num = em.createNamedQuery("deleteUserConsentRolesByRealmAndLink")
+                .setParameter("realmId", realm.getId())
+                .setParameter("link", storageProviderId)
+                .executeUpdate();
+        num = em.createNamedQuery("deleteUserConsentsByRealmAndLink")
                 .setParameter("realmId", realm.getId())
                 .setParameter("link", storageProviderId)
                 .executeUpdate();

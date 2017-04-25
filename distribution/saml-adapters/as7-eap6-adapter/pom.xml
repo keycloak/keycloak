@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.0.0.Final</version>
+        <version>3.1.0.CR1-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
     <name>Keycloak SAML AS7 / JBoss EAP 6 Adapter Distros</name>
@@ -32,7 +32,20 @@
 
     <modules>
         <module>as7-modules</module>
-        <module>as7-adapter-zip</module>
         <module>eap6-adapter-zip</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!product</name>
+                </property>
+            </activation>
+            <modules>
+                <module>as7-adapter-zip</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

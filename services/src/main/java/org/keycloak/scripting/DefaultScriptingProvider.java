@@ -110,7 +110,13 @@ public class DefaultScriptingProvider implements ScriptingProvider {
      * Looks-up a {@link ScriptEngine} based on the MIME-type provided by the given {@link Script}.
      */
     private ScriptEngine lookupScriptEngineFor(ScriptModel script) {
-        return scriptEngineManager.getEngineByMimeType(script.getMimeType());
+        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        try {
+            Thread.currentThread().setContextClassLoader(DefaultScriptingProvider.class.getClassLoader());
+            return scriptEngineManager.getEngineByMimeType(script.getMimeType());
+        } finally {
+            Thread.currentThread().setContextClassLoader(cl);
+        }
     }
 
     @Override

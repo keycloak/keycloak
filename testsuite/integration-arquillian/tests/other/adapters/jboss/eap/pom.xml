@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests-adapters-jboss</artifactId>
-        <version>3.0.0.Final</version>
+        <version>3.1.0.CR1-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-adapters-eap</artifactId>
@@ -34,5 +34,20 @@
     <properties>
         <app.server>eap</app.server>
     </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.wildfly.extras.creaper</groupId>
+            <artifactId>creaper-core</artifactId>
+            <scope>test</scope>
+            <version>1.5.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-cli</artifactId>
+            <scope>test</scope>
+            <version>2.2.0.Final</version>
+        </dependency>
+    </dependencies>
     
 </project>

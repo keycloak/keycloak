@@ -21,7 +21,7 @@
     <parent>
 		<artifactId>keycloak-tomcat-integration-pom</artifactId>
 		<groupId>org.keycloak</groupId>
-		<version>3.0.0.Final</version>
+		<version>3.1.0.CR1-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
@@ -29,8 +29,6 @@
 	<artifactId>keycloak-tomcat-core-adapter</artifactId>
 	<name>Keycloak Tomcat Core Integration</name>
     <properties>
-        <!-- <tomcat.version>8.0.14</tomcat.version> -->
-        <!-- <tomcat.version>7.0.52</tomcat.version> -->
         <tomcat.version>6.0.41</tomcat.version>
     </properties>
 	<description />

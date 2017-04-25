@@ -45,10 +45,10 @@ import java.util.Map;
  */
 public class KeycloakIdentity implements Identity {
 
-    private final AccessToken accessToken;
-    private final RealmModel realm;
-    private final KeycloakSession keycloakSession;
-    private final Attributes attributes;
+    protected final AccessToken accessToken;
+    protected final RealmModel realm;
+    protected final KeycloakSession keycloakSession;
+    protected final Attributes attributes;
 
     public KeycloakIdentity(KeycloakSession keycloakSession) {
         this(Tokens.getAccessToken(keycloakSession), keycloakSession);
@@ -139,12 +139,19 @@ public class KeycloakIdentity implements Identity {
 
         if (this.accessToken.getClientSession() != null) {
             ClientSessionModel clientSession = this.keycloakSession.sessions().getClientSession(this.accessToken.getClientSession());
-            clientUser = this.keycloakSession.users().getServiceAccount(clientSession.getClient());
-        } else if (this.accessToken.getIssuedFor() != null) {
-            ClientModel clientModel = this.keycloakSession.realms().getClientById(this.accessToken.getIssuedFor(), this.realm);
-            clientUser = this.keycloakSession.users().getServiceAccount(clientModel);
+
+            if (clientSession != null) {
+                clientUser = this.keycloakSession.users().getServiceAccount(clientSession.getClient());
+            }
         }
 
+        if (this.accessToken.getIssuedFor() != null) {
+            ClientModel clientModel = this.keycloakSession.realms().getClientById(this.accessToken.getIssuedFor(), this.realm);
+
+            if (clientModel != null) {
+                clientUser = this.keycloakSession.users().getServiceAccount(clientModel);
+            }
+        }
 
         if (clientUser == null) {
             return false;

@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-auth-server</artifactId>
-        <version>3.0.0.Final</version>
+        <version>3.1.0.CR1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -236,6 +236,12 @@
                                             <includes>
                                                 <include>keycloak.jks</include>
                                                 <include>keycloak.truststore</include>
+                                                <include>client.jks</include>
+                                                <include>ca.crt</include>
+                                                <include>client.crt</include>
+                                                <include>client.key</include>
+                                                <include>intermediate-ca.crl</include>
+                                                <include>empty.crl</include>
                                             </includes>
                                         </resource>
                                     </resources>
@@ -343,6 +349,10 @@
                     <name>auth.server.ssl.required</name>
                 </property>
             </activation>
+            <properties>
+                <!--disable exclusion pattern for x509 tests, which is enabled by default in the base/pom.xml-->
+                <exclude.x509>-</exclude.x509>
+            </properties>
             <build>
                 <pluginManagement>
                     <plugins>
@@ -388,6 +398,12 @@
                                                 <includes>
                                                     <include>keycloak.jks</include>
                                                     <include>keycloak.truststore</include>
+                                                    <include>client.jks</include>
+                                                    <include>ca.crt</include>
+                                                    <include>client.crt</include>
+                                                    <include>client.key</include>
+                                                    <include>intermediate-ca.crl</include>
+                                                    <include>empty.crl</include>
                                                 </includes>
                                             </resource>
                                         </resources>

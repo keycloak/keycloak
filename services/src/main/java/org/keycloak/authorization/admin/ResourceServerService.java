@@ -17,6 +17,22 @@
  */
 package org.keycloak.authorization.admin;
 
+import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
+
+import java.io.IOException;
+import java.util.HashMap;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
+
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.ResourceServer;
@@ -34,24 +50,10 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.services.resources.admin.RealmAuth;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
-import java.io.IOException;
-import java.util.HashMap;
-
-import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -171,22 +173,26 @@ public class ResourceServerService {
         return resource;
     }
 
+    @Path("/permission")
+    public Object getPermissionTypeResource() {
+        this.auth.requireView();
+        PermissionService resource = new PermissionService(this.resourceServer, this.authorization, this.auth);
+
+        ResteasyProviderFactory.getInstance().injectProperties(resource);
+
+        return resource;
+    }
+
     private void createDefaultPermission(ResourceRepresentation resource, PolicyRepresentation policy) {
-        PolicyRepresentation defaultPermission = new PolicyRepresentation();
+        ResourcePermissionRepresentation defaultPermission = new ResourcePermissionRepresentation();
 
         defaultPermission.setName("Default Permission");
-        defaultPermission.setType("resource");
         defaultPermission.setDescription("A permission that applies to the default resource type");
         defaultPermission.setDecisionStrategy(DecisionStrategy.UNANIMOUS);
         defaultPermission.setLogic(Logic.POSITIVE);
 
-        HashMap<String, String> defaultPermissionConfig = new HashMap<>();
-
-        defaultPermissionConfig.put("default", "true");
-        defaultPermissionConfig.put("defaultResourceType", resource.getType());
-        defaultPermissionConfig.put("applyPolicies", "[\"" + policy.getName() + "\"]");
-
-        defaultPermission.setConfig(defaultPermissionConfig);
+        defaultPermission.setResourceType(resource.getType());
+        defaultPermission.addPolicy(policy.getName());
 
         getPolicyResource().create(defaultPermission);
     }

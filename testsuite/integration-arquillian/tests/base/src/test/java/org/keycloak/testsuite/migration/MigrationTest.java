@@ -59,6 +59,9 @@ import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.OAuthClient;
 
+import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
+import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT_LINKS;
+import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
 import static org.keycloak.testsuite.Assert.assertEquals;
 import static org.keycloak.testsuite.Assert.assertFalse;
 import static org.keycloak.testsuite.Assert.assertNames;
@@ -112,8 +115,15 @@ public class MigrationTest extends AbstractKeycloakTest {
     }
     
     @Test
+    @Migration(versionFrom = "2.5.5.Final")
+    public void migration2_5_5Test() {
+        testMigratedData();
+        testMigrationTo3_0_0();
+    }
+    
+    @Test
     @Migration(versionFrom = "1.9.8.Final")
-    public void migration1_9_8Test() {
+    public void migration1_9_8Test() throws Exception {
         testMigratedData();
         testMigrationTo2_0_0();
         testMigrationTo2_1_0();
@@ -121,6 +131,7 @@ public class MigrationTest extends AbstractKeycloakTest {
         testMigrationTo2_3_0();
         testMigrationTo2_5_0();
         testMigrationTo2_5_1();
+        testMigrationTo3_0_0();
     }
     
     @Test
@@ -179,6 +190,9 @@ public class MigrationTest extends AbstractKeycloakTest {
         testExtractRealmKeys(masterRealm, migrationRealm);
     }
 
+    /**
+     * @see org.keycloak.migration.migrators.MigrateTo2_5_0
+     */
     private void testMigrationTo2_5_0() {
         testLdapKerberosMigration_2_5_0();
         
@@ -186,8 +200,38 @@ public class MigrationTest extends AbstractKeycloakTest {
         testDuplicateEmailSupport(masterRealm, migrationRealm);
     }
 
-    private void testMigrationTo2_5_1() {
+    private void testMigrationTo2_5_1() throws Exception {
         testOfflineTokenLogin();
+    }
+    
+    /**
+     * @see org.keycloak.migration.migrators.MigrateTo3_0_0
+     */
+    private void testMigrationTo3_0_0() {
+        testRoleManageAccountLinks(masterRealm, migrationRealm);
+    }
+    
+    private void testRoleManageAccountLinks(RealmResource... realms) {
+        log.info("testing role manage account links");
+        for (RealmResource realm : realms) {
+            List<ClientRepresentation> clients = realm.clients().findByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID);
+            if (!clients.isEmpty()) {
+                String accountClientId = clients.get(0).getId();
+                ClientResource accountClient = realm.clients().get(accountClientId);
+                accountClient.roles().get(MANAGE_ACCOUNT_LINKS).toRepresentation(); //the role should be presented, it'll throw javax.ws.rs.NotFoundException in case the role is not found
+
+                Set<RoleRepresentation> roleComposites = accountClient.roles().get(MANAGE_ACCOUNT).getRoleComposites();
+                boolean success = false;
+                for (RoleRepresentation roleComposite : roleComposites) {
+                    if (roleComposite.getName().equals(MANAGE_ACCOUNT_LINKS)) {
+                        success = true;
+                    }
+                }
+                if (!success) {
+                    fail("'manage-account' role of client 'account' should have composite role 'manage-account-links'.");
+                }
+            }
+        }
     }
         
     private void testExtractRealmKeys(RealmResource masterRealm, RealmResource migrationRealm) {
@@ -363,12 +407,12 @@ public class MigrationTest extends AbstractKeycloakTest {
         }
     }
 
-    private void testOfflineTokenLogin() {
+    private void testOfflineTokenLogin() throws Exception {
         if (isImportMigrationMode()) {
             log.info("Skip offline token login test in the 'import' migrationMode");
         } else {
             log.info("test login with old offline token");
-            String oldOfflineToken = suiteContext.getMigrationContext().getOfflineToken();
+            String oldOfflineToken = suiteContext.getMigrationContext().loadOfflineToken();
             Assert.assertNotNull(oldOfflineToken);
 
             oauth.realm(MIGRATION);

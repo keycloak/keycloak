@@ -148,6 +148,7 @@ public class RealmManager {
         adminConsole.setPublicClient(true);
         adminConsole.addRedirectUri(baseUrl + "/*");
         adminConsole.setFullScopeAllowed(false);
+        adminConsole.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
         RoleModel adminRole;
         if (realm.getName().equals(Config.getAdminRealm())) {
@@ -182,6 +183,7 @@ public class RealmManager {
             adminCli.setFullScopeAllowed(false);
             adminCli.setStandardFlowEnabled(false);
             adminCli.setDirectAccessGrantsEnabled(true);
+            adminCli.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
             RoleModel adminRole;
             if (realm.getName().equals(Config.getAdminRealm())) {
@@ -348,6 +350,7 @@ public class RealmManager {
         adminRole.setScopeParamRequired(false);
         realmAdminClient.setBearerOnly(true);
         realmAdminClient.setFullScopeAllowed(false);
+        realmAdminClient.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
         for (String r : AdminRoles.ALL_REALM_ROLES) {
             addAndSetAdminRole(r, realmAdminClient, adminRole);
@@ -389,6 +392,7 @@ public class RealmManager {
             String redirectUri = base + "/*";
             client.addRedirectUri(redirectUri);
             client.setBaseUrl(base);
+            client.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
             for (String role : AccountRoles.ALL) {
                 client.addDefaultRole(role);
@@ -415,6 +419,7 @@ public class RealmManager {
             client.setEnabled(true);
             client.setName("${client_" + Constants.BROKER_SERVICE_CLIENT_ID + "}");
             client.setFullScopeAllowed(false);
+            client.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
             for (String role : Constants.BROKER_SERVICE_ROLES) {
                 RoleModel roleModel = client.addRole(role);

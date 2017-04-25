@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-distribution-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.0.0.Final</version>
+        <version>3.1.0.CR1-SNAPSHOT</version>
     </parent>
 
     <name>Adapters Distribution Parent</name>
@@ -33,17 +33,31 @@
     <modules>
         <module>as7-eap6-adapter</module>
         <module>fuse-adapter-zip</module>
-        <module>jetty81-adapter-zip</module>
-        <module>jetty91-adapter-zip</module>
-        <module>jetty92-adapter-zip</module>
-        <module>jetty93-adapter-zip</module>
-        <module>jetty94-adapter-zip</module>
         <module>js-adapter-zip</module>
         <module>osgi</module>
-        <module>tomcat6-adapter-zip</module>
-        <module>tomcat7-adapter-zip</module>
-        <module>tomcat8-adapter-zip</module>
-        <module>wf8-adapter</module>
+
         <module>wildfly-adapter</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!product</name>
+                </property>
+            </activation>
+            <modules>
+                <module>tomcat6-adapter-zip</module>
+                <module>tomcat7-adapter-zip</module>
+                <module>tomcat8-adapter-zip</module>
+                <module>jetty81-adapter-zip</module>
+                <module>jetty91-adapter-zip</module>
+                <module>jetty92-adapter-zip</module>
+                <module>jetty93-adapter-zip</module>
+                <module>jetty94-adapter-zip</module>
+                <module>wf8-adapter</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

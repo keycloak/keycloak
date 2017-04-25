@@ -5,7 +5,7 @@
     <parent>
         <artifactId>keycloak-misc-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.0.0.Final</version>
+        <version>3.1.0.CR1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <groupId>org.keycloak</groupId>
@@ -21,7 +21,7 @@
         <dependency>
           <groupId>org.keycloak.bom</groupId>
           <artifactId>keycloak-adapter-bom</artifactId>
-          <version>3.0.0.Final</version>
+          <version>3.1.0.CR1-SNAPSHOT</version>
           <type>pom</type>
           <scope>import</scope>
         </dependency>

@@ -91,6 +91,11 @@ public class ClientBuilder {
         return this;
     }
 
+    public ClientBuilder frontchannelLogout(Boolean frontchannelLogout) {
+        rep.setFrontchannelLogout(frontchannelLogout);
+        return this;
+    }
+
     public ClientBuilder secret(String secret) {
         rep.setSecret(secret);
         return this;
@@ -112,6 +117,15 @@ public class ClientBuilder {
         }
         attributes.put(name, value);
         rep.setAttributes(attributes);
+        return this;
+    }
+
+    public ClientBuilder removeAttribute(String name) {
+        Map<String, String> attributes = rep.getAttributes();
+        if (attributes != null) {
+            attributes.remove(name);
+            rep.setAttributes(attributes);
+        }
         return this;
     }
 
@@ -157,6 +171,11 @@ public class ClientBuilder {
 
     public ClientBuilder rootUrl(String rootUrl) {
         rep.setRootUrl(rootUrl);
+        return this;
+    }
+
+    public ClientBuilder authorizationServicesEnabled(boolean enable) {
+        rep.setAuthorizationServicesEnabled(true);
         return this;
     }
 }

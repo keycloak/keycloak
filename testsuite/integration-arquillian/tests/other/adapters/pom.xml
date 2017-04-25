@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests-other</artifactId>
-        <version>3.0.0.Final</version>
+        <version>3.1.0.CR1-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-adapters</artifactId>
@@ -347,6 +347,12 @@
                                             <artifactItem>
                                                 <groupId>org.keycloak.testsuite</groupId>
                                                 <artifactId>servlet-authz-app</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>war</type>
+                                            </artifactItem>
+                                            <artifactItem>
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>servlet-policy-enforcer</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>war</type>
                                             </artifactItem>

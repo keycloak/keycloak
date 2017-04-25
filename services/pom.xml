@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.0.0.Final</version>
+        <version>3.1.0.CR1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -219,6 +219,27 @@
             <build>
                 <plugins>
                     <plugin>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-resources</id>
+                                <phase>validate</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>target/docs</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>src/docs</directory>
+                                            <filtering>true</filtering>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
                         <executions>
@@ -244,7 +265,7 @@
 
                                     <reportOutputDirectory>${project.basedir}/target/apidocs-rest/swagger</reportOutputDirectory>
                                     <useStandardDocletOptions>false</useStandardDocletOptions>
-                                    <additionalparam> -skipUiFiles -apiVersion 1 -includeResourcePrefixes org.keycloak.services.resources.admin,org.keycloak.protocol.oidc -docBasePath /apidocs -apiBasePath http://localhost:8080/auth -apiInfoFile ${project.basedir}/src/docs/swagger/apiinfo.json</additionalparam>
+                                    <additionalparam> -skipUiFiles -apiVersion 1 -includeResourcePrefixes org.keycloak.services.resources.admin,org.keycloak.protocol.oidc -docBasePath /apidocs -apiBasePath http://localhost:8080/auth -apiInfoFile ${project.basedir}/target/docs/swagger/apiinfo.json</additionalparam>
                                 </configuration>
                                 <goals>
                                     <goal>javadoc</goal>
@@ -289,7 +310,7 @@
                                     <goal>process-asciidoc</goal>
                                 </goals>
                                 <configuration>
-                                    <sourceDirectory>${project.basedir}/src/docs/asciidoc</sourceDirectory>
+                                    <sourceDirectory>${project.basedir}/target/docs/asciidoc</sourceDirectory>
                                     <sourceDocumentName>index.adoc</sourceDocumentName>
                                     <outputDirectory>${project.basedir}/target/apidocs-rest/output</outputDirectory>
                                     <backend>html5</backend>

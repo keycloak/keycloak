@@ -41,11 +41,59 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.List;
 
+import org.jboss.logging.Logger;
+import org.keycloak.common.util.Base64Url;
+import java.security.MessageDigest;
+import java.security.SecureRandom;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class ServletOAuthClient extends KeycloakDeploymentDelegateOAuthClient {
+
+	// https://tools.ietf.org/html/rfc7636#section-4
+	private String codeVerifier;
+	private String codeChallenge;
+	private String codeChallengeMethod = OAuth2Constants.PKCE_METHOD_S256;
+	private static Logger logger = Logger.getLogger(ServletOAuthClient.class);
+
+    public static String generateSecret() {
+        return generateSecret(32);
+    }
+
+    public static String generateSecret(int bytes) {
+        byte[] buf = new byte[bytes];
+        new SecureRandom().nextBytes(buf);
+        return Base64Url.encode(buf);
+    }
+
+    private void setCodeVerifier() {
+        codeVerifier = generateSecret();
+        logger.debugf("Generated codeVerifier = %s", codeVerifier);
+        return;
+    }
+
+    private void setCodeChallenge() {
+        try {
+            if (codeChallengeMethod.equals(OAuth2Constants.PKCE_METHOD_S256)) {
+                MessageDigest md = MessageDigest.getInstance("SHA-256");
+                md.update(codeVerifier.getBytes());
+                StringBuilder sb = new StringBuilder();
+                for (byte b : md.digest()) {
+                    String hex = String.format("%02x", b);
+                    sb.append(hex);
+                }
+                codeChallenge = Base64Url.encode(sb.toString().getBytes());
+            } else {
+                codeChallenge = Base64Url.encode(codeVerifier.getBytes());
+            }
+            logger.debugf("Encode codeChallenge = %s, codeChallengeMethod = %s", codeChallenge, codeChallengeMethod);
+        } catch (Exception e) {
+            logger.info("PKCE client side unknown hash algorithm");
+            codeChallenge = Base64Url.encode(codeVerifier.getBytes());
+        }
+    }
 
     /**
      * closes client
@@ -57,7 +105,15 @@ public class ServletOAuthClient extends KeycloakDeploymentDelegateOAuthClient {
     private AccessTokenResponse resolveBearerToken(HttpServletRequest request, String redirectUri, String code) throws IOException, ServerRequest.HttpFailure {
         // Don't send sessionId in oauth clients for now
         KeycloakDeployment resolvedDeployment = resolveDeployment(getDeployment(), request);
-        return ServerRequest.invokeAccessCodeToToken(resolvedDeployment, code, redirectUri, null);
+
+        // https://tools.ietf.org/html/rfc7636#section-4
+        if (codeVerifier != null) {
+            logger.debugf("Before sending Token Request, codeVerifier = %s", codeVerifier);
+            return ServerRequest.invokeAccessCodeToToken(resolvedDeployment, code, redirectUri, null, codeVerifier);
+        } else {
+            logger.debug("Before sending Token Request without codeVerifier");
+            return ServerRequest.invokeAccessCodeToToken(resolvedDeployment, code, redirectUri, null);
+        }
     }
 
     /**
@@ -93,6 +149,12 @@ public class ServletOAuthClient extends KeycloakDeploymentDelegateOAuthClient {
         KeycloakDeployment resolvedDeployment = resolveDeployment(getDeployment(), request);
         String authUrl = resolvedDeployment.getAuthUrl().clone().build().toString();
         String scopeParam = TokenUtil.attachOIDCScope(scope);
+
+        // https://tools.ietf.org/html/rfc7636#section-4
+        if (resolvedDeployment.isPkce()) {
+            setCodeVerifier();
+            setCodeChallenge();
+        }
 
         KeycloakUriBuilder uriBuilder =  KeycloakUriBuilder.fromUri(authUrl)
                 .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE)

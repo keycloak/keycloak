@@ -1,10 +1,5 @@
 'use strict';
 
-var consoleBaseUrl = window.location.href;
-consoleBaseUrl = consoleBaseUrl.substring(0, consoleBaseUrl.indexOf("/console"));
-consoleBaseUrl = consoleBaseUrl + "/console";
-var configUrl = consoleBaseUrl + "/config";
-
 var auth = {};
 var resourceBundle;
 var locale = 'en';
@@ -14,11 +9,11 @@ var resourceRequests = 0;
 var loadingTimer = -1;
 
 angular.element(document).ready(function () {
-    var keycloakAuth = new Keycloak(configUrl);
+    var keycloakAuth = new Keycloak(consoleBaseUrl + 'config');
 
     function whoAmI(success, error) {
         var req = new XMLHttpRequest();
-        req.open('GET', consoleBaseUrl + "/whoami", true);
+        req.open('GET', consoleBaseUrl + 'whoami', true);
         req.setRequestHeader('Accept', 'application/json');
         req.setRequestHeader('Authorization', 'bearer ' + keycloakAuth.token);
 
@@ -38,7 +33,7 @@ angular.element(document).ready(function () {
 
     function loadResourceBundle(success, error) {
         var req = new XMLHttpRequest();
-        req.open('GET', consoleBaseUrl + '/messages.json?lang=' + locale, true);
+        req.open('GET', consoleBaseUrl + 'messages.json?lang=' + locale, true);
         req.setRequestHeader('Accept', 'application/json');
 
         req.onreadystatechange = function () {
@@ -2173,14 +2168,28 @@ module.directive('kcEnter', function() {
     };
 });
 
-module.directive('kcSave', function ($compile, Notifications) {
+module.directive('kcSave', function ($compile, $timeout, Notifications) {
+    var clickDelay = 500; // 500 ms
+    
     return {
         restrict: 'A',
         link: function ($scope, elem, attr, ctrl) {
             elem.addClass("btn btn-primary");
             elem.attr("type","submit");
-            elem.bind('click', function() {
+            
+            var disabled = false;
+            elem.on('click', function(evt) {
                 if ($scope.hasOwnProperty("changed") && !$scope.changed) return;
+                
+                // KEYCLOAK-4121: Prevent double form submission
+                if (disabled) {
+                    evt.preventDefault();
+                    evt.stopImmediatePropagation();
+                    return;
+                } else {
+                    disabled = true;
+                    $timeout(function () { disabled = false; }, clickDelay, false);
+                }
                 
                 $scope.$apply(function() {
                     var form = elem.closest('form');

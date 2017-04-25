@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-distribution-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.0.0.Final</version>
+        <version>3.1.0.CR1-SNAPSHOT</version>
     </parent>
 
     <artifactId>keycloak-server-overlay</artifactId>
@@ -37,9 +37,22 @@
         </dependency>
     </dependencies>
 
+    <properties>
+        <commonFilesToInclude>
+            ${serverDistDir}/modules/system/layers/keycloak/**,
+            ${serverDistDir}/themes/**,
+            ${serverDistDir}/providers/**,
+            ${serverDistDir}/License.html,
+            ${serverDistDir}/bin/client/keycloak*,
+            ${serverDistDir}/bin/*keycloak*,
+            ${serverDistDir}/bin/kc*,
+            ${serverDistDir}/bin/federation-sssd-setup.sh,
+            ${serverDistDir}/bin/migrate*
+        </commonFilesToInclude>
+    </properties>
+
     <build>
         <finalName>keycloak-overlay-${project.version}</finalName>
-        <resources></resources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -77,6 +90,7 @@
                                     <artifactId>keycloak-server-dist</artifactId>
                                     <type>zip</type>
                                     <outputDirectory>${project.build.directory}/unpacked</outputDirectory>
+                                    <includes>${filesToInclude}</includes>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
@@ -124,7 +138,6 @@
                             <appendAssemblyId>false</appendAssemblyId>
                             <outputDirectory>${project.build.directory}</outputDirectory>
                             <workDirectory>${project.build.directory}/assembly/work</workDirectory>
-                            <tarLongFileMode>gnu</tarLongFileMode>
                         </configuration>
                     </execution>
                 </executions>
@@ -168,5 +181,39 @@
             </plugin>
         </plugins>
     </build>
+
+
+    <profiles>
+        <profile>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!product</name>
+                </property>
+            </activation>
+            <properties>
+                <identityType>add-ons</identityType>
+                <serverDistDir>keycloak-${project.version}</serverDistDir>
+                <filesToInclude>${commonFilesToInclude}</filesToInclude>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>product</id>
+            <activation>
+                <property>
+                    <name>product</name>
+                </property>
+            </activation>
+            <properties>
+                <identityType>layers</identityType>
+                <serverDistDir>${product.name}-${product.filename.version}</serverDistDir>
+                <filesToInclude>
+                    ${commonFilesToInclude},
+                    ${serverDistDir}/bin/product.conf,
+                    ${serverDistDir}/modules/layers.conf</filesToInclude>
+            </properties>
+        </profile>
+    </profiles>
 
 </project>

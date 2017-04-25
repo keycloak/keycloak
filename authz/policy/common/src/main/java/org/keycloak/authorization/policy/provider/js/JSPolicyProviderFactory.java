@@ -1,30 +1,27 @@
 package org.keycloak.authorization.policy.provider.js;
 
-import java.util.function.Supplier;
+import java.util.Map;
 
-import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
-import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class JSPolicyProviderFactory implements PolicyProviderFactory {
+public class JSPolicyProviderFactory implements PolicyProviderFactory<JSPolicyRepresentation> {
 
-    private JSPolicyProvider provider = new JSPolicyProvider(new Supplier<ScriptEngine>() {
-        @Override
-        public ScriptEngine get() {
-            return new ScriptEngineManager().getEngineByName("nashorn");
-        }
-    });
+    private static final String ENGINE = "nashorn";
+
+    private JSPolicyProvider provider = new JSPolicyProvider(() -> new ScriptEngineManager().getEngineByName(ENGINE));
 
     @Override
     public String getName() {
@@ -42,13 +39,40 @@ public class JSPolicyProviderFactory implements PolicyProviderFactory {
     }
 
     @Override
-    public PolicyProviderAdminService getAdminResource(ResourceServer resourceServer) {
+    public PolicyProvider create(KeycloakSession session) {
         return null;
     }
 
     @Override
-    public PolicyProvider create(KeycloakSession session) {
-        return null;
+    public JSPolicyRepresentation toRepresentation(Policy policy, JSPolicyRepresentation representation) {
+        representation.setCode(policy.getConfig().get("code"));
+        return representation;
+    }
+
+    @Override
+    public Class<JSPolicyRepresentation> getRepresentationType() {
+        return JSPolicyRepresentation.class;
+    }
+
+    @Override
+    public void onCreate(Policy policy, JSPolicyRepresentation representation, AuthorizationProvider authorization) {
+        updatePolicy(policy, representation.getCode());
+    }
+
+    @Override
+    public void onUpdate(Policy policy, JSPolicyRepresentation representation, AuthorizationProvider authorization) {
+        updatePolicy(policy, representation.getCode());
+    }
+
+    @Override
+    public void onImport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization) {
+        updatePolicy(policy, representation.getConfig().get("code"));
+    }
+
+    private void updatePolicy(Policy policy, String code) {
+        Map<String, String> config = policy.getConfig();
+        config.put("code", code);
+        policy.setConfig(config);
     }
 
     @Override

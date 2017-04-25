@@ -25,7 +25,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.0.0.Final</version>
+        <version>3.1.0.CR1-SNAPSHOT</version>
         <relativePath>../../../../pom.xml</relativePath>
     </parent>
 
@@ -69,6 +69,10 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-saml-wildfly-adapter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-wildfly-elytron-adapter</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
