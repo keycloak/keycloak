@@ -16,6 +16,8 @@
  */
 package org.keycloak.testsuite.authz;
 
+import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -39,6 +41,7 @@ import org.keycloak.representations.idm.authorization.PolicyEvaluationResponse;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 
 import java.util.HashMap;
 import java.util.List;
@@ -58,6 +61,11 @@ public class PolicyEvaluationCompositeRoleTest extends AbstractKeycloakTest {
         testRealmRep.setRealm(TEST);
         testRealmRep.setEnabled(true);
         testRealms.add(testRealmRep);
+    }
+    
+    @Deployment
+    public static WebArchive deploy() {
+        return RunOnServerDeployment.create();
     }
 
     public static void setup(KeycloakSession session) {
