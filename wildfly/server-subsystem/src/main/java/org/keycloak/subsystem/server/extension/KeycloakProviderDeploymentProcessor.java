@@ -48,7 +48,7 @@ public class KeycloakProviderDeploymentProcessor implements DeploymentUnitProces
 
         if (!KeycloakProviderDependencyProcessor.isKeycloakProviderDeployment(deploymentUnit)) return;
 
-        logger.infof("Deploying Keycloak provider: {0}", deploymentUnit.getName());
+        logger.infov("Deploying Keycloak provider: {0}", deploymentUnit.getName());
         final Module module = deploymentUnit.getAttachment(Attachments.MODULE);
         ProviderManager pm = new ProviderManager(module.getClassLoader());
         ProviderManagerRegistry.SINGLETON.deploy(pm);
@@ -66,7 +66,7 @@ public class KeycloakProviderDeploymentProcessor implements DeploymentUnitProces
     public void undeploy(DeploymentUnit context) {
         ProviderManager pm = context.getAttachment(ATTACHMENT_KEY);
         if (pm != null) {
-            logger.infof("Undeploying Keycloak provider: {0}", context.getName());
+            logger.infov("Undeploying Keycloak provider: {0}", context.getName());
             ProviderManagerRegistry.SINGLETON.undeploy(pm);
             context.removeAttachment(ATTACHMENT_KEY);
         }
