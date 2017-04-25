@@ -267,9 +267,7 @@ public class SamlProtocol implements LoginProtocol {
 
         if (logoutPostUrl == null || logoutPostUrl.trim().isEmpty()) {
             // if we don't have a redirect uri either, return true and default to the admin url + POST binding
-            if (logoutRedirectUrl == null || logoutRedirectUrl.trim().isEmpty())
-                return true;
-            return false;
+            return (logoutRedirectUrl == null || logoutRedirectUrl.trim().isEmpty());
         }
 
         if (samlClient.forcePostBinding()) {
@@ -282,11 +280,8 @@ public class SamlProtocol implements LoginProtocol {
         if (SAML_POST_BINDING.equals(bindingType))
             return true;
 
-        if (logoutRedirectUrl == null || logoutRedirectUrl.trim().isEmpty())
-            return true; // we don't have a redirect binding url, so use post binding
-
-        return false; // redirect binding
-
+        // true if we don't have a redirect binding url, so use post binding, false for redirect binding
+        return (logoutRedirectUrl == null || logoutRedirectUrl.trim().isEmpty());
     }
 
     protected String getNameIdFormat(SamlClient samlClient, ClientSessionModel clientSession) {
@@ -529,15 +524,20 @@ public class SamlProtocol implements LoginProtocol {
         if (!(client instanceof ClientModel))
             return null;
         try {
-            if (isLogoutPostBindingForClient(clientSession)) {
-                String bindingUri = getLogoutServiceUrl(uriInfo, client, SAML_POST_BINDING);
+            boolean postBinding = isLogoutPostBindingForClient(clientSession);
+            String bindingUri = getLogoutServiceUrl(uriInfo, client, postBinding ? SAML_POST_BINDING : SAML_REDIRECT_BINDING);
+            if (bindingUri == null) {
+                logger.warnf("Failed to logout client %s, skipping this client.  Please configure the logout service url in the admin console for your client applications.", client.getClientId());
+                return null;
+            }
+
+            if (postBinding) {
                 SAML2LogoutRequestBuilder logoutBuilder = createLogoutRequest(bindingUri, clientSession, client);
                 // This is POST binding, hence KeyID is included in dsig:KeyInfo/dsig:KeyName, no need to add <samlp:Extensions> element
                 JaxrsSAML2BindingBuilder binding = createBindingBuilder(samlClient);
                 return binding.postBinding(logoutBuilder.buildDocument()).request(bindingUri);
             } else {
                 logger.debug("frontchannel redirect binding");
-                String bindingUri = getLogoutServiceUrl(uriInfo, client, SAML_REDIRECT_BINDING);
                 SAML2LogoutRequestBuilder logoutBuilder = createLogoutRequest(bindingUri, clientSession, client);
                 if (samlClient.requiresRealmSignature() && samlClient.addExtensionsElementWithKeyInfo()) {
                     KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
@@ -620,7 +620,7 @@ public class SamlProtocol implements LoginProtocol {
         SamlClient samlClient = new SamlClient(client);
         String logoutUrl = getLogoutServiceUrl(uriInfo, client, SAML_POST_BINDING);
         if (logoutUrl == null) {
-            logger.warnv("Can't do backchannel logout. No SingleLogoutService POST Binding registered for client: {1}", client.getClientId());
+            logger.warnf("Can't do backchannel logout. No SingleLogoutService POST Binding registered for client: %s", client.getClientId());
             return;
         }
         SAML2LogoutRequestBuilder logoutBuilder = createLogoutRequest(logoutUrl, clientSession, client);
