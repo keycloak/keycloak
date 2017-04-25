@@ -62,6 +62,9 @@ public class PolicyEvaluationCompositeRoleTest extends AbstractKeycloakTest {
 
     public static void setup(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName(TEST);
+
+        session.getContext().setRealm(realm);
+
         ClientModel client = session.realms().addClient(realm, "myclient");
         RoleModel role1 = client.addRole("client-role1");
 
