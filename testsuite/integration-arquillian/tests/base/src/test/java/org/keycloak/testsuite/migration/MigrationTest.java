@@ -123,7 +123,7 @@ public class MigrationTest extends AbstractKeycloakTest {
     
     @Test
     @Migration(versionFrom = "1.9.8.Final")
-    public void migration1_9_8Test() {
+    public void migration1_9_8Test() throws Exception {
         testMigratedData();
         testMigrationTo2_0_0();
         testMigrationTo2_1_0();
@@ -200,7 +200,7 @@ public class MigrationTest extends AbstractKeycloakTest {
         testDuplicateEmailSupport(masterRealm, migrationRealm);
     }
 
-    private void testMigrationTo2_5_1() {
+    private void testMigrationTo2_5_1() throws Exception {
         testOfflineTokenLogin();
     }
     
@@ -407,12 +407,12 @@ public class MigrationTest extends AbstractKeycloakTest {
         }
     }
 
-    private void testOfflineTokenLogin() {
+    private void testOfflineTokenLogin() throws Exception {
         if (isImportMigrationMode()) {
             log.info("Skip offline token login test in the 'import' migrationMode");
         } else {
             log.info("test login with old offline token");
-            String oldOfflineToken = suiteContext.getMigrationContext().getOfflineToken();
+            String oldOfflineToken = suiteContext.getMigrationContext().loadOfflineToken();
             Assert.assertNotNull(oldOfflineToken);
 
             oauth.realm(MIGRATION);
