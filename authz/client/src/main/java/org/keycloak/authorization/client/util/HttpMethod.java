@@ -17,6 +17,12 @@
  */
 package org.keycloak.authorization.client.util;
 
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -27,13 +33,8 @@ import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
+import org.keycloak.authorization.client.ClientAuthenticator;
 import org.keycloak.authorization.client.Configuration;
-
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -41,19 +42,21 @@ import java.util.Map;
 public class HttpMethod<R> {
 
     private final HttpClient httpClient;
+    private final ClientAuthenticator authenticator;
     private final RequestBuilder builder;
     protected final Configuration configuration;
     protected final HashMap<String, String> headers;
     protected final HashMap<String, String> params;
     private HttpMethodResponse<R> response;
 
-    public HttpMethod(Configuration configuration, RequestBuilder builder) {
-        this(configuration, builder, new HashMap<String, String>(), new HashMap<String, String>());
+    public HttpMethod(Configuration configuration, ClientAuthenticator authenticator, RequestBuilder builder) {
+        this(configuration, authenticator, builder, new HashMap<String, String>(), new HashMap<String, String>());
     }
 
-    public HttpMethod(Configuration configuration, RequestBuilder builder, HashMap<String, String> params, HashMap<String, String> headers) {
+    public HttpMethod(Configuration configuration, ClientAuthenticator authenticator, RequestBuilder builder, HashMap<String, String> params, HashMap<String, String> headers) {
         this.configuration = configuration;
         this.httpClient = configuration.getHttpClient();
+        this.authenticator = authenticator;
         this.builder = builder;
         this.params = params;
         this.headers = headers;
@@ -121,7 +124,7 @@ public class HttpMethod<R> {
     }
 
     public HttpMethodAuthenticator<R> authentication() {
-        return new HttpMethodAuthenticator<R>(this);
+        return new HttpMethodAuthenticator<R>(this, authenticator);
     }
 
     public HttpMethod<R> param(String name, String value) {
@@ -136,7 +139,7 @@ public class HttpMethod<R> {
     }
 
     public HttpMethod<R> form() {
-        return new HttpMethod<R>(this.configuration, this.builder, this.params, this.headers) {
+        return new HttpMethod<R>(this.configuration, authenticator, this.builder, this.params, this.headers) {
             @Override
             protected void preExecute(RequestBuilder builder) {
                 if (params != null) {

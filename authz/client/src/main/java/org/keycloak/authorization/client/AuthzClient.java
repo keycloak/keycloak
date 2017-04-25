@@ -53,13 +53,17 @@ public class AuthzClient {
     }
 
     public static AuthzClient create(Configuration configuration) {
-        return new AuthzClient(configuration);
+        return new AuthzClient(configuration, configuration.getClientAuthenticator());
+    }
+
+    public static AuthzClient create(Configuration configuration, ClientAuthenticator authenticator) {
+        return new AuthzClient(configuration, authenticator);
     }
 
     private final ServerConfiguration serverConfiguration;
     private final Configuration deployment;
 
-    private AuthzClient(Configuration configuration) {
+    private AuthzClient(Configuration configuration, ClientAuthenticator authenticator) {
         if (configuration == null) {
             throw new IllegalArgumentException("Client configuration can not be null.");
         }
@@ -72,7 +76,9 @@ public class AuthzClient {
 
         configurationUrl += "/realms/" + configuration.getRealm() + "/.well-known/uma-configuration";
 
-        this.http = new Http(configuration);
+        this.deployment = configuration;
+
+        this.http = new Http(configuration, authenticator != null ? authenticator : configuration.getClientAuthenticator());
 
         try {
             this.serverConfiguration = this.http.<ServerConfiguration>get(URI.create(configurationUrl))
@@ -83,8 +89,10 @@ public class AuthzClient {
         }
 
         this.http.setServerConfiguration(this.serverConfiguration);
+    }
 
-        this.deployment = configuration;
+    private AuthzClient(Configuration configuration) {
+        this(configuration, null);
     }
 
     public ProtectionResource protection() {
@@ -106,7 +114,7 @@ public class AuthzClient {
     public AccessTokenResponse obtainAccessToken() {
         return this.http.<AccessTokenResponse>post(this.serverConfiguration.getTokenEndpoint())
                 .authentication()
-                    .oauth2ClientCredentials()
+                    .client()
                 .response()
                     .json(AccessTokenResponse.class)
                 .execute();
