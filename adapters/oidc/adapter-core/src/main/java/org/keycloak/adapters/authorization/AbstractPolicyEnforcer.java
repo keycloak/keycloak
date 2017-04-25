@@ -29,6 +29,7 @@ import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.OIDCHttpFacade;
 import org.keycloak.adapters.spi.HttpFacade.Request;
 import org.keycloak.authorization.client.AuthzClient;
+import org.keycloak.authorization.client.ClientAuthorizationContext;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.EnforcementMode;
@@ -203,7 +204,7 @@ public abstract class AbstractPolicyEnforcer {
     }
 
     private AuthorizationContext createEmptyAuthorizationContext(final boolean granted) {
-        return new AuthorizationContext() {
+        return new ClientAuthorizationContext(authzClient) {
             @Override
             public boolean hasPermission(String resourceName, String scopeName) {
                 return granted;
@@ -252,7 +253,7 @@ public abstract class AbstractPolicyEnforcer {
     }
 
     private AuthorizationContext createAuthorizationContext(AccessToken accessToken) {
-        return new AuthorizationContext(accessToken, this.paths);
+        return new ClientAuthorizationContext(accessToken, this.paths, authzClient);
     }
 
     private boolean isResourcePermission(PathConfig actualPathConfig, Permission permission) {
