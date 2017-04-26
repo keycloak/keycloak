@@ -550,6 +550,15 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmImportCtrl'
         })
+        .when('/realms/:realm/partial-export', {
+            templateUrl : resourceUrl + '/partials/partial-export.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                }
+            },
+            controller : 'RealmExportCtrl'
+        })
         .when('/create/user/:realm', {
             templateUrl : resourceUrl + '/partials/user-detail.html',
             resolve : {

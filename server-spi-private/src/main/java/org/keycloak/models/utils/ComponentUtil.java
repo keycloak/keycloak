@@ -54,7 +54,7 @@ public class ComponentUtil {
         return getComponentFactory(session, component.getProviderType(), component.getProviderId());
     }
 
-    private static Map<String, ProviderConfigProperty> getComponentConfigProperties(KeycloakSession session, String providerType, String providerId) {
+    public static Map<String, ProviderConfigProperty> getComponentConfigProperties(KeycloakSession session, String providerType, String providerId) {
         try {
             ComponentFactory componentFactory = getComponentFactory(session, providerType, providerId);
             List<ProviderConfigProperty> l = componentFactory.getConfigProperties();
