@@ -75,6 +75,8 @@ public abstract class AbstractAuthorizationSettingsTest extends AbstractClientTe
         clientSettingsPage.tabs().authorization();
         assertTrue(authorizationPage.isCurrent());
 
+        newClient.setId(found.getId());
+
         return newClient;
     }
 }

@@ -57,36 +57,14 @@ import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
-import org.keycloak.testsuite.adapter.page.BadAssertionSalesPostSig;
-import org.keycloak.testsuite.adapter.page.BadClientSalesPostSigServlet;
-import org.keycloak.testsuite.adapter.page.BadRealmSalesPostSigServlet;
-import org.keycloak.testsuite.adapter.page.DifferentCookieNameServlet;
-import org.keycloak.testsuite.adapter.page.Employee2Servlet;
-import org.keycloak.testsuite.adapter.page.EmployeeServlet;
-import org.keycloak.testsuite.adapter.page.EmployeeSigFrontServlet;
-import org.keycloak.testsuite.adapter.page.EmployeeSigPostNoIdpKeyServlet;
-import org.keycloak.testsuite.adapter.page.EmployeeSigRedirNoIdpKeyServlet;
-import org.keycloak.testsuite.adapter.page.EmployeeSigRedirOptNoIdpKeyServlet;
-import org.keycloak.testsuite.adapter.page.EmployeeSigServlet;
-import org.keycloak.testsuite.adapter.page.InputPortal;
-import org.keycloak.testsuite.adapter.page.MissingAssertionSig;
-import org.keycloak.testsuite.adapter.page.SAMLServlet;
-import org.keycloak.testsuite.adapter.page.SalesMetadataServlet;
-import org.keycloak.testsuite.adapter.page.SalesPost2Servlet;
-import org.keycloak.testsuite.adapter.page.SalesPostAssertionAndResponseSig;
-import org.keycloak.testsuite.adapter.page.SalesPostEncServlet;
-import org.keycloak.testsuite.adapter.page.SalesPostPassiveServlet;
-import org.keycloak.testsuite.adapter.page.SalesPostServlet;
-import org.keycloak.testsuite.adapter.page.SalesPostSigEmailServlet;
-import org.keycloak.testsuite.adapter.page.SalesPostSigPersistentServlet;
-import org.keycloak.testsuite.adapter.page.SalesPostSigServlet;
-import org.keycloak.testsuite.adapter.page.SalesPostSigTransientServlet;
+import org.keycloak.testsuite.adapter.page.*;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.login.Login;
 import org.keycloak.testsuite.auth.page.login.SAMLIDPInitiatedLogin;
 import org.keycloak.testsuite.page.AbstractPage;
 import org.keycloak.testsuite.util.*;
 
+import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.openqa.selenium.By;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -129,6 +107,7 @@ import static org.keycloak.testsuite.util.IOUtil.loadXML;
 import static org.keycloak.testsuite.util.IOUtil.modifyDocElementAttribute;
 import static org.keycloak.testsuite.util.Matchers.bodyHC;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
+import static org.keycloak.testsuite.util.SamlClient.Binding.POST;
 import static org.keycloak.testsuite.util.SamlClient.idpInitiatedLogin;
 import static org.keycloak.testsuite.util.SamlClient.login;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
@@ -143,6 +122,9 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
 
     @Page
     protected BadRealmSalesPostSigServlet badRealmSalesPostSigServletPage;
+
+    @Page
+    protected EmployeeAcsServlet employeeAcsServletPage;
 
     @Page
     protected Employee2Servlet employee2ServletPage;
@@ -225,6 +207,11 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
     @Deployment(name = BadRealmSalesPostSigServlet.DEPLOYMENT_NAME)
     protected static WebArchive badRealmSalesPostSig() {
         return samlServletDeployment(BadRealmSalesPostSigServlet.DEPLOYMENT_NAME, SendUsernameServlet.class);
+    }
+
+    @Deployment(name = EmployeeAcsServlet.DEPLOYMENT_NAME)
+    protected static WebArchive employeeAssertionConsumerServiceUrlSet() {
+        return samlServletDeployment(EmployeeAcsServlet.DEPLOYMENT_NAME, SendUsernameServlet.class);
     }
 
     @Deployment(name = Employee2Servlet.DEPLOYMENT_NAME)
@@ -465,6 +452,20 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
     @Test
     public void employeeSigTest() {
         testSuccessfulAndUnauthorizedLogin(employeeSigServletPage, testRealmSAMLRedirectLoginPage);
+    }
+
+    @Test
+    public void employeeAcsTest() {
+        SAMLDocumentHolder samlResponse = new SamlClient(employeeAcsServletPage.buildUri()).getSamlResponse(Binding.POST, (client, context, strategy) -> {
+            strategy.setRedirectable(false);
+            return client.execute(new HttpGet(employeeAcsServletPage.buildUri()), context);
+        });
+
+        assertThat(samlResponse.getSamlObject(), instanceOf(AuthnRequestType.class));
+        assertThat(((AuthnRequestType) samlResponse.getSamlObject()).getAssertionConsumerServiceURL(), notNullValue());
+        assertThat(((AuthnRequestType) samlResponse.getSamlObject()).getAssertionConsumerServiceURL().getPath(), is("/employee-acs/a/different/endpoint/for/saml"));
+
+        assertSuccessfulLogin(employeeAcsServletPage, bburkeUser, testRealmSAMLPostLoginPage, "principal=bburke");
     }
 
     private static final KeyPair NEW_KEY_PAIR = KeyUtils.generateRsaKeyPair(1024);

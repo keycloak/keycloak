@@ -24,7 +24,6 @@ import static org.junit.Assert.fail;
 import java.util.Collections;
 import java.util.stream.Collectors;
 
-import javax.management.relation.Role;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
@@ -47,7 +46,7 @@ import org.keycloak.testsuite.util.RolesBuilder;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class RolePolicyManagementTest extends AbstractPermissionManagementTest {
+public class RolePolicyManagementTest extends AbstractPolicyManagementTest {
 
     @Override
     protected RealmBuilder createTestRealm() {
@@ -120,7 +119,7 @@ public class RolePolicyManagementTest extends AbstractPermissionManagementTest {
         representation.setLogic(Logic.POSITIVE);
         representation.setRoles(representation.getRoles().stream().filter(roleDefinition -> !roleDefinition.getId().equals("Resource A")).collect(Collectors.toSet()));
 
-        RolePoliciesResource policies = authorization.policies().roles();
+        RolePoliciesResource policies = authorization.policies().role();
         RolePolicyResource permission = policies.findById(representation.getId());
 
         permission.update(representation);
@@ -147,7 +146,7 @@ public class RolePolicyManagementTest extends AbstractPermissionManagementTest {
         representation.setName("Test Delete Permission");
         representation.addRole("Role A", false);
 
-        RolePoliciesResource policies = authorization.policies().roles();
+        RolePoliciesResource policies = authorization.policies().role();
         Response response = policies.create(representation);
         RolePolicyRepresentation created = response.readEntity(RolePolicyRepresentation.class);
 
@@ -171,7 +170,7 @@ public class RolePolicyManagementTest extends AbstractPermissionManagementTest {
         representation.setName("Test Generic Config  Permission");
         representation.addRole("Role A", false);
 
-        RolePoliciesResource policies = authorization.policies().roles();
+        RolePoliciesResource policies = authorization.policies().role();
         Response response = policies.create(representation);
         RolePolicyRepresentation created = response.readEntity(RolePolicyRepresentation.class);
 
@@ -187,7 +186,7 @@ public class RolePolicyManagementTest extends AbstractPermissionManagementTest {
     }
 
     private void assertCreated(AuthorizationResource authorization, RolePolicyRepresentation representation) {
-        RolePoliciesResource permissions = authorization.policies().roles();
+        RolePoliciesResource permissions = authorization.policies().role();
         Response response = permissions.create(representation);
         RolePolicyRepresentation created = response.readEntity(RolePolicyRepresentation.class);
         RolePolicyResource permission = permissions.findById(created.getId());

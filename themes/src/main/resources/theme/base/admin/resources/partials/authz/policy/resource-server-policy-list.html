@@ -50,7 +50,7 @@
                         <div class="pull-right">
                             <a id="hideDetails" data-ng-show="showDetailsFlag" class="btn btn-default" data-ng-click="showDetailsFlag = !showDetailsFlag;showDetails();" href="">{{:: 'authz-hide-details' | translate}}</a>
                             <a id="showDetails" data-ng-hide="showDetailsFlag" class="btn btn-default" data-ng-click="showDetailsFlag = !showDetailsFlag;showDetails();" href="">{{:: 'authz-show-details' | translate}}</a>
-                            <select class="form-control" ng-model="policyType"
+                            <select id="create-policy" class="form-control" ng-model="policyType"
                                     ng-options="p.name for p in policyProviders track by p.type"
                                     data-ng-change="addPolicy(policyType);">
                                 <option value="" disabled selected>{{:: 'authz-create-policy' | translate}}...</option>

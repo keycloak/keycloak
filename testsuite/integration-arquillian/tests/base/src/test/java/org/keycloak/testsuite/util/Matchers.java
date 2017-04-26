@@ -16,12 +16,20 @@
  */
 package org.keycloak.testsuite.util;
 
+import org.keycloak.dom.saml.v2.SAML2Object;
+import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
+import org.keycloak.dom.saml.v2.protocol.ResponseType;
+import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
+import org.keycloak.testsuite.util.matchers.SamlResponseTypeMatcher;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.testsuite.util.matchers.*;
 
+import java.net.URI;
 import java.util.Map;
 import javax.ws.rs.core.Response;
 import org.apache.http.HttpResponse;
 import org.hamcrest.Matcher;
+import static org.hamcrest.Matchers.*;
 
 /**
  * Additional hamcrest matchers for use in {@link org.junit.Assert#assertThat}.
@@ -108,5 +116,41 @@ public class Matchers {
      */
     public static <T> Matcher<Response> header(Matcher<Map<String, T>> matcher) {
         return new ResponseHeaderMatcher(matcher);
+    }
+
+    /**
+     * Matches when the SAML status code of a {@link ResponseType} instance is equal to the given code.
+     * @param expectedStatusCode
+     * @return
+     */
+    public static <T> Matcher<SAML2Object> isSamlResponse(JBossSAMLURIConstants expectedStatus) {
+        return allOf(
+          instanceOf(ResponseType.class),
+          new SamlResponseTypeMatcher(is(URI.create(expectedStatus.get())))
+        );
+    }
+
+    /**
+     * Matches when the destination of a SAML {@link LogoutRequestType} instance is equal to the given destination.
+     * @param expectedStatusCode
+     * @return
+     */
+    public static <T> Matcher<SAML2Object> isSamlLogoutRequest(String destination) {
+        return allOf(
+          instanceOf(LogoutRequestType.class),
+          new SamlLogoutRequestTypeMatcher(URI.create(destination))
+        );
+    }
+
+    /**
+     * Matches when the SAML status of a {@link StatusResponseType} instance is equal to the given code.
+     * @param expectedStatusCode
+     * @return
+     */
+    public static <T> Matcher<SAML2Object> isSamlStatusResponse(JBossSAMLURIConstants expectedStatus) {
+        return allOf(
+          instanceOf(StatusResponseType.class),
+          new SamlStatusResponseTypeMatcher(is(URI.create(expectedStatus.get())))
+        );
     }
 }

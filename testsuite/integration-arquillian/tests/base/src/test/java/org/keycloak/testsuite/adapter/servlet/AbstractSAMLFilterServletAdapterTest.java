@@ -18,6 +18,7 @@ public abstract class AbstractSAMLFilterServletAdapterTest extends AbstractSAMLS
     public void checkRoles() {
         badClientSalesPostSigServletPage.checkRoles(true);
         badRealmSalesPostSigServletPage.checkRoles(true);
+        employeeAcsServletPage.checkRoles(true);
         employeeSigServletPage.checkRoles(true);
         employeeSigFrontServletPage.checkRoles(true);
         salesMetadataServletPage.checkRoles(true);
@@ -48,6 +49,7 @@ public abstract class AbstractSAMLFilterServletAdapterTest extends AbstractSAMLS
     public void uncheckRoles() {
         badClientSalesPostSigServletPage.checkRoles(false);
         badRealmSalesPostSigServletPage.checkRoles(false);
+        employeeAcsServletPage.checkRoles(false);
         employee2ServletPage.checkRoles(false);
         employeeSigServletPage.checkRoles(false);
         employeeSigFrontServletPage.checkRoles(false);

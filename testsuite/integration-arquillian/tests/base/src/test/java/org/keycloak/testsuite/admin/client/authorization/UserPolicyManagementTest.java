@@ -43,7 +43,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class UserPolicyManagementTest extends AbstractPermissionManagementTest {
+public class UserPolicyManagementTest extends AbstractPolicyManagementTest {
 
     @Override
     protected RealmBuilder createTestRealm() {
@@ -54,7 +54,7 @@ public class UserPolicyManagementTest extends AbstractPermissionManagementTest {
     }
 
     @Test
-    public void testCreateUserPolicy() {
+    public void testCreate() {
         AuthorizationResource authorization = getClient().authorization();
         UserPolicyRepresentation representation = new UserPolicyRepresentation();
 
@@ -89,7 +89,7 @@ public class UserPolicyManagementTest extends AbstractPermissionManagementTest {
         representation.setLogic(Logic.POSITIVE);
         representation.setUsers(representation.getUsers().stream().filter(userName -> !userName.equals("User A")).collect(Collectors.toSet()));
 
-        UserPoliciesResource policies = authorization.policies().users();
+        UserPoliciesResource policies = authorization.policies().user();
         UserPolicyResource permission = policies.findById(representation.getId());
 
         permission.update(representation);
@@ -109,7 +109,7 @@ public class UserPolicyManagementTest extends AbstractPermissionManagementTest {
         representation.setName("Test Delete Permission");
         representation.addUser("User A");
 
-        UserPoliciesResource policies = authorization.policies().users();
+        UserPoliciesResource policies = authorization.policies().user();
         Response response = policies.create(representation);
         UserPolicyRepresentation created = response.readEntity(UserPolicyRepresentation.class);
 
@@ -133,7 +133,7 @@ public class UserPolicyManagementTest extends AbstractPermissionManagementTest {
         representation.setName("Test Generic Config Permission");
         representation.addUser("User A");
 
-        UserPoliciesResource policies = authorization.policies().users();
+        UserPoliciesResource policies = authorization.policies().user();
         Response response = policies.create(representation);
         UserPolicyRepresentation created = response.readEntity(UserPolicyRepresentation.class);
 
@@ -149,7 +149,7 @@ public class UserPolicyManagementTest extends AbstractPermissionManagementTest {
     }
 
     private void assertCreated(AuthorizationResource authorization, UserPolicyRepresentation representation) {
-        UserPoliciesResource permissions = authorization.policies().users();
+        UserPoliciesResource permissions = authorization.policies().user();
         Response response = permissions.create(representation);
         UserPolicyRepresentation created = response.readEntity(UserPolicyRepresentation.class);
         UserPolicyResource permission = permissions.findById(created.getId());

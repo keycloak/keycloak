@@ -18,6 +18,7 @@
 package org.keycloak.authorization.client.util;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.authorization.client.ClientAuthenticator;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -25,26 +26,24 @@ import org.keycloak.OAuth2Constants;
 public class HttpMethodAuthenticator<R> {
 
     private final HttpMethod<R> method;
+    private final ClientAuthenticator authenticator;
 
-    public HttpMethodAuthenticator(HttpMethod<R> method) {
+    public HttpMethodAuthenticator(HttpMethod<R> method, ClientAuthenticator authenticator) {
         this.method = method;
+        this.authenticator = authenticator;
     }
 
-    public HttpMethod<R> oauth2ClientCredentials() {
+    public HttpMethod<R> client() {
         this.method.params.put(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS);
-        configureClientCredentials();
+        authenticator.configureClientCredentials(this.method.params, this.method.headers);
         return this.method;
     }
 
     public HttpMethod<R> oauth2ResourceOwnerPassword(String userName, String password) {
+        client();
         this.method.params.put(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD);
         this.method.params.put("username", userName);
         this.method.params.put("password", password);
-        configureClientCredentials();
         return this.method;
-    }
-
-    private void configureClientCredentials() {
-        this.method.configuration.getClientAuthenticator().configureClientCredentials(this.method.params, this.method.headers);
     }
 }

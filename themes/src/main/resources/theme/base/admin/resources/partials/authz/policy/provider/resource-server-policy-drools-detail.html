@@ -31,31 +31,31 @@
                 <kc-tooltip>{{:: 'authz-policy-description.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="policy.config.mavenArtifactGroupId">{{:: 'authz-policy-drools-maven-artifact' | translate}} <span class="required" data-ng-show="create">*</span></label>
-                <button data-ng-click="resolveModules()" class="btn btn-primary">{{:: 'authz-policy-drools-maven-artifact-resolve' | translate}}</button>
+                <label class="col-md-2 control-label" for="artifactGroupId">{{:: 'authz-policy-drools-maven-artifact' | translate}} <span class="required" data-ng-show="create">*</span></label>
+                <button data-ng-click="resolveModules()" id="resolveModule" class="btn btn-primary">{{:: 'authz-policy-drools-maven-artifact-resolve' | translate}}</button>
                 <div class="col-sm-3">
-                    <input class="form-control" type="text" id="policy.config.mavenArtifactGroupId" name="policy.config.mavenArtifactGroupId" data-ng-model="policy.config.mavenArtifactGroupId" placeholder="Group Identifier" required>
+                    <input class="form-control" type="text" id="artifactGroupId" name="artifactGroupId" data-ng-model="policy.artifactGroupId" placeholder="Group Identifier" required>
                 </div>
                 <kc-tooltip>{{:: 'authz-policy-drools-maven-artifact.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="policy.config.mavenArtifactId"></label>
+                <label class="col-md-2 control-label" for="artifactId"></label>
                 <div class="col-sm-3">
-                    <input class="form-control" type="text" id="policy.config.mavenArtifactId" name="policy.config.mavenArtifactId" data-ng-model="policy.config.mavenArtifactId" autofocus placeholder="Artifact Identifier" required>
+                    <input class="form-control" type="text" id="artifactId" name="artifactId" data-ng-model="policy.artifactId" autofocus placeholder="Artifact Identifier" required>
                 </div>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="policy.config.mavenArtifactVersion"></label>
+                <label class="col-md-2 control-label" for="artifactVersion"></label>
                 <div class="col-sm-3">
-                    <input class="form-control" type="text" id="policy.config.mavenArtifactVersion" name="policy.config.mavenArtifactVersion" data-ng-model="policy.config.mavenArtifactVersion" autofocus placeholder="Version" required>
+                    <input class="form-control" type="text" id="artifactVersion" name="artifactVersion" data-ng-model="policy.artifactVersion" autofocus placeholder="Version" required>
                 </div>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="policy.config.moduleName">{{:: 'authz-policy-drools-module' | translate}} <span class="required" data-ng-show="create">*</span></label>
+                <label class="col-md-2 control-label" for="moduleName">{{:: 'authz-policy-drools-module' | translate}} <span class="required" data-ng-show="create">*</span></label>
                 <div class="col-sm-3">
                     <div>
-                        <select class="form-control" id="policy.config.moduleName"
-                                ng-model="policy.config.moduleName"
+                        <select class="form-control" id="moduleName"
+                                ng-model="policy.moduleName"
                                 ng-options="moduleName as moduleName for moduleName in drools.moduleNames"
                                 ng-change="resolveSessions()"
                                 ng-disabled="!drools.moduleNames.length"
@@ -66,11 +66,11 @@
                 <kc-tooltip>{{:: 'authz-policy-drools-module.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="policy.config.sessionName">{{:: 'authz-policy-drools-session' | translate}} <span class="required" data-ng-show="create">*</span></label>
+                <label class="col-md-2 control-label" for="sessionName">{{:: 'authz-policy-drools-session' | translate}} <span class="required" data-ng-show="create">*</span></label>
                 <div class="col-sm-3">
                     <div>
-                        <select class="form-control" id="policy.config.sessionName"
-                                ng-model="policy.config.sessionName"
+                        <select class="form-control" id="sessionName"
+                                ng-model="policy.sessionName"
                                 ng-options="sessionName as sessionName for sessionName in drools.moduleSessions"
                                 ng-disabled="!drools.moduleSessions.length"
                                 required>
@@ -80,14 +80,14 @@
                 <kc-tooltip>{{:: 'authz-policy-drools-session.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="policy.config.scannerPeriod">{{:: 'authz-policy-drools-update-period' | translate}}</label>
+                <label class="col-md-2 control-label" for="scannerPeriod">{{:: 'authz-policy-drools-update-period' | translate}}</label>
                 <div class="col-md-6 time-selector">
-                    <input class="form-control" type="number" required min="1" max="31536000" data-ng-model="policy.config.scannerPeriod" id="policy.config.scannerPeriod"
-                           name="policy.config.scannerPeriod"
-                           ng-disabled="!policy.config.sessionName"/>
-                    <select class="form-control" name="policy.config.scannerPeriodUnit"
-                            data-ng-model="policy.config.scannerPeriodUnit"
-                            ng-disabled="!policy.config.sessionName">
+                    <input class="form-control" type="number" required min="1" max="31536000" data-ng-model="policy.scannerPeriod" id="scannerPeriod"
+                           name="scannerPeriod"
+                           ng-disabled="!policy.sessionName"/>
+                    <select class="form-control" id="scannerPeriodUnit" name="scannerPeriodUnit"
+                            data-ng-model="policy.scannerPeriodUnit"
+                            ng-disabled="!policy.sessionName">
                         <option value="Seconds">{{:: 'seconds' | translate}}</option>
                         <option value="Minutes">{{:: 'minutes' | translate}}</option>
                         <option value="Hours">{{:: 'hours' | translate}}</option>
@@ -97,10 +97,10 @@
                 <kc-tooltip>{{:: 'authz-policy-drools-update-period.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="policy.logic">{{:: 'authz-policy-logic' | translate}}</label>
+                <label class="col-md-2 control-label" for="logic">{{:: 'authz-policy-logic' | translate}}</label>
 
                 <div class="col-sm-1">
-                    <select class="form-control" id="policy.logic"
+                    <select class="form-control" id="logic"
                             data-ng-model="policy.logic">
                         <option value="POSITIVE">{{:: 'authz-policy-logic-positive' | translate}}</option>
                         <option value="NEGATIVE">{{:: 'authz-policy-logic-negative' | translate}}</option>

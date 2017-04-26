@@ -23,18 +23,17 @@ import java.util.List;
 import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
-import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
-import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.representations.idm.authorization.AggregatePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class AggregatePolicyProviderFactory implements PolicyProviderFactory<PolicyRepresentation> {
+public class AggregatePolicyProviderFactory implements PolicyProviderFactory<AggregatePolicyRepresentation> {
 
     private AggregatePolicyProvider provider = new AggregatePolicyProvider();
 
@@ -54,23 +53,33 @@ public class AggregatePolicyProviderFactory implements PolicyProviderFactory<Pol
     }
 
     @Override
-    public PolicyProviderAdminService getAdminResource(ResourceServer resourceServer, AuthorizationProvider authorization) {
-        return null;
-    }
-
-    @Override
     public PolicyProvider create(KeycloakSession session) {
         return null;
     }
 
     @Override
-    public void onCreate(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization) {
+    public void onCreate(Policy policy, AggregatePolicyRepresentation representation, AuthorizationProvider authorization) {
         verifyCircularReference(policy, new ArrayList<>());
     }
 
     @Override
-    public void onUpdate(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization) {
+    public void onUpdate(Policy policy, AggregatePolicyRepresentation representation, AuthorizationProvider authorization) {
         verifyCircularReference(policy, new ArrayList<>());
+    }
+
+    @Override
+    public void onImport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization) {
+        verifyCircularReference(policy, new ArrayList<>());
+    }
+
+    @Override
+    public AggregatePolicyRepresentation toRepresentation(Policy policy, AggregatePolicyRepresentation representation) {
+        return representation;
+    }
+
+    @Override
+    public Class<AggregatePolicyRepresentation> getRepresentationType() {
+        return AggregatePolicyRepresentation.class;
     }
 
     private void verifyCircularReference(Policy policy, List<String> ids) {

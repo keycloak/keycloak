@@ -36,6 +36,13 @@
                 </div>
                 <kc-tooltip>{{:: 'robots-tag-tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="xXSSProtection"><a href="https://www.owasp.org/index.php/OWASP_Secure_Headers_Project#xxxsp" target="_blank">{{:: 'x-xss-protection' | translate}}</a></label>
+                <div class="col-sm-6">
+                    <input class="form-control" id="xXSSProtection" type="text" ng-model="realm.browserSecurityHeaders.xXSSProtection">
+                </div>
+                <kc-tooltip>{{:: 'x-xss-protection-tooltip' | translate}}</kc-tooltip>
+            </div>
         </fieldset>
         <div class="form-group" data-ng-show="access.manageRealm">
             <div class="col-md-10 col-md-offset-2">

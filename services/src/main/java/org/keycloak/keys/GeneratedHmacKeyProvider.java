@@ -17,6 +17,7 @@
 
 package org.keycloak.keys;
 
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.jose.jws.AlgorithmType;
@@ -47,7 +48,7 @@ public class GeneratedHmacKeyProvider implements HmacKeyProvider {
         if (model.hasNote(SecretKey.class.getName())) {
             secretKey = model.getNote(SecretKey.class.getName());
         } else {
-            secretKey = KeyUtils.loadSecretKey(model.get(Attributes.SECRET_KEY));
+            secretKey = KeyUtils.loadSecretKey(Base64Url.decode(model.get(Attributes.SECRET_KEY)));
             model.setNote(SecretKey.class.getName(), secretKey);
         }
     }

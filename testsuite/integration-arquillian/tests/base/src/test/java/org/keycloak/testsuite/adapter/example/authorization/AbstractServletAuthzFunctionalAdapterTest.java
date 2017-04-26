@@ -26,15 +26,19 @@ import java.util.List;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
-import org.keycloak.admin.client.resource.ClientsResource;
+import org.keycloak.admin.client.resource.ClientPoliciesResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.ResourcesResource;
+import org.keycloak.admin.client.resource.RolePoliciesResource;
+import org.keycloak.admin.client.resource.RoleScopeResource;
+import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.testsuite.util.WaitUtils;
 
 /**
@@ -203,6 +207,101 @@ public abstract class AbstractServletAuthzFunctionalAdapterTest extends Abstract
             driver.navigate().to(getResourceServerUrl() + "/public-html.html");
             WaitUtils.waitForPageToLoad(driver);
             assertTrue(hasText("This is public resource that should be accessible without login."));
+        });
+    }
+
+    @Test
+    public void testRequiredRole() throws Exception {
+        performTests(() -> {
+            login("jdoe", "jdoe");
+            navigateToUserPremiumPage();
+            assertFalse(wasDenied());
+
+            RolesResource rolesResource = getClientResource(RESOURCE_SERVER_ID).roles();
+
+            rolesResource.create(new RoleRepresentation("required-role", "", false));
+
+            RolePolicyRepresentation policy = new RolePolicyRepresentation();
+
+            policy.setName("Required Role Policy");
+            policy.addRole("user_premium", false);
+            policy.addRole("required-role", false);
+
+            RolePoliciesResource rolePolicy = getAuthorizationResource().policies().role();
+
+            rolePolicy.create(policy);
+            policy = rolePolicy.findByName(policy.getName());
+
+            updatePermissionPolicies("Premium Resource Permission", policy.getName());
+
+            login("jdoe", "jdoe");
+            navigateToUserPremiumPage();
+            assertFalse(wasDenied());
+
+            policy.getRoles().clear();
+            policy.addRole("user_premium", false);
+            policy.addRole("required-role", true);
+
+            rolePolicy.findById(policy.getId()).update(policy);
+
+            login("jdoe", "jdoe");
+            navigateToUserPremiumPage();
+            assertTrue(wasDenied());
+
+            UsersResource users = realmsResouce().realm(REALM_NAME).users();
+            UserRepresentation user = users.search("jdoe").get(0);
+
+            RoleScopeResource roleScopeResource = users.get(user.getId()).roles().clientLevel(getClientResource(RESOURCE_SERVER_ID).toRepresentation().getId());
+            RoleRepresentation requiredRole = rolesResource.get("required-role").toRepresentation();
+            roleScopeResource.add(Arrays.asList(requiredRole));
+
+            login("jdoe", "jdoe");
+            navigateToUserPremiumPage();
+            assertFalse(wasDenied());
+
+            policy.getRoles().clear();
+            policy.addRole("user_premium", false);
+            policy.addRole("required-role", false);
+
+            rolePolicy.findById(policy.getId()).update(policy);
+
+            login("jdoe", "jdoe");
+            navigateToUserPremiumPage();
+            assertFalse(wasDenied());
+
+            roleScopeResource.remove(Arrays.asList(requiredRole));
+
+            login("jdoe", "jdoe");
+            navigateToUserPremiumPage();
+            assertFalse(wasDenied());
+        });
+    }
+
+    @Test
+    public void testOnlySpecificClient() throws Exception {
+        performTests(() -> {
+            login("jdoe", "jdoe");
+            assertFalse(wasDenied());
+
+            ClientPolicyRepresentation policy = new ClientPolicyRepresentation();
+
+            policy.setName("Only Client Policy");
+            policy.addClient("admin-cli");
+
+            ClientPoliciesResource policyResource = getAuthorizationResource().policies().client();
+            policyResource.create(policy);
+            policy = policyResource.findByName(policy.getName());
+
+            updatePermissionPolicies("Protected Resource Permission", policy.getName());
+
+            login("jdoe", "jdoe");
+            assertTrue(wasDenied());
+
+            policy.addClient("servlet-authz-app");
+            policyResource.findById(policy.getId()).update(policy);
+
+            login("jdoe", "jdoe");
+            assertFalse(wasDenied());
         });
     }
 }

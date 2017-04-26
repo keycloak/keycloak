@@ -47,7 +47,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public abstract class AbstractPermissionManagementTest extends AbstractKeycloakTest {
+public abstract class AbstractPolicyManagementTest extends AbstractKeycloakTest {
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -147,7 +147,7 @@ public abstract class AbstractPermissionManagementTest extends AbstractKeycloakT
         representation.setName(name);
         representation.addUser(userId);
 
-        client.authorization().policies().users().create(representation);
+        client.authorization().policies().user().create(representation);
     }
 
     protected ClientResource getClient() {

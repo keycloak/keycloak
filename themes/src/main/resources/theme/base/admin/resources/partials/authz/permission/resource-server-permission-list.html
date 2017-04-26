@@ -50,6 +50,7 @@
                         <div class="pull-right">
                             <select class="form-control" ng-model="policyType"
                                     ng-options="p.name for p in policyProviders track by p.type"
+                                    id="create-permission"
                                     data-ng-change="addPolicy(policyType);">
                                 <option value="" disabled selected>{{:: 'authz-create-permission' | translate}}...</option>
                             </select>

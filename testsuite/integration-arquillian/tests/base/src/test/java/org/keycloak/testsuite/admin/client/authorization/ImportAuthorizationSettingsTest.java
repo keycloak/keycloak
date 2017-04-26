@@ -28,6 +28,7 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
 
 /**
@@ -43,6 +44,8 @@ public class ImportAuthorizationSettingsTest extends AbstractAuthorizationTest {
         RoleRepresentation role = new RoleRepresentation();
         role.setName("admin");
         clientResource.roles().create(role);
+
+        testRealmResource().users().create(UserBuilder.create().username("alice").build());
     }
 
     @After
@@ -72,6 +75,6 @@ public class ImportAuthorizationSettingsTest extends AbstractAuthorizationTest {
 
         authorizationResource.importSettings(toImport);
 
-        assertEquals(13, authorizationResource.policies().policies().size());
+        assertEquals(15, authorizationResource.policies().policies().size());
     }
 }

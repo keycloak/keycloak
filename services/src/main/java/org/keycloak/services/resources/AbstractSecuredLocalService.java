@@ -22,6 +22,7 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.AbstractOAuthClient;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.ClientModel;
@@ -133,7 +134,7 @@ public abstract class AbstractSecuredLocalService {
         if (cookie != null) {
             stateChecker = cookie.getValue();
         } else {
-            stateChecker = KeycloakModelUtils.generateSecret();
+            stateChecker = Base64Url.encode(KeycloakModelUtils.generateSecret());
             String cookiePath = AuthenticationManager.getRealmCookiePath(realm, uriInfo);
             boolean secureOnly = realm.getSslRequired().isRequired(clientConnection);
             CookieHelper.addCookie(KEYCLOAK_STATE_CHECKER, stateChecker, cookiePath, null, null, -1, secureOnly, true);

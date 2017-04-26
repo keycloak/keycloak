@@ -81,8 +81,8 @@ public class GeneratedHmacKeyProviderFactory extends AbstractHmacKeyProviderFact
 
     private void generateSecret(ComponentModel model, int size) {
         try {
-            String secret = KeycloakModelUtils.generateSecret(size);
-            model.put(Attributes.SECRET_KEY, secret);
+            byte[] secret = KeycloakModelUtils.generateSecret(size);
+            model.put(Attributes.SECRET_KEY, Base64Url.encode(secret));
 
             String kid = KeycloakModelUtils.generateId();
             model.put(Attributes.KID_KEY, kid);
