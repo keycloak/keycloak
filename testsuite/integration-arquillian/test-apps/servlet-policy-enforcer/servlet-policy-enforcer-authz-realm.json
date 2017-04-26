@@ -115,6 +115,11 @@
                     {
                         "name": "Pattern 11",
                         "typedScopes": []
+                    },
+                    {
+                        "name": "Pattern 12",
+                        "uri": "/realm_uri",
+                        "typedScopes": []
                     }
                 ],
                 "policies": [
@@ -254,6 +259,16 @@
                         "decisionStrategy": "UNANIMOUS",
                         "config": {
                             "resources": "[\"Pattern 11\"]",
+                            "applyPolicies": "[\"Default Policy\"]"
+                        }
+                    },
+                    {
+                        "name": "Pattern 12 Permission",
+                        "type": "resource",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "resources": "[\"Pattern 12\"]",
                             "applyPolicies": "[\"Default Policy\"]"
                         }
                     }
