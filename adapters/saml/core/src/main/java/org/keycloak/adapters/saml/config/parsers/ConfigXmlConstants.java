@@ -72,6 +72,7 @@ public class ConfigXmlConstants {
     public static final String VALIDATE_REQUEST_SIGNATURE_ATTR = "validateRequestSignature";
     public static final String POST_BINDING_URL_ATTR = "postBindingUrl";
     public static final String REDIRECT_BINDING_URL_ATTR = "redirectBindingUrl";
+    public static final String ASSERTION_CONSUMER_SERVICE_URL_ATTR = "assertionConsumerServiceUrl";
 
     public static final String HTTP_CLIENT_ELEMENT = "HttpClient";
     public static final String ALLOW_ANY_HOSTNAME_ATTR = "allowAnyHostname";

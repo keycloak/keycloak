@@ -17,6 +17,7 @@
 
 package org.keycloak.adapters.saml;
 
+import org.keycloak.adapters.saml.SamlDeployment.IDP.SingleSignOnService;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.HttpFacade;
@@ -95,21 +96,22 @@ public abstract class AbstractInitiateLogin implements AuthChallenge {
             nameIDPolicyFormat =  JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.get();
         }
 
+        SingleSignOnService sso = deployment.getIDP().getSingleSignOnService();
         SAML2AuthnRequestBuilder authnRequestBuilder = new SAML2AuthnRequestBuilder()
-                .destination(deployment.getIDP().getSingleSignOnService().getRequestBindingUrl())
+                .destination(sso.getRequestBindingUrl())
                 .issuer(issuerURL)
                 .forceAuthn(deployment.isForceAuthentication()).isPassive(deployment.isIsPassive())
                 .nameIdPolicy(SAML2NameIDPolicyBuilder.format(nameIDPolicyFormat));
-        if (deployment.getIDP().getSingleSignOnService().getResponseBinding() != null) {
+        if (sso.getResponseBinding() != null) {
             String protocolBinding = JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get();
-            if (deployment.getIDP().getSingleSignOnService().getResponseBinding() == SamlDeployment.Binding.POST) {
+            if (sso.getResponseBinding() == SamlDeployment.Binding.POST) {
                 protocolBinding = JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get();
             }
             authnRequestBuilder.protocolBinding(protocolBinding);
 
         }
-        if (deployment.getAssertionConsumerServiceUrl() != null) {
-            authnRequestBuilder.assertionConsumerUrl(deployment.getAssertionConsumerServiceUrl());
+        if (sso.getAssertionConsumerServiceUrl() != null) {
+            authnRequestBuilder.assertionConsumerUrl(sso.getAssertionConsumerServiceUrl());
         }
         return authnRequestBuilder;
     }
