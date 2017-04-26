@@ -37,18 +37,27 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
+import javax.persistence.Tuple;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class JpaRealmProvider implements RealmProvider {
+
+    private static final String[] GET_CLIENTS_REALM_GRAPH_JOIN = { "getClientsByRealm.fetch.set",
+            "getClientsByRealm.fetch.identityProviders",
+            "getClientsByRealm.fetch.protocolMappers",
+            "getClientsByRealm.fetch.defaultRoles" };
+
     protected static final Logger logger = Logger.getLogger(JpaRealmProvider.class);
     private final KeycloakSession session;
     protected EntityManager em;
@@ -446,16 +455,42 @@ public class JpaRealmProvider implements RealmProvider {
 
     @Override
     public List<ClientModel> getClients(RealmModel realm) {
-        TypedQuery<String> query = em.createNamedQuery("getClientIdsByRealm", String.class);
+        TypedQuery<ClientEntity> query = em.createNamedQuery("getClientsByRealm", ClientEntity.class);
+        Set<ClientEntity> result = null;
+        Map<String, Set<RoleModel>> rolesMap = new TreeMap<>();
+        Set<RoleModel> roles;
         query.setParameter("realm", realm.getId());
-        List<String> clients = query.getResultList();
-        if (clients.isEmpty()) return Collections.EMPTY_LIST;
-        List<ClientModel> list = new LinkedList<>();
-        for (String id : clients) {
-            ClientModel client = session.realms().getClientById(id, realm);
-            if (client != null) list.add(client);
+
+        //Load Roles Model
+        roles = new HashSet<RoleModel>();
+        for (Tuple t : em.createNamedQuery("realmScopeMappingIds", Tuple.class).setParameter("realm", realm.getId()).getResultList()) {
+            roles = rolesMap.get(t.get(0, String.class));
+            if (roles == null) {
+                roles = new HashSet<>();
+                rolesMap.put(t.get(0, String.class), roles);
+            }
+            roles.add(realm.getRoleById(t.get(1, String.class)));
         }
-        return Collections.unmodifiableList(list);
+
+        result = new HashSet<>(query.getResultList());
+        if (!result.isEmpty()) {
+            //Fetch list relation
+            for (String name : GET_CLIENTS_REALM_GRAPH_JOIN) {
+                query.setHint("javax.persistence.loadgraph", em.getEntityGraph(name));
+                result.addAll(query.getResultList());
+            }
+        }
+
+        //Fill Map with empty set where client is not present
+        result.forEach(clientEntity -> {
+            if (!rolesMap.containsKey(clientEntity.getId())) {
+                rolesMap.put(clientEntity.getId(), Collections.emptySet());
+            }
+        });
+
+        return result.stream().map(app -> new PrefetchClientAdapter(realm, em, session, app, rolesMap.get(app.getId())))
+                .collect(Collectors.collectingAndThen(
+                        Collectors.toList(), Collections::unmodifiableList));
 
     }
 

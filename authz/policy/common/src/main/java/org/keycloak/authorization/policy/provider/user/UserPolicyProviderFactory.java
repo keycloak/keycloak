@@ -23,13 +23,12 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
-
+import java.util.Set;    
+import java.util.function.Function;   
+import java.util.stream.Collectors;
 import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
-import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.PolicyStore;
@@ -164,9 +163,10 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
                 UserModel removedUser = ((UserRemovedEvent) event).getUser();
                 RealmModel realm = ((UserRemovedEvent) event).getRealm();
                 ResourceServerStore resourceServerStore = storeFactory.getResourceServerStore();
-                realm.getClients().forEach(clientModel -> {
-                    ResourceServer resourceServer = resourceServerStore.findByClient(clientModel.getId());
 
+                //Fetch all resources in one call
+                resourceServerStore.findByClients(realm.getClients().stream().map(clientModel -> clientModel.getId()).collect(
+                        Collectors.toList())).forEach(resourceServer -> {
                     if (resourceServer != null) {
                         policyStore.findByType(getId(), resourceServer.getId()).forEach(policy -> {
                             List<String> users = new ArrayList<>();

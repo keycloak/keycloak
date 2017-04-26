@@ -30,8 +30,12 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToOne;
 import javax.persistence.MapKeyColumn;
+import javax.persistence.NamedAttributeNode;
+import javax.persistence.NamedEntityGraph;
+import javax.persistence.NamedEntityGraphs;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.NamedSubgraph;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
@@ -49,11 +53,25 @@ import java.util.Set;
 @Entity
 @Table(name="CLIENT", uniqueConstraints = {@UniqueConstraint(columnNames = {"REALM_ID", "CLIENT_ID"})})
 @NamedQueries({
-        @NamedQuery(name="getClientsByRealm", query="select client from ClientEntity client where client.realm = :realm"),
-        @NamedQuery(name="getClientById", query="select client from ClientEntity client where client.id = :id and client.realm.id = :realm"),
-        @NamedQuery(name="getClientIdsByRealm", query="select client.id from ClientEntity client where client.realm.id = :realm"),
-        @NamedQuery(name="findClientIdByClientId", query="select client.id from ClientEntity client where client.clientId = :clientId and client.realm.id = :realm"),
-        @NamedQuery(name="findClientByClientId", query="select client from ClientEntity client where client.clientId = :clientId and client.realm.id = :realm"),
+        @NamedQuery(name = "getClientById", query = "select client from ClientEntity client where client.id = :id and client.realm.id = :realm"),
+        @NamedQuery(name = "getClientIdsByRealm", query = "select client.id from ClientEntity client where client.realm.id = :realm"),
+        @NamedQuery(name = "findClientIdByClientId", query = "select client.id from ClientEntity client where client.clientId = :clientId and client.realm.id = :realm"),
+        @NamedQuery(name = "findClientByClientId", query = "select client from ClientEntity client where client.clientId = :clientId and client.realm.id = :realm"),
+        @NamedQuery(name = "getClientsByRealm", query = "select distinct client from ClientEntity client where client.realm.id = :realm")
+
+})
+
+@NamedEntityGraphs({
+        @NamedEntityGraph(name = "getClientsByRealm.fetch.set", attributeNodes = { @NamedAttributeNode("clientTemplate"),
+                @NamedAttributeNode("webOrigins"), @NamedAttributeNode("redirectUris"), @NamedAttributeNode("attributes"),
+                @NamedAttributeNode("registeredNodes") }),
+        @NamedEntityGraph(name = "getClientsByRealm.fetch.identityProviders", attributeNodes = {
+                @NamedAttributeNode("identityProviders") }),
+        @NamedEntityGraph(name = "getClientsByRealm.fetch.protocolMappers", attributeNodes = {
+                @NamedAttributeNode(value = "protocolMappers", subgraph = "protocolMappers.config") }, subgraphs = {
+                @NamedSubgraph(name = "protocolMappers.config", attributeNodes = { @NamedAttributeNode("config") }) }),
+        @NamedEntityGraph(name = "getClientsByRealm.fetch.defaultRoles", attributeNodes = {
+                @NamedAttributeNode("defaultRoles") })
 })
 public class ClientEntity {
 

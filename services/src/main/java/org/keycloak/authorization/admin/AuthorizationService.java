@@ -39,10 +39,16 @@ public class AuthorizationService {
     private final AuthorizationProvider authorization;
 
     public AuthorizationService(KeycloakSession session, ClientModel client, RealmAuth auth) {
+        this(session, client, auth,
+                session.getProvider(AuthorizationProvider.class).getStoreFactory().getResourceServerStore().findByClient(client.getId()));
+
+    }
+
+    public AuthorizationService(KeycloakSession session, ClientModel client, RealmAuth auth, ResourceServer resourceServer) {
         this.session = session;
         this.client = client;
         this.authorization = session.getProvider(AuthorizationProvider.class);
-        this.resourceServer = this.authorization.getStoreFactory().getResourceServerStore().findByClient(this.client.getId());
+        this.resourceServer = resourceServer;
         this.auth = auth;
 
         if (auth != null) {
