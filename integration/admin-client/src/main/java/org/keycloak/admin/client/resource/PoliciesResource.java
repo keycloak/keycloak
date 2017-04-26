@@ -70,10 +70,10 @@ public interface PoliciesResource {
     PolicyEvaluationResponse evaluate(PolicyEvaluationRequest evaluationRequest);
 
     @Path("role")
-    RolePoliciesResource roles();
+    RolePoliciesResource role();
 
     @Path("user")
-    UserPoliciesResource users();
+    UserPoliciesResource user();
 
     @Path("js")
     JSPoliciesResource js();
@@ -86,4 +86,7 @@ public interface PoliciesResource {
 
     @Path("rules")
     RulePoliciesResource rule();
+
+    @Path("client")
+    ClientPoliciesResource client();
 }

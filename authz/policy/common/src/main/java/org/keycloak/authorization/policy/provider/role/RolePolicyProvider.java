@@ -17,9 +17,9 @@
  */
 package org.keycloak.authorization.policy.provider.role;
 
-import static org.keycloak.authorization.policy.provider.role.RolePolicyProviderFactory.getRoles;
-
 import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
 
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.identity.Identity;
@@ -29,41 +29,41 @@ import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class RolePolicyProvider implements PolicyProvider {
 
+    private final Function<Policy, RolePolicyRepresentation> representationFunction;
+
+    public RolePolicyProvider(Function<Policy, RolePolicyRepresentation> representationFunction) {
+        this.representationFunction = representationFunction;
+    }
+
     @Override
     public void evaluate(Evaluation evaluation) {
         Policy policy = evaluation.getPolicy();
-        Map<String, Object>[] roleIds = getRoles(policy);
+        Set<RolePolicyRepresentation.RoleDefinition> roleIds = representationFunction.apply(policy).getRoles();
         AuthorizationProvider authorizationProvider = evaluation.getAuthorizationProvider();
         RealmModel realm = authorizationProvider.getKeycloakSession().getContext().getRealm();
+        Identity identity = evaluation.getContext().getIdentity();
 
-        if (roleIds.length > 0) {
-            Identity identity = evaluation.getContext().getIdentity();
+        for (RolePolicyRepresentation.RoleDefinition roleDefinition : roleIds) {
+            RoleModel role = realm.getRoleById(roleDefinition.getId());
 
-            for (Map<String, Object> current : roleIds) {
-                RoleModel role = realm.getRoleById((String) current.get("id"));
+            if (role != null) {
+                boolean hasRole = hasRole(identity, role, realm);
 
-                if (role != null) {
-                    boolean hasRole = hasRole(identity, role, realm);
-
-                    if (!hasRole && Boolean.valueOf(isRequired(current))) {
-                        evaluation.deny();
-                        return;
-                    } else if (hasRole) {
-                        evaluation.grant();
-                    }
+                if (!hasRole && roleDefinition.isRequired()) {
+                    evaluation.deny();
+                    return;
+                } else if (hasRole) {
+                    evaluation.grant();
                 }
             }
         }
-    }
-
-    private boolean isRequired(Map<String, Object> current) {
-        return (boolean) current.getOrDefault("required", false);
     }
 
     private boolean hasRole(Identity identity, RoleModel role, RealmModel realm) {
