@@ -97,7 +97,7 @@ public class AuthorizationTokenService {
         KeycloakEvaluationContext evaluationContext = new KeycloakEvaluationContext(this.authorization.getKeycloakSession());
         KeycloakIdentity identity = (KeycloakIdentity) evaluationContext.getIdentity();
 
-        if (!identity.hasRole("uma_authorization")) {
+        if (!identity.hasRealmRole("uma_authorization")) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_SCOPE, "Requires uma_authorization scope.", Status.FORBIDDEN);
         }
 
