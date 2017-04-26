@@ -74,7 +74,7 @@
         </audit-log>
         <management-interfaces>
             <native-interface security-realm="ManagementRealm">
-                <socket interface="management" port="${jboss.management.native.port:9999}"/>
+                <socket interface="management" port="${jboss.management.native.port:3456}"/>
             </native-interface>
         </management-interfaces>
     </management>
@@ -82,7 +82,7 @@
     <domain-controller>
         <remote username="$local" security-realm="ManagementRealm">
             <discovery-options>
-                <static-discovery name="primary" protocol="${jboss.domain.master.protocol:remote}" host="${jboss.domain.master.address}" port="${jboss.domain.master.port:9999}"/>
+                <static-discovery name="primary" protocol="${jboss.domain.master.protocol:remote}" host="${jboss.domain.master.address:127.0.0.1}" port="${jboss.domain.master.port:9999}"/>
             </discovery-options>
         </remote>
     </domain-controller>
