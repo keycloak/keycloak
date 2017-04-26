@@ -1434,8 +1434,8 @@ module.controller('ResourceServerPolicyClientDetailCtrl', function($scope, $rout
         onInitUpdate : function(policy) {
             var selectedClients = [];
 
-            if (policy.config.clients) {
-                var clients = eval(policy.config.clients);
+            if (policy.clients) {
+                var clients = policy.clients;
 
                 for (var i = 0; i < clients.length; i++) {
                     Client.get({realm: $route.current.params.realm, client: clients[i]}, function(data) {
@@ -1461,7 +1461,8 @@ module.controller('ResourceServerPolicyClientDetailCtrl', function($scope, $rout
                 clients.push($scope.selectedClients[i].id);
             }
 
-            $scope.policy.config.clients = JSON.stringify(clients);
+            $scope.policy.clients = clients;
+            delete $scope.policy.config;
         },
 
         onInitCreate : function() {
@@ -1481,7 +1482,8 @@ module.controller('ResourceServerPolicyClientDetailCtrl', function($scope, $rout
                 clients.push($scope.selectedClients[i].id);
             }
 
-            $scope.policy.config.clients = JSON.stringify(clients);
+            $scope.policy.clients = clients;
+            delete $scope.policy.config;
         }
     }, realm, client, $scope);
 });

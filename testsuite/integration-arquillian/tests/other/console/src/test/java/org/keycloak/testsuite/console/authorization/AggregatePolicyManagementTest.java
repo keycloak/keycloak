@@ -55,7 +55,7 @@ public class AggregatePolicyManagementTest extends AbstractAuthorizationSettings
 
         AuthorizationResource authorization = testRealmResource().clients().get(newClient.getId()).authorization();
         PoliciesResource policies = authorization.policies();
-        RolePoliciesResource roles = policies.roles();
+        RolePoliciesResource roles = policies.role();
 
         roles.create(policyA);
 
@@ -71,7 +71,7 @@ public class AggregatePolicyManagementTest extends AbstractAuthorizationSettings
         policyC.setName("Policy C");
         policyC.addUser("test");
 
-        policies.users().create(policyC);
+        policies.user().create(policyC);
     }
 
     @Test
