@@ -34,6 +34,7 @@
         <module>jetty-core</module>
         <module>jetty8.1</module>
         <module>jetty9.2</module>
+        <module>jetty9.3</module>
     </modules>
 
     <profiles>
@@ -46,7 +47,6 @@
             </activation>
             <modules>
                 <module>jetty9.1</module>
-                <module>jetty9.3</module>
                 <module>jetty9.4</module>
             </modules>
         </profile>
