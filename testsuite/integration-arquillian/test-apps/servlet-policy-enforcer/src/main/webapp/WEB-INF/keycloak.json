@@ -56,6 +56,10 @@
             {
                 "name": "Pattern 11",
                 "path": "/api/{version}/{resource}"
+            },
+            {
+                "name": "Pattern 12",
+                "path": "/keycloak_json_uri"
             }
         ]
     }

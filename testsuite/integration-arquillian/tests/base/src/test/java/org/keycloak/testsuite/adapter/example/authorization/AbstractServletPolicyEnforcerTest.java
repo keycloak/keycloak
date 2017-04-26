@@ -290,12 +290,14 @@ public abstract class AbstractServletPolicyEnforcerTest extends AbstractExampleA
             login("alice", "alice");
 
             navigateTo("/resource/a/i/b/c/d/e");
+            assertFalse(wasDenied());
             navigateTo("/resource/a/i/b/c/");
             assertFalse(wasDenied());
 
             updatePermissionPolicies("Pattern 10 Permission", "Deny Policy");
             login("alice", "alice");
             navigateTo("/resource/a/i/b/c/d/e");
+            assertTrue(wasDenied());
             navigateTo("/resource/a/i/b/c/d");
             assertTrue(wasDenied());
 
@@ -349,6 +351,34 @@ public abstract class AbstractServletPolicyEnforcerTest extends AbstractExampleA
             assertTrue(wasDenied());
         });
     }
+
+    @Test
+    public void testPriorityOfURIForResource() {
+        performTests(() -> {
+            login("alice", "alice");
+            navigateTo("/realm_uri");
+            assertTrue(wasDenied());
+            navigateTo("/keycloak_json_uri");
+            assertFalse(wasDenied());
+
+            updatePermissionPolicies("Pattern 12 Permission", "Deny Policy");
+
+            login("alice", "alice");
+            navigateTo("/realm_uri");
+            assertTrue(wasDenied());
+            navigateTo("/keycloak_json_uri");
+            assertTrue(wasDenied());
+
+            updatePermissionPolicies("Pattern 12 Permission", "Default Policy");
+
+            login("alice", "alice");
+            navigateTo("/realm_uri");
+            assertTrue(wasDenied());
+            navigateTo("/keycloak_json_uri");
+            assertFalse(wasDenied());
+        });
+    }
+
 
     private void navigateTo(String path) {
         this.driver.navigate().to(getResourceServerUrl() + path);
