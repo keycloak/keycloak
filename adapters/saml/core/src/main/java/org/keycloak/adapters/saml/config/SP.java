@@ -26,6 +26,7 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class SP implements Serializable {
+
     public static class PrincipalNameMapping implements Serializable {
         private String policy;
         private String attributeName;
@@ -58,6 +59,7 @@ public class SP implements Serializable {
     private PrincipalNameMapping principalNameMapping;
     private Set<String> roleAttributes;
     private IDP idp;
+    private String assertionConsumerServiceUrl;
 
     public String getEntityID() {
         return entityID;
@@ -145,6 +147,14 @@ public class SP implements Serializable {
 
     public void setLogoutPage(String logoutPage) {
         this.logoutPage = logoutPage;
+    }
+
+    public String getAssertionConsumerServiceUrl() {
+        return assertionConsumerServiceUrl;
+    }
+
+    public void setAssertionConsumerServiceUrl(String assertionConsumerServiceUrl) {
+        this.assertionConsumerServiceUrl = assertionConsumerServiceUrl;
     }
 
 }

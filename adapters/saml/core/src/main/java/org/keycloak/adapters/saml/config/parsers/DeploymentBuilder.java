@@ -68,6 +68,7 @@ public class DeploymentBuilder {
         deployment.setLogoutPage(sp.getLogoutPage());
         deployment.setSignatureCanonicalizationMethod(sp.getIdp().getSignatureCanonicalizationMethod());
         deployment.setSignatureAlgorithm(SignatureAlgorithm.RSA_SHA256);
+        deployment.setAssertionConsumerServiceUrl(sp.getAssertionConsumerServiceUrl());
         if (sp.getIdp().getSignatureAlgorithm() != null) {
             deployment.setSignatureAlgorithm(SignatureAlgorithm.valueOf(sp.getIdp().getSignatureAlgorithm()));
         }

@@ -90,6 +90,7 @@ public class SPXmlParser extends AbstractParser {
         sp.setForceAuthentication(getBooleanAttributeValue(startElement, ConfigXmlConstants.FORCE_AUTHENTICATION_ATTR));
         sp.setIsPassive(getBooleanAttributeValue(startElement, ConfigXmlConstants.IS_PASSIVE_ATTR));
         sp.setTurnOffChangeSessionIdOnLogin(getBooleanAttributeValue(startElement, ConfigXmlConstants.TURN_OFF_CHANGE_SESSSION_ID_ON_LOGIN_ATTR));
+        sp.setAssertionConsumerServiceUrl(getAttributeValue(startElement, ConfigXmlConstants.ASSERTION_CONSUMER_SERVICE_URL_ATTR));
         while (xmlEventReader.hasNext()) {
             XMLEvent xmlEvent = StaxParserUtil.peek(xmlEventReader);
             if (xmlEvent == null)
