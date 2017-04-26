@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
@@ -49,7 +50,7 @@ import org.keycloak.util.JsonSerialization;
  */
 public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPolicyRepresentation> {
 
-    private UserPolicyProvider provider = new UserPolicyProvider();
+    private UserPolicyProvider provider = new UserPolicyProvider((Function<Policy, UserPolicyRepresentation>) policy -> toRepresentation(policy, new UserPolicyRepresentation()));
 
     @Override
     public String getName() {
@@ -110,42 +111,40 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
     }
 
     private void updateUsers(Policy policy, AuthorizationProvider authorization, Set<String> users) {
-        try {
-            KeycloakSession session = authorization.getKeycloakSession();
-            RealmModel realm = authorization.getRealm();
-            UserProvider userProvider = session.users();
-            Set<String> updatedUsers = new HashSet<>();
+        KeycloakSession session = authorization.getKeycloakSession();
+        RealmModel realm = authorization.getRealm();
+        UserProvider userProvider = session.users();
+        Set<String> updatedUsers = new HashSet<>();
 
-            if (users != null) {
+        if (users != null) {
+            for (String userId : users) {
+                UserModel user = null;
+
                 try {
-                    for (String userId : users) {
-                        UserModel user = null;
-
-                        try {
-                            user = userProvider.getUserByUsername(userId, realm);
-                        } catch (Exception ignore) {
-                        }
-
-                        if (user == null) {
-                            user = userProvider.getUserById(userId, realm);
-                        }
-
-                        if (user == null) {
-                            throw new RuntimeException("Error while importing configuration. User [" + userId + "] could not be found.");
-                        }
-
-                        updatedUsers.add(user.getId());
-                    }
-                } catch (Exception e) {
-                    throw new RuntimeException("Error while updating policy [" + policy.getName() + "].", e);
+                    user = userProvider.getUserByUsername(userId, realm);
+                } catch (Exception ignore) {
                 }
-            }
 
+                if (user == null) {
+                    user = userProvider.getUserById(userId, realm);
+                }
+
+                if (user == null) {
+                    throw new RuntimeException("Error while updating policy [" + policy.getName()  + "]. User [" + userId + "] could not be found.");
+                }
+
+                updatedUsers.add(user.getId());
+            }
+        }
+
+        try {
             Map<String, String> config = policy.getConfig();
+
             config.put("users", JsonSerialization.writeValueAsString(updatedUsers));
+
             policy.setConfig(config);
         } catch (IOException cause) {
-            throw new RuntimeException("Failed to deserialize roles", cause);
+            throw new RuntimeException("Failed to serialize users", cause);
         }
     }
 

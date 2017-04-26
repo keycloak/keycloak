@@ -147,7 +147,7 @@ public abstract class AbstractPolicyManagementTest extends AbstractKeycloakTest 
         representation.setName(name);
         representation.addUser(userId);
 
-        client.authorization().policies().users().create(representation);
+        client.authorization().policies().user().create(representation);
     }
 
     protected ClientResource getClient() {
