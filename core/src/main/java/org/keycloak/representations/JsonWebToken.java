@@ -141,6 +141,7 @@ public class JsonWebToken implements Serializable {
     }
 
     public boolean hasAudience(String audience) {
+        if (this.audience == null) return false;
         for (String a : this.audience) {
             if (a.equals(audience)) {
                 return true;

@@ -21,6 +21,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.AuthorizationProviderFactory;
 import org.keycloak.authorization.Decision;
 import org.keycloak.authorization.common.DefaultEvaluationContext;
 import org.keycloak.authorization.common.UserModelIdentity;
@@ -79,9 +80,10 @@ public class FineGrainAdminLocalTest extends AbstractKeycloakTest {
     public static void setupDefaults(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName(TEST);
 
-        ClientModel client = realm.getClientByClientId("realm-management");
+        ClientModel client = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
 
-        AuthorizationProvider authz = session.getProvider(AuthorizationProvider.class);
+        AuthorizationProviderFactory factory = (AuthorizationProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(AuthorizationProvider.class);
+        AuthorizationProvider authz = factory.create(session, realm);
         ResourceServer resourceServer = authz.getStoreFactory().getResourceServerStore().create(client.getId());
         Scope mapRoleScope = authz.getStoreFactory().getScopeStore().create("map-role", resourceServer);
         Scope manageScope = authz.getStoreFactory().getScopeStore().create("manage", resourceServer);
@@ -103,6 +105,7 @@ public class FineGrainAdminLocalTest extends AbstractKeycloakTest {
 
             String name = "map.role.permission." + client.getClientId() + "." + role.getName();
             Policy permission = addScopePermission(authz, resourceServer, name, resource, mapRoleScope, policy);
+            addEmptyScopePermission(authz, resourceServer, "empty. " + name, resource, mapRoleScope);
 
         }
         Resource usersResource = authz.getStoreFactory().getResourceStore().create("Users", resourceServer, resourceServer.getClientId());
@@ -121,6 +124,18 @@ public class FineGrainAdminLocalTest extends AbstractKeycloakTest {
         representation.addResource(resource.getName());
         representation.addScope(scope.getName());
         representation.addPolicy(policy.getName());
+
+        return authz.getStoreFactory().getPolicyStore().create(representation, resourceServer);
+    }
+
+    private static Policy addEmptyScopePermission(AuthorizationProvider authz, ResourceServer resourceServer, String name, Resource resource, Scope scope) {
+        ScopePermissionRepresentation representation = new ScopePermissionRepresentation();
+
+        representation.setName(name);
+        representation.setDecisionStrategy(DecisionStrategy.UNANIMOUS);
+        representation.setLogic(Logic.POSITIVE);
+        representation.addResource(resource.getName());
+        representation.addScope(scope.getName());
 
         return authz.getStoreFactory().getPolicyStore().create(representation, resourceServer);
     }
@@ -179,7 +194,7 @@ public class FineGrainAdminLocalTest extends AbstractKeycloakTest {
 
     }
 
-    //@Test
+    @Test
     public void testUI() throws Exception {
         testingClient.server().run(FineGrainAdminLocalTest::setupDefaults);
         testingClient.server().run(FineGrainAdminLocalTest::setupUsers);
