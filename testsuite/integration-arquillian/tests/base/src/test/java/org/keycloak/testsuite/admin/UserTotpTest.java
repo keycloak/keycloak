@@ -28,7 +28,7 @@ import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.resources.AccountService;
+import org.keycloak.services.resources.account.DeprecatedAccountFormService;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.AccountTotpPage;
@@ -45,7 +45,7 @@ import java.util.List;
 public class UserTotpTest extends AbstractTestRealmKeycloakTest {
 
     private static final UriBuilder BASE = UriBuilder.fromUri("http://localhost:8180/auth");
-    public static String ACCOUNT_REDIRECT = AccountService.loginRedirectUrl(BASE.clone()).build("test").toString();
+    public static String ACCOUNT_REDIRECT = DeprecatedAccountFormService.loginRedirectUrl(BASE.clone()).build("test").toString();
 
     @Rule
     public AssertEvents events = new AssertEvents(this);

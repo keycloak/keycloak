@@ -38,6 +38,7 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeyManager;
+import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -136,6 +137,11 @@ public class AuthenticationManager {
         } catch (Exception e) {
         }
 
+    }
+
+    public static void backchannelLogout(KeycloakSession session, UserSessionModel userSession, boolean logoutBroker) {
+        KeycloakContext ctx = session.getContext();
+        backchannelLogout(session, ctx.getRealm(), userSession, ctx.getUri(), ctx.getConnection(), ctx.getRequestHeaders(), logoutBroker);
     }
 
     /**

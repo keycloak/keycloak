@@ -16,7 +16,7 @@
  */
 package org.keycloak.testsuite.pages;
 
-import org.keycloak.services.resources.AccountService;
+import org.keycloak.services.resources.account.DeprecatedAccountFormService;
 import org.keycloak.testsuite.Constants;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -70,6 +70,6 @@ public class AccountPasswordPage extends AbstractAccountPage {
     }
 
     public String getPath() {
-        return AccountService.passwordUrl(UriBuilder.fromUri(Constants.AUTH_SERVER_ROOT)).build(this.realmName).toString();
+        return DeprecatedAccountFormService.passwordUrl(UriBuilder.fromUri(Constants.AUTH_SERVER_ROOT)).build(this.realmName).toString();
     }
 }

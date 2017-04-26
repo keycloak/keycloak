@@ -16,7 +16,7 @@
  */
 package org.keycloak.testsuite.pages;
 
-import org.keycloak.services.resources.AccountService;
+import org.keycloak.services.resources.account.DeprecatedAccountFormService;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -40,7 +40,7 @@ public class AccountTotpPage extends AbstractAccountPage {
     private WebElement removeLink;
 
     private String getPath() {
-        return AccountService.totpUrl(UriBuilder.fromUri(getAuthServerRoot())).build("test").toString();
+        return DeprecatedAccountFormService.totpUrl(UriBuilder.fromUri(getAuthServerRoot())).build("test").toString();
     }
 
     public void configure(String totp) {

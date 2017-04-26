@@ -23,7 +23,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.services.resources.AccountService;
+import org.keycloak.services.resources.account.DeprecatedAccountFormService;
 import org.keycloak.services.Urls;
 
 import javax.ws.rs.core.UriBuilder;
@@ -80,7 +80,7 @@ public class AccountFederatedIdentityBean {
         this.identities = new LinkedList<FederatedIdentityEntry>(orderedSet); 
 
         // Removing last social provider is not possible if you don't have other possibility to authenticate
-        this.removeLinkPossible = availableIdentities > 1 || user.getFederationLink() != null || AccountService.isPasswordSet(session, realm, user);
+        this.removeLinkPossible = availableIdentities > 1 || user.getFederationLink() != null || DeprecatedAccountFormService.isPasswordSet(session, realm, user);
     }
 
     private FederatedIdentityModel getIdentity(Set<FederatedIdentityModel> identities, String providerId) {
