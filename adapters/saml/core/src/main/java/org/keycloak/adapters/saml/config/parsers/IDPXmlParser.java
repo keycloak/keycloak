@@ -118,6 +118,7 @@ public class IDPXmlParser extends AbstractParser {
         sso.setRequestBinding(getAttributeValue(element, ConfigXmlConstants.REQUEST_BINDING_ATTR));
         sso.setResponseBinding(getAttributeValue(element, ConfigXmlConstants.RESPONSE_BINDING_ATTR));
         sso.setBindingUrl(getAttributeValue(element, ConfigXmlConstants.BINDING_URL_ATTR));
+        sso.setAssertionConsumerServiceUrl(getAttributeValue(element, ConfigXmlConstants.ASSERTION_CONSUMER_SERVICE_URL_ATTR));
         return sso;
     }
 

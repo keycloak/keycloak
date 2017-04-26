@@ -455,6 +455,56 @@
             ]
         },
         {
+            "clientId": "http://localhost:8081/employee-acs/",
+            "enabled": true,
+            "protocol": "saml",
+            "fullScopeAllowed": true,
+            "baseUrl": "http://localhost:8080/employee-acs",
+            "redirectUris": [
+                "http://localhost:8080/employee-acs/*"
+            ],
+            "adminUrl": "http://localhost:8080/employee-acs",
+            "attributes": {
+                "saml.authnstatement": "true"
+            },
+            "protocolMappers": [
+                {
+                    "name": "email",
+                    "protocol": "saml",
+                    "protocolMapper": "saml-user-property-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "user.attribute": "email",
+                        "friendly.name": "email",
+                        "attribute.name": "urn:oid:1.2.840.113549.1.9.1",
+                        "attribute.nameformat": "URI Reference"
+                    }
+                },
+                {
+                    "name": "phone",
+                    "protocol": "saml",
+                    "protocolMapper": "saml-user-attribute-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "user.attribute": "phone",
+                        "attribute.name": "phone",
+                        "attribute.nameformat": "Basic"
+                    }
+                },
+                {
+                    "name": "role-list",
+                    "protocol": "saml",
+                    "protocolMapper": "saml-role-list-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "attribute.name": "Role",
+                        "attribute.nameformat": "Basic",
+                        "single": "false"
+                    }
+                }
+            ]
+        },
+        {
             "clientId": "http://localhost:8081/employee2/",
             "enabled": true,
             "protocol": "saml",
