@@ -19,6 +19,7 @@ package org.keycloak.services.resources;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MimeTypeUtil;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.KeycloakSession;
@@ -246,7 +247,7 @@ public class WelcomeResource {
         if (stateChecker != null) {
             return stateChecker;
         } else {
-            stateChecker = KeycloakModelUtils.generateSecret();
+            stateChecker = Base64Url.encode(KeycloakModelUtils.generateSecret());
             String cookiePath = uriInfo.getPath();
             boolean secureOnly = uriInfo.getRequestUri().getScheme().equalsIgnoreCase("https");
             CookieHelper.addCookie(KEYCLOAK_STATE_CHECKER, stateChecker, cookiePath, null, null, -1, secureOnly, true);
