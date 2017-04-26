@@ -296,7 +296,7 @@ public class AdminConsole {
             authUrl = authUrl.substring(0, authUrl.length() - 1);
 
             map.put("authUrl", authUrl);
-            map.put("consoleBaseUrl", Urls.adminConsoleRoot(baseUri, realm.getId()));
+            map.put("consoleBaseUrl", Urls.adminConsoleRoot(baseUri, realm.getName()));
             map.put("resourceUrl", Urls.themeRoot(baseUri) + "/admin/" + theme.getName());
             map.put("masterRealm", Config.getAdminRealm());
             map.put("resourceVersion", Version.RESOURCES_VERSION);
