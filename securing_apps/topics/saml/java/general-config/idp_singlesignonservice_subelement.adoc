@@ -34,6 +34,13 @@ responseBinding::
   The values of this can be `POST` or `REDIRECT`.  This setting is _OPTIONAL_.
   The default is that the client will not request a specific binding type for responses. 
 
+assertionConsumerServiceUrl::
+  URL of the assertion consumer service (ACS) where the IDP login service should send responses to.
+  This setting is _OPTIONAL_. By default it is unset, relying on the configuration in the IdP.
+  When set, it must end in `/saml`, e.g. `http://sp.domain.com/my/endpoint/for/saml`. The value
+  of this property is sent in `AssertionConsumerServiceURL` attribute of SAML `AuthnRequest` message.
+  This property is typically  accompanied by the `responseBinding` attribute.
+
 bindingUrl::
   This is the URL for the IDP login service that the client will send requests to. This setting is _REQUIRED_.
 
