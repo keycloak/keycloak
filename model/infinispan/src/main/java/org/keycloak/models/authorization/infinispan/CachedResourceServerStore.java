@@ -18,8 +18,12 @@
 
 package org.keycloak.models.authorization.infinispan;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -39,11 +43,15 @@ import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 public class CachedResourceServerStore implements ResourceServerStore {
 
     private static final String RS_ID_CACHE_PREFIX = "rs-id-";
+
     private static final String RS_CLIENT_ID_CACHE_PREFIX = "rs-client-id-";
 
     private final CacheTransaction transaction;
+
     private StoreFactory storeFactory;
+
     private ResourceServerStore delegate;
+
     private final Cache<String, Map<String, List<CachedResourceServer>>> cache;
 
     public CachedResourceServerStore(KeycloakSession session, CacheTransaction transaction, StoreFactory delegate) {
@@ -57,7 +65,8 @@ public class CachedResourceServerStore implements ResourceServerStore {
     public ResourceServer create(String clientId) {
         ResourceServer resourceServer = getDelegate().create(clientId);
 
-        this.transaction.whenRollback(() -> resolveResourceServerCache(resourceServer.getId()).remove(getCacheKeyForResourceServer(resourceServer.getId())));
+        this.transaction.whenRollback(
+                () -> resolveResourceServerCache(resourceServer.getId()).remove(getCacheKeyForResourceServer(resourceServer.getId())));
 
         return createAdapter(new CachedResourceServer(resourceServer));
     }
@@ -101,10 +110,17 @@ public class CachedResourceServerStore implements ResourceServerStore {
             ResourceServer resourceServer = getDelegate().findByClient(id);
 
             if (resourceServer != null) {
-                resolveResourceServerCache(cacheKeyForResourceServer).put(cacheKeyForResourceServer, Arrays.asList(new CachedResourceServer(resourceServer)));
+                resolveResourceServerCache(cacheKeyForResourceServer)
+                        .put(cacheKeyForResourceServer, Arrays.asList(new CachedResourceServer(resourceServer)));
                 return findById(resourceServer.getId());
             }
+            //Keep empty list to prevent performance issue
+            else {
+                resolveResourceServerCache(cacheKeyForResourceServer).put(cacheKeyForResourceServer, Collections.emptyList());
+            }
 
+            return null;
+        } else if (cached.isEmpty()) {
             return null;
         }
 
@@ -130,6 +146,7 @@ public class CachedResourceServerStore implements ResourceServerStore {
     private StoreFactory getStoreFactory() {
         return this.storeFactory;
     }
+
     private ResourceServer createAdapter(ResourceServer cached) {
         return new ResourceServer() {
 
@@ -170,7 +187,9 @@ public class CachedResourceServerStore implements ResourceServerStore {
             private ResourceServer getDelegateForUpdate() {
                 if (this.updated == null) {
                     this.updated = getDelegate().findById(getId());
-                    if (this.updated == null) throw new IllegalStateException("Not found in database");
+                    if (this.updated == null) {
+                        throw new IllegalStateException("Not found in database");
+                    }
                     transaction.whenCommit(() -> {
                         cache.remove(getId());
                         cache.remove(getClientId());
@@ -184,5 +203,48 @@ public class CachedResourceServerStore implements ResourceServerStore {
 
     private Map<String, List<CachedResourceServer>> resolveResourceServerCache(String id) {
         return cache.computeIfAbsent(id, key -> new HashMap<>());
+    }
+
+    @Override
+    public List<ResourceServer> findByClients(List<String> ids) {
+        String cacheKeyForResourceServer;
+        List<CachedResourceServer> cached;
+        List<ResourceServer> results = new ArrayList<>(ids.size());
+        Iterator<String> idsIterator = ids.iterator();
+        String id;
+        Collection<ResourceServer> resources;
+
+        while (idsIterator.hasNext()) {
+            id = idsIterator.next();
+            cacheKeyForResourceServer = getCacheKeyForResourceServerClientId(id);
+            cached = resolveResourceServerCache(id).get(cacheKeyForResourceServer);
+
+            if (cached != null) {
+                if (!cached.isEmpty()) {
+                    results.add(cached.get(0));
+                }
+                idsIterator.remove();
+            }
+        }
+
+        if (!ids.isEmpty()) {
+            resources = getDelegate().findByClients(ids);
+
+            for (ResourceServer resourceServer : resources) {
+                cacheKeyForResourceServer = getCacheKeyForResourceServerClientId(resourceServer.getClientId());
+                resolveResourceServerCache(resourceServer.getClientId())
+                        .put(cacheKeyForResourceServer, Arrays.asList(new CachedResourceServer(resourceServer)));
+                results.add(findById(resourceServer.getId()));
+                ids.remove(resourceServer.getId());
+            }
+
+            //Create empty list in cache for missing resource
+            for (String emptyId : ids) {
+                cacheKeyForResourceServer = getCacheKeyForResourceServerClientId(emptyId);
+                resolveResourceServerCache(emptyId).put(cacheKeyForResourceServer, Collections.emptyList());
+            }
+        }
+
+        return results;
     }
 }
