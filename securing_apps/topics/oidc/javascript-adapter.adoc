@@ -73,7 +73,7 @@ After the user is authenticated the application can make requests to RESTful ser
 [source,javascript]
 ----
 var loadData = function () {
-    document.getElementById('username').innerText = keycloak.username;
+    document.getElementById('username').innerText = keycloak.subject;
 
     var url = 'http://localhost:8080/restful-service';
 
