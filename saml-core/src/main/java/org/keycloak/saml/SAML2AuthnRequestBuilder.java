@@ -68,6 +68,11 @@ public class SAML2AuthnRequestBuilder implements SamlProtocolExtensionsAwareBuil
         return this;
     }
 
+    public SAML2AuthnRequestBuilder assertionConsumerUrl(URI assertionConsumerUrl) {
+        this.authnRequestType.setAssertionConsumerServiceURL(assertionConsumerUrl);
+        return this;
+    }
+
     public SAML2AuthnRequestBuilder forceAuthn(boolean forceAuthn) {
         this.authnRequestType.setForceAuthn(forceAuthn);
         return this;
