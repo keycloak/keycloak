@@ -18,6 +18,7 @@
 package org.keycloak.services.managers;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
@@ -227,7 +228,7 @@ public class ClientSessionCode {
 
     private static String generateCode(ClientSessionModel clientSession) {
         try {
-            String actionId = KeycloakModelUtils.generateSecret();
+            String actionId = Base64Url.encode(KeycloakModelUtils.generateSecret());
 
             StringBuilder sb = new StringBuilder();
             sb.append(actionId);
