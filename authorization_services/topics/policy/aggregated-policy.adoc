@@ -3,7 +3,7 @@
 
 As mentioned previously, {{book.project.name}} allows you to build a policy of policies, a concept referred to as policy aggregation. You can use policy aggregation to reuse existing policies to build more complex ones and keep your permissions even more decoupled from the policies that are evaluated during the processing of authorization requests.
 
-To create a new aggregated policy, select *Aggregated* in the dropdown list located in the right upper corner of the permission listing.
+To create a new aggregated policy, select *Aggregated* in the dropdown list located in the right upper corner of the policy listing.
 
 .Add an Aggregated Policy
 image:../../{{book.images}}/policy/create-aggregated.png[alt="Add Aggregated Policy"]

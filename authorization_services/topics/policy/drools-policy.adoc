@@ -4,7 +4,7 @@
 With this type of policy you can define conditions for your permissions using http://www.drools.org[Drools], which is a rule evaluation environment. It is one of the _Rule-Based_ policy types
 supported by {{book.project.name}}, and provides flexibility to write any policy based on the <<fake/../evaluation-api.adoc#_policy_evaluation_api, Evaluation API>>.
 
-To create a new Rule-based policy, in the dropdown list in the right upper corner of the permission listing,
+To create a new Rule-based policy, in the dropdown list in the right upper corner of the policy listing,
  select *Rule*.
 
 .Add Rule Policy

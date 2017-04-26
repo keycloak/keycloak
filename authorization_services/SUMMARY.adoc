@@ -51,6 +51,8 @@
 
    ... link:authorization_services/topics/policy/aggregated-policy.adoc[Aggregated Policy]
 
+   ... link:authorization_services/topics/policy/client-policy.adoc[Client Policy]
+
    ... link:authorization_services/topics/policy/logic.adoc[Positive and Negative Logic]
 
    ... link:authorization_services/topics/policy/evaluation-api.adoc[Policy Evaluation API]

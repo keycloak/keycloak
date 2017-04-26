@@ -58,3 +58,14 @@ Although both examples address the same requirements, they do so in different wa
 Now, suppose your security requirements have changed and in addition to project managers, PMOs can also create new projects.
 
 Security requirements change, but with {{book.project.name}} there is no need to change your application code to address the new requirements. Once your application is based on the resource and scope identifier, you need only change the configuration of the permissions or policies associated with a particular resource in the authorization server. In this case, the permissions and policies associated with the `Project Resource` and/or the scope `urn:project.com:project:create` would be changed.
+
+==== Using the AuthorizationContext to obtain an Authorization Client Instance
+
+The ```AuthorizationContext``` can also be used to obtain a reference to the <<fake/../../service/client-api.adoc#_service_client_api, Authorization Client API>> configured to your application:
+
+```java
+    ClientAuthorizationContext clientContext = ClientAuthorizationContext.class.cast(authzContext);
+    AuthzClient authzClient = clientContext.getClient();
+```
+
+In some cases, resource servers protected by the policy enforcer need to access the APIs provided by the authorization server. With an ```AuthzClient``` instance in hands, resource servers can interact with the server in order to create resources or check for specific permissions programmatically.
