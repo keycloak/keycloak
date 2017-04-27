@@ -22,7 +22,7 @@
     <parent>
         <artifactId>keycloak-examples-saml-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.1.0.CR1-SNAPSHOT</version>
+        <version>3.1.0.CR1</version>
     </parent>
 
     <artifactId>saml-servlet-filter</artifactId>
