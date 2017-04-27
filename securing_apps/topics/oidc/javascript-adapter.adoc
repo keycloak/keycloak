@@ -334,7 +334,7 @@ Returns true if the token has less than minValidity seconds left before it expir
 
 ====== updateToken(minValidity)
 
-If the token expires within minValidity seconds (minValidity is optional, if not specified 0 is used) the token is refreshed.
+If the token expires within minValidity seconds (minValidity is optional, if not specified 5 is used) the token is refreshed.
 If the session status iframe is enabled, the session status is also checked. 
 
 Returns promise to set functions that can be invoked if the token is still valid, or if the token is no longer valid.
