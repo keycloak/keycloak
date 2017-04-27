@@ -52,6 +52,7 @@
                                     <include>org.keycloak:keycloak-jetty-adapter-spi</include>
                                 </includes>
                             </artifactSet>
+                            <createSourcesJar>true</createSourcesJar>
                         </configuration>
                     </execution>
                 </executions>
