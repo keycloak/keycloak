@@ -6,7 +6,6 @@
         <artifactId>keycloak-misc-parent</artifactId>
         <groupId>org.keycloak</groupId>
         <version>3.1.0.CR1-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
     </parent>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-spring-boot-starter-parent</artifactId>
