@@ -13,7 +13,7 @@
     <description>Support for using Keycloak in Spring Boot applications.</description>
     <packaging>pom</packaging>
     <modules>
-        <module>keycloak-default-spring-boot-starter</module>
+        <module>keycloak-spring-boot-starter</module>
     </modules>
     <dependencyManagement>
       <dependencies>

@@ -53,7 +53,7 @@
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-wildfly-adapter-dist</artifactId>
                 <version>3.2.0.CR1-SNAPSHOT</version>
-            </dependency>    
+            </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-saml-adapter-core</artifactId>
@@ -121,7 +121,7 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-default-spring-boot-starter</artifactId>
+                <artifactId>keycloak-spring-boot-starter</artifactId>
                 <version>3.2.0.CR1-SNAPSHOT</version>
             </dependency>
         </dependencies>

@@ -6,7 +6,7 @@
         <artifactId>keycloak-spring-boot-starter-parent</artifactId>
         <version>3.2.0.CR1-SNAPSHOT</version>
     </parent>
-    <artifactId>keycloak-default-spring-boot-starter</artifactId>
+    <artifactId>keycloak-spring-boot-starter</artifactId>
     <name>Keycloak :: Spring :: Boot :: Default ::  Starter</name>
     <description>Spring Boot Default Starter for Keycloak</description>
 
@@ -15,6 +15,11 @@
           <groupId>org.keycloak</groupId>
           <artifactId>keycloak-spring-boot-adapter</artifactId>
       </dependency>
+      <dependency>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter</artifactId>
+          <version>1.5.2.RELEASE</version>
+      </dependency>    
       <dependency>
           <groupId>org.keycloak</groupId>
           <artifactId>spring-boot-container-bundle</artifactId>
