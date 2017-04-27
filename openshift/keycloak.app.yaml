@@ -13,6 +13,10 @@ objects:
   spec:
     strategy:
       type: Rolling
+      resources:
+        limits:
+          cpu: 4000m
+          memory: 4Gi
     triggers:
     - type: ConfigChange
     test: false
@@ -117,6 +121,17 @@ objects:
             value: 'name=keycloak-server'
           - name: OPENSHIFT_KUBE_PING_SERVER_PORT
             value: '47600'
+          - name: JAVA_OPTS
+            value: >-
+              -server -Xms256m -Xmx4096m -XX:MetaspaceSize=96M
+              -XX:+UseParallelGC
+              -XX:MinHeapFreeRatio=20
+              -XX:MaxHeapFreeRatio=40
+              -XX:GCTimeRatio=4
+              -XX:AdaptiveSizePolicyWeight=90
+              -XX:MaxMetaspaceSize=512m -Djava.net.preferIPv4Stack=true
+              -Djboss.modules.system.pkgs=org.jboss.byteman
+              -Djava.awt.headless=true
         restartPolicy: Always
         securityContext: {}
         terminationGracePeriodSeconds: 30
