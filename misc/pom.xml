@@ -4,7 +4,6 @@
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
         <version>3.1.0.CR1-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
     </parent>
     <name>Keycloak Misc</name>
     <description/>
