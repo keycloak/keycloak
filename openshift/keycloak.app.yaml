@@ -13,6 +13,10 @@ objects:
   spec:
     strategy:
       type: Rolling
+      resources:
+        limits:
+          cpu: 4000m
+          memory: 4Gi
     triggers:
     - type: ConfigChange
     test: false
