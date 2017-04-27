@@ -41,6 +41,7 @@
         <module>servlet-filter</module>
         <module>servlet-oauth-client</module>
         <module>spring-boot</module>
+        <module>spring-boot-container-bundle</module>
         <module>spring-security</module>
         <module>tomcat</module>
         <module>undertow</module>
