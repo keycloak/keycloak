@@ -34,6 +34,11 @@ public class KeycloakSpringBootProperties extends AdapterConfig {
     @JsonIgnore
     private Map config = new HashMap();
 
+    /**
+     * Allow enabling of Keycloak Spring Boot adapter by configuration.
+     */
+    private boolean enabled = true;
+
     public Map getConfig() {
         return config;
     }
@@ -42,6 +47,14 @@ public class KeycloakSpringBootProperties extends AdapterConfig {
      * To provide Java EE security constraints
      */
     private List<SecurityConstraint> securityConstraints = new ArrayList<SecurityConstraint>();
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
 
     /**
      * This matches security-constraint of the servlet spec

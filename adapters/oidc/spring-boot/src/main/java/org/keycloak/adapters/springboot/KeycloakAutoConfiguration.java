@@ -33,6 +33,7 @@ import org.keycloak.adapters.tomcat.KeycloakAuthenticatorValve;
 import org.keycloak.adapters.undertow.KeycloakServletExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.embedded.ConfigurableEmbeddedServletContainer;
 import org.springframework.boot.context.embedded.EmbeddedServletContainerCustomizer;
@@ -60,6 +61,7 @@ import java.util.Set;
 @Configuration
 @ConditionalOnWebApplication
 @EnableConfigurationProperties(KeycloakSpringBootProperties.class)
+@ConditionalOnProperty(value = "keycloak.enabled", matchIfMissing = true)
 public class KeycloakAutoConfiguration {
 
     private KeycloakSpringBootProperties keycloakProperties;
