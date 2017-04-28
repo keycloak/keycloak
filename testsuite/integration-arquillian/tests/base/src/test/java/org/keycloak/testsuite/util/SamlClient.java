@@ -58,11 +58,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
+import org.apache.http.protocol.HttpContext;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.admin.Users.getPasswordOf;
 import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getAuthServerContextRoot;
-import static org.keycloak.testsuite.util.IOUtil.documentToString;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
 
 /**
@@ -221,9 +221,11 @@ public class SamlClient {
     public static SAMLDocumentHolder extractSamlResponseFromForm(String responsePage) {
         org.jsoup.nodes.Document theResponsePage = Jsoup.parse(responsePage);
         Elements samlResponses = theResponsePage.select("input[name=SAMLResponse]");
-        assertThat("Checking uniqueness of SAMLResponse input field in the page", samlResponses, hasSize(1));
+        Elements samlRequests = theResponsePage.select("input[name=SAMLRequest]");
+        int size = samlResponses.size() + samlRequests.size();
+        assertThat("Checking uniqueness of SAMLResponse/SAMLRequest input field in the page", size, is(1));
 
-        Element respElement = samlResponses.first();
+        Element respElement = samlResponses.isEmpty() ? samlRequests.first() : samlResponses.first();
 
         return SAMLRequestParser.parseResponsePostBinding(respElement.val());
     }
@@ -237,15 +239,15 @@ public class SamlClient {
     public static SAMLDocumentHolder extractSamlResponseFromRedirect(String responseUri) {
         List<NameValuePair> params = URLEncodedUtils.parse(URI.create(responseUri), "UTF-8");
 
-        String samlResponse = null;
+        String samlDoc = null;
         for (NameValuePair param : params) {
-            if ("SAMLResponse".equals(param.getName())) {
-                assertThat(samlResponse, nullValue());
-                samlResponse = param.getValue();
+            if ("SAMLResponse".equals(param.getName()) || "SAMLRequest".equals(param.getName())) {
+                assertThat("Only one SAMLRequest/SAMLResponse check", samlDoc, nullValue());
+                samlDoc = param.getValue();
             }
         }
 
-        return SAMLRequestParser.parseResponseRedirectBinding(samlResponse);
+        return SAMLRequestParser.parseResponseRedirectBinding(samlDoc);
     }
 
     /**
@@ -386,23 +388,14 @@ public class SamlClient {
      */
     public static SAMLDocumentHolder login(UserRepresentation user, URI samlEndpoint,
                                            Document samlRequest, String relayState, Binding requestBinding, Binding expectedResponseBinding) {
-        return login(user, samlEndpoint, samlRequest, relayState, requestBinding, expectedResponseBinding, false, true);
+        return new SamlClient(samlEndpoint).login(user, samlRequest, relayState, requestBinding, expectedResponseBinding, false, true);
     }
 
-    /**
-     * Send request for login form and then login using user param. This method is designed for clients which requires consent
-     *
-     * @param user
-     * @param samlEndpoint
-     * @param samlRequest
-     * @param relayState
-     * @param requestBinding
-     * @param expectedResponseBinding
-     * @return
-     */
-    public static SAMLDocumentHolder loginWithRequiredConsent(UserRepresentation user, URI samlEndpoint,
-                                                              Document samlRequest, String relayState, Binding requestBinding, Binding expectedResponseBinding, boolean consent) {
-        return login(user, samlEndpoint, samlRequest, relayState, requestBinding, expectedResponseBinding, true, consent);
+    private final HttpClientContext context = HttpClientContext.create();
+    private final URI samlEndpoint;
+
+    public SamlClient(URI samlEndpoint) {
+        this.samlEndpoint = samlEndpoint;
     }
 
     /**
@@ -418,15 +411,11 @@ public class SamlClient {
      * @param consent
      * @return
      */
-    public static SAMLDocumentHolder login(UserRepresentation user, URI samlEndpoint,
-                                           Document samlRequest, String relayState, Binding requestBinding, Binding expectedResponseBinding, boolean consentRequired, boolean consent) {
-        CloseableHttpResponse response = null;
-        SamlClient.RedirectStrategyWithSwitchableFollowRedirect strategy = new SamlClient.RedirectStrategyWithSwitchableFollowRedirect();
-        try (CloseableHttpClient client = HttpClientBuilder.create().setRedirectStrategy(strategy).build()) {
-            HttpClientContext context = HttpClientContext.create();
-
+    public SAMLDocumentHolder login(UserRepresentation user,
+                                    Document samlRequest, String relayState, Binding requestBinding, Binding expectedResponseBinding, boolean consentRequired, boolean consent) {
+        return getSamlResponse(expectedResponseBinding, (client, context, strategy) -> {
             HttpUriRequest post = requestBinding.createSamlUnsignedRequest(samlEndpoint, relayState, samlRequest);
-            response = client.execute(post, context);
+            CloseableHttpResponse response = client.execute(post, context);
 
             assertThat(response, statusCodeIsHC(Response.Status.OK));
             String loginPageText = EntityUtils.toString(response.getEntity(), "UTF-8");
@@ -444,8 +433,90 @@ public class SamlClient {
             }
 
             strategy.setRedirectable(false);
-            response = client.execute(loginRequest, context);
-            
+            return client.execute(loginRequest, context);
+        });
+    }
+
+    /**
+     * Send request for login form once already logged in, hence login using SSO.
+     * Check whether client requires consent and handle consent page.
+     *
+     * @param user
+     * @param samlEndpoint
+     * @param samlRequest
+     * @param relayState
+     * @param requestBinding
+     * @param expectedResponseBinding
+     * @return
+     */
+    public SAMLDocumentHolder subsequentLoginViaSSO(Document samlRequest, String relayState, Binding requestBinding, Binding expectedResponseBinding) {
+        return getSamlResponse(expectedResponseBinding, (client, context, strategy) -> {
+            strategy.setRedirectable(false);
+
+            HttpUriRequest post = requestBinding.createSamlUnsignedRequest(samlEndpoint, relayState, samlRequest);
+            CloseableHttpResponse response = client.execute(post, context);
+            assertThat(response, statusCodeIsHC(Response.Status.FOUND));
+            String location = response.getFirstHeader("Location").getValue();
+
+            response = client.execute(new HttpGet(location), context);
+            assertThat(response, statusCodeIsHC(Response.Status.OK));
+            return response;
+        });
+    }
+
+    /**
+     * Send request for login form once already logged in, hence login using SSO.
+     * Check whether client requires consent and handle consent page.
+     *
+     * @param user
+     * @param samlEndpoint
+     * @param samlRequest
+     * @param relayState
+     * @param requestBinding
+     * @param expectedResponseBinding
+     * @return
+     */
+    public SAMLDocumentHolder logout(Document samlRequest, String relayState, Binding requestBinding, Binding expectedResponseBinding) {
+        return getSamlResponse(expectedResponseBinding, (client, context, strategy) -> {
+            strategy.setRedirectable(false);
+
+            HttpUriRequest post = requestBinding.createSamlUnsignedRequest(samlEndpoint, relayState, samlRequest);
+            CloseableHttpResponse response = client.execute(post, context);
+            assertThat(response, statusCodeIsHC(Response.Status.OK));
+            return response;
+        });
+    }
+
+    @FunctionalInterface
+    public interface HttpClientProcessor {
+        public CloseableHttpResponse process(CloseableHttpClient client, HttpContext context, RedirectStrategyWithSwitchableFollowRedirect strategy) throws Exception;
+    }
+
+    public void execute(HttpClientProcessor body) {
+        CloseableHttpResponse response = null;
+        RedirectStrategyWithSwitchableFollowRedirect strategy = new RedirectStrategyWithSwitchableFollowRedirect();
+
+        try (CloseableHttpClient client = HttpClientBuilder.create().setRedirectStrategy(strategy).build()) {
+            response = body.process(client, context, strategy);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        } finally {
+            if (response != null) {
+                EntityUtils.consumeQuietly(response.getEntity());
+                try {
+                    response.close();
+                } catch (IOException ex) {
+                }
+            }
+        }
+    }
+
+    public SAMLDocumentHolder getSamlResponse(Binding expectedResponseBinding, HttpClientProcessor body) {
+        CloseableHttpResponse response = null;
+        RedirectStrategyWithSwitchableFollowRedirect strategy = new RedirectStrategyWithSwitchableFollowRedirect();
+        try (CloseableHttpClient client = HttpClientBuilder.create().setRedirectStrategy(strategy).build()) {
+            response = body.process(client, context, strategy);
+
             return expectedResponseBinding.extractResponse(response);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
@@ -469,7 +540,7 @@ public class SamlClient {
      * @return
      */
     public static SAMLDocumentHolder idpInitiatedLogin(UserRepresentation user, URI idpInitiatedURI, Binding expectedResponseBinding) {
-        return idpInitiatedLogin(user, idpInitiatedURI, expectedResponseBinding, false, true);
+        return new SamlClient(idpInitiatedURI).idpInitiatedLogin(user, expectedResponseBinding, false, true);
     }
 
     /**
@@ -482,28 +553,23 @@ public class SamlClient {
      * @return
      */
     public static SAMLDocumentHolder idpInitiatedLoginWithRequiredConsent(UserRepresentation user, URI idpInitiatedURI, Binding expectedResponseBinding, boolean consent) {
-        return idpInitiatedLogin(user, idpInitiatedURI, expectedResponseBinding, true, consent);
+        return new SamlClient(idpInitiatedURI).idpInitiatedLogin(user, expectedResponseBinding, true, consent);
     }
 
     /**
      * Send request for login form and then login using user param. Checks whether client requires consent and handle consent page.
      *
      * @param user
-     * @param idpInitiatedURI
+     * @param samlEndpoint
      * @param expectedResponseBinding
      * @param consent
      * @return
      */
-    public static SAMLDocumentHolder idpInitiatedLogin(UserRepresentation user, URI idpInitiatedURI, Binding expectedResponseBinding, boolean consentRequired, boolean consent) {
-        CloseableHttpResponse response = null;
-        SamlClient.RedirectStrategyWithSwitchableFollowRedirect strategy = new SamlClient.RedirectStrategyWithSwitchableFollowRedirect();
-        try (CloseableHttpClient client = HttpClientBuilder.create().setRedirectStrategy(strategy).build()) {
-
-            HttpGet get = new HttpGet(idpInitiatedURI);
-            response = client.execute(get);
+    public SAMLDocumentHolder idpInitiatedLogin(UserRepresentation user, Binding expectedResponseBinding, boolean consentRequired, boolean consent) {
+        return getSamlResponse(expectedResponseBinding, (client, context, strategy) -> {
+            HttpGet get = new HttpGet(samlEndpoint);
+            CloseableHttpResponse response = client.execute(get);
             assertThat(response, statusCodeIsHC(Response.Status.OK));
-
-            HttpClientContext context = HttpClientContext.create();
 
             String loginPageText = EntityUtils.toString(response.getEntity(), "UTF-8");
             response.close();
@@ -520,20 +586,8 @@ public class SamlClient {
             }
 
             strategy.setRedirectable(false);
-            response = client.execute(loginRequest, context);
-
-            return expectedResponseBinding.extractResponse(response);
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        } finally {
-            if (response != null) {
-                EntityUtils.consumeQuietly(response.getEntity());
-                try {
-                    response.close();
-                } catch (IOException ex) {
-                }
-            }
-        }
+            return client.execute(loginRequest, context);
+        });
     }
 
 
