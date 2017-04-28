@@ -1541,7 +1541,7 @@
                 <product.name-html>\u003Cstrong\u003ERed Hat\u003C\u002Fstrong\u003E\u003Csup\u003E\u00AE\u003C\u002Fsup\u003E Single Sign On</product.name-html>
                 <product.version>${project.version}</product.version>
                 <product.default-profile>product</product.default-profile>
-                <product.filename.version>7.1</product.filename.version>
+                <product.filename.version>7.2</product.filename.version>
             </properties>
         </profile>
 
