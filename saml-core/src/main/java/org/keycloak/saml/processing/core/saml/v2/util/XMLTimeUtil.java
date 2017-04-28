@@ -130,7 +130,7 @@ public class XMLTimeUtil {
      * @return
      */
     public static long inMilis(int valueInMins) {
-        return valueInMins * 60 * 1000;
+        return (long) valueInMins * 60 * 1000;
     }
 
     /**
