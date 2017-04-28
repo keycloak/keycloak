@@ -54,6 +54,8 @@ keycloak.credentials.secret = 11111111-1111-1111-1111-111111111111
 keycloak.use-resource-role-mappings = true
 ----
 
+You can disable the Keycloak Spring Boot Adapter (for example in tests) by setting `keycloak.enabled = false`.
+
 To configure a Policy Enforcer, unlike keycloak.json, `policy-enforcer-config` must be used instead of just `policy-enforcer`.
 
 You also need to specify the Java EE security config that would normally go in the `web.xml`.
