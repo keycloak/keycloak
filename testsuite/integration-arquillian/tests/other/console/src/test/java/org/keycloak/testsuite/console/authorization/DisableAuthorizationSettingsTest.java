@@ -17,6 +17,8 @@
 package org.keycloak.testsuite.console.authorization;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 import org.junit.Test;
 
@@ -25,10 +27,13 @@ import org.junit.Test;
  */
 public class DisableAuthorizationSettingsTest extends AbstractAuthorizationSettingsTest {
 
+    public static final String WARNING_MESSAGE = "Are you sure you want to disable authorization ? Once you save your changes, all authorization settings associated with this client will be removed. This operation can not be reverted.";
+
     @Test
     public void testDisableAuthorization() throws InterruptedException {
         clientSettingsPage.navigateTo();
         clientSettingsPage.form().setAuthorizationSettingsEnabled(false);
+        waitUntilElement(modalDialog.getMessage()).text().contains(WARNING_MESSAGE);
         clientSettingsPage.form().confirmDisableAuthorizationSettings();
         Thread.sleep(1000);
         clientSettingsPage.form().save();
@@ -36,5 +41,15 @@ public class DisableAuthorizationSettingsTest extends AbstractAuthorizationSetti
 
         clientSettingsPage.navigateTo();
         assertFalse(clientSettingsPage.form().isAuthorizationSettingsEnabled());
+    }
+
+    @Test
+    public void testCancelDisablingAuthorization() throws InterruptedException {
+        clientSettingsPage.navigateTo();
+        clientSettingsPage.form().setAuthorizationSettingsEnabled(false);
+        waitUntilElement(modalDialog.getMessage()).text().contains(WARNING_MESSAGE);
+        modalDialog.cancel();
+        Thread.sleep(1000);
+        assertTrue(clientSettingsPage.form().isAuthorizationSettingsEnabled());
     }
 }
