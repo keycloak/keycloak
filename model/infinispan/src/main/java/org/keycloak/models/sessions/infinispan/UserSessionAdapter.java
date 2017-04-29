@@ -124,6 +124,12 @@ public class UserSessionAdapter implements UserSessionModel {
         if (entity.getNotes() == null) {
             entity.setNotes(new ConcurrentHashMap<>());
         }
+        if (value == null) {
+            if (entity.getNotes().containsKey(name)) {
+                removeNote(name);
+            }
+            return;
+        }
         entity.getNotes().put(name, value);
         update();
     }
