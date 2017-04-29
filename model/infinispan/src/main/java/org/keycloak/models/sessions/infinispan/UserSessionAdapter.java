@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -121,7 +122,7 @@ public class UserSessionAdapter implements UserSessionModel {
     @Override
     public void setNote(String name, String value) {
         if (entity.getNotes() == null) {
-            entity.setNotes(new HashMap<String, String>());
+            entity.setNotes(new ConcurrentHashMap<>());
         }
         entity.getNotes().put(name, value);
         update();

@@ -478,9 +478,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     void attachSession(UserSessionAdapter userSession, ClientSessionModel clientSession) {
         UserSessionEntity entity = userSession.getEntity();
         String clientSessionId = clientSession.getId();
-        if (entity.getClientSessions() == null) {
-            entity.setClientSessions(new HashSet<String>());
-        }
         if (!entity.getClientSessions().contains(clientSessionId)) {
             entity.getClientSessions().add(clientSessionId);
             userSession.update();
@@ -513,9 +510,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         String clientSessionId = clientSession.getId();
         if (entity.getClientSessions() != null && entity.getClientSessions().contains(clientSessionId)) {
             entity.getClientSessions().remove(clientSessionId);
-            if (entity.getClientSessions().isEmpty()) {
-                entity.setClientSessions(null);
-            }
             userSession.update();
         }
     }
