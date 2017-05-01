@@ -552,6 +552,22 @@ public class AuthenticationProcessor {
         }
     }
 
+    protected void logSuccess() {
+        if (realm.isBruteForceProtected()) {
+            String username = clientSession.getNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME);
+            // TODO: as above, need to handle non form success
+
+            if(username == null) {
+                return;
+            }
+
+            UserModel user = KeycloakModelUtils.findUserByNameOrEmail(session, realm, username);
+            if (user != null) {
+                getBruteForceProtector().successfulLogin(realm, user, connection);
+            }
+        }
+    }
+
     public boolean isSuccessful(AuthenticationExecutionModel model) {
         ClientSessionModel.ExecutionStatus status = clientSession.getExecutionStatus().get(model.getId());
         if (status == null) return false;
@@ -853,7 +869,7 @@ public class AuthenticationProcessor {
     public void validateUser(UserModel authenticatedUser) {
         if (authenticatedUser == null) return;
         if (!authenticatedUser.isEnabled()) throw new AuthenticationFlowException(AuthenticationFlowError.USER_DISABLED);
-        if (realm.isBruteForceProtected()) {
+        if (realm.isBruteForceProtected() && !realm.isPermanentLockout()) {
             if (getBruteForceProtector().isTemporarilyDisabled(session, realm, authenticatedUser)) {
                 throw new AuthenticationFlowException(AuthenticationFlowError.USER_TEMPORARILY_DISABLED);
             }
@@ -866,6 +882,8 @@ public class AuthenticationProcessor {
             return redirectToRequiredActions(session, realm, clientSession, uriInfo);
         } else {
             event.detail(Details.CODE_ID, clientSession.getId());  // todo This should be set elsewhere.  find out why tests fail.  Don't know where this is supposed to be set
+            // the user has successfully logged in and we can clear his/her previous login failure attempts.
+            logSuccess();
             return AuthenticationManager.finishedRequiredActions(session,  userSession, clientSession, connection, request, uriInfo, event);
         }
     }

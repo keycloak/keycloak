@@ -66,6 +66,7 @@ public class RealmRepresentation {
 
     //--- brute force settings
     protected Boolean bruteForceProtected;
+    protected Boolean permanentLockout;
     protected Integer maxFailureWaitSeconds;
     protected Integer minimumQuickLoginWaitSeconds;
     protected Integer waitIncrementSeconds;
@@ -556,6 +557,14 @@ public class RealmRepresentation {
 
     public void setBruteForceProtected(Boolean bruteForceProtected) {
         this.bruteForceProtected = bruteForceProtected;
+    }
+
+    public Boolean isPermanentLockout() {
+        return permanentLockout;
+    }
+
+    public void setPermanentLockout(Boolean permanentLockout) {
+        this.permanentLockout = permanentLockout;
     }
 
     public Integer getMaxFailureWaitSeconds() {

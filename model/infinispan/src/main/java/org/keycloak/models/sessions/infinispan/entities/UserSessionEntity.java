@@ -21,6 +21,8 @@ import org.keycloak.models.UserSessionModel;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -44,11 +46,11 @@ public class UserSessionEntity extends SessionEntity {
 
     private int lastSessionRefresh;
 
-    private Set<String> clientSessions;
+    private Set<String> clientSessions = new CopyOnWriteArraySet<>();
 
     private UserSessionModel.State state;
 
-    private Map<String, String> notes;
+    private Map<String, String> notes = new ConcurrentHashMap<>();
 
     public String getUser() {
         return user;
@@ -108,10 +110,6 @@ public class UserSessionEntity extends SessionEntity {
 
     public Set<String> getClientSessions() {
         return clientSessions;
-    }
-
-    public void setClientSessions(Set<String> clientSessions) {
-        this.clientSessions = clientSessions;
     }
 
     public Map<String, String> getNotes() {
