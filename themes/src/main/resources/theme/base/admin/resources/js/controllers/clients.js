@@ -1229,12 +1229,6 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
             }, $scope.clientEdit, function() {
                 $route.reload();
                 Notifications.success("Your changes have been saved to the client.");
-            }, function(error) {
-                if (error.status == 400 && error.data.error_description) {
-                    Notifications.error(error.data.error_description);
-                } else {
-                    Notifications.error('Unexpected error when updating client');
-                }
             });
         }
     };
@@ -1348,12 +1342,6 @@ module.controller('CreateClientCtrl', function($scope, realm, client, templates,
             var id = l.substring(l.lastIndexOf("/") + 1);
             $location.url("/realms/" + realm.realm + "/clients/" + id);
             Notifications.success("The client has been created.");
-        }, function(error) {
-            if (error.status == 400 && error.data.error_description) {
-                Notifications.error(error.data.error_description);
-            } else {
-                Notifications.error('Unexpected error when creating client');
-            }
         });
     };
 
