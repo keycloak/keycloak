@@ -18,8 +18,6 @@
 
 package org.keycloak.authorization.store.syncronization;
 
-import java.util.stream.Collectors;
-
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -37,15 +35,19 @@ public class RealmSynchronizer implements Synchronizer<RealmRemovedEvent> {
         StoreFactory storeFactory = authorizationProvider.getStoreFactory();
 
         //Fetch all resources in one call
-        storeFactory.getResourceServerStore().findByClients(event.getRealm().getClients().stream().map(clientModel -> clientModel.getId()).collect(
-                Collectors.toList())).forEach(resourceServer -> {
-            if (resourceServer != null) {
-                String id = resourceServer.getId();
-                storeFactory.getResourceStore().findByResourceServer(id).forEach(resource -> storeFactory.getResourceStore().delete(resource.getId()));
-                storeFactory.getScopeStore().findByResourceServer(id).forEach(scope -> storeFactory.getScopeStore().delete(scope.getId()));
-                storeFactory.getPolicyStore().findByResourceServer(id).forEach(scope -> storeFactory.getPolicyStore().delete(scope.getId()));
-                storeFactory.getResourceServerStore().delete(id);
-            }
-        });
+        storeFactory.getResourceServerStore()
+                .findByClients(event.getRealm().getClients().stream().map(clientModel -> clientModel.getId()).toArray(String[]::new))
+                .forEach(resourceServer -> {
+                    if (resourceServer != null) {
+                        String id = resourceServer.getId();
+                        storeFactory.getResourceStore().findByResourceServer(id)
+                                .forEach(resource -> storeFactory.getResourceStore().delete(resource.getId()));
+                        storeFactory.getScopeStore().findByResourceServer(id)
+                                .forEach(scope -> storeFactory.getScopeStore().delete(scope.getId()));
+                        storeFactory.getPolicyStore().findByResourceServer(id)
+                                .forEach(scope -> storeFactory.getPolicyStore().delete(scope.getId()));
+                        storeFactory.getResourceServerStore().delete(id);
+                    }
+                });
     }
 }

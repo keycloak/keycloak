@@ -18,6 +18,7 @@
 package org.keycloak.authorization.jpa.store;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -82,22 +83,19 @@ public class JPAResourceServerStore implements ResourceServerStore {
     }
 
     @Override
-    public List<ResourceServer> findByClients(List<String> clientIds) {
-        List<String> ids;
+    public List<ResourceServer> findByClients(String... clientIds) {
         Query query = entityManager.createNamedQuery("findByClients", ResourceServer.class);
-        List<ResourceServer> results = new ArrayList<>(clientIds.size());
-        while (!clientIds.isEmpty()) {
-            if (clientIds.size() > ORACLE_IN_LIMIT) {
-                ids = clientIds.subList(0, ORACLE_IN_LIMIT);
-                clientIds = clientIds.subList(ORACLE_IN_LIMIT, clientIds.size());
-            } else {
-                ids = clientIds;
-                clientIds = Collections.emptyList();
+        List<ResourceServer> results = new ArrayList<>(clientIds.length);
+        List<String> ids = Arrays.asList(clientIds);
+        int limit;
+        while (!ids.isEmpty()) {
+            limit = ids.size();
+            if (limit > ORACLE_IN_LIMIT) {
+                limit = ORACLE_IN_LIMIT;
             }
-
-            query.setParameter("clientIds", ids);
+            query.setParameter("clientIds", ids.subList(0, limit));
             results.addAll(query.getResultList());
-
+            ids = ids.subList(limit, ids.size());
         }
         return results;
     }

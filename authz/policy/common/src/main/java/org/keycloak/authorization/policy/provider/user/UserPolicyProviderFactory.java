@@ -23,9 +23,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;    
-import java.util.function.Function;   
-import java.util.stream.Collectors;
+import java.util.Set;
+import java.util.function.Function;
+
 import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
@@ -165,30 +165,32 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
                 ResourceServerStore resourceServerStore = storeFactory.getResourceServerStore();
 
                 //Fetch all resources in one call
-                resourceServerStore.findByClients(realm.getClients().stream().map(clientModel -> clientModel.getId()).collect(
-                        Collectors.toList())).forEach(resourceServer -> {
-                    if (resourceServer != null) {
-                        policyStore.findByType(getId(), resourceServer.getId()).forEach(policy -> {
-                            List<String> users = new ArrayList<>();
+                resourceServerStore
+                        .findByClients(realm.getClients().stream().map(clientModel -> clientModel.getId()).toArray(String[]::new))
+                        .forEach(resourceServer -> {
+                            if (resourceServer != null) {
+                                policyStore.findByType(getId(), resourceServer.getId()).forEach(policy -> {
+                                    List<String> users = new ArrayList<>();
 
-                            for (String userId : getUsers(policy)) {
-                                if (!userId.equals(removedUser.getId())) {
-                                    users.add(userId);
-                                }
-                            }
+                                    for (String userId : getUsers(policy)) {
+                                        if (!userId.equals(removedUser.getId())) {
+                                            users.add(userId);
+                                        }
+                                    }
 
-                            try {
-                                if (users.isEmpty()) {
-                                    policyStore.delete(policy.getId());
-                                } else {
-                                    policy.getConfig().put("users", JsonSerialization.writeValueAsString(users));
-                                }
-                            } catch (IOException e) {
-                                throw new RuntimeException("Error while synchronizing users with policy [" + policy.getName() + "].", e);
+                                    try {
+                                        if (users.isEmpty()) {
+                                            policyStore.delete(policy.getId());
+                                        } else {
+                                            policy.getConfig().put("users", JsonSerialization.writeValueAsString(users));
+                                        }
+                                    } catch (IOException e) {
+                                        throw new RuntimeException(
+                                                "Error while synchronizing users with policy [" + policy.getName() + "].", e);
+                                    }
+                                });
                             }
                         });
-                    }
-                });
             }
         });
     }

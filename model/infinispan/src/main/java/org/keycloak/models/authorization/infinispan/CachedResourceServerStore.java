@@ -20,12 +20,12 @@ package org.keycloak.models.authorization.infinispan;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.infinispan.Cache;
 import org.keycloak.authorization.model.ResourceServer;
@@ -71,7 +71,7 @@ public class CachedResourceServerStore implements ResourceServerStore {
     public void delete(String id) {
         ResourceServer resourceServer = getDelegate().findById(id);
         getDelegate().delete(id);
-        this.transaction.whenCommit(() -> removeCachedResourceServer(resourceServer));	
+        this.transaction.whenCommit(() -> removeCachedResourceServer(resourceServer));
     }
 
     @Override
@@ -101,7 +101,7 @@ public class CachedResourceServerStore implements ResourceServerStore {
         if (cached == null) {
             ResourceServer resourceServer = getDelegate().findByClient(id);
 
-            if (resourceServer != null) {    
+            if (resourceServer != null) {
                 return findById(resourceServer.getId());
             }
             //Keep empty list to prevent performance issue
@@ -238,7 +238,7 @@ public class CachedResourceServerStore implements ResourceServerStore {
                     this.updated = getDelegate().findById(getId());
                     if (this.updated == null) throw new IllegalStateException("Not found in database");
                     transaction.whenCommit(() -> {
-						removeCachedResourceServer(getId(), getClientId());
+                        removeCachedResourceServer(getId(), getClientId());
                     });
                 }
 
@@ -252,41 +252,33 @@ public class CachedResourceServerStore implements ResourceServerStore {
     }
 
     @Override
-    public List<ResourceServer> findByClients(List<String> ids) {
-        String cacheKeyForResourceServer;
-        List<CachedResourceServer> cached;
-        List<ResourceServer> results = new ArrayList<>(ids.size());
-        Iterator<String> idsIterator = ids.iterator();
-        String id;
-        Collection<ResourceServer> resources;
+    public List<ResourceServer> findByClients(String... ids) {
+        List<ResourceServer> results = new ArrayList<>(ids.length);
 
-        while (idsIterator.hasNext()) {
-            id = idsIterator.next();
-            cacheKeyForResourceServer = getCacheKeyForResourceServerClientId(id);
-            cached = resolveResourceServerCache(id).get(cacheKeyForResourceServer);
-
-            if (cached != null) {
-                if (!cached.isEmpty()) {
-                    results.add(cached.get(0));
-                }
-                idsIterator.remove();
+        //Get cached elements
+        ids = Arrays.stream(ids).filter(id -> {
+            List<CachedResourceServer> cachedElements = resolveResourceServerCache(id).get(getCacheKeyForResourceServerClientId(id));
+            if (cachedElements != null && !cachedElements.isEmpty()) {
+                results.add(findByClient(id));
             }
-        }
+            return cachedElements == null;
+        }).toArray(String[]::new);
 
-        if (!ids.isEmpty()) {
-            resources = getDelegate().findByClients(ids);
-
-            for (ResourceServer resourceServer : resources) {
-                //Cache item
-                putCachedResourceServer(resourceServer);
-                results.add(findById(resourceServer.getId()));
-                ids.remove(resourceServer.getClientId());
-            }
+        if (ids.length > 0) {
+            getDelegate().findByClients(ids).forEach(
+                    resourceServer -> {
+                        //Cache item
+                        putCachedResourceServer(resourceServer);
+                        results.add(findById(resourceServer.getId()));
+                    }
+            );
 
             //Create empty list in cache for missing resource
-            for (String emptyId : ids) {
-                putCachedResourceServer(null, emptyId, Collections.emptyList());
-            }
+            Arrays.stream(ids)
+                    .filter(((Predicate<String>) results.stream().map(resourceServer -> resourceServer.getClientId())
+                            .collect(Collectors.toList())::contains).negate()).forEach(id -> {
+                putCachedResourceServer(null, id, Collections.emptyList());
+            });
         }
 
         return results;

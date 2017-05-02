@@ -106,8 +106,8 @@ public class ClientsResource {
             //Load all ResourceServer in one call
             if (view && Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION) && !clientModels.isEmpty()) {
                 resourceServerMap = session.getProvider(AuthorizationProvider.class).getStoreFactory().getResourceServerStore()
-                        .findByClients(clientModels.stream().map(m -> m.getId()).collect(
-                                Collectors.toList())).stream().collect(Collectors.toMap(r -> r.getClientId(), r -> r));
+                        .findByClients(clientModels.stream().map(m -> m.getId()).toArray(String[]::new)).stream()
+                        .collect(Collectors.toMap(r -> r.getClientId(), r -> r));
 
             }
 

@@ -69,5 +69,5 @@ public interface ResourceServerStore {
      * @param ids the identifier of existing clients application
      * @return the resources server instance, with the given client id or empty if no instance was found
      */
-    List<ResourceServer> findByClients(List<String> ids);
+    List<ResourceServer> findByClients(String... ids);
 }

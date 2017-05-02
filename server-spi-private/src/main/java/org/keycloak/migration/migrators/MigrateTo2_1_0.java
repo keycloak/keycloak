@@ -69,8 +69,7 @@ public class MigrateTo2_1_0 implements Migration {
 
 
         //Fetch all resources in one call
-        storeFactory.getResourceServerStore().findByClients(realm.getClients().stream().map(clientModel -> clientModel.getId()).collect(
-                Collectors.toList())).forEach(resourceServer -> {
+        storeFactory.getResourceServerStore().findByClients(realm.getClients().stream().map(clientModel -> clientModel.getId()).toArray(String[]::new)).forEach(resourceServer -> {
             if (resourceServer != null) {
                 policyStore.findByType("role", resourceServer.getId()).forEach(policy -> {
                     Map<String, String> config = policy.getConfig();

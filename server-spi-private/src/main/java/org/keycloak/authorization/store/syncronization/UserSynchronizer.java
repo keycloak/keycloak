@@ -17,8 +17,6 @@
 
 package org.keycloak.authorization.store.syncronization;
 
-import java.util.stream.Collectors;
-
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceServerStore;
@@ -47,21 +45,21 @@ public class UserSynchronizer implements Synchronizer<UserRemovedEvent> {
         RealmModel realm = event.getRealm();
 
         //Fetch all resources in one call
-        resourceServerStore.findByClients(realm.getClients().stream().map(clientModel -> clientModel.getId()).collect(
-                Collectors.toList())).forEach(resourceServer -> {
-            if (resourceServer != null) {
-                resourceStore.findByOwner(userModel.getId(), resourceServer.getId()).forEach(resource -> {
-                    String resourceId = resource.getId();
-                    policyStore.findByResource(resourceId, resourceServer.getId()).forEach(policy -> {
-                        if (policy.getResources().size() == 1) {
-                            policyStore.delete(policy.getId());
-                        } else {
-                            policy.removeResource(resource);
-                        }
-                    });
-                    resourceStore.delete(resourceId);
+        resourceServerStore.findByClients(realm.getClients().stream().map(clientModel -> clientModel.getId()).toArray(String[]::new))
+                .forEach(resourceServer -> {
+                    if (resourceServer != null) {
+                        resourceStore.findByOwner(userModel.getId(), resourceServer.getId()).forEach(resource -> {
+                            String resourceId = resource.getId();
+                            policyStore.findByResource(resourceId, resourceServer.getId()).forEach(policy -> {
+                                if (policy.getResources().size() == 1) {
+                                    policyStore.delete(policy.getId());
+                                } else {
+                                    policy.removeResource(resource);
+                                }
+                            });
+                            resourceStore.delete(resourceId);
+                        });
+                    }
                 });
-            }
-        });
     }
 }
