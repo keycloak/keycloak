@@ -213,6 +213,7 @@ public class RealmManager {
 
         // brute force
         realm.setBruteForceProtected(false); // default settings off for now todo set it on
+        realm.setPermanentLockout(false);
         realm.setMaxFailureWaitSeconds(900);
         realm.setMinimumQuickLoginWaitSeconds(60);
         realm.setWaitIncrementSeconds(60);

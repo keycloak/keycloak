@@ -60,7 +60,7 @@ import java.util.Set;
 @Configuration
 @ConditionalOnWebApplication
 @EnableConfigurationProperties(KeycloakSpringBootProperties.class)
-public class KeycloakSpringBootConfiguration {
+public class KeycloakAutoConfiguration {
 
     private KeycloakSpringBootProperties keycloakProperties;
 
@@ -69,6 +69,7 @@ public class KeycloakSpringBootConfiguration {
         this.keycloakProperties = keycloakProperties;
         KeycloakSpringBootConfigResolver.setAdapterConfig(keycloakProperties);
     }
+
 
     @Bean
     public EmbeddedServletContainerCustomizer getKeycloakContainerCustomizer() {
