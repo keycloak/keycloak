@@ -41,7 +41,6 @@ import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.exceptions.fed.IssueInstantMissingException;
 import org.keycloak.saml.common.util.DocumentUtil;
-import org.keycloak.saml.common.util.StaxParserUtil;
 import org.keycloak.saml.common.util.StaxUtil;
 import org.keycloak.saml.processing.api.saml.v2.response.SAML2Response;
 import org.keycloak.saml.processing.api.saml.v2.sig.SAML2Signature;
@@ -560,7 +559,7 @@ public class AssertionUtil {
         SAMLParser parser = new SAMLParser();
 
         JAXPValidationUtil.checkSchemaValidation(decryptedDocumentElement);
-        AssertionType assertion = (AssertionType) parser.parse(StaxParserUtil.getXMLEventReader(DocumentUtil
+        AssertionType assertion = (AssertionType) parser.parse(parser.createEventReader(DocumentUtil
                 .getNodeAsStream(decryptedDocumentElement)));
 
         responseType.replaceAssertion(oldID, new ResponseType.RTChoiceType(assertion));
