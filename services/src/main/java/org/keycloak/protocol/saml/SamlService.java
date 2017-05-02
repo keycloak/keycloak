@@ -292,6 +292,19 @@ public class SamlService extends AuthorizationEndpointBase {
                     return ErrorPage.error(session, Messages.UNSUPPORTED_NAME_ID_FORMAT);
                 }
             }
+            //Reading subject/nameID in the saml request
+            SubjectType subject = requestAbstractType.getSubject();
+            if (subject != null) {
+                SubjectType.STSubType subType = subject.getSubType();
+                if (subType != null) {
+                    BaseIDAbstractType baseID = subject.getSubType().getBaseID();
+                    if (baseID != null && baseID instanceof NameIDType) {
+                        NameIDType nameID = (NameIDType) baseID;
+                        clientSession.setNote(SamlProtocol.SAML_NAME_ID, nameID.getValue());
+                    }
+
+                }
+            }
 
             //Reading subject/nameID in the saml request
             SubjectType subject = requestAbstractType.getSubject();
