@@ -20,6 +20,7 @@ package org.keycloak.sessions;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.Provider;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -38,6 +39,15 @@ public interface AuthenticationSessionProvider extends Provider {
     void removeExpired(RealmModel realm);
     void onRealmRemoved(RealmModel realm);
     void onClientRemoved(RealmModel realm, ClientModel client);
+
+    /**
+     * Requests update of authNotes of an authentication session that is not owned
+     * by this instance but might exist somewhere in the cluster.
+     * 
+     * @param authSessionId
+     * @param authNotesFragment Map with authNote values. Auth note is removed if the corresponding value in the map is {@code null}.
+     */
+    void updateNonlocalSessionAuthNotes(String authSessionId, Map<String, String> authNotesFragment);
 
 
 }

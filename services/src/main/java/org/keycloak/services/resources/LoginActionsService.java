@@ -67,7 +67,6 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.resources.LoginActionsServiceChecks.RestartFlowException;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.AuthenticationFlowURLHelper;
 import org.keycloak.services.util.BrowserHistoryHelper;
@@ -448,7 +447,6 @@ public class LoginActionsService {
               .secretKey(session.keys().getActiveHmacKey(realm).getSecretKey())
               .verify();
 
-            // TODO:hmlnarik Optimize
             token = TokenVerifier.create(tokenString, handler.getTokenClass()).getToken();
         } catch (TokenNotActiveException ex) {
             if (authSession != null) {
@@ -469,39 +467,31 @@ public class LoginActionsService {
         }
 
         // Now proceed with the verification and handle the token
-        tokenContext = new ActionTokenContext(session, realm, uriInfo, clientConnection, request, event, handler);
+        tokenContext = new ActionTokenContext(session, realm, uriInfo, clientConnection, request, event, handler, execution, this::processFlow, this::brokerLoginFlow);
 
         try {
-            tokenContext.setExecutionId(execution);
-
             String tokenAuthSessionId = handler.getAuthenticationSessionIdFromToken(token);
+
+            if (tokenAuthSessionId != null) {
+                // This can happen if the token contains ID but user opens the link in a new browser
+                LoginActionsServiceChecks.checkNotLoggedInYet(tokenContext, tokenAuthSessionId);
+            }
+
             if (authSession == null) {
-                if (tokenAuthSessionId != null) {
-                    // This can happen if the token contains ID but user opens the link in a new browser
-                    LoginActionsServiceChecks.checkNotLoggedInYet(tokenContext, tokenAuthSessionId);
-                }
+                authSession = handler.startFreshAuthenticationSession(token, tokenContext);
+                tokenContext.setAuthenticationSession(authSession, true);
+            } else if (tokenAuthSessionId == null ||
+              ! LoginActionsServiceChecks.doesAuthenticationSessionFromCookieMatchOneFromToken(tokenContext, tokenAuthSessionId)) {
+                // There exists an authentication session but no auth session ID was received in the action token
+                logger.debugf("Authentication session in progress but no authentication session ID was found in action token %s, restarting.", token.getId());
+                new AuthenticationSessionManager(session).removeAuthenticationSession(realm, authSession, false);
 
                 authSession = handler.startFreshAuthenticationSession(token, tokenContext);
                 tokenContext.setAuthenticationSession(authSession, true);
-
-                initLoginEvent(authSession);
-                event.event(handler.eventType());
-            } else {
-                initLoginEvent(authSession);
-                event.event(handler.eventType());
-
-                if (tokenAuthSessionId == null) {
-                    // There exists an authentication session but no auth session ID was received in the action token
-                    logger.debugf("Authentication session exists while reauthentication was requested by using action token %s, restarting.", token.getId());
-                    new AuthenticationSessionManager(session).removeAuthenticationSession(realm, authSession, false);
-
-                    authSession = handler.startFreshAuthenticationSession(token, tokenContext);
-                    tokenContext.setAuthenticationSession(authSession, true);
-                } else {
-                    LoginActionsServiceChecks.checkNotLoggedInYet(tokenContext, tokenAuthSessionId);
-                    LoginActionsServiceChecks.checkAuthenticationSessionFromCookieMatchesOneFromToken(tokenContext, tokenAuthSessionId);
-                }
             }
+
+            initLoginEvent(authSession);
+            event.event(handler.eventType());
 
             LoginActionsServiceChecks.checkIsUserValid(token, tokenContext);
             LoginActionsServiceChecks.checkIsClientValid(token, tokenContext);
@@ -519,14 +509,9 @@ public class LoginActionsService {
 
             authSession.setAuthNote(DefaultActionTokenKey.ACTION_TOKEN_USER_ID, token.getUserId());
 
-            return handler.handleToken(token, tokenContext, this::processFlow);
+            return handler.handleToken(token, tokenContext);
         } catch (ExplainedTokenVerificationException ex) {
             return handleActionTokenVerificationException(tokenContext, ex, ex.getErrorEvent(), ex.getMessage());
-        } catch (RestartFlowException ex) {
-            Response response = handler.handleRestartRequest(token, tokenContext, this::processFlow);
-            return response == null
-              ? handleActionTokenVerificationException(tokenContext, ex, eventError, defaultErrorMessage)
-              : response;
         } catch (LoginActionsServiceException ex) {
             Response response = ex.getResponse();
             return response == null
@@ -777,37 +762,6 @@ public class LoginActionsService {
 
         AuthenticatedClientSessionModel clientSession = AuthenticationProcessor.attachSession(authSession, null, session, realm, clientConnection, event);
         return AuthenticationManager.redirectAfterSuccessfulFlow(session, realm, clientSession.getUserSession(), clientSession, request, uriInfo, clientConnection, event, authSession.getProtocol());
-    }
-
-
-    /**
-     * Initiated by admin, not the user on login
-     *
-     * @param key
-     * @return
-     */
-    @Path("execute-actions")
-    @GET
-    public Response executeActions(@QueryParam("key") String key) {
-        // TODO:mposolda
-        /*
-        event.event(EventType.EXECUTE_ACTIONS);
-        if (key != null) {
-            SessionCodeChecks checks = checksForCode(key);
-            if (!checks.verifyCode(ClientSessionModel.Action.EXECUTE_ACTIONS.name(), ClientSessionCode.ActionType.USER)) {
-                return checks.response;
-            }
-            ClientSessionModel clientSession = checks.getClientSession();
-            // verify user email as we know it is valid as this entry point would never have gotten here.
-            clientSession.getUserSession().getUser().setEmailVerified(true);
-            clientSession.setNote(AuthenticationManager.END_AFTER_REQUIRED_ACTIONS, "true");
-            clientSession.setNote(ClientSessionModel.Action.EXECUTE_ACTIONS.name(), "true");
-            return AuthenticationProcessor.redirectToRequiredActions(session, realm, clientSession, uriInfo);
-        } else {
-            event.error(Errors.INVALID_CODE);
-            return ErrorPage.error(session, Messages.INVALID_CODE);
-        }*/
-        return null;
     }
 
     private void initLoginEvent(AuthenticationSessionModel authSession) {

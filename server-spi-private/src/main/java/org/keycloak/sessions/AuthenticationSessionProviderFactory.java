@@ -23,4 +23,6 @@ import org.keycloak.provider.ProviderFactory;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public interface AuthenticationSessionProviderFactory extends ProviderFactory<AuthenticationSessionProvider> {
+    // TODO:hmlnarik: move this constant out of an interface into a more appropriate class
+    public static final String AUTHENTICATION_SESSION_EVENTS = "AUTHENTICATION_SESSION_EVENTS";
 }

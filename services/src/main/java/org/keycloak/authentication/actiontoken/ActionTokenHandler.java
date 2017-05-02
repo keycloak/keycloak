@@ -35,21 +35,6 @@ import javax.ws.rs.core.Response;
  */
 public interface ActionTokenHandler<T extends JsonWebToken> extends Provider {
 
-    @FunctionalInterface
-    public interface ProcessFlow {
-        Response processFlow(boolean action, String execution, AuthenticationSessionModel authSession, String flowPath, AuthenticationFlowModel flow, String errorMessage, AuthenticationProcessor processor);
-    };
-
-    /**
-     * Returns an array of verifiers that are tested prior to handling the token. All verifiers have to pass successfully
-     * for token to be handled. The returned array must not be {@code null}.
-     * @param tokenContext
-     * @return Verifiers or an empty array
-     */
-    default Predicate<? super T>[] getVerifiers(ActionTokenContext<T> tokenContext) {
-        return new Predicate[] {};
-    }
-
     /**
      * Performs the action as per the token details. This method is only called if all verifiers
      * returned in {@link #handleToken} succeed.
@@ -59,13 +44,23 @@ public interface ActionTokenHandler<T extends JsonWebToken> extends Provider {
      * @return
      * @throws VerificationException
      */
-    Response handleToken(T token, ActionTokenContext<T> tokenContext, ProcessFlow processFlow);
+    Response handleToken(T token, ActionTokenContext<T> tokenContext);
 
     /**
      * Returns the Java token class for use with deserialization.
      * @return
      */
     Class<T> getTokenClass();
+
+    /**
+     * Returns an array of verifiers that are tested prior to handling the token. All verifiers have to pass successfully
+     * for token to be handled. The returned array must not be {@code null}.
+     * @param tokenContext
+     * @return Verifiers or an empty array. The returned array must not be {@code null}.
+     */
+    default Predicate<? super T>[] getVerifiers(ActionTokenContext<T> tokenContext) {
+        return new Predicate[] {};
+    }
 
     /**
      * Returns an authentication session ID requested from within the given token
@@ -95,17 +90,8 @@ public interface ActionTokenHandler<T extends JsonWebToken> extends Provider {
     String getDefaultErrorMessage();
 
     /**
-     * Returns a response that restarts a flow that this action token initiates, or {@code null} if
-     * no special handling is requested.
-     * 
-     * @return
-     */
-    default Response handleRestartRequest(T token, ActionTokenContext<T> tokenContext, ProcessFlow processFlow) {
-        return null;
-    }
-
-    /**
-     * Creates a fresh authentication session according to the information from the token.
+     * Creates a fresh authentication session according to the information from the token. The default
+     * implementation creates a new authentication session that requests termination after required actions.
      * @param token
      * @param tokenContext
      * @return

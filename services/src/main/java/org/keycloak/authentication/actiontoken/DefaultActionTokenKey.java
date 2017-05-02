@@ -25,7 +25,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  */
 public class DefaultActionTokenKey extends JsonWebToken {
 
-    // The authenticationSession note with ID of the user authenticated via the action token
+    /** The authenticationSession note with ID of the user authenticated via the action token */
     public static final String ACTION_TOKEN_USER_ID = "ACTION_TOKEN_USER";
 
     public DefaultActionTokenKey(String userId, String actionId) {

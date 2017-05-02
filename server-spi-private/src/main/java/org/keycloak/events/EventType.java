@@ -92,6 +92,8 @@ public enum EventType {
     USER_INFO_REQUEST(false),
     USER_INFO_REQUEST_ERROR(false),
 
+    IDENTITY_PROVIDER_LINK_ACCOUNT(true),
+    IDENTITY_PROVIDER_LINK_ACCOUNT_ERROR(true),
     IDENTITY_PROVIDER_LOGIN(false),
     IDENTITY_PROVIDER_LOGIN_ERROR(false),
     IDENTITY_PROVIDER_FIRST_LOGIN(true),
@@ -129,6 +131,10 @@ public enum EventType {
         this.saveByDefault = saveByDefault;
     }
 
+    /**
+     * Determines whether this event is stored when the admin has not set a specific set of event types to save.
+     * @return
+     */
     public boolean isSaveByDefault() {
         return saveByDefault;
     }

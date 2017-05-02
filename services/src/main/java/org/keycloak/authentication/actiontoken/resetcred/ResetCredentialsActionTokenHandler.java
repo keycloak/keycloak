@@ -62,29 +62,16 @@ public class ResetCredentialsActionTokenHandler extends AbstractActionTokenHande
     }
 
     @Override
-    public Response handleToken(ResetCredentialsActionToken token, ActionTokenContext tokenContext, ProcessFlow processFlow) {
+    public Response handleToken(ResetCredentialsActionToken token, ActionTokenContext tokenContext) {
         AuthenticationProcessor authProcessor = new ResetCredsAuthenticationProcessor();
 
-        return processFlow.processFlow(
+        return tokenContext.processFlow(
           false,
-          tokenContext.getExecutionId(),
-          tokenContext.getAuthenticationSession(),
           RESET_CREDENTIALS_PATH,
           tokenContext.getRealm().getResetCredentialsFlow(),
           null,
           authProcessor
         );
-    }
-
-    @Override
-    public Response handleRestartRequest(ResetCredentialsActionToken token, ActionTokenContext<ResetCredentialsActionToken> tokenContext, ProcessFlow processFlow) {
-        // In the case restart is requested, the handling is exactly the same as if a token had been
-        // handled correctly but with a fresh authentication session
-        AuthenticationSessionManager asm = new AuthenticationSessionManager(tokenContext.getSession());
-        asm.removeAuthenticationSession(tokenContext.getRealm(), tokenContext.getAuthenticationSession(), false);
-
-        tokenContext.setAuthenticationSession(tokenContext.createAuthenticationSessionForClient(null), true);
-        return handleToken(token, tokenContext, processFlow);
     }
 
     public static class ResetCredsAuthenticationProcessor extends AuthenticationProcessor {

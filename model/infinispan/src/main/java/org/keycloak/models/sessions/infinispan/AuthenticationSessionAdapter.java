@@ -18,7 +18,7 @@
 package org.keycloak.models.sessions.infinispan;
 
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -144,21 +144,27 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
 
     @Override
     public String getClientNote(String name) {
-        return entity.getClientNotes() != null ? entity.getClientNotes().get(name) : null;
+        return (entity.getClientNotes() != null && name != null) ? entity.getClientNotes().get(name) : null;
     }
 
     @Override
     public void setClientNote(String name, String value) {
         if (entity.getClientNotes() == null) {
-            entity.setClientNotes(new HashMap<>());
+            entity.setClientNotes(new ConcurrentHashMap<>());
         }
-        entity.getClientNotes().put(name, value);
+        if (name != null) {
+            if (value == null) {
+                entity.getClientNotes().remove(name);
+            } else {
+                entity.getClientNotes().put(name, value);
+            }
+        }
         update();
     }
 
     @Override
     public void removeClientNote(String name) {
-        if (entity.getClientNotes() != null) {
+        if (entity.getClientNotes() != null && name != null) {
             entity.getClientNotes().remove(name);
         }
         update();
@@ -167,34 +173,40 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
     @Override
     public Map<String, String> getClientNotes() {
         if (entity.getClientNotes() == null || entity.getClientNotes().isEmpty()) return Collections.emptyMap();
-        Map<String, String> copy = new HashMap<>();
+        Map<String, String> copy = new ConcurrentHashMap<>();
         copy.putAll(entity.getClientNotes());
         return copy;
     }
 
     @Override
     public void clearClientNotes() {
-        entity.setClientNotes(new HashMap<>());
+        entity.setClientNotes(new ConcurrentHashMap<>());
         update();
     }
 
     @Override
     public String getAuthNote(String name) {
-        return entity.getAuthNotes() != null ? entity.getAuthNotes().get(name) : null;
+        return (entity.getAuthNotes() != null && name != null) ? entity.getAuthNotes().get(name) : null;
     }
 
     @Override
     public void setAuthNote(String name, String value) {
         if (entity.getAuthNotes() == null) {
-            entity.setAuthNotes(new HashMap<String, String>());
+            entity.setAuthNotes(new ConcurrentHashMap<>());
         }
-        entity.getAuthNotes().put(name, value);
+        if (name != null) {
+            if (value == null) {
+                entity.getAuthNotes().remove(name);
+            } else {
+                entity.getAuthNotes().put(name, value);
+            }
+        }
         update();
     }
 
     @Override
     public void removeAuthNote(String name) {
-        if (entity.getAuthNotes() != null) {
+        if (entity.getAuthNotes() != null && name != null) {
             entity.getAuthNotes().remove(name);
         }
         update();
@@ -202,16 +214,22 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
 
     @Override
     public void clearAuthNotes() {
-        entity.setAuthNotes(new HashMap<>());
+        entity.setAuthNotes(new ConcurrentHashMap<>());
         update();
     }
 
     @Override
     public void setUserSessionNote(String name, String value) {
         if (entity.getUserSessionNotes() == null) {
-            entity.setUserSessionNotes(new HashMap<String, String>());
+            entity.setUserSessionNotes(new ConcurrentHashMap<>());
         }
-        entity.getUserSessionNotes().put(name, value);
+        if (name != null) {
+            if (value == null) {
+                entity.getUserSessionNotes().remove(name);
+            } else {
+                entity.getUserSessionNotes().put(name, value);
+            }
+        }
         update();
 
     }
@@ -221,14 +239,14 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
         if (entity.getUserSessionNotes() == null) {
             return Collections.EMPTY_MAP;
         }
-        HashMap<String, String> copy = new HashMap<>();
+        ConcurrentHashMap<String, String> copy = new ConcurrentHashMap<>();
         copy.putAll(entity.getUserSessionNotes());
         return copy;
     }
 
     @Override
     public void clearUserSessionNotes() {
-        entity.setUserSessionNotes(new HashMap<String, String>());
+        entity.setUserSessionNotes(new ConcurrentHashMap<>());
         update();
 
     }

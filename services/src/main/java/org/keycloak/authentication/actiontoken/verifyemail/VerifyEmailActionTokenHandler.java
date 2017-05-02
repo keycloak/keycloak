@@ -57,7 +57,7 @@ public class VerifyEmailActionTokenHandler extends AbstractActionTokenHander<Ver
     }
 
     @Override
-    public Response handleToken(VerifyEmailActionToken token, ActionTokenContext<VerifyEmailActionToken> tokenContext, ProcessFlow processFlow) {
+        public Response handleToken(VerifyEmailActionToken token, ActionTokenContext<VerifyEmailActionToken> tokenContext) {
         UserModel user = tokenContext.getAuthenticationSession().getAuthenticatedUser();
         EventBuilder event = tokenContext.getEvent();
 

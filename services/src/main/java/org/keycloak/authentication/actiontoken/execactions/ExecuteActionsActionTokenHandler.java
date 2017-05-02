@@ -25,9 +25,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.resources.LoginActionsServiceChecks;
 import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.sessions.CommonClientSessionModel.Action;
 import javax.ws.rs.core.Response;
 
 /**
@@ -61,7 +59,7 @@ public class ExecuteActionsActionTokenHandler extends AbstractActionTokenHander<
     }
 
     @Override
-    public Response handleToken(ExecuteActionsActionToken token, ActionTokenContext<ExecuteActionsActionToken> tokenContext, ProcessFlow processFlow) {
+    public Response handleToken(ExecuteActionsActionToken token, ActionTokenContext<ExecuteActionsActionToken> tokenContext) {
         AuthenticationSessionModel authSession = tokenContext.getAuthenticationSession();
 
         String redirectUri = RedirectUtils.verifyRedirectUri(tokenContext.getUriInfo(), token.getRedirectUri(),

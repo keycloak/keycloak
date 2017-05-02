@@ -17,6 +17,7 @@
 package org.keycloak.authentication.actiontoken;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.*;
@@ -25,6 +26,8 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import java.util.function.Function;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilderException;
 import javax.ws.rs.core.UriInfo;
 import org.jboss.resteasy.spi.HttpRequest;
@@ -34,6 +37,16 @@ import org.jboss.resteasy.spi.HttpRequest;
  * @author hmlnarik
  */
 public class ActionTokenContext<T extends JsonWebToken> {
+
+    @FunctionalInterface
+    public interface ProcessAuthenticateFlow {
+        Response processFlow(boolean action, String execution, AuthenticationSessionModel authSession, String flowPath, AuthenticationFlowModel flow, String errorMessage, AuthenticationProcessor processor);
+    };
+
+    @FunctionalInterface
+    public interface ProcessBrokerFlow {
+        Response brokerLoginFlow(String code, String execution, String flowPath);
+    };
 
     private final KeycloakSession session;
     private final RealmModel realm;
@@ -45,8 +58,13 @@ public class ActionTokenContext<T extends JsonWebToken> {
     private AuthenticationSessionModel authenticationSession;
     private boolean authenticationSessionFresh;
     private String executionId;
+    private final ProcessAuthenticateFlow processAuthenticateFlow;
+    private final ProcessBrokerFlow processBrokerFlow;
 
-    public ActionTokenContext(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection clientConnection, HttpRequest request, EventBuilder event, ActionTokenHandler<T> handler) {
+    public ActionTokenContext(KeycloakSession session, RealmModel realm, UriInfo uriInfo,
+      ClientConnection clientConnection, HttpRequest request,
+      EventBuilder event, ActionTokenHandler<T> handler, String executionId,
+      ProcessAuthenticateFlow processFlow, ProcessBrokerFlow processBrokerFlow) {
         this.session = session;
         this.realm = realm;
         this.uriInfo = uriInfo;
@@ -54,6 +72,9 @@ public class ActionTokenContext<T extends JsonWebToken> {
         this.request = request;
         this.event = event;
         this.handler = handler;
+        this.executionId = executionId;
+        this.processAuthenticateFlow = processFlow;
+        this.processBrokerFlow = processBrokerFlow;
     }
 
     public EventBuilder getEvent() {
@@ -130,5 +151,13 @@ public class ActionTokenContext<T extends JsonWebToken> {
 
     public void setExecutionId(String executionId) {
         this.executionId = executionId;
+    }
+
+    public Response processFlow(boolean action, String flowPath, AuthenticationFlowModel flow, String errorMessage, AuthenticationProcessor processor) {
+        return processAuthenticateFlow.processFlow(action, getExecutionId(), getAuthenticationSession(), flowPath, flow, errorMessage, processor);
+    }
+
+    public Response brokerFlow(String code, String flowPath) {
+        return processBrokerFlow.brokerLoginFlow(code, getExecutionId(), flowPath);
     }
 }

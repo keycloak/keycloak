@@ -31,7 +31,6 @@ import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.*;
 import org.keycloak.models.UserModel.RequiredAction;
-import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.services.Urls;
 import org.keycloak.services.validation.Validation;
 
@@ -87,7 +86,7 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
 
     @Override
     public void processAction(RequiredActionContext context) {
-        logger.infof("Re-sending email requested for user: %s", context.getUser().getUsername());
+        logger.debugf("Re-sending email requested for user: %s", context.getUser().getUsername());
 
         // This will allow user to re-send email again
         context.getAuthenticationSession().removeAuthNote(Constants.VERIFY_EMAIL_KEY);
@@ -151,10 +150,5 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
         }
 
         return forms.createResponse(UserModel.RequiredAction.VERIFY_EMAIL);
-    }
-
-    public static void setupKey(AuthenticationSessionModel session) {
-        String secret = HmacOTP.generateSecret(10);
-        session.setAuthNote(Constants.VERIFY_EMAIL_KEY, secret);
     }
 }

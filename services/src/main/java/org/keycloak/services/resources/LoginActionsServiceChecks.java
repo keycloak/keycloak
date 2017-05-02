@@ -45,11 +45,6 @@ public class LoginActionsServiceChecks {
     private static final Logger LOG = Logger.getLogger(LoginActionsServiceChecks.class.getName());
 
     /**
-     * Exception signalling that flow needs to be restarted because authentication session IDs from cookie and token do not match.
-     */
-    public static class RestartFlowException extends VerificationException { }
-
-    /**
      * This check verifies that user ID (subject) from the token matches
      * the one from the authentication session.
      */
@@ -264,32 +259,32 @@ public class LoginActionsServiceChecks {
      *
      *  @param <T>
      */
-    public static <T extends JsonWebToken> void checkAuthenticationSessionFromCookieMatchesOneFromToken(ActionTokenContext<T> context, String authSessionIdFromToken) throws VerificationException {
+    public static <T extends JsonWebToken> boolean doesAuthenticationSessionFromCookieMatchOneFromToken(ActionTokenContext<T> context, String authSessionIdFromToken) throws VerificationException {
         if (authSessionIdFromToken == null) {
-            throw new RestartFlowException();
+            return false;
         }
 
         AuthenticationSessionManager asm = new AuthenticationSessionManager(context.getSession());
         String authSessionIdFromCookie = asm.getCurrentAuthenticationSessionId(context.getRealm());
 
         if (authSessionIdFromCookie == null) {
-            throw new RestartFlowException();
+            return false;
         }
 
         AuthenticationSessionModel authSessionFromCookie = context.getSession()
           .authenticationSessions().getAuthenticationSession(context.getRealm(), authSessionIdFromCookie);
         if (authSessionFromCookie == null) {    // Cookie contains ID of expired auth session
-            throw new RestartFlowException();
+            return false;
         }
 
         if (Objects.equals(authSessionIdFromCookie, authSessionIdFromToken)) {
             context.setAuthenticationSession(authSessionFromCookie, false);
-            return;
+            return true;
         }
 
         String parentSessionId = authSessionFromCookie.getAuthNote(AuthenticationProcessor.FORKED_FROM);
         if (parentSessionId == null || ! Objects.equals(authSessionIdFromToken, parentSessionId)) {
-            throw new RestartFlowException();
+            return false;
         }
 
         AuthenticationSessionModel authSessionFromParent = context.getSession()
@@ -299,12 +294,14 @@ public class LoginActionsServiceChecks {
         // from the login form (browser flow) but from the token's flow
         // Don't expire KC_RESTART cookie at this point
         asm.removeAuthenticationSession(context.getRealm(), authSessionFromCookie, false);
-        LOG.infof("Removed forked session: %s", authSessionFromCookie.getId());
+        LOG.debugf("Removed forked session: %s", authSessionFromCookie.getId());
 
         // Refresh browser cookie
         asm.setAuthSessionCookie(parentSessionId, context.getRealm());
 
         context.setAuthenticationSession(authSessionFromParent, false);
         context.setExecutionId(authSessionFromParent.getAuthNote(AuthenticationProcessor.LAST_PROCESSED_EXECUTION));
+
+        return true;
     }
 }

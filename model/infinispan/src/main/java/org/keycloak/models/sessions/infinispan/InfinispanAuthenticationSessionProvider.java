@@ -17,6 +17,7 @@
 
 package org.keycloak.models.sessions.infinispan;
 
+import org.keycloak.cluster.ClusterProvider;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -27,6 +28,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.cache.infinispan.events.AuthenticationSessionAuthNoteUpdateEvent;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.stream.AuthenticationSessionPredicate;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -136,6 +138,20 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
         while (itr.hasNext()) {
             cache.remove(itr.next().getKey());
         }
+    }
+
+    @Override
+    public void updateNonlocalSessionAuthNotes(String authSessionId, Map<String, String> authNotesFragment) {
+        if (authSessionId == null) {
+            return;
+        }
+
+        ClusterProvider cluster = session.getProvider(ClusterProvider.class);
+        cluster.notify(
+          InfinispanAuthenticationSessionProviderFactory.AUTHENTICATION_SESSION_EVENTS,
+          AuthenticationSessionAuthNoteUpdateEvent.create(authSessionId, authNotesFragment),
+          true
+        );
     }
 
     @Override
