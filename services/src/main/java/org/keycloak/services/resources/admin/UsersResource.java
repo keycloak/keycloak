@@ -345,7 +345,7 @@ public class UsersResource {
         EventBuilder event = new EventBuilder(realm, session, clientConnection);
 
         UserSessionModel userSession = session.sessions().createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteAddr(), "impersonate", false, null, null);
-        AuthenticationManager.createLoginCookie(session, realm, userSession.getUser(), userSession, uriInfo, clientConnection);
+        AuthenticationManager.createLoginCookie(session, realm, userSession.getUser(), userSession, uriInfo, clientConnection, auth);
         URI redirect = AccountService.accountServiceApplicationPage(uriInfo).build(realm.getName());
         Map<String, Object> result = new HashMap<>();
         result.put("sameRealm", sameRealm);

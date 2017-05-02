@@ -37,6 +37,7 @@ import org.keycloak.jose.jws.AlgorithmType;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
@@ -56,6 +57,8 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.services.resources.admin.AdminAuth;
+import org.keycloak.services.resources.admin.RealmAuth;
 import org.keycloak.services.util.CookieHelper;
 import org.keycloak.services.util.P3PHelper;
 
@@ -68,8 +71,10 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.security.PublicKey;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -286,7 +291,7 @@ public class AuthenticationManager {
     }
 
 
-    public static AccessToken createIdentityToken(RealmModel realm, UserModel user, UserSessionModel session, String issuer) {
+    public static AccessToken createIdentityToken(RealmModel realm, UserModel user, UserSessionModel session, String issuer, RealmAuth auth) {
         AccessToken token = new AccessToken();
         token.id(KeycloakModelUtils.generateId());
         token.issuedNow();
@@ -298,13 +303,34 @@ public class AuthenticationManager {
         if (realm.getSsoSessionMaxLifespan() > 0) {
             token.expiration(Time.currentTime() + realm.getSsoSessionMaxLifespan());
         }
+        if (auth == null) {
+           return token;
+        }
+
+        AdminAuth adminAuth = auth.getAuth();
+        UserModel impersonator = adminAuth.getUser();
+        RealmModel impersonatorRealm = adminAuth.getRealm();
+        if (user.getId().equals(impersonator.getId())) {
+            return token;
+        }
+
+        Map<String, Object> imp = new HashMap<>();
+        imp.put("sub", impersonator.getId());
+        imp.put("username", impersonator.getUsername());
+
+        if(!impersonatorRealm.getName().equals(realm.getName())) {
+            imp.put("realmName", impersonatorRealm.getName());
+        }
+
+        token.getOtherClaims().put(ImpersonationConstants.IMPERSONATION_CLAIM, imp);
+
         return token;
     }
 
-    public static void createLoginCookie(KeycloakSession keycloakSession, RealmModel realm, UserModel user, UserSessionModel session, UriInfo uriInfo, ClientConnection connection) {
+    public static void createLoginCookie(KeycloakSession keycloakSession, RealmModel realm, UserModel user, UserSessionModel session, UriInfo uriInfo, ClientConnection connection, RealmAuth auth) {
         String cookiePath = getIdentityCookiePath(realm, uriInfo);
         String issuer = Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName());
-        AccessToken identityToken = createIdentityToken(realm, user, session, issuer);
+        AccessToken identityToken = createIdentityToken(realm, user, session, issuer, auth);
         String encoded = encodeToken(keycloakSession, realm, identityToken);
         boolean secureOnly = realm.getSslRequired().isRequired(connection);
         int maxAge = NewCookie.DEFAULT_MAX_AGE;
@@ -446,7 +472,7 @@ public class AuthenticationManager {
         session.getContext().resolveLocale(userSession.getUser());
 
         // refresh the cookies!
-        createLoginCookie(session, realm, userSession.getUser(), userSession, uriInfo, clientConnection);
+        createLoginCookie(session, realm, userSession.getUser(), userSession, uriInfo, clientConnection, null);
         if (userSession.getState() != UserSessionModel.State.LOGGED_IN) userSession.setState(UserSessionModel.State.LOGGED_IN);
         if (userSession.isRememberMe()) {
             createRememberMeCookie(realm, userSession.getLoginUsername(), uriInfo, clientConnection);
