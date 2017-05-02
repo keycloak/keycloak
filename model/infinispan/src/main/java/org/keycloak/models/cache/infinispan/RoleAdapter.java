@@ -27,7 +27,9 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.HashSet;
 import java.util.Set;
-
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -132,16 +134,18 @@ public class RoleAdapter implements RoleModel {
 
     @Override
     public Set<RoleModel> getComposites() {
+        List<String> missing;
         if (isUpdated()) return updated.getComposites();
 
         if (composites == null) {
             composites = new HashSet<RoleModel>();
-            for (String id : cached.getComposites()) {
-                RoleModel role = realm.getRoleById(id);
-                if (role == null) {
-                    throw new IllegalStateException("Could not find composite in role " + getName() + ": " + id);
-                }
-                composites.add(role);
+            composites.addAll(realm.getRolesById(cached.getComposites().stream().toArray(String[]::new)));
+
+            //Check for missing composite
+            missing = new ArrayList<>(cached.getComposites());
+            missing.removeAll(composites.stream().map(role -> role.getId()).collect(Collectors.toList()));
+            if (!missing.isEmpty()) {
+                throw new IllegalStateException("Could not find composite in role " + getName() + ": " + missing.get(0));
             }
         }
 

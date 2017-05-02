@@ -796,6 +796,11 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
+    public List<RoleModel> getRolesById(String... ids){
+        return session.realms().getRolesById(this, ids);
+    }
+
+    @Override
     public PasswordPolicy getPasswordPolicy() {
         if (passwordPolicy == null) {
             passwordPolicy = PasswordPolicy.parse(session, realm.getPasswordPolicy());

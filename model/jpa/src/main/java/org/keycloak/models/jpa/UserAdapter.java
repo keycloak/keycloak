@@ -400,14 +400,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         // even if we're getting just the id.
         TypedQuery<String> query = em.createNamedQuery("userRoleMappingIds", String.class);
         query.setParameter("user", getEntity());
-        List<String> ids = query.getResultList();
-        Set<RoleModel> roles = new HashSet<RoleModel>();
-        for (String roleId : ids) {
-            RoleModel roleById = realm.getRoleById(roleId);
-            if (roleById == null) continue;
-            roles.add(roleById);
-        }
-        return roles;
+        return new HashSet<>(realm.getRolesById(query.getResultList().stream().toArray(String[]::new)));
     }
 
     @Override

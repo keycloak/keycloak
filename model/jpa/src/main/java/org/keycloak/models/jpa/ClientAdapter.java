@@ -242,14 +242,7 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
     public Set<RoleModel> getScopeMappings() {
         TypedQuery<String> query = em.createNamedQuery("clientScopeMappingIds", String.class);
         query.setParameter("client", getEntity());
-        List<String> ids = query.getResultList();
-        Set<RoleModel> roles = new HashSet<RoleModel>();
-        for (String roleId : ids) {
-            RoleModel role = realm.getRoleById(roleId);
-            if (role == null) continue;
-            roles.add(role);
-        }
-        return roles;
+        return new HashSet<>(realm.getRolesById(query.getResultList().stream().toArray(String[]::new)));
     }
 
     @Override

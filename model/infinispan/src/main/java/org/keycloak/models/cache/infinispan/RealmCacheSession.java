@@ -17,12 +17,15 @@
 
 package org.keycloak.models.cache.infinispan;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
@@ -666,14 +669,14 @@ public class RealmCacheSession implements CacheRealmProvider {
             cache.addRevisioned(query, startupRevision);
             return model;
         }
-        Set<RoleModel> list = new HashSet<>();
-        for (String id : query.getRoles()) {
-            RoleModel role = session.realms().getRoleById(id, realm);
-            if (role == null) {
-                invalidations.add(cacheKey);
-                return getDelegate().getRealmRoles(realm);
-            }
-            list.add(role);
+
+
+        Set<RoleModel> list = new HashSet<>(session.realms().getRolesById(realm, query.getRoles().stream().toArray(String[]::new)));
+        Set<String> missingRoles = new HashSet(query.getRoles());
+        missingRoles.removeAll(list.stream().map(role -> role.getId()).collect(Collectors.toList()));
+        for (String id : missingRoles) {
+            invalidations.add(cacheKey);
+            return getDelegate().getRealmRoles(realm);
         }
         return list;
     }
@@ -702,14 +705,12 @@ public class RealmCacheSession implements CacheRealmProvider {
             cache.addRevisioned(query, startupRevision);
             return model;
         }
-        Set<RoleModel> list = new HashSet<>();
-        for (String id : query.getRoles()) {
-            RoleModel role = session.realms().getRoleById(id, realm);
-            if (role == null) {
-                invalidations.add(cacheKey);
-                return getDelegate().getClientRoles(realm, client);
-            }
-            list.add(role);
+        Set<RoleModel> list = new HashSet<>(session.realms().getRolesById(realm, query.getRoles().stream().toArray(String[]::new)));
+        Set<String> missingRoles = new HashSet(query.getRoles());
+        missingRoles.removeAll(list.stream().map(role -> role.getId()).collect(Collectors.toList()));
+        for (String id : missingRoles) {
+            invalidations.add(cacheKey);
+            return getDelegate().getClientRoles(realm, client);
         }
         return list;
     }
@@ -795,6 +796,42 @@ public class RealmCacheSession implements CacheRealmProvider {
         roleRemovalInvalidations(role.getId(), role.getName(), role.getContainer().getId());
 
         return getDelegate().removeRole(realm, role);
+    }
+
+    @Override
+    public List<RoleModel> getRolesById(RealmModel realm, String... ids) {
+        List<RoleModel> roles = new ArrayList<>(ids.length);
+        //Use cached model
+        ids = Arrays.stream(ids).filter(id -> {
+            CachedRole cached = cache.get(id, CachedRole.class);
+            RoleModel roleModel = null;
+            if (cached != null) {
+                roleModel = getRoleById(id, realm);
+                if (roleModel != null) {
+                    roles.add(roleModel);
+                }
+            }
+            return cached == null || roleModel == null;
+        }).toArray(String[]::new);
+
+        for(RoleModel model :  getDelegate().getRolesById(realm, ids )) {
+            CachedRole cached;
+            Long loaded = cache.getCurrentRevision(model.getId());
+            if (invalidations.contains(model.getId()))
+                roles.add(model);
+            else {
+                if (model.isClientRole()) {
+                    cached = new CachedClientRole(loaded, model.getContainerId(), model, realm);
+                } else {
+                    cached = new CachedRealmRole(loaded, model, realm);
+                }
+                cache.addRevisioned(cached, startupRevision);
+                RoleAdapter adapter = new RoleAdapter(cached,this, realm);
+                managedRoles.put(model.getId(), adapter);
+                roles.add(adapter);
+            }
+        }
+        return roles;
     }
 
     @Override

@@ -33,12 +33,13 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
 
+import static org.keycloak.JPAConstants.ORACLE_IN_LIMIT;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class JPAResourceServerStore implements ResourceServerStore {
 
-    public static final int ORACLE_IN_LIMIT = 1000;
 
     private final EntityManager entityManager;
 

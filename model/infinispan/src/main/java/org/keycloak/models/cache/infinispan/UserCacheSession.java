@@ -753,11 +753,8 @@ public class UserCacheSession implements UserCache {
         consentModel.setCreatedDate(cachedConsent.getCreatedDate());
         consentModel.setLastUpdatedDate(cachedConsent.getLastUpdatedDate());
 
-        for (String roleId : cachedConsent.getRoleIds()) {
-            RoleModel role = session.realms().getRoleById(roleId, realm);
-            if (role != null) {
-                consentModel.addGrantedRole(role);
-            }
+        for (RoleModel role : session.realms().getRolesById(realm, cachedConsent.getRoleIds().stream().toArray(String[]::new))) {
+            consentModel.addGrantedRole(role);
         }
         for (ProtocolMapperModel protocolMapper : cachedConsent.getProtocolMappers()) {
             consentModel.addGrantedProtocolMapper(protocolMapper);

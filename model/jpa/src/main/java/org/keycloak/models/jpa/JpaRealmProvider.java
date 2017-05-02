@@ -17,6 +17,8 @@
 
 package org.keycloak.models.jpa;
 
+import static org.keycloak.JPAConstants.ORACLE_IN_LIMIT;
+
 import org.jboss.logging.Logger;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.migration.MigrationModel;
@@ -39,6 +41,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import javax.persistence.Tuple;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -249,11 +252,9 @@ public class JpaRealmProvider implements RealmProvider {
         List<String> roles = query.getResultList();
 
         if (roles.isEmpty()) return Collections.EMPTY_SET;
-        Set<RoleModel> list = new HashSet<RoleModel>();
-        for (String id : roles) {
-            list.add(session.realms().getRoleById(id, realm));
-        }
-        return Collections.unmodifiableSet(list);
+
+        return Collections
+                .unmodifiableSet(new HashSet<RoleModel>(session.realms().getRolesById(realm, roles.stream().toArray(String[]::new))));
     }
 
     @Override
@@ -269,15 +270,9 @@ public class JpaRealmProvider implements RealmProvider {
 
     @Override
     public Set<RoleModel> getClientRoles(RealmModel realm, ClientModel client) {
-        Set<RoleModel> list = new HashSet<RoleModel>();
         TypedQuery<String> query = em.createNamedQuery("getClientRoleIds", String.class);
         query.setParameter("client", client.getId());
-        List<String> roles = query.getResultList();
-        for (String id : roles) {
-            list.add(session.realms().getRoleById(id, realm));
-        }
-        return list;
-
+        return new HashSet<RoleModel>(session.realms().getRolesById(realm,query.getResultList().stream().toArray(String[]::new)));
     }
 
     @Override
@@ -320,6 +315,28 @@ public class JpaRealmProvider implements RealmProvider {
         if (!realm.getId().equals(entity.getRealmId())) return null;
         RoleAdapter adapter = new RoleAdapter(session, realm, em, entity);
         return adapter;
+    }
+
+    @Override
+    public List<RoleModel> getRolesById(RealmModel realm, String... ids) {
+        TypedQuery<RoleEntity> query = em.createNamedQuery("getRolesById", RoleEntity.class);
+        List<RoleEntity> results = new ArrayList<>(ids.length);
+
+        List<String> queryIds = Arrays.asList(ids);
+        int limit;
+
+        query.setParameter("realm", realm.getId());
+        while (!queryIds.isEmpty()) {
+            limit = queryIds.size();
+            if (limit > ORACLE_IN_LIMIT) {
+                limit = ORACLE_IN_LIMIT;
+            }
+            query.setParameter("ids", queryIds.subList(0, limit));
+            results.addAll(query.getResultList());
+            queryIds = queryIds.subList(limit, queryIds.size());
+        }
+
+        return results.stream().map(entity -> new RoleAdapter(session, realm, em, entity)).collect(Collectors.toList());
     }
 
     @Override
@@ -458,18 +475,12 @@ public class JpaRealmProvider implements RealmProvider {
         TypedQuery<ClientEntity> query = em.createNamedQuery("getClientsByRealm", ClientEntity.class);
         Set<ClientEntity> result = null;
         Map<String, Set<RoleModel>> rolesMap = new TreeMap<>();
-        Set<RoleModel> roles;
         query.setParameter("realm", realm.getId());
 
         //Load Roles Model
-        roles = new HashSet<RoleModel>();
         for (Tuple t : em.createNamedQuery("realmScopeMappingIds", Tuple.class).setParameter("realm", realm.getId()).getResultList()) {
-            roles = rolesMap.get(t.get(0, String.class));
-            if (roles == null) {
-                roles = new HashSet<>();
-                rolesMap.put(t.get(0, String.class), roles);
-            }
-            roles.add(realm.getRoleById(t.get(1, String.class)));
+            rolesMap.computeIfAbsent(t.get(0, String.class), k -> new HashSet<>())
+                    .add(realm.getRoleById(t.get(1, String.class)));
         }
 
         result = new HashSet<>(query.getResultList());

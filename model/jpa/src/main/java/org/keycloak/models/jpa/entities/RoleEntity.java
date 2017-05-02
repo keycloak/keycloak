@@ -52,7 +52,8 @@ import java.util.Set;
         @NamedQuery(name="getRealmRoles", query="select role from RoleEntity role where role.clientRole = false and role.realm = :realm"),
         @NamedQuery(name="getRealmRoleIds", query="select role.id from RoleEntity role where role.clientRole = false and role.realm.id = :realm"),
         @NamedQuery(name="getRealmRoleByName", query="select role from RoleEntity role where role.clientRole = false and role.name = :name and role.realm = :realm"),
-        @NamedQuery(name="getRealmRoleIdByName", query="select role.id from RoleEntity role where role.clientRole = false and role.name = :name and role.realm.id = :realm")
+        @NamedQuery(name="getRealmRoleIdByName", query="select role.id from RoleEntity role where role.clientRole = false and role.name = :name and role.realm.id = :realm"),
+        @NamedQuery(name="getRolesById", query="select role from RoleEntity role left join fetch role.compositeRoles where role.id in (:ids) and role.realmId = :realm")
 })
 
 public class RoleEntity {

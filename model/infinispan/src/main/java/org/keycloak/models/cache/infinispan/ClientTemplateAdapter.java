@@ -172,12 +172,8 @@ public class ClientTemplateAdapter implements ClientTemplateModel {
 
     public Set<RoleModel> getScopeMappings() {
         if (isUpdated()) return updated.getScopeMappings();
-        Set<RoleModel> roles = new HashSet<RoleModel>();
-        for (String id : cached.getScope()) {
-            roles.add(cacheSession.getRoleById(id, getRealm()));
-
-        }
-        return roles;
+        return new HashSet<RoleModel>(
+                cacheSession.getRolesById(getRealm(), cached.getScope().stream().toArray(String[]::new)));
     }
 
     public void addScopeMapping(RoleModel role) {

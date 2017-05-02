@@ -518,6 +518,12 @@ public class RealmAdapter implements CachedRealmModel {
      }
 
     @Override
+    public List<RoleModel> getRolesById(String... ids) {
+        if (isUpdated()) return updated.getRolesById(ids);
+        return cacheSession.getRolesById(this, ids);
+    }
+
+    @Override
     public List<GroupModel> getDefaultGroups() {
         if (isUpdated()) return updated.getDefaultGroups();
 
