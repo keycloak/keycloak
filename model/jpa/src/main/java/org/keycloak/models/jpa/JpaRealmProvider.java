@@ -20,6 +20,7 @@ package org.keycloak.models.jpa;
 import static org.keycloak.JPAConstants.ORACLE_IN_LIMIT;
 
 import org.jboss.logging.Logger;
+import org.keycloak.JPAConstants;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.migration.MigrationModel;
 import org.keycloak.models.ClientModel;
@@ -487,7 +488,7 @@ public class JpaRealmProvider implements RealmProvider {
         if (!result.isEmpty()) {
             //Fetch list relation
             for (String name : GET_CLIENTS_REALM_GRAPH_JOIN) {
-                query.setHint("javax.persistence.loadgraph", em.getEntityGraph(name));
+                query.setHint(JPAConstants.LOADGRAPH, em.getEntityGraph(name));
                 result.addAll(query.getResultList());
             }
         }
