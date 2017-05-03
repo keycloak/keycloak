@@ -30,12 +30,29 @@
     <artifactId>integration-arquillian-tests-adapters-eap6</artifactId>
 
     <name>Adapter Tests - JBoss - EAP 6</name>
-    
+
+    <dependencies>
+        <dependency>
+            <groupId>org.wildfly.extras.creaper</groupId>
+            <artifactId>creaper-core</artifactId>
+            <scope>test</scope>
+            <version>1.5.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-cli</artifactId>
+            <scope>test</scope>
+            <version>2.2.0.Final</version>
+        </dependency>
+    </dependencies>
+            
     <properties>
         <app.server>eap6</app.server>
 
         <app.server.management.protocol>remote</app.server.management.protocol>
         <app.server.management.port>${app.server.management.port.jmx}</app.server.management.port>
+        <app.server.1.management.port>${app.server.1.management.port.jmx}</app.server.1.management.port>
+        <app.server.2.management.port>${app.server.2.management.port.jmx}</app.server.2.management.port>
     </properties>
     
 </project>

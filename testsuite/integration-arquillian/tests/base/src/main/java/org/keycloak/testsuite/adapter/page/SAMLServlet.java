@@ -28,7 +28,7 @@ public abstract class SAMLServlet extends AbstractPageWithInjectedUrl {
 
     public void logout() {
         driver.navigate().to(getUriBuilder().queryParam("GLO", "true").build().toASCIIString());
-        getUriBuilder().replaceQueryParam("GLO", null);
+        getUriBuilder().replaceQueryParam("GLO");
         pause(300);
     }
 
@@ -36,7 +36,7 @@ public abstract class SAMLServlet extends AbstractPageWithInjectedUrl {
         if (check) {
             getUriBuilder().queryParam("checkRoles", true);
         } else {
-            getUriBuilder().replaceQueryParam("checkRoles", null);
+            getUriBuilder().replaceQueryParam("checkRoles");
         }
     }
 
