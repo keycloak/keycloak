@@ -6,6 +6,7 @@ embed-server --server-config=standalone.xml
 /subsystem=infinispan/cache-container=keycloak/local-cache=users:add()
 /subsystem=infinispan/cache-container=keycloak/local-cache=users/eviction=EVICTION:add(max-entries=10000,strategy=LRU)
 /subsystem=infinispan/cache-container=keycloak/local-cache=sessions:add()
+/subsystem=infinispan/cache-container=keycloak/local-cache=authenticationSessions:add()
 /subsystem=infinispan/cache-container=keycloak/local-cache=offlineSessions:add()
 /subsystem=infinispan/cache-container=keycloak/local-cache=loginFailures:add()
 /subsystem=infinispan/cache-container=keycloak/local-cache=work:add()

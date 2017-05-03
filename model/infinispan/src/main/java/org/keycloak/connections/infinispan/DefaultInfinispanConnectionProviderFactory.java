@@ -118,6 +118,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
             cacheManager.defineConfiguration(InfinispanConnectionProvider.USER_REVISIONS_CACHE_NAME, getRevisionCacheConfig(userRevisionsMaxEntries));
             cacheManager.getCache(InfinispanConnectionProvider.USER_REVISIONS_CACHE_NAME, true);
             cacheManager.getCache(InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME, true);
+            cacheManager.getCache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME, true);
             cacheManager.getCache(InfinispanConnectionProvider.KEYS_CACHE_NAME, true);
 
             logger.debugv("Using container managed Infinispan cache container, lookup={1}", cacheContainerLookup);

@@ -89,6 +89,7 @@
                     <eviction max-entries="10000" strategy="LRU"/>
                 </local-cache>
                 <local-cache name="sessions"/>
+                <local-cache name="authenticationSessions"/>
                 <local-cache name="offlineSessions"/>
                 <local-cache name="loginFailures"/>
                 <local-cache name="authorization"/>

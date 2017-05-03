@@ -237,6 +237,7 @@ public class PolicyEvaluationService {
 
                     AuthenticationSessionModel authSession = keycloakSession.authenticationSessions().createAuthenticationSession(id, realm, clientModel);
                     authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+                    authSession.setAuthenticatedUser(userModel);
                     userSession = keycloakSession.sessions().createUserSession(id, realm, userModel, userModel.getUsername(), "127.0.0.1", "passwd", false, null, null);
 
                     AuthenticationManager.setRolesAndMappersInSession(authSession);

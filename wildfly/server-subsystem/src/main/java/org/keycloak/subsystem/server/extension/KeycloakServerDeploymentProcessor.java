@@ -41,7 +41,7 @@ import java.util.List;
 public class KeycloakServerDeploymentProcessor implements DeploymentUnitProcessor {
 
     private static final String[] CACHES = new String[] {
-        "realms", "users","sessions","offlineSessions","loginFailures","work","authorization","keys"
+        "realms", "users","sessions","authenticationSessions","offlineSessions","loginFailures","work","authorization","keys"
     };
 
     // This param name is defined again in Keycloak Services class

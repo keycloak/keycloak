@@ -18,17 +18,23 @@ package org.keycloak.testsuite.account;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
+import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.auth.page.account.AccountManagement;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.auth.page.login.VerifyEmail;
 import org.keycloak.testsuite.util.MailServerConfiguration;
-import org.keycloak.testsuite.util.RealmRepUtil;
 import org.keycloak.testsuite.util.SslMailServer;
 
 import static org.junit.Assert.assertEquals;
@@ -53,6 +59,9 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     private VerifyEmail testRealmVerifyEmailPage;
+
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -86,6 +95,15 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
         accountManagement.navigateTo();
         testRealmLoginPage.form().login(user.getUsername(), "password");
 
+        EventRepresentation sendEvent = events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL)
+                .user(user.getId())
+                .client("account")
+                .detail(Details.USERNAME, "test-user@localhost")
+                .detail(Details.EMAIL, "test-user@localhost")
+                .removeDetail(Details.REDIRECT_URI)
+                .assertEvent();
+        String mailCodeId = sendEvent.getDetails().get(Details.CODE_ID);
+
         assertEquals("You need to verify your email address to activate your account.",
                 testRealmVerifyEmailPage.getFeedbackText());
 
@@ -96,6 +114,23 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
 
         driver.navigate().to(verifyEmailUrl);
 
+        events.expectRequiredAction(EventType.VERIFY_EMAIL)
+                .user(user.getId())
+                .client("account")
+                .detail(Details.USERNAME, "test-user@localhost")
+                .detail(Details.EMAIL, "test-user@localhost")
+                .detail(Details.CODE_ID, mailCodeId)
+                .removeDetail(Details.REDIRECT_URI)
+                .assertEvent();
+
+        events.expectLogin()
+                .client("account")
+                .user(user.getId())
+                .session(mailCodeId)
+                .detail(Details.USERNAME, "test-user@localhost")
+                .removeDetail(Details.REDIRECT_URI)
+                .assertEvent();
+
         assertCurrentUrlStartsWith(accountManagement);
         accountManagement.signOut();
         testRealmLoginPage.form().login(user.getUsername(), "password");
@@ -103,15 +138,27 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void verifyEmailWithSslWrongCertificate() {
+    public void verifyEmailWithSslWrongCertificate() throws Exception {
         UserRepresentation user = ApiUtil.findUserByUsername(testRealm(), "test-user@localhost");
 
         SslMailServer.startWithSsl(this.getClass().getClassLoader().getResource(SslMailServer.INVALID_KEY).getFile());
         accountManagement.navigateTo();
         loginPage.form().login(user.getUsername(), "password");
 
-        assertEquals("Failed to send email, please try again later.\n" +
-                        "« Back to Application",
-                testRealmVerifyEmailPage.getErrorMessage());
+        events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL_ERROR)
+                .error(Errors.EMAIL_SEND_FAILED)
+                .user(user.getId())
+                .client("account")
+                .detail(Details.USERNAME, "test-user@localhost")
+                .detail(Details.EMAIL, "test-user@localhost")
+                .removeDetail(Details.REDIRECT_URI)
+                .assertEvent();
+
+        // Email wasn't send
+        Assert.assertNull(SslMailServer.getLastReceivedMessage());
+
+        // Email wasn't send, but we won't notify end user about that. Admin is aware due to the error in the logs and the SEND_VERIFY_EMAIL_ERROR event.
+        assertEquals("You need to verify your email address to activate your account.",
+                testRealmVerifyEmailPage.getFeedbackText());
     }
 }

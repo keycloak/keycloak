@@ -27,6 +27,8 @@ import org.keycloak.common.util.Time;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.*;
@@ -74,8 +76,8 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
         // Do not allow resending e-mail by simple page refresh, i.e. when e-mail sent, it should be resent properly via email-verification endpoint
         if (! Objects.equals(authSession.getAuthNote(Constants.VERIFY_EMAIL_KEY), email)) {
             authSession.setAuthNote(Constants.VERIFY_EMAIL_KEY, email);
-            context.getEvent().clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, email).success();
-            challenge = sendVerifyEmail(context.getSession(), loginFormsProvider, context.getUser(), context.getAuthenticationSession());
+            EventBuilder event = context.getEvent().clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, email);
+            challenge = sendVerifyEmail(context.getSession(), loginFormsProvider, context.getUser(), context.getAuthenticationSession(), event);
         } else {
             challenge = loginFormsProvider.createResponse(UserModel.RequiredAction.VERIFY_EMAIL);
         }
@@ -126,7 +128,7 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
         return UserModel.RequiredAction.VERIFY_EMAIL.name();
     }
 
-    private Response sendVerifyEmail(KeycloakSession session, LoginFormsProvider forms, UserModel user, AuthenticationSessionModel authSession) throws UriBuilderException, IllegalArgumentException {
+    private Response sendVerifyEmail(KeycloakSession session, LoginFormsProvider forms, UserModel user, AuthenticationSessionModel authSession, EventBuilder event) throws UriBuilderException, IllegalArgumentException {
         RealmModel realm = session.getContext().getRealm();
         UriInfo uriInfo = session.getContext().getUri();
 
@@ -144,9 +146,10 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
 
         try {
             session.getProvider(EmailTemplateProvider.class).setRealm(realm).setUser(user).sendVerifyEmail(link, expirationInMinutes);
+            event.success();
         } catch (EmailException e) {
             logger.error("Failed to send verification email", e);
-            return forms.createResponse(RequiredAction.VERIFY_EMAIL);
+            event.error(Errors.EMAIL_SEND_FAILED);
         }
 
         return forms.createResponse(UserModel.RequiredAction.VERIFY_EMAIL);

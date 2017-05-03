@@ -17,13 +17,14 @@
 
 package org.keycloak.models.sessions.infinispan.entities;
 
+import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class AuthenticatedClientSessionEntity {
+public class AuthenticatedClientSessionEntity implements Serializable {
 
     private String id;
     private String authMethod;
