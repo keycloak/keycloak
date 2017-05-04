@@ -88,7 +88,7 @@ The process starts with the upstream side, which for RH-SSO is in a GitHub repos
 . Check out a topic branch to work in:
 
  git checkout -b BRANCH_NAME upstream/master
-
++
 IMPORTANT: Do NOT forget to put the ‘upstream/master’ at the end of the command. Otherwise you might be working with the wrong content.
 
 . Do work / make edits.
