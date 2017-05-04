@@ -31,6 +31,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -81,7 +82,13 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
 
         UserModel existingUser = getExistingUser(session, realm, authSession);
 
-        sendVerifyEmail(session, context, existingUser, brokerContext);
+        // Do not allow resending e-mail by simple page refresh
+        if (! Objects.equals(authSession.getAuthNote(Constants.VERIFY_EMAIL_KEY), existingUser.getEmail())) {
+            authSession.setAuthNote(Constants.VERIFY_EMAIL_KEY, existingUser.getEmail());
+            sendVerifyEmail(session, context, existingUser, brokerContext);
+        } else {
+            showEmailSentPage(context, brokerContext);
+        }
     }
 
     @Override
@@ -89,7 +96,8 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
         logger.debugf("Re-sending email requested for user, details follow");
 
         // This will allow user to re-send email again
-        context.getAuthenticationSession().removeAuthNote(VERIFY_ACCOUNT_IDP_USERNAME);
+        context.getAuthenticationSession().removeAuthNote(Constants.VERIFY_EMAIL_KEY);
+
         authenticateImpl(context, serializedCtx, brokerContext);
     }
 
@@ -146,6 +154,11 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
             return;
         }
 
+        showEmailSentPage(context, brokerContext);
+    }
+
+
+    protected void showEmailSentPage(AuthenticationFlowContext context, BrokeredIdentityContext brokerContext) {
         String accessCode = context.generateAccessCode();
         URI action = context.getActionUrl(accessCode);
 
@@ -156,4 +169,5 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
                 .createIdpLinkEmailPage();
         context.forceChallenge(challenge);
     }
+
 }

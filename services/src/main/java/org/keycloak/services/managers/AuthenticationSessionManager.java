@@ -28,13 +28,14 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.services.util.CookieHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.StickySessionEncoderProvider;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class AuthenticationSessionManager {
 
-    private static final String AUTH_SESSION_ID = "AUTH_SESSION_ID";
+    public static final String AUTH_SESSION_ID = "AUTH_SESSION_ID";
 
     private static final Logger log = Logger.getLogger(AuthenticationSessionManager.class);
 
@@ -57,12 +58,12 @@ public class AuthenticationSessionManager {
 
 
     public String getCurrentAuthenticationSessionId(RealmModel realm) {
-        return getAuthSessionCookie();
+        return getAuthSessionCookieDecoded(realm);
     }
 
 
     public AuthenticationSessionModel getCurrentAuthenticationSession(RealmModel realm) {
-        String authSessionId = getAuthSessionCookie();
+        String authSessionId = getAuthSessionCookieDecoded(realm);
         return authSessionId==null ? null : session.authenticationSessions().getAuthenticationSession(realm, authSessionId);
     }
 
@@ -72,22 +73,37 @@ public class AuthenticationSessionManager {
         String cookiePath = AuthenticationManager.getRealmCookiePath(realm, uriInfo);
 
         boolean sslRequired = realm.getSslRequired().isRequired(session.getContext().getConnection());
-        CookieHelper.addCookie(AUTH_SESSION_ID, authSessionId, cookiePath, null, null, -1, sslRequired, true);
 
-        log.debugf("Set AUTH_SESSION_ID cookie with value %s", authSessionId);
+        StickySessionEncoderProvider encoder = session.getProvider(StickySessionEncoderProvider.class);
+        String encodedAuthSessionId = encoder.encodeSessionId(authSessionId);
+
+        CookieHelper.addCookie(AUTH_SESSION_ID, encodedAuthSessionId, cookiePath, null, null, -1, sslRequired, true);
+
+        log.debugf("Set AUTH_SESSION_ID cookie with value %s", encodedAuthSessionId);
     }
 
 
-    public String getAuthSessionCookie() {
+    private String getAuthSessionCookieDecoded(RealmModel realm) {
         String cookieVal = CookieHelper.getCookieValue(AUTH_SESSION_ID);
 
         if (cookieVal != null) {
             log.debugf("Found AUTH_SESSION_ID cookie with value %s", cookieVal);
+
+            StickySessionEncoderProvider encoder = session.getProvider(StickySessionEncoderProvider.class);
+            String decodedAuthSessionId = encoder.decodeSessionId(cookieVal);
+
+            // Check if owner of this authentication session changed due to re-hashing (usually node failover or addition of new node)
+            String reencoded = encoder.encodeSessionId(decodedAuthSessionId);
+            if (!reencoded.equals(cookieVal)) {
+                log.debugf("Route changed. Will update authentication session cookie");
+                setAuthSessionCookie(decodedAuthSessionId, realm);
+            }
+
+            return decodedAuthSessionId;
         } else {
             log.debugf("Not found AUTH_SESSION_ID cookie");
+            return null;
         }
-
-        return cookieVal;
     }
 
 

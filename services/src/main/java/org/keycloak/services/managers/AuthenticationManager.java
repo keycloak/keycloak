@@ -513,7 +513,7 @@ public class AuthenticationManager {
             
             if (actionTokenKey != null) {
                 ActionTokenStoreProvider actionTokenStore = session.getProvider(ActionTokenStoreProvider.class);
-                actionTokenStore.put(actionTokenKey, null);
+                actionTokenStore.put(actionTokenKey, null); // Token is invalidated
             }
         }
 

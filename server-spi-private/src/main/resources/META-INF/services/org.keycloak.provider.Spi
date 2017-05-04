@@ -34,6 +34,7 @@ org.keycloak.scripting.ScriptingSpi
 org.keycloak.services.managers.BruteForceProtectorSpi
 org.keycloak.services.resource.RealmResourceSPI
 org.keycloak.sessions.AuthenticationSessionSpi
+org.keycloak.sessions.StickySessionEncoderSpi
 org.keycloak.protocol.ClientInstallationSpi
 org.keycloak.protocol.LoginProtocolSpi
 org.keycloak.protocol.ProtocolMapperSpi

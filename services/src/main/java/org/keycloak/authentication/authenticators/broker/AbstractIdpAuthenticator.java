@@ -47,9 +47,6 @@ public abstract class AbstractIdpAuthenticator implements Authenticator {
     // The clientSession note flag to indicate that email provided by identityProvider was changed on updateProfile page
     public static final String UPDATE_PROFILE_EMAIL_CHANGED = "UPDATE_PROFILE_EMAIL_CHANGED";
 
-    // The clientSession note flag to indicate if re-authentication after first broker login happened in different browser window. This can happen for example during email verification
-    public static final String IS_DIFFERENT_BROWSER = "IS_DIFFERENT_BROWSER"; // TODO:mposolda can reuse the END_AFTER_REQUIRED_ACTIONS instead?
-
     // The clientSession note flag to indicate that updateProfile page will be always displayed even if "updateProfileOnFirstLogin" is off
     public static final String ENFORCE_UPDATE_PROFILE = "ENFORCE_UPDATE_PROFILE";
 

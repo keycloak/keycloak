@@ -31,6 +31,9 @@ public class IdpLinkEmailPage extends AbstractPage {
     @FindBy(linkText = "Click here")
     private WebElement resendEmailLink;
 
+    @FindBy(linkText = "Click here") // Actually same link like "resendEmailLink"
+    private WebElement continueFlowLink;
+
     @Override
     public boolean isCurrent() {
         return driver.getTitle().startsWith("Link ");
@@ -40,8 +43,8 @@ public class IdpLinkEmailPage extends AbstractPage {
         resendEmailLink.click();
     }
 
-    public String getResendEmailLink() {
-        return resendEmailLink.getAttribute("href");
+    public void clickContinueFlowLink() {
+        continueFlowLink.click();
     }
 
     @Override

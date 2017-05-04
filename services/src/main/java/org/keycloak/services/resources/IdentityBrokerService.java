@@ -41,7 +41,6 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.AuthenticationFlowModel;
@@ -751,17 +750,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         UserModel federatedUser = authSession.getAuthenticatedUser();
 
         if (wasFirstBrokerLogin) {
-
-            String isDifferentBrowser = authSession.getAuthNote(AbstractIdpAuthenticator.IS_DIFFERENT_BROWSER);
-            if (Boolean.parseBoolean(isDifferentBrowser)) {
-                new AuthenticationSessionManager(session).removeAuthenticationSession(realmModel, authSession, true);
-                return session.getProvider(LoginFormsProvider.class)
-                        .setSuccess(Messages.IDENTITY_PROVIDER_LINK_SUCCESS, context.getIdpConfig().getAlias(), context.getUsername())
-                        .createInfoPage();
-            } else {
-                return finishBrokerAuthentication(context, federatedUser, authSession, providerId);
-            }
-
+            return finishBrokerAuthentication(context, federatedUser, authSession, providerId);
         } else {
 
             boolean firstBrokerLoginInProgress = (authSession.getAuthNote(AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE) != null);

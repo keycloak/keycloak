@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+import javax.ws.rs.core.Response;
+
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
@@ -289,7 +291,8 @@ public abstract class AbstractServletAuthzFunctionalAdapterTest extends Abstract
             policy.addClient("admin-cli");
 
             ClientPoliciesResource policyResource = getAuthorizationResource().policies().client();
-            policyResource.create(policy);
+            Response response = policyResource.create(policy);
+            response.close();
             policy = policyResource.findByName(policy.getName());
 
             updatePermissionPolicies("Protected Resource Permission", policy.getName());

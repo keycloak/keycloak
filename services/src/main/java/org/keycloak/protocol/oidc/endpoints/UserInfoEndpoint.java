@@ -140,24 +140,7 @@ public class UserInfoEndpoint {
             throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Token invalid: " + e.getMessage(), Response.Status.UNAUTHORIZED);
         }
 
-        UserSessionModel userSession = session.sessions().getUserSession(realm, token.getSessionState());
-        ClientSessionModel clientSession = session.sessions().getClientSession(token.getClientSession());
-        if( userSession == null ) {
-            userSession = session.sessions().getOfflineUserSession(realm, token.getSessionState());
-            if( AuthenticationManager.isOfflineSessionValid(realm, userSession)) {
-                clientSession = session.sessions().getOfflineClientSession(realm, token.getClientSession());
-            } else {
-                userSession = null;
-                clientSession = null;
-            }
-        }
-
-        if (userSession == null) {
-            event.error(Errors.USER_SESSION_NOT_FOUND);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "User session not found", Response.Status.BAD_REQUEST);
-        }
-
-        event.session(userSession);
+        UserSessionModel userSession = findValidSession(token, event);
 
         UserModel userModel = userSession.getUser();
         if (userModel == null) {
@@ -168,11 +151,6 @@ public class UserInfoEndpoint {
         event.user(userModel)
                 .detail(Details.USERNAME, userModel.getUsername());
 
-
-        if (clientSession == null || !AuthenticationManager.isSessionValid(realm, userSession)) {
-            event.error(Errors.SESSION_EXPIRED);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Session expired", Response.Status.UNAUTHORIZED);
-        }
 
         ClientModel clientModel = realm.getClientByClientId(token.getIssuedFor());
         if (clientModel == null) {
@@ -185,6 +163,12 @@ public class UserInfoEndpoint {
         if (!clientModel.isEnabled()) {
             event.error(Errors.CLIENT_DISABLED);
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client disabled", Response.Status.BAD_REQUEST);
+        }
+
+        AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(clientModel.getId());
+        if (clientSession == null) {
+            event.error(Errors.SESSION_EXPIRED);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Session expired", Response.Status.UNAUTHORIZED);
         }
 
         AccessToken userInfo = new AccessToken();
@@ -223,6 +207,36 @@ public class UserInfoEndpoint {
         event.success();
 
         return Cors.add(request, responseBuilder).auth().allowedOrigins(token).build();
+    }
+
+
+    private UserSessionModel findValidSession(AccessToken token, EventBuilder event) {
+        UserSessionModel userSession = session.sessions().getUserSession(realm, token.getSessionState());
+        UserSessionModel offlineUserSession = null;
+        if (AuthenticationManager.isSessionValid(realm, userSession)) {
+            event.session(userSession);
+            return userSession;
+        } else {
+            offlineUserSession = session.sessions().getOfflineUserSession(realm, token.getSessionState());
+            if (AuthenticationManager.isOfflineSessionValid(realm, offlineUserSession)) {
+                event.session(offlineUserSession);
+                return offlineUserSession;
+            }
+        }
+
+        if (userSession == null && offlineUserSession == null) {
+            event.error(Errors.USER_SESSION_NOT_FOUND);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "User session not found", Response.Status.BAD_REQUEST);
+        }
+
+        if (userSession != null) {
+            event.session(userSession);
+        } else {
+            event.session(offlineUserSession);
+        }
+
+        event.error(Errors.SESSION_EXPIRED);
+        throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Session expired", Response.Status.UNAUTHORIZED);
     }
 
 }

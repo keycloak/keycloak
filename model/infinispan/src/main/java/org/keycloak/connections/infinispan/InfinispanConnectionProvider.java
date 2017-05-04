@@ -49,6 +49,9 @@ public interface InfinispanConnectionProvider extends Provider {
     int KEYS_CACHE_DEFAULT_MAX = 1000;
     int KEYS_CACHE_MAX_IDLE_SECONDS = 3600;
 
+    // System property used on Wildfly to identify distributedCache address and sticky session route
+    String JBOSS_NODE_NAME = "jboss.node.name";
+
 
     <K, V> Cache<K, V> getCache(String name);
 

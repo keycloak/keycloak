@@ -72,19 +72,18 @@ public abstract class BrowserHistoryHelper {
             }
 
             // For now, handle just status 200 with String body. See if more is needed...
-            if (response.getStatus() == 200) {
-                Object entity = response.getEntity();
-                if (entity instanceof String) {
-                    String responseString = (String) entity;
+            Object entity = response.getEntity();
+            if (entity != null && entity instanceof String) {
+                String responseString = (String) entity;
 
-                    URI lastExecutionURL = new AuthenticationFlowURLHelper(session, session.getContext().getRealm(), session.getContext().getUri()).getLastExecutionUrl(authSession);
+                URI lastExecutionURL = new AuthenticationFlowURLHelper(session, session.getContext().getRealm(), session.getContext().getUri()).getLastExecutionUrl(authSession);
 
-                    // Inject javascript for history "replaceState"
-                    String responseWithJavascript = responseWithJavascript(responseString, lastExecutionURL.toString());
+                // Inject javascript for history "replaceState"
+                String responseWithJavascript = responseWithJavascript(responseString, lastExecutionURL.toString());
 
-                    return Response.fromResponse(response).entity(responseWithJavascript).build();
-                }
+                return Response.fromResponse(response).entity(responseWithJavascript).build();
             }
+
 
             return response;
         }

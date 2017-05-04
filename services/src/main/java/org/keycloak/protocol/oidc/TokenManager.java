@@ -197,31 +197,26 @@ public class TokenManager {
             return false;
         }
 
-        UserSessionModel userSession =  session.sessions().getUserSession(realm, token.getSessionState());
-        if (AuthenticationManager.isSessionValid(realm, userSession)) {
-            ClientSessionModel clientSession = session.sessions().getClientSession(realm, token.getClientSession());
-            if (clientSession != null) {
-                return true;
-            }
-        }
-
-<<<<<<< f392e79ad781014387c9fe5724815b24eab7a35f
-        userSession = session.sessions().getOfflineUserSession(realm, token.getSessionState());
-        if (AuthenticationManager.isOfflineSessionValid(realm, userSession)) {
-            ClientSessionModel clientSession = session.sessions().getOfflineClientSession(realm, token.getClientSession());
-            if (clientSession != null) {
-                return true;
-            }
-=======
         ClientModel client = realm.getClientByClientId(token.getIssuedFor());
         if (client == null || !client.isEnabled()) {
             return false;
         }
 
-        AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(client.getId());
-        if (clientSession == null) {
-            return false;
->>>>>>> KEYCLOAK-4626 AuthenticationSessions: start
+        UserSessionModel userSession =  session.sessions().getUserSession(realm, token.getSessionState());
+        if (AuthenticationManager.isSessionValid(realm, userSession)) {
+            AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(client.getId());
+            if (clientSession != null) {
+                return true;
+            }
+        }
+
+
+        userSession = session.sessions().getOfflineUserSession(realm, token.getSessionState());
+        if (AuthenticationManager.isOfflineSessionValid(realm, userSession)) {
+            AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(client.getId());
+            if (clientSession != null) {
+                return true;
+            }
         }
 
         return false;

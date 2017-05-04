@@ -346,7 +346,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractIdentityProvi
         driver.navigate().to(linkFromMail.trim());
 
         infoPage.assertCurrent();
-        Assert.assertThat(infoPage.getInfo(), startsWith("Your account was successfully linked with " + getProviderId() + " account pedroigor"));
+        Assert.assertThat(infoPage.getInfo(), startsWith("You successfully verified your email. Please go back to your original browser and continue there with the login."));
     }
 
     /**
@@ -384,15 +384,13 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractIdentityProvi
 
             // authenticated, but not redirected to app. Just seeing info page.
             infoPage2.assertCurrent();
-            Assert.assertThat(infoPage2.getInfo(), startsWith("Your account was successfully linked with " + getProviderId() + " account pedroigor"));
+            Assert.assertThat(infoPage2.getInfo(), startsWith("You successfully verified your email. Please go back to your original browser and continue there with the login."));
         } finally {
             // Revert everything
             webRule2.after();
         }
 
-        driver.navigate().refresh();
-        this.loginExpiredPage.assertCurrent();
-        this.loginExpiredPage.clickLoginContinueLink();
+        this.idpLinkEmailPage.clickContinueFlowLink();
 
         // authenticated and redirected to app. User is linked with identity provider
         assertFederatedUser("pedroigor", "psilva@redhat.com", "pedroigor");

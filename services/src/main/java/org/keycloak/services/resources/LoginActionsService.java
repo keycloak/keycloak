@@ -338,7 +338,7 @@ public class LoginActionsService {
                 return ErrorPage.error(session, Messages.RESET_CREDENTIAL_NOT_ALLOWED);
 
             }
-            authSession = createAuthenticationSessionForClient(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+            authSession = createAuthenticationSessionForClient();
             return processResetCredentials(false, null, authSession);
         }
 
@@ -346,17 +346,17 @@ public class LoginActionsService {
         return resetCredentials(code, execution);
     }
 
-    AuthenticationSessionModel createAuthenticationSessionForClient(String clientId)
+    AuthenticationSessionModel createAuthenticationSessionForClient()
       throws UriBuilderException, IllegalArgumentException {
         AuthenticationSessionModel authSession;
 
         // set up the account service as the endpoint to call.
-        ClientModel client = realm.getClientByClientId(clientId == null ? Constants.ACCOUNT_MANAGEMENT_CLIENT_ID : clientId);
+        ClientModel client = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
         authSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, client, true);
         authSession.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
         //authSession.setNote(AuthenticationManager.END_AFTER_REQUIRED_ACTIONS, "true");
         authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        String redirectUri = Urls.accountBase(uriInfo.getBaseUri()).path("/").build(realm.getName()).toString(); // TODO:mposolda It seems that this should be taken from client rather then hardcoded to account?
+        String redirectUri = Urls.accountBase(uriInfo.getBaseUri()).path("/").build(realm.getName()).toString();
         authSession.setRedirectUri(redirectUri);
         authSession.setClientNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM, OAuth2Constants.CODE);
         authSession.setClientNote(OIDCLoginProtocol.REDIRECT_URI_PARAM, redirectUri);

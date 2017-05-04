@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+import javax.ws.rs.core.Response;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
@@ -43,7 +45,6 @@ import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
@@ -77,14 +78,16 @@ public class RequireUmaAuthorizationScopeTest extends AbstractKeycloakTest {
         AuthorizationResource authorization = client.authorization();
         ResourceRepresentation resource = new ResourceRepresentation("Resource A");
 
-        authorization.resources().create(resource);
+        Response response = authorization.resources().create(resource);
+        response.close();
 
         JSPolicyRepresentation policy = new JSPolicyRepresentation();
 
         policy.setName("Default Policy");
         policy.setCode("$evaluation.grant();");
 
-        authorization.policies().js().create(policy);
+        response = authorization.policies().js().create(policy);
+        response.close();
 
         ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
 
@@ -92,7 +95,8 @@ public class RequireUmaAuthorizationScopeTest extends AbstractKeycloakTest {
         permission.addResource(resource.getName());
         permission.addPolicy(policy.getName());
 
-        authorization.permissions().resource().create(permission);
+        response = authorization.permissions().resource().create(permission);
+        response.close();
     }
 
     @Test
@@ -140,7 +144,7 @@ public class RequireUmaAuthorizationScopeTest extends AbstractKeycloakTest {
     }
 
     private RealmResource getRealm() throws Exception {
-        return AdminClientUtil.createAdminClient().realm("authz-test");
+        return adminClient.realm("authz-test");
     }
 
     private ClientResource getClient(RealmResource realm) {

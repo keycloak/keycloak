@@ -11,5 +11,8 @@
         <p id="instruction2" class="instruction">
             ${msg("emailLinkIdp2")} <a href="${url.loginAction}">${msg("doClickHere")}</a> ${msg("emailLinkIdp3")}
         </p>
+        <p id="instruction3" class="instruction">
+            ${msg("emailLinkIdp4")} <a href="${url.loginAction}">${msg("doClickHere")}</a> ${msg("emailLinkIdp5")}
+        </p>
     </#if>
 </@layout.registrationLayout>
