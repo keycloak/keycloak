@@ -5,6 +5,7 @@
 . IBM Style Guide (printed)
 . link:https://www.ibm.com/developerworks/library/styleguidelines/[IBM DeveloperWorks Editorial Style Guide]
 . link:http://brand.redhat.com/elements/[RH Corporate]
+. link:https://mojo.redhat.com/docs/DOC-1136272[Red Hat Style Guide and Writers Checklist]
 . This document
 
 == Style Guidelines
