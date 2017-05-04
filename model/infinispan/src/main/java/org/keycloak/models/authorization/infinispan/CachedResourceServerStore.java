@@ -176,7 +176,6 @@ public class CachedResourceServerStore implements ResourceServerStore {
      * @param clientId associate client id
      */
     private void removeCachedResourceServer(String id, String clientId) {
-        String cacheKeyForResourceServer;
         if (id != null) {
             cache.remove(id);
         }
