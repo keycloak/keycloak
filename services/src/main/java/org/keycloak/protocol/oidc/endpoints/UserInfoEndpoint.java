@@ -141,6 +141,15 @@ public class UserInfoEndpoint {
 
         UserSessionModel userSession = session.sessions().getUserSession(realm, token.getSessionState());
         ClientSessionModel clientSession = session.sessions().getClientSession(token.getClientSession());
+        if( userSession == null ) {
+            userSession = session.sessions().getOfflineUserSession(realm, token.getSessionState());
+            if( AuthenticationManager.isOfflineSessionValid(realm, userSession)) {
+                clientSession = session.sessions().getOfflineClientSession(realm, token.getClientSession());
+            } else {
+                userSession = null;
+                clientSession = null;
+            }
+        }
 
         if (userSession == null) {
             event.error(Errors.USER_SESSION_NOT_FOUND);
