@@ -1948,6 +1948,8 @@ module.factory('errorInterceptor', function($q, $window, $rootScope, $location, 
                 } else {
                     Notifications.error("An unexpected server error has occurred");
                 }
+            } else {
+                Notifications.error("No response from server.");
             }
             return $q.reject(response);
         }
