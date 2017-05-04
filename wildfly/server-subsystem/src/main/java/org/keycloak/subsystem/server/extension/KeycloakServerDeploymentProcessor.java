@@ -41,12 +41,12 @@ import java.util.List;
 public class KeycloakServerDeploymentProcessor implements DeploymentUnitProcessor {
 
     private static final String[] CACHES = new String[] {
-        "realms", "users","sessions","authenticationSessions","offlineSessions","loginFailures","work","authorization","keys"
+        "realms", "users","sessions","authenticationSessions","offlineSessions","loginFailures","work","authorization","keys","actionTokens"
     };
 
     // This param name is defined again in Keycloak Services class
     // org.keycloak.services.resources.KeycloakApplication.  We have this value in
-    // two places to avoid dependency between Keycloak Subsystem and Keyclaok Services module.
+    // two places to avoid dependency between Keycloak Subsystem and Keycloak Services module.
     public static final String KEYCLOAK_CONFIG_PARAM_NAME = "org.keycloak.server-subsystem.Config";
 
     @Override

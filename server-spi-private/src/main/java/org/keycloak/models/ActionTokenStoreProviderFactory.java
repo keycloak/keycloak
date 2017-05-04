@@ -14,23 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.authentication.actiontoken.resetcred;
+package org.keycloak.models;
 
-import org.keycloak.authentication.actiontoken.DefaultActionToken;
+import org.keycloak.provider.ProviderFactory;
 
 /**
- * Representation of a token that represents a time-limited reset credentials action.
  *
  * @author hmlnarik
  */
-public class ResetCredentialsActionToken extends DefaultActionToken {
+public interface ActionTokenStoreProviderFactory extends ProviderFactory<ActionTokenStoreProvider> {
 
-    public static final String TOKEN_TYPE = "reset-credentials";
-
-    public ResetCredentialsActionToken(String userId, int absoluteExpirationInSecs, String authenticationSessionId) {
-        super(userId, TOKEN_TYPE, absoluteExpirationInSecs, null, authenticationSessionId);
-    }
-
-    private ResetCredentialsActionToken() {
-    }
 }

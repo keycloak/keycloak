@@ -157,4 +157,9 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
     public String getId() {
         return UserModel.RequiredAction.UPDATE_PASSWORD.name();
     }
+
+    @Override
+    public boolean isOneTimeAction() {
+        return true;
+    }
 }

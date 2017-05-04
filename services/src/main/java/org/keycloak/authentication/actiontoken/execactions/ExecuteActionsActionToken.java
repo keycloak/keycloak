@@ -16,13 +16,10 @@
  */
 package org.keycloak.authentication.actiontoken.execactions;
 
-import org.keycloak.TokenVerifier;
 import org.keycloak.authentication.actiontoken.DefaultActionToken;
-import org.keycloak.common.VerificationException;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.UUID;
 
 /**
  *
@@ -34,15 +31,14 @@ public class ExecuteActionsActionToken extends DefaultActionToken {
     private static final String JSON_FIELD_REQUIRED_ACTIONS = "rqac";
     private static final String JSON_FIELD_REDIRECT_URI = "reduri";
 
-    public ExecuteActionsActionToken(String userId, int absoluteExpirationInSecs, UUID actionVerificationNonce, List<String> requiredActions, String redirectUri, String clientId) {
-        super(userId, TOKEN_TYPE, absoluteExpirationInSecs, actionVerificationNonce);
+    public ExecuteActionsActionToken(String userId, int absoluteExpirationInSecs, List<String> requiredActions, String redirectUri, String clientId) {
+        super(userId, TOKEN_TYPE, absoluteExpirationInSecs, null);
         setRequiredActions(requiredActions == null ? new LinkedList<>() : new LinkedList<>(requiredActions));
         setRedirectUri(redirectUri);
         this.issuedFor = clientId;
     }
 
     private ExecuteActionsActionToken() {
-        super(null, TOKEN_TYPE, -1, null);
     }
 
     @JsonProperty(value = JSON_FIELD_REQUIRED_ACTIONS)
@@ -71,15 +67,5 @@ public class ExecuteActionsActionToken extends DefaultActionToken {
         } else {
             setOtherClaims(JSON_FIELD_REDIRECT_URI, redirectUri);
         }
-    }
-
-    /**
-     * Returns a {@code ExecuteActionsActionToken} instance decoded from the given string. If decoding fails, returns {@code null}
-     *
-     * @param actionTokenString
-     * @return
-     */
-    public static ExecuteActionsActionToken deserialize(String actionTokenString) throws VerificationException {
-        return TokenVerifier.create(actionTokenString, ExecuteActionsActionToken.class).getToken();
     }
 }

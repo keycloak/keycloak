@@ -42,6 +42,8 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
 
     private volatile Cache<String, AuthenticationSessionEntity> authSessionsCache;
 
+    public static final String AUTHENTICATION_SESSION_EVENTS = "AUTHENTICATION_SESSION_EVENTS";
+
     @Override
     public void init(Config.Scope config) {
 

@@ -45,6 +45,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.page.LoginPasswordUpdatePage;
+import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.AdminEventPaths;
@@ -68,6 +69,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -94,6 +96,9 @@ public class UserTest extends AbstractAdminTest {
 
     @Page
     protected InfoPage infoPage;
+
+    @Page
+    protected ErrorPage errorPage;
 
     @Page
     protected LoginPage loginPage;
@@ -546,8 +551,49 @@ public class UserTest extends AbstractAdminTest {
 
         driver.navigate().to(link);
 
-// TODO:hmlnarik - return back once single-use cache would be implemented
-//        assertEquals("We're sorry...", driver.getTitle());
+        assertEquals("We're sorry...", driver.getTitle());
+    }
+
+    @Test
+    public void sendResetPasswordEmailSuccessTokenShortLifespan() throws IOException, MessagingException {
+        UserRepresentation userRep = new UserRepresentation();
+        userRep.setEnabled(true);
+        userRep.setUsername("user1");
+        userRep.setEmail("user1@test.com");
+
+        String id = createUser(userRep);
+
+        final AtomicInteger originalValue = new AtomicInteger();
+
+        RealmRepresentation realmRep = realm.toRepresentation();
+        originalValue.set(realmRep.getActionTokenGeneratedByAdminLifespan());
+        realmRep.setActionTokenGeneratedByAdminLifespan(60);
+        realm.update(realmRep);
+
+        try {
+            UserResource user = realm.users().get(id);
+            List<String> actions = new LinkedList<>();
+            actions.add(UserModel.RequiredAction.UPDATE_PASSWORD.name());
+            user.executeActionsEmail(actions);
+
+            Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+
+            MimeMessage message = greenMail.getReceivedMessages()[0];
+
+            String link = MailUtils.getPasswordResetEmailLink(message);
+
+            setTimeOffset(70);
+
+            driver.navigate().to(link);
+
+            errorPage.assertCurrent();
+            assertEquals("An error occurred, please login again through your application.", errorPage.getError());
+        } finally {
+            setTimeOffset(0);
+
+            realmRep.setActionTokenGeneratedByAdminLifespan(originalValue.get());
+            realm.update(realmRep);
+        }
     }
 
     @Test
@@ -608,8 +654,7 @@ public class UserTest extends AbstractAdminTest {
 
         driver.navigate().to(link);
 
-// TODO:hmlnarik - return back once single-use cache would be implemented
-//        assertEquals("We're sorry...", driver.getTitle());
+        assertEquals("We're sorry...", driver.getTitle());
     }
 
     @Test
@@ -674,8 +719,7 @@ public class UserTest extends AbstractAdminTest {
 
         driver.navigate().to(link);
 
-// TODO:hmlnarik - return back once single-use cache would be implemented
-//        assertEquals("We're sorry...", driver.getTitle());
+        assertEquals("We're sorry...", driver.getTitle());
     }
 
 
@@ -733,6 +777,11 @@ public class UserTest extends AbstractAdminTest {
 
         driver.navigate().to(link);
 
+        Assert.assertEquals("Your account has been updated.", infoPage.getInfo());
+
+        driver.navigate().to("about:blank");
+
+        driver.navigate().to(link); // It should be possible to use the same action token multiple times
         Assert.assertEquals("Your account has been updated.", infoPage.getInfo());
     }
 

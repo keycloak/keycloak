@@ -358,8 +358,6 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         events.expectRequiredAction(EventType.VERIFY_EMAIL)
           .user(testUserId)
-          .detail(Details.USERNAME, "test-user@localhost")
-          .detail(Details.EMAIL, "test-user@localhost")
           .detail(Details.CODE_ID, Matchers.not(Matchers.is(mailCodeId)))
           .client(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID)   // as authentication sessions are browser-specific,
                                                             // the client and redirect_uri is unrelated to

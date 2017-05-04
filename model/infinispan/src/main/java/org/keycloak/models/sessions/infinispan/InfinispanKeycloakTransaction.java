@@ -16,11 +16,14 @@
  */
 package org.keycloak.models.sessions.infinispan;
 
+import org.keycloak.cluster.ClusterEvent;
+import org.keycloak.cluster.ClusterProvider;
 import org.infinispan.context.Flag;
 import org.keycloak.models.KeycloakTransaction;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
 
@@ -32,12 +35,12 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
     private final static Logger log = Logger.getLogger(InfinispanKeycloakTransaction.class);
 
     public enum CacheOperation {
-        ADD, REMOVE, REPLACE, ADD_IF_ABSENT // ADD_IF_ABSENT throws an exception if there is existing value
+        ADD, ADD_WITH_LIFESPAN, REMOVE, REPLACE, ADD_IF_ABSENT // ADD_IF_ABSENT throws an exception if there is existing value
     }
 
     private boolean active;
     private boolean rollback;
-    private final Map<Object, CacheTask> tasks = new HashMap<>();
+    private final Map<Object, CacheTask> tasks = new LinkedHashMap<>();
 
     @Override
     public void begin() {
@@ -80,7 +83,28 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
         if (tasks.containsKey(taskKey)) {
             throw new IllegalStateException("Can't add session: task in progress for session");
         } else {
-            tasks.put(taskKey, new CacheTask<>(cache, CacheOperation.ADD, key, value));
+            tasks.put(taskKey, new CacheTaskWithValue<V>(value) {
+                @Override
+                public void execute() {
+                    decorateCache(cache).put(key, value);
+                }
+            });
+        }
+    }
+
+    public <K, V> void put(Cache<K, V> cache, K key, V value, long lifespan, TimeUnit lifespanUnit) {
+        log.tracev("Adding cache operation: {0} on {1}", CacheOperation.ADD_WITH_LIFESPAN, key);
+
+        Object taskKey = getTaskKey(cache, key);
+        if (tasks.containsKey(taskKey)) {
+            throw new IllegalStateException("Can't add session: task in progress for session");
+        } else {
+            tasks.put(taskKey, new CacheTaskWithValue<V>(value) {
+                @Override
+                public void execute() {
+                    decorateCache(cache).put(key, value, lifespan, lifespanUnit);
+                }
+            });
         }
     }
 
@@ -91,7 +115,15 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
         if (tasks.containsKey(taskKey)) {
             throw new IllegalStateException("Can't add session: task in progress for session");
         } else {
-            tasks.put(taskKey, new CacheTask<>(cache, CacheOperation.ADD_IF_ABSENT, key, value));
+            tasks.put(taskKey, new CacheTaskWithValue<V>(value) {
+                @Override
+                public void execute() {
+                    V existing = cache.putIfAbsent(key, value);
+                    if (existing != null) {
+                        throw new IllegalStateException("There is already existing value in cache for key " + key);
+                    }
+                }
+            });
         }
     }
 
@@ -101,40 +133,47 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
         Object taskKey = getTaskKey(cache, key);
         CacheTask current = tasks.get(taskKey);
         if (current != null) {
-            switch (current.operation) {
-                case ADD:
-                case ADD_IF_ABSENT:
-                case REPLACE:
-                    current.value = value;
-                    return;
-                case REMOVE:
-                    return;
+            if (current instanceof CacheTaskWithValue) {
+                ((CacheTaskWithValue<V>) current).setValue(value);
             }
         } else {
-            tasks.put(taskKey, new CacheTask<>(cache, CacheOperation.REPLACE, key, value));
+            tasks.put(taskKey, new CacheTaskWithValue<V>(value) {
+                @Override
+                public void execute() {
+                    decorateCache(cache).replace(key, value);
+                }
+            });
         }
+    }
+
+    public <K, V> void notify(ClusterProvider clusterProvider, String taskKey, ClusterEvent event, boolean ignoreSender) {
+        log.tracev("Adding cache operation SEND_EVENT: {0}", event);
+
+        String theTaskKey = taskKey;
+        int i = 1;
+        while (tasks.containsKey(theTaskKey)) {
+            theTaskKey = taskKey + "-" + (i++);
+        }
+
+        tasks.put(taskKey, () -> clusterProvider.notify(taskKey, event, ignoreSender));
     }
 
     public <K, V> void remove(Cache<K, V> cache, K key) {
         log.tracev("Adding cache operation: {0} on {1}", CacheOperation.REMOVE, key);
 
         Object taskKey = getTaskKey(cache, key);
-        tasks.put(taskKey, new CacheTask<>(cache, CacheOperation.REMOVE, key, null));
+        tasks.put(taskKey, () -> decorateCache(cache).remove(key));
     }
 
     // This is for possibility to lookup for session by id, which was created in this transaction
     public <K, V> V get(Cache<K, V> cache, K key) {
         Object taskKey = getTaskKey(cache, key);
-        CacheTask<K, V> current = tasks.get(taskKey);
+        CacheTask<V> current = tasks.get(taskKey);
         if (current != null) {
-            switch (current.operation) {
-                case ADD:
-                case ADD_IF_ABSENT:
-                case REPLACE:
-                    return current.value;
-                case REMOVE:
-                    return null;
+            if (current instanceof CacheTaskWithValue) {
+                return ((CacheTaskWithValue<V>) current).getValue();
             }
+            return null;
         }
 
         // Should we have per-transaction cache for lookups?
@@ -151,46 +190,29 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
         }
     }
 
-    public static class CacheTask<K, V> {
-        private final Cache<K, V> cache;
-        private final CacheOperation operation;
-        private final K key;
-        private V value;
+    public interface CacheTask<V> {
+        void execute();
+    }
 
-        public CacheTask(Cache<K, V> cache, CacheOperation operation, K key, V value) {
-            this.cache = cache;
-            this.operation = operation;
-            this.key = key;
+    public abstract class CacheTaskWithValue<V> implements CacheTask<V> {
+        protected V value;
+
+        public CacheTaskWithValue(V value) {
             this.value = value;
         }
 
-        public void execute() {
-            log.tracev("Executing cache operation: {0} on {1}", operation, key);
-
-            switch (operation) {
-                case ADD:
-                    decorateCache().put(key, value);
-                    break;
-                case REMOVE:
-                    decorateCache().remove(key);
-                    break;
-                case REPLACE:
-                    decorateCache().replace(key, value);
-                    break;
-                case ADD_IF_ABSENT:
-                    V existing = cache.putIfAbsent(key, value);
-                    if (existing != null) {
-                        throw new IllegalStateException("IllegalState. There is already existing value in cache for key " + key);
-                    }
-                    break;
-            }
+        public V getValue() {
+            return value;
         }
 
-
-        // Ignore return values. Should have better performance within cluster / cross-dc env
-        private Cache<K, V> decorateCache() {
-            return cache.getAdvancedCache()
-                    .withFlags(Flag.IGNORE_RETURN_VALUES, Flag.SKIP_REMOTE_LOOKUP);
+        public void setValue(V value) {
+            this.value = value;
         }
+    }
+
+    // Ignore return values. Should have better performance within cluster / cross-dc env
+    private static <K, V> Cache<K, V> decorateCache(Cache<K, V> cache) {
+        return cache.getAdvancedCache()
+                .withFlags(Flag.IGNORE_RETURN_VALUES, Flag.SKIP_REMOTE_LOOKUP);
     }
 }

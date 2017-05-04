@@ -304,4 +304,12 @@ public class LoginActionsServiceChecks {
 
         return true;
     }
+
+    public static <T extends DefaultActionToken> void checkTokenWasNotUsedYet(T token, ActionTokenContext<T> context) throws VerificationException {
+        ActionTokenStoreProvider actionTokenStore = context.getSession().getProvider(ActionTokenStoreProvider.class);
+        if (actionTokenStore.get(token) != null) {
+            throw new ExplainedTokenVerificationException(token, Errors.EXPIRED_CODE, Messages.EXPIRED_ACTION);
+        }
+    }
+
 }

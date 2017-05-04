@@ -14,20 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.keycloak.models.cache.infinispan;
 
-package org.keycloak.models.jpa.entities;
+import org.keycloak.cluster.ClusterEvent;
 
 /**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * Event requesting removal of the action tokens with the given user and action regardless of nonce.
  */
-public interface RealmAttributes {
+public class RemoveActionTokensSpecificEvent implements ClusterEvent {
 
-    String DISPLAY_NAME = "displayName";
+    private final String userId;
+    private final String actionId;
 
-    String DISPLAY_NAME_HTML = "displayNameHtml";
+    public RemoveActionTokensSpecificEvent(String userId, String actionId) {
+        this.userId = userId;
+        this.actionId = actionId;
+    }
 
-    String ACTION_TOKEN_GENERATED_BY_ADMIN_LIFESPAN = "actionTokenGeneratedByAdminLifespan";
+    public String getUserId() {
+        return userId;
+    }
 
-    String ACTION_TOKEN_GENERATED_BY_USER_LIFESPAN = "actionTokenGeneratedByUserLifespan";
+    public String getActionId() {
+        return actionId;
+    }
 
 }

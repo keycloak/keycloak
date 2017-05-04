@@ -46,6 +46,8 @@ public class RealmRepresentation {
     protected Integer accessCodeLifespan;
     protected Integer accessCodeLifespanUserAction;
     protected Integer accessCodeLifespanLogin;
+    protected Integer actionTokenGeneratedByAdminLifespan;
+    protected Integer actionTokenGeneratedByUserLifespan;
     protected Boolean enabled;
     protected String sslRequired;
     @Deprecated
@@ -336,6 +338,22 @@ public class RealmRepresentation {
 
     public void setAccessCodeLifespanLogin(Integer accessCodeLifespanLogin) {
         this.accessCodeLifespanLogin = accessCodeLifespanLogin;
+    }
+
+    public Integer getActionTokenGeneratedByAdminLifespan() {
+        return actionTokenGeneratedByAdminLifespan;
+    }
+
+    public void setActionTokenGeneratedByAdminLifespan(Integer actionTokenGeneratedByAdminLifespan) {
+        this.actionTokenGeneratedByAdminLifespan = actionTokenGeneratedByAdminLifespan;
+    }
+
+    public Integer getActionTokenGeneratedByUserLifespan() {
+        return actionTokenGeneratedByUserLifespan;
+    }
+
+    public void setActionTokenGeneratedByUserLifespan(Integer actionTokenGeneratedByUserLifespan) {
+        this.actionTokenGeneratedByUserLifespan = actionTokenGeneratedByUserLifespan;
     }
 
     public List<String> getDefaultRoles() {

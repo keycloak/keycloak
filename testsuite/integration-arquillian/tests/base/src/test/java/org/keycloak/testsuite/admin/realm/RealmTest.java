@@ -255,6 +255,8 @@ public class RealmTest extends AbstractAdminTest {
         rep.setSsoSessionIdleTimeout(123);
         rep.setSsoSessionMaxLifespan(12);
         rep.setAccessCodeLifespanLogin(1234);
+        rep.setActionTokenGeneratedByAdminLifespan(2345);
+        rep.setActionTokenGeneratedByUserLifespan(3456);
         rep.setRegistrationAllowed(true);
         rep.setRegistrationEmailAsUsername(true);
         rep.setEditUsernameAllowed(true);
@@ -267,6 +269,8 @@ public class RealmTest extends AbstractAdminTest {
         assertEquals(123, rep.getSsoSessionIdleTimeout().intValue());
         assertEquals(12, rep.getSsoSessionMaxLifespan().intValue());
         assertEquals(1234, rep.getAccessCodeLifespanLogin().intValue());
+        assertEquals(2345, rep.getActionTokenGeneratedByAdminLifespan().intValue());
+        assertEquals(3456, rep.getActionTokenGeneratedByUserLifespan().intValue());
         assertEquals(Boolean.TRUE, rep.isRegistrationAllowed());
         assertEquals(Boolean.TRUE, rep.isRegistrationEmailAsUsername());
         assertEquals(Boolean.TRUE, rep.isEditUsernameAllowed());
@@ -443,6 +447,12 @@ public class RealmTest extends AbstractAdminTest {
         if (realm.getAccessCodeLifespan() != null) assertEquals(realm.getAccessCodeLifespan(), storedRealm.getAccessCodeLifespan());
         if (realm.getAccessCodeLifespanUserAction() != null)
             assertEquals(realm.getAccessCodeLifespanUserAction(), storedRealm.getAccessCodeLifespanUserAction());
+        if (realm.getActionTokenGeneratedByAdminLifespan() != null)
+            assertEquals(realm.getActionTokenGeneratedByAdminLifespan(), storedRealm.getActionTokenGeneratedByAdminLifespan());
+        if (realm.getActionTokenGeneratedByUserLifespan() != null)
+            assertEquals(realm.getActionTokenGeneratedByUserLifespan(), storedRealm.getActionTokenGeneratedByUserLifespan());
+        else
+            assertEquals(realm.getAccessCodeLifespanUserAction(), storedRealm.getActionTokenGeneratedByUserLifespan());
         if (realm.getNotBefore() != null) assertEquals(realm.getNotBefore(), storedRealm.getNotBefore());
         if (realm.getAccessTokenLifespan() != null) assertEquals(realm.getAccessTokenLifespan(), storedRealm.getAccessTokenLifespan());
         if (realm.getAccessTokenLifespanForImplicitFlow() != null) assertEquals(realm.getAccessTokenLifespanForImplicitFlow(), storedRealm.getAccessTokenLifespanForImplicitFlow());

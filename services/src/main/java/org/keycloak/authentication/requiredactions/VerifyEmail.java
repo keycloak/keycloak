@@ -32,7 +32,6 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.*;
-import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.services.Urls;
 import org.keycloak.services.validation.Validation;
 
@@ -132,20 +131,20 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
         RealmModel realm = session.getContext().getRealm();
         UriInfo uriInfo = session.getContext().getUri();
 
-        int validityInSecs = realm.getAccessCodeLifespanUserAction();
+        int validityInSecs = realm.getActionTokenGeneratedByUserLifespan();
         int absoluteExpirationInSecs = Time.currentTime() + validityInSecs;
-//        ExecuteActionsActionToken token = new ExecuteActionsActionToken(user.getId(), absoluteExpirationInSecs, null,
-//          Collections.singletonList(UserModel.RequiredAction.VERIFY_EMAIL.name()),
-//          null, null);
-//        token.setAuthenticationSessionId(authenticationSession.getId());
 
-        VerifyEmailActionToken token = new VerifyEmailActionToken(user.getId(), absoluteExpirationInSecs, null, authSession.getId(), user.getEmail());
+        VerifyEmailActionToken token = new VerifyEmailActionToken(user.getId(), absoluteExpirationInSecs, authSession.getId(), user.getEmail());
         UriBuilder builder = Urls.actionTokenBuilder(uriInfo.getBaseUri(), token.serialize(session, realm, uriInfo));
         String link = builder.build(realm.getName()).toString();
         long expirationInMinutes = TimeUnit.SECONDS.toMinutes(validityInSecs);
 
         try {
-            session.getProvider(EmailTemplateProvider.class).setRealm(realm).setUser(user).sendVerifyEmail(link, expirationInMinutes);
+            session
+              .getProvider(EmailTemplateProvider.class)
+              .setRealm(realm)
+              .setUser(user)
+              .sendVerifyEmail(link, expirationInMinutes);
             event.success();
         } catch (EmailException e) {
             logger.error("Failed to send verification email", e);

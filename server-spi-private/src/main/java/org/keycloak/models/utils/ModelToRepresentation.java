@@ -303,6 +303,8 @@ public class ModelToRepresentation {
         rep.setAccessCodeLifespan(realm.getAccessCodeLifespan());
         rep.setAccessCodeLifespanUserAction(realm.getAccessCodeLifespanUserAction());
         rep.setAccessCodeLifespanLogin(realm.getAccessCodeLifespanLogin());
+        rep.setActionTokenGeneratedByAdminLifespan(realm.getActionTokenGeneratedByAdminLifespan());
+        rep.setActionTokenGeneratedByUserLifespan(realm.getActionTokenGeneratedByUserLifespan());
         rep.setSmtpServer(new HashMap<>(realm.getSmtpConfig()));
         rep.setBrowserSecurityHeaders(realm.getBrowserSecurityHeaders());
         rep.setAccountTheme(realm.getAccountTheme());

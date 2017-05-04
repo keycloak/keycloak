@@ -17,15 +17,18 @@
 package org.keycloak.authentication.actiontoken.execactions;
 
 import org.keycloak.TokenVerifier.Predicate;
+import org.keycloak.authentication.RequiredActionFactory;
+import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.*;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
-import org.keycloak.models.UserModel;
+import org.keycloak.models.*;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import java.util.Objects;
 import javax.ws.rs.core.Response;
 
 /**
@@ -48,7 +51,7 @@ public class ExecuteActionsActionTokenHandler extends AbstractActionTokenHander<
     public Predicate<? super ExecuteActionsActionToken>[] getVerifiers(ActionTokenContext<ExecuteActionsActionToken> tokenContext) {
         return TokenUtils.predicates(
           TokenUtils.checkThat(
-            // either redirect URI is not specified or must be valid for the cllient
+            // either redirect URI is not specified or must be valid for the client
             t -> t.getRedirectUri() == null
                  || RedirectUtils.verifyRedirectUri(tokenContext.getUriInfo(), t.getRedirectUri(),
                       tokenContext.getRealm(), tokenContext.getAuthenticationSession().getClient()) != null,
@@ -81,4 +84,24 @@ public class ExecuteActionsActionTokenHandler extends AbstractActionTokenHander<
         String nextAction = AuthenticationManager.nextRequiredAction(tokenContext.getSession(), authSession, tokenContext.getClientConnection(), tokenContext.getRequest(), tokenContext.getUriInfo(), tokenContext.getEvent());
         return AuthenticationManager.redirectToRequiredActions(tokenContext.getSession(), tokenContext.getRealm(), authSession, tokenContext.getUriInfo(), nextAction);
     }
+
+    @Override
+    public boolean canUseTokenRepeatedly(ExecuteActionsActionToken token, ActionTokenContext<ExecuteActionsActionToken> tokenContext) {
+        RealmModel realm = tokenContext.getRealm();
+        KeycloakSessionFactory sessionFactory = tokenContext.getSession().getKeycloakSessionFactory();
+
+        return token.getRequiredActions().stream()
+          .map(actionName -> realm.getRequiredActionProviderByAlias(actionName))    // get realm-specific model from action name and filter out irrelevant
+          .filter(Objects::nonNull)
+          .filter(RequiredActionProviderModel::isEnabled)
+
+          .map(RequiredActionProviderModel::getProviderId)      // get provider ID from model
+
+          .map(providerId -> (RequiredActionFactory) sessionFactory.getProviderFactory(RequiredActionProvider.class, providerId))
+          .filter(Objects::nonNull)
+
+          .noneMatch(RequiredActionFactory::isOneTimeAction);
+    }
+
+
 }

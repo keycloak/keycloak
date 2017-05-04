@@ -25,7 +25,6 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ErrorPage;
-import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.LoginActionsServiceChecks.IsActionRequired;
@@ -55,9 +54,7 @@ public class ResetCredentialsActionTokenHandler extends AbstractActionTokenHande
         return new Predicate[] {
             TokenUtils.checkThat(tokenContext.getRealm()::isResetPasswordAllowed, Errors.NOT_ALLOWED, Messages.RESET_CREDENTIAL_NOT_ALLOWED),
 
-            new IsActionRequired(tokenContext, Action.AUTHENTICATE),
-
-//            singleUseCheck,   // TODO:hmlnarik - fix with single-use cache
+            new IsActionRequired(tokenContext, Action.AUTHENTICATE)
         };
     }
 
@@ -72,6 +69,11 @@ public class ResetCredentialsActionTokenHandler extends AbstractActionTokenHande
           null,
           authProcessor
         );
+    }
+
+    @Override
+    public boolean canUseTokenRepeatedly(ResetCredentialsActionToken token, ActionTokenContext tokenContext) {
+        return false;
     }
 
     public static class ResetCredsAuthenticationProcessor extends AuthenticationProcessor {

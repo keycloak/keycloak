@@ -17,19 +17,17 @@
 package org.keycloak.authentication.actiontoken;
 
 import org.keycloak.TokenVerifier.Predicate;
-import org.keycloak.authentication.AuthenticationProcessor;
-import org.keycloak.common.VerificationException;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import javax.ws.rs.core.Response;
 
 /**
  *  Handler of the action token.
+ *
+ * @param <T> Class implementing the action token
  *
  *  @author hmlnarik
  */
@@ -42,7 +40,6 @@ public interface ActionTokenHandler<T extends JsonWebToken> extends Provider {
      * @param token
      * @param tokenContext
      * @return
-     * @throws VerificationException
      */
     Response handleToken(T token, ActionTokenContext<T> tokenContext);
 
@@ -96,10 +93,12 @@ public interface ActionTokenHandler<T extends JsonWebToken> extends Provider {
      * @param tokenContext
      * @return
      */
-    default AuthenticationSessionModel startFreshAuthenticationSession(T token, ActionTokenContext<T> tokenContext) {
-        AuthenticationSessionModel authSession = tokenContext.createAuthenticationSessionForClient(token.getIssuedFor());
-        authSession.setAuthNote(AuthenticationManager.END_AFTER_REQUIRED_ACTIONS, "true");
-        return authSession;
-    }
+    AuthenticationSessionModel startFreshAuthenticationSession(T token, ActionTokenContext<T> tokenContext);
 
+    /**
+     * Returns {@code true} when the token can be used repeatedly to invoke the action, {@code false} when the token
+     * is intended to be for single use only.
+     * @return see above
+     */
+    boolean canUseTokenRepeatedly(T token, ActionTokenContext<T> tokenContext);
 }

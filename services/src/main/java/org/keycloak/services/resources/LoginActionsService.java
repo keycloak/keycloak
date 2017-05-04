@@ -504,8 +504,12 @@ public class LoginActionsService {
 
             authSession = tokenContext.getAuthenticationSession();
             event = tokenContext.getEvent();
+            event.event(handler.eventType());
 
-            initLoginEvent(authSession);
+            if (! handler.canUseTokenRepeatedly(token, tokenContext)) {
+                LoginActionsServiceChecks.checkTokenWasNotUsedYet(token, tokenContext);
+                authSession.setAuthNote(AuthenticationManager.INVALIDATE_ACTION_TOKEN, token.serializeKey());
+            }
 
             authSession.setAuthNote(DefaultActionTokenKey.ACTION_TOKEN_USER_ID, token.getUserId());
 

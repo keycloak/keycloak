@@ -16,9 +16,7 @@
  */
 package org.keycloak.authentication.actiontoken.idpverifyemail;
 
-import org.keycloak.authentication.actiontoken.verifyemail.*;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.UUID;
 import org.keycloak.authentication.actiontoken.DefaultActionToken;
 
 /**
@@ -39,16 +37,14 @@ public class IdpVerifyAccountLinkActionToken extends DefaultActionToken {
     @JsonProperty(value = JSON_FIELD_IDENTITY_PROVIDER_ALIAS)
     private String identityProviderAlias;
 
-    public IdpVerifyAccountLinkActionToken(String userId, int absoluteExpirationInSecs, UUID actionVerificationNonce, String authenticationSessionId,
+    public IdpVerifyAccountLinkActionToken(String userId, int absoluteExpirationInSecs, String authenticationSessionId,
       String identityProviderUsername, String identityProviderAlias) {
-        super(userId, TOKEN_TYPE, absoluteExpirationInSecs, actionVerificationNonce);
-        setAuthenticationSessionId(authenticationSessionId);
+        super(userId, TOKEN_TYPE, absoluteExpirationInSecs, null, authenticationSessionId);
         this.identityProviderUsername = identityProviderUsername;
         this.identityProviderAlias = identityProviderAlias;
     }
 
     private IdpVerifyAccountLinkActionToken() {
-        super(null, TOKEN_TYPE, -1, null);
     }
 
     public String getIdentityProviderUsername() {

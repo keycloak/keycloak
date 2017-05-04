@@ -14,23 +14,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.authentication.actiontoken.resetcred;
+package org.keycloak.models;
 
-import org.keycloak.authentication.actiontoken.DefaultActionToken;
+import org.keycloak.provider.*;
 
 /**
- * Representation of a token that represents a time-limited reset credentials action.
- *
+ * SPI for action tokens.
+ * 
  * @author hmlnarik
  */
-public class ResetCredentialsActionToken extends DefaultActionToken {
+public class ActionTokenStoreSpi implements Spi {
 
-    public static final String TOKEN_TYPE = "reset-credentials";
+    public static final String NAME = "actionToken";
 
-    public ResetCredentialsActionToken(String userId, int absoluteExpirationInSecs, String authenticationSessionId) {
-        super(userId, TOKEN_TYPE, absoluteExpirationInSecs, null, authenticationSessionId);
+    @Override
+    public boolean isInternal() {
+        return true;
     }
 
-    private ResetCredentialsActionToken() {
+    @Override
+    public String getName() {
+        return NAME;
     }
+
+    @Override
+    public Class<? extends Provider> getProviderClass() {
+        return ActionTokenStoreProvider.class;
+    }
+
+    @Override
+    public Class<? extends ProviderFactory> getProviderFactoryClass() {
+        return ActionTokenStoreProviderFactory.class;
+    }
+
 }

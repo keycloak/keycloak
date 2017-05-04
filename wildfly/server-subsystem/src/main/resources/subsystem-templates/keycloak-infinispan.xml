@@ -43,6 +43,10 @@
                     <eviction max-entries="1000" strategy="LRU"/>
                     <expiration max-idle="3600000" />
                 </local-cache>
+                <local-cache name="actionTokens">
+                    <eviction max-entries="-1" strategy="NONE"/>
+                    <expiration max-idle="-1" interval="300000"/>
+                </local-cache>
             </cache-container>
             <cache-container name="server" default-cache="default" module="org.wildfly.clustering.server">
                 <local-cache name="default">
@@ -108,6 +112,10 @@
                 <local-cache name="keys">
                     <eviction max-entries="1000" strategy="LRU"/>
                     <expiration max-idle="3600000" />
+                </local-cache>
+                <local-cache name="actionTokens">
+                    <eviction max-entries="-1" strategy="NONE"/>
+                    <expiration max-idle="-1" interval="300000"/>
                 </local-cache>
             </cache-container>
             <cache-container name="server" aliases="singleton cluster" default-cache="default" module="org.wildfly.clustering.server">

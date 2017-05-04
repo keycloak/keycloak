@@ -816,7 +816,7 @@ public class UsersResource {
                                         @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId) {
         List<String> actions = new LinkedList<>();
         actions.add(UserModel.RequiredAction.UPDATE_PASSWORD.name());
-        return executeActionsEmail(id, redirectUri, clientId, actions);
+        return executeActionsEmail(id, redirectUri, clientId, null, actions);
     }
 
 
@@ -831,6 +831,7 @@ public class UsersResource {
      * @param id User is
      * @param redirectUri Redirect uri
      * @param clientId Client id
+     * @param lifespan Number of seconds after which the generated token expires
      * @param actions required actions the user needs to complete
      * @return
      */
@@ -840,6 +841,7 @@ public class UsersResource {
     public Response executeActionsEmail(@PathParam("id") String id,
                                         @QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String redirectUri,
                                         @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId,
+                                        @QueryParam("lifespan") Integer lifespan,
                                         List<String> actions) {
         auth.requireManage();
 
@@ -881,9 +883,11 @@ public class UsersResource {
             }
         }
 
-        long relativeExpiration = realm.getAccessCodeLifespanUserAction();
-        int expiration = Time.currentTime() + realm.getAccessCodeLifespanUserAction();
-        ExecuteActionsActionToken token = new ExecuteActionsActionToken(id, expiration, UUID.randomUUID(), actions, redirectUri, clientId);
+        if (lifespan == null) {
+            lifespan = realm.getActionTokenGeneratedByAdminLifespan();
+        }
+        int expiration = Time.currentTime() + lifespan;
+        ExecuteActionsActionToken token = new ExecuteActionsActionToken(id, expiration, actions, redirectUri, clientId);
 
         try {
             UriBuilder builder = LoginActionsService.actionTokenProcessor(uriInfo);
@@ -894,7 +898,7 @@ public class UsersResource {
             this.session.getProvider(EmailTemplateProvider.class)
               .setRealm(realm)
               .setUser(user)
-              .sendExecuteActions(link, TimeUnit.SECONDS.toMinutes(relativeExpiration));
+              .sendExecuteActions(link, TimeUnit.SECONDS.toMinutes(lifespan));
 
             //audit.user(user).detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, accessCode.getCodeId()).success();
 
@@ -925,7 +929,7 @@ public class UsersResource {
     public Response sendVerifyEmail(@PathParam("id") String id, @QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String redirectUri, @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId) {
         List<String> actions = new LinkedList<>();
         actions.add(UserModel.RequiredAction.VERIFY_EMAIL.name());
-        return executeActionsEmail(id, redirectUri, clientId, actions);
+        return executeActionsEmail(id, redirectUri, clientId, null, actions);
     }
 
     @GET

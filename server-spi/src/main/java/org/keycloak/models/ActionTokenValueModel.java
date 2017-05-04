@@ -14,23 +14,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.authentication.actiontoken.resetcred;
+package org.keycloak.models;
 
-import org.keycloak.authentication.actiontoken.DefaultActionToken;
+import java.util.Map;
+import java.util.UUID;
 
 /**
- * Representation of a token that represents a time-limited reset credentials action.
- *
+ * This model represents contents of an action token shareable among Keycloak instances in the cluster.
  * @author hmlnarik
  */
-public class ResetCredentialsActionToken extends DefaultActionToken {
+public interface ActionTokenValueModel {
+    
+    /**
+     * Returns unmodifiable map of all notes.
+     * @return see description. Returns empty map if no note is set, never returns {@code null}.
+     */
+    Map<String,String> getNotes();
 
-    public static final String TOKEN_TYPE = "reset-credentials";
-
-    public ResetCredentialsActionToken(String userId, int absoluteExpirationInSecs, String authenticationSessionId) {
-        super(userId, TOKEN_TYPE, absoluteExpirationInSecs, null, authenticationSessionId);
-    }
-
-    private ResetCredentialsActionToken() {
-    }
+    /**
+     * Returns value of the given note (or {@code null} when no note of this name is present)
+     * @return see description
+     */
+    String getNote(String name);
 }

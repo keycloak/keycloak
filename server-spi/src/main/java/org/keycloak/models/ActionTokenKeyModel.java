@@ -14,23 +14,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.authentication.actiontoken.resetcred;
+package org.keycloak.models;
 
-import org.keycloak.authentication.actiontoken.DefaultActionToken;
+import java.util.UUID;
 
 /**
- * Representation of a token that represents a time-limited reset credentials action.
  *
  * @author hmlnarik
  */
-public class ResetCredentialsActionToken extends DefaultActionToken {
+public interface ActionTokenKeyModel {
 
-    public static final String TOKEN_TYPE = "reset-credentials";
+    /**
+     * @return ID of user which this token is for.
+     */
+    String getUserId();
 
-    public ResetCredentialsActionToken(String userId, int absoluteExpirationInSecs, String authenticationSessionId) {
-        super(userId, TOKEN_TYPE, absoluteExpirationInSecs, null, authenticationSessionId);
-    }
+    /**
+     * @return Action identifier this token is for.
+     */
+    String getActionId();
 
-    private ResetCredentialsActionToken() {
-    }
+    /**
+     * Returns absolute number of seconds since the epoch in UTC timezone when the token expires.
+     */
+    int getExpiration();
+
+    /**
+     * @return Single-use random value used for verification whether the relevant action is allowed.
+     */
+    UUID getActionVerificationNonce();
 }

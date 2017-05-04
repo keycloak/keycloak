@@ -22,9 +22,7 @@ import org.keycloak.common.VerificationException;
 
 import org.keycloak.common.util.Time;
 import org.keycloak.jose.jws.JWSBuilder;
-import org.keycloak.models.KeyManager;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
+import org.keycloak.models.*;
 import org.keycloak.services.Urls;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -37,12 +35,11 @@ import javax.ws.rs.core.UriInfo;
  *
  * @author hmlnarik
  */
-public class DefaultActionToken extends DefaultActionTokenKey {
+public class DefaultActionToken extends DefaultActionTokenKey implements ActionTokenValueModel {
 
-    public static final String JSON_FIELD_ACTION_VERIFICATION_NONCE = "nonce";
     public static final String JSON_FIELD_AUTHENTICATION_SESSION_ID = "asid";
 
-    public static Predicate<DefaultActionToken> ACTION_TOKEN_BASIC_CHECKS = t -> {
+    public static final Predicate<DefaultActionToken> ACTION_TOKEN_BASIC_CHECKS = t -> {
         if (t.getActionVerificationNonce() == null) {
             throw new VerificationException("Nonce not present.");
         }
@@ -53,15 +50,8 @@ public class DefaultActionToken extends DefaultActionTokenKey {
     /**
      * Single-use random value used for verification whether the relevant action is allowed.
      */
-    @JsonProperty(value = JSON_FIELD_ACTION_VERIFICATION_NONCE, required = true)
-    private UUID actionVerificationNonce;
-
     public DefaultActionToken() {
-        super(null, null);
-    }
-
-    public DefaultActionToken(String userId, String actionId, int expirationInSecs) {
-        this(userId, actionId, expirationInSecs, UUID.randomUUID());
+        super(null, null, 0, null);
     }
 
     /**
@@ -72,11 +62,20 @@ public class DefaultActionToken extends DefaultActionTokenKey {
      * @param actionVerificationNonce
      */
     protected DefaultActionToken(String userId, String actionId, int absoluteExpirationInSecs, UUID actionVerificationNonce) {
-        super(userId, actionId);
-        this.actionVerificationNonce = actionVerificationNonce == null ? UUID.randomUUID() : actionVerificationNonce;
-        expiration = absoluteExpirationInSecs;
+        super(userId, actionId, absoluteExpirationInSecs, actionVerificationNonce);
     }
 
+    /**
+     *
+     * @param userId User ID
+     * @param actionId Action ID
+     * @param absoluteExpirationInSecs Absolute expiration time in seconds in timezone of Keycloak.
+     * @param actionVerificationNonce
+     */
+    protected DefaultActionToken(String userId, String actionId, int absoluteExpirationInSecs, UUID actionVerificationNonce, String authenticationSessionId) {
+        super(userId, actionId, absoluteExpirationInSecs, actionVerificationNonce);
+        setAuthenticationSessionId(authenticationSessionId);
+    }
 
     @JsonProperty(value = JSON_FIELD_AUTHENTICATION_SESSION_ID)
     public String getAuthenticationSessionId() {
@@ -88,11 +87,8 @@ public class DefaultActionToken extends DefaultActionTokenKey {
         setOtherClaims(JSON_FIELD_AUTHENTICATION_SESSION_ID, authenticationSessionId);
     }
 
-    public UUID getActionVerificationNonce() {
-        return actionVerificationNonce;
-    }
-
     @JsonIgnore
+    @Override
     public Map<String, String> getNotes() {
         Map<String, String> res = new HashMap<>();
         if (getAuthenticationSessionId() != null) {
@@ -101,6 +97,7 @@ public class DefaultActionToken extends DefaultActionTokenKey {
         return res;
     }
 
+    @Override
     public String getNote(String name) {
         Object res = getOtherClaims().get(name);
         return res instanceof String ? (String) res : null;

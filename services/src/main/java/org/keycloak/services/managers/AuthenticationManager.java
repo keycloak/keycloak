@@ -26,6 +26,7 @@ import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionContextResult;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.authentication.actiontoken.DefaultActionTokenKey;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
@@ -37,23 +38,10 @@ import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.jose.jws.AlgorithmType;
 import org.keycloak.jose.jws.JWSBuilder;
-import org.keycloak.models.AuthenticatedClientSessionModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
-import org.keycloak.models.ClientTemplateModel;
-import org.keycloak.models.KeyManager;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RequiredActionProviderModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserConsentModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocol.Error;
-import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ServicesLogger;
@@ -77,11 +65,7 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.security.PublicKey;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Stateless object that manages authentication
@@ -92,6 +76,7 @@ import java.util.Set;
 public class AuthenticationManager {
     public static final String SET_REDIRECT_URI_AFTER_REQUIRED_ACTIONS= "SET_REDIRECT_URI_AFTER_REQUIRED_ACTIONS";
     public static final String END_AFTER_REQUIRED_ACTIONS = "END_AFTER_REQUIRED_ACTIONS";
+    public static final String INVALIDATE_ACTION_TOKEN = "INVALIDATE_ACTION_TOKEN";
 
     // Last authenticated client in userSession.
     public static final String LAST_AUTHENTICATED_CLIENT = "LAST_AUTHENTICATED_CLIENT";
@@ -522,6 +507,16 @@ public class AuthenticationManager {
 
     public static Response finishedRequiredActions(KeycloakSession session, AuthenticationSessionModel authSession, UserSessionModel userSession,
                                                    ClientConnection clientConnection, HttpRequest request, UriInfo uriInfo, EventBuilder event) {
+        String actionTokenKeyToInvalidate = authSession.getAuthNote(INVALIDATE_ACTION_TOKEN);
+        if (actionTokenKeyToInvalidate != null) {
+            ActionTokenKeyModel actionTokenKey = DefaultActionTokenKey.from(actionTokenKeyToInvalidate);
+            
+            if (actionTokenKey != null) {
+                ActionTokenStoreProvider actionTokenStore = session.getProvider(ActionTokenStoreProvider.class);
+                actionTokenStore.put(actionTokenKey, null);
+            }
+        }
+
         if (authSession.getAuthNote(END_AFTER_REQUIRED_ACTIONS) != null) {
             LoginFormsProvider infoPage = session.getProvider(LoginFormsProvider.class)
                     .setSuccess(Messages.ACCOUNT_UPDATED);

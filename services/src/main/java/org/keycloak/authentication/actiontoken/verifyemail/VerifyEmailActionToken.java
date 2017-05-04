@@ -17,7 +17,6 @@
 package org.keycloak.authentication.actiontoken.verifyemail;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.UUID;
 import org.keycloak.authentication.actiontoken.DefaultActionToken;
 
 /**
@@ -34,15 +33,12 @@ public class VerifyEmailActionToken extends DefaultActionToken {
     @JsonProperty(value = JSON_FIELD_EMAIL)
     private String email;
 
-    public VerifyEmailActionToken(String userId, int absoluteExpirationInSecs, UUID actionVerificationNonce, String authenticationSessionId,
-      String email) {
-        super(userId, TOKEN_TYPE, absoluteExpirationInSecs, actionVerificationNonce);
-        setAuthenticationSessionId(authenticationSessionId);
+    public VerifyEmailActionToken(String userId, int absoluteExpirationInSecs, String authenticationSessionId, String email) {
+        super(userId, TOKEN_TYPE, absoluteExpirationInSecs, null, authenticationSessionId);
         this.email = email;
     }
 
     private VerifyEmailActionToken() {
-        super(null, TOKEN_TYPE, -1, null);
     }
 
     public String getEmail() {

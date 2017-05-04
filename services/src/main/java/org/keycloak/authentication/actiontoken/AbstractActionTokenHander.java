@@ -17,13 +17,11 @@
 package org.keycloak.authentication.actiontoken;
 
 import org.keycloak.Config.Scope;
-import org.keycloak.authentication.actiontoken.ActionTokenHandler;
-import org.keycloak.authentication.actiontoken.ActionTokenHandlerFactory;
 import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.representations.JsonWebToken;
-import org.keycloak.services.messages.Messages;
+import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 /**
  *
@@ -92,4 +90,15 @@ public abstract class AbstractActionTokenHander<T extends DefaultActionToken> im
         return token == null ? null : token.getAuthenticationSessionId();
     }
 
+    @Override
+    public AuthenticationSessionModel startFreshAuthenticationSession(T token, ActionTokenContext<T> tokenContext) {
+        AuthenticationSessionModel authSession = tokenContext.createAuthenticationSessionForClient(token.getIssuedFor());
+        authSession.setAuthNote(AuthenticationManager.END_AFTER_REQUIRED_ACTIONS, "true");
+        return authSession;
+    }
+    
+    @Override
+    public boolean canUseTokenRepeatedly(T token, ActionTokenContext<T> tokenContext) {
+        return true;
+    }
 }

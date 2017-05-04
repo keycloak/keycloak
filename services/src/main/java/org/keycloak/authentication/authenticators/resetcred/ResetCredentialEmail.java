@@ -85,15 +85,11 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
             return;
         }
 
-        int validityInSecs = context.getRealm().getAccessCodeLifespanUserAction();
+        int validityInSecs = context.getRealm().getActionTokenGeneratedByUserLifespan();
         int absoluteExpirationInSecs = Time.currentTime() + validityInSecs;
 
-        KeycloakSession keycloakSession = context.getSession();
-        Long lastCreatedPassword = getLastChangedTimestamp(keycloakSession, context.getRealm(), user);
-
         // We send the secret in the email in a link as a query param.
-        ResetCredentialsActionToken token = new ResetCredentialsActionToken(user.getId(), absoluteExpirationInSecs,
-          null, authenticationSession.getId(), lastCreatedPassword);
+        ResetCredentialsActionToken token = new ResetCredentialsActionToken(user.getId(), absoluteExpirationInSecs, authenticationSession.getId());
         String link = UriBuilder
           .fromUri(context.getActionTokenUrl(token.serialize(context.getSession(), context.getRealm(), context.getUriInfo())))
           .build()
@@ -101,6 +97,7 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
         long expirationInMinutes = TimeUnit.SECONDS.toMinutes(validityInSecs);
         try {
             context.getSession().getProvider(EmailTemplateProvider.class).setRealm(context.getRealm()).setUser(user).sendPasswordReset(link, expirationInMinutes);
+
             event.clone().event(EventType.SEND_RESET_PASSWORD)
                          .user(user)
                          .detail(Details.USERNAME, username)
