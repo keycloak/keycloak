@@ -1943,9 +1943,13 @@ module.factory('errorInterceptor', function($q, $window, $rootScope, $location, 
             } else if (response.status) {
                 if (response.data && response.data.errorMessage) {
                     Notifications.error(response.data.errorMessage);
+                } else if (response.data && response.data.error_description) {
+                    Notifications.error(response.data.error_description);
                 } else {
                     Notifications.error("An unexpected server error has occurred");
                 }
+            } else {
+                Notifications.error("No response from server.");
             }
             return $q.reject(response);
         }

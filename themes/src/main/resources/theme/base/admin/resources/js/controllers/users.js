@@ -59,12 +59,6 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, cl
                     $scope.selectedClientMappings = [];
                 }
                 Notifications.success("Role mappings updated.");
-            }).error(function(response) {
-                if (response && response['error_description']) {
-                    Notifications.error(response['error_description']);
-                } else {
-                    Notifications.error("Failed to remove role mapping");
-                }
             });
     };
 
@@ -93,12 +87,6 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, cl
                 $scope.realmComposite = CompositeRealmRoleMapping.query({realm : realm.realm, userId : user.id});
                 $scope.realmRoles = AvailableRealmRoleMapping.query({realm : realm.realm, userId : user.id});
                 Notifications.success("Role mappings updated.");
-            }).error(function(response) {
-                if (response && response['error_description']) {
-                    Notifications.error(response['error_description']);
-                } else {
-                    Notifications.error("Failed to remove role mapping");
-                }
             });
     };
 
@@ -537,12 +525,6 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, $route, R
                 Notifications.success("The password has been reset");
                 $scope.password = null;
                 $scope.confirmPassword = null;
-            }, function(response) {
-                if (response.data && response.data['error_description']) {
-                    Notifications.error(response.data['error_description']);
-                } else {
-                    Notifications.error("Failed to reset user password");
-                }
             });
         }, function() {
             $scope.password = null;
@@ -822,10 +804,6 @@ module.controller('GenericUserStorageCtrl', function($scope, $location, Notifica
 
                 $location.url("/realms/" + realm.realm + "/user-storage/providers/" + $scope.instance.providerId + "/" + id);
                 Notifications.success("The provider has been created.");
-            }, function (errorResponse) {
-                if (errorResponse.data && errorResponse.data['error_description']) {
-                    Notifications.error(errorResponse.data['error_description']);
-                }
             });
         } else {
             console.log('update existing provider');
@@ -835,10 +813,6 @@ module.controller('GenericUserStorageCtrl', function($scope, $location, Notifica
                 $scope.instance,  function () {
                     $route.reload();
                     Notifications.success("The provider has been updated.");
-                }, function (errorResponse) {
-                    if (errorResponse.data && errorResponse.data['error_description']) {
-                        Notifications.error(errorResponse.data['error_description']);
-                    }
                 });
         }
     };
@@ -950,12 +924,6 @@ module.controller('UserGroupMembershipCtrl', function($scope, $route, realm, gro
         UserGroupMapping.remove({realm: realm.realm, userId: user.id, groupId: $scope.selectedGroup.id}, function() {
             Notifications.success('Removed group membership');
             $route.reload();
-        }, function(response) {
-            if (response.data && response.data['error_description']) {
-                Notifications.error(response.data['error_description']);
-            } else {
-                Notifications.error("Failed to leave group");
-            }
         });
 
     };
@@ -1231,10 +1199,6 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
 
                 $location.url("/realms/" + realm.realm + "/user-storage/providers/" + $scope.instance.providerId + "/" + id);
                 Notifications.success("The provider has been created.");
-            }, function (errorResponse) {
-                if (errorResponse.data && errorResponse.data['error_description']) {
-                    Notifications.error(errorResponse.data['error_description']);
-                }
             });
         } else {
             Components.update({realm: realm.realm,
@@ -1243,10 +1207,6 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
                 $scope.instance,  function () {
                     $route.reload();
                     Notifications.success("The provider has been updated.");
-                }, function (errorResponse) {
-                    if (errorResponse.data && errorResponse.data['error_description']) {
-                        Notifications.error(errorResponse.data['error_description']);
-                    }
                 });
         }
     };
@@ -1409,10 +1369,6 @@ module.controller('LDAPMapperCtrl', function($scope, $route, realm,  provider, m
             $scope.mapper,  function () {
                 $route.reload();
                 Notifications.success("The mapper has been updated.");
-            }, function (errorResponse) {
-                if (errorResponse.data && errorResponse.data['error_description']) {
-                    Notifications.error(errorResponse.data['error_description']);
-                }
             });
     };
 
@@ -1498,10 +1454,6 @@ module.controller('LDAPMapperCreateCtrl', function($scope, realm, provider, mapp
 
             $location.url("/realms/" + realm.realm + "/ldap-mappers/" + $scope.mapper.parentId + "/mappers/" + id);
             Notifications.success("The mapper has been created.");
-        }, function (errorResponse) {
-            if (errorResponse.data && errorResponse.data['error_description']) {
-                Notifications.error(errorResponse.data['error_description']);
-            }
         });
     };
 

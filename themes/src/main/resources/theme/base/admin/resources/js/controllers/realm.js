@@ -1220,10 +1220,6 @@ module.controller('GenericKeystoreCtrl', function($scope, $location, Notificatio
 
                 $location.url("/realms/" + realm.realm + "/keys/providers/" + $scope.instance.providerId + "/" + id);
                 Notifications.success("The provider has been created.");
-            }, function (errorResponse) {
-                if (errorResponse.data && errorResponse.data['error_description']) {
-                    Notifications.error(errorResponse.data['error_description']);
-                }
             });
         } else {
             Components.update({realm: realm.realm,
@@ -1232,10 +1228,6 @@ module.controller('GenericKeystoreCtrl', function($scope, $location, Notificatio
                 $scope.instance,  function () {
                     $route.reload();
                     Notifications.success("The provider has been updated.");
-                }, function (errorResponse) {
-                    if (errorResponse.data && errorResponse.data['error_description']) {
-                        Notifications.error(errorResponse.data['error_description']);
-                    }
                 });
         }
     };
@@ -2463,10 +2455,6 @@ module.controller('ClientRegPolicyDetailCtrl', function($scope, realm, clientReg
                 var id = l.substring(l.lastIndexOf("/") + 1);
                 $location.url("/realms/" + realm.realm + "/client-registration/client-reg-policies/" + $scope.instance.providerId + "/" + id);
                 Notifications.success("The policy has been created.");
-            }, function (errorResponse) {
-                if (errorResponse.data && errorResponse.data['error_description']) {
-                    Notifications.error(errorResponse.data['error_description']);
-                }
             });
         } else {
             Components.update({realm: realm.realm,
@@ -2475,10 +2463,6 @@ module.controller('ClientRegPolicyDetailCtrl', function($scope, realm, clientReg
                 $scope.instance,  function () {
                     $route.reload();
                     Notifications.success("The policy has been updated.");
-                }, function (errorResponse) {
-                    if (errorResponse.data && errorResponse.data['error_description']) {
-                        Notifications.error(errorResponse.data['error_description']);
-                    }
                 });
         }
     };
