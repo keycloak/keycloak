@@ -61,12 +61,6 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-authz-client</artifactId>
         </dependency>
-
-        <dependency>
-            <groupId>org.wildfly</groupId>
-            <artifactId>wildfly-feature-pack</artifactId>
-            <type>zip</type>
-        </dependency>
     </dependencies>
 
     <build>
@@ -118,5 +112,53 @@
             </plugin>
         </plugins>
     </build>
+
+
+    <profiles>
+        <profile>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!product</name>
+                </property>
+            </activation>
+
+            <properties>
+                <build-tools.version>${wildfly.build-tools.version}</build-tools.version>
+                <feature.parent>org.wildfly:wildfly-feature-pack</feature.parent>
+            </properties>
+
+            <dependencies>
+                <dependency>
+                    <groupId>org.wildfly</groupId>
+                    <artifactId>wildfly-feature-pack</artifactId>
+                    <type>zip</type>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <profile>
+            <id>product</id>
+            <activation>
+                <property>
+                    <name>product</name>
+                </property>
+            </activation>
+
+            <properties>
+                <build-tools.version>${eap.build-tools.version}</build-tools.version>
+                <feature.parent>org.jboss.eap:wildfly-feature-pack</feature.parent>
+            </properties>
+
+            <dependencies>
+                <dependency>
+                    <groupId>org.jboss.eap</groupId>
+                    <artifactId>wildfly-feature-pack</artifactId>
+                    <version>${eap.version}</version>
+                    <type>zip</type>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 
 </project>
