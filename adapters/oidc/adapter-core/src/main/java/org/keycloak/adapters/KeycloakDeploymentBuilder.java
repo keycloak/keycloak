@@ -96,6 +96,7 @@ public class KeycloakDeploymentBuilder {
             deployment.setCorsMaxAge(adapterConfig.getCorsMaxAge());
             deployment.setCorsAllowedHeaders(adapterConfig.getCorsAllowedHeaders());
             deployment.setCorsAllowedMethods(adapterConfig.getCorsAllowedMethods());
+            deployment.setCorsExposedHeaders(adapterConfig.getCorsExposedHeaders());
         }
 
         // https://tools.ietf.org/html/rfc7636

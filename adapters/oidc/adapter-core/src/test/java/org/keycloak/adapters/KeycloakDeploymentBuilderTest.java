@@ -53,6 +53,7 @@ public class KeycloakDeploymentBuilderTest {
         assertEquals(1000, deployment.getCorsMaxAge());
         assertEquals("POST, PUT, DELETE, GET", deployment.getCorsAllowedMethods());
         assertEquals("X-Custom, X-Custom2", deployment.getCorsAllowedHeaders());
+        assertEquals("X-Custom3, X-Custom4", deployment.getCorsExposedHeaders());
         assertTrue(deployment.isBearerOnly());
         assertTrue(deployment.isPublicClient());
         assertTrue(deployment.isEnableBasicAuth());
