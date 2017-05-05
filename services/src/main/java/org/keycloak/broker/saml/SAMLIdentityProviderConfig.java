@@ -121,6 +121,22 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
         getConfig().put("wantAuthnRequestsSigned", String.valueOf(wantAuthnRequestsSigned));
     }
 
+    public boolean isWantAssertionsSigned() {
+        return Boolean.valueOf(getConfig().get("wantAssertionsSigned"));
+    }
+
+    public void setWantAssertionsSigned(boolean wantAssertionsSigned) {
+        getConfig().put("wantAssertionsSigned", String.valueOf(wantAssertionsSigned));
+    }
+
+    public boolean isWantAssertionsEncrypted() {
+        return Boolean.valueOf(getConfig().get("wantAssertionsEncrypted"));
+    }
+
+    public void setWantAssertionsEncrypted(boolean wantAssertionsEncrypted) {
+        getConfig().put("wantAssertionsEncrypted", String.valueOf(wantAssertionsEncrypted));
+    }
+
     public boolean isAddExtensionsElementWithKeyInfo() {
         return Boolean.valueOf(getConfig().get("addExtensionsElementWithKeyInfo"));
     }

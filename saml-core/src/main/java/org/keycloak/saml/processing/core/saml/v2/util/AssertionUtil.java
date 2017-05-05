@@ -32,6 +32,7 @@ import org.keycloak.dom.saml.v2.assertion.StatementAbstractType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType.STSubType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
+import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.common.ErrorCodes;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
@@ -280,6 +281,22 @@ public class AssertionUtil {
             doc.appendChild(n);
 
             return new SAML2Signature().validate(doc, new HardcodedKeyLocator(publicKey));
+        } catch (Exception e) {
+            logger.signatureAssertionValidationError(e);
+        }
+        return false;
+    }
+
+    /**
+     * Given an assertion element, validate the signature.
+     */
+    public static boolean isSignatureValid(Element assertionElement, KeyLocator keyLocator) {
+        try {
+            Document doc = DocumentUtil.createDocument();
+            Node n = doc.importNode(assertionElement, true);
+            doc.appendChild(n);
+
+            return new SAML2Signature().validate(doc, keyLocator);
         } catch (Exception e) {
             logger.signatureAssertionValidationError(e);
         }
@@ -540,7 +557,23 @@ public class AssertionUtil {
         return responseType.getAssertions().get(0).getAssertion();
     }
 
-    public static ResponseType decryptAssertion(ResponseType responseType, PrivateKey privateKey) throws ParsingException, ProcessingException, ConfigurationException {
+    public static boolean isAssertionEncrypted(ResponseType responseType) throws ProcessingException {
+        List<ResponseType.RTChoiceType> assertions = responseType.getAssertions();
+
+        if (assertions.isEmpty()) {
+            throw new ProcessingException("No assertion from response.");
+        }
+
+        ResponseType.RTChoiceType rtChoiceType = assertions.get(0);
+        return rtChoiceType.getEncryptedAssertion() != null;
+    }
+
+    /**
+     * This method modifies the given responseType, and replaces the encrypted assertion with a decrypted version.
+     *
+     * It returns the assertion element as it was decrypted. This can be used in sginature verification.
+     */
+    public static Element decryptAssertion(ResponseType responseType, PrivateKey privateKey) throws ParsingException, ProcessingException, ConfigurationException {
         SAML2Response saml2Response = new SAML2Response();
 
         Document doc = saml2Response.convert(responseType);
@@ -564,6 +597,6 @@ public class AssertionUtil {
 
         responseType.replaceAssertion(oldID, new ResponseType.RTChoiceType(assertion));
 
-        return responseType;
+        return decryptedDocumentElement;
     }
 }
