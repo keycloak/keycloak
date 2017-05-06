@@ -128,13 +128,4 @@ public interface PolicyStore {
      * @return a list of policies that depends on the a policy with the given identifier
      */
     List<Policy> findDependentPolicies(String id, String resourceServerId);
-
-    /**
-     * Notify this store about changes to data associated with policies. E.g.: resources and scopes..
-     *
-     * TODO: need a better strategy to handle cross-references between stores, specially in cases where the store is caching data. Use some event-based solution here.
-     *
-     * @param cached
-     */
-    default void notifyChange(Object cached) {}
 }
