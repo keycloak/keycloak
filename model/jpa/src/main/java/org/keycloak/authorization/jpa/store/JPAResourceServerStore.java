@@ -17,19 +17,24 @@
  */
 package org.keycloak.authorization.jpa.store;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import javax.persistence.EntityManager;
+import javax.persistence.Query;
+
 import org.keycloak.authorization.jpa.entities.ResourceServerEntity;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-import javax.persistence.EntityManager;
-import javax.persistence.Query;
-import java.util.List;
-
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class JPAResourceServerStore implements ResourceServerStore {
+
+    public static final int ORACLE_IN_LIMIT = 1000;
 
     private final EntityManager entityManager;
 
@@ -61,7 +66,7 @@ public class JPAResourceServerStore implements ResourceServerStore {
 
     @Override
     public ResourceServer findByClient(final String clientId) {
-        Query query = entityManager.createQuery("from ResourceServerEntity where clientId = :clientId");
+        Query query = entityManager.createNamedQuery("findByClient", ResourceServer.class);
 
         query.setParameter("clientId", clientId);
         List result = query.getResultList();
@@ -71,5 +76,26 @@ public class JPAResourceServerStore implements ResourceServerStore {
         }
 
         return (ResourceServer) result.get(0);
+    }
+
+    @Override
+    public List<ResourceServer> findByClients(List<String> clientIds) {
+        List<String> ids;
+        Query query = entityManager.createNamedQuery("findByClients", ResourceServer.class);
+        List<ResourceServer> results = new ArrayList<>(clientIds.size());
+        while (!clientIds.isEmpty()) {
+            if (clientIds.size() > ORACLE_IN_LIMIT) {
+                ids = clientIds.subList(0, ORACLE_IN_LIMIT);
+                clientIds = clientIds.subList(ORACLE_IN_LIMIT, clientIds.size());
+            } else {
+                ids = clientIds;
+                clientIds = Collections.emptyList();
+            }
+
+            query.setParameter("clientIds", ids);
+            results.addAll(query.getResultList());
+
+        }
+        return results;
     }
 }

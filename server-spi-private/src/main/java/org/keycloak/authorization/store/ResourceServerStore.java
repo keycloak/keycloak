@@ -18,46 +18,53 @@
 
 package org.keycloak.authorization.store;
 
+import java.util.List;
+
 import org.keycloak.authorization.model.ResourceServer;
 
 /**
- * A {@link ResourceServerStore} is responsible to manage the persistence of {@link ResourceServer} instances.
+ * A {@link ResourceServerStore} is responsible to manage the persistence of {@link org.keycloak.authorization.model.ResourceServer} instances.
  *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public interface ResourceServerStore {
 
     /**
-     * <p>Creates a {@link ResourceServer} instance backed by this persistent storage implementation.
+     * <p>Creates a {@link org.keycloak.authorization.model.ResourceServer} instance backed by this persistent storage implementation.
      *
      * @param clientId the client id acting as a resource server
-     *
      * @return an instance backed by the underlying storage implementation
      */
     ResourceServer create(String clientId);
 
     /**
-     * Removes a {@link ResourceServer} instance, with the given {@code id} from the persistent storage.
+     * Removes a {@link org.keycloak.authorization.model.ResourceServer} instance, with the given {@code id} from the persistent storage.
      *
      * @param id the identifier of an existing resource server instance
      */
     void delete(String id);
 
     /**
-     * Returns a {@link ResourceServer} instance based on its identifier.
+     * Returns a {@link org.keycloak.authorization.model.ResourceServer} instance based on its identifier.
      *
      * @param id the identifier of an existing resource server instance
-     *
      * @return the resource server instance with the given identifier or null if no instance was found
      */
     ResourceServer findById(String id);
 
     /**
-     * Returns a {@link ResourceServer} instance based on the identifier of a client application.
+     * Returns a {@link org.keycloak.authorization.model.ResourceServer} instance based on the identifier of a client application.
      *
      * @param id the identifier of an existing client application
-     * 
      * @return the resource server instance, with the given client id or null if no instance was found
      */
     ResourceServer findByClient(String id);
+
+    /**
+     * Returns a {@link org.keycloak.authorization.model.ResourceServer} instance based on the identifier of a client application.
+     *
+     * @param ids the identifier of existing clients application
+     * @return the resources server instance, with the given client id or empty if no instance was found
+     */
+    List<ResourceServer> findByClients(List<String> ids);
 }

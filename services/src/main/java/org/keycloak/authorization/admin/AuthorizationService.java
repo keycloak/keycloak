@@ -18,14 +18,14 @@
 
 package org.keycloak.authorization.admin;
 
+import javax.ws.rs.Path;
+
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.resources.admin.RealmAuth;
-
-import javax.ws.rs.Path;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -39,10 +39,16 @@ public class AuthorizationService {
     private final AuthorizationProvider authorization;
 
     public AuthorizationService(KeycloakSession session, ClientModel client, RealmAuth auth) {
+        this(session, client, auth,
+                session.getProvider(AuthorizationProvider.class).getStoreFactory().getResourceServerStore().findByClient(client.getId()));
+
+    }
+
+    public AuthorizationService(KeycloakSession session, ClientModel client, RealmAuth auth, ResourceServer resourceServer) {
         this.session = session;
         this.client = client;
         this.authorization = session.getProvider(AuthorizationProvider.class);
-        this.resourceServer = this.authorization.getStoreFactory().getResourceServerStore().findByClient(this.client.getId());
+        this.resourceServer = resourceServer;
         this.auth = auth;
 
         if (auth != null) {

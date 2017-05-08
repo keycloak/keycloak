@@ -37,7 +37,8 @@ import java.io.Serializable;
         @NamedQuery(name="clientScopeMappings", query="select m from ScopeMappingEntity m where m.client = :client"),
         @NamedQuery(name="clientScopeMappingIds", query="select m.role.id from ScopeMappingEntity m where m.client = :client"),
         @NamedQuery(name="deleteScopeMappingByRole", query="delete from ScopeMappingEntity where role = :role"),
-        @NamedQuery(name="deleteScopeMappingByClient", query="delete from ScopeMappingEntity where client = :client")
+        @NamedQuery(name="deleteScopeMappingByClient", query="delete from ScopeMappingEntity where client = :client"),
+        @NamedQuery(name="realmScopeMappingIds", query="select m.client.id, m.role.id from ScopeMappingEntity m where m.client.realm.id = :realm")
 })
 @Table(name="SCOPE_MAPPING")
 @Entity
