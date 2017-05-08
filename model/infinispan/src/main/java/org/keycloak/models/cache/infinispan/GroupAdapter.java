@@ -195,18 +195,17 @@ public class GroupAdapter implements GroupModel {
 
     @Override
     public Set<RoleModel> getRoleMappings() {
-        if (isUpdated()) return updated.getRoleMappings();
-        Set<RoleModel> roles = new HashSet<RoleModel>();
-        for (String id : cached.getRoleMappings()) {
-            RoleModel roleById = keycloakSession.realms().getRoleById(id, realm);
-            if (roleById == null) {
-                // chance that role was removed, so just delegate to persistence and get user invalidated
-                getDelegateForUpdate();
-                return updated.getRoleMappings();
-            }
-            roles.add(roleById);
-
+        if (isUpdated()) {
+            return updated.getRoleMappings();
         }
+        Set<RoleModel> roles = new HashSet<RoleModel>(
+                keycloakSession.realms().getRolesById(realm, cached.getRoleMappings().stream().toArray(String[]::new)));
+        if (roles.size() != cached.getRoleMappings().size()) {
+            // chance that role was removed, so just delegate to persistence and get user invalidated
+            getDelegateForUpdate();
+            return updated.getRoleMappings();
+        }
+
         return roles;
     }
 

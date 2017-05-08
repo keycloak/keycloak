@@ -80,6 +80,8 @@ public interface RealmProvider extends Provider {
 
     RoleModel getRoleById(String id, RealmModel realm);
 
+    List<RoleModel> getRolesById( RealmModel realm,String... ids);
+
     boolean removeClient(String id, RealmModel realm);
 
     ClientTemplateModel getClientTemplateById(String id, RealmModel realm);

@@ -17,8 +17,13 @@
 
 package org.keycloak.migration.migrators;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.migration.ModelVersion;
@@ -28,12 +33,6 @@ import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.util.JsonSerialization;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
 /**
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
@@ -41,10 +40,11 @@ import java.util.stream.Collectors;
 public class MigrateTo2_1_0 implements Migration {
     public static final ModelVersion VERSION = new ModelVersion("2.1.0");
 
+    @Override
     public ModelVersion getVersion() {
         return VERSION;
     }
-
+    @Override
     public void migrate(KeycloakSession session) {
         for (RealmModel realm : session.realms().getRealms()) {
             migrateDefaultRequiredAction(realm);
@@ -66,9 +66,10 @@ public class MigrateTo2_1_0 implements Migration {
         AuthorizationProvider authorizationProvider = session.getProvider(AuthorizationProvider.class);
         StoreFactory storeFactory = authorizationProvider.getStoreFactory();
         PolicyStore policyStore = storeFactory.getPolicyStore();
-        realm.getClients().forEach(clientModel -> {
-            ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(clientModel.getId());
 
+
+        //Fetch all resources in one call
+        storeFactory.getResourceServerStore().findByClients(realm.getClients().stream().map(clientModel -> clientModel.getId()).toArray(String[]::new)).forEach(resourceServer -> {
             if (resourceServer != null) {
                 policyStore.findByType("role", resourceServer.getId()).forEach(policy -> {
                     Map<String, String> config = policy.getConfig();

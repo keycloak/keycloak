@@ -18,6 +18,8 @@
 
 package org.keycloak.authorization.store;
 
+import java.util.List;
+
 import org.keycloak.authorization.model.ResourceServer;
 
 /**
@@ -60,4 +62,12 @@ public interface ResourceServerStore {
      * @return the resource server instance, with the given client id or null if no instance was found
      */
     ResourceServer findByClient(String id);
+
+    /**
+     * Returns a {@link org.keycloak.authorization.model.ResourceServer} instance based on the identifier of a client application.
+     *
+     * @param ids the identifier of existing clients application
+     * @return the resources server instance, with the given client id or empty if no instance was found
+     */
+    List<ResourceServer> findByClients(String... ids);
 }

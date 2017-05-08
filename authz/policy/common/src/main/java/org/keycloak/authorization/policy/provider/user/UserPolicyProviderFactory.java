@@ -29,7 +29,6 @@ import java.util.function.Function;
 import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
-import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.PolicyStore;
@@ -164,31 +163,34 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
                 UserModel removedUser = ((UserRemovedEvent) event).getUser();
                 RealmModel realm = ((UserRemovedEvent) event).getRealm();
                 ResourceServerStore resourceServerStore = storeFactory.getResourceServerStore();
-                realm.getClients().forEach(clientModel -> {
-                    ResourceServer resourceServer = resourceServerStore.findByClient(clientModel.getId());
 
-                    if (resourceServer != null) {
-                        policyStore.findByType(getId(), resourceServer.getId()).forEach(policy -> {
-                            List<String> users = new ArrayList<>();
+                //Fetch all resources in one call
+                resourceServerStore
+                        .findByClients(realm.getClients().stream().map(clientModel -> clientModel.getId()).toArray(String[]::new))
+                        .forEach(resourceServer -> {
+                            if (resourceServer != null) {
+                                policyStore.findByType(getId(), resourceServer.getId()).forEach(policy -> {
+                                    List<String> users = new ArrayList<>();
 
-                            for (String userId : getUsers(policy)) {
-                                if (!userId.equals(removedUser.getId())) {
-                                    users.add(userId);
-                                }
-                            }
+                                    for (String userId : getUsers(policy)) {
+                                        if (!userId.equals(removedUser.getId())) {
+                                            users.add(userId);
+                                        }
+                                    }
 
-                            try {
-                                if (users.isEmpty()) {
-                                    policyStore.delete(policy.getId());
-                                } else {
-                                    policy.getConfig().put("users", JsonSerialization.writeValueAsString(users));
-                                }
-                            } catch (IOException e) {
-                                throw new RuntimeException("Error while synchronizing users with policy [" + policy.getName() + "].", e);
+                                    try {
+                                        if (users.isEmpty()) {
+                                            policyStore.delete(policy.getId());
+                                        } else {
+                                            policy.getConfig().put("users", JsonSerialization.writeValueAsString(users));
+                                        }
+                                    } catch (IOException e) {
+                                        throw new RuntimeException(
+                                                "Error while synchronizing users with policy [" + policy.getName() + "].", e);
+                                    }
+                                });
                             }
                         });
-                    }
-                });
             }
         });
     }
