@@ -1326,6 +1326,21 @@ module.controller('RealmRevocationCtrl', function($scope, Realm, RealmPushRevoca
 });
 
 
+module.controller('RoleTabCtrl', function(Dialog, $scope, Current, Notifications, $location) {
+    $scope.removeRole = function() {
+        Dialog.confirmDelete($scope.role.name, 'role', function() {
+            RoleById.remove({
+                realm: realm.realm,
+                role: $scope.role.id
+            }, function () {
+                $route.reload();
+                Notifications.success("The role has been deleted.");
+            });
+        });
+    };
+});
+
+
 module.controller('RoleListCtrl', function($scope, $route, Dialog, Notifications, realm, roles, RoleById, filterFilter) {
     $scope.realm = realm;
     $scope.roles = roles;

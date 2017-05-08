@@ -373,7 +373,41 @@ module.config(['$routeProvider', function ($routeProvider) {
             }
         },
         controller: 'ResourceServerPolicyAggregateDetailCtrl'
-    });
+    }).when('/realms/:realm/roles/:role/permissions', {
+        templateUrl : resourceUrl + '/partials/authz/mgmt/realm-role-permissions.html',
+        resolve : {
+            realm : function(RealmLoader) {
+                return RealmLoader();
+            },
+            role : function(RoleLoader) {
+                return RoleLoader();
+            }
+        },
+        controller : 'RealmRolePermissionsCtrl'
+    }).when('/realms/:realm/clients/:client/roles/:role/permissions', {
+        templateUrl : resourceUrl + '/partials/authz/mgmt/client-role-permissions.html',
+        resolve : {
+            realm : function(RealmLoader) {
+                return RealmLoader();
+            },
+            client : function(ClientLoader) {
+                return ClientLoader();
+            },
+            role : function(RoleLoader) {
+                return RoleLoader();
+            }
+        },
+        controller : 'ClientRolePermissionsCtrl'
+    }).when('/realms/:realm/users-permissions', {
+        templateUrl : resourceUrl + '/partials/authz/mgmt/users-permissions.html',
+        resolve : {
+            realm : function(RealmLoader) {
+                return RealmLoader();
+            }
+        },
+        controller : 'UsersPermissionsCtrl'
+    })
+    ;
 }]);
 
 module.directive('kcTabsResourceServer', function () {

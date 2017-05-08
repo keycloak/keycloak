@@ -8,9 +8,7 @@
         <li data-ng-hide="create">{{role.name}}</li>
     </ol>
 
-    <h1 data-ng-show="create">{{:: 'add-role' | translate}}</h1>
-    <h1 data-ng-hide="create">{{role.name|capitalize}}<i class="pficon pficon-delete clickable" data-ng-show="!create && access.manageClients" 
-    	data-ng-hide="changed" data-ng-click="remove()"></i></h1>
+    <kc-tabs-client-role></kc-tabs-client-role>
 
     <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageClients">
 

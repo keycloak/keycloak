@@ -2354,3 +2354,60 @@ module.controller('PolicyEvaluateCtrl', function($scope, $http, $route, $locatio
         $scope.authzRequest.userId = user.id;
     }
 });
+
+module.controller('RealmRolePermissionsCtrl', function($scope, $http, $route, $location, realm, role, RoleManagementPermissions, Client, Notifications) {
+    console.log('RealmRolePermissionsCtrl');
+    $scope.role = role;
+    $scope.realm = realm;
+    RoleManagementPermissions.get({realm: realm.realm, role: role.id}, function(data) {
+        $scope.permissions = data;
+    });
+    Client.query({realm: realm.realm, clientId: 'realm-management'}, function(data) {
+        $scope.realmManagementClientId = data[0].id;
+    });
+    $scope.setEnabled = function() {
+        var param = { enabled: $scope.permissions.enabled};
+        RoleManagementPermissions.update({realm: realm.realm, role:role.id}, param, function(data) {
+            $scope.permissions = data;
+        })
+    };
+
+
+});
+module.controller('ClientRolePermissionsCtrl', function($scope, $http, $route, $location, realm, client, role, RoleManagementPermissions, Client, Notifications) {
+    console.log('RealmRolePermissionsCtrl');
+    $scope.client = client;
+    $scope.role = role;
+    $scope.realm = realm;
+    RoleManagementPermissions.get({realm: realm.realm, role: role.id}, function(data) {
+        $scope.permissions = data;
+    });
+    $scope.setEnabled = function() {
+        var param = { enabled: $scope.permissions.enabled};
+        RoleManagementPermissions.update({realm: realm.realm, role:role.id}, param, function(data) {
+            $scope.permissions = data;
+        })
+    };
+
+
+});
+
+module.controller('UsersPermissionsCtrl', function($scope, $http, $route, $location, realm, UsersManagementPermissions, Client, Notifications) {
+    console.log('UsersPermissionsCtrl');
+    $scope.realm = realm;
+    UsersManagementPermissions.get({realm: realm.realm, role: role.id}, function(data) {
+        $scope.permissions = data;
+    });
+    Client.query({realm: realm.realm, clientId: 'realm-management'}, function(data) {
+        $scope.realmManagementClientId = data[0].id;
+    });
+    $scope.setEnabled = function() {
+        var param = { enabled: $scope.permissions.enabled};
+        UsersManagementPermissions.update({realm: realm.realm, role:role.id}, param, function(data) {
+            $scope.permissions = data;
+        })
+    };
+
+
+});
+

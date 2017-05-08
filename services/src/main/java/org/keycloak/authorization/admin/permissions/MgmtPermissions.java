@@ -25,7 +25,9 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.AdminAuth;
@@ -47,7 +49,8 @@ public class MgmtPermissions {
     public MgmtPermissions(KeycloakSession session, RealmModel realm) {
         this.session = session;
         this.realm = realm;
-        AuthorizationProviderFactory factory = (AuthorizationProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(AuthorizationProvider.class);
+        KeycloakSessionFactory keycloakSessionFactory = session.getKeycloakSessionFactory();
+        AuthorizationProviderFactory factory = (AuthorizationProviderFactory) keycloakSessionFactory.getProviderFactory(AuthorizationProvider.class);
         this.authz = factory.create(session, realm);
     }
     public MgmtPermissions(KeycloakSession session, RealmModel realm, AdminAuth auth) {
@@ -57,10 +60,11 @@ public class MgmtPermissions {
     }
 
     public boolean isAdminSameRealm() {
-        return realm.getId().equals(auth.getRealm().getId());
+        return auth == null || realm.getId().equals(auth.getRealm().getId());
     }
 
     public RealmAuth getRealmAuth() {
+        if (auth == null) return null;
         RealmManager realmManager = new RealmManager(session);
         if (auth.getRealm().equals(realmManager.getKeycloakAdminstrationRealm())) {
             return new RealmAuth(auth, realm.getMasterAdminClient());
@@ -71,7 +75,7 @@ public class MgmtPermissions {
 
     public Identity identity() {
         if (identity != null) return identity;
-        if (auth.getClient().getClientId().equals(Constants.REALM_MANAGEMENT_CLIENT_ID)) {
+        if (auth.getClient().getClientId().equals(Constants.ADMIN_CLI_CLIENT_ID)) {
             this.identity = new UserModelIdentity(realm, auth.getUser());
 
         } else {
@@ -80,10 +84,16 @@ public class MgmtPermissions {
         return this.identity;
     }
 
+    public void setIdentity(UserModel user) {
+        this.identity = new UserModelIdentity(realm, user);
+    }
+
 
     public RoleMgmtPermissions roles() {
         return new RoleMgmtPermissions(session, realm, authz, this);
     }
+
+    public UsersPermissions users() { return new UsersPermissions(session, realm, authz, this); }
 
     public ResourceServer findOrCreateResourceServer(ClientModel client) {
         ResourceServer server = authz.getStoreFactory().getResourceServerStore().findByClient(client.getId());

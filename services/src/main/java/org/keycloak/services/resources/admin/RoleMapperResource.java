@@ -19,6 +19,7 @@ package org.keycloak.services.resources.admin;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
+import org.keycloak.authorization.admin.permissions.MgmtPermissions;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -33,6 +34,7 @@ import org.keycloak.representations.idm.ClientMappingsRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.RealmManager;
 
 import javax.ws.rs.Consumes;
@@ -64,6 +66,17 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class RoleMapperResource {
+
+    /**
+     * RoleMapperResource is reused bewteen GroupResource and UserResource to manage role mappings.
+     * We don't know what type of resource we're managing here (user or group), so we don't know how to query the policy engine to determine
+     * if an action is allowed.
+     *
+     */
+    public interface ManageResourcePermissionCheck {
+        boolean canManage();
+    }
+
     protected static final Logger logger = Logger.getLogger(RoleMapperResource.class);
 
     protected RealmModel realm;
@@ -73,6 +86,8 @@ public class RoleMapperResource {
     private RoleMapperModel roleMapper;
 
     private AdminEventBuilder adminEvent;
+
+    private ManageResourcePermissionCheck manageResourcePermissionCheck;
 
     @Context
     protected ClientConnection clientConnection;
@@ -94,6 +109,9 @@ public class RoleMapperResource {
 
     }
 
+    public void setManageCheck(ManageResourcePermissionCheck mapperPermissions) {
+        this.manageResourcePermissionCheck = mapperPermissions;
+    }
 
     /**
      * Get role mappings
@@ -224,7 +242,7 @@ public class RoleMapperResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public void addRealmRoleMappings(List<RoleRepresentation> roles) {
-        auth.requireManage();
+        checkManagePermission();
 
         if (roleMapper == null) {
             throw new NotFoundException("User not found");
@@ -237,10 +255,21 @@ public class RoleMapperResource {
             if (roleModel == null || !roleModel.getId().equals(role.getId())) {
                 throw new NotFoundException("Role not found");
             }
+            checkMapRolePermission(roleModel);
             roleMapper.grantRole(roleModel);
         }
 
         adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(roles).success();
+    }
+
+    private void checkManagePermission() {
+        if (manageResourcePermissionCheck == null) {
+            auth.requireManage();
+        } else {
+            if (!manageResourcePermissionCheck.canManage()) {
+                throw new ForbiddenException();
+            }
+        }
     }
 
     /**
@@ -252,7 +281,7 @@ public class RoleMapperResource {
     @DELETE
     @Consumes(MediaType.APPLICATION_JSON)
     public void deleteRealmRoleMappings(List<RoleRepresentation> roles) {
-        auth.requireManage();
+        checkManagePermission();
 
         if (roleMapper == null) {
             throw new NotFoundException("User not found");
@@ -264,6 +293,7 @@ public class RoleMapperResource {
             roles = new LinkedList<>();
 
             for (RoleModel roleModel : roleModels) {
+                checkMapRolePermission(roleModel);
                 roleMapper.deleteRoleMapping(roleModel);
                 roles.add(ModelToRepresentation.toRepresentation(roleModel));
             }
@@ -274,7 +304,7 @@ public class RoleMapperResource {
                 if (roleModel == null || !roleModel.getId().equals(role.getId())) {
                     throw new NotFoundException("Role not found");
                 }
-
+                checkMapRolePermission(roleModel);
                 try {
                     roleMapper.deleteRoleMapping(roleModel);
                 } catch (ModelException me) {
@@ -290,10 +320,20 @@ public class RoleMapperResource {
 
     }
 
+    private void checkMapRolePermission(RoleModel roleModel) {
+        if (!new MgmtPermissions(session, realm, auth.getAuth()).roles().canMapRole(roleModel)) {
+            throw new ForbiddenException();
+        }
+    }
+
     @Path("clients/{client}")
     public ClientRoleMappingsResource getUserClientRoleMappingsResource(@PathParam("client") String client) {
         ClientModel clientModel = realm.getClientById(client);
-        return new ClientRoleMappingsResource(uriInfo, session, realm, auth, roleMapper, clientModel, adminEvent);
+        ClientRoleMappingsResource resource = new ClientRoleMappingsResource(uriInfo, session, realm, auth, roleMapper, clientModel, adminEvent);
+        resource.setManageCheck(() -> {
+            return new MgmtPermissions(session, realm, auth.getAuth()).users().canManage();
+        });
+        return resource;
 
     }
 }

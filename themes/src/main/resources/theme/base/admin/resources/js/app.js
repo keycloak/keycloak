@@ -2345,6 +2345,24 @@ module.directive('kcTabsAuthentication', function () {
     }
 });
 
+module.directive('kcTabsRole', function () {
+    return {
+        scope: true,
+        restrict: 'E',
+        replace: true,
+        templateUrl: resourceUrl + '/templates/kc-tabs-role.html'
+    }
+});
+
+module.directive('kcTabsClientRole', function () {
+    return {
+        scope: true,
+        restrict: 'E',
+        replace: true,
+        templateUrl: resourceUrl + '/templates/kc-tabs-client-role.html'
+    }
+});
+
 module.directive('kcTabsUser', function () {
     return {
         scope: true,

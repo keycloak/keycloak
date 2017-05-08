@@ -328,7 +328,7 @@ public class ClientResource {
 
     @Path("roles")
     public RoleContainerResource getRoleContainerResource() {
-        return new RoleContainerResource(uriInfo, realm, auth, client, adminEvent);
+        return new RoleContainerResource(session, uriInfo, realm, auth, client, adminEvent);
     }
 
     /**

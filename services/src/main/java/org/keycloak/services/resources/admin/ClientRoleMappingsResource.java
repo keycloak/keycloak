@@ -19,6 +19,7 @@ package org.keycloak.services.resources.admin;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
+import org.keycloak.authorization.admin.permissions.MgmtPermissions;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
@@ -30,6 +31,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.ForbiddenException;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -63,6 +65,8 @@ public class ClientRoleMappingsResource {
     protected ClientModel client;
     protected AdminEventBuilder adminEvent;
     private UriInfo uriInfo;
+    private RoleMapperResource.ManageResourcePermissionCheck manageResourcePermissionCheck;
+
 
     public ClientRoleMappingsResource(UriInfo uriInfo, KeycloakSession session, RealmModel realm, RealmAuth auth, RoleMapperModel user, ClientModel client, AdminEventBuilder adminEvent) {
         this.uriInfo = uriInfo;
@@ -73,6 +77,12 @@ public class ClientRoleMappingsResource {
         this.client = client;
         this.adminEvent = adminEvent.resource(ResourceType.CLIENT_ROLE_MAPPING);
     }
+
+    public void setManageCheck(RoleMapperResource.ManageResourcePermissionCheck mapperPermissions) {
+        this.manageResourcePermissionCheck = mapperPermissions;
+    }
+
+
 
     /**
      * Get client-level role mappings for the user, and the app
@@ -157,6 +167,17 @@ public class ClientRoleMappingsResource {
         return mappings;
     }
 
+    private void checkManagePermission() {
+        if (manageResourcePermissionCheck == null) {
+            auth.requireManage();
+        } else {
+            if (!manageResourcePermissionCheck.canManage()) {
+                throw new ForbiddenException();
+            }
+        }
+    }
+
+
     /**
      * Add client-level roles to the user role mapping
      *
@@ -165,7 +186,7 @@ public class ClientRoleMappingsResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public void addClientRoleMapping(List<RoleRepresentation> roles) {
-        auth.requireManage();
+        checkManagePermission();
 
         if (user == null || client == null) {
             throw new NotFoundException("Not found");
@@ -176,21 +197,28 @@ public class ClientRoleMappingsResource {
             if (roleModel == null || !roleModel.getId().equals(role.getId())) {
                 throw new NotFoundException("Role not found");
             }
+            checkMapRolePermission(roleModel);
             user.grantRole(roleModel);
         }
         adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(roles).success();
 
     }
 
-    /**
-     * Delete client-level roles from user role mapping
-     *
-     * @param roles
-     */
+    private void checkMapRolePermission(RoleModel roleModel) {
+        if (!new MgmtPermissions(session, realm, auth.getAuth()).roles().canMapRole(roleModel)) {
+            throw new ForbiddenException();
+        }
+    }
+
+        /**
+         * Delete client-level roles from user role mapping
+         *
+         * @param roles
+         */
     @DELETE
     @Consumes(MediaType.APPLICATION_JSON)
     public void deleteClientRoleMapping(List<RoleRepresentation> roles) {
-        auth.requireManage();
+        checkManagePermission();
 
         if (user == null || client == null) {
             throw new NotFoundException("Not found");
@@ -205,6 +233,7 @@ public class ClientRoleMappingsResource {
                     ClientModel client = (ClientModel) roleModel.getContainer();
                     if (!client.getId().equals(this.client.getId())) continue;
                 }
+                checkMapRolePermission(roleModel);
                 user.deleteRoleMapping(roleModel);
                 roles.add(ModelToRepresentation.toRepresentation(roleModel));
             }
@@ -216,6 +245,7 @@ public class ClientRoleMappingsResource {
                     throw new NotFoundException("Role not found");
                 }
 
+                checkMapRolePermission(roleModel);
                 try {
                     user.deleteRoleMapping(roleModel);
                 } catch (ModelException me) {

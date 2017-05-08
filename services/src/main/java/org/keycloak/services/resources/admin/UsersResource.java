@@ -22,6 +22,7 @@ import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.authorization.admin.permissions.MgmtPermissions;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
@@ -48,9 +49,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.credential.PasswordUserCredentialModel;
 import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.provider.ProviderFactory;
@@ -723,6 +722,9 @@ public class UsersResource {
         UserModel user = session.users().getUserById(id, realm);
 
         RoleMapperResource resource =  new RoleMapperResource(realm, auth, user, adminEvent);
+        resource.setManageCheck(() -> {
+            return new MgmtPermissions(session, realm, auth.getAuth()).users().canManage();
+        });
         ResteasyProviderFactory.getInstance().injectProperties(resource);
         return resource;
 

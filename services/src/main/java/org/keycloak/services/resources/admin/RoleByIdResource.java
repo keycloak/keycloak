@@ -19,6 +19,8 @@ package org.keycloak.services.resources.admin;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
+import org.keycloak.authorization.admin.permissions.MgmtPermissions;
+import org.keycloak.authorization.admin.permissions.RoleMgmtPermissions;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
@@ -26,6 +28,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.RoleRepresentation;
 
 import javax.ws.rs.Consumes;
@@ -39,7 +42,9 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -242,6 +247,65 @@ public class RoleByIdResource extends RoleResource {
 
         RoleModel role = getRoleModel(id);
         deleteComposites(adminEvent, uriInfo, roles, role);
+    }
+
+    /**
+     * Return object stating whether role Authoirzation permissions have been initialized or not and a reference
+     *
+     *
+     * @param id
+     * @return
+     */
+    @Path("{role-id}/management/permissions")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    public ManagementPermissionReference getManagementPermissions(final @PathParam("role-id") String id) {
+        auth.requireView();
+
+        RoleModel role = getRoleModel(id);
+
+        MgmtPermissions permissions = new MgmtPermissions(session, realm);
+        if (!permissions.roles().isPermissionsEnabled(role)) {
+            return new ManagementPermissionReference();
+        }
+        return toMgmtRef(role, permissions);
+    }
+
+    public static ManagementPermissionReference toMgmtRef(RoleModel role, MgmtPermissions permissions) {
+        ManagementPermissionReference ref = new ManagementPermissionReference();
+        ref.setEnabled(true);
+        ref.setResource(permissions.roles().resource(role).getId());
+        Map<String, String> scopes = new HashMap<>();
+        scopes.put(RoleMgmtPermissions.MAP_ROLE_SCOPE, permissions.roles().mapRolePermission(role).getId());
+        ref.setScopePermissions(scopes);
+        return ref;
+    }
+
+    /**
+     * Return object stating whether role Authoirzation permissions have been initialized or not and a reference
+     *
+     *
+     * @param id
+     * @return initialized manage permissions reference
+     */
+    @Path("{role-id}/management/permissions")
+    @PUT
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @NoCache
+    public ManagementPermissionReference setManagementPermissionsEnabled(final @PathParam("role-id") String id, ManagementPermissionReference ref) {
+        auth.requireManage();
+
+        RoleModel role = getRoleModel(id);
+
+        MgmtPermissions permissions = new MgmtPermissions(session, realm);
+        permissions.roles().setPermissionsEnabled(role, ref.isEnabled());
+        if (ref.isEnabled()) {
+            return toMgmtRef(role, permissions);
+        } else {
+            return new ManagementPermissionReference();
+        }
     }
 
 }

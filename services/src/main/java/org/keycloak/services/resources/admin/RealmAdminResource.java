@@ -23,6 +23,9 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.Config;
 import org.keycloak.KeyPairVerifier;
+import org.keycloak.authorization.admin.permissions.MgmtPermissions;
+import org.keycloak.authorization.admin.permissions.RoleMgmtPermissions;
+import org.keycloak.authorization.admin.permissions.UsersPermissions;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.PemUtils;
@@ -44,6 +47,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.UserCache;
@@ -61,6 +65,7 @@ import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -132,7 +137,6 @@ public class RealmAdminResource {
         this.adminEvent = adminEvent.realm(realm).resource(ResourceType.REALM);
 
         auth.init(RealmAuth.Resource.REALM);
-        auth.requireAny();
     }
 
     /**
@@ -234,7 +238,7 @@ public class RealmAdminResource {
      */
     @Path("roles")
     public RoleContainerResource getRoleContainerResource() {
-        return new RoleContainerResource(uriInfo, realm, auth, realm, adminEvent);
+        return new RoleContainerResource(session, uriInfo, realm, auth, realm, adminEvent);
     }
 
     /**
@@ -359,6 +363,51 @@ public class RealmAdminResource {
         //resourceContext.initResource(users);
         return users;
     }
+
+    @NoCache
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("users-management-permissions")
+    public ManagementPermissionReference getUserMgmtPermissions() {
+        auth.requireView();
+
+        MgmtPermissions permissions = new MgmtPermissions(session, realm);
+        if (permissions.users().isPermissionsEnabled()) {
+            return toUsersMgmtRef(permissions);
+        } else {
+            return new ManagementPermissionReference();
+        }
+
+    }
+
+    @PUT
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Path("users-management-permissions")
+    public ManagementPermissionReference setUsersManagementPermissionsEnabled(ManagementPermissionReference ref) {
+        auth.requireManage();
+
+        MgmtPermissions permissions = new MgmtPermissions(session, realm);
+        permissions.users().setPermissionsEnabled(ref.isEnabled());
+        if (ref.isEnabled()) {
+            return toUsersMgmtRef(permissions);
+        } else {
+            return new ManagementPermissionReference();
+        }
+    }
+
+
+    public static ManagementPermissionReference toUsersMgmtRef(MgmtPermissions permissions) {
+        ManagementPermissionReference ref = new ManagementPermissionReference();
+        ref.setEnabled(true);
+        ref.setResource(permissions.users().resource().getId());
+        Map<String, String> scopes = new HashMap<>();
+        scopes.put(MgmtPermissions.MANAGE_SCOPE, permissions.users().managePermission().getId());
+        ref.setScopePermissions(scopes);
+        return ref;
+    }
+
 
     @Path("user-storage")
     public UserStorageProviderResource userStorage() {

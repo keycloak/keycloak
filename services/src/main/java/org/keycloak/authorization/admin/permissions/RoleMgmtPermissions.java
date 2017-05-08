@@ -29,6 +29,7 @@ import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.permission.evaluator.PermissionEvaluator;
 import org.keycloak.authorization.policy.evaluation.DecisionResult;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
+import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.util.Permissions;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
@@ -59,16 +60,7 @@ public class RoleMgmtPermissions {
     }
 
     public boolean isPermissionsEnabled(RoleModel role) {
-        ClientModel client = getRoleClient(role);
-        ResourceServer server = authz.getStoreFactory().getResourceServerStore().findByClient(client.getId());
-        if (server == null) return false;
-
-        Resource resource =  authz.getStoreFactory().getResourceStore().findByName(getRoleResourceName(role), server.getId());
-        if (resource == null) return false;
-
-        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(getMapRoleScopePermissionName(role), server.getId());
-
-        return policy != null;
+        return mapRolePermission(role) != null;
     }
 
     public void setPermissionsEnabled(RoleModel role, boolean enable) {
@@ -79,8 +71,7 @@ public class RoleMgmtPermissions {
            }
            createResource(role);
        } else {
-           ClientModel client = getRoleClient(role);
-           ResourceServer server = authz.getStoreFactory().getResourceServerStore().findByClient(client.getId());
+           ResourceServer server = resourceServer(role);
            if (server == null) return;
            Resource resource = authz.getStoreFactory().getResourceStore().findByName(getRoleResourceName(role), server.getId());
            if (resource != null) authz.getStoreFactory().getResourceStore().delete(resource.getId());
@@ -89,6 +80,44 @@ public class RoleMgmtPermissions {
        }
     }
 
+    public Policy mapRolePermission(RoleModel role) {
+        ResourceServer server = resourceServer(role);
+        if (server == null) return null;
+
+        Resource resource = authz.getStoreFactory().getResourceStore().findByName(getRoleResourceName(role), server.getId());
+        if (resource == null) return null;
+
+        Policy policy =  authz.getStoreFactory().getPolicyStore().findByName(getMapRoleScopePermissionName(role), server.getId());
+        return authz.getStoreFactory().getPolicyStore().findById(policy.getId(), server.getId());
+    }
+
+    public Resource resource(RoleModel role) {
+        ResourceStore resourceStore = authz.getStoreFactory().getResourceStore();
+        ResourceServer server = resourceServer(role);
+        if (server == null) return null;
+        Resource resource =  resourceStore.findByName(getRoleResourceName(role), server.getId());
+        if (resource == null) return null;
+        return resourceStore.findById(resource.getId(), server.getId());
+    }
+
+    public ResourceServer resourceServer(RoleModel role) {
+        ClientModel client = getRoleClient(role);
+        return authz.getStoreFactory().getResourceServerStore().findByClient(client.getId());
+    }
+
+    /**
+     * Is admin allowed to map this role?  In Authz terms, does the user have the "map-role" scope for the role's Authz resource?
+     *
+     * This method is hardcoded to return TRUE if any of these conditions are met:
+     * - The admin is from the master realm managing a different realm
+     * - If the Authz objects are not set up correctly for this role (resource server, resource, permission)
+     * - If the role's mapRole permission does not have a policy associated with it.
+     *
+     * Otherwise, it will use the Authz policy engine to resolve this answer.
+     *
+     * @param role
+     * @return
+     */
     public boolean canMapRole(RoleModel role) {
         if (!root.isAdminSameRealm()) {
             return true;
@@ -101,22 +130,27 @@ public class RoleMgmtPermissions {
             return true; // if no policies applied, just ignore
         }
 
+        RealmModel oldRealm = session.getContext().getRealm();
+        try {
+            session.getContext().setRealm(realm);
+            Identity identity = root.identity();
 
-        Identity identity = root.identity();
+            EvaluationContext context = new DefaultEvaluationContext(identity, session);
+            DecisionResult decisionCollector = new DecisionResult();
+            Resource roleResource = resource(role);
+            Scope mapRoleScope = getMapRoleScope(resourceServer);
 
-        EvaluationContext context = new DefaultEvaluationContext(identity, session);
-        DecisionResult decisionCollector = new DecisionResult();
-        Resource roleResource = authz.getStoreFactory().getResourceStore().findByName(getRoleResourceName(role), resourceServer.getId());
-        Scope mapRoleScope = getMapRoleScope(resourceServer);
-
-        List<ResourcePermission> permissions = Permissions.permission(resourceServer, roleResource, mapRoleScope);
-        PermissionEvaluator from = authz.evaluators().from(permissions, context);
-        from.evaluate(decisionCollector);
-        if (!decisionCollector.completed()) {
-            logger.error("Failed to run map role policy check", decisionCollector.getError());
-            return false;
+            List<ResourcePermission> permissions = Permissions.permission(resourceServer, roleResource, mapRoleScope);
+            PermissionEvaluator from = authz.evaluators().from(permissions, context);
+            from.evaluate(decisionCollector);
+            if (!decisionCollector.completed()) {
+                logger.error("Failed to run map role policy check", decisionCollector.getError());
+                return false;
+            }
+            return decisionCollector.getResults().get(0).getEffect() == Decision.Effect.PERMIT;
+        } finally {
+            session.getContext().setRealm(oldRealm);
         }
-        return decisionCollector.getResults().get(0).getEffect() == Decision.Effect.PERMIT;
     }
 
 
@@ -130,12 +164,12 @@ public class RoleMgmtPermissions {
         return client;
     }
 
-    public Policy getManageUsersPolicy(ResourceServer server) {
+    public Policy manageUsersPolicy(ResourceServer server) {
         RoleModel role = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).getRole(AdminRoles.MANAGE_USERS);
-        return getRolePolicy(server, role);
+        return rolePolicy(server, role);
     }
 
-    public Policy getRolePolicy(ResourceServer server, RoleModel role) {
+    public Policy rolePolicy(ResourceServer server, RoleModel role) {
         String policyName = Helper.getRolePolicyName(role);
         Policy policy = authz.getStoreFactory().getPolicyStore().findByName(policyName, server.getId());
         if (policy != null) return policy;
