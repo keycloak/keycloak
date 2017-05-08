@@ -41,10 +41,10 @@ To start Keycloak during development first build as specified above, then run:
     mvn -f testsuite/integration/pom.xml exec:java -Pkeycloak-server 
 
 
-To start Keycloak from the appliance distribution first build the distribution it as specified above, then run:
+To start Keycloak from the server distribution first build the distribution it as specified above, then run:
 
-    tar xfz distribution/appliance-dist/target/keycloak-appliance-dist-all-<VERSION>.tar.gz
-    cd keycloak-appliance-dist-all-<VERSION>/keycloak
+    tar xfz distribution/server-dist/target/keycloak-<VERSION>.tar.gz
+    cd keycloak-<VERSION>
     bin/standalone.sh
     
 To stop the server press `Ctrl + C`.
