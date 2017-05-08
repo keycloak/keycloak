@@ -192,7 +192,6 @@
         <module>adapters</module>
         <module>authz</module>
         <module>examples</module>
-        <module>testsuite</module>
         <module>misc</module>
     </modules>
 
@@ -1538,6 +1537,18 @@
                 <product.default-profile>product</product.default-profile>
                 <product.filename.version>7.2</product.filename.version>
             </properties>
+        </profile>
+
+        <profile>
+            <id>testsuite</id>
+            <activation>
+                <property>
+                    <name>!skipTestsuite</name>
+                </property>
+            </activation>
+            <modules>
+                <module>testsuite</module>
+            </modules>
         </profile>
 
         <profile>

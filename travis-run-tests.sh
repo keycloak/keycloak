@@ -1,5 +1,7 @@
 #!/bin/bash -e
 
+mvn install --no-snapshot-updates -DskipTests=true -f testsuite
+
 if [ $1 == "old" ]; then
     mvn test -B --no-snapshot-updates -f testsuite/integration
     mvn test -B --no-snapshot-updates -f testsuite/jetty
