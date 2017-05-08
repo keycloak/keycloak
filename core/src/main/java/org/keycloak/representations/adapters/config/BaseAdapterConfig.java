@@ -33,7 +33,7 @@ import java.util.TreeMap;
 @JsonPropertyOrder({"realm", "realm-public-key", "auth-server-url", "ssl-required",
         "resource", "public-client", "credentials",
         "use-resource-role-mappings",
-        "enable-cors", "cors-max-age", "cors-allowed-methods",
+        "enable-cors", "cors-max-age", "cors-allowed-methods", "cors-exposed-headers",
         "expose-token", "bearer-only", "autodetect-bearer-only", "enable-basic-auth"})
 public class BaseAdapterConfig extends BaseRealmConfig {
     @JsonProperty("resource")
@@ -48,6 +48,8 @@ public class BaseAdapterConfig extends BaseRealmConfig {
     protected String corsAllowedHeaders;
     @JsonProperty("cors-allowed-methods")
     protected String corsAllowedMethods;
+    @JsonProperty("cors-exposed-headers")
+    protected String corsExposedHeaders;
     @JsonProperty("expose-token")
     protected boolean exposeToken;
     @JsonProperty("bearer-only")
@@ -109,6 +111,14 @@ public class BaseAdapterConfig extends BaseRealmConfig {
     public void setCorsAllowedMethods(String corsAllowedMethods) {
          this.corsAllowedMethods = corsAllowedMethods;
      }
+
+    public String getCorsExposedHeaders() {
+        return corsExposedHeaders;
+    }
+
+    public void setCorsExposedHeaders(String corsExposedHeaders) {
+        this.corsExposedHeaders = corsExposedHeaders;
+    }
 
     public boolean isExposeToken() {
          return exposeToken;

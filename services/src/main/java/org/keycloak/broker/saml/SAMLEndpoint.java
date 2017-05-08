@@ -49,9 +49,12 @@ import org.keycloak.protocol.saml.SamlProtocolUtils;
 import org.keycloak.saml.SAML2LogoutResponseBuilder;
 import org.keycloak.saml.SAMLRequestParser;
 import org.keycloak.saml.common.constants.GeneralConstants;
+import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.common.util.DocumentUtil;
+import org.keycloak.saml.processing.api.saml.v2.sig.SAML2Signature;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
@@ -74,6 +77,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.security.Key;
 import java.security.cert.X509Certificate;
@@ -83,6 +87,8 @@ import java.util.List;
 import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import java.util.*;
 
@@ -344,7 +350,38 @@ public class SAMLEndpoint {
                 if (responseType.getAssertions() == null || responseType.getAssertions().isEmpty()) {
                     return callback.error(relayState, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
                 }
-                AssertionType assertion = AssertionUtil.getAssertion(responseType, keys.getPrivateKey());
+
+                boolean assertionIsEncrypted = AssertionUtil.isAssertionEncrypted(responseType);
+
+                if (config.isWantAssertionsEncrypted() && !assertionIsEncrypted) {
+                    logger.error("The assertion is not encrypted, which is required.");
+                    event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
+                    event.error(Errors.INVALID_SAML_RESPONSE);
+                    return ErrorPage.error(session, Messages.INVALID_REQUESTER);
+                }
+
+                Element assertionElement;
+
+                if (assertionIsEncrypted) {
+                    // This methods writes the parsed and decrypted assertion back on the responseType parameter:
+                    assertionElement = AssertionUtil.decryptAssertion(responseType, keys.getPrivateKey());
+                } else {
+                    /* We verify the assertion using original document to handle cases where the IdP
+                    includes whitespace and/or newlines inside tags. */
+                    assertionElement = DocumentUtil.getElement(holder.getSamlDocument(), new QName(JBossSAMLConstants.ASSERTION.get()));
+                }
+
+                if (config.isWantAssertionsSigned() && config.isValidateSignature()) {
+                    if (!AssertionUtil.isSignatureValid(assertionElement, getIDPKeyLocator())) {
+                        logger.error("validation failed");
+                        event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
+                        event.error(Errors.INVALID_SIGNATURE);
+                        return ErrorPage.error(session, Messages.INVALID_REQUESTER);
+                    }
+                }
+
+                AssertionType assertion = responseType.getAssertions().get(0).getAssertion();
+
                 SubjectType subject = assertion.getSubject();
                 SubjectType.STSubType subType = subject.getSubType();
                 NameIDType subjectNameID = (NameIDType) subType.getBaseID();

@@ -404,7 +404,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
 
         int timeSkew = Integer.parseInt(jsConsoleTestAppPage.getTimeSkewValue().getText());
         assertTrue("TimeSkew was: " + timeSkew + ", but should be ~0", timeSkew >= 0 - TIME_SKEW_TOLERANCE);
-        assertTrue("TimeSkew was: " + timeSkew + ", but should be ~0", timeSkew  <= TIME_SKEW_TOLERANCE);
+        assertTrue("TimeSkew was: " + timeSkew + ", but should be ~0", timeSkew <= TIME_SKEW_TOLERANCE);
 
         setTimeOffset(40);
         jsConsoleTestAppPage.refreshToken();
@@ -414,7 +414,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
 
         timeSkew = Integer.parseInt(jsConsoleTestAppPage.getTimeSkewValue().getText());
         assertTrue("TimeSkew was: " + timeSkew + ", but should be ~-40", timeSkew + 40 >= 0 - TIME_SKEW_TOLERANCE);
-        assertTrue("TimeSkew was: " + timeSkew + ", but should be ~-40", timeSkew + 40  <= TIME_SKEW_TOLERANCE);
+        assertTrue("TimeSkew was: " + timeSkew + ", but should be ~-40", timeSkew + 40 <= TIME_SKEW_TOLERANCE);
     }
 
     // KEYCLOAK-4179
@@ -523,6 +523,27 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         waitUntilElement(jsConsoleTestAppPage.getEventsElement()).text().contains("Auth Refresh Success");
 
         setTimeOffset(0);
+    }
+
+    @Test
+    // KEYCLOAK-4503
+    public void initializeWithRefreshToken() {
+        oauth.realm(EXAMPLE);
+        oauth.clientId("js-console");
+        oauth.redirectUri("http://localhost:8280/js-console");
+        oauth.doLogin("user", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String token = oauth.doAccessTokenRequest(code, "password").getAccessToken();
+        String refreshToken = oauth.doRefreshTokenRequest(token, "password").getRefreshToken();
+
+        jsConsoleTestAppPage.navigateTo();
+        jsConsoleTestAppPage.setInput2(refreshToken);
+
+        jsConsoleTestAppPage.initWithRefreshToken();
+
+        waitUntilElement(jsConsoleTestAppPage.getOutputElement()).text().contains("Init Success (Not Authenticated)");
+        waitUntilElement(jsConsoleTestAppPage.getEventsElement()).text().not().contains("Auth Success");
     }
 
     @Test

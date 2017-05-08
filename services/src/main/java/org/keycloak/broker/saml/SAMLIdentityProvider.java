@@ -236,6 +236,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
 
 
         boolean wantAuthnRequestsSigned = getConfig().isWantAuthnRequestsSigned();
+        boolean wantAssertionsSigned = getConfig().isWantAssertionsSigned();
         String entityId = getEntityId(uriInfo, realm);
         String nameIDPolicyFormat = getConfig().getNameIDPolicyFormat();
 
@@ -247,7 +248,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
         for (RsaKeyMetadata key : keys) {
             addKeyInfo(keysString, key, KeyTypes.SIGNING.value());
         }
-        String descriptor = SPMetadataDescriptor.getSPDescriptor(authnBinding, endpoint, endpoint, wantAuthnRequestsSigned, entityId, nameIDPolicyFormat, keysString.toString());
+        String descriptor = SPMetadataDescriptor.getSPDescriptor(authnBinding, endpoint, endpoint, wantAuthnRequestsSigned, wantAssertionsSigned, entityId, nameIDPolicyFormat, keysString.toString());
         return Response.ok(descriptor, MediaType.APPLICATION_XML_TYPE).build();
     }
 

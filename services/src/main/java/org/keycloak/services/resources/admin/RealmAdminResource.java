@@ -590,7 +590,7 @@ public class RealmAdminResource {
             query.client(client);
         }
 
-        if (types != null & !types.isEmpty()) {
+        if (types != null && !types.isEmpty()) {
             EventType[] t = new EventType[types.size()];
             for (int i = 0; i < t.length; i++) {
                 t[i] = EventType.valueOf(types.get(i));

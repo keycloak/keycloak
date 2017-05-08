@@ -48,6 +48,9 @@ public class ModalDialog {
     @FindBy(id = "name")
     private WebElement nameInput;
 
+    @FindBy(className = "modal-body")
+    private WebElement message;
+
     public void ok() {
         waitForModalFadeIn(driver);
         okButton.click();
@@ -69,5 +72,9 @@ public class ModalDialog {
     public void setName(String name) {
         nameInput.clear();
         nameInput.sendKeys(name);
+    }
+
+    public WebElement getMessage() {
+        return message;
     }
 }
