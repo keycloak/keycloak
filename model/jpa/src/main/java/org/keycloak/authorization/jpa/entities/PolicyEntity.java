@@ -74,7 +74,7 @@ public class PolicyEntity implements Policy {
     @Column(name = "LOGIC")
     private Logic logic = Logic.POSITIVE;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.LAZY)
     @MapKeyColumn(name="NAME")
     @Column(name="VALUE", columnDefinition = "TEXT")
     @CollectionTable(name="POLICY_CONFIG", joinColumns={ @JoinColumn(name="POLICY_ID") })
@@ -92,7 +92,7 @@ public class PolicyEntity implements Policy {
     @JoinTable(name = "RESOURCE_POLICY", joinColumns = @JoinColumn(name = "POLICY_ID"), inverseJoinColumns = @JoinColumn(name = "RESOURCE_ID"))
     private Set<ResourceEntity> resources = new HashSet<>();
 
-    @OneToMany(fetch = FetchType.EAGER, cascade = {})
+    @OneToMany(fetch = FetchType.LAZY, cascade = {})
     @JoinTable(name = "SCOPE_POLICY", joinColumns = @JoinColumn(name = "POLICY_ID"), inverseJoinColumns = @JoinColumn(name = "SCOPE_ID"))
     private Set<ScopeEntity> scopes = new HashSet<>();
 
