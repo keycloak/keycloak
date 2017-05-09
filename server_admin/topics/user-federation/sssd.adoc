@@ -126,7 +126,7 @@ An RPM for this library can be found in https://github.com/keycloak/libunix-dbus
 
 Before enabling the SSSD Federation provider, you must install the RPM for this library:
 
-  $ sudo yum install rh-sso7-libunix-dbus-java.x86_64.rpm
+  $ sudo yum install rh-sso7-libunix-dbus-java
 
 {% endif %}
 
