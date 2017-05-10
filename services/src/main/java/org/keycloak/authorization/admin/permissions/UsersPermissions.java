@@ -17,6 +17,7 @@
 package org.keycloak.authorization.admin.permissions;
 
 import org.jboss.logging.Logger;
+import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.Decision;
 import org.keycloak.authorization.common.DefaultEvaluationContext;
@@ -29,6 +30,7 @@ import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.permission.evaluator.PermissionEvaluator;
 import org.keycloak.authorization.policy.evaluation.DecisionResult;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
+import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.util.Permissions;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
@@ -66,8 +68,9 @@ public class UsersPermissions {
         this.root = root;
     }
 
+
     private void initialize() {
-        ClientModel client = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
+        ClientModel client = root.getRealmManagementClient();
         ResourceServer server = root.findOrCreateResourceServer(client);
         Scope manageScope = authz.getStoreFactory().getScopeStore().findByName(MgmtPermissions.MANAGE_SCOPE, server.getId());
         if (manageScope == null) {
@@ -101,7 +104,7 @@ public class UsersPermissions {
     }
 
     public void setPermissionsEnabled(boolean enable) {
-        ClientModel client = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
+        ClientModel client = root.getRealmManagementClient();
         if (enable) {
             initialize();
         } else {
@@ -137,7 +140,7 @@ public class UsersPermissions {
     }
 
     private ResourceServer getRealmManagementResourceServer() {
-        ClientModel client = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
+        ClientModel client = root.getRealmManagementClient();
         return root.findOrCreateResourceServer(client);
     }
 
@@ -147,7 +150,7 @@ public class UsersPermissions {
             auth.init(RealmAuth.Resource.USER);
             return auth.hasManage();
         } else {
-            ClientModel client = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
+            ClientModel client = root.getRealmManagementClient();
             RoleModel manageUsers = client.getRole(AdminRoles.MANAGE_USERS);
             return admin.hasRole(manageUsers);
         }
@@ -232,7 +235,8 @@ public class UsersPermissions {
     }
 
     public ResourceServer resourceServer() {
-        ClientModel client = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
+        ResourceServerStore resourceServerStore = authz.getStoreFactory().getResourceServerStore();
+        ClientModel client = root.getRealmManagementClient();
         return authz.getStoreFactory().getResourceServerStore().findByClient(client.getId());
     }
 

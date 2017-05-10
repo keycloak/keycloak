@@ -17,6 +17,7 @@
 package org.keycloak.authorization.admin.permissions;
 
 import org.jboss.logging.Logger;
+import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.Decision;
 import org.keycloak.authorization.common.DefaultEvaluationContext;
@@ -153,19 +154,18 @@ public class RoleMgmtPermissions {
         }
     }
 
-
     private ClientModel getRoleClient(RoleModel role) {
         ClientModel client = null;
         if (role.getContainer() instanceof ClientModel) {
             client = (ClientModel)role.getContainer();
         } else {
-            client = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
+            client = root.getRealmManagementClient();
         }
         return client;
     }
 
     public Policy manageUsersPolicy(ResourceServer server) {
-        RoleModel role = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).getRole(AdminRoles.MANAGE_USERS);
+        RoleModel role = root.getRealmManagementClient().getRole(AdminRoles.MANAGE_USERS);
         return rolePolicy(server, role);
     }
 

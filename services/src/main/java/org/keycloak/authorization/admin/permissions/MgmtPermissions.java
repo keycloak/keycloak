@@ -16,6 +16,7 @@
  */
 package org.keycloak.authorization.admin.permissions;
 
+import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.AuthorizationProviderFactory;
 import org.keycloak.authorization.common.KeycloakIdentity;
@@ -57,6 +58,17 @@ public class MgmtPermissions {
         this(session, realm);
         this.auth = auth;
 
+    }
+
+    public ClientModel getRealmManagementClient() {
+        ClientModel client = null;
+        if (realm.getName().equals(Config.getAdminRealm())) {
+            client = realm.getClientByClientId(Config.getAdminRealm() + "-realm");
+        } else {
+            client = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
+
+        }
+        return client;
     }
 
     public boolean isAdminSameRealm() {
