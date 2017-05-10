@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright 2017 Andy Hanson
+ * Copyright 2017 Brett Epps <https://github.com/eppsilon>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
  * associated documentation files (the "Software"), to deal in the Software without restriction, including
