@@ -1,5 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
-
 <!--
   ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
   ~ and other contributors as indicated by the @author tags.
@@ -16,21 +14,11 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
-<module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-servlet-oauth-client">
-    <resources>
-        <!-- Insert resources here -->
-    </resources>
-    <dependencies>
-        <module name="javax.api"/>
-        <module name="javax.servlet.api"/>
-        <module name="org.jboss.logging"/>
-        <module name="org.picketbox"/>
-        <module name="org.apache.httpcomponents"/>
-        <module name="org.keycloak.keycloak-adapter-spi"/>
-        <module name="org.keycloak.keycloak-adapter-core"/>
-        <module name="org.keycloak.keycloak-common"/>
-        <module name="org.keycloak.keycloak-core"/>
-    </dependencies>
-
-</module>
+<server-provisioning xmlns="urn:wildfly:server-provisioning:1.2" extract-schemas="true" copy-module-artifacts="true">
+    <copy-artifacts>
+        <copy-artifact artifact="org.keycloak:keycloak-client-cli-dist:zip" to-location="" from-location="keycloak-client-tools"/>
+    </copy-artifacts>
+    <feature-packs>
+        <feature-pack groupId="org.keycloak" artifactId="keycloak-server-feature-pack" version="${project.version}"/>     
+    </feature-packs>
+</server-provisioning>
