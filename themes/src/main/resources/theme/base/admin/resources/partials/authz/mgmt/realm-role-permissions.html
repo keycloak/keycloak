@@ -9,11 +9,11 @@
     <form class=form-horizontal" name="enableForm" novalidate kc-read-only="!access.manageAuthorization">
         <fieldset class="border-top">
         <div class="form-group">
-            <label class="col-md-2 control-label" for="permissionsEnabled">{{:: 'permissions-enabled' | translate}}</label>
+            <label class="col-md-2 control-label" for="permissionsEnabled">{{:: 'permissions-enabled-role' | translate}}</label>
             <div class="col-md-6">
                 <input ng-model="permissions.enabled" ng-click="setEnabled()" name="permissionsEnabled" id="permissionsEnabled" ng-disabled="!access.manageAuthorization" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
             </div>
-            <kc-tooltip>{{:: 'permissions-enabled.tooltip' | translate}}</kc-tooltip>
+            <kc-tooltip>{{:: 'permissions-enabled-role.tooltip' | translate}}</kc-tooltip>
         </div>
         </fieldset>
     </form>

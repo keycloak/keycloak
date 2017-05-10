@@ -1387,6 +1387,7 @@ module.controller('ClientScopeMappingCtrl', function($scope, $http, realm, clien
     }
 
     $scope.changeFlag = function() {
+        console.log('changeFlag');
         Client.update({
             realm : realm.realm,
             client : client.id

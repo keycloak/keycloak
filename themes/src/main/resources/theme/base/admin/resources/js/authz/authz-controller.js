@@ -2367,9 +2367,7 @@ module.controller('RealmRolePermissionsCtrl', function($scope, $http, $route, $l
     });
     $scope.setEnabled = function() {
         var param = { enabled: $scope.permissions.enabled};
-        RoleManagementPermissions.update({realm: realm.realm, role:role.id}, param, function(data) {
-            $scope.permissions = data;
-        })
+        $scope.permissions= RoleManagementPermissions.update({realm: realm.realm, role:role.id}, param);
     };
 
 
@@ -2384,9 +2382,7 @@ module.controller('ClientRolePermissionsCtrl', function($scope, $http, $route, $
     });
     $scope.setEnabled = function() {
         var param = { enabled: $scope.permissions.enabled};
-        RoleManagementPermissions.update({realm: realm.realm, role:role.id}, param, function(data) {
-            $scope.permissions = data;
-        })
+        $scope.permissions = RoleManagementPermissions.update({realm: realm.realm, role:role.id}, param);
     };
 
 
@@ -2395,17 +2391,16 @@ module.controller('ClientRolePermissionsCtrl', function($scope, $http, $route, $
 module.controller('UsersPermissionsCtrl', function($scope, $http, $route, $location, realm, UsersManagementPermissions, Client, Notifications) {
     console.log('UsersPermissionsCtrl');
     $scope.realm = realm;
-    UsersManagementPermissions.get({realm: realm.realm, role: role.id}, function(data) {
+    UsersManagementPermissions.get({realm: realm.realm}, function(data) {
         $scope.permissions = data;
     });
     Client.query({realm: realm.realm, clientId: 'realm-management'}, function(data) {
         $scope.realmManagementClientId = data[0].id;
     });
-    $scope.setEnabled = function() {
+    $scope.changeIt = function() {
+        console.log('before permissions.enabled=' + $scope.permissions.enabled);
         var param = { enabled: $scope.permissions.enabled};
-        UsersManagementPermissions.update({realm: realm.realm, role:role.id}, param, function(data) {
-            $scope.permissions = data;
-        })
+        $scope.permissions = UsersManagementPermissions.update({realm: realm.realm}, param);
     };
 
 

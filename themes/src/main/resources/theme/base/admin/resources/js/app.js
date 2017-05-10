@@ -2376,6 +2376,15 @@ module.directive('kcTabsUser', function () {
     }
 });
 
+module.directive('kcTabsUsers', function () {
+    return {
+        scope: true,
+        restrict: 'E',
+        replace: true,
+        templateUrl: resourceUrl + '/templates/kc-tabs-users.html'
+    }
+});
+
 module.directive('kcTabsGroup', function () {
     return {
         scope: true,
