@@ -32,6 +32,7 @@ public class IDP implements Serializable {
         private String requestBinding;
         private String responseBinding;
         private String bindingUrl;
+        private String assertionConsumerServiceUrl;
         private boolean validateAssertionSignature;
 
         public boolean isSignRequest() {
@@ -80,6 +81,14 @@ public class IDP implements Serializable {
 
         public void setBindingUrl(String bindingUrl) {
             this.bindingUrl = bindingUrl;
+        }
+
+        public String getAssertionConsumerServiceUrl() {
+            return assertionConsumerServiceUrl;
+        }
+
+        public void setAssertionConsumerServiceUrl(String assertionConsumerServiceUrl) {
+            this.assertionConsumerServiceUrl = assertionConsumerServiceUrl;
         }
     }
 
