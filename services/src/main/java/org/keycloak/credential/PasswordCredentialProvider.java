@@ -95,7 +95,7 @@ public class PasswordCredentialProvider implements CredentialProvider, Credentia
         newPassword.setType(CredentialModel.PASSWORD);
         long createdDate = Time.currentTimeMillis();
         newPassword.setCreatedDate(createdDate);
-        hash.encode(cred.getValue(), policy, newPassword);
+        hash.encode(cred.getValue(), policy.getHashIterations(), newPassword);
         getCredentialStore().createCredential(realm, user, newPassword);
         UserCache userCache = session.userCache();
         if (userCache != null) {
@@ -207,7 +207,7 @@ public class PasswordCredentialProvider implements CredentialProvider, Credentia
             return true;
         }
 
-        hash.encode(cred.getValue(), policy, password);
+        hash.encode(cred.getValue(), policy.getHashIterations(), password);
         getCredentialStore().updateCredential(realm, user, password);
         UserCache userCache = session.userCache();
         if (userCache != null) {
