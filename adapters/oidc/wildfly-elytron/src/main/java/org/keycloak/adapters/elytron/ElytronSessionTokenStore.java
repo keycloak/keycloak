@@ -76,7 +76,7 @@ public class ElytronSessionTokenStore implements ElytronTokeStore {
     public boolean isCached(RequestAuthenticator authenticator) {
         HttpScope session = this.httpFacade.getScope(Scope.SESSION);
 
-        if (session == null) {
+        if (session == null || !session.supportsAttachments()) {
             log.debug("session was null, returning null");
             return false;
         }
