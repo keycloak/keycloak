@@ -55,6 +55,8 @@ public class CachedResourceStore extends AbstractCachedStore implements Resource
 
         addInvalidation(getCacheKeyForResource(resource.getId()));
         addInvalidation(getCacheKeyForResourceName(resource.getName()));
+        addInvalidation(getCacheKeyForOwner(owner));
+
         getCachedStoreFactory().getPolicyStore().addInvalidations(resource);
 
         getTransaction().whenRollback(() -> removeCachedEntry(resourceServer.getId(), getCacheKeyForResource(resource.getId())));
