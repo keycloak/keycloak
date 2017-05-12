@@ -34,6 +34,11 @@ public class KeycloakSpringBootProperties extends AdapterConfig {
     @JsonIgnore
     private Map config = new HashMap();
 
+    /**
+     * Disable Keycloak auto configuration. See {@link KeycloakAutoConfiguration}
+     */
+    private boolean disabled = false;
+
     public Map getConfig() {
         return config;
     }
@@ -145,5 +150,13 @@ public class KeycloakSpringBootProperties extends AdapterConfig {
 
     public void setSecurityConstraints(List<SecurityConstraint> securityConstraints) {
         this.securityConstraints = securityConstraints;
+    }
+
+    public boolean isDisabled() {
+        return disabled;
+    }
+
+    public void setDisabled(boolean disabled) {
+        this.disabled = disabled;
     }
 }
