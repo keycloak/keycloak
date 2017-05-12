@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.auth.page.login;
 
+import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -38,8 +39,14 @@ public class OAuthGrant extends LoginActions {
         cancelButton.click();
     }
 
+
+    public boolean isCurrent(WebDriver driver1) {
+        if (driver1 == null) driver1 = driver;
+        return driver1.getPageSource().contains("Do you grant these access privileges");
+    }
+
     @Override
     public boolean isCurrent() {
-        return driver.getPageSource().contains("Do you grant these access privileges");
+        return isCurrent(null);
     }
 }

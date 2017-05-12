@@ -103,6 +103,8 @@
         <github.username/>
         <github.secretToken/>
         <ieDriverArch/>
+        <js.browser>phantomjs</js.browser>
+        <js.chromeArguments>--headless</js.chromeArguments>
         <htmlUnitBrowserVersion>chrome</htmlUnitBrowserVersion>
         <phantomjs.cli.args>--ignore-ssl-errors=true --web-security=false --ssl-certificates-path=${client.certificate.ca.path} --ssl-client-certificate-file=${client.certificate.file} --ssl-client-key-file=${client.key.file} --ssl-client-key-passphrase=${client.key.passphrase}</phantomjs.cli.args>
         <firefox_binary>/usr/bin/firefox</firefox_binary>
@@ -268,6 +270,8 @@
                             <test.intermittent>${test.intermittent}</test.intermittent>
 
                             <browser>${browser}</browser>
+                            <js.browser>${js.browser}</js.browser>
+                            <js.chromeArguments>${js.chromeArguments}</js.chromeArguments>
                             <htmlUnitBrowserVersion>${htmlUnitBrowserVersion}</htmlUnitBrowserVersion>
                             <webdriverDownloadBinaries>${webdriverDownloadBinaries}</webdriverDownloadBinaries>
 
