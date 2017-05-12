@@ -18,6 +18,7 @@ package org.keycloak.broker.oidc;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.bouncycastle.util.encoders.Base64;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.broker.provider.AbstractIdentityProvider;
@@ -249,10 +250,12 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         }
 
         public SimpleHttp generateTokenRequest(String authorizationCode) {
+            String base64Encoded = Base64.toBase64String((getConfig().getClientId() + ":" + getConfig().getClientSecret()).getBytes());
             return SimpleHttp.doPost(getConfig().getTokenUrl(), session)
+                    .header("Authorization", "Basic " + base64Encoded)
                     .param(OAUTH2_PARAMETER_CODE, authorizationCode)
-                    .param(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
-                    .param(OAUTH2_PARAMETER_CLIENT_SECRET, getConfig().getClientSecret())
+                    //.param(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
+                    //.param(OAUTH2_PARAMETER_CLIENT_SECRET, getConfig().getClientSecret())
                     .param(OAUTH2_PARAMETER_REDIRECT_URI, uriInfo.getAbsolutePath().toString())
                     .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE);
         }

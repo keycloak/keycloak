@@ -49,3 +49,4 @@ target
 # Maven shade
 #############
 *dependency-reduced-pom.xml
+/bin/
