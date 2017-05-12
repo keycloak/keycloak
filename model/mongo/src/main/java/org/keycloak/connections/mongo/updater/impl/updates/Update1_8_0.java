@@ -21,7 +21,7 @@ import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.WriteResult;
-import org.keycloak.credential.hash.Pbkdf2PasswordHashProvider;
+import org.keycloak.credential.hash.Pbkdf2PasswordHashProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserCredentialModel;
 
@@ -46,7 +46,7 @@ public class Update1_8_0 extends Update {
 
         BasicDBObject query = new BasicDBObject("credentials", new BasicDBObject("$elemMatch", elemMatch));
 
-        BasicDBObject update = new BasicDBObject("$set", new BasicDBObject("credentials.$.algorithm", Pbkdf2PasswordHashProvider.ID));
+        BasicDBObject update = new BasicDBObject("$set", new BasicDBObject("credentials.$.algorithm", Pbkdf2PasswordHashProviderFactory.ID));
 
         DBCollection users = db.getCollection("users");
 

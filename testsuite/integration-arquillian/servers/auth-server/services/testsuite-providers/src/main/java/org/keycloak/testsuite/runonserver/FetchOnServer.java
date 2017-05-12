@@ -15,19 +15,18 @@
  * limitations under the License.
  */
 
-package org.keycloak.credential.hash;
+package org.keycloak.testsuite.runonserver;
 
-import org.keycloak.credential.CredentialModel;
-import org.keycloak.models.PasswordPolicy;
-import org.keycloak.provider.Provider;
+import org.keycloak.models.KeycloakSession;
+
+import java.io.Serializable;
+import java.util.function.Function;
 
 /**
- * @author <a href="mailto:me@tsudot.com">Kunal Kerkar</a>
+ * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public interface PasswordHashProvider extends Provider {
-    boolean policyCheck(PasswordPolicy policy, CredentialModel credentia);
+public interface FetchOnServer extends Serializable {
 
-    void encode(String rawPassword, int iterations, CredentialModel credential);
+    Object run(KeycloakSession session);
 
-    boolean verify(String rawPassword, CredentialModel credential);
 }

@@ -71,6 +71,11 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
 
     @Override
     public void process(Archive<?> archive, TestClass testClass) {
+        // Ignore run on server classes
+        if (archive.getName().equals("run-on-server-classes.war")) {
+            return;
+        }
+
         log.info("Processing archive " + archive.getName());
 //        if (isAdapterTest(testClass)) {
         modifyAdapterConfigs(archive, testClass);

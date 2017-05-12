@@ -19,12 +19,13 @@ package org.keycloak.testsuite.admin.realm;
 
 import org.apache.commons.io.IOUtils;
 import org.hamcrest.Matchers;
+import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ServerInfoResource;
-import org.keycloak.common.util.StreamUtil;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -34,7 +35,6 @@ import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
-import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -45,6 +45,9 @@ import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.auth.page.AuthRealm;
+import org.keycloak.testsuite.client.KeycloakTestingClient;
+import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
+import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.CredentialBuilder;
 import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
@@ -52,7 +55,6 @@ import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
 
-import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
@@ -66,7 +68,6 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -76,6 +77,11 @@ import static org.junit.Assert.fail;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class RealmTest extends AbstractAdminTest {
+
+    @Deployment
+    public static WebArchive deploy() {
+        return RunOnServerDeployment.create();
+    }
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -140,7 +146,10 @@ public class RealmTest extends AbstractAdminTest {
         RealmRepresentation returned = adminClient.realm("realm-with-smtp").toRepresentation();
         assertEquals(ComponentRepresentation.SECRET_VALUE, returned.getSmtpServer().get("password"));
 
-        assertEquals("secret", testingClient.testing("realm-with-smtp").getSmtpConfig().get("password"));
+        KeycloakTestingClient.Server serverClient = testingClient.server("realm-with-smtp");
+
+        RealmRepresentation internalRep = serverClient.fetch(RunHelpers.internalRealm());
+        assertEquals("secret", internalRep.getSmtpServer().get("password"));
 
         adminClient.realm("realm-with-smtp").update(rep);
 
@@ -148,7 +157,8 @@ public class RealmTest extends AbstractAdminTest {
         assertFalse(event.getRepresentation().contains("some secret value!!"));
         assertTrue(event.getRepresentation().contains(ComponentRepresentation.SECRET_VALUE));
 
-        assertEquals("secret", testingClient.testing("realm-with-smtp").getSmtpConfig().get("password"));
+        internalRep = serverClient.fetch(RunHelpers.internalRealm());
+        assertEquals("secret", internalRep.getSmtpServer().get("password"));
 
         RealmRepresentation realm = adminClient.realms().findAll().stream().filter(r -> r.getRealm().equals("realm-with-smtp")).findFirst().get();
         assertEquals(ComponentRepresentation.SECRET_VALUE, realm.getSmtpServer().get("password"));
