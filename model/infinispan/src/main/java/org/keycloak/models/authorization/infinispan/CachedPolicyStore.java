@@ -214,6 +214,10 @@ public class CachedPolicyStore extends AbstractCachedStore implements PolicyStor
         return new StringBuilder().append(POLICY_CACHE_PREFIX).append("findByScopeIds-").append(scopeId).toString();
     }
 
+    private String getCacheKeyForResource(String resourceId) {
+        return new StringBuilder().append(POLICY_CACHE_PREFIX).append("findByResource-").append(resourceId).toString();
+    }
+
     private Policy createAdapter(CachedPolicy cached) {
         return new Policy() {
 
@@ -448,10 +452,6 @@ public class CachedPolicyStore extends AbstractCachedStore implements PolicyStor
                 return this.updated;
             }
         };
-    }
-
-    private String getCacheKeyForResource(String resourceId) {
-        return new StringBuilder("findByResource").append(resourceId).toString();
     }
 
     private List<Policy> cacheResult(String resourceServerId, String key, Supplier<List<Policy>> provider) {
