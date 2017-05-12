@@ -14,20 +14,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.keycloak.models.authorization.infinispan.events;
 
-package org.keycloak.credential.hash;
-
-import org.keycloak.credential.CredentialModel;
-import org.keycloak.models.PasswordPolicy;
-import org.keycloak.provider.Provider;
+import java.util.Collections;
 
 /**
- * @author <a href="mailto:me@tsudot.com">Kunal Kerkar</a>
+ * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public interface PasswordHashProvider extends Provider {
-    boolean policyCheck(PasswordPolicy policy, CredentialModel credentia);
+public class ResourceServerRemovedEvent extends AuthorizationInvalidationEvent {
 
-    void encode(String rawPassword, int iterations, CredentialModel credential);
+    private final String clientId;
 
-    boolean verify(String rawPassword, CredentialModel credential);
+    public ResourceServerRemovedEvent(String id, String clientId) {
+        super(id, Collections.emptySet());
+        this.clientId = clientId;
+    }
+
+    public String getClientId() {
+        return clientId;
+    }
 }

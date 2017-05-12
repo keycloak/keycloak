@@ -18,11 +18,16 @@
 
 package org.keycloak.models.authorization.infinispan;
 
+import java.util.List;
+import java.util.Map;
+
+import org.infinispan.Cache;
 import org.keycloak.Config;
-import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.authorization.infinispan.events.AuthorizationInvalidationEvent;
 import org.keycloak.models.cache.authorization.CachedStoreFactoryProvider;
 import org.keycloak.models.cache.authorization.CachedStoreProviderFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
@@ -31,9 +36,12 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class InfinispanStoreProviderFactory implements CachedStoreProviderFactory, EnvironmentDependentProviderFactory {
+
+    private StoreFactoryCacheManager cacheManager;
+
     @Override
     public CachedStoreFactoryProvider create(KeycloakSession session) {
-        return new InfinispanStoreFactoryProvider(session);
+        return new InfinispanStoreFactoryProvider(session, cacheManager);
     }
 
     @Override
@@ -43,7 +51,25 @@ public class InfinispanStoreProviderFactory implements CachedStoreProviderFactor
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
+        KeycloakSession session = factory.create();
 
+        try {
+            InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
+            Cache<String, Map<String, List<Object>>> cache = provider.getCache(InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME);
+            ClusterProvider clusterProvider = session.getProvider(ClusterProvider.class);
+
+            cacheManager = new StoreFactoryCacheManager(cache);
+
+            clusterProvider.registerListener(ClusterProvider.ALL, event -> {
+                if (event instanceof AuthorizationInvalidationEvent) {
+                    cacheManager.invalidate(AuthorizationInvalidationEvent.class.cast(event));
+                }
+            });
+        } finally {
+            if (session != null) {
+                session.close();
+            }
+        }
     }
 
     @Override

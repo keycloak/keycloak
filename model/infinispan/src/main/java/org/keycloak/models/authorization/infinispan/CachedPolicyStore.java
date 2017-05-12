@@ -30,18 +30,13 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import org.infinispan.Cache;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
-import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.authorization.infinispan.InfinispanStoreFactoryProvider.CacheTransaction;
 import org.keycloak.models.authorization.infinispan.entities.CachedPolicy;
-import org.keycloak.models.cache.authorization.CachedStoreFactoryProvider;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
@@ -49,28 +44,15 @@ import org.keycloak.representations.idm.authorization.Logic;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class CachedPolicyStore implements PolicyStore {
+public class CachedPolicyStore extends AbstractCachedStore implements PolicyStore {
 
-    private static final String POLICY_ID_CACHE_PREFIX = "policy-id-";
+    private static final String POLICY_CACHE_PREFIX = "pc-";
 
-    private final Cache<String, Map<String, List<CachedPolicy>>> cache;
-    private final CachedStoreFactoryProvider cacheStoreFactory;
-    private final CacheTransaction transaction;
-    private final List<String> cacheKeys;
-    private final StoreFactory storeFactory;
     private PolicyStore delegate;
 
-    public CachedPolicyStore(KeycloakSession session, CachedStoreFactoryProvider cacheStoreFactory, CacheTransaction transaction, StoreFactory delegate) {
-        this.cacheStoreFactory = cacheStoreFactory;
-        this.transaction = transaction;
-        InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
-        this.cache = provider.getCache(InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME);
-        cacheKeys = new ArrayList<>();
-        cacheKeys.add("findByResource");
-        cacheKeys.add("findByResourceType");
-        cacheKeys.add("findByScopeIds");
-        cacheKeys.add("findByType");
-        this.storeFactory = delegate;
+    public CachedPolicyStore(InfinispanStoreFactoryProvider cacheStoreFactory, StoreFactory storeFactory) {
+        super(cacheStoreFactory, storeFactory);
+        this.delegate = storeFactory.getPolicyStore();
     }
 
     @Override
@@ -78,13 +60,11 @@ public class CachedPolicyStore implements PolicyStore {
         Policy policy = getDelegate().create(representation, getStoreFactory().getResourceServerStore().findById(resourceServer.getId()));
         String id = policy.getId();
 
-        this.transaction.whenRollback(() -> {
-            resolveResourceServerCache(resourceServer.getId()).remove(getCacheKeyForPolicy(id));
-        });
+        addInvalidation(getCacheKeyForPolicy(policy.getId()));
+        addInvalidation(getCacheKeyForPolicyName(policy.getName()));
+        addInvalidation(getCacheKeyForPolicyType(policy.getType()));
 
-        this.transaction.whenCommit(() -> {
-            invalidateCache(resourceServer.getId());
-        });
+        configureTransaction(resourceServer, id);
 
         return createAdapter(new CachedPolicy(policy));
     }
@@ -95,9 +75,13 @@ public class CachedPolicyStore implements PolicyStore {
         if (policy == null) {
             return;
         }
-        ResourceServer resourceServer = policy.getResourceServer();
+
+        addInvalidation(getCacheKeyForPolicy(policy.getId()));
+        addInvalidation(getCacheKeyForPolicyName(policy.getName()));
+        addInvalidation(getCacheKeyForPolicyType(policy.getType()));
+
         getDelegate().delete(id);
-        invalidateCache(resourceServer.getId());
+        configureTransaction(policy.getResourceServer(), policy.getId());
     }
 
     @Override
@@ -106,27 +90,43 @@ public class CachedPolicyStore implements PolicyStore {
             return getDelegate().findById(id, null);
         }
 
+        if (isInvalid(getCacheKeyForPolicy(id))) {
+            return getDelegate().findById(id, resourceServerId);
+        }
+
         String cacheKeyForPolicy = getCacheKeyForPolicy(id);
-        List<CachedPolicy> cached = resolveResourceServerCache(resourceServerId).get(cacheKeyForPolicy);
+        List<Object> cached = resolveCacheEntry(resourceServerId, cacheKeyForPolicy);
 
         if (cached == null) {
             Policy policy = getDelegate().findById(id, resourceServerId);
 
             if (policy != null) {
-                CachedPolicy cachedPolicy = new CachedPolicy(policy);
-                resolveResourceServerCache(resourceServerId).put(cacheKeyForPolicy, Arrays.asList(cachedPolicy));
-                return createAdapter(cachedPolicy);
+                return createAdapter(putCacheEntry(resourceServerId, cacheKeyForPolicy, new CachedPolicy(policy)));
             }
 
             return null;
         }
 
-        return createAdapter(cached.get(0));
+        return createAdapter(CachedPolicy.class.cast(cached.get(0)));
     }
 
     @Override
     public Policy findByName(String name, String resourceServerId) {
-        return getDelegate().findByName(name, resourceServerId);
+        String cacheKey = getCacheKeyForPolicyName(name);
+
+        if (isInvalid(cacheKey)) {
+            return getDelegate().findByName(name, resourceServerId);
+        }
+
+        return cacheResult(resourceServerId, cacheKey, () -> {
+            Policy policy = getDelegate().findByName(name, resourceServerId);
+
+            if (policy == null) {
+                return Collections.emptyList();
+            }
+
+            return Arrays.asList(policy);
+        }).stream().findFirst().orElse(null);
     }
 
     @Override
@@ -141,12 +141,24 @@ public class CachedPolicyStore implements PolicyStore {
 
     @Override
     public List<Policy> findByResource(String resourceId, String resourceServerId) {
-        return cacheResult(resourceServerId, new StringBuilder("findByResource").append(resourceId).toString(), () -> getDelegate().findByResource(resourceId, resourceServerId));
+        String cacheKey = getCacheKeyForResource(resourceId);
+
+        if (isInvalid(cacheKey)) {
+            return getDelegate().findByResource(resourceId, resourceServerId);
+        }
+
+        return cacheResult(resourceServerId, cacheKey, () -> getDelegate().findByResource(resourceId, resourceServerId));
     }
 
     @Override
     public List<Policy> findByResourceType(String resourceType, String resourceServerId) {
-        return cacheResult(resourceServerId, new StringBuilder("findByResourceType").append(resourceType).toString(), () -> getDelegate().findByResourceType(resourceType, resourceServerId));
+        String cacheKey = getCacheKeyForResourceType(resourceType);
+
+        if (isInvalid(cacheKey)) {
+            return getDelegate().findByResourceType(resourceType, resourceServerId);
+        }
+
+        return cacheResult(resourceServerId, cacheKey, () -> getDelegate().findByResourceType(resourceType, resourceServerId));
     }
 
     @Override
@@ -154,7 +166,13 @@ public class CachedPolicyStore implements PolicyStore {
         List<Policy> policies = new ArrayList<>();
 
         for (String scopeId : scopeIds) {
-            policies.addAll(cacheResult(resourceServerId, new StringBuilder("findByScopeIds").append(scopeId).toString(), () -> getDelegate().findByScopeIds(Arrays.asList(scopeId), resourceServerId)));
+            String cacheKey = getCacheForScope(scopeId);
+
+            if (isInvalid(cacheKey)) {
+                policies.addAll(getDelegate().findByScopeIds(Arrays.asList(scopeId), resourceServerId));
+            } else {
+                policies.addAll(cacheResult(resourceServerId, cacheKey, () -> getDelegate().findByScopeIds(Arrays.asList(scopeId), resourceServerId)));
+            }
         }
 
         return policies;
@@ -162,7 +180,13 @@ public class CachedPolicyStore implements PolicyStore {
 
     @Override
     public List<Policy> findByType(String type, String resourceServerId) {
-        return cacheResult(resourceServerId, new StringBuilder("findByType").append(type).toString(), () -> getDelegate().findByType(type, resourceServerId));
+        String cacheKey = getCacheKeyForPolicyType(type);
+
+        if (isInvalid(cacheKey)) {
+            return getDelegate().findByType(type, resourceServerId);
+        }
+
+        return cacheResult(resourceServerId, cacheKey, () -> getDelegate().findByType(type, resourceServerId));
     }
 
     @Override
@@ -170,35 +194,28 @@ public class CachedPolicyStore implements PolicyStore {
         return getDelegate().findDependentPolicies(id, resourceServerId);
     }
 
-    @Override
-    public void notifyChange(Object cached) {
-        String resourceServerId;
-
-        if (Resource.class.isInstance(cached)) {
-            resourceServerId = ((Resource) cached).getResourceServer().getId();
-        } else if (Scope.class.isInstance(cached)){
-            resourceServerId = ((Scope) cached).getResourceServer().getId();
-        } else {
-            throw new RuntimeException("Unexpected notification [" + cached + "]");
-        }
-
-        invalidateCache(resourceServerId);
+    private String getCacheKeyForPolicy(String id) {
+        return new StringBuilder().append(POLICY_CACHE_PREFIX).append("id-").append(id).toString();
     }
 
-    private String getCacheKeyForPolicy(String policyId) {
-        return POLICY_ID_CACHE_PREFIX + policyId;
+    private String getCacheKeyForPolicyType(String type) {
+        return new StringBuilder().append(POLICY_CACHE_PREFIX).append("findByType-").append(type).toString();
     }
 
-    private StoreFactory getStoreFactory() {
-        return this.storeFactory;
+    private String getCacheKeyForPolicyName(String name) {
+        return new StringBuilder().append(POLICY_CACHE_PREFIX).append("findByName-").append(name).toString();
     }
 
-    private PolicyStore getDelegate() {
-        if (this.delegate == null) {
-            this.delegate = getStoreFactory().getPolicyStore();
-        }
+    private String getCacheKeyForResourceType(String resourceType) {
+        return new StringBuilder().append(POLICY_CACHE_PREFIX).append("findByResourceType-").append(resourceType).toString();
+    }
 
-        return this.delegate;
+    private String getCacheForScope(String scopeId) {
+        return new StringBuilder().append(POLICY_CACHE_PREFIX).append("findByScopeIds-").append(scopeId).toString();
+    }
+
+    private String getCacheKeyForResource(String resourceId) {
+        return new StringBuilder().append(POLICY_CACHE_PREFIX).append("findByResource-").append(resourceId).toString();
     }
 
     private Policy createAdapter(CachedPolicy cached) {
@@ -243,11 +260,21 @@ public class CachedPolicyStore implements PolicyStore {
 
             @Override
             public Map<String, String> getConfig() {
-                return cached.getConfig();
+                return new HashMap<>(cached.getConfig());
             }
 
             @Override
             public void setConfig(Map<String, String> config) {
+                String resourceType = config.get("defaultResourceType");
+
+                if (resourceType != null) {
+                    addInvalidation(getCacheKeyForResourceType(resourceType));
+                    String cachedResourceType = cached.getConfig().get("defaultResourceType");
+                    if (cachedResourceType != null && !resourceType.equals(cachedResourceType)) {
+                        addInvalidation(getCacheKeyForResourceType(cachedResourceType));
+                    }
+                }
+
                 getDelegateForUpdate().setConfig(config);
                 cached.setConfig(config);
             }
@@ -259,6 +286,8 @@ public class CachedPolicyStore implements PolicyStore {
 
             @Override
             public void setName(String name) {
+                addInvalidation(getCacheKeyForPolicyName(name));
+                addInvalidation(getCacheKeyForPolicyName(cached.getName()));
                 getDelegateForUpdate().setName(name);
                 cached.setName(name);
             }
@@ -281,13 +310,18 @@ public class CachedPolicyStore implements PolicyStore {
 
             @Override
             public void addScope(Scope scope) {
-                getDelegateForUpdate().addScope(getStoreFactory().getScopeStore().findById(scope.getId(), cached.getResourceServerId()));
+                Scope model = getStoreFactory().getScopeStore().findById(scope.getId(), cached.getResourceServerId());
+                addInvalidation(getCacheForScope(model.getId()));
+                getDelegateForUpdate().addScope(model);
                 cached.addScope(scope);
+                scopes.add(scope);
             }
 
             @Override
             public void removeScope(Scope scope) {
-                getDelegateForUpdate().removeScope(getStoreFactory().getScopeStore().findById(scope.getId(), cached.getResourceServerId()));
+                Scope model = getStoreFactory().getScopeStore().findById(scope.getId(), cached.getResourceServerId());
+                addInvalidation(getCacheForScope(scope.getId()));
+                getDelegateForUpdate().removeScope(model);
                 cached.removeScope(scope);
                 scopes.remove(scope);
             }
@@ -307,20 +341,37 @@ public class CachedPolicyStore implements PolicyStore {
 
             @Override
             public void addResource(Resource resource) {
-                getDelegateForUpdate().addResource(getStoreFactory().getResourceStore().findById(resource.getId(), cached.getResourceServerId()));
+                Resource model = getStoreFactory().getResourceStore().findById(resource.getId(), cached.getResourceServerId());
+
+                addInvalidation(getCacheKeyForResource(model.getId()));
+
+                if (model.getType() != null) {
+                    addInvalidation(getCacheKeyForResourceType(model.getType()));
+                }
+
+                getDelegateForUpdate().addResource(model);
                 cached.addResource(resource);
+                resources.add(resource);
             }
 
             @Override
             public void removeResource(Resource resource) {
-                getDelegateForUpdate().removeResource(getStoreFactory().getResourceStore().findById(resource.getId(), cached.getResourceServerId()));
+                Resource model = getStoreFactory().getResourceStore().findById(resource.getId(), cached.getResourceServerId());
+
+                addInvalidation(getCacheKeyForResource(model.getId()));
+
+                if (model.getType() != null) {
+                    addInvalidation(getCacheKeyForResourceType(model.getType()));
+                }
+
+                getDelegateForUpdate().removeResource(model);
                 cached.removeResource(resource);
                 resources.remove(resource);
             }
 
             @Override
             public Set<Policy> getAssociatedPolicies() {
-                if (associatedPolicies == null) {
+                if (associatedPolicies == null || updated != null) {
                     associatedPolicies = new HashSet<>();
 
                     for (String id : cached.getAssociatedPoliciesIds()) {
@@ -337,7 +388,7 @@ public class CachedPolicyStore implements PolicyStore {
 
             @Override
             public Set<Resource> getResources() {
-                if (resources == null) {
+                if (resources == null || updated != null) {
                     resources = new HashSet<>();
 
                     for (String id : cached.getResourcesIds()) {
@@ -354,7 +405,7 @@ public class CachedPolicyStore implements PolicyStore {
 
             @Override
             public Set<Scope> getScopes() {
-                if (scopes == null) {
+                if (scopes == null || updated != null) {
                     scopes = new HashSet<>();
 
                     for (String id : cached.getScopesIds()) {
@@ -394,12 +445,8 @@ public class CachedPolicyStore implements PolicyStore {
                 if (this.updated == null) {
                     this.updated = getDelegate().findById(getId(), cached.getResourceServerId());
                     if (this.updated == null) throw new IllegalStateException("Not found in database");
-                    transaction.whenCommit(() -> {
-                        invalidateCache(cached.getResourceServerId());
-                    });
-                    transaction.whenRollback(() -> {
-                        resolveResourceServerCache(cached.getResourceServerId()).remove(getCacheKeyForPolicy(getId()));
-                    });
+                    addInvalidation(getCacheKeyForPolicy(updated.getId()));
+                    configureTransaction(updated.getResourceServer(), updated.getId());
                 }
 
                 return this.updated;
@@ -407,33 +454,47 @@ public class CachedPolicyStore implements PolicyStore {
         };
     }
 
-    private CachedStoreFactoryProvider getCachedStoreFactory() {
-        return cacheStoreFactory;
-    }
-
-    private void invalidateCache(String resourceServerId) {
-        cache.remove(resourceServerId);
-    }
-
     private List<Policy> cacheResult(String resourceServerId, String key, Supplier<List<Policy>> provider) {
-        List<CachedPolicy> cached = resolveResourceServerCache(resourceServerId).computeIfAbsent(key, (Function<String, List<CachedPolicy>>) o -> {
+        List<Object> cached = getCachedStoreFactory().computeIfCachedEntryAbsent(resourceServerId, key, (Function<String, List<Object>>) o -> {
             List<Policy> result = provider.get();
 
             if (result.isEmpty()) {
                 return Collections.emptyList();
             }
 
-            return result.stream().map(policy -> new CachedPolicy(policy)).collect(Collectors.toList());
+            return result.stream().map(policy -> policy.getId()).collect(Collectors.toList());
         });
 
         if (cached == null) {
             return Collections.emptyList();
         }
 
-        return cached.stream().map(cachedPolicy -> createAdapter(cachedPolicy)).collect(Collectors.toList());
+        return cached.stream().map(id -> findById(id.toString(), resourceServerId)).collect(Collectors.toList());
     }
 
-    private Map<String, List<CachedPolicy>> resolveResourceServerCache(String id) {
-        return cache.computeIfAbsent(id, key -> new HashMap<>());
+    private void configureTransaction(ResourceServer resourceServer, String id) {
+        getTransaction().whenRollback(() -> removeCachedEntry(resourceServer.getId(), getCacheKeyForPolicy(id)));
+        getTransaction().whenCommit(() -> invalidate(resourceServer.getId()));
+    }
+
+    private PolicyStore getDelegate() {
+        return delegate;
+    }
+
+    void addInvalidations(Object object) {
+        if (Resource.class.isInstance(object)) {
+            Resource resource = (Resource) object;
+            addInvalidation(getCacheKeyForResource(resource.getId()));
+            String type = resource.getType();
+
+            if (type != null) {
+                addInvalidation(getCacheKeyForResourceType(type));
+            }
+        } else if (Scope.class.isInstance(object)) {
+            Scope scope = (Scope) object;
+            addInvalidation(getCacheForScope(scope.getId()));
+        } else {
+            throw new RuntimeException("Unexpected notification [" + object + "]");
+        }
     }
 }

@@ -46,6 +46,7 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserSessionModel;
@@ -332,6 +333,8 @@ public class RealmAdminResource {
             return ErrorResponse.error("Specified regex pattern(s) is invalid.", Response.Status.BAD_REQUEST);
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("Realm with same name exists");
+        } catch (ModelException e) {
+            return ErrorResponse.error(e.getMessage(), Status.BAD_REQUEST);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             return ErrorResponse.error("Failed to update realm", Response.Status.INTERNAL_SERVER_ERROR);

@@ -17,17 +17,38 @@
 
 package org.keycloak.credential.hash;
 
-import org.keycloak.credential.CredentialModel;
-import org.keycloak.models.PasswordPolicy;
-import org.keycloak.provider.Provider;
+import org.keycloak.Config;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 
 /**
  * @author <a href="mailto:me@tsudot.com">Kunal Kerkar</a>
  */
-public interface PasswordHashProvider extends Provider {
-    boolean policyCheck(PasswordPolicy policy, CredentialModel credentia);
+public class Pbkdf2PasswordHashProviderFactory implements PasswordHashProviderFactory {
 
-    void encode(String rawPassword, int iterations, CredentialModel credential);
+    public static final String ID = "pbkdf2";
 
-    boolean verify(String rawPassword, CredentialModel credential);
+    public static final String PBKDF2_ALGORITHM = "PBKDF2WithHmacSHA1";
+
+    @Override
+    public PasswordHashProvider create(KeycloakSession session) {
+        return new Pbkdf2PasswordHashProvider(ID, PBKDF2_ALGORITHM);
+    }
+
+    @Override
+    public void init(Config.Scope config) {
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+    }
+
+    @Override
+    public String getId() {
+        return ID;
+    }
+
+    @Override
+    public void close() {
+    }
 }

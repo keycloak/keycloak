@@ -19,9 +19,12 @@
 package org.keycloak.models.authorization.infinispan;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.function.Function;
 
-import org.keycloak.authorization.store.PolicyStore;
+import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
@@ -39,16 +42,21 @@ public class InfinispanStoreFactoryProvider implements CachedStoreFactoryProvide
     private final CachedResourceStore resourceStore;
     private final CachedScopeStore scopeStore;
     private final CachedPolicyStore policyStore;
+    private final KeycloakSession session;
+    private final StoreFactoryCacheManager cacheManager;
     private ResourceServerStore resourceServerStore;
+    private Set<String> invalidations = new HashSet<>();
 
-    public InfinispanStoreFactoryProvider(KeycloakSession session) {
+    public InfinispanStoreFactoryProvider(KeycloakSession session, StoreFactoryCacheManager cacheManager) {
+        this.session = session;
+        this.cacheManager = cacheManager;
         this.transaction = new CacheTransaction();
         session.getTransactionManager().enlistAfterCompletion(transaction);
         StoreFactory delegate = session.getProvider(StoreFactory.class);
-        resourceStore = new CachedResourceStore(session, this, this.transaction, delegate);
-        resourceServerStore = new CachedResourceServerStore(session, this.transaction, delegate);
-        scopeStore = new CachedScopeStore(session, this, this.transaction, delegate);
-        policyStore = new CachedPolicyStore(session, this, this.transaction, delegate);
+        resourceStore = new CachedResourceStore(this, delegate);
+        resourceServerStore = new CachedResourceServerStore(this, delegate);
+        scopeStore = new CachedScopeStore(this, delegate);
+        policyStore = new CachedPolicyStore(this, delegate);
     }
 
     @Override
@@ -67,13 +75,49 @@ public class InfinispanStoreFactoryProvider implements CachedStoreFactoryProvide
     }
 
     @Override
-    public PolicyStore getPolicyStore() {
+    public CachedPolicyStore getPolicyStore() {
         return policyStore;
     }
 
     @Override
     public void close() {
 
+    }
+
+    void addInvalidation(String cacheKey) {
+        invalidations.add(cacheKey);
+    }
+
+    boolean isInvalid(String cacheKeyForPolicy) {
+        return invalidations.contains(cacheKeyForPolicy);
+    }
+
+    void invalidate(String resourceServerId) {
+        cacheManager.invalidate(session, resourceServerId, invalidations);
+    }
+
+    List<Object> resolveCachedEntry(String resourceServerId, String cacheKeyForPolicy) {
+        return cacheManager.resolveResourceServerCache(resourceServerId).get(cacheKeyForPolicy);
+    }
+
+    void putCacheEntry(String resourceServerId, String key, List<Object> entry) {
+        cacheManager.resolveResourceServerCache(resourceServerId).put(key, entry);
+    }
+
+    List<Object> computeIfCachedEntryAbsent(String resourceServerId, String key, Function<String, List<Object>> function) {
+        return cacheManager.resolveResourceServerCache(resourceServerId).computeIfAbsent(key, function);
+    }
+
+    CacheTransaction getTransaction() {
+        return transaction;
+    }
+
+    void removeCachedEntry(String id, String key) {
+        cacheManager.resolveResourceServerCache(id).remove(key);
+    }
+
+    void removeEntries(ResourceServer resourceServer) {
+        cacheManager.removeAll(session, resourceServer);
     }
 
     static class CacheTransaction implements KeycloakTransaction {

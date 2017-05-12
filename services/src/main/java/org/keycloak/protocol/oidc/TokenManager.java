@@ -214,16 +214,22 @@ public class TokenManager {
         }
 
         UserSessionModel userSession =  session.sessions().getUserSession(realm, token.getSessionState());
-        if (!AuthenticationManager.isSessionValid(realm, userSession)) {
-            return false;
+        if (AuthenticationManager.isSessionValid(realm, userSession)) {
+            ClientSessionModel clientSession = session.sessions().getClientSession(realm, token.getClientSession());
+            if (clientSession != null) {
+                return true;
+            }
         }
 
-        ClientSessionModel clientSession = session.sessions().getClientSession(realm, token.getClientSession());
-        if (clientSession == null) {
-            return false;
+        userSession = session.sessions().getOfflineUserSession(realm, token.getSessionState());
+        if (AuthenticationManager.isOfflineSessionValid(realm, userSession)) {
+            ClientSessionModel clientSession = session.sessions().getOfflineClientSession(realm, token.getClientSession());
+            if (clientSession != null) {
+                return true;
+            }
         }
 
-        return true;
+        return false;
     }
 
     public RefreshResult refreshAccessToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm, ClientModel authorizedClient, String encodedRefreshToken, EventBuilder event, HttpHeaders headers) throws OAuthErrorException {

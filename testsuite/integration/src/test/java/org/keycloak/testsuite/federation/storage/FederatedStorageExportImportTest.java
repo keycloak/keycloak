@@ -103,7 +103,7 @@ public class FederatedStorageExportImportTest {
         session.userFederatedStorage().addRequiredAction(realm, userId, "UPDATE_PASSWORD");
         CredentialModel credential = new CredentialModel();
         getHashProvider(session, realm.getPasswordPolicy()).encode("password", realm.
-                getPasswordPolicy(), credential);
+                getPasswordPolicy().getHashIterations(), credential);
         session.userFederatedStorage().createCredential(realm, userId, credential);
         session.userFederatedStorage().grantRole(realm, userId, role);
         session.userFederatedStorage().joinGroup(realm, userId, group);
@@ -170,7 +170,7 @@ public class FederatedStorageExportImportTest {
         session.userFederatedStorage().addRequiredAction(realm, userId, "UPDATE_PASSWORD");
         CredentialModel credential = new CredentialModel();
         getHashProvider(session, realm.getPasswordPolicy()).encode("password", realm.
-                getPasswordPolicy(), credential);
+                getPasswordPolicy().getHashIterations(), credential);
         session.userFederatedStorage().createCredential(realm, userId, credential);
         session.userFederatedStorage().grantRole(realm, userId, role);
         session.userFederatedStorage().joinGroup(realm, userId, group);
