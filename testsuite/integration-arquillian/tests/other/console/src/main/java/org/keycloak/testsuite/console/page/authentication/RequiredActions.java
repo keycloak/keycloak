@@ -85,4 +85,60 @@ public class RequiredActions extends Authentication {
     public void setUpdateProfileDefaultAction(boolean value) {
         setRequiredActionDefaultValue(UPDATE_PROFILE, value);
     }
+
+    private boolean getRequiredActionValue(String id) {
+        WaitUtils.waitUntilElement(requiredActionTable).is().present();
+
+        WebElement checkbox = requiredActionTable.findElement(By.id(id));
+
+        return checkbox.isSelected();
+    }
+
+    private boolean getRequiredActionEnabledValue(String id) {
+        return getRequiredActionValue(id + ENABLED);
+    }
+
+    private boolean getRequiredActionDefaultValue(String id) {
+        return getRequiredActionValue(id + DEFAULT);
+    }
+
+    public boolean getTermsAndConditionEnabled() {
+        return getRequiredActionEnabledValue(TERMS_AND_CONDITIONS);
+    }
+
+    public boolean getTermsAndConditionDefaultAction() {
+        return getRequiredActionDefaultValue(TERMS_AND_CONDITIONS);
+    }
+
+    public boolean getVerifyEmailEnabled() {
+        return getRequiredActionEnabledValue(VERIFY_EMAIL);
+    }
+
+    public boolean getVerifyEmailDefaultAction() {
+        return getRequiredActionDefaultValue(VERIFY_EMAIL);
+    }
+
+    public boolean getUpdatePasswordEnabled() {
+        return getRequiredActionEnabledValue(UPDATE_PASSWORD);
+    }
+
+    public boolean getUpdatePasswordDefaultAction() {
+        return getRequiredActionDefaultValue(UPDATE_PASSWORD);
+    }
+
+    public boolean getConfigureTotpEnabled() {
+        return getRequiredActionEnabledValue(CONFIGURE_TOTP);
+    }
+
+    public boolean getConfigureTotpDefaultAction() {
+        return getRequiredActionDefaultValue(CONFIGURE_TOTP);
+    }
+
+    public boolean getUpdateProfileEnabled() {
+        return getRequiredActionEnabledValue(UPDATE_PROFILE);
+    }
+
+    public boolean getUpdateProfileDefaultAction() {
+        return getRequiredActionDefaultValue(UPDATE_PROFILE);
+    }
 }
