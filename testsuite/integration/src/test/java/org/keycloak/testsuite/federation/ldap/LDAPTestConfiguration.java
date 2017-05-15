@@ -38,10 +38,11 @@ public class LDAPTestConfiguration {
 
     private String connectionPropertiesLocation;
     private int sleepTime;
-    private boolean startEmbeddedLdapLerver = true;
+    private boolean startEmbeddedLdapServer = true;
     private Map<String, String> config;
 
     protected static final Map<String, String> PROP_MAPPINGS = new HashMap<String, String>();
+
     protected static final Map<String, String> DEFAULT_VALUES = new HashMap<String, String>();
 
     static {
@@ -124,9 +125,10 @@ public class LDAPTestConfiguration {
             config.put(propertyName, value);
         }
 
-        startEmbeddedLdapLerver = Boolean.parseBoolean(p.getProperty("idm.test.ldap.start.embedded.ldap.server", "true"));
+        startEmbeddedLdapServer = Boolean.parseBoolean(p.getProperty("idm.test.ldap.start.embedded.ldap.server", "true"));
         sleepTime = Integer.parseInt(p.getProperty("idm.test.ldap.sleepTime", "1000"));
-        log.info("Start embedded server: " + startEmbeddedLdapLerver);
+        config.put("startEmbeddedLdapServer", Boolean.toString(startEmbeddedLdapServer));
+        log.info("Start embedded server: " + startEmbeddedLdapServer);
         log.info("Read config: " + config);
     }
 
@@ -138,8 +140,8 @@ public class LDAPTestConfiguration {
         this.connectionPropertiesLocation = connectionPropertiesLocation;
     }
 
-    public boolean isStartEmbeddedLdapLerver() {
-        return startEmbeddedLdapLerver;
+    public boolean isStartEmbeddedLdapServer() {
+        return startEmbeddedLdapServer;
     }
 
     public int getSleepTime() {
