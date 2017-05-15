@@ -400,6 +400,51 @@ public class LDAPProvidersIntegrationNoImportTest {
         Assert.assertEquals("Your password has been updated.", profilePage.getSuccess());
     }
 
+    //
+    //  KEYCLOAK-3964
+    //
+    // Adding a user to LDAP and Logging In as him - Verifying he is not added locally both times
+    @Test
+    public void testLDAPUserImportOnCreationOrLogin() {
+       
+    	KeycloakSession session = keycloakRule.startSession();
+        RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+        LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);        	
+      	LDAPConfig config = ldapProvider.getLdapIdentityStore().getConfig();      
+      
+      	// Make sure mary is gone
+      	LDAPTestUtils.removeLDAPUserByUsername(ldapProvider, appRealm, config, "maryjane");
+      	
+     
+      // Create the user in LDAP and register him
+      //
+       LDAPObject mary = LDAPTestUtils.addLDAPUser(ldapProvider, appRealm, "maryjane", "mary", "yram", "mj@testing.redhat.cz", null, "12398");
+       LDAPTestUtils.updateLDAPPassword(ldapProvider, mary, "Password1");
+        
+        try {
+        	
+        	// Log in and out of the user
+         	loginSuccessAndLogout("maryjane", "Password1");  
+           
+         	// Delete LDAP User
+        	LDAPTestUtils.removeLDAPUserByUsername(ldapProvider, appRealm, config, "maryjane");
+   
+        	// Make sure the deletion took place. 
+        	List<UserModel> deletedUsers = session.users().searchForUser("mary yram", appRealm);
+            Assert.assertTrue(deletedUsers.isEmpty());
+                  
+        } finally {
+            keycloakRule.stopSession(session, false);
+        }
+    }
+    
+    
+    
+    
+    
+    
+    
+    
     @Test
     public void registerExistingLdapUser() {
         loginPage.open();
