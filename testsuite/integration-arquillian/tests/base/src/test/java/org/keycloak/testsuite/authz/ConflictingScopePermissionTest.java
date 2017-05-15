@@ -50,7 +50,6 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -140,7 +139,7 @@ public class ConflictingScopePermissionTest extends AbstractKeycloakTest {
     }
 
     private RealmResource getRealm() throws Exception {
-        return AdminClientUtil.createAdminClient().realm("authz-test");
+        return adminClient.realm("authz-test");
     }
 
     private ClientResource getClient(RealmResource realm) {

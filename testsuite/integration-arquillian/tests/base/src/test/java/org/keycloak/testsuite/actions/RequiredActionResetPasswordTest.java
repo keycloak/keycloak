@@ -59,11 +59,6 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
     @Page
     protected LoginPasswordUpdatePage changePasswordPage;
 
-    @Before
-    public void before() {
-        oauth.state("mystate"); // have to set this as keycloak validates that state is sent
-    }
-
 
     @Test
     public void tempPassword() throws Exception {
@@ -73,11 +68,11 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
         changePasswordPage.assertCurrent();
         changePasswordPage.changePassword("new-password", "new-password");
 
-        String sessionId = events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent().getSessionId();
+        events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        EventRepresentation loginEvent = events.expectLogin().session(sessionId).assertEvent();
+        EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
         oauth.openLogout();
 

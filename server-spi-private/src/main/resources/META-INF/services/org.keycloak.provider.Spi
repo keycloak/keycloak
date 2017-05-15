@@ -19,6 +19,7 @@ org.keycloak.provider.ExceptionConverterSpi
 org.keycloak.storage.UserStorageProviderSpi
 org.keycloak.storage.federated.UserFederatedStorageProviderSpi
 org.keycloak.models.RealmSpi
+org.keycloak.models.ActionTokenStoreSpi
 org.keycloak.models.UserSessionSpi
 org.keycloak.models.UserSpi
 org.keycloak.models.session.UserSessionPersisterSpi
@@ -32,6 +33,8 @@ org.keycloak.timer.TimerSpi
 org.keycloak.scripting.ScriptingSpi
 org.keycloak.services.managers.BruteForceProtectorSpi
 org.keycloak.services.resource.RealmResourceSPI
+org.keycloak.sessions.AuthenticationSessionSpi
+org.keycloak.sessions.StickySessionEncoderSpi
 org.keycloak.protocol.ClientInstallationSpi
 org.keycloak.protocol.LoginProtocolSpi
 org.keycloak.protocol.ProtocolMapperSpi

@@ -26,4 +26,8 @@ public interface RealmAttributes {
 
     String DISPLAY_NAME_HTML = "displayNameHtml";
 
+    String ACTION_TOKEN_GENERATED_BY_ADMIN_LIFESPAN = "actionTokenGeneratedByAdminLifespan";
+
+    String ACTION_TOKEN_GENERATED_BY_USER_LIFESPAN = "actionTokenGeneratedByUserLifespan";
+
 }

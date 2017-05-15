@@ -132,6 +132,12 @@ kinit hnelson@KEYCLOAK.ORG
 and provide password `secret`
 
 Now when you access `http://localhost:8081/auth/realms/master/account` you should be logged in automatically as user `hnelson` .
+
+Simple loadbalancer
+-------------------
+
+You can run class `SimpleUndertowLoadBalancer` from IDE. By default, it executes the embedded undertow loadbalancer running on `http://localhost:8180`, which communicates with 2 backend Keycloak nodes 
+running on `http://localhost:8181` and `http://localhost:8182` . See javadoc for more details.
  
 
 Create many users or offline sessions

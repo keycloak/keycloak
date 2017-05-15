@@ -118,4 +118,9 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
     public String getId() {
         return UserModel.RequiredAction.CONFIGURE_TOTP.name();
     }
+
+    @Override
+    public boolean isOneTimeAction() {
+        return true;
+    }
 }

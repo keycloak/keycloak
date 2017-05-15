@@ -37,14 +37,7 @@ import org.keycloak.testsuite.MailUtil;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.broker.util.UserSessionStatusServlet;
 import org.keycloak.testsuite.broker.util.UserSessionStatusServlet.UserSessionStatus;
-import org.keycloak.testsuite.pages.AccountFederatedIdentityPage;
-import org.keycloak.testsuite.pages.AccountPasswordPage;
-import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
-import org.keycloak.testsuite.pages.ErrorPage;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
-import org.keycloak.testsuite.pages.OAuthGrantPage;
-import org.keycloak.testsuite.pages.VerifyEmailPage;
+import org.keycloak.testsuite.pages.*;
 import org.keycloak.testsuite.rule.GreenMailRule;
 import org.keycloak.testsuite.rule.LoggingRule;
 import org.keycloak.testsuite.rule.WebResource;
@@ -61,9 +54,8 @@ import java.net.URI;
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.Matchers.startsWith;
+import static org.junit.Assert.*;
 
 /**
  * @author pedroigor
@@ -114,6 +106,9 @@ public abstract class AbstractIdentityProviderTest {
 
     @WebResource
     protected ErrorPage errorPage;
+
+    @WebResource
+    protected InfoPage infoPage;
 
     protected KeycloakSession session;
 
@@ -210,15 +205,26 @@ public abstract class AbstractIdentityProviderTest {
     protected void loginIDP(String username) {
         driver.navigate().to("http://localhost:8081/test-app");
 
-        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
+        assertThat(this.driver.getCurrentUrl(), startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
 
         // choose the identity provider
         this.loginPage.clickSocial(getProviderId());
 
         String currentUrl = this.driver.getCurrentUrl();
-        assertTrue(currentUrl.startsWith("http://localhost:8082/auth/"));
+        assertThat(currentUrl, startsWith("http://localhost:8082/auth/"));
         // log in to identity provider
         this.loginPage.login(username, "password");
+        doAfterProviderAuthentication();
+    }
+
+    protected void loginToIDPWhenAlreadyLoggedIntoProviderIdP(String username) {
+        driver.navigate().to("http://localhost:8081/test-app");
+
+        assertThat(this.driver.getCurrentUrl(), startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
+
+        // choose the identity provider
+        this.loginPage.clickSocial(getProviderId());
+
         doAfterProviderAuthentication();
     }
 

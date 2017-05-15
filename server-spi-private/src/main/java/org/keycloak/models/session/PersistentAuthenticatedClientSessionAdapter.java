@@ -18,25 +18,23 @@
 package org.keycloak.models.session;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class PersistentClientSessionAdapter implements ClientSessionModel {
+public class PersistentAuthenticatedClientSessionAdapter implements AuthenticatedClientSessionModel {
 
     private final PersistentClientSessionModel model;
     private final RealmModel realm;
@@ -45,23 +43,18 @@ public class PersistentClientSessionAdapter implements ClientSessionModel {
 
     private PersistentClientSessionData data;
 
-    public PersistentClientSessionAdapter(ClientSessionModel clientSession) {
+    public PersistentAuthenticatedClientSessionAdapter(AuthenticatedClientSessionModel clientSession) {
         data = new PersistentClientSessionData();
         data.setAction(clientSession.getAction());
-        data.setAuthMethod(clientSession.getAuthMethod());
-        data.setExecutionStatus(clientSession.getExecutionStatus());
+        data.setAuthMethod(clientSession.getProtocol());
         data.setNotes(clientSession.getNotes());
         data.setProtocolMappers(clientSession.getProtocolMappers());
         data.setRedirectUri(clientSession.getRedirectUri());
         data.setRoles(clientSession.getRoles());
-        data.setUserSessionNotes(clientSession.getUserSessionNotes());
 
         model = new PersistentClientSessionModel();
         model.setClientId(clientSession.getClient().getId());
-        model.setClientSessionId(clientSession.getId());
-        if (clientSession.getAuthenticatedUser() != null) {
-            model.setUserId(clientSession.getAuthenticatedUser().getId());
-        }
+        model.setUserId(clientSession.getUserSession().getUser().getId());
         model.setUserSessionId(clientSession.getUserSession().getId());
         model.setTimestamp(clientSession.getTimestamp());
 
@@ -70,7 +63,7 @@ public class PersistentClientSessionAdapter implements ClientSessionModel {
         userSession = clientSession.getUserSession();
     }
 
-    public PersistentClientSessionAdapter(PersistentClientSessionModel model, RealmModel realm, ClientModel client, UserSessionModel userSession) {
+    public PersistentAuthenticatedClientSessionAdapter(PersistentClientSessionModel model, RealmModel realm, ClientModel client, UserSessionModel userSession) {
         this.model = model;
         this.realm = realm;
         this.client = client;
@@ -104,7 +97,7 @@ public class PersistentClientSessionAdapter implements ClientSessionModel {
 
     @Override
     public String getId() {
-        return model.getClientSessionId();
+        return null;
     }
 
     @Override
@@ -178,37 +171,12 @@ public class PersistentClientSessionAdapter implements ClientSessionModel {
     }
 
     @Override
-    public Map<String, ExecutionStatus> getExecutionStatus() {
-        return getData().getExecutionStatus();
-    }
-
-    @Override
-    public void setExecutionStatus(String authenticator, ExecutionStatus status) {
-        getData().getExecutionStatus().put(authenticator, status);
-    }
-
-    @Override
-    public void clearExecutionStatus() {
-        getData().getExecutionStatus().clear();
-    }
-
-    @Override
-    public UserModel getAuthenticatedUser() {
-        return userSession.getUser();
-    }
-
-    @Override
-    public void setAuthenticatedUser(UserModel user) {
-        throw new IllegalStateException("Not supported setAuthenticatedUser");
-    }
-
-    @Override
-    public String getAuthMethod() {
+    public String getProtocol() {
         return getData().getAuthMethod();
     }
 
     @Override
-    public void setAuthMethod(String method) {
+    public void setProtocol(String method) {
         getData().setAuthMethod(method);
     }
 
@@ -222,7 +190,7 @@ public class PersistentClientSessionAdapter implements ClientSessionModel {
     public void setNote(String name, String value) {
         PersistentClientSessionData entity = getData();
         if (entity.getNotes() == null) {
-            entity.setNotes(new HashMap<String, String>());
+            entity.setNotes(new HashMap<>());
         }
         entity.getNotes().put(name, value);
     }
@@ -243,58 +211,11 @@ public class PersistentClientSessionAdapter implements ClientSessionModel {
     }
 
     @Override
-    public Set<String> getRequiredActions() {
-        return getData().getRequiredActions();
-    }
-
-    @Override
-    public void addRequiredAction(String action) {
-        getData().getRequiredActions().add(action);
-    }
-
-    @Override
-    public void removeRequiredAction(String action) {
-        getData().getRequiredActions().remove(action);
-    }
-
-    @Override
-    public void addRequiredAction(UserModel.RequiredAction action) {
-        addRequiredAction(action.name());
-    }
-
-    @Override
-    public void removeRequiredAction(UserModel.RequiredAction action) {
-        removeRequiredAction(action.name());
-    }
-
-    @Override
-    public void setUserSessionNote(String name, String value) {
-        PersistentClientSessionData entity = getData();
-        if (entity.getUserSessionNotes() == null) {
-            entity.setUserSessionNotes(new HashMap<String, String>());
-        }
-        entity.getUserSessionNotes().put(name, value);
-    }
-
-    @Override
-    public Map<String, String> getUserSessionNotes() {
-        PersistentClientSessionData entity = getData();
-        if (entity.getUserSessionNotes() == null || entity.getUserSessionNotes().isEmpty()) return Collections.emptyMap();
-        return entity.getUserSessionNotes();
-    }
-
-    @Override
-    public void clearUserSessionNotes() {
-        PersistentClientSessionData entity = getData();
-        entity.setUserSessionNotes(new HashMap<String, String>());
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || !(o instanceof ClientSessionModel)) return false;
+        if (o == null || !(o instanceof AuthenticatedClientSessionModel)) return false;
 
-        ClientSessionModel that = (ClientSessionModel) o;
+        AuthenticatedClientSessionModel that = (AuthenticatedClientSessionModel) o;
         return that.getId().equals(getId());
     }
 
@@ -320,17 +241,8 @@ public class PersistentClientSessionAdapter implements ClientSessionModel {
         @JsonProperty("notes")
         private Map<String, String> notes;
 
-        @JsonProperty("userSessionNotes")
-        private Map<String, String> userSessionNotes;
-
-        @JsonProperty("executionStatus")
-        private Map<String, ClientSessionModel.ExecutionStatus> executionStatus = new HashMap<>();
-
         @JsonProperty("action")
         private String action;
-
-        @JsonProperty("requiredActions")
-        private Set<String> requiredActions = new HashSet<>();
 
         public String getAuthMethod() {
             return authMethod;
@@ -372,22 +284,6 @@ public class PersistentClientSessionAdapter implements ClientSessionModel {
             this.notes = notes;
         }
 
-        public Map<String, String> getUserSessionNotes() {
-            return userSessionNotes;
-        }
-
-        public void setUserSessionNotes(Map<String, String> userSessionNotes) {
-            this.userSessionNotes = userSessionNotes;
-        }
-
-        public Map<String, ClientSessionModel.ExecutionStatus> getExecutionStatus() {
-            return executionStatus;
-        }
-
-        public void setExecutionStatus(Map<String, ClientSessionModel.ExecutionStatus> executionStatus) {
-            this.executionStatus = executionStatus;
-        }
-
         public String getAction() {
             return action;
         }
@@ -396,12 +292,5 @@ public class PersistentClientSessionAdapter implements ClientSessionModel {
             this.action = action;
         }
 
-        public Set<String> getRequiredActions() {
-            return requiredActions;
-        }
-
-        public void setRequiredActions(Set<String> requiredActions) {
-            this.requiredActions = requiredActions;
-        }
     }
 }

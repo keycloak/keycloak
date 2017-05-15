@@ -21,14 +21,13 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.OAuth2Constants;
+import org.keycloak.sessions.CommonClientSessionModel;
 
 import java.security.MessageDigest;
 import java.util.HashSet;
@@ -38,17 +37,15 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ClientSessionCode {
+public class ClientSessionCode<CLIENT_SESSION extends CommonClientSessionModel> {
 
     private static final String ACTIVE_CODE = "active_code";
 
     private static final Logger logger = Logger.getLogger(ClientSessionCode.class);
 
-    private static final String NEXT_CODE = ClientSessionCode.class.getName() + ".nextCode";
-
     private KeycloakSession session;
     private final RealmModel realm;
-    private final ClientSessionModel clientSession;
+    private final CLIENT_SESSION commonLoginSession;
 
     public enum ActionType {
         CLIENT,
@@ -56,45 +53,45 @@ public class ClientSessionCode {
         USER
     }
 
-    public ClientSessionCode(KeycloakSession session, RealmModel realm, ClientSessionModel clientSession) {
+    public ClientSessionCode(KeycloakSession session, RealmModel realm, CLIENT_SESSION commonLoginSession) {
         this.session = session;
         this.realm = realm;
-        this.clientSession = clientSession;
+        this.commonLoginSession = commonLoginSession;
     }
 
-    public static class ParseResult {
-        ClientSessionCode code;
-        boolean clientSessionNotFound;
+    public static class ParseResult<CLIENT_SESSION extends CommonClientSessionModel> {
+        ClientSessionCode<CLIENT_SESSION> code;
+        boolean authSessionNotFound;
         boolean illegalHash;
-        ClientSessionModel clientSession;
+        CLIENT_SESSION clientSession;
 
-        public ClientSessionCode getCode() {
+        public ClientSessionCode<CLIENT_SESSION> getCode() {
             return code;
         }
 
-        public boolean isClientSessionNotFound() {
-            return clientSessionNotFound;
+        public boolean isAuthSessionNotFound() {
+            return authSessionNotFound;
         }
 
         public boolean isIllegalHash() {
             return illegalHash;
         }
 
-        public ClientSessionModel getClientSession() {
+        public CLIENT_SESSION getClientSession() {
             return clientSession;
         }
     }
 
-    public static ParseResult parseResult(String code, KeycloakSession session, RealmModel realm) {
-        ParseResult result = new ParseResult();
+    public static <CLIENT_SESSION extends CommonClientSessionModel> ParseResult<CLIENT_SESSION> parseResult(String code, KeycloakSession session, RealmModel realm, Class<CLIENT_SESSION> sessionClass) {
+        ParseResult<CLIENT_SESSION> result = new ParseResult<>();
         if (code == null) {
             result.illegalHash = true;
             return result;
         }
         try {
-            result.clientSession = getClientSession(code, session, realm);
+            result.clientSession = getClientSession(code, session, realm, sessionClass);
             if (result.clientSession == null) {
-                result.clientSessionNotFound = true;
+                result.authSessionNotFound = true;
                 return result;
             }
 
@@ -103,7 +100,7 @@ public class ClientSessionCode {
                 return result;
             }
 
-            result.code = new ClientSessionCode(session, realm, result.clientSession);
+            result.code = new ClientSessionCode<CLIENT_SESSION>(session, realm, result.clientSession);
             return result;
         } catch (RuntimeException e) {
             result.illegalHash = true;
@@ -111,35 +108,15 @@ public class ClientSessionCode {
         }
     }
 
-    public static ClientSessionCode parse(String code, KeycloakSession session, RealmModel realm) {
-        try {
-            ClientSessionModel clientSession = getClientSession(code, session, realm);
-            if (clientSession == null) {
-                return null;
-            }
+    public static <CLIENT_SESSION extends CommonClientSessionModel> CLIENT_SESSION getClientSession(String code, KeycloakSession session, RealmModel realm, Class<CLIENT_SESSION> sessionClass) {
+        CommonClientSessionModel clientSessionn = CodeGenerateUtil.getParser(sessionClass).parseSession(code, session, realm);;
+        CLIENT_SESSION clientSession = sessionClass.cast(clientSessionn);
 
-            if (!verifyCode(code, clientSession)) {
-                return null;
-            }
-
-            return new ClientSessionCode(session, realm, clientSession);
-        } catch (RuntimeException e) {
-            return null;
-        }
-    }
-
-    public static ClientSessionModel getClientSession(String code, KeycloakSession session, RealmModel realm) {
-        try {
-            String[] parts = code.split("\\.");
-            String id = parts[1];
-            return session.sessions().getClientSession(realm, id);
-        } catch (ArrayIndexOutOfBoundsException e) {
-            return null;
-        }
-    }
-
-    public ClientSessionModel getClientSession() {
         return clientSession;
+    }
+
+    public CLIENT_SESSION getClientSession() {
+        return commonLoginSession;
     }
 
     public boolean isValid(String requestedAction, ActionType actionType) {
@@ -148,7 +125,7 @@ public class ClientSessionCode {
     }
 
     public boolean isActionActive(ActionType actionType) {
-        int timestamp = clientSession.getTimestamp();
+        int timestamp = commonLoginSession.getTimestamp();
 
         int lifespan;
         switch (actionType) {
@@ -169,7 +146,7 @@ public class ClientSessionCode {
     }
 
     public boolean isValidAction(String requestedAction) {
-        String action = clientSession.getAction();
+        String action = commonLoginSession.getAction();
         if (action == null) {
             return false;
         }
@@ -179,8 +156,17 @@ public class ClientSessionCode {
         return true;
     }
 
+    public void removeExpiredClientSession() {
+        CodeGenerateUtil.ClientSessionParser parser = CodeGenerateUtil.getParser(commonLoginSession.getClass());
+        parser.removeExpiredSession(session, commonLoginSession);
+    }
+
 
     public Set<RoleModel> getRequestedRoles() {
+        return getRequestedRoles(commonLoginSession, realm);
+    }
+
+    public static Set<RoleModel> getRequestedRoles(CommonClientSessionModel clientSession, RealmModel realm) {
         Set<RoleModel> requestedRoles = new HashSet<>();
         for (String roleId : clientSession.getRoles()) {
             RoleModel role = realm.getRoleById(roleId);
@@ -192,9 +178,11 @@ public class ClientSessionCode {
     }
 
     public Set<ProtocolMapperModel> getRequestedProtocolMappers() {
+        return getRequestedProtocolMappers(commonLoginSession.getProtocolMappers(), commonLoginSession.getClient());
+    }
+
+    public static Set<ProtocolMapperModel> getRequestedProtocolMappers(Set<String> protocolMappers, ClientModel client) {
         Set<ProtocolMapperModel> requestedProtocolMappers = new HashSet<>();
-        Set<String> protocolMappers = clientSession.getProtocolMappers();
-        ClientModel client = clientSession.getClient();
         ClientTemplateModel template = client.getClientTemplate();
         if (protocolMappers != null) {
             for (String protocolMapperId : protocolMappers) {
@@ -211,46 +199,34 @@ public class ClientSessionCode {
     }
 
     public void setAction(String action) {
-        clientSession.setAction(action);
-        clientSession.setTimestamp(Time.currentTime());
+        commonLoginSession.setAction(action);
+        commonLoginSession.setTimestamp(Time.currentTime());
     }
 
     public String getCode() {
-        String nextCode = (String) session.getAttribute(NEXT_CODE + "." + clientSession.getId());
+        CodeGenerateUtil.ClientSessionParser parser = CodeGenerateUtil.getParser(commonLoginSession.getClass());
+        String nextCode = parser.getNote(commonLoginSession, ACTIVE_CODE);
         if (nextCode == null) {
-            nextCode = generateCode(clientSession);
-            session.setAttribute(NEXT_CODE + "." + clientSession.getId(), nextCode);
+            nextCode = generateCode(commonLoginSession);
         } else {
-            logger.debug("Code already generated for session, using code from session attributes");
+            logger.debug("Code already generated for session, using same code");
         }
         return nextCode;
     }
 
-    private static String generateCode(ClientSessionModel clientSession) {
+    private static String generateCode(CommonClientSessionModel authSession) {
         try {
             String actionId = Base64Url.encode(KeycloakModelUtils.generateSecret());
 
             StringBuilder sb = new StringBuilder();
             sb.append(actionId);
             sb.append('.');
-            sb.append(clientSession.getId());
+            sb.append(authSession.getId());
 
-            // https://tools.ietf.org/html/rfc7636#section-4
-            String codeChallenge = clientSession.getNote(OAuth2Constants.CODE_CHALLENGE);
-            String codeChallengeMethod = clientSession.getNote(OAuth2Constants.CODE_CHALLENGE_METHOD);
-            if (codeChallenge != null) {
-                logger.debugf("PKCE received codeChallenge = %s", codeChallenge);
-                if (codeChallengeMethod == null) {
-                    logger.debug("PKCE not received codeChallengeMethod, treating plain");
-                    codeChallengeMethod = OAuth2Constants.PKCE_METHOD_PLAIN;
-                } else {
-                    logger.debugf("PKCE received codeChallengeMethod = %s", codeChallengeMethod);
-                }
-            }
+            CodeGenerateUtil.ClientSessionParser parser = CodeGenerateUtil.getParser(authSession.getClass());
 
-            String code = sb.toString();
-
-            clientSession.setNote(ACTIVE_CODE, code);
+            String code = parser.generateCode(authSession, actionId);
+            parser.setNote(authSession, ACTIVE_CODE, code);
 
             return code;
         } catch (Exception e) {
@@ -258,15 +234,17 @@ public class ClientSessionCode {
         }
     }
 
-    private static boolean verifyCode(String code, ClientSessionModel clientSession) {
+    public static boolean verifyCode(String code, CommonClientSessionModel authSession) {
         try {
-            String activeCode = clientSession.getNote(ACTIVE_CODE);
+            CodeGenerateUtil.ClientSessionParser parser = CodeGenerateUtil.getParser(authSession.getClass());
+
+            String activeCode = parser.getNote(authSession, ACTIVE_CODE);
             if (activeCode == null) {
                 logger.debug("Active code not found in client session");
                 return false;
             }
 
-            clientSession.removeNote(ACTIVE_CODE);
+            parser.removeNote(authSession, ACTIVE_CODE);
 
             return MessageDigest.isEqual(code.getBytes(), activeCode.getBytes());
         } catch (Exception e) {

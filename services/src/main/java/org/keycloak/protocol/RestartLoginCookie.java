@@ -23,24 +23,23 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.HMACProvider;
-import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.util.CookieHelper;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.crypto.SecretKey;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.UriInfo;
-import java.security.PublicKey;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * This is an an encoded token that is stored as a cookie so that if there is a client timeout, then the client session
+ * This is an an encoded token that is stored as a cookie so that if there is a client timeout, then the authentication session
  * can be restarted.
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -49,8 +48,6 @@ import java.util.Map;
 public class RestartLoginCookie {
     private static final Logger logger = Logger.getLogger(RestartLoginCookie.class);
     public static final String KC_RESTART = "KC_RESTART";
-    @JsonProperty("cs")
-    protected String clientSession;
 
     @JsonProperty("cid")
     protected String clientId;
@@ -66,14 +63,6 @@ public class RestartLoginCookie {
 
     @JsonProperty("notes")
     protected Map<String, String> notes = new HashMap<>();
-
-    public String getClientSession() {
-        return clientSession;
-    }
-
-    public void setClientSession(String clientSession) {
-        this.clientSession = clientSession;
-    }
 
     public Map<String, String> getNotes() {
         return notes;
@@ -125,19 +114,18 @@ public class RestartLoginCookie {
 
     public RestartLoginCookie() {
     }
-    public RestartLoginCookie(ClientSessionModel clientSession) {
+    public RestartLoginCookie(AuthenticationSessionModel clientSession) {
         this.action = clientSession.getAction();
         this.clientId = clientSession.getClient().getClientId();
-        this.authMethod = clientSession.getAuthMethod();
+        this.authMethod = clientSession.getProtocol();
         this.redirectUri = clientSession.getRedirectUri();
-        this.clientSession = clientSession.getId();
-        for (Map.Entry<String, String> entry : clientSession.getNotes().entrySet()) {
+        for (Map.Entry<String, String> entry : clientSession.getClientNotes().entrySet()) {
             notes.put(entry.getKey(), entry.getValue());
         }
     }
 
-    public static void setRestartCookie(KeycloakSession session, RealmModel realm, ClientConnection connection, UriInfo uriInfo, ClientSessionModel clientSession) {
-        RestartLoginCookie restart = new RestartLoginCookie(clientSession);
+    public static void setRestartCookie(KeycloakSession session, RealmModel realm, ClientConnection connection, UriInfo uriInfo, AuthenticationSessionModel authSession) {
+        RestartLoginCookie restart = new RestartLoginCookie(authSession);
         String encoded = restart.encode(session, realm);
         String path = AuthenticationManager.getRealmCookiePath(realm, uriInfo);
         boolean secureOnly = realm.getSslRequired().isRequired(connection);
@@ -150,7 +138,8 @@ public class RestartLoginCookie {
         CookieHelper.addCookie(KC_RESTART, "", path, null, null, 0, secureOnly, true);
     }
 
-    public static ClientSessionModel restartSession(KeycloakSession session, RealmModel realm, String code) throws Exception {
+
+    public static AuthenticationSessionModel restartSession(KeycloakSession session, RealmModel realm) throws Exception {
         Cookie cook = session.getContext().getRequestHeaders().getCookies().get(KC_RESTART);
         if (cook ==  null) {
             logger.debug("KC_RESTART cookie doesn't exist");
@@ -164,24 +153,18 @@ public class RestartLoginCookie {
             return null;
         }
         RestartLoginCookie cookie = input.readJsonContent(RestartLoginCookie.class);
-        String[] parts = code.split("\\.");
-        String clientSessionId = parts[1];
-        if (!clientSessionId.equals(cookie.getClientSession())) {
-            logger.debug("RestartLoginCookie clientSession does not match code's clientSession");
-            return null;
-        }
 
         ClientModel client = realm.getClientByClientId(cookie.getClientId());
         if (client == null) return null;
 
-        ClientSessionModel clientSession = session.sessions().createClientSession(realm, client);
-        clientSession.setAuthMethod(cookie.getAuthMethod());
-        clientSession.setRedirectUri(cookie.getRedirectUri());
-        clientSession.setAction(cookie.getAction());
+        AuthenticationSessionModel authSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, client, true);
+        authSession.setProtocol(cookie.getAuthMethod());
+        authSession.setRedirectUri(cookie.getRedirectUri());
+        authSession.setAction(cookie.getAction());
         for (Map.Entry<String, String> entry : cookie.getNotes().entrySet()) {
-            clientSession.setNote(entry.getKey(), entry.getValue());
+            authSession.setClientNote(entry.getKey(), entry.getValue());
         }
 
-        return clientSession;
+        return authSession;
     }
 }

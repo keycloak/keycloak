@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.actions;
 
+import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
@@ -86,11 +87,11 @@ public class TermsAndConditionsTest extends AbstractTestRealmKeycloakTest {
 
         termsPage.acceptTerms();
 
-        String sessionId = events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION).removeDetail(Details.REDIRECT_URI).detail(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID).assertEvent().getSessionId();
+        events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION).removeDetail(Details.REDIRECT_URI).detail(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID).assertEvent();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().session(sessionId).assertEvent();
+        events.expectLogin().assertEvent();
 
         // assert user attribute is properly set
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
@@ -123,6 +124,7 @@ public class TermsAndConditionsTest extends AbstractTestRealmKeycloakTest {
         events.expectLogin().event(EventType.CUSTOM_REQUIRED_ACTION_ERROR).detail(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID)
                 .error(Errors.REJECTED_BY_USER)
                 .removeDetail(Details.CONSENT)
+                .session(Matchers.nullValue(String.class))
                 .assertEvent();
 
 

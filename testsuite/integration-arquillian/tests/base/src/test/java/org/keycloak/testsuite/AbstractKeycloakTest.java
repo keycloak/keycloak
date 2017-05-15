@@ -18,26 +18,19 @@ package org.keycloak.testsuite;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.http.ssl.SSLContexts;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.Time;
 import org.keycloak.testsuite.arquillian.KcArquillian;
 import org.keycloak.testsuite.arquillian.TestContext;
 
-import java.io.File;
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import javax.net.ssl.SSLContext;
+
 import javax.ws.rs.NotFoundException;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.drone.api.annotation.Drone;
@@ -53,7 +46,6 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RealmsResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -77,7 +69,6 @@ import org.openqa.selenium.WebDriver;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
-import static org.keycloak.testsuite.util.IOUtil.PROJECT_BUILD_DIRECTORY;
 
 /**
  *
@@ -135,7 +126,8 @@ public abstract class AbstractKeycloakTest {
     public void beforeAbstractKeycloakTest() throws Exception {
         adminClient = testContext.getAdminClient();
         if (adminClient == null) {
-            adminClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting());
+            String authServerContextRoot = suiteContext.getAuthServerInfo().getContextRoot().toString();
+            adminClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(), authServerContextRoot);
             testContext.setAdminClient(adminClient);
         }
 
@@ -147,10 +139,9 @@ public abstract class AbstractKeycloakTest {
 
         TestEventsLogger.setDriver(driver);
 
-        if (!suiteContext.isAdminPasswordUpdated()) {
-            log.debug("updating admin password");
+        // The backend cluster nodes may not be yet started. Password will be updated later for cluster setup.
+        if (!AuthServerTestEnricher.AUTH_SERVER_CLUSTER) {
             updateMasterAdminPassword();
-            suiteContext.setAdminPasswordUpdated(true);
         }
 
         if (testContext.getTestRealmReps() == null) {
@@ -202,10 +193,16 @@ public abstract class AbstractKeycloakTest {
         return false;
     }
 
-    private void updateMasterAdminPassword() {
-        welcomePage.navigateTo();
-        if (!welcomePage.isPasswordSet()) {
-            welcomePage.setPassword("admin", "admin");
+    protected void updateMasterAdminPassword() {
+        if (!suiteContext.isAdminPasswordUpdated()) {
+            log.debug("updating admin password");
+
+            welcomePage.navigateTo();
+            if (!welcomePage.isPasswordSet()) {
+                welcomePage.setPassword("admin", "admin");
+            }
+
+            suiteContext.setAdminPasswordUpdated(true);
         }
     }
 
@@ -236,7 +233,8 @@ public abstract class AbstractKeycloakTest {
         if (testingClient == null) {
             testingClient = testContext.getTestingClient();
             if (testingClient == null) {
-                testingClient = KeycloakTestingClient.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth");
+                String authServerContextRoot = suiteContext.getAuthServerInfo().getContextRoot().toString();
+                testingClient = KeycloakTestingClient.getInstance(authServerContextRoot + "/auth");
                 testContext.setTestingClient(testingClient);
             }
         }
@@ -348,6 +346,10 @@ public abstract class AbstractKeycloakTest {
         userResource.update(userRepresentation);
     }
 
+    /**
+     * Sets time offset in seconds that will be added to Time.currentTime() and Time.currentTimeMillis() both for client and server.
+     * @param offset
+     */
     public void setTimeOffset(int offset) {
         String response = invokeTimeOffset(offset);
         resetTimeOffset = offset != 0;

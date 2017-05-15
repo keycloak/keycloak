@@ -25,11 +25,11 @@ import org.keycloak.authentication.authenticators.broker.util.ExistingUserInfo;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.events.Errors;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.ws.rs.core.Response;
 
@@ -47,25 +47,25 @@ public abstract class AbstractIdpAuthenticator implements Authenticator {
     // The clientSession note flag to indicate that email provided by identityProvider was changed on updateProfile page
     public static final String UPDATE_PROFILE_EMAIL_CHANGED = "UPDATE_PROFILE_EMAIL_CHANGED";
 
-    // The clientSession note flag to indicate if re-authentication after first broker login happened in different browser window. This can happen for example during email verification
-    public static final String IS_DIFFERENT_BROWSER = "IS_DIFFERENT_BROWSER";
-
     // The clientSession note flag to indicate that updateProfile page will be always displayed even if "updateProfileOnFirstLogin" is off
     public static final String ENFORCE_UPDATE_PROFILE = "ENFORCE_UPDATE_PROFILE";
 
     // clientSession.note flag specifies if we imported new user to keycloak (true) or we just linked to an existing keycloak user (false)
     public static final String BROKER_REGISTERED_NEW_USER = "BROKER_REGISTERED_NEW_USER";
 
+    // Set after firstBrokerLogin is successfully finished and contains the providerId of the provider, whose 'first-broker-login' flow was just finished
+    public static final String FIRST_BROKER_LOGIN_SUCCESS = "FIRST_BROKER_LOGIN_SUCCESS";
+
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
-        ClientSessionModel clientSession = context.getClientSession();
+        AuthenticationSessionModel authSession = context.getAuthenticationSession();
 
-        SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromClientSession(clientSession, BROKERED_CONTEXT_NOTE);
+        SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromAuthenticationSession(authSession, BROKERED_CONTEXT_NOTE);
         if (serializedCtx == null) {
             throw new AuthenticationFlowException("Not found serialized context in clientSession", AuthenticationFlowError.IDENTITY_PROVIDER_ERROR);
         }
-        BrokeredIdentityContext brokerContext = serializedCtx.deserialize(context.getSession(), clientSession);
+        BrokeredIdentityContext brokerContext = serializedCtx.deserialize(context.getSession(), authSession);
 
         if (!brokerContext.getIdpConfig().isEnabled()) {
             sendFailureChallenge(context, Errors.IDENTITY_PROVIDER_ERROR, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR, AuthenticationFlowError.IDENTITY_PROVIDER_ERROR);
@@ -76,9 +76,9 @@ public abstract class AbstractIdpAuthenticator implements Authenticator {
 
     @Override
     public void action(AuthenticationFlowContext context) {
-        ClientSessionModel clientSession = context.getClientSession();
+        AuthenticationSessionModel clientSession = context.getAuthenticationSession();
 
-        SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromClientSession(clientSession, BROKERED_CONTEXT_NOTE);
+        SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromAuthenticationSession(clientSession, BROKERED_CONTEXT_NOTE);
         if (serializedCtx == null) {
             throw new AuthenticationFlowException("Not found serialized context in clientSession", AuthenticationFlowError.IDENTITY_PROVIDER_ERROR);
         }
@@ -112,8 +112,8 @@ public abstract class AbstractIdpAuthenticator implements Authenticator {
 
     }
 
-    public static UserModel getExistingUser(KeycloakSession session, RealmModel realm, ClientSessionModel clientSession) {
-        String existingUserId = clientSession.getNote(EXISTING_USER_INFO);
+    public static UserModel getExistingUser(KeycloakSession session, RealmModel realm, AuthenticationSessionModel authSession) {
+        String existingUserId = authSession.getAuthNote(EXISTING_USER_INFO);
         if (existingUserId == null) {
             throw new AuthenticationFlowException("Unexpected state. There is no existing duplicated user identified in ClientSession",
                     AuthenticationFlowError.INTERNAL_ERROR);

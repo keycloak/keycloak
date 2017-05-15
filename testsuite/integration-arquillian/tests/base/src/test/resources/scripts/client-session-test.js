@@ -12,7 +12,7 @@ function authenticate(context) {
         return;
     }
 
-    if (clientSession.getAuthMethod() != "${authMethod}") {
+    if (clientSession.getProtocol() != "${authMethod}") {
         context.failure(AuthenticationFlowError.INVALID_CLIENT_SESSION);
         return;
     }

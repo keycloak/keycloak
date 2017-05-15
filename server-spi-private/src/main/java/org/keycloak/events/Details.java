@@ -25,6 +25,7 @@ public interface Details {
     String EMAIL = "email";
     String PREVIOUS_EMAIL = "previous_email";
     String UPDATED_EMAIL = "updated_email";
+    String ACTION = "action";
     String CODE_ID = "code_id";
     String REDIRECT_URI = "redirect_uri";
     String RESPONSE_TYPE = "response_type";
@@ -62,5 +63,7 @@ public interface Details {
     String SIGNATURE_ALGORITHM = "signature_algorithm";
 
     String CLIENT_REGISTRATION_POLICY = "client_registration_policy";
+
+    String EXISTING_USER = "previous_user";
 
 }

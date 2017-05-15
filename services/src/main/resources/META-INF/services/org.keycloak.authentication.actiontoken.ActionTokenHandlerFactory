@@ -1,0 +1,4 @@
+org.keycloak.authentication.actiontoken.resetcred.ResetCredentialsActionTokenHandler
+org.keycloak.authentication.actiontoken.execactions.ExecuteActionsActionTokenHandler
+org.keycloak.authentication.actiontoken.verifyemail.VerifyEmailActionTokenHandler
+org.keycloak.authentication.actiontoken.idpverifyemail.IdpVerifyAccountLinkActionTokenHandler

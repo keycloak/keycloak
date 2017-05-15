@@ -127,11 +127,12 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
         totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
 
-        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setuptotp").assertEvent().getSessionId();
+        String authSessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setuptotp").assertEvent()
+                .getDetails().get(Details.CODE_ID);
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().user(userId).session(sessionId).detail(Details.USERNAME, "setuptotp").assertEvent();
+        events.expectLogin().user(userId).session(authSessionId).detail(Details.USERNAME, "setuptotp").assertEvent();
     }
 
     @Test
@@ -145,15 +146,16 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
         totpPage.configure(totp.generateTOTP(totpSecret));
 
-        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent().getSessionId();
+        String authSessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent()
+                .getDetails().get(Details.CODE_ID);
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        EventRepresentation loginEvent = events.expectLogin().session(sessionId).assertEvent();
+        EventRepresentation loginEvent = events.expectLogin().session(authSessionId).assertEvent();
 
         oauth.openLogout();
 
-        events.expectLogout(loginEvent.getSessionId()).assertEvent();
+        events.expectLogout(authSessionId).assertEvent();
 
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
@@ -229,7 +231,8 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         totpPage.assertCurrent();
         totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
 
-        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent().getSessionId();
+        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent()
+                .getDetails().get(Details.CODE_ID);
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
@@ -260,7 +263,8 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         TimeBasedOTP timeBased = new TimeBasedOTP(HmacOTP.HMAC_SHA1, 8, 30, 1);
         totpPage.configure(timeBased.generateTOTP(totpSecret));
 
-        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent().getSessionId();
+        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent()
+                .getDetails().get(Details.CODE_ID);
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
@@ -311,7 +315,8 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         HmacOTP otpgen = new HmacOTP(6, HmacOTP.HMAC_SHA1, 1);
         totpPage.configure(otpgen.generateHOTP(totpSecret, 0));
         String uri = driver.getCurrentUrl();
-        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent().getSessionId();
+        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent()
+            .getDetails().get(Details.CODE_ID);
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 

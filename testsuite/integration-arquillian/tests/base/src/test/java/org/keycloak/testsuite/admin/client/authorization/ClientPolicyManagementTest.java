@@ -112,6 +112,7 @@ public class ClientPolicyManagementTest extends AbstractPolicyManagementTest {
         ClientPoliciesResource policies = authorization.policies().client();
         Response response = policies.create(representation);
         ClientPolicyRepresentation created = response.readEntity(ClientPolicyRepresentation.class);
+        response.close();
 
         policies.findById(created.getId()).remove();
 
@@ -136,6 +137,7 @@ public class ClientPolicyManagementTest extends AbstractPolicyManagementTest {
         ClientPoliciesResource policies = authorization.policies().client();
         Response response = policies.create(representation);
         ClientPolicyRepresentation created = response.readEntity(ClientPolicyRepresentation.class);
+        response.close();
 
         PolicyResource policy = authorization.policies().policy(created.getId());
         PolicyRepresentation genericConfig = policy.toRepresentation();
@@ -152,6 +154,7 @@ public class ClientPolicyManagementTest extends AbstractPolicyManagementTest {
         ClientPoliciesResource permissions = authorization.policies().client();
         Response response = permissions.create(representation);
         ClientPolicyRepresentation created = response.readEntity(ClientPolicyRepresentation.class);
+        response.close();
         ClientPolicyResource permission = permissions.findById(created.getId());
         assertRepresentation(representation, permission);
     }

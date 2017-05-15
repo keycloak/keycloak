@@ -41,6 +41,7 @@ import org.keycloak.constants.AdapterConstants;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
@@ -73,7 +74,7 @@ import java.util.*;
  */
 public class OAuthClient {
     public static final String SERVER_ROOT = AuthServerTestEnricher.getAuthServerContextRoot();
-    public static final String AUTH_SERVER_ROOT = SERVER_ROOT + "/auth";
+    public static String AUTH_SERVER_ROOT = SERVER_ROOT + "/auth";
     public static final String APP_ROOT = AUTH_SERVER_ROOT + "/realms/master/app";
     private static final boolean sslRequired = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required"));
 
@@ -89,7 +90,7 @@ public class OAuthClient {
 
     private String redirectUri;
 
-    private String state;
+    private StateParamProvider state;
 
     private String scope;
 
@@ -162,7 +163,9 @@ public class OAuthClient {
         realm = "test";
         clientId = "test-app";
         redirectUri = APP_ROOT + "/auth";
-        state = "mystate";
+        state = () -> {
+            return KeycloakModelUtils.generateId();
+        };
         scope = null;
         uiLocales = null;
         clientSessionState = null;
@@ -607,6 +610,7 @@ public class OAuthClient {
         if (redirectUri != null) {
             b.queryParam(OAuth2Constants.REDIRECT_URI, redirectUri);
         }
+        String state = this.state.getState();
         if (state != null) {
             b.queryParam(OAuth2Constants.STATE, state);
         }
@@ -692,8 +696,17 @@ public class OAuthClient {
         return this;
     }
 
-    public OAuthClient state(String state) {
-        this.state = state;
+    public OAuthClient stateParamHardcoded(String value) {
+        this.state = () -> {
+            return value;
+        };
+        return this;
+    }
+
+    public OAuthClient stateParamRandom() {
+        this.state = () -> {
+            return KeycloakModelUtils.generateId();
+        };
         return this;
     }
 
@@ -926,5 +939,13 @@ public class OAuthClient {
 
         return publicKeys.get(realm);
     }
+
+
+    private interface StateParamProvider {
+
+        String getState();
+
+    }
+
 
 }

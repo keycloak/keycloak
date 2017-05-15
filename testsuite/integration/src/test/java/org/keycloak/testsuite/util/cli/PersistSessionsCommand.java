@@ -17,8 +17,11 @@
 
 package org.keycloak.testsuite.util.cli;
 
+import java.util.LinkedList;
+import java.util.List;
+
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.RealmModel;
@@ -27,8 +30,6 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -65,9 +66,9 @@ public class PersistSessionsCommand extends AbstractCommand {
         });
     }
 
+
     private void createSessionsBatch(final int countInThisBatch) {
         final List<String> userSessionIds = new LinkedList<>();
-        final List<String> clientSessionIds = new LinkedList<>();
 
         KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
 
@@ -79,13 +80,11 @@ public class PersistSessionsCommand extends AbstractCommand {
                 UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
 
                 for (int i = 0; i < countInThisBatch; i++) {
-                    UserSessionModel userSession = session.sessions().createUserSession(realm, john, "john-doh@localhost", "127.0.0.2", "form", true, null, null);
-                    ClientSessionModel clientSession = session.sessions().createClientSession(realm, testApp);
-                    clientSession.setUserSession(userSession);
+                    UserSessionModel userSession = session.sessions().createUserSession(KeycloakModelUtils.generateId(), realm, john, "john-doh@localhost", "127.0.0.2", "form", true, null, null);
+                    AuthenticatedClientSessionModel clientSession = session.sessions().createClientSession(realm, testApp, userSession);
                     clientSession.setRedirectUri("http://redirect");
                     clientSession.setNote("foo", "bar-" + i);
                     userSessionIds.add(userSession.getId());
-                    clientSessionIds.add(clientSession.getId());
                 }
             }
 
@@ -100,6 +99,7 @@ public class PersistSessionsCommand extends AbstractCommand {
             @Override
             public void run(KeycloakSession session) {
                 RealmModel realm = session.realms().getRealmByName("master");
+                ClientModel testApp = realm.getClientByClientId("security-admin-console");
                 UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
 
                 int counter = 0;
@@ -107,17 +107,12 @@ public class PersistSessionsCommand extends AbstractCommand {
                     counter++;
                     UserSessionModel userSession = session.sessions().getUserSession(realm, userSessionId);
                     persister.createUserSession(userSession, true);
+
+                    AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(testApp.getId());
+                    persister.createClientSession(clientSession, true);
                 }
 
                 log.infof("%d user sessions persisted. Continue", counter);
-
-                counter = 0;
-                for (String clientSessionId : clientSessionIds) {
-                    counter++;
-                    ClientSessionModel clientSession = session.sessions().getClientSession(realm, clientSessionId);
-                    persister.createClientSession(clientSession, true);
-                }
-                log.infof("%d client sessions persisted. Continue", counter);
             }
 
         });
