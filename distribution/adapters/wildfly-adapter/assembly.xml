@@ -60,13 +60,6 @@
             <fileMode>0444</fileMode>
         </fileSet>
         <fileSet>
-            <directory>cli</directory>
-            <outputDirectory>bin</outputDirectory>
-            <includes>
-                <include>*.*</include>
-            </includes>
-        </fileSet>
-        <fileSet>
             <directory>src/main/modules</directory>
             <outputDirectory>modules</outputDirectory>
             <includes>
@@ -74,5 +67,23 @@
             </includes>
         </fileSet>
     </fileSets>
+    <files>
+        <file>
+            <source>../shared-cli/adapter-install.cli</source>
+            <outputDirectory>bin</outputDirectory>
+        </file>
+        <file>
+            <source>cli/adapter-install-offline.cli</source>
+            <outputDirectory>bin</outputDirectory>
+        </file>
+        <file>
+            <source>../shared-cli/adapter-elytron-install.cli</source>
+            <outputDirectory>bin</outputDirectory>
+        </file>
+        <file>
+            <source>cli/adapter-elytron-install-offline.cli</source>
+            <outputDirectory>bin</outputDirectory>
+        </file>
+    </files>
 
 </assembly>

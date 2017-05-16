@@ -33,7 +33,7 @@
         <module name="com.fasterxml.jackson.core.jackson-core"/>
         <module name="com.fasterxml.jackson.core.jackson-databind"/>
         <module name="com.fasterxml.jackson.jaxrs.jackson-jaxrs-json-provider"/>
-        <module name="org.apache.httpcomponents" />
+        <module name="org.apache.httpcomponents"/>
         <module name="javax.servlet.api"/>
         <module name="org.jboss.logging"/>
         <module name="org.jboss.xnio"/>

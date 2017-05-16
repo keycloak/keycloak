@@ -39,6 +39,10 @@
             <outputDirectory/>
             <filtered>false</filtered>
             <excludes>
+                <exclude>.installation</exclude>
+                <exclude>docs/**</exclude>
+                <exclude>domain/**</exclude>
+                <exclude>standalone/**</exclude>
                 <exclude>bin/*.sh</exclude>
                 <exclude>module.xml</exclude>
                 <exclude>welcome-content/**</exclude>
@@ -80,6 +84,22 @@
             <includes>
                 <include>layers.conf</include>
             </includes>
+        </fileSet>
+        <fileSet>
+            <directory>src/main</directory>
+            <outputDirectory></outputDirectory>
+            <includes>
+                <include>README.txt</include>
+            </includes>
+            <filtered>true</filtered>
+        </fileSet>
+        <fileSet>
+            <directory>target/cli</directory>
+            <outputDirectory>bin</outputDirectory>
+            <includes>
+                <include>*.cli</include>
+            </includes>
+            <filtered>true</filtered>
         </fileSet>
     </fileSets>
 
