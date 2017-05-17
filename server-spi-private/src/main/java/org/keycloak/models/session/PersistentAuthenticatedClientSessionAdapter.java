@@ -244,6 +244,15 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
         @JsonProperty("action")
         private String action;
 
+        // TODO: Keeping those just for backwards compatibility. @JsonIgnoreProperties doesn't work on Wildfly - probably due to classloading issues
+        @JsonProperty("userSessionNotes")
+        private Map<String, String> userSessionNotes;
+        @JsonProperty("executionStatus")
+        private Map<String, Object> executionStatus;
+        @JsonProperty("requiredActions")
+        private Set<String> requiredActions;
+
+
         public String getAuthMethod() {
             return authMethod;
         }
@@ -292,5 +301,28 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
             this.action = action;
         }
 
+        public Map<String, String> getUserSessionNotes() {
+            return userSessionNotes;
+        }
+
+        public void setUserSessionNotes(Map<String, String> userSessionNotes) {
+            this.userSessionNotes = userSessionNotes;
+        }
+
+        public Map<String, Object> getExecutionStatus() {
+            return executionStatus;
+        }
+
+        public void setExecutionStatus(Map<String, Object> executionStatus) {
+            this.executionStatus = executionStatus;
+        }
+
+        public Set<String> getRequiredActions() {
+            return requiredActions;
+        }
+
+        public void setRequiredActions(Set<String> requiredActions) {
+            this.requiredActions = requiredActions;
+        }
     }
 }

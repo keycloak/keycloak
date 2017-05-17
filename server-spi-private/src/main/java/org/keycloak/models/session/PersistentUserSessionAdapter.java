@@ -50,7 +50,9 @@ public class PersistentUserSessionAdapter implements UserSessionModel {
         data.setNotes(other.getNotes());
         data.setRememberMe(other.isRememberMe());
         data.setStarted(other.getStarted());
-        data.setState(other.getState());
+        if (other.getState() != null) {
+            data.setState(other.getState().toString());
+        }
 
         this.model = new PersistentUserSessionModel();
         this.model.setUserSessionId(other.getId());
@@ -192,12 +194,24 @@ public class PersistentUserSessionAdapter implements UserSessionModel {
 
     @Override
     public State getState() {
-        return getData().getState();
+        String state = getData().getState();
+
+        if (state == null) {
+            return null;
+        }
+
+        // Migration to Keycloak 3.2
+        if (state.equals("LOGGING_IN")) {
+            return State.LOGGED_IN;
+        }
+
+        return State.valueOf(state);
     }
 
     @Override
     public void setState(State state) {
-        getData().setState(state);
+        String stateStr = state==null ? null : state.toString();
+        getData().setState(stateStr);
     }
 
     @Override
@@ -243,7 +257,7 @@ public class PersistentUserSessionAdapter implements UserSessionModel {
         private Map<String, String> notes;
 
         @JsonProperty("state")
-        private State state;
+        private String state;
 
         public String getBrokerSessionId() {
             return brokerSessionId;
@@ -301,11 +315,11 @@ public class PersistentUserSessionAdapter implements UserSessionModel {
             this.notes = notes;
         }
 
-        public State getState() {
+        public String getState() {
             return state;
         }
 
-        public void setState(State state) {
+        public void setState(String state) {
             this.state = state;
         }
     }
