@@ -24,6 +24,7 @@ public abstract class AbstractSAMLFilterServletAdapterTest extends AbstractSAMLS
         salesMetadataServletPage.checkRoles(true);
         salesPostServletPage.checkRoles(true);
         salesPostEncServletPage.checkRoles(true);
+        salesPostEncSignAssertionsOnlyServletPage.checkRoles(true);
         salesPostSigServletPage.checkRoles(true);
         salesPostPassiveServletPage.checkRoles(true);
         salesPostSigPersistentServletPage.checkRoles(true);
@@ -56,6 +57,7 @@ public abstract class AbstractSAMLFilterServletAdapterTest extends AbstractSAMLS
         salesMetadataServletPage.checkRoles(false);
         salesPostServletPage.checkRoles(false);
         salesPostEncServletPage.checkRoles(false);
+        salesPostEncSignAssertionsOnlyServletPage.checkRoles(false);
         salesPostSigServletPage.checkRoles(false);
         salesPostPassiveServletPage.checkRoles(false);
         salesPostSigEmailServletPage.checkRoles(false);
