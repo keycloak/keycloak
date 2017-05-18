@@ -555,6 +555,125 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
+    public void sendResetPasswordEmailSuccessTwoLinks() throws IOException, MessagingException {
+        UserRepresentation userRep = new UserRepresentation();
+        userRep.setEnabled(true);
+        userRep.setUsername("user1");
+        userRep.setEmail("user1@test.com");
+
+        String id = createUser(userRep);
+
+        UserResource user = realm.users().get(id);
+        List<String> actions = new LinkedList<>();
+        actions.add(UserModel.RequiredAction.UPDATE_PASSWORD.name());
+        user.executeActionsEmail(actions);
+        user.executeActionsEmail(actions);
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userResourcePath(id) + "/execute-actions-email", ResourceType.USER);
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userResourcePath(id) + "/execute-actions-email", ResourceType.USER);
+
+        Assert.assertEquals(2, greenMail.getReceivedMessages().length);
+
+        int i = 1;
+        for (MimeMessage message : greenMail.getReceivedMessages()) {
+            String link = MailUtils.getPasswordResetEmailLink(message);
+
+            driver.navigate().to(link);
+
+            passwordUpdatePage.assertCurrent();
+
+            passwordUpdatePage.changePassword("new-pass" + i, "new-pass" + i);
+            i++;
+
+            assertEquals("Your account has been updated.", driver.getTitle());
+        }
+
+        for (MimeMessage message : greenMail.getReceivedMessages()) {
+            String link = MailUtils.getPasswordResetEmailLink(message);
+            driver.navigate().to(link);
+            errorPage.assertCurrent();
+        }
+    }
+
+    @Test
+    public void sendResetPasswordEmailSuccessTwoLinksReverse() throws IOException, MessagingException {
+        UserRepresentation userRep = new UserRepresentation();
+        userRep.setEnabled(true);
+        userRep.setUsername("user1");
+        userRep.setEmail("user1@test.com");
+
+        String id = createUser(userRep);
+
+        UserResource user = realm.users().get(id);
+        List<String> actions = new LinkedList<>();
+        actions.add(UserModel.RequiredAction.UPDATE_PASSWORD.name());
+        user.executeActionsEmail(actions);
+        user.executeActionsEmail(actions);
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userResourcePath(id) + "/execute-actions-email", ResourceType.USER);
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userResourcePath(id) + "/execute-actions-email", ResourceType.USER);
+
+        Assert.assertEquals(2, greenMail.getReceivedMessages().length);
+
+        int i = 1;
+        for (int j = greenMail.getReceivedMessages().length - 1; j >= 0; j--) {
+            MimeMessage message = greenMail.getReceivedMessages()[j];
+
+            String link = MailUtils.getPasswordResetEmailLink(message);
+
+            driver.navigate().to(link);
+
+            passwordUpdatePage.assertCurrent();
+
+            passwordUpdatePage.changePassword("new-pass" + i, "new-pass" + i);
+            i++;
+
+            assertEquals("Your account has been updated.", driver.getTitle());
+        }
+
+        for (MimeMessage message : greenMail.getReceivedMessages()) {
+            String link = MailUtils.getPasswordResetEmailLink(message);
+            driver.navigate().to(link);
+            errorPage.assertCurrent();
+        }
+    }
+
+    @Test
+    public void sendResetPasswordEmailSuccessLinkOpenDoesNotExpireWhenOpenedOnly() throws IOException, MessagingException {
+        UserRepresentation userRep = new UserRepresentation();
+        userRep.setEnabled(true);
+        userRep.setUsername("user1");
+        userRep.setEmail("user1@test.com");
+
+        String id = createUser(userRep);
+
+        UserResource user = realm.users().get(id);
+        List<String> actions = new LinkedList<>();
+        actions.add(UserModel.RequiredAction.UPDATE_PASSWORD.name());
+        user.executeActionsEmail(actions);
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userResourcePath(id) + "/execute-actions-email", ResourceType.USER);
+
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+
+        MimeMessage message = greenMail.getReceivedMessages()[0];
+
+        String link = MailUtils.getPasswordResetEmailLink(message);
+
+        driver.navigate().to(link);
+
+        passwordUpdatePage.assertCurrent();
+
+        driver.manage().deleteAllCookies();
+        driver.navigate().to("about:blank");
+
+        driver.navigate().to(link);
+
+        passwordUpdatePage.assertCurrent();
+
+        passwordUpdatePage.changePassword("new-pass", "new-pass");
+
+        assertEquals("Your account has been updated.", driver.getTitle());
+    }
+
+    @Test
     public void sendResetPasswordEmailSuccessTokenShortLifespan() throws IOException, MessagingException {
         UserRepresentation userRep = new UserRepresentation();
         userRep.setEnabled(true);
