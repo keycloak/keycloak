@@ -203,4 +203,31 @@ if ((result.default-provider == undefined) && (result.provider.default.enabled =
    /subsystem=keycloak-server/spi=connectionsInfinispan/:write-attribute(name=default-provider,value=default)
    echo
 end-if
+
+# Migrate from 3.0.0 to 3.2.0
+if (outcome == failed) of /subsystem=infinispan/cache-container=keycloak/distributed-cache=authenticationSessions/:read-resource
+  echo Adding distributed-cache=authenticationSessions to keycloak cache container...
+  /subsystem=infinispan/cache-container=keycloak/distributed-cache=authenticationSessions/:add(mode=SYNC,owners=1)
+  echo
+end-if
+
+if (outcome == failed) of /subsystem=infinispan/cache-container=keycloak/local-cache=actionTokens/:read-resource
+  echo Adding local-cache=actionTokens to keycloak cache container...
+  /subsystem=infinispan/cache-container=keycloak/local-cache=actionTokens/:add(indexing=NONE,start=LAZY)
+  /subsystem=infinispan/cache-container=keycloak/local-cache=actionTokens/component=eviction/:write-attribute(name=strategy,value=NONE)
+  /subsystem=infinispan/cache-container=keycloak/local-cache=actionTokens/component=eviction/:write-attribute(name=max-entries,value=-1)
+  /subsystem=infinispan/cache-container=keycloak/local-cache=actionTokens/component=expiration/:write-attribute(name=interval,value=300000)
+  /subsystem=infinispan/cache-container=keycloak/local-cache=actionTokens/component=expiration/:write-attribute(name=max-idle,value=-1)
+  echo
+end-if
+
+if (outcome == success) of /subsystem=infinispan/cache-container=keycloak/distributed-cache=authorization/:read-resource
+  echo Replacing distributed-cache=authorization with local-cache=authorization
+  /subsystem=infinispan/cache-container=keycloak/distributed-cache=authorization/:remove
+  /subsystem=infinispan/cache-container=keycloak/local-cache=authorization/:add
+  /subsystem=infinispan/cache-container=keycloak/local-cache=authorization/component=eviction/:write-attribute(name=strategy,value=LRU)
+  /subsystem=infinispan/cache-container=keycloak/local-cache=authorization/component=eviction/:write-attribute(name=max-entries,value=10000)
+  echo
+end-if
+
 echo *** End Migration ***
