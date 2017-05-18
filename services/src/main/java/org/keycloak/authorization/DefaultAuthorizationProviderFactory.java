@@ -65,11 +65,7 @@ public class DefaultAuthorizationProviderFactory implements AuthorizationProvide
 
     @Override
     public AuthorizationProvider create(KeycloakSession session, RealmModel realm) {
-        StoreFactory storeFactory = session.getProvider(CachedStoreFactoryProvider.class);
-        if (storeFactory == null) {
-            storeFactory = session.getProvider(StoreFactory.class);
-        }
-        return new AuthorizationProvider(session, realm, storeFactory, policyProviderFactories);
+        return new AuthorizationProvider(session, realm, policyProviderFactories);
     }
 
     private Map<String, PolicyProviderFactory> configurePolicyProviderFactories(KeycloakSessionFactory keycloakSessionFactory) {

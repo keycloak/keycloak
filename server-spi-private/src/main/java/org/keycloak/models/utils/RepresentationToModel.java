@@ -2110,7 +2110,7 @@ public class RepresentationToModel {
             }
         }
 
-        policy.getConfig().remove("scopes");
+        policy.removeConfig("scopes");
     }
 
     private static void updateAssociatedPolicies(Set<String> policyIds, Policy policy, StoreFactory storeFactory) {
@@ -2163,7 +2163,7 @@ public class RepresentationToModel {
             }
         }
 
-        policy.getConfig().remove("applyPolicies");
+        policy.removeConfig("applyPolicies");
     }
 
     private static void updateResources(Set<String> resourceIds, Policy policy, StoreFactory storeFactory) {
@@ -2209,7 +2209,7 @@ public class RepresentationToModel {
             }
         }
 
-        policy.getConfig().remove("resources");
+        policy.removeConfig("resources");
     }
 
     public static Resource toModel(ResourceRepresentation resource, ResourceServer resourceServer, AuthorizationProvider authorization) {

@@ -28,6 +28,7 @@ import org.keycloak.authorization.permission.evaluator.Evaluators;
 import org.keycloak.authorization.policy.evaluation.DefaultPolicyEvaluator;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
+import org.keycloak.authorization.store.AuthorizationStoreFactory;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.ResourceStore;
@@ -35,13 +36,15 @@ import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.cache.authorization.CachedStoreFactoryProvider;
+import org.keycloak.models.cache.authorization.CachedStoreProviderFactory;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 
 /**
  * <p>The main contract here is the creation of {@link org.keycloak.authorization.permission.evaluator.PermissionEvaluator} instances.  Usually
- * an application has a single {@link AuthorizationProvider} instance and threads servicing client requests obtain {@link org.keycloak.authorization.core.permission.evaluator.PermissionEvaluator}
+ * an application has a single {@link AuthorizationProvider} instance and threads servicing client requests obtain {@link org.keycloak.authorization.permission.evaluator.PermissionEvaluator}
  * from the {@link #evaluators()} method.
  *
  * <p>The internal state of a {@link AuthorizationProvider} is immutable.  This internal state includes all of the metadata
@@ -69,14 +72,14 @@ public final class AuthorizationProvider implements Provider {
 
     private final DefaultPolicyEvaluator policyEvaluator;
     private StoreFactory storeFactory;
+    private StoreFactory storeFactoryDelegate;
     private final Map<String, PolicyProviderFactory> policyProviderFactories;
     private final KeycloakSession keycloakSession;
     private final RealmModel realm;
 
-    public AuthorizationProvider(KeycloakSession session, RealmModel realm, StoreFactory storeFactory, Map<String, PolicyProviderFactory> policyProviderFactories) {
+    public AuthorizationProvider(KeycloakSession session, RealmModel realm, Map<String, PolicyProviderFactory> policyProviderFactories) {
         this.keycloakSession = session;
         this.realm = realm;
-        this.storeFactory = storeFactory;
         this.policyProviderFactories = policyProviderFactories;
         this.policyEvaluator = new DefaultPolicyEvaluator(this);
     }
@@ -92,15 +95,32 @@ public final class AuthorizationProvider implements Provider {
     }
 
     /**
+     * Cache sits in front of this
+     *
      * Returns a {@link StoreFactory}.
      *
      * @return the {@link StoreFactory}
      */
     public StoreFactory getStoreFactory() {
-        return createStoreFactory();
+        if (storeFactory != null) return storeFactory;
+        storeFactory = keycloakSession.getProvider(CachedStoreFactoryProvider.class);
+        if (storeFactory == null) storeFactory = getLocalStoreFactory();
+        storeFactory = createStoreFactory(storeFactory);
+        return storeFactory;
     }
 
-    private StoreFactory createStoreFactory() {
+    /**
+     * No cache sits in front of this
+     *
+     * @return
+     */
+    public StoreFactory getLocalStoreFactory() {
+        if (storeFactoryDelegate != null) return storeFactoryDelegate;
+        storeFactoryDelegate = keycloakSession.getProvider(StoreFactory.class);
+        return storeFactoryDelegate;
+    }
+
+    private StoreFactory createStoreFactory(StoreFactory storeFactory) {
         return new StoreFactory() {
             @Override
             public ResourceStore getResourceStore() {
@@ -222,7 +242,7 @@ public final class AuthorizationProvider implements Provider {
      * Returns a {@link PolicyProviderFactory} given a <code>type</code>.
      *
      * @param type the type of the policy provider
-     * @param <F> the expected type of the provider
+     * @param <P> the expected type of the provider
      * @return a {@link PolicyProvider} with the given <code>type</code>
      */
     public <P extends PolicyProvider> P getProvider(String type) {

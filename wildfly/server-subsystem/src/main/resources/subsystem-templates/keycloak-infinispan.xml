@@ -37,7 +37,7 @@
                 <local-cache name="loginFailures"/>
                 <local-cache name="work"/>
                 <local-cache name="authorization">
-                    <eviction max-entries="100" strategy="LRU"/>
+                    <eviction max-entries="10000" strategy="LRU"/>
                 </local-cache>
                 <local-cache name="keys">
                     <eviction max-entries="1000" strategy="LRU"/>

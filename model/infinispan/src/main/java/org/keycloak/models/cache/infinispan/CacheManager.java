@@ -215,7 +215,7 @@ public abstract class CacheManager {
     }
 
 
-    protected void invalidationEventReceived(InvalidationEvent event) {
+    public void invalidationEventReceived(InvalidationEvent event) {
         Set<String> invalidations = new HashSet<>();
 
         addInvalidationsFromEvent(event, invalidations);

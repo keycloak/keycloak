@@ -71,7 +71,7 @@ public class MigrateTo2_1_0 implements Migration {
 
             if (resourceServer != null) {
                 policyStore.findByType("role", resourceServer.getId()).forEach(policy -> {
-                    Map<String, String> config = policy.getConfig();
+                    Map<String, String> config = new HashMap(policy.getConfig());
                     String roles = config.get("roles");
                     List roleConfig;
 

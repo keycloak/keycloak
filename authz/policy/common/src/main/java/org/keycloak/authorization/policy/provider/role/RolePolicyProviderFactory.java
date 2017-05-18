@@ -163,11 +163,7 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
         }
 
         try {
-            Map<String, String> config = policy.getConfig();
-
-            config.put("roles", JsonSerialization.writeValueAsString(updatedRoles));
-
-            policy.setConfig(config);
+            policy.putConfig("roles", JsonSerialization.writeValueAsString(updatedRoles));
         } catch (IOException cause) {
             throw new RuntimeException("Failed to serialize roles", cause);
         }
@@ -224,9 +220,7 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
                     if (roles.isEmpty()) {
                         policyStore.delete(policy.getId());
                     } else {
-                        Map<String, String> config = policy.getConfig();
-                        config.put("roles", JsonSerialization.writeValueAsString(roles));
-                        policy.setConfig(config);
+                        policy.putConfig("roles", JsonSerialization.writeValueAsString(roles));
                     }
                 } catch (IOException e) {
                     throw new RuntimeException("Error while synchronizing roles with policy [" + policy.getName() + "].", e);

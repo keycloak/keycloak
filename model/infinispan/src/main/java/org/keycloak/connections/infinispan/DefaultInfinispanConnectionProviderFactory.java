@@ -126,6 +126,16 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
             cacheManager.getCache(InfinispanConnectionProvider.KEYS_CACHE_NAME, true);
             cacheManager.getCache(InfinispanConnectionProvider.ACTION_TOKEN_CACHE, true);
 
+            long authzRevisionsMaxEntries = cacheManager.getCache(InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME).getCacheConfiguration().eviction().maxEntries();
+            authzRevisionsMaxEntries = authzRevisionsMaxEntries > 0
+                    ? 2 * authzRevisionsMaxEntries
+                    : InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_DEFAULT_MAX;
+
+            cacheManager.defineConfiguration(InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_NAME, getRevisionCacheConfig(authzRevisionsMaxEntries));
+            cacheManager.getCache(InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_NAME, true);
+
+
+
             logger.debugv("Using container managed Infinispan cache container, lookup={1}", cacheContainerLookup);
         } catch (Exception e) {
             throw new RuntimeException("Failed to retrieve cache container", e);
@@ -157,6 +167,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         Configuration modelCacheConfiguration = modelCacheConfigBuilder.build();
 
         cacheManager.defineConfiguration(InfinispanConnectionProvider.REALM_CACHE_NAME, modelCacheConfiguration);
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME, modelCacheConfiguration);
         cacheManager.defineConfiguration(InfinispanConnectionProvider.USER_CACHE_NAME, modelCacheConfiguration);
 
         ConfigurationBuilder sessionConfigBuilder = new ConfigurationBuilder();
@@ -186,14 +197,12 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         cacheManager.defineConfiguration(InfinispanConnectionProvider.SESSION_CACHE_NAME, sessionCacheConfiguration);
         cacheManager.defineConfiguration(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME, sessionCacheConfiguration);
         cacheManager.defineConfiguration(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME, sessionCacheConfiguration);
-        cacheManager.defineConfiguration(InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME, sessionCacheConfiguration);
         cacheManager.defineConfiguration(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME, sessionCacheConfiguration);
 
         // Retrieve caches to enforce rebalance
         cacheManager.getCache(InfinispanConnectionProvider.SESSION_CACHE_NAME, true);
         cacheManager.getCache(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME, true);
         cacheManager.getCache(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME, true);
-        cacheManager.getCache(InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME, true);
         cacheManager.getCache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME, true);
 
         ConfigurationBuilder replicationConfigBuilder = new ConfigurationBuilder();
@@ -236,6 +245,14 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
         cacheManager.defineConfiguration(InfinispanConnectionProvider.ACTION_TOKEN_CACHE, getActionTokenCacheConfig());
         cacheManager.getCache(InfinispanConnectionProvider.ACTION_TOKEN_CACHE, true);
+
+        long authzRevisionsMaxEntries = cacheManager.getCache(InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME).getCacheConfiguration().eviction().maxEntries();
+        authzRevisionsMaxEntries = authzRevisionsMaxEntries > 0
+                ? 2 * authzRevisionsMaxEntries
+                : InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_DEFAULT_MAX;
+
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_NAME, getRevisionCacheConfig(authzRevisionsMaxEntries));
+        cacheManager.getCache(InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_NAME, true);
     }
 
     private Configuration getRevisionCacheConfig(long maxEntries) {
