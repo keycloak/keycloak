@@ -26,6 +26,8 @@ import javax.persistence.AccessType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
@@ -36,7 +38,12 @@ import java.util.List;
  */
 @Entity
 @Table(name = "RESOURCE_SERVER", uniqueConstraints = {@UniqueConstraint(columnNames = "CLIENT_ID")})
-public class ResourceServerEntity implements ResourceServer {
+@NamedQueries(
+        {
+                @NamedQuery(name="findResourceServerIdByClient", query="select r.id from ResourceServerEntity r where r.clientId = :clientId"),
+        }
+)
+public class ResourceServerEntity {
 
     @Id
     @Column(name="ID", length = 36)
@@ -58,7 +65,6 @@ public class ResourceServerEntity implements ResourceServer {
     @OneToMany (mappedBy = "resourceServer")
     private List<ScopeEntity> scopes;
 
-    @Override
     public String getId() {
         return this.id;
     }
@@ -67,7 +73,6 @@ public class ResourceServerEntity implements ResourceServer {
         this.id = id;
     }
 
-    @Override
     public String getClientId() {
         return this.clientId;
     }
@@ -76,22 +81,18 @@ public class ResourceServerEntity implements ResourceServer {
         this.clientId = clientId;
     }
 
-    @Override
     public boolean isAllowRemoteResourceManagement() {
         return this.allowRemoteResourceManagement;
     }
 
-    @Override
     public void setAllowRemoteResourceManagement(boolean allowRemoteResourceManagement) {
         this.allowRemoteResourceManagement = allowRemoteResourceManagement;
     }
 
-    @Override
     public PolicyEnforcementMode getPolicyEnforcementMode() {
         return this.policyEnforcementMode;
     }
 
-    @Override
     public void setPolicyEnforcementMode(PolicyEnforcementMode policyEnforcementMode) {
         this.policyEnforcementMode = policyEnforcementMode;
     }
@@ -110,5 +111,20 @@ public class ResourceServerEntity implements ResourceServer {
 
     public void setScopes(final List<ScopeEntity> scopes) {
         this.scopes = scopes;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ResourceServerEntity that = (ResourceServerEntity) o;
+
+        return getId().equals(that.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getId().hashCode();
     }
 }

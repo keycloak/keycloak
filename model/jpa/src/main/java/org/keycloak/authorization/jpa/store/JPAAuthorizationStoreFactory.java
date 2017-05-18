@@ -32,8 +32,9 @@ import org.keycloak.models.KeycloakSession;
  */
 public class JPAAuthorizationStoreFactory implements AuthorizationStoreFactory {
     @Override
-    public StoreFactory  create(KeycloakSession session) {
-        return new JPAStoreFactory(getEntityManager(session));
+    public StoreFactory create(KeycloakSession session) {
+        AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
+        return new JPAStoreFactory(getEntityManager(session), provider);
     }
 
     @Override

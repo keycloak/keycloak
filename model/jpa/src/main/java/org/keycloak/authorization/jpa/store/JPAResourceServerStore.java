@@ -17,13 +17,19 @@
  */
 package org.keycloak.authorization.jpa.store;
 
+import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.jpa.entities.PolicyEntity;
 import org.keycloak.authorization.jpa.entities.ResourceServerEntity;
+import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.persistence.Query;
+import javax.persistence.TypedQuery;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -32,9 +38,11 @@ import java.util.List;
 public class JPAResourceServerStore implements ResourceServerStore {
 
     private final EntityManager entityManager;
+    private final AuthorizationProvider provider;
 
-    public JPAResourceServerStore(EntityManager entityManager) {
+    public JPAResourceServerStore(EntityManager entityManager, AuthorizationProvider provider) {
         this.entityManager = entityManager;
+        this.provider = provider;
     }
 
     @Override
@@ -46,30 +54,54 @@ public class JPAResourceServerStore implements ResourceServerStore {
 
         this.entityManager.persist(entity);
 
-        return entity;
+        return new ResourceServerAdapter(entity, entityManager, provider.getStoreFactory());
     }
 
     @Override
     public void delete(String id) {
-        this.entityManager.remove(findById(id));
+        ResourceServerEntity entity = entityManager.find(ResourceServerEntity.class, id);
+        if (entity == null) return;
+        //This didn't work, had to loop through and remove each policy individually
+        //entityManager.createNamedQuery("deletePolicyByResourceServer")
+        //        .setParameter("serverId", id).executeUpdate();
+
+        TypedQuery<String> query = entityManager.createNamedQuery("findPolicyIdByServerId", String.class);
+        query.setParameter("serverId", id);
+        List<String> result = query.getResultList();
+        List<Policy> list = new LinkedList<>();
+        for (String policyId : result) {
+            entityManager.remove(entityManager.getReference(PolicyEntity.class, policyId));
+        }
+
+        entityManager.flush();
+        entityManager.createNamedQuery("deleteResourceByResourceServer")
+                .setParameter("serverId", id).executeUpdate();
+        entityManager.flush();
+        entityManager.createNamedQuery("deleteScopeByResourceServer")
+                .setParameter("serverId", id).executeUpdate();
+        entityManager.flush();
+
+        this.entityManager.remove(entity);
+        entityManager.flush();
     }
 
     @Override
     public ResourceServer findById(String id) {
-        return entityManager.find(ResourceServerEntity.class, id);
+        ResourceServerEntity entity = entityManager.find(ResourceServerEntity.class, id);
+        if (entity == null) return null;
+        return new ResourceServerAdapter(entity, entityManager, provider.getStoreFactory());
     }
 
     @Override
     public ResourceServer findByClient(final String clientId) {
-        Query query = entityManager.createQuery("from ResourceServerEntity where clientId = :clientId");
+        TypedQuery<String> query = entityManager.createNamedQuery("findResourceServerIdByClient", String.class);
 
         query.setParameter("clientId", clientId);
-        List result = query.getResultList();
-
-        if (result.isEmpty()) {
+        try {
+            String id = query.getSingleResult();
+            return provider.getStoreFactory().getResourceServerStore().findById(id);
+        } catch (NoResultException ex) {
             return null;
         }
-
-        return (ResourceServer) result.get(0);
     }
 }

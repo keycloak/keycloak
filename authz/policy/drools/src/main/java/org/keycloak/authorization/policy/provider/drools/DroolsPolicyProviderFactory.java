@@ -120,17 +120,15 @@ public class DroolsPolicyProviderFactory implements PolicyProviderFactory<RulePo
     }
 
     private void updateConfig(Policy policy, RulePolicyRepresentation representation) {
-        Map<String, String> config = policy.getConfig();
 
-        config.put("mavenArtifactGroupId", representation.getArtifactGroupId());
-        config.put("mavenArtifactId", representation.getArtifactId());
-        config.put("mavenArtifactVersion", representation.getArtifactVersion());
-        config.put("scannerPeriod", representation.getScannerPeriod());
-        config.put("scannerPeriodUnit", representation.getScannerPeriodUnit());
-        config.put("sessionName", representation.getSessionName());
-        config.put("moduleName", representation.getModuleName());
+        policy.putConfig("mavenArtifactGroupId", representation.getArtifactGroupId());
+        policy.putConfig("mavenArtifactId", representation.getArtifactId());
+        policy.putConfig("mavenArtifactVersion", representation.getArtifactVersion());
+        policy.putConfig("scannerPeriod", representation.getScannerPeriod());
+        policy.putConfig("scannerPeriodUnit", representation.getScannerPeriodUnit());
+        policy.putConfig("sessionName", representation.getSessionName());
+        policy.putConfig("moduleName", representation.getModuleName());
 
-        policy.setConfig(config);
     }
 
     void update(Policy policy) {

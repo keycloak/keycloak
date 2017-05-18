@@ -107,7 +107,7 @@ public class ClientPolicyProviderFactory implements PolicyProviderFactory<Client
                             if (clients.isEmpty()) {
                                 policyStore.delete(policy.getId());
                             } else {
-                                policy.getConfig().put("clients", JsonSerialization.writeValueAsString(clients));
+                                policy.putConfig("clients", JsonSerialization.writeValueAsString(clients));
                             }
                         } catch (IOException e) {
                             throw new RuntimeException("Error while synchronizing clients with policy [" + policy.getName() + "].", e);
@@ -152,11 +152,7 @@ public class ClientPolicyProviderFactory implements PolicyProviderFactory<Client
         }
 
         try {
-            Map<String, String> config = policy.getConfig();
-
-            config.put("clients", JsonSerialization.writeValueAsString(updatedClients));
-
-            policy.setConfig(config);
+            policy.putConfig("clients", JsonSerialization.writeValueAsString(updatedClients));
         } catch (IOException cause) {
             throw new RuntimeException("Failed to serialize clients", cause);
         }

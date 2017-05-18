@@ -16,9 +16,10 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.authorization.infinispan.entities;
+package org.keycloak.models.cache.infinispan.authorization.entities;
 
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.models.cache.infinispan.entities.AbstractRevisioned;
 import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 
 import java.io.Serializable;
@@ -26,53 +27,30 @@ import java.io.Serializable;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class CachedResourceServer implements ResourceServer, Serializable {
+public class CachedResourceServer extends AbstractRevisioned {
 
-    private static final long serialVersionUID = 5054253390723121289L;
-
-    private final String id;
     private String clientId;
     private boolean allowRemoteResourceManagement;
     private PolicyEnforcementMode policyEnforcementMode;
 
-    public CachedResourceServer(ResourceServer resourceServer) {
-        this.id = resourceServer.getId();
+    public CachedResourceServer(Long revision, ResourceServer resourceServer) {
+        super(revision, resourceServer.getId());
         this.clientId = resourceServer.getClientId();
         this.allowRemoteResourceManagement = resourceServer.isAllowRemoteResourceManagement();
         this.policyEnforcementMode = resourceServer.getPolicyEnforcementMode();
     }
 
-    public CachedResourceServer(String id) {
-        this.id = id;
-    }
 
-    @Override
-    public String getId() {
-        return this.id;
-    }
-
-    @Override
     public String getClientId() {
         return this.clientId;
     }
 
-    @Override
     public boolean isAllowRemoteResourceManagement() {
         return this.allowRemoteResourceManagement;
     }
 
-    @Override
-    public void setAllowRemoteResourceManagement(boolean allowRemoteResourceManagement) {
-        this.allowRemoteResourceManagement = allowRemoteResourceManagement;
-    }
-
-    @Override
     public PolicyEnforcementMode getPolicyEnforcementMode() {
         return this.policyEnforcementMode;
     }
 
-    @Override
-    public void setPolicyEnforcementMode(PolicyEnforcementMode enforcementMode) {
-        this.policyEnforcementMode = enforcementMode;
-    }
 }

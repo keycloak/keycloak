@@ -21,6 +21,7 @@ package org.keycloak.authorization.util;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -61,8 +62,8 @@ public final class Permissions {
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceStore resourceStore = storeFactory.getResourceStore();
 
-        resourceStore.findByOwner(resourceServer.getClientId(), resourceServer.getId()).stream().forEach(resource -> permissions.addAll(createResourcePermissionsWithScopes(resource, resource.getScopes(), authorization)));
-        resourceStore.findByOwner(identity.getId(), resourceServer.getId()).stream().forEach(resource -> permissions.addAll(createResourcePermissionsWithScopes(resource, resource.getScopes(), authorization)));
+        resourceStore.findByOwner(resourceServer.getClientId(), resourceServer.getId()).stream().forEach(resource -> permissions.addAll(createResourcePermissionsWithScopes(resource, new LinkedList(resource.getScopes()), authorization)));
+        resourceStore.findByOwner(identity.getId(), resourceServer.getId()).stream().forEach(resource -> permissions.addAll(createResourcePermissionsWithScopes(resource, new LinkedList(resource.getScopes()), authorization)));
 
         return permissions;
     }
@@ -74,7 +75,7 @@ public final class Permissions {
         List<Scope> scopes;
 
         if (requestedScopes.isEmpty()) {
-            scopes = resource.getScopes();
+            scopes = new LinkedList<>(resource.getScopes());
             // check if there is a typed resource whose scopes are inherited by the resource being requested. In this case, we assume that parent resource
             // is owned by the resource server itself
             if (type != null && !resource.getOwner().equals(resourceServer.getClientId())) {
@@ -102,7 +103,6 @@ public final class Permissions {
                 return byName;
             }).collect(Collectors.toList());
         }
-
         permissions.add(new ResourcePermission(resource, scopes, resource.getResourceServer()));
 
         return permissions;

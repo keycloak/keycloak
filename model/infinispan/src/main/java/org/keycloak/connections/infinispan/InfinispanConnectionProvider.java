@@ -38,6 +38,8 @@ public interface InfinispanConnectionProvider extends Provider {
     String LOGIN_FAILURE_CACHE_NAME = "loginFailures";
     String WORK_CACHE_NAME = "work";
     String AUTHORIZATION_CACHE_NAME = "authorization";
+    String AUTHORIZATION_REVISIONS_CACHE_NAME = "authorizationRevisions";
+    int AUTHORIZATION_REVISIONS_CACHE_DEFAULT_MAX = 20000;
 
     String KEYS_CACHE_NAME = "keys";
     int KEYS_CACHE_DEFAULT_MAX = 1000;

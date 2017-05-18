@@ -16,6 +16,7 @@
  */
 package org.keycloak.authorization.authorization;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -46,6 +47,7 @@ import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.Cors;
+import org.keycloak.services.resources.RealmsResource;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.OPTIONS;
@@ -72,6 +74,7 @@ import java.util.stream.Stream;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class AuthorizationTokenService {
+    protected static final Logger logger = Logger.getLogger(AuthorizationTokenService.class);
 
     private final AuthorizationProvider authorization;
 
@@ -131,6 +134,7 @@ public class AuthorizationTokenService {
 
             @Override
             public void onError(Throwable cause) {
+                logger.error("failed authorize", cause);
                 asyncResponse.resume(cause);
             }
         });

@@ -14,23 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.authorization.infinispan.events;
+package org.keycloak.models.cache.infinispan.authorization.events;
 
-import java.util.Collections;
+import org.keycloak.models.cache.infinispan.authorization.StoreFactoryCacheManager;
+
+import java.util.Set;
 
 /**
- * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
+ * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @version $Revision: 1 $
  */
-public class ResourceServerRemovedEvent extends AuthorizationInvalidationEvent {
-
-    private final String clientId;
-
-    public ResourceServerRemovedEvent(String id, String clientId) {
-        super(id, Collections.emptySet());
-        this.clientId = clientId;
-    }
-
-    public String getClientId() {
-        return clientId;
-    }
+public interface AuthorizationCacheInvalidationEvent {
+    void addInvalidations(StoreFactoryCacheManager realmCache, Set<String> invalidations);
 }

@@ -16,11 +16,12 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.authorization.infinispan.entities;
+package org.keycloak.models.cache.infinispan.authorization.entities;
 
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.models.cache.infinispan.entities.AbstractRevisioned;
 
 import java.io.Serializable;
 import java.util.List;
@@ -30,11 +31,8 @@ import java.util.stream.Collectors;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class CachedResource implements Resource, Serializable {
+public class CachedResource extends AbstractRevisioned implements InResourceServer {
 
-    private static final long serialVersionUID = -6886179034626995165L;
-
-    private final String id;
     private String resourceServerId;
     private String iconUri;
     private String owner;
@@ -43,8 +41,8 @@ public class CachedResource implements Resource, Serializable {
     private String uri;
     private Set<String> scopesIds;
 
-    public CachedResource(Resource resource) {
-        this.id = resource.getId();
+    public CachedResource(Long revision, Resource resource) {
+        super(revision, resource.getId());
         this.name = resource.getName();
         this.uri = resource.getUri();
         this.type = resource.getType();
@@ -54,74 +52,25 @@ public class CachedResource implements Resource, Serializable {
         this.scopesIds = resource.getScopes().stream().map(Scope::getId).collect(Collectors.toSet());
     }
 
-    public CachedResource(String id) {
-        this.id = id;
-    }
 
-    @Override
-    public String getId() {
-        return this.id;
-    }
-
-    @Override
     public String getName() {
         return this.name;
     }
 
-    @Override
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    @Override
     public String getUri() {
         return this.uri;
     }
 
-    @Override
-    public void setUri(String uri) {
-        this.uri = uri;
-    }
-
-    @Override
     public String getType() {
         return this.type;
     }
 
-    @Override
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    @Override
-    public List<Scope> getScopes() {
-        throw new RuntimeException("Not implemented");
-    }
-
-    @Override
     public String getIconUri() {
         return this.iconUri;
     }
 
-    @Override
-    public void setIconUri(String iconUri) {
-        this.iconUri = iconUri;
-    }
-
-    @Override
-    public ResourceServer getResourceServer() {
-        throw new RuntimeException("Not implemented");
-    }
-
-    @Override
     public String getOwner() {
         return this.owner;
-    }
-
-    @Override
-    public void updateScopes(Set<Scope> scopes) {
-        this.scopesIds.clear();
-        this.scopesIds.addAll(scopes.stream().map(Scope::getId).collect(Collectors.toSet()));
     }
 
     public String getResourceServerId() {

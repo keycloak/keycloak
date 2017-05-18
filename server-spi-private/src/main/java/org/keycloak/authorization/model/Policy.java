@@ -76,9 +76,10 @@ public interface Policy {
     /**
      * Returns a {@link Map} holding string-based key/value pairs representing any additional configuration for this policy.
      *
-     * @return a map with any additional configuration defined for this policy.
+     * @return a unmodifiable map with any additional configuration defined for this policy.
      */
     Map<String, String> getConfig();
+
 
     /**
      * Sets a {@link Map} with string-based key/value pairs representing any additional configuration for this policy.
@@ -86,6 +87,9 @@ public interface Policy {
      * @return a map with any additional configuration for this policy.
      */
     void setConfig(Map<String, String> config);
+
+    void removeConfig(String name);
+    void putConfig(String name, String value);
 
     /**
      * Returns the name of this policy.
@@ -120,7 +124,7 @@ public interface Policy {
      *
      * @return a resource server
      */
-    <R extends ResourceServer> R getResourceServer();
+     ResourceServer getResourceServer();
 
     /**
      * Returns the {@link Policy} instances associated with this policy and used to evaluate authorization decisions when
@@ -128,21 +132,21 @@ public interface Policy {
      *
      * @return the associated policies or an empty set if no policy is associated with this policy
      */
-    <P extends Policy> Set<P> getAssociatedPolicies();
+    Set<Policy> getAssociatedPolicies();
 
     /**
      * Returns the {@link Resource} instances where this policy applies.
      *
      * @return a set with all resource instances where this policy applies. Or an empty set if there is no resource associated with this policy
      */
-    <R extends Resource> Set<R> getResources();
+    Set<Resource> getResources();
 
     /**
      * Returns the {@link Scope} instances where this policy applies.
      *
      * @return a set with all scope instances where this policy applies. Or an empty set if there is no scope associated with this policy
      */
-    <S extends Scope> Set<S> getScopes();
+    Set<Scope> getScopes();
 
     void addScope(Scope scope);
 

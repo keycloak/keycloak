@@ -41,10 +41,12 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.authorization.AuthorizationTokenService;
 import org.keycloak.authorization.common.KeycloakEvaluationContext;
 import org.keycloak.authorization.common.KeycloakIdentity;
 import org.keycloak.authorization.entitlement.representation.EntitlementRequest;
@@ -79,6 +81,7 @@ import org.keycloak.services.resources.Cors;
  */
 public class EntitlementService {
 
+    protected static final Logger logger = Logger.getLogger(EntitlementService.class);
     private final AuthorizationProvider authorization;
 
     @Context
@@ -122,6 +125,7 @@ public class EntitlementService {
 
             @Override
             public void onError(Throwable cause) {
+                logger.error("failed", cause);
                 asyncResponse.resume(cause);
             }
 
@@ -175,6 +179,7 @@ public class EntitlementService {
             authorization.evaluators().from(createPermissions(entitlementRequest, resourceServer, authorization), new KeycloakEvaluationContext(this.authorization.getKeycloakSession())).evaluate(new DecisionResultCollector() {
                 @Override
                 public void onError(Throwable cause) {
+                    logger.error("failed", cause);
                     asyncResponse.resume(cause);
                 }
 
