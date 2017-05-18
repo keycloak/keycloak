@@ -10,8 +10,8 @@ cd $JBOSS_HOME/bin
 
 RESULT=0
 ./jboss-cli.sh --file=keycloak-install.cli
-if [ $? -ne 0 ]; then RESULT=1; fi
-   exit $RESULT
-fi
+if [ $? -ne 0 ]; then exit 1; fi
+./jboss-cli.sh --file=keycloak-install-ha.cli
+if [ $? -ne 0 ]; then exit 1; fi
 
-exit 1
+exit 0
