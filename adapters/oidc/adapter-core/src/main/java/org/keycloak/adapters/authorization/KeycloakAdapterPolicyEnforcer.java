@@ -127,7 +127,7 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
                 AccessToken token = httpFacade.getSecurityContext().getToken();
 
                 if (token.getAuthorization() == null) {
-                    EntitlementResponse authzResponse = authzClient.entitlement(accessToken).getAll(authzClient.getConfiguration().getClientId());
+                    EntitlementResponse authzResponse = authzClient.entitlement(accessToken).getAll(authzClient.getConfiguration().getResource());
                     return AdapterRSATokenVerifier.verifyToken(authzResponse.getRpt(), deployment);
                 } else {
                     EntitlementRequest request = new EntitlementRequest();
@@ -137,7 +137,7 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
                     permissionRequest.setScopes(new HashSet<>(pathConfig.getScopes()));
                     LOGGER.debugf("Sending entitlements request: resource_set_id [%s], resource_set_name [%s], scopes [%s].", permissionRequest.getResourceSetId(), permissionRequest.getResourceSetName(), permissionRequest.getScopes());
                     request.addPermission(permissionRequest);
-                    EntitlementResponse authzResponse = authzClient.entitlement(accessToken).get(authzClient.getConfiguration().getClientId(), request);
+                    EntitlementResponse authzResponse = authzClient.entitlement(accessToken).get(authzClient.getConfiguration().getResource(), request);
                     return AdapterRSATokenVerifier.verifyToken(authzResponse.getRpt(), deployment);
                 }
             }
