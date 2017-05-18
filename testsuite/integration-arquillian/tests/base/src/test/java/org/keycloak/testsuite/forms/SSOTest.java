@@ -23,9 +23,12 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.drone.Different;
@@ -33,6 +36,7 @@ import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.openqa.selenium.WebDriver;
 
@@ -58,6 +62,9 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected AccountUpdateProfilePage profilePage;
+
+    @Page
+    protected LoginPasswordUpdatePage updatePasswordPage;
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -109,6 +116,7 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
         events.clear();
     }
 
+
     @Test
     public void multipleSessions() {
         loginPage.open();
@@ -124,7 +132,6 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
             OAuthClient oauth2 = new OAuthClient();
             oauth2.init(adminClient, driver2);
 
-            oauth2.state("mystate");
             oauth2.doLogin("test-user@localhost", "password");
 
             EventRepresentation login2 = events.expectLogin().assertEvent();
@@ -156,6 +163,40 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
         } finally {
             driver2.close();
         }
+    }
+
+
+    @Test
+    public void loginWithRequiredActionAddedInTheMeantime() {
+        // SSO login
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+
+        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+
+        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        String sessionId = loginEvent.getSessionId();
+
+        // Add update-profile required action to user now
+        UserRepresentation user = testRealm().users().get(loginEvent.getUserId()).toRepresentation();
+        user.getRequiredActions().add(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
+        testRealm().users().get(loginEvent.getUserId()).update(user);
+
+        // Attempt SSO login. update-password form is shown
+        oauth.openLoginForm();
+        updatePasswordPage.assertCurrent();
+
+        updatePasswordPage.changePassword("password", "password");
+        events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
+
+        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        loginEvent = events.expectLogin().removeDetail(Details.USERNAME).client("test-app").assertEvent();
+        String sessionId2 = loginEvent.getSessionId();
+        assertEquals(sessionId, sessionId2);
+
+
     }
 
 }

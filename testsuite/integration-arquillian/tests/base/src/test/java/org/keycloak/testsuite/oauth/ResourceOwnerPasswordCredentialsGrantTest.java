@@ -36,6 +36,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientManager;
@@ -203,6 +204,8 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
                 .removeDetail(Details.REDIRECT_URI)
                 .removeDetail(Details.CONSENT)
                 .assertEvent();
+
+        Assert.assertTrue(login.equals(accessToken.getPreferredUsername()) || login.equals(accessToken.getEmail()));
 
         assertEquals(accessToken.getSessionState(), refreshToken.getSessionState());
 

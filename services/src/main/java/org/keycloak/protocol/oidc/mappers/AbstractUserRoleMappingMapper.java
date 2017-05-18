@@ -93,9 +93,9 @@ abstract class AbstractUserRoleMappingMapper extends AbstractOIDCProtocolMapper 
         // get a set of all realm roles assigned to the user or its group
         Stream<RoleModel> clientUserRoles = getAllUserRolesStream(user).filter(restriction);
 
-        boolean dontLimitScope = userSession.getClientSessions().stream().anyMatch(cs -> cs.getClient().isFullScopeAllowed());
+        boolean dontLimitScope = userSession.getAuthenticatedClientSessions().values().stream().anyMatch(cs -> cs.getClient().isFullScopeAllowed());
         if (! dontLimitScope) {
-            Set<RoleModel> clientRoles = userSession.getClientSessions().stream()
+            Set<RoleModel> clientRoles = userSession.getAuthenticatedClientSessions().values().stream()
               .flatMap(cs -> cs.getClient().getScopeMappings().stream())
               .collect(Collectors.toSet());
 

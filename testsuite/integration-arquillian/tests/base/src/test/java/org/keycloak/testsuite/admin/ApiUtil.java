@@ -137,6 +137,13 @@ public class ApiUtil {
         return realm.users().get(findUserByUsername(realm, username).getId());
     }
 
+    /**
+     * Creates a user
+     * @param realm
+     * @param user
+     * @param password
+     * @return ID of the new user
+     */
     public static String createUserWithAdminClient(RealmResource realm, UserRepresentation user) {
         Response response = realm.users().create(user);
         String createdId = getCreatedId(response);
@@ -144,6 +151,13 @@ public class ApiUtil {
         return createdId;
     }
 
+    /**
+     * Creates a user and sets the password
+     * @param realm
+     * @param user
+     * @param password
+     * @return ID of the new user
+     */
     public static String createUserAndResetPasswordWithAdminClient(RealmResource realm, UserRepresentation user, String password) {
         String id = createUserWithAdminClient(realm, user);
         resetUserPassword(realm.users().get(id), password, false);

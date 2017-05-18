@@ -19,11 +19,18 @@ package org.keycloak.testsuite.arquillian.undertow;
 
 import org.arquillian.undertow.UndertowContainerConfiguration;
 import org.jboss.arquillian.container.spi.ConfigurationException;
+import org.jboss.logging.Logger;
 
 public class KeycloakOnUndertowConfiguration extends UndertowContainerConfiguration {
 
+    protected static final Logger log = Logger.getLogger(KeycloakOnUndertowConfiguration.class);
+
     private int workerThreads = Math.max(Runtime.getRuntime().availableProcessors(), 2) * 8;
     private String resourcesHome;
+    private boolean remoteMode;
+    private String route;
+
+    private int bindHttpPortOffset = 0;
 
     public int getWorkerThreads() {
         return workerThreads;
@@ -41,10 +48,39 @@ public class KeycloakOnUndertowConfiguration extends UndertowContainerConfigurat
         this.resourcesHome = resourcesHome;
     }
 
+    public int getBindHttpPortOffset() {
+        return bindHttpPortOffset;
+    }
+
+    public void setBindHttpPortOffset(int bindHttpPortOffset) {
+        this.bindHttpPortOffset = bindHttpPortOffset;
+    }
+
+    public String getRoute() {
+        return route;
+    }
+
+    public void setRoute(String route) {
+        this.route = route;
+    }
+
+    public boolean isRemoteMode() {
+        return remoteMode;
+    }
+
+    public void setRemoteMode(boolean remoteMode) {
+        this.remoteMode = remoteMode;
+    }
+
     @Override
     public void validate() throws ConfigurationException {
         super.validate();
-        
+
+        int basePort = getBindHttpPort();
+        int newPort = basePort + bindHttpPortOffset;
+        setBindHttpPort(newPort);
+        log.info("KeycloakOnUndertow will listen on port: " + newPort);
+
         // TODO validate workerThreads
         
     }

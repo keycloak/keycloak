@@ -16,8 +16,6 @@
  */
 package org.keycloak.testsuite.oauth;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -31,7 +29,6 @@ import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.openqa.selenium.By;
@@ -61,11 +58,12 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     public void clientConfiguration() {
         oauth.responseType(OAuth2Constants.CODE);
         oauth.responseMode(null);
+        oauth.stateParamRandom();
     }
 
     @Test
     public void authorizationRequest() throws IOException {
-        oauth.state("OpenIdConnect.AuthenticationProperties=2302984sdlk");
+        oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
 
         OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
@@ -100,8 +98,6 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     public void authorizationValidRedirectUri() throws IOException {
         ClientManager.realm(adminClient.realm("test")).clientId("test-app").addRedirectUris(oauth.getRedirectUri());
 
-        oauth.state("mystate");
-
         OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
         Assert.assertTrue(response.isRedirected());
@@ -113,7 +109,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
     @Test
     public void authorizationRequestNoState() throws IOException {
-        oauth.state(null);
+        oauth.stateParamHardcoded(null);
 
         OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
@@ -143,7 +139,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     @Test
     public void authorizationRequestFormPostResponseMode() throws IOException {
         oauth.responseMode(OIDCResponseMode.FORM_POST.toString().toLowerCase());
-        oauth.state("OpenIdConnect.AuthenticationProperties=2302984sdlk");
+        oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
         oauth.doLoginGrant("test-user@localhost", "password");
 
         String sources = driver.getPageSource();
@@ -159,7 +155,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     }
 
     private void assertCode(String expectedCodeId, String actualCode) {
-        assertEquals(expectedCodeId, actualCode.split("\\.")[1]);
+        assertEquals(expectedCodeId, actualCode.split("\\.")[2]);
     }
 
 }

@@ -27,6 +27,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.plugins.server.servlet.HttpServlet30Dispatcher;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.spi.ResteasyDeployment;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -37,12 +38,15 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.testsuite.util.cli.TestsuiteCLI;
 import org.keycloak.util.JsonSerialization;
+import org.mvel2.util.Make;
 
 import javax.servlet.DispatcherType;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -186,6 +190,8 @@ public class KeycloakServer {
             int undertowWorkerThreads = Integer.parseInt(System.getProperty("undertowWorkerThreads"));
             config.setWorkerThreads(undertowWorkerThreads);
         }
+
+        detectNodeName(config);
 
         final KeycloakServer keycloak = new KeycloakServer(config);
         keycloak.sysout = true;
@@ -367,6 +373,26 @@ public class KeycloakServer {
             s.append(p);
         }
         return new File(s.toString());
+    }
+
+
+    private static void detectNodeName(KeycloakServerConfig config) {
+        String nodeName = System.getProperty(InfinispanConnectionProvider.JBOSS_NODE_NAME);
+        if (nodeName == null) {
+            // Try to autodetect "jboss.node.name" from the port
+            Map<Integer, String> nodesCfg = new HashMap<>();
+            nodesCfg.put(8181, "node1");
+            nodesCfg.put(8182, "node2");
+
+            nodeName = nodesCfg.get(config.getPort());
+            if (nodeName != null) {
+                System.setProperty(InfinispanConnectionProvider.JBOSS_NODE_NAME, nodeName);
+            }
+        }
+
+        if (nodeName != null) {
+            log.infof("Node name: %s", nodeName);
+        }
     }
 
 }

@@ -128,7 +128,7 @@ public class SAMLKeyCloakServerBrokerBasicTest extends AbstractKeycloakIdentityP
     }
 
     @Test
-    public void testSuccessfulAuthenticationWithoutUpdateProfile_newUser_emailAsUsername() {
+    public void testSuccessfulAuthenticationWithoutUpdateProfile_newUser_emailAsUsername() throws Exception {
         super.testSuccessfulAuthenticationWithoutUpdateProfile_newUser_emailAsUsername();
     }
 

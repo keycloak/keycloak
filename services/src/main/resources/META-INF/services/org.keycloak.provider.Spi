@@ -19,4 +19,4 @@ org.keycloak.exportimport.ClientDescriptionConverterSpi
 org.keycloak.wellknown.WellKnownSpi
 org.keycloak.services.clientregistration.ClientRegistrationSpi
 org.keycloak.services.clientregistration.policy.ClientRegistrationPolicySpi
-
+org.keycloak.authentication.actiontoken.ActionTokenHandlerSpi

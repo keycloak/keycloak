@@ -20,8 +20,6 @@ package org.keycloak.authentication.authenticators.resetcred;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.resources.LoginActionsService;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -33,15 +31,10 @@ public class ResetPassword extends AbstractSetRequiredActionAuthenticator {
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
-        String actionCookie = LoginActionsService.getActionCookie(context.getSession().getContext().getRequestHeaders(), context.getRealm(), context.getUriInfo(), context.getConnection());
-        if (actionCookie == null || !actionCookie.equals(context.getClientSession().getId())) {
-            context.getClientSession().setNote(AuthenticationManager.END_AFTER_REQUIRED_ACTIONS, "true");
-        }
-
         if (context.getExecution().isRequired() ||
                 (context.getExecution().isOptional() &&
                         configuredFor(context))) {
-            context.getClientSession().addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+            context.getAuthenticationSession().addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
         }
         context.success();
     }

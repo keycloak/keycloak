@@ -16,8 +16,8 @@
  */
 package org.keycloak.testsuite.oauth;
 
+import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -155,6 +155,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
                 .client(THIRD_PARTY_APP)
                 .error("rejected_by_user")
                 .removeDetail(Details.CONSENT)
+                .session(Matchers.nullValue(String.class))
                 .assertEvent();
     }
 
@@ -309,6 +310,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
                 .client(THIRD_PARTY_APP)
                 .error("rejected_by_user")
                 .removeDetail(Details.CONSENT)
+                .session(Matchers.nullValue(String.class))
                 .assertEvent();
 
         oauth.scope("foo-role third-party/bar-role");

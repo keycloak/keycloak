@@ -53,6 +53,7 @@
             <property name="bindAddress">localhost</property>
             <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.KeycloakOnUndertow</property>
             <property name="bindHttpPort">${auth.server.http.port}</property>
+            <property name="remoteMode">${undertow.remote}</property>
         </configuration>
     </container>
     
@@ -90,7 +91,7 @@
                 <property name="jbossHome">${auth.server.backend1.home}</property>
                 <property name="serverConfig">standalone-ha.xml</property>
                 <property name="jbossArguments">
-                    -Djboss.socket.binding.port-offset=${auth.server.backend1.port.offset} 
+                    -Djboss.socket.binding.port-offset=${auth.server.backend1.port.offset}
                     -Djboss.node.name=node1
                     ${adapter.test.props}
                     ${auth.server.profile}
@@ -126,6 +127,43 @@
             </configuration>
         </container>
     </group>
+
+    <!-- Clustering with embedded undertow -->
+    <group qualifier="auth-server-undertow-cluster">
+        <container qualifier="auth-server-undertow-backend1" mode="manual" >
+            <configuration>
+                <property name="enabled">${auth.server.undertow.cluster}</property>
+                <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.KeycloakOnUndertow</property>
+                <property name="bindAddress">localhost</property>
+                <property name="bindHttpPort">${auth.server.http.port}</property>
+                <property name="bindHttpPortOffset">1</property>
+                <property name="route">node1</property>
+                <property name="remoteMode">${undertow.remote}</property>
+            </configuration>
+        </container>
+        <container qualifier="auth-server-undertow-backend2" mode="manual" >
+            <configuration>
+                <property name="enabled">${auth.server.undertow.cluster}</property>
+                <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.KeycloakOnUndertow</property>
+                <property name="bindAddress">localhost</property>
+                <property name="bindHttpPort">${auth.server.http.port}</property>
+                <property name="bindHttpPortOffset">2</property>
+                <property name="route">node2</property>
+                <property name="remoteMode">${undertow.remote}</property>
+            </configuration>
+        </container>
+
+        <container qualifier="auth-server-balancer-undertow" mode="suite" >
+            <configuration>
+                <property name="enabled">${auth.server.undertow.cluster}</property>
+                <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.lb.SimpleUndertowLoadBalancerContainer</property>
+                <property name="bindAddress">localhost</property>
+                <property name="bindHttpPort">${auth.server.http.port}</property>
+                <property name="nodes">node1=http://localhost:8181,node2=http://localhost:8182</property>
+            </configuration>
+        </container>
+    </group>
+
 
     <container qualifier="auth-server-balancer-wildfly" mode="suite" >
         <configuration>

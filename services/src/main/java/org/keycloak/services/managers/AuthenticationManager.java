@@ -19,11 +19,14 @@ package org.keycloak.services.managers;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
+import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionContextResult;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.authentication.actiontoken.DefaultActionTokenKey;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
@@ -35,17 +38,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.jose.jws.AlgorithmType;
 import org.keycloak.jose.jws.JWSBuilder;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
-import org.keycloak.models.KeyManager;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RequiredActionProviderModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserConsentModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocol.Error;
@@ -55,9 +48,12 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.IdentityBrokerService;
+import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.util.CookieHelper;
 import org.keycloak.services.util.P3PHelper;
+import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.CommonClientSessionModel;
 
 import javax.crypto.SecretKey;
 import javax.ws.rs.core.Cookie;
@@ -65,12 +61,11 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.security.PublicKey;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Stateless object that manages authentication
@@ -81,6 +76,10 @@ import java.util.Set;
 public class AuthenticationManager {
     public static final String SET_REDIRECT_URI_AFTER_REQUIRED_ACTIONS= "SET_REDIRECT_URI_AFTER_REQUIRED_ACTIONS";
     public static final String END_AFTER_REQUIRED_ACTIONS = "END_AFTER_REQUIRED_ACTIONS";
+    public static final String INVALIDATE_ACTION_TOKEN = "INVALIDATE_ACTION_TOKEN";
+
+    // Last authenticated client in userSession.
+    public static final String LAST_AUTHENTICATED_CLIENT = "LAST_AUTHENTICATED_CLIENT";
 
     // userSession note with authTime (time when authentication flow including requiredActions was finished)
     public static final String AUTH_TIME = "AUTH_TIME";
@@ -124,7 +123,10 @@ public class AuthenticationManager {
             if (cookie == null) return;
             String tokenString = cookie.getValue();
 
-            TokenVerifier verifier = TokenVerifier.create(tokenString).realmUrl(Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName())).checkActive(false).checkTokenType(false);
+            TokenVerifier<AccessToken> verifier = TokenVerifier.create(tokenString, AccessToken.class)
+              .realmUrl(Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()))
+              .checkActive(false)
+              .checkTokenType(false);
 
             String kid = verifier.getHeader().getKeyId();
             SecretKey secretKey = session.keys().getHmacSecretKey(realm, kid);
@@ -159,7 +161,7 @@ public class AuthenticationManager {
         logger.debugv("Logging out: {0} ({1})", user.getUsername(), userSession.getId());
         expireUserSessionCookie(session, userSession, realm, uriInfo, headers, connection);
 
-        for (ClientSessionModel clientSession : userSession.getClientSessions()) {
+        for (AuthenticatedClientSessionModel clientSession : userSession.getAuthenticatedClientSessions().values()) {
             backchannelLogoutClientSession(session, realm, clientSession, userSession, uriInfo, headers);
         }
         if (logoutBroker) {
@@ -169,6 +171,7 @@ public class AuthenticationManager {
                 try {
                     identityProvider.backchannelLogout(session, userSession, uriInfo, realm);
                 } catch (Exception e) {
+                    logger.warn("Exception at broker backchannel logout for broker " + brokerId, e);
                 }
             }
         }
@@ -176,17 +179,17 @@ public class AuthenticationManager {
         session.sessions().removeUserSession(realm, userSession);
     }
 
-    public static void backchannelLogoutClientSession(KeycloakSession session, RealmModel realm, ClientSessionModel clientSession, UserSessionModel userSession, UriInfo uriInfo, HttpHeaders headers) {
+    public static void backchannelLogoutClientSession(KeycloakSession session, RealmModel realm, AuthenticatedClientSessionModel clientSession, UserSessionModel userSession, UriInfo uriInfo, HttpHeaders headers) {
         ClientModel client = clientSession.getClient();
-        if (client instanceof ClientModel && !client.isFrontchannelLogout() && !ClientSessionModel.Action.LOGGED_OUT.name().equals(clientSession.getAction())) {
-            String authMethod = clientSession.getAuthMethod();
+        if (!client.isFrontchannelLogout() && !AuthenticatedClientSessionModel.Action.LOGGED_OUT.name().equals(clientSession.getAction())) {
+            String authMethod = clientSession.getProtocol();
             if (authMethod == null) return; // must be a keycloak service like account
             LoginProtocol protocol = session.getProvider(LoginProtocol.class, authMethod);
             protocol.setRealm(realm)
                     .setHttpHeaders(headers)
                     .setUriInfo(uriInfo);
             protocol.backchannelLogout(userSession, clientSession);
-            clientSession.setAction(ClientSessionModel.Action.LOGGED_OUT.name());
+            clientSession.setAction(AuthenticatedClientSessionModel.Action.LOGGED_OUT.name());
         }
 
     }
@@ -197,8 +200,8 @@ public class AuthenticationManager {
 
         List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
         for (UserSessionModel userSession : userSessions) {
-            List<ClientSessionModel> clientSessions = userSession.getClientSessions();
-            for (ClientSessionModel clientSession : clientSessions) {
+            Collection<AuthenticatedClientSessionModel> clientSessions = userSession.getAuthenticatedClientSessions().values();
+            for (AuthenticatedClientSessionModel clientSession : clientSessions) {
                 if (clientSession.getClient().getId().equals(clientId)) {
                     AuthenticationManager.backchannelLogoutClientSession(session, realm, clientSession, userSession, uriInfo, headers);
                     TokenManager.dettachClientSession(session.sessions(), realm, clientSession);
@@ -215,16 +218,16 @@ public class AuthenticationManager {
         if (userSession.getState() != UserSessionModel.State.LOGGING_OUT) {
             userSession.setState(UserSessionModel.State.LOGGING_OUT);
         }
-        List<ClientSessionModel> redirectClients = new LinkedList<ClientSessionModel>();
-        for (ClientSessionModel clientSession : userSession.getClientSessions()) {
+        List<AuthenticatedClientSessionModel> redirectClients = new LinkedList<>();
+        for (AuthenticatedClientSessionModel clientSession : userSession.getAuthenticatedClientSessions().values()) {
             ClientModel client = clientSession.getClient();
-            if (ClientSessionModel.Action.LOGGED_OUT.name().equals(clientSession.getAction())) continue;
+            if (AuthenticatedClientSessionModel.Action.LOGGED_OUT.name().equals(clientSession.getAction())) continue;
             if (client.isFrontchannelLogout()) {
-                String authMethod = clientSession.getAuthMethod();
+                String authMethod = clientSession.getProtocol();
                 if (authMethod == null) continue; // must be a keycloak service like account
                 redirectClients.add(clientSession);
             } else {
-                String authMethod = clientSession.getAuthMethod();
+                String authMethod = clientSession.getProtocol();
                 if (authMethod == null) continue; // must be a keycloak service like account
                 LoginProtocol protocol = session.getProvider(LoginProtocol.class, authMethod);
                 protocol.setRealm(realm)
@@ -233,21 +236,21 @@ public class AuthenticationManager {
                 try {
                     logger.debugv("backchannel logout to: {0}", client.getClientId());
                     protocol.backchannelLogout(userSession, clientSession);
-                    clientSession.setAction(ClientSessionModel.Action.LOGGED_OUT.name());
+                    clientSession.setAction(AuthenticatedClientSessionModel.Action.LOGGED_OUT.name());
                 } catch (Exception e) {
                     ServicesLogger.LOGGER.failedToLogoutClient(e);
                 }
             }
         }
 
-        for (ClientSessionModel nextRedirectClient : redirectClients) {
-            String authMethod = nextRedirectClient.getAuthMethod();
+        for (AuthenticatedClientSessionModel nextRedirectClient : redirectClients) {
+            String authMethod = nextRedirectClient.getProtocol();
             LoginProtocol protocol = session.getProvider(LoginProtocol.class, authMethod);
             protocol.setRealm(realm)
                     .setHttpHeaders(headers)
                     .setUriInfo(uriInfo);
             // setting this to logged out cuz I"m not sure protocols can always verify that the client was logged out or not
-            nextRedirectClient.setAction(ClientSessionModel.Action.LOGGED_OUT.name());
+            nextRedirectClient.setAction(AuthenticatedClientSessionModel.Action.LOGGED_OUT.name());
             try {
                 logger.debugv("frontchannel logout to: {0}", nextRedirectClient.getClient().getClientId());
                 Response response = protocol.frontchannelLogout(userSession, nextRedirectClient);
@@ -410,20 +413,20 @@ public class AuthenticationManager {
 
 
     public static Response redirectAfterSuccessfulFlow(KeycloakSession session, RealmModel realm, UserSessionModel userSession,
-                                                ClientSessionModel clientSession,
+                                                AuthenticatedClientSessionModel clientSession,
                                                 HttpRequest request, UriInfo uriInfo, ClientConnection clientConnection,
-                                                EventBuilder event) {
-        LoginProtocol protocol = session.getProvider(LoginProtocol.class, clientSession.getAuthMethod());
-        protocol.setRealm(realm)
+                                                EventBuilder event, String protocol) {
+        LoginProtocol protocolImpl = session.getProvider(LoginProtocol.class, protocol);
+        protocolImpl.setRealm(realm)
                 .setHttpHeaders(request.getHttpHeaders())
                 .setUriInfo(uriInfo)
                 .setEventBuilder(event);
-        return redirectAfterSuccessfulFlow(session, realm, userSession, clientSession, request, uriInfo, clientConnection, event, protocol);
+        return redirectAfterSuccessfulFlow(session, realm, userSession, clientSession, request, uriInfo, clientConnection, event, protocolImpl);
 
     }
 
     public static Response redirectAfterSuccessfulFlow(KeycloakSession session, RealmModel realm, UserSessionModel userSession,
-                                                       ClientSessionModel clientSession,
+                                                       AuthenticatedClientSessionModel clientSession,
                                                        HttpRequest request, UriInfo uriInfo, ClientConnection clientConnection,
                                                        EventBuilder event, LoginProtocol protocol) {
         Cookie sessionCookie = request.getHttpHeaders().getCookies().get(AuthenticationManager.KEYCLOAK_SESSION_COOKIE);
@@ -460,32 +463,66 @@ public class AuthenticationManager {
             userSession.setNote(AUTH_TIME, String.valueOf(authTime));
         }
 
-        return protocol.authenticated(userSession, new ClientSessionCode(session, realm, clientSession));
+        userSession.setNote(LAST_AUTHENTICATED_CLIENT, clientSession.getClient().getId());
+
+        return protocol.authenticated(userSession, clientSession);
 
     }
 
-    public static boolean isSSOAuthentication(ClientSessionModel clientSession) {
+    public static boolean isSSOAuthentication(AuthenticatedClientSessionModel clientSession) {
         String ssoAuth = clientSession.getNote(SSO_AUTH);
         return Boolean.parseBoolean(ssoAuth);
     }
 
 
-    public static Response nextActionAfterAuthentication(KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession,
+    public static Response nextActionAfterAuthentication(KeycloakSession session, AuthenticationSessionModel authSession,
                                                   ClientConnection clientConnection,
                                                   HttpRequest request, UriInfo uriInfo, EventBuilder event) {
-        Response requiredAction = actionRequired(session, userSession, clientSession, clientConnection, request, uriInfo, event);
+        Response requiredAction = actionRequired(session, authSession, clientConnection, request, uriInfo, event);
         if (requiredAction != null) return requiredAction;
-        return finishedRequiredActions(session, userSession, clientSession, clientConnection, request, uriInfo, event);
+        return finishedRequiredActions(session, authSession, null, clientConnection, request, uriInfo, event);
 
     }
 
-    public static Response finishedRequiredActions(KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession, ClientConnection clientConnection, HttpRequest request, UriInfo uriInfo, EventBuilder event) {
-        if (clientSession.getNote(END_AFTER_REQUIRED_ACTIONS) != null) {
+
+    public static Response redirectToRequiredActions(KeycloakSession session, RealmModel realm, AuthenticationSessionModel authSession, UriInfo uriInfo, String requiredAction) {
+        // redirect to non-action url so browser refresh button works without reposting past data
+        ClientSessionCode<AuthenticationSessionModel> accessCode = new ClientSessionCode<>(session, realm, authSession);
+        accessCode.setAction(ClientSessionModel.Action.REQUIRED_ACTIONS.name());
+        authSession.setAuthNote(AuthenticationProcessor.CURRENT_FLOW_PATH, LoginActionsService.REQUIRED_ACTION);
+        authSession.setAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION, requiredAction);
+
+        UriBuilder uriBuilder = LoginActionsService.loginActionsBaseUrl(uriInfo)
+                .path(LoginActionsService.REQUIRED_ACTION);
+
+        if (requiredAction != null) {
+            uriBuilder.queryParam("execution", requiredAction);
+        }
+
+        URI redirect = uriBuilder.build(realm.getName());
+        return Response.status(302).location(redirect).build();
+
+    }
+
+
+    public static Response finishedRequiredActions(KeycloakSession session, AuthenticationSessionModel authSession, UserSessionModel userSession,
+                                                   ClientConnection clientConnection, HttpRequest request, UriInfo uriInfo, EventBuilder event) {
+        String actionTokenKeyToInvalidate = authSession.getAuthNote(INVALIDATE_ACTION_TOKEN);
+        if (actionTokenKeyToInvalidate != null) {
+            ActionTokenKeyModel actionTokenKey = DefaultActionTokenKey.from(actionTokenKeyToInvalidate);
+            
+            if (actionTokenKey != null) {
+                ActionTokenStoreProvider actionTokenStore = session.getProvider(ActionTokenStoreProvider.class);
+                actionTokenStore.put(actionTokenKey, null); // Token is invalidated
+            }
+        }
+
+        if (authSession.getAuthNote(END_AFTER_REQUIRED_ACTIONS) != null) {
             LoginFormsProvider infoPage = session.getProvider(LoginFormsProvider.class)
                     .setSuccess(Messages.ACCOUNT_UPDATED);
-            if (clientSession.getNote(SET_REDIRECT_URI_AFTER_REQUIRED_ACTIONS) != null) {
-                if (clientSession.getRedirectUri() != null) {
-                    infoPage.setAttribute("pageRedirectUri", clientSession.getRedirectUri());
+            if (authSession.getAuthNote(SET_REDIRECT_URI_AFTER_REQUIRED_ACTIONS) != null) {
+                if (authSession.getRedirectUri() != null) {
+                    infoPage.setAttribute("pageRedirectUri", authSession.getRedirectUri());
                 }
 
             } else {
@@ -493,44 +530,56 @@ public class AuthenticationManager {
             }
             Response response = infoPage
                     .createInfoPage();
-            session.sessions().removeUserSession(session.getContext().getRealm(), userSession);
             return response;
 
+            // Don't remove authentication session for now, to ensure that browser buttons (back/refresh) will still work fine.
+
         }
+        RealmModel realm = authSession.getRealm();
+
+        AuthenticatedClientSessionModel clientSession = AuthenticationProcessor.attachSession(authSession, userSession, session, realm, clientConnection, event);
+
+        event.event(EventType.LOGIN);
+        event.session(clientSession.getUserSession());
         event.success();
-        RealmModel realm = clientSession.getRealm();
-        return redirectAfterSuccessfulFlow(session, realm , userSession, clientSession, request, uriInfo, clientConnection, event);
+        return redirectAfterSuccessfulFlow(session, realm, clientSession.getUserSession(), clientSession, request, uriInfo, clientConnection, event, authSession.getProtocol());
     }
 
-    public static boolean isActionRequired(final KeycloakSession session, final UserSessionModel userSession, final ClientSessionModel clientSession,
-                                           final ClientConnection clientConnection,
-                                           final HttpRequest request, final UriInfo uriInfo, final EventBuilder event) {
-        final RealmModel realm = clientSession.getRealm();
-        final UserModel user = userSession.getUser();
-        final ClientModel client = clientSession.getClient();
+    // Return null if action is not required. Or the name of the requiredAction in case it is required.
+    public static String nextRequiredAction(final KeycloakSession session, final AuthenticationSessionModel authSession,
+                                            final ClientConnection clientConnection,
+                                            final HttpRequest request, final UriInfo uriInfo, final EventBuilder event) {
+        final RealmModel realm = authSession.getRealm();
+        final UserModel user = authSession.getAuthenticatedUser();
+        final ClientModel client = authSession.getClient();
 
-        evaluateRequiredActionTriggers(session, userSession, clientSession, clientConnection, request, uriInfo, event, realm, user);
+        evaluateRequiredActionTriggers(session, authSession, clientConnection, request, uriInfo, event, realm, user);
 
-        if (!user.getRequiredActions().isEmpty() || !clientSession.getRequiredActions().isEmpty()) return true;
+        if (!user.getRequiredActions().isEmpty()) {
+            return user.getRequiredActions().iterator().next();
+        }
+        if (!authSession.getRequiredActions().isEmpty()) {
+            return authSession.getRequiredActions().iterator().next();
+        }
 
         if (client.isConsentRequired()) {
 
             UserConsentModel grantedConsent = session.users().getConsentByClient(realm, user.getId(), client.getId());
 
-            ClientSessionCode accessCode = new ClientSessionCode(session, realm, clientSession);
+            ClientSessionCode<AuthenticationSessionModel> accessCode = new ClientSessionCode<>(session, realm, authSession);
             for (RoleModel r : accessCode.getRequestedRoles()) {
 
                 // Consent already granted by user
                 if (grantedConsent != null && grantedConsent.isRoleGranted(r)) {
                     continue;
                 }
-                return true;
+                return CommonClientSessionModel.Action.OAUTH_GRANT.name();
              }
 
             for (ProtocolMapperModel protocolMapper : accessCode.getRequestedProtocolMappers()) {
                 if (protocolMapper.isConsentRequired() && protocolMapper.getConsentText() != null) {
                     if (grantedConsent == null || !grantedConsent.isProtocolMapperGranted(protocolMapper)) {
-                        return true;
+                        return CommonClientSessionModel.Action.OAUTH_GRANT.name();
                     }
                 }
             }
@@ -539,32 +588,32 @@ public class AuthenticationManager {
         } else {
             event.detail(Details.CONSENT, Details.CONSENT_VALUE_NO_CONSENT_REQUIRED);
         }
-        return false;
+        return null;
 
     }
 
 
-    public static Response actionRequired(final KeycloakSession session, final UserSessionModel userSession, final ClientSessionModel clientSession,
+    public static Response actionRequired(final KeycloakSession session, final AuthenticationSessionModel authSession,
                                                          final ClientConnection clientConnection,
                                                          final HttpRequest request, final UriInfo uriInfo, final EventBuilder event) {
-        final RealmModel realm = clientSession.getRealm();
-        final UserModel user = userSession.getUser();
-        final ClientModel client = clientSession.getClient();
+        final RealmModel realm = authSession.getRealm();
+        final UserModel user = authSession.getAuthenticatedUser();
+        final ClientModel client = authSession.getClient();
 
-        evaluateRequiredActionTriggers(session, userSession, clientSession, clientConnection, request, uriInfo, event, realm, user);
+        evaluateRequiredActionTriggers(session, authSession, clientConnection, request, uriInfo, event, realm, user);
 
 
         logger.debugv("processAccessCode: go to oauth page?: {0}", client.isConsentRequired());
 
-        event.detail(Details.CODE_ID, clientSession.getId());
+        event.detail(Details.CODE_ID, authSession.getId());
 
         Set<String> requiredActions = user.getRequiredActions();
-        Response action = executionActions(session, userSession, clientSession, request, event, realm, user, requiredActions);
+        Response action = executionActions(session, authSession, request, event, realm, user, requiredActions);
         if (action != null) return action;
 
         // executionActions() method should remove any duplicate actions that might be in the clientSession
-        requiredActions = clientSession.getRequiredActions();
-        action = executionActions(session, userSession, clientSession, request, event, realm, user, requiredActions);
+        requiredActions = authSession.getRequiredActions();
+        action = executionActions(session, authSession, request, event, realm, user, requiredActions);
         if (action != null) return action;
 
         if (client.isConsentRequired()) {
@@ -573,7 +622,7 @@ public class AuthenticationManager {
 
             List<RoleModel> realmRoles = new LinkedList<>();
             MultivaluedMap<String, RoleModel> resourceRoles = new MultivaluedMapImpl<>();
-            ClientSessionCode accessCode = new ClientSessionCode(session, realm, clientSession);
+            ClientSessionCode<AuthenticationSessionModel> accessCode = new ClientSessionCode<>(session, realm, authSession);
             for (RoleModel r : accessCode.getRequestedRoles()) {
 
                 // Consent already granted by user
@@ -599,13 +648,15 @@ public class AuthenticationManager {
 
             // Skip grant screen if everything was already approved by this user
             if (realmRoles.size() > 0 || resourceRoles.size() > 0 || protocolMappers.size() > 0) {
-                accessCode.setAction(ClientSessionModel.Action.REQUIRED_ACTIONS.name());
-                clientSession.setNote(CURRENT_REQUIRED_ACTION, ClientSessionModel.Action.OAUTH_GRANT.name());
+                accessCode.
+
+                        setAction(AuthenticatedClientSessionModel.Action.REQUIRED_ACTIONS.name());
+                authSession.setAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION, AuthenticatedClientSessionModel.Action.OAUTH_GRANT.name());
 
                 return session.getProvider(LoginFormsProvider.class)
                         .setClientSessionCode(accessCode.getCode())
                         .setAccessRequest(realmRoles, resourceRoles, protocolMappers)
-                        .createOAuthGrant(clientSession);
+                        .createOAuthGrant();
             } else {
                 String consentDetail = (grantedConsent != null) ? Details.CONSENT_VALUE_PERSISTED_CONSENT : Details.CONSENT_VALUE_NO_CONSENT_REQUIRED;
                 event.detail(Details.CONSENT, consentDetail);
@@ -617,7 +668,38 @@ public class AuthenticationManager {
 
     }
 
-    protected static Response executionActions(KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession,
+
+    public static void setRolesAndMappersInSession(AuthenticationSessionModel authSession) {
+        ClientModel client = authSession.getClient();
+        UserModel user = authSession.getAuthenticatedUser();
+
+        Set<String> requestedRoles = new HashSet<String>();
+        // todo scope param protocol independent
+        String scopeParam = authSession.getClientNote(OAuth2Constants.SCOPE);
+        for (RoleModel r : TokenManager.getAccess(scopeParam, true, client, user)) {
+            requestedRoles.add(r.getId());
+        }
+        authSession.setRoles(requestedRoles);
+
+        Set<String> requestedProtocolMappers = new HashSet<String>();
+        ClientTemplateModel clientTemplate = client.getClientTemplate();
+        if (clientTemplate != null && client.useTemplateMappers()) {
+            for (ProtocolMapperModel protocolMapper : clientTemplate.getProtocolMappers()) {
+                if (protocolMapper.getProtocol().equals(authSession.getProtocol())) {
+                    requestedProtocolMappers.add(protocolMapper.getId());
+                }
+            }
+
+        }
+        for (ProtocolMapperModel protocolMapper : client.getProtocolMappers()) {
+            if (protocolMapper.getProtocol().equals(authSession.getProtocol())) {
+                requestedProtocolMappers.add(protocolMapper.getId());
+            }
+        }
+        authSession.setProtocolMappers(requestedProtocolMappers);
+    }
+
+    protected static Response executionActions(KeycloakSession session, AuthenticationSessionModel authSession,
                                                HttpRequest request, EventBuilder event, RealmModel realm, UserModel user,
                                                Set<String> requiredActions) {
         for (String action : requiredActions) {
@@ -635,34 +717,34 @@ public class AuthenticationManager {
                 throw new RuntimeException("Unable to find factory for Required Action: " + model.getProviderId() + " did you forget to declare it in a META-INF/services file?");
             }
             RequiredActionProvider actionProvider = factory.create(session);
-            RequiredActionContextResult context = new RequiredActionContextResult(userSession, clientSession, realm, event, session, request, user, factory);
+            RequiredActionContextResult context = new RequiredActionContextResult(authSession, realm, event, session, request, user, factory);
             actionProvider.requiredActionChallenge(context);
 
             if (context.getStatus() == RequiredActionContext.Status.FAILURE) {
-                LoginProtocol protocol = context.getSession().getProvider(LoginProtocol.class, context.getClientSession().getAuthMethod());
+                LoginProtocol protocol = context.getSession().getProvider(LoginProtocol.class, context.getAuthenticationSession().getProtocol());
                 protocol.setRealm(context.getRealm())
                         .setHttpHeaders(context.getHttpRequest().getHttpHeaders())
                         .setUriInfo(context.getUriInfo())
                         .setEventBuilder(event);
-                Response response = protocol.sendError(context.getClientSession(), Error.CONSENT_DENIED);
+                Response response = protocol.sendError(context.getAuthenticationSession(), Error.CONSENT_DENIED);
                 event.error(Errors.REJECTED_BY_USER);
                 return response;
             }
             else if (context.getStatus() == RequiredActionContext.Status.CHALLENGE) {
-                clientSession.setNote(CURRENT_REQUIRED_ACTION, model.getProviderId());
+                authSession.setAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION, model.getProviderId());
                 return context.getChallenge();
             }
             else if (context.getStatus() == RequiredActionContext.Status.SUCCESS) {
                 event.clone().event(EventType.CUSTOM_REQUIRED_ACTION).detail(Details.CUSTOM_REQUIRED_ACTION, factory.getId()).success();
                 // don't have to perform the same action twice, so remove it from both the user and session required actions
-                clientSession.getUserSession().getUser().removeRequiredAction(factory.getId());
-                clientSession.removeRequiredAction(factory.getId());
+                authSession.getAuthenticatedUser().removeRequiredAction(factory.getId());
+                authSession.removeRequiredAction(factory.getId());
             }
         }
         return null;
     }
 
-    public static void evaluateRequiredActionTriggers(final KeycloakSession session, final UserSessionModel userSession, final ClientSessionModel clientSession, final ClientConnection clientConnection, final HttpRequest request, final UriInfo uriInfo, final EventBuilder event, final RealmModel realm, final UserModel user) {
+    public static void evaluateRequiredActionTriggers(final KeycloakSession session, final AuthenticationSessionModel authSession, final ClientConnection clientConnection, final HttpRequest request, final UriInfo uriInfo, final EventBuilder event, final RealmModel realm, final UserModel user) {
 
         // see if any required actions need triggering, i.e. an expired password
         for (RequiredActionProviderModel model : realm.getRequiredActionProviders()) {
@@ -672,7 +754,7 @@ public class AuthenticationManager {
                 throw new RuntimeException("Unable to find factory for Required Action: " + model.getProviderId() + " did you forget to declare it in a META-INF/services file?");
             }
             RequiredActionProvider provider = factory.create(session);
-            RequiredActionContextResult result = new RequiredActionContextResult(userSession, clientSession, realm, event, session, request, user, factory) {
+            RequiredActionContextResult result = new RequiredActionContextResult(authSession, realm, event, session, request, user, factory) {
                 @Override
                 public void challenge(Response response) {
                     throw new RuntimeException("Not allowed to call challenge() within evaluateTriggers()");
@@ -702,7 +784,11 @@ public class AuthenticationManager {
     public static AuthResult verifyIdentityToken(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, boolean checkActive, boolean checkTokenType,
                                                     boolean isCookie, String tokenString, HttpHeaders headers) {
         try {
-            TokenVerifier verifier = TokenVerifier.create(tokenString).realmUrl(Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName())).checkActive(checkActive).checkTokenType(checkTokenType);
+            TokenVerifier<AccessToken> verifier = TokenVerifier.create(tokenString, AccessToken.class)
+              .withDefaultChecks()
+              .realmUrl(Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()))
+              .checkActive(checkActive)
+              .checkTokenType(checkTokenType);
             String kid = verifier.getHeader().getKeyId();
             AlgorithmType algorithmType = verifier.getHeader().getAlgorithm().getType();
 

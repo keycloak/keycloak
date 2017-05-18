@@ -45,6 +45,12 @@ public abstract class AbstractClusterTest extends AbstractKeycloakTest {
         logFailoverSetup();
     }
 
+    // Assume that route like "node6" will have corresponding backend container like "auth-server-wildfly-backend6"
+    protected void setCurrentFailNodeForRoute(String route) {
+        String routeNumber = route.substring(route.length() - 1);
+        currentFailNodeIndex = Integer.parseInt(routeNumber) - 1;
+    }
+
     protected ContainerInfo getCurrentFailNode() {
         return backendNode(currentFailNodeIndex);
     }
@@ -111,9 +117,13 @@ public abstract class AbstractClusterTest extends AbstractKeycloakTest {
     }
 
     protected Keycloak getAdminClientFor(ContainerInfo node) {
-        return node.equals(suiteContext.getAuthServerInfo())
-                ? adminClient // frontend client
-                : backendAdminClients.get(node);
+        Keycloak adminClient = backendAdminClients.get(node);
+
+        if (adminClient == null && node.equals(suiteContext.getAuthServerInfo())) {
+            adminClient = this.adminClient;
+        }
+
+        return adminClient;
     }
 
     @Before

@@ -17,43 +17,47 @@
 
 package org.keycloak.models.sessions.infinispan;
 
-import org.infinispan.Cache;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.sessions.infinispan.entities.ClientSessionEntity;
-import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
-
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.infinispan.Cache;
+import org.keycloak.common.util.Time;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.sessions.infinispan.entities.AuthenticationSessionEntity;
+import org.keycloak.sessions.AuthenticationSessionModel;
+
 /**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * NOTE: Calling setter doesn't automatically enlist for update
+ *
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class ClientSessionAdapter implements ClientSessionModel {
+public class AuthenticationSessionAdapter implements AuthenticationSessionModel {
 
     private KeycloakSession session;
-    private InfinispanUserSessionProvider provider;
-    private Cache<String, SessionEntity> cache;
+    private InfinispanAuthenticationSessionProvider provider;
+    private Cache<String, AuthenticationSessionEntity> cache;
     private RealmModel realm;
-    private ClientSessionEntity entity;
-    private boolean offline;
+    private AuthenticationSessionEntity entity;
 
-    public ClientSessionAdapter(KeycloakSession session, InfinispanUserSessionProvider provider, Cache<String, SessionEntity> cache, RealmModel realm,
-                                ClientSessionEntity entity, boolean offline) {
+    public AuthenticationSessionAdapter(KeycloakSession session, InfinispanAuthenticationSessionProvider provider, Cache<String, AuthenticationSessionEntity> cache, RealmModel realm,
+                                        AuthenticationSessionEntity entity) {
         this.session = session;
         this.provider = provider;
         this.cache = cache;
         this.realm = realm;
         this.entity = entity;
-        this.offline = offline;
     }
+
+    void update() {
+        provider.tx.replace(cache, entity.getId(), entity);
+    }
+
 
     @Override
     public String getId() {
@@ -67,36 +71,7 @@ public class ClientSessionAdapter implements ClientSessionModel {
 
     @Override
     public ClientModel getClient() {
-        return realm.getClientById(entity.getClient());
-    }
-
-    @Override
-    public UserSessionAdapter getUserSession() {
-        return entity.getUserSession() != null ? provider.getUserSession(realm, entity.getUserSession(), offline) : null;
-    }
-
-    @Override
-    public void setUserSession(UserSessionModel userSession) {
-        if (userSession == null) {
-            if (entity.getUserSession() != null) {
-                provider.dettachSession(getUserSession(), this);
-            }
-            entity.setUserSession(null);
-        } else {
-            UserSessionAdapter userSessionAdapter = (UserSessionAdapter) userSession;
-            if (entity.getUserSession() != null) {
-                if (entity.getUserSession().equals(userSession.getId())) {
-                    return;
-                } else {
-                    provider.dettachSession(userSessionAdapter, this);
-                }
-            } else {
-                provider.attachSession(userSessionAdapter, this);
-            }
-
-            entity.setUserSession(userSession.getId());
-        }
-        update();
+        return realm.getClientById(entity.getClientUuid());
     }
 
     @Override
@@ -157,52 +132,104 @@ public class ClientSessionAdapter implements ClientSessionModel {
     }
 
     @Override
-    public String getAuthMethod() {
-        return entity.getAuthMethod();
+    public String getProtocol() {
+        return entity.getProtocol();
     }
 
     @Override
-    public void setAuthMethod(String authMethod) {
-        entity.setAuthMethod(authMethod);
+    public void setProtocol(String protocol) {
+        entity.setProtocol(protocol);
         update();
     }
 
     @Override
-    public String getNote(String name) {
-        return entity.getNotes() != null ? entity.getNotes().get(name) : null;
+    public String getClientNote(String name) {
+        return (entity.getClientNotes() != null && name != null) ? entity.getClientNotes().get(name) : null;
     }
 
     @Override
-    public void setNote(String name, String value) {
-        if (entity.getNotes() == null) {
-            entity.setNotes(new HashMap<String, String>());
+    public void setClientNote(String name, String value) {
+        if (entity.getClientNotes() == null) {
+            entity.setClientNotes(new ConcurrentHashMap<>());
         }
-        entity.getNotes().put(name, value);
+        if (name != null) {
+            if (value == null) {
+                entity.getClientNotes().remove(name);
+            } else {
+                entity.getClientNotes().put(name, value);
+            }
+        }
         update();
     }
 
     @Override
-    public void removeNote(String name) {
-        if (entity.getNotes() != null) {
-            entity.getNotes().remove(name);
-            update();
+    public void removeClientNote(String name) {
+        if (entity.getClientNotes() != null && name != null) {
+            entity.getClientNotes().remove(name);
         }
+        update();
     }
 
     @Override
-    public Map<String, String> getNotes() {
-        if (entity.getNotes() == null || entity.getNotes().isEmpty()) return Collections.emptyMap();
-        Map<String, String> copy = new HashMap<>();
-        copy.putAll(entity.getNotes());
+    public Map<String, String> getClientNotes() {
+        if (entity.getClientNotes() == null || entity.getClientNotes().isEmpty()) return Collections.emptyMap();
+        Map<String, String> copy = new ConcurrentHashMap<>();
+        copy.putAll(entity.getClientNotes());
         return copy;
+    }
+
+    @Override
+    public void clearClientNotes() {
+        entity.setClientNotes(new ConcurrentHashMap<>());
+        update();
+    }
+
+    @Override
+    public String getAuthNote(String name) {
+        return (entity.getAuthNotes() != null && name != null) ? entity.getAuthNotes().get(name) : null;
+    }
+
+    @Override
+    public void setAuthNote(String name, String value) {
+        if (entity.getAuthNotes() == null) {
+            entity.setAuthNotes(new ConcurrentHashMap<>());
+        }
+        if (name != null) {
+            if (value == null) {
+                entity.getAuthNotes().remove(name);
+            } else {
+                entity.getAuthNotes().put(name, value);
+            }
+        }
+        update();
+    }
+
+    @Override
+    public void removeAuthNote(String name) {
+        if (entity.getAuthNotes() != null && name != null) {
+            entity.getAuthNotes().remove(name);
+        }
+        update();
+    }
+
+    @Override
+    public void clearAuthNotes() {
+        entity.setAuthNotes(new ConcurrentHashMap<>());
+        update();
     }
 
     @Override
     public void setUserSessionNote(String name, String value) {
         if (entity.getUserSessionNotes() == null) {
-            entity.setUserSessionNotes(new HashMap<String, String>());
+            entity.setUserSessionNotes(new ConcurrentHashMap<>());
         }
-        entity.getUserSessionNotes().put(name, value);
+        if (name != null) {
+            if (value == null) {
+                entity.getUserSessionNotes().remove(name);
+            } else {
+                entity.getUserSessionNotes().put(name, value);
+            }
+        }
         update();
 
     }
@@ -212,14 +239,14 @@ public class ClientSessionAdapter implements ClientSessionModel {
         if (entity.getUserSessionNotes() == null) {
             return Collections.EMPTY_MAP;
         }
-        HashMap<String, String> copy = new HashMap<>();
+        ConcurrentHashMap<String, String> copy = new ConcurrentHashMap<>();
         copy.putAll(entity.getUserSessionNotes());
         return copy;
     }
 
     @Override
     public void clearUserSessionNotes() {
-        entity.setUserSessionNotes(new HashMap<String, String>());
+        entity.setUserSessionNotes(new ConcurrentHashMap<>());
         update();
 
     }
@@ -248,7 +275,6 @@ public class ClientSessionAdapter implements ClientSessionModel {
     @Override
     public void addRequiredAction(UserModel.RequiredAction action) {
         addRequiredAction(action.name());
-
     }
 
     @Override
@@ -256,24 +282,22 @@ public class ClientSessionAdapter implements ClientSessionModel {
         removeRequiredAction(action.name());
     }
 
-    void update() {
-        provider.getTx().replace(cache, entity.getId(), entity);
-    }
     @Override
-    public Map<String, ExecutionStatus> getExecutionStatus() {
-        return entity.getAuthenticatorStatus();
+    public Map<String, AuthenticationSessionModel.ExecutionStatus> getExecutionStatus() {
+
+        return entity.getExecutionStatus();
     }
 
     @Override
-    public void setExecutionStatus(String authenticator, ExecutionStatus status) {
-        entity.getAuthenticatorStatus().put(authenticator, status);
+    public void setExecutionStatus(String authenticator, AuthenticationSessionModel.ExecutionStatus status) {
+        entity.getExecutionStatus().put(authenticator, status);
         update();
 
     }
 
     @Override
     public void clearExecutionStatus() {
-        entity.getAuthenticatorStatus().clear();
+        entity.getExecutionStatus().clear();
         update();
     }
 
@@ -286,7 +310,22 @@ public class ClientSessionAdapter implements ClientSessionModel {
         if (user == null) entity.setAuthUserId(null);
         else entity.setAuthUserId(user.getId());
         update();
-
     }
 
+    @Override
+    public void updateClient(ClientModel client) {
+        entity.setClientUuid(client.getId());
+        update();
+    }
+
+    @Override
+    public void restartSession(RealmModel realm, ClientModel client) {
+        String id = entity.getId();
+        entity = new AuthenticationSessionEntity();
+        entity.setId(id);
+        entity.setRealm(realm.getId());
+        entity.setClientUuid(client.getId());
+        entity.setTimestamp(Time.currentTime());
+        update();
+    }
 }

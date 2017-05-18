@@ -475,6 +475,30 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public int getActionTokenGeneratedByAdminLifespan() {
+        if (isUpdated()) return updated.getActionTokenGeneratedByAdminLifespan();
+        return cached.getActionTokenGeneratedByAdminLifespan();
+    }
+
+    @Override
+    public void setActionTokenGeneratedByAdminLifespan(int seconds) {
+        getDelegateForUpdate();
+        updated.setActionTokenGeneratedByAdminLifespan(seconds);
+    }
+
+    @Override
+    public int getActionTokenGeneratedByUserLifespan() {
+        if (isUpdated()) return updated.getActionTokenGeneratedByUserLifespan();
+        return cached.getActionTokenGeneratedByUserLifespan();
+    }
+
+    @Override
+    public void setActionTokenGeneratedByUserLifespan(int seconds) {
+        getDelegateForUpdate();
+        updated.setActionTokenGeneratedByUserLifespan(seconds);
+    }
+
+    @Override
     public List<RequiredCredentialModel> getRequiredCredentials() {
         if (isUpdated()) return updated.getRequiredCredentials();
         return cached.getRequiredCredentials();

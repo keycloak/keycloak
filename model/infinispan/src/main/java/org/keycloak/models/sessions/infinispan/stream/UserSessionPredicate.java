@@ -33,6 +33,8 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
 
     private String user;
 
+    private String client;
+
     private Integer expired;
 
     private Integer expiredRefresh;
@@ -50,6 +52,11 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
 
     public UserSessionPredicate user(String user) {
         this.user = user;
+        return this;
+    }
+
+    public UserSessionPredicate client(String clientUUID) {
+        this.client = clientUUID;
         return this;
     }
 
@@ -84,6 +91,10 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
         }
 
         if (user != null && !entity.getUser().equals(user)) {
+            return false;
+        }
+
+        if (client != null && (entity.getAuthenticatedClientSessions() == null || !entity.getAuthenticatedClientSessions().containsKey(client))) {
             return false;
         }
 

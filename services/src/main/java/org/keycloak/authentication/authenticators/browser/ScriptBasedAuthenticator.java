@@ -47,7 +47,7 @@ import java.util.Map;
  * <li>{@code realm} the {@link RealmModel}</li>
  * <li>{@code user} the current {@link UserModel}</li>
  * <li>{@code session} the active {@link KeycloakSession}</li>
- * <li>{@code clientSession} the current {@link org.keycloak.models.ClientSessionModel}</li>
+ * <li>{@code clientSession} the current {@link org.keycloak.sessions.AuthenticationSessionModel}</li>
  * <li>{@code httpRequest} the current {@link org.jboss.resteasy.spi.HttpRequest}</li>
  * <li>{@code LOG} a {@link org.jboss.logging.Logger} scoped to {@link ScriptBasedAuthenticator}/li>
  * </ol>
@@ -160,7 +160,7 @@ public class ScriptBasedAuthenticator implements Authenticator {
             bindings.put("user", context.getUser());
             bindings.put("session", context.getSession());
             bindings.put("httpRequest", context.getHttpRequest());
-            bindings.put("clientSession", context.getClientSession());
+            bindings.put("clientSession", context.getAuthenticationSession());
             bindings.put("LOG", LOGGER);
         });
     }

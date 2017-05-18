@@ -22,7 +22,7 @@ Adding this system property when running any test:
     -Darquillian.debug=true
     
 will add lots of info to the log. Especially about:
-* The test method names, which will be executed for each test class, will be written at the proper running order to the log at the beginning of each test (done by KcArquillian class). 
+* The test method names, which will be executed for each test class, will be written at the proper running order to the log at the beginning of each test class(done by KcArquillian class). 
 * All the triggered arquillian lifecycle events and executed observers listening to those events will be written to the log
 * The bootstrap of WebDriver will be unlimited. By default there is just 1 minute timeout and test is cancelled when WebDriver is not bootstrapped within it.
 
@@ -257,20 +257,20 @@ mvn -f testsuite/integration-arquillian/tests/other/console/pom.xml \
 ## Welcome Page tests
 The Welcome Page tests need to be run on WildFly/EAP and with `-Dskip.add.user.json` switch. So that they are disabled by default and are meant to be run separately.
 
-```
-# Prepare servers
-mvn -f testsuite/integration-arquillian/servers/pom.xml \
-    clean install \
-    -Pauth-server-wildfly \
-    -Papp-server-wildfly
 
-# Run tests
-mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
-    clean test \
-    -Dtest=WelcomePageTest \
-    -Dskip.add.user.json \
-    -Pauth-server-wildfly
-```
+    # Prepare servers
+    mvn -f testsuite/integration-arquillian/servers/pom.xml \
+        clean install \
+        -Pauth-server-wildfly \
+        -Papp-server-wildfly
+
+    # Run tests
+    mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
+        clean test \
+        -Dtest=WelcomePageTest \
+        -Dskip.add.user.json \
+        -Pauth-server-wildfly
+
 
 ## Social Login
 The social login tests require setup of all social networks including an example social user. These details can't be 
@@ -341,4 +341,80 @@ To run the X.509 client certificate authentication tests:
 	  -Dauth.server.ssl.required \
 	  -Dbrowser=phantomjs \
 	  "-Dtest=*.x509.*"
+	  
+## Cluster tests
+
+Cluster tests use 2 backend servers (Keycloak on Wildfly/EAP) and 1 frontend loadbalancer server node. Invalidation tests don't use loadbalancer. 
+The browser usually communicates directly with the backend node1 and after doing some change here (eg. updating user), it verifies that the change is visible on node2 and user is updated here as well.
+
+Failover tests use loadbalancer and they require the setup with the distributed infinispan caches switched to have 2 owners (default value is 1 owner). Otherwise failover won't reliably work. 
+
+
+The setup includes:
+
+*  a `mod_cluster` load balancer on Wildfly
+*  two clustered nodes of Keycloak server on Wildfly/EAP
+
+Clustering tests require MULTICAST to be enabled on machine's `loopback` network interface.
+This can be done by running the following commands under root privileges:
+
+    route add -net 224.0.0.0 netmask 240.0.0.0 dev lo
+    ifconfig lo multicast
+
+Then after build the sources, distribution and setup of clean shared database (replace command according your DB), you can use this command to setup servers:
+
+    export DB_HOST=localhost
+    mvn -f testsuite/integration-arquillian/servers/pom.xml \
+    -Pauth-server-wildfly,auth-server-cluster,jpa \
+    -Dsession.cache.owners=2 \
+    -Djdbc.mvn.groupId=mysql \
+    -Djdbc.mvn.version=5.1.29 \
+    -Djdbc.mvn.artifactId=mysql-connector-java \
+    -Dkeycloak.connectionsJpa.url=jdbc:mysql://$DB_HOST/keycloak \
+    -Dkeycloak.connectionsJpa.user=keycloak \
+    -Dkeycloak.connectionsJpa.password=keycloak \
+    clean install
+    
+And then this to run the cluster tests:
+   
+    mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
+    -Pauth-server-wildfly,auth-server-cluster \
+    -Dsession.cache.owners=2 \
+    -Dbackends.console.output=true \
+    -Dauth.server.log.check=false \
+    -Dfrontend.console.output=true \
+    -Dtest=org.keycloak.testsuite.cluster.**.*Test clean install
+   
+	  
+### Cluster tests with embedded undertow
+
+#### Run cluster tests from IDE
+
+The test uses Undertow loadbalancer on `http://localhost:8180` and two embedded backend Undertow servers with Keycloak on `http://localhost:8181` and `http://localhost:8182` .
+You can use any cluster test (eg. AuthenticationSessionFailoverClusterTest) and run from IDE with those system properties (replace with your DB settings):
+
+    -Dauth.server.undertow=false -Dauth.server.undertow.cluster=true -Dauth.server.cluster=true 
+    -Dkeycloak.connectionsJpa.url=jdbc:mysql://localhost/keycloak -Dkeycloak.connectionsJpa.driver=com.mysql.jdbc.Driver 
+    -Dkeycloak.connectionsJpa.user=keycloak -Dkeycloak.connectionsJpa.password=keycloak -Dkeycloak.connectionsInfinispan.clustered=true -Dresources	 
+    -Dkeycloak.connectionsInfinispan.sessionsOwners=2 -Dsession.cache.owners=2    
+     
+Invalidation tests (subclass of `AbstractInvalidationClusterTest`) don't need last two properties.
+
+
+#### Run cluster environment from IDE
+
+This mode is useful for develop/manual tests of clustering features. You will need to manually run keycloak backend nodes and loadbalancer. 
+
+1) Run KeycloakServer server1 with:
+
+    -Dkeycloak.connectionsJpa.url=jdbc:mysql://localhost/keycloak -Dkeycloak.connectionsJpa.driver=com.mysql.jdbc.Driver 
+    -Dkeycloak.connectionsJpa.user=keycloak -Dkeycloak.connectionsJpa.password=keycloak -Dkeycloak.connectionsInfinispan.clustered=true 
+    -Dkeycloak.connectionsInfinispan.sessionsOwners=2 -Dresources
+
+and argument: `-p 8181`
+
+2) Run KeycloakServer server2 with same parameters but argument: `-p 8182`
+
+3) Run loadbalancer (class `SimpleUndertowLoadBalancer`) without arguments and system properties. Loadbalancer runs on port 8180, so you can access Keycloak on `http://localhost:8180/auth`     
+
 

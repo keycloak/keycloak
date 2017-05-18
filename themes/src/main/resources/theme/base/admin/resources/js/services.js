@@ -496,7 +496,8 @@ module.factory('UserCredentials', function($resource) {
 module.factory('UserExecuteActionsEmail', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/users/:userId/execute-actions-email', {
         realm : '@realm',
-        userId : '@userId'
+        userId : '@userId',
+        lifespan : '@lifespan',
     }, {
         update : {
             method : 'PUT'

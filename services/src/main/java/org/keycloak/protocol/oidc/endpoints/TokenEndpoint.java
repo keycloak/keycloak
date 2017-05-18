@@ -32,13 +32,12 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.UserSessionProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
@@ -48,10 +47,12 @@ import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.Cors;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
@@ -62,7 +63,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -175,6 +175,8 @@ public class TokenEndpoint {
         if (client.isBearerOnly()) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_CLIENT, "Bearer-only not allowed", Response.Status.BAD_REQUEST);
         }
+
+
     }
 
     private void checkGrantType() {
@@ -208,29 +210,35 @@ public class TokenEndpoint {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Missing parameter: " + OAuth2Constants.CODE, Response.Status.BAD_REQUEST);
         }
 
-        ClientSessionCode.ParseResult parseResult = ClientSessionCode.parseResult(code, session, realm);
-        if (parseResult.isClientSessionNotFound() || parseResult.isIllegalHash()) {
-            String[] parts = code.split("\\.");
-            if (parts.length == 2) {
-                event.detail(Details.CODE_ID, parts[1]);
-            }
+        String[] parts = code.split("\\.");
+        if (parts.length == 4) {
+            event.detail(Details.CODE_ID, parts[2]);
+        }
+
+        ClientSessionCode.ParseResult<AuthenticatedClientSessionModel> parseResult = ClientSessionCode.parseResult(code, session, realm, AuthenticatedClientSessionModel.class);
+        if (parseResult.isAuthSessionNotFound() || parseResult.isIllegalHash()) {
             event.error(Errors.INVALID_CODE);
-            if (parseResult.getClientSession() != null) {
-                session.sessions().removeClientSession(realm, parseResult.getClientSession());
+
+            // Attempt to use same code twice should invalidate existing clientSession
+            AuthenticatedClientSessionModel clientSession = parseResult.getClientSession();
+            if (clientSession != null) {
+                clientSession.setUserSession(null);
             }
+
             throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Code not valid", Response.Status.BAD_REQUEST);
         }
 
-        ClientSessionModel clientSession = parseResult.getClientSession();
-        event.detail(Details.CODE_ID, clientSession.getId());
+        AuthenticatedClientSessionModel clientSession = parseResult.getClientSession();
 
-        if (!parseResult.getCode().isValid(ClientSessionModel.Action.CODE_TO_TOKEN.name(), ClientSessionCode.ActionType.CLIENT)) {
+        if (!parseResult.getCode().isValid(AuthenticatedClientSessionModel.Action.CODE_TO_TOKEN.name(), ClientSessionCode.ActionType.CLIENT)) {
             event.error(Errors.INVALID_CODE);
             throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Code is expired", Response.Status.BAD_REQUEST);
         }
 
+        // TODO: This shouldn't be needed to write into the AuthenticatedClientSessionModel itself
         parseResult.getCode().setAction(null);
 
+        // TODO: Maybe rather create userSession even at this stage?
         UserSessionModel userSession = clientSession.getUserSession();
 
         if (userSession == null) {
@@ -355,7 +363,8 @@ public class TokenEndpoint {
 
             if (!result.isOfflineToken()) {
                 UserSessionModel userSession = session.sessions().getUserSession(realm, res.getSessionState());
-                updateClientSessions(userSession.getClientSessions());
+                AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(client.getId());
+                updateClientSession(clientSession);
                 updateUserSessionFromClientAuth(userSession);
             }
 
@@ -369,7 +378,7 @@ public class TokenEndpoint {
         return Cors.add(request, Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).auth().allowedOrigins(uriInfo, client).allowedMethods("POST").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
     }
 
-    private void updateClientSession(ClientSessionModel clientSession) {
+    private void updateClientSession(AuthenticatedClientSessionModel clientSession) {
 
         if(clientSession == null) {
             ServicesLogger.LOGGER.clientSessionNull();
@@ -385,26 +394,6 @@ public class TokenEndpoint {
             clientSession.setNote(AdapterConstants.CLIENT_SESSION_STATE, adapterSessionId);
             event.detail(AdapterConstants.CLIENT_SESSION_HOST, adapterSessionHost);
             clientSession.setNote(AdapterConstants.CLIENT_SESSION_HOST, adapterSessionHost);
-        }
-    }
-
-    private void updateClientSessions(List<ClientSessionModel> clientSessions) {
-        if(clientSessions == null) {
-            ServicesLogger.LOGGER.clientSessionNull();
-            return;
-        }
-        for (ClientSessionModel clientSession : clientSessions) {
-            if(clientSession == null) {
-                ServicesLogger.LOGGER.clientSessionNull();
-                continue;
-            }
-            if(clientSession.getClient() == null) {
-                ServicesLogger.LOGGER.clientModelNull();
-                continue;
-            }
-            if(client.getId().equals(clientSession.getClient().getId())) {
-                updateClientSession(clientSession);
-            }
         }
     }
 
@@ -428,17 +417,16 @@ public class TokenEndpoint {
         }
         String scope = formParams.getFirst(OAuth2Constants.SCOPE);
 
-        UserSessionProvider sessions = session.sessions();
-        ClientSessionModel clientSession = sessions.createClientSession(realm, client);
-        clientSession.setAuthMethod(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
-        clientSession.setNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
-        clientSession.setNote(OIDCLoginProtocol.SCOPE_PARAM, scope);
+        AuthenticationSessionModel authSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, client, false);
+        authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        authSession.setAction(AuthenticatedClientSessionModel.Action.AUTHENTICATE.name());
+        authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
+        authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, scope);
 
         AuthenticationFlowModel flow = realm.getDirectGrantFlow();
         String flowId = flow.getId();
         AuthenticationProcessor processor = new AuthenticationProcessor();
-        processor.setClientSession(clientSession)
+        processor.setAuthenticationSession(authSession)
                 .setFlowId(flowId)
                 .setConnection(clientConnection)
                 .setEventBuilder(event)
@@ -449,13 +437,16 @@ public class TokenEndpoint {
         Response challenge = processor.authenticateOnly();
         if (challenge != null) return challenge;
         processor.evaluateRequiredActionTriggers();
-        UserModel user = clientSession.getAuthenticatedUser();
+        UserModel user = authSession.getAuthenticatedUser();
         if (user.getRequiredActions() != null && user.getRequiredActions().size() > 0) {
             event.error(Errors.RESOLVE_REQUIRED_ACTIONS);
             throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Account is not fully set up", Response.Status.BAD_REQUEST);
 
         }
-        processor.attachSession();
+
+        AuthenticationManager.setRolesAndMappersInSession(authSession);
+
+        AuthenticatedClientSessionModel clientSession = processor.attachSession();
         UserSessionModel userSession = processor.getUserSession();
         updateUserSessionFromClientAuth(userSession);
 
@@ -505,17 +496,17 @@ public class TokenEndpoint {
 
         String scope = formParams.getFirst(OAuth2Constants.SCOPE);
 
-        UserSessionProvider sessions = session.sessions();
+        AuthenticationSessionModel authSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, client, false);
+        authSession.setAuthenticatedUser(clientUser);
+        authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
+        authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, scope);
 
-        ClientSessionModel clientSession = sessions.createClientSession(realm, client);
-        clientSession.setAuthMethod(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        clientSession.setNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
-        clientSession.setNote(OIDCLoginProtocol.SCOPE_PARAM, scope);
-
-        UserSessionModel userSession = sessions.createUserSession(realm, clientUser, clientUsername, clientConnection.getRemoteAddr(), ServiceAccountConstants.CLIENT_AUTH, false, null, null);
+        UserSessionModel userSession = session.sessions().createUserSession(authSession.getId(), realm, clientUser, clientUsername, clientConnection.getRemoteAddr(), ServiceAccountConstants.CLIENT_AUTH, false, null, null);
         event.session(userSession);
 
-        TokenManager.attachClientSession(userSession, clientSession);
+        AuthenticationManager.setRolesAndMappersInSession(authSession);
+        AuthenticatedClientSessionModel clientSession = TokenManager.attachAuthenticationSession(session, userSession, authSession);
 
         // Notes about client details
         userSession.setNote(ServiceAccountConstants.CLIENT_ID, client.getClientId());

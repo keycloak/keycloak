@@ -33,7 +33,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.resources.AttributeFormDataProcessor;
 import org.keycloak.services.validation.Validation;
 
@@ -74,7 +73,7 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
     }
 
     protected boolean requiresUpdateProfilePage(AuthenticationFlowContext context, SerializedBrokeredIdentityContext userCtx, BrokeredIdentityContext brokerContext) {
-        String enforceUpdateProfile = context.getClientSession().getNote(ENFORCE_UPDATE_PROFILE);
+        String enforceUpdateProfile = context.getAuthenticationSession().getAuthNote(ENFORCE_UPDATE_PROFILE);
         if (Boolean.parseBoolean(enforceUpdateProfile)) {
             return true;
         }
@@ -123,12 +122,12 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
             }
 
             userCtx.setEmail(email);
-            context.getClientSession().setNote(UPDATE_PROFILE_EMAIL_CHANGED, "true");
+            context.getAuthenticationSession().setAuthNote(UPDATE_PROFILE_EMAIL_CHANGED, "true");
         }
 
         AttributeFormDataProcessor.process(formData, realm, userCtx);
 
-        userCtx.saveToClientSession(context.getClientSession(), BROKERED_CONTEXT_NOTE);
+        userCtx.saveToAuthenticationSession(context.getAuthenticationSession(), BROKERED_CONTEXT_NOTE);
 
         logger.debugf("Profile updated successfully after first authentication with identity provider '%s' for broker user '%s'.", brokerContext.getIdpConfig().getAlias(), userCtx.getUsername());
 

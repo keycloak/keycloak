@@ -23,8 +23,6 @@ import org.keycloak.authentication.requiredactions.util.UpdateProfileContext;
 import org.keycloak.authentication.requiredactions.util.UserUpdateProfileContext;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.common.util.ObjectUtil;
-import org.keycloak.email.EmailException;
-import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.forms.login.LoginFormsPages;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.forms.login.freemarker.model.ClientBean;
@@ -38,18 +36,11 @@ import org.keycloak.forms.login.freemarker.model.RegisterBean;
 import org.keycloak.forms.login.freemarker.model.RequiredActionUrlFormatterMethod;
 import org.keycloak.forms.login.freemarker.model.TotpBean;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
-import org.keycloak.models.Constants;
-import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
+import org.keycloak.models.*;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.Urls;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.theme.BrowserSecurityHeaderSetup;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.FreeMarkerUtil;
@@ -70,14 +61,7 @@ import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.net.URI;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -106,7 +90,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     private UserModel user;
 
-    private ClientSessionModel clientSession;
     private final Map<String, Object> attributes = new HashMap<String, Object>();
 
     public FreeMarkerLoginFormsProvider(KeycloakSession session, FreeMarkerUtil freeMarker) {
@@ -123,7 +106,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     public Response createResponse(UserModel.RequiredAction action) {
         RealmModel realm = session.getContext().getRealm();
-        UriInfo uriInfo = session.getContext().getUri();
 
         String actionMessage;
         LoginFormsPages page;
@@ -145,20 +127,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 page = LoginFormsPages.LOGIN_UPDATE_PASSWORD;
                 break;
             case VERIFY_EMAIL:
-                try {
-                    UriBuilder builder = Urls.loginActionEmailVerificationBuilder(uriInfo.getBaseUri());
-                    builder.queryParam(OAuth2Constants.CODE, accessCode);
-                    builder.queryParam(Constants.KEY, clientSession.getNote(Constants.VERIFY_EMAIL_KEY));
-
-                    String link = builder.build(realm.getName()).toString();
-                    long expiration = TimeUnit.SECONDS.toMinutes(realm.getAccessCodeLifespanUserAction());
-
-                    session.getProvider(EmailTemplateProvider.class).setRealm(realm).setUser(user).sendVerifyEmail(link, expiration);
-                } catch (EmailException e) {
-                    logger.error("Failed to send verification email", e);
-                    return setError(Messages.EMAIL_SENT_ERROR).createErrorPage();
-                }
-
                 actionMessage = Messages.VERIFY_EMAIL;
                 page = LoginFormsPages.LOGIN_VERIFY_EMAIL;
                 break;
@@ -182,16 +150,23 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
         String requestURI = uriInfo.getBaseUri().getPath();
         UriBuilder uriBuilder = UriBuilder.fromUri(requestURI);
+        if (page == LoginFormsPages.OAUTH_GRANT) {
+            // for some reason Resteasy 2.3.7 doesn't like query params and form params with the same name and will null out the code form param
+            uriBuilder.replaceQuery(null);
+        }
+
+        URI baseUri = uriBuilder.build();
+
+        if (accessCode != null) {
+            uriBuilder.queryParam(OAuth2Constants.CODE, accessCode);
+        }
+        URI baseUriWithCode = uriBuilder.build();
 
         for (String k : queryParameterMap.keySet()) {
 
             Object[] objects = queryParameterMap.get(k).toArray();
             if (objects.length == 1 && objects[0] == null) continue; //
             uriBuilder.replaceQueryParam(k, objects);
-        }
-
-        if (accessCode != null) {
-            uriBuilder.replaceQueryParam(OAuth2Constants.CODE, accessCode);
         }
 
         ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
@@ -235,11 +210,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         }
         attributes.put("messagesPerField", messagesPerField);
 
-        if (page == LoginFormsPages.OAUTH_GRANT) {
-            // for some reason Resteasy 2.3.7 doesn't like query params and form params with the same name and will null out the code form param
-            uriBuilder.replaceQuery(null);
-        }
-        URI baseUri = uriBuilder.build();
         attributes.put("requiredActionUrl", new RequiredActionUrlFormatterMethod(realm, baseUri));
         if (realm != null && user != null && session != null) {
             attributes.put("authenticatorConfigured", new AuthenticatorConfiguredMethod(realm, user, session));
@@ -250,7 +220,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
             List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
             identityProviders = LoginFormsUtil.filterIdentityProviders(identityProviders, session, realm, attributes, formData);
-            attributes.put("social", new IdentityProviderBean(realm, session, identityProviders, baseUri, uriInfo));
+            attributes.put("social", new IdentityProviderBean(realm, session, identityProviders, baseUriWithCode));
 
             attributes.put("url", new UrlBean(realm, theme, baseUri, this.actionUri));
 
@@ -298,7 +268,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 attributes.put("register", new RegisterBean(formData));
                 break;
             case OAUTH_GRANT:
-                attributes.put("oauth", new OAuthGrantBean(accessCode, clientSession, client, realmRolesRequested, resourceRolesRequested, protocolMappersRequested, this.accessRequestMessage));
+                attributes.put("oauth", new OAuthGrantBean(accessCode, client, realmRolesRequested, resourceRolesRequested, protocolMappersRequested, this.accessRequestMessage));
                 attributes.put("advancedMsg", new AdvancedMessageFormatterMethod(locale, messagesBundle));
                 break;
             case CODE:
@@ -342,10 +312,13 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             if (objects.length == 1 && objects[0] == null) continue; //
             uriBuilder.replaceQueryParam(k, objects);
         }
-        if (accessCode != null) {
-            uriBuilder.replaceQueryParam(OAuth2Constants.CODE, accessCode);
-        }
+
         URI baseUri = uriBuilder.build();
+
+        if (accessCode != null) {
+            uriBuilder.queryParam(OAuth2Constants.CODE, accessCode);
+        }
+        URI baseUriWithCode = uriBuilder.build();
 
         ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
         Theme theme;
@@ -398,7 +371,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
             List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
             identityProviders = LoginFormsUtil.filterIdentityProviders(identityProviders, session, realm, attributes, formData);
-            attributes.put("social", new IdentityProviderBean(realm, session, identityProviders, baseUri, uriInfo));
+            attributes.put("social", new IdentityProviderBean(realm, session, identityProviders, baseUriWithCode));
 
             attributes.put("url", new UrlBean(realm, theme, baseUri, this.actionUri));
             attributes.put("requiredActionUrl", new RequiredActionUrlFormatterMethod(realm, baseUri));
@@ -467,6 +440,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     }
 
     @Override
+    public Response createLoginExpiredPage() {
+        return createResponse(LoginFormsPages.LOGIN_PAGE_EXPIRED);
+    }
+
+    @Override
     public Response createIdpLinkEmailPage() {
         BrokeredIdentityContext brokerContext = (BrokeredIdentityContext) this.attributes.get(IDENTITY_PROVIDER_BROKER_CONTEXT);
         String idpAlias = brokerContext.getIdpConfig().getAlias();
@@ -485,8 +463,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     }
 
     @Override
-    public Response createOAuthGrant(ClientSessionModel clientSession) {
-        this.clientSession = clientSession;
+    public Response createOAuthGrant() {
         return createResponse(LoginFormsPages.OAUTH_GRANT);
     }
 
@@ -589,12 +566,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     @Override
     public LoginFormsProvider setClientSessionCode(String accessCode) {
         this.accessCode = accessCode;
-        return this;
-    }
-
-    @Override
-    public LoginFormsProvider setClientSession(ClientSessionModel clientSession) {
-        this.clientSession = clientSession;
         return this;
     }
 

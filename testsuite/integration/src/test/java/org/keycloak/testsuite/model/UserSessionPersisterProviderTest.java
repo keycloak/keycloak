@@ -23,13 +23,14 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.common.util.Time;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.session.UserSessionPersisterProvider;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
@@ -45,6 +46,7 @@ import java.util.Set;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class UserSessionPersisterProviderTest {
+
 
     @ClassRule
     public static KeycloakRule kc = new KeycloakRule();
@@ -151,7 +153,7 @@ public class UserSessionPersisterProviderTest {
         int clientSessionsCount = 0;
         for (UserSessionModel loadedSession : loadedSessions) {
             Assert.assertEquals(expectedTime, loadedSession.getLastSessionRefresh());
-            for (ClientSessionModel clientSession : loadedSession.getClientSessions()) {
+            for (AuthenticatedClientSessionModel clientSession : loadedSession.getAuthenticatedClientSessions().values()) {
                 Assert.assertEquals(expectedTime, clientSession.getTimestamp());
                 clientSessionsCount++;
             }
@@ -183,11 +185,11 @@ public class UserSessionPersisterProviderTest {
         try {
             persistedSession.setLastSessionRefresh(Time.currentTime());
             persistedSession.setNote("foo", "bar");
-            persistedSession.setState(UserSessionModel.State.LOGGING_IN);
+            persistedSession.setState(UserSessionModel.State.LOGGED_IN);
             persister.updateUserSession(persistedSession, true);
 
             // create new clientSession
-            ClientSessionModel clientSession = createClientSession(realm.getClientByClientId("third-party"), session.sessions().getUserSession(realm, persistedSession.getId()),
+            AuthenticatedClientSessionModel clientSession = createClientSession(realm.getClientByClientId("third-party"), session.sessions().getUserSession(realm, persistedSession.getId()),
                     "http://redirect", "state", new HashSet<String>(), new HashSet<String>());
             persister.createClientSession(clientSession, true);
 
@@ -198,10 +200,10 @@ public class UserSessionPersisterProviderTest {
             persistedSession = loadedSessions.get(0);
             UserSessionProviderTest.assertSession(persistedSession, session.users().getUserByUsername("user1", realm), "127.0.0.2", started, started+10, "test-app", "third-party");
             Assert.assertEquals("bar", persistedSession.getNote("foo"));
-            Assert.assertEquals(UserSessionModel.State.LOGGING_IN, persistedSession.getState());
+            Assert.assertEquals(UserSessionModel.State.LOGGED_IN, persistedSession.getState());
 
             // Remove clientSession
-            persister.removeClientSession(clientSession.getId(), true);
+            persister.removeClientSession(userSession.getId(), realm.getClientByClientId("third-party").getId(), true);
 
             resetSession();
 
@@ -228,7 +230,7 @@ public class UserSessionPersisterProviderTest {
         fooRealm.addClient("foo-app");
         session.users().addUser(fooRealm, "user3");
 
-        UserSessionModel userSession = session.sessions().createUserSession(fooRealm, session.users().getUserByUsername("user3", fooRealm), "user3", "127.0.0.1", "form", true, null, null);
+        UserSessionModel userSession = session.sessions().createUserSession(KeycloakModelUtils.generateId(), fooRealm, session.users().getUserByUsername("user3", fooRealm), "user3", "127.0.0.1", "form", true, null, null);
         createClientSession(fooRealm.getClientByClientId("foo-app"), userSession, "http://redirect", "state", new HashSet<String>(), new HashSet<String>());
 
         resetSession();
@@ -262,7 +264,7 @@ public class UserSessionPersisterProviderTest {
         fooRealm.addClient("bar-app");
         session.users().addUser(fooRealm, "user3");
 
-        UserSessionModel userSession = session.sessions().createUserSession(fooRealm, session.users().getUserByUsername("user3", fooRealm), "user3", "127.0.0.1", "form", true, null, null);
+        UserSessionModel userSession = session.sessions().createUserSession(KeycloakModelUtils.generateId(), fooRealm, session.users().getUserByUsername("user3", fooRealm), "user3", "127.0.0.1", "form", true, null, null);
         createClientSession(fooRealm.getClientByClientId("foo-app"), userSession, "http://redirect", "state", new HashSet<String>(), new HashSet<String>());
         createClientSession(fooRealm.getClientByClientId("bar-app"), userSession, "http://redirect", "state", new HashSet<String>(), new HashSet<String>());
 
@@ -358,8 +360,8 @@ public class UserSessionPersisterProviderTest {
     }
 
 
-    private ClientSessionModel createClientSession(ClientModel client, UserSessionModel userSession, String redirect, String state, Set<String> roles, Set<String> protocolMappers) {
-        ClientSessionModel clientSession = session.sessions().createClientSession(realm, client);
+    private AuthenticatedClientSessionModel createClientSession(ClientModel client, UserSessionModel userSession, String redirect, String state, Set<String> roles, Set<String> protocolMappers) {
+        AuthenticatedClientSessionModel clientSession = session.sessions().createClientSession(realm, client, userSession);
         if (userSession != null) clientSession.setUserSession(userSession);
         clientSession.setRedirectUri(redirect);
         if (state != null) clientSession.setNote(OIDCLoginProtocol.STATE_PARAM, state);
@@ -370,7 +372,7 @@ public class UserSessionPersisterProviderTest {
 
     private UserSessionModel[] createSessions() {
         UserSessionModel[] sessions = new UserSessionModel[3];
-        sessions[0] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.1", "form", true, null, null);
+        sessions[0] = session.sessions().createUserSession(KeycloakModelUtils.generateId(), realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.1", "form", true, null, null);
 
         Set<String> roles = new HashSet<String>();
         roles.add("one");
@@ -383,10 +385,10 @@ public class UserSessionPersisterProviderTest {
         createClientSession(realm.getClientByClientId("test-app"), sessions[0], "http://redirect", "state", roles, protocolMappers);
         createClientSession(realm.getClientByClientId("third-party"), sessions[0], "http://redirect", "state", new HashSet<String>(), new HashSet<String>());
 
-        sessions[1] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.2", "form", true, null, null);
+        sessions[1] = session.sessions().createUserSession(KeycloakModelUtils.generateId(), realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.2", "form", true, null, null);
         createClientSession(realm.getClientByClientId("test-app"), sessions[1], "http://redirect", "state", new HashSet<String>(), new HashSet<String>());
 
-        sessions[2] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user2", realm), "user2", "127.0.0.3", "form", true, null, null);
+        sessions[2] = session.sessions().createUserSession(KeycloakModelUtils.generateId(), realm, session.users().getUserByUsername("user2", realm), "user2", "127.0.0.3", "form", true, null, null);
         createClientSession(realm.getClientByClientId("test-app"), sessions[2], "http://redirect", "state", new HashSet<String>(), new HashSet<String>());
 
         return sessions;
@@ -394,7 +396,7 @@ public class UserSessionPersisterProviderTest {
 
     private void persistUserSession(UserSessionModel userSession, boolean offline) {
         persister.createUserSession(userSession, offline);
-        for (ClientSessionModel clientSession : userSession.getClientSessions()) {
+        for (AuthenticatedClientSessionModel clientSession : userSession.getAuthenticatedClientSessions().values()) {
             persister.createClientSession(clientSession, offline);
         }
     }

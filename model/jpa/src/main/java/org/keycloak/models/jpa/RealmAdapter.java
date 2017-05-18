@@ -512,6 +512,26 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         em.flush();
     }
 
+    @Override
+    public int getActionTokenGeneratedByAdminLifespan() {
+        return getAttribute(RealmAttributes.ACTION_TOKEN_GENERATED_BY_ADMIN_LIFESPAN, 12 * 60 * 60);
+    }
+
+    @Override
+    public void setActionTokenGeneratedByAdminLifespan(int actionTokenGeneratedByAdminLifespan) {
+        setAttribute(RealmAttributes.ACTION_TOKEN_GENERATED_BY_ADMIN_LIFESPAN, actionTokenGeneratedByAdminLifespan);
+    }
+
+    @Override
+    public int getActionTokenGeneratedByUserLifespan() {
+        return getAttribute(RealmAttributes.ACTION_TOKEN_GENERATED_BY_USER_LIFESPAN, getAccessCodeLifespanUserAction());
+    }
+
+    @Override
+    public void setActionTokenGeneratedByUserLifespan(int actionTokenGeneratedByUserLifespan) {
+        setAttribute(RealmAttributes.ACTION_TOKEN_GENERATED_BY_USER_LIFESPAN, actionTokenGeneratedByUserLifespan);
+    }
+
     protected RequiredCredentialModel initRequiredCredentialModel(String type) {
         RequiredCredentialModel model = RequiredCredentialModel.BUILT_IN.get(type);
         if (model == null) {

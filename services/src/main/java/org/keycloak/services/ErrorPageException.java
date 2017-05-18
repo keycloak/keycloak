@@ -37,6 +37,8 @@ public class ErrorPageException extends WebApplicationException {
         this.parameters = parameters;
     }
 
+
+
     @Override
     public Response getResponse() {
         return ErrorPage.error(session, errorMessage, parameters);

@@ -24,13 +24,13 @@ import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderDataMarshaller;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.reflections.Reflections;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.resources.IdentityBrokerService;
+import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
@@ -246,7 +246,7 @@ public class SerializedBrokeredIdentityContext implements UpdateProfileContext {
         }
     }
 
-    public BrokeredIdentityContext deserialize(KeycloakSession session, ClientSessionModel clientSession) {
+    public BrokeredIdentityContext deserialize(KeycloakSession session, AuthenticationSessionModel authSession) {
         BrokeredIdentityContext ctx = new BrokeredIdentityContext(getId());
 
         ctx.setUsername(getBrokerUsername());
@@ -258,7 +258,7 @@ public class SerializedBrokeredIdentityContext implements UpdateProfileContext {
         ctx.setBrokerUserId(getBrokerUserId());
         ctx.setToken(getToken());
 
-        RealmModel realm = clientSession.getRealm();
+        RealmModel realm = authSession.getRealm();
         IdentityProviderModel idpConfig = realm.getIdentityProviderByAlias(getIdentityProviderId());
         if (idpConfig == null) {
             throw new ModelException("Can't find identity provider with ID " + getIdentityProviderId() + " in realm " + realm.getName());
@@ -282,7 +282,7 @@ public class SerializedBrokeredIdentityContext implements UpdateProfileContext {
             }
         }
 
-        ctx.setClientSession(clientSession);
+        ctx.setAuthenticationSession(authSession);
         return ctx;
     }
 
@@ -299,7 +299,7 @@ public class SerializedBrokeredIdentityContext implements UpdateProfileContext {
         ctx.setToken(context.getToken());
         ctx.setIdentityProviderId(context.getIdpConfig().getAlias());
 
-        ctx.emailAsUsername = context.getClientSession().getRealm().isRegistrationEmailAsUsername();
+        ctx.emailAsUsername = context.getAuthenticationSession().getRealm().isRegistrationEmailAsUsername();
 
         IdentityProviderDataMarshaller serializer = context.getIdp().getMarshaller();
 
@@ -313,24 +313,24 @@ public class SerializedBrokeredIdentityContext implements UpdateProfileContext {
         return ctx;
     }
 
-    // Save this context as note to clientSession
-    public void saveToClientSession(ClientSessionModel clientSession, String noteKey) {
+    // Save this context as note to authSession
+    public void saveToAuthenticationSession(AuthenticationSessionModel authSession, String noteKey) {
         try {
             String asString = JsonSerialization.writeValueAsString(this);
-            clientSession.setNote(noteKey, asString);
+            authSession.setAuthNote(noteKey, asString);
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         }
     }
 
-    public static SerializedBrokeredIdentityContext readFromClientSession(ClientSessionModel clientSession, String noteKey) {
-        String asString = clientSession.getNote(noteKey);
+    public static SerializedBrokeredIdentityContext readFromAuthenticationSession(AuthenticationSessionModel authSession, String noteKey) {
+        String asString = authSession.getAuthNote(noteKey);
         if (asString == null) {
             return null;
         } else {
             try {
                 SerializedBrokeredIdentityContext serializedCtx = JsonSerialization.readValue(asString, SerializedBrokeredIdentityContext.class);
-                serializedCtx.emailAsUsername = clientSession.getRealm().isRegistrationEmailAsUsername();
+                serializedCtx.emailAsUsername = authSession.getRealm().isRegistrationEmailAsUsername();
                 return serializedCtx;
             } catch (IOException ioe) {
                 throw new RuntimeException(ioe);

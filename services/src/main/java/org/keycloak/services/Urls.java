@@ -178,8 +178,9 @@ public class Urls {
         return loginResetCredentialsBuilder(baseUri).build(realmName);
     }
 
-    public static UriBuilder executeActionsBuilder(URI baseUri) {
-        return loginActionsBase(baseUri).path(LoginActionsService.class, "executeActions");
+    public static UriBuilder actionTokenBuilder(URI baseUri, String tokenString) {
+        return loginActionsBase(baseUri).path(LoginActionsService.class, "executeActionToken")
+          .queryParam("key", tokenString);
     }
 
     public static UriBuilder loginResetCredentialsBuilder(URI baseUri) {
@@ -204,6 +205,11 @@ public class Urls {
 
     public static URI realmLoginPage(URI baseUri, String realmName) {
         return loginActionsBase(baseUri).path(LoginActionsService.class, "authenticate").build(realmName);
+    }
+
+    public static URI realmLoginRestartPage(URI baseUri, String realmId) {
+        return loginActionsBase(baseUri).path(LoginActionsService.class, "restartSession")
+                .build(realmId);
     }
 
     private static UriBuilder realmLogout(URI baseUri) {
