@@ -124,6 +124,11 @@
                 <artifactId>keycloak-spring-boot-starter</artifactId>
                 <version>3.2.0.CR1-SNAPSHOT</version>
             </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-authz-client</artifactId>
+                <version>3.2.0.CR1-SNAPSHOT</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
