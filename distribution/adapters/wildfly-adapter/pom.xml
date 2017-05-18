@@ -98,13 +98,6 @@
         </profile>
 
         <profile>
-            <id>wf11</id>
-            <properties>
-                <build-tools.version>${wildfly11.build-tools.version}</build-tools.version>
-            </properties>
-        </profile>
-
-        <profile>
             <id>product</id>
             <activation>
                 <property>
