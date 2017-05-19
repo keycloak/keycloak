@@ -53,6 +53,7 @@
         <module>integration</module>
         <module>tomcat8</module>
         <module>integration-arquillian</module>
+        <module>utils</module>
     </modules>
 
     <profiles>
