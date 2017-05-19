@@ -159,9 +159,6 @@ public class UserSessionAdapter implements UserSessionModel {
 
     @Override
     public void setNote(String name, String value) {
-        if (entity.getNotes() == null) {
-            entity.setNotes(new ConcurrentHashMap<>());
-        }
         if (value == null) {
             if (entity.getNotes().containsKey(name)) {
                 removeNote(name);
@@ -201,8 +198,8 @@ public class UserSessionAdapter implements UserSessionModel {
         provider.updateSessionEntity(entity, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId);
 
         entity.setState(null);
-        entity.setNotes(null);
-        entity.setAuthenticatedClientSessions(null);
+        entity.getNotes().clear();
+        entity.getAuthenticatedClientSessions().clear();
 
         update();
     }

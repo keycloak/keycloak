@@ -53,6 +53,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -518,7 +519,8 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         entity.setBrokerUserId(userSession.getBrokerUserId());
         entity.setIpAddress(userSession.getIpAddress());
         entity.setLoginUsername(userSession.getLoginUsername());
-        entity.setNotes(userSession.getNotes());
+        entity.setNotes(userSession.getNotes()== null ? new ConcurrentHashMap<>() : userSession.getNotes());
+        entity.setAuthenticatedClientSessions(new ConcurrentHashMap<>());
         entity.setRememberMe(userSession.isRememberMe());
         entity.setState(userSession.getState());
         entity.setUser(userSession.getUser().getId());
@@ -555,10 +557,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         entity.setTimestamp(clientSession.getTimestamp());
 
         Map<String, AuthenticatedClientSessionEntity> clientSessions = importedUserSession.getEntity().getAuthenticatedClientSessions();
-        if (clientSessions == null) {
-            clientSessions = new HashMap<>();
-            importedUserSession.getEntity().setAuthenticatedClientSessions(clientSessions);
-        }
 
         clientSessions.put(clientSession.getClient().getId(), entity);
 
