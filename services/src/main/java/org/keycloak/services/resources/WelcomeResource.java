@@ -24,7 +24,6 @@ import org.keycloak.common.util.MimeTypeUtil;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.util.CacheControlUtil;
@@ -36,6 +35,7 @@ import org.keycloak.theme.ThemeProvider;
 import org.keycloak.utils.MediaType;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
