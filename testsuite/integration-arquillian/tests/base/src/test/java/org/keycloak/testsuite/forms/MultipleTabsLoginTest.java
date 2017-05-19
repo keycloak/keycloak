@@ -27,6 +27,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -120,21 +121,15 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
     public void openMultipleTabs() {
         oauth.openLoginForm();
         loginPage.assertCurrent();
-        String actionUrl1 = getActionUrl(driver.getPageSource());
+        String actionUrl1 = ActionURIUtils.getActionURIFromPageSource(driver.getPageSource());
 
         oauth.openLoginForm();
         loginPage.assertCurrent();
-        String actionUrl2 = getActionUrl(driver.getPageSource());
+        String actionUrl2 = ActionURIUtils.getActionURIFromPageSource(driver.getPageSource());
 
         Assert.assertEquals(actionUrl1, actionUrl2);
 
     }
-
-
-    private String getActionUrl(String pageSource) {
-        return pageSource.split("action=\"")[1].split("\"")[0].replaceAll("&amp;", "&");
-    }
-
 
     @Test
     public void multipleTabsParallelLoginTest() {
@@ -173,7 +168,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         // Simulate to open login form in 2 tabs
         oauth.openLoginForm();
         loginPage.assertCurrent();
-        String actionUrl1 = getActionUrl(driver.getPageSource());
+        String actionUrl1 = ActionURIUtils.getActionURIFromPageSource(driver.getPageSource());
 
         // Click "register" in tab2
         loginPage.clickRegister();
@@ -204,7 +199,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         // Simulate to open login form in 2 tabs
         oauth.openLoginForm();
         loginPage.assertCurrent();
-        String actionUrl1 = getActionUrl(driver.getPageSource());
+        String actionUrl1 = ActionURIUtils.getActionURIFromPageSource(driver.getPageSource());
 
         loginPage.login("invalid", "invalid");
         loginPage.assertCurrent();
@@ -228,7 +223,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         // Open tab1
         oauth.openLoginForm();
         loginPage.assertCurrent();
-        String actionUrl1 = getActionUrl(driver.getPageSource());
+        String actionUrl1 = ActionURIUtils.getActionURIFromPageSource(driver.getPageSource());
 
         // Authenticate in tab2
         loginPage.login("login-test", "password");
@@ -253,8 +248,8 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         oauth.openLoginForm();
 
         // Manually remove execution from the URL and try to simulate the request just with "code" parameter
-        String actionUrl = driver.getPageSource().split("action=\"")[1].split("\"")[0].replaceAll("&amp;", "&");
-        actionUrl = actionUrl.replaceFirst("&execution=.*", "");
+        String actionUrl = ActionURIUtils.getActionURIFromPageSource(driver.getPageSource());
+        actionUrl = ActionURIUtils.removeQueryParamFromURI(actionUrl, Constants.EXECUTION);
 
         driver.navigate().to(actionUrl);
 
@@ -272,8 +267,8 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         updatePasswordPage.assertCurrent();
 
         // Manually remove execution from the URL and try to simulate the request just with "code" parameter
-        String actionUrl = driver.getPageSource().split("action=\"")[1].split("\"")[0].replaceAll("&amp;", "&");
-        actionUrl = actionUrl.replaceFirst("&execution=.*", "");
+        String actionUrl = ActionURIUtils.getActionURIFromPageSource(driver.getPageSource());
+        actionUrl = ActionURIUtils.removeQueryParamFromURI(actionUrl, Constants.EXECUTION);
 
         driver.navigate().to(actionUrl);
 

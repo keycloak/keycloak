@@ -36,6 +36,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.ActionURIUtils;
 
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -71,10 +72,7 @@ public class LoginStatusIframeEndpointTest extends AbstractKeycloakTest {
             String s = IOUtils.toString(response.getEntity().getContent());
             response.close();
 
-            Matcher matcher = Pattern.compile("action=\"([^\"]*)\"").matcher(s);
-            matcher.find();
-
-            String action = matcher.group(1);
+            String action = ActionURIUtils.getActionURIFromPageSource(s);
 
             HttpPost post = new HttpPost(action);
 

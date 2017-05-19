@@ -24,6 +24,8 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticatorConfigModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -247,9 +249,11 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
     }
 
     public URI getActionUrl(String executionId, String code) {
+        ClientModel client = processor.getAuthenticationSession().getClient();
         return LoginActionsService.registrationFormProcessor(processor.getUriInfo())
                 .queryParam(OAuth2Constants.CODE, code)
-                .queryParam("execution", executionId)
+                .queryParam(Constants.EXECUTION, executionId)
+                .queryParam(Constants.CLIENT_ID, client.getClientId())
                 .build(processor.getRealm().getName());
     }
 

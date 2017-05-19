@@ -24,6 +24,7 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.Base64Url;
@@ -37,6 +38,7 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
@@ -57,6 +59,7 @@ import javax.ws.rs.core.UriBuilder;
 import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -496,23 +499,11 @@ public abstract class AbstractClientInitiatedAccountLinkTest extends AbstractSer
 
             // ok, now scrape the code from page
             String pageSource = driver.getPageSource();
-            Pattern p = Pattern.compile("action=\"(.+)\"");
-            Matcher m = p.matcher(pageSource);
-            String action = null;
-            if (m.find()) {
-                action = m.group(1);
+            String action = ActionURIUtils.getActionURIFromPageSource(pageSource);
+            System.out.println("action uri: " + action);
 
-            }
-            System.out.println("action: " + action);
-
-            p = Pattern.compile("code=(.+)&");
-            m = p.matcher(action);
-            String code = null;
-            if (m.find()) {
-                code = m.group(1);
-
-            }
-            System.out.println("code: " + code);
+            Map<String, String> queryParams = ActionURIUtils.parseQueryParamsFromActionURI(action);
+            System.out.println("query params: " + queryParams);
 
             // now try and use the code to login to remote link-only idp
 
@@ -520,7 +511,8 @@ public abstract class AbstractClientInitiatedAccountLinkTest extends AbstractSer
 
             uri = UriBuilder.fromUri(AuthServerTestEnricher.getAuthServerContextRoot())
                     .path(uri)
-                    .queryParam("code", code)
+                    .queryParam(OAuth2Constants.CODE, queryParams.get(OAuth2Constants.CODE))
+                    .queryParam(Constants.CLIENT_ID, queryParams.get(Constants.CLIENT_ID))
                     .build().toString();
 
             System.out.println("hack uri: " + uri);

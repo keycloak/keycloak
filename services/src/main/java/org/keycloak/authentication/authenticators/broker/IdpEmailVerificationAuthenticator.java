@@ -132,7 +132,10 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
           brokerContext.getUsername(), brokerContext.getIdpConfig().getAlias()
         );
         UriBuilder builder = Urls.actionTokenBuilder(uriInfo.getBaseUri(), token.serialize(session, realm, uriInfo));
-        String link = builder.queryParam("execution", context.getExecution().getId()).build(realm.getName()).toString();
+        String link = builder
+                .queryParam(Constants.EXECUTION, context.getExecution().getId())
+                .queryParam(Constants.CLIENT_ID, context.getExecution().getId())
+                .build(realm.getName()).toString();
         long expirationInMinutes = TimeUnit.SECONDS.toMinutes(validityInSecs);
 
         try {

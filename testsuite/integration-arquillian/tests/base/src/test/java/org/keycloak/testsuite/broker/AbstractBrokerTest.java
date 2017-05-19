@@ -387,4 +387,22 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
         logoutFromRealm(bc.providerRealmName());
         logoutFromRealm(bc.consumerRealmName());
     }
+
+
+    // KEYCLOAK-4016
+    @Test
+    public void testExpiredCode() {
+        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+
+        log.debug("Expire all browser cookies");
+        driver.manage().deleteAllCookies();
+
+        log.debug("Clicking social " + bc.getIDPAlias());
+        accountLoginPage.clickSocial(bc.getIDPAlias());
+
+        waitForPage(driver, "sorry");
+        errorPage.assertCurrent();
+        String link = errorPage.getBackToApplicationLink();
+        Assert.assertTrue(link.endsWith("/auth/realms/consumer/account"));
+    }
 }

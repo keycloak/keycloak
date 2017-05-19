@@ -26,6 +26,7 @@ import javax.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.AuthorizationEndpointBase;
@@ -61,13 +62,15 @@ public class AuthenticationFlowURLHelper {
     }
 
 
-    public URI getLastExecutionUrl(String flowPath, String executionId) {
+    public URI getLastExecutionUrl(String flowPath, String executionId, String clientId) {
         UriBuilder uriBuilder = LoginActionsService.loginActionsBaseUrl(uriInfo)
                 .path(flowPath);
 
         if (executionId != null) {
-            uriBuilder.queryParam("execution", executionId);
+            uriBuilder.queryParam(Constants.EXECUTION, executionId);
         }
+        uriBuilder.queryParam(Constants.CLIENT_ID, clientId);
+
         return uriBuilder.build(realm.getName());
     }
 
@@ -84,7 +87,7 @@ public class AuthenticationFlowURLHelper {
             latestFlowPath = LoginActionsService.AUTHENTICATE_PATH;
         }
 
-        return getLastExecutionUrl(latestFlowPath, executionId);
+        return getLastExecutionUrl(latestFlowPath, executionId, authSession.getClient().getClientId());
     }
 
 }

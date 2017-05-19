@@ -17,7 +17,6 @@
 package org.keycloak.forms.login.freemarker;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.requiredactions.util.UpdateProfileContext;
 import org.keycloak.authentication.requiredactions.util.UserUpdateProfileContext;
@@ -40,7 +39,6 @@ import org.keycloak.models.*;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.Urls;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.theme.BrowserSecurityHeaderSetup;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.FreeMarkerUtil;
@@ -75,7 +73,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     private List<RoleModel> realmRolesRequested;
     private MultivaluedMap<String, RoleModel> resourceRolesRequested;
     private List<ProtocolMapperModel> protocolMappersRequested;
-    private MultivaluedMap<String, String> queryParams;
     private Map<String, String> httpResponseHeaders = new HashMap<String, String>();
     private String accessRequestMessage;
     private URI actionUri;
@@ -146,8 +143,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         ClientModel client = session.getContext().getClient();
         UriInfo uriInfo = session.getContext().getUri();
 
-        MultivaluedMap<String, String> queryParameterMap = queryParams != null ? queryParams : new MultivaluedMapImpl<String, String>();
-
         String requestURI = uriInfo.getBaseUri().getPath();
         UriBuilder uriBuilder = UriBuilder.fromUri(requestURI);
         if (page == LoginFormsPages.OAUTH_GRANT) {
@@ -155,19 +150,17 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             uriBuilder.replaceQuery(null);
         }
 
+        if (client != null) {
+            uriBuilder.queryParam(Constants.CLIENT_ID, client.getClientId());
+        }
+
         URI baseUri = uriBuilder.build();
 
         if (accessCode != null) {
             uriBuilder.queryParam(OAuth2Constants.CODE, accessCode);
         }
-        URI baseUriWithCode = uriBuilder.build();
 
-        for (String k : queryParameterMap.keySet()) {
-
-            Object[] objects = queryParameterMap.get(k).toArray();
-            if (objects.length == 1 && objects[0] == null) continue; //
-            uriBuilder.replaceQueryParam(k, objects);
-        }
+        URI baseUriWithCodeAndClientId = uriBuilder.build();
 
         ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
         Theme theme;
@@ -220,7 +213,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
             List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
             identityProviders = LoginFormsUtil.filterIdentityProviders(identityProviders, session, realm, attributes, formData);
-            attributes.put("social", new IdentityProviderBean(realm, session, identityProviders, baseUriWithCode));
+            attributes.put("social", new IdentityProviderBean(realm, session, identityProviders, baseUriWithCodeAndClientId));
 
             attributes.put("url", new UrlBean(realm, theme, baseUri, this.actionUri));
 
@@ -301,16 +294,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         ClientModel client = session.getContext().getClient();
         UriInfo uriInfo = session.getContext().getUri();
 
-        MultivaluedMap<String, String> queryParameterMap = queryParams != null ? queryParams : new MultivaluedMapImpl<String, String>();
-
         String requestURI = uriInfo.getBaseUri().getPath();
         UriBuilder uriBuilder = UriBuilder.fromUri(requestURI);
 
-        for (String k : queryParameterMap.keySet()) {
-
-            Object[] objects = queryParameterMap.get(k).toArray();
-            if (objects.length == 1 && objects[0] == null) continue; //
-            uriBuilder.replaceQueryParam(k, objects);
+        if (client != null) {
+            uriBuilder.queryParam(Constants.CLIENT_ID, client.getClientId());
         }
 
         URI baseUri = uriBuilder.build();
@@ -318,6 +306,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         if (accessCode != null) {
             uriBuilder.queryParam(OAuth2Constants.CODE, accessCode);
         }
+
         URI baseUriWithCode = uriBuilder.build();
 
         ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
