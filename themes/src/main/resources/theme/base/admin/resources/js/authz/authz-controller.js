@@ -1254,17 +1254,19 @@ module.controller('ResourceServerPolicyScopeDetailCtrl', function($scope, $route
                 client : client.id,
                 id : policy.id
             }, function(policies) {
-                $scope.selectedPolicies = [];
-                for (i = 0; i < policies.length; i++) {
-                    policies[i].text = policies[i].name;
-                    $scope.selectedPolicies.push(policies[i]);
-                }
-                var copy = angular.copy($scope.selectedPolicies);
-                $scope.$watch('selectedPolicies', function() {
-                    if (!angular.equals($scope.selectedPolicies, copy)) {
-                        $scope.changed = true;
+                if (policies.length > 0) {
+                    $scope.selectedPolicies = [];
+                    for (i = 0; i < policies.length; i++) {
+                        policies[i].text = policies[i].name;
+                        $scope.selectedPolicies.push(policies[i]);
                     }
-                }, true);
+                    var copy = angular.copy($scope.selectedPolicies);
+                    $scope.$watch('selectedPolicies', function() {
+                        if (!angular.equals($scope.selectedPolicies, copy)) {
+                            $scope.changed = true;
+                        }
+                    }, true);
+                }
             });
         },
 
