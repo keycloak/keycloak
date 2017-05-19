@@ -89,7 +89,7 @@
             <directory>src/main</directory>
             <outputDirectory></outputDirectory>
             <includes>
-                <include>README.txt</include>
+                <include>${readmeInclude}</include>
             </includes>
             <filtered>true</filtered>
         </fileSet>

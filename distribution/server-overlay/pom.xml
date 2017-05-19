@@ -43,6 +43,7 @@
     </dependencies>
 
     <build>
+        <finalName>keycloak-overlay-${project.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -183,10 +184,8 @@
             <properties>
                 <build-tools.version>${wildfly.build-tools.version}</build-tools.version>
                 <assemblyFile>assembly.xml</assemblyFile>
+                <readmeInclude>README.txt</readmeInclude>
             </properties>
-            <build>
-                <finalName>keycloak-overlay-${project.version}</finalName>
-            </build>
         </profile>
 
         <profile>
@@ -200,6 +199,7 @@
                 <build-tools.version>${eap.build-tools.version}</build-tools.version>
                 <assemblyFile>assembly.xml</assemblyFile>
                 <profileExcludes>%regex[(providers.*)|(docs/contrib.*)|(docs/examples.*)|(docs/schema.*)]</profileExcludes>
+                <readmeInclude></readmeInclude>
             </properties>
             <dependencies>
                 <dependency>
@@ -208,9 +208,6 @@
                     <type>zip</type>
                 </dependency>
             </dependencies>
-            <build>
-                <finalName>${product.name}-overlay-${product.filename.version}</finalName>
-            </build>
         </profile>
     </profiles>
 
