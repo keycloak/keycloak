@@ -69,10 +69,6 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
             }
         } else {
             this.userSession = (UserSessionAdapter) userSession;
-
-            if (sessionEntity.getAuthenticatedClientSessions() == null) {
-                sessionEntity.setAuthenticatedClientSessions(new HashMap<>());
-            }
             sessionEntity.getAuthenticatedClientSessions().put(clientUUID, entity);
             update();
         }

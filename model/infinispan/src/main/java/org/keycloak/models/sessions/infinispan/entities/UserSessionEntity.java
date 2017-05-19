@@ -50,7 +50,7 @@ public class UserSessionEntity extends SessionEntity {
 
     private Map<String, String> notes = new ConcurrentHashMap<>();
 
-    private Map<String, AuthenticatedClientSessionEntity> authenticatedClientSessions;
+    private Map<String, AuthenticatedClientSessionEntity> authenticatedClientSessions  = new ConcurrentHashMap<>();
 
     public String getUser() {
         return user;
