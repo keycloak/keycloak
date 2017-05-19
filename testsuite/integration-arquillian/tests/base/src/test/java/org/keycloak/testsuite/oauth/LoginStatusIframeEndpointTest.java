@@ -42,6 +42,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
+import org.keycloak.testsuite.runonserver.ServerVersion;
 
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -63,7 +64,7 @@ public class LoginStatusIframeEndpointTest extends AbstractKeycloakTest {
 
     @Deployment
     public static WebArchive deploy() {
-        return RunOnServerDeployment.create(LoginStatusIframeEndpointTest.class);
+        return RunOnServerDeployment.create(LoginStatusIframeEndpointTest.class, ServerVersion.class);
     }
 
     @Test
@@ -197,20 +198,24 @@ public class LoginStatusIframeEndpointTest extends AbstractKeycloakTest {
 
     @Test
     public void checkIframeCache() throws IOException {
-        String version = testingClient.server().fetch(session -> Version.RESOURCES_VERSION, String.class);
+        String version = testingClient.server().fetch(new ServerVersion());
 
         CloseableHttpClient client = HttpClients.createDefault();
-        HttpGet get = new HttpGet(suiteContext.getAuthServerInfo().getContextRoot() + "/auth/realms/master/protocol/openid-connect/login-status-iframe.html");
-        CloseableHttpResponse response = client.execute(get);
+        try {
+            HttpGet get = new HttpGet(suiteContext.getAuthServerInfo().getContextRoot() + "/auth/realms/master/protocol/openid-connect/login-status-iframe.html");
+            CloseableHttpResponse response = client.execute(get);
 
-        assertEquals(200, response.getStatusLine().getStatusCode());
-        assertEquals("no-cache, must-revalidate, no-transform, no-store", response.getHeaders("Cache-Control")[0].getValue());
+            assertEquals(200, response.getStatusLine().getStatusCode());
+            assertEquals("no-cache, must-revalidate, no-transform, no-store", response.getHeaders("Cache-Control")[0].getValue());
 
-        get = new HttpGet(suiteContext.getAuthServerInfo().getContextRoot() + "/auth/realms/master/protocol/openid-connect/login-status-iframe.html?version=" + version);
-        response = client.execute(get);
+            get = new HttpGet(suiteContext.getAuthServerInfo().getContextRoot() + "/auth/realms/master/protocol/openid-connect/login-status-iframe.html?version=" + version);
+            response = client.execute(get);
 
-        assertEquals(200, response.getStatusLine().getStatusCode());
-        assertTrue(response.getHeaders("Cache-Control")[0].getValue().contains("max-age"));
+            assertEquals(200, response.getStatusLine().getStatusCode());
+            assertTrue(response.getHeaders("Cache-Control")[0].getValue().contains("max-age"));
+        } finally {
+            client.close();
+        }
     }
 
     @Override
