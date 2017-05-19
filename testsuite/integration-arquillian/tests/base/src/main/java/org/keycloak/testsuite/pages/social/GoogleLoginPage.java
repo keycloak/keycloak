@@ -17,7 +17,8 @@
 
 package org.keycloak.testsuite.pages.social;
 
-import org.keycloak.testsuite.util.WaitUtils;
+import org.openqa.selenium.Keys;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -25,33 +26,26 @@ import org.openqa.selenium.support.FindBy;
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class GoogleLoginPage extends AbstractSocialLoginPage {
-    @FindBy(id = "Email")
+    @FindBy(xpath = ".//p[@role='heading'][1]")
+    private WebElement firstAccount;
+
+    @FindBy(id = "identifierId")
     private WebElement emailInput;
 
-    @FindBy(id = "Passwd")
+    @FindBy(xpath = ".//input[@type='password']")
     private WebElement passwordInput;
-
-    @FindBy(id = "next")
-    private WebElement nextButton;
-
-    @FindBy(id = "signIn")
-    private WebElement signInButton;
-
-    @FindBy(id = "submit_approve_access")
-    private WebElement approveAccessButton;
-
-    @FindBy(id = "PersistentCookie")
-    private WebElement persisentCookieCheckbox;
 
     @Override
     public void login(String user, String password) {
-        emailInput.sendKeys(user);
-        nextButton.click();
-        passwordInput.sendKeys(password);
-        persisentCookieCheckbox.click();
-        signInButton.click();
+        try {
+            firstAccount.click();
+        }
+        catch (NoSuchElementException e) {
+            emailInput.sendKeys(user);
+            emailInput.sendKeys(Keys.RETURN);
+        }
 
-        WaitUtils.waitUntilElement(approveAccessButton).is().enabled();
-        approveAccessButton.click();
+        passwordInput.sendKeys(password);
+        passwordInput.sendKeys(Keys.RETURN);
     }
 }
