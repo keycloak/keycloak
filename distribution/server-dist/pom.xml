@@ -114,7 +114,7 @@
             <properties>
                 <build-tools.version>${eap.build-tools.version}</build-tools.version>
                 <assemblyFile>assembly.xml</assemblyFile>
-                <profileExcludes>%regex[(providers.*)|(docs/contrib.*)|(docs/examples.*)|(docs/schema.*)]</profileExcludes>
+                <profileExcludes>%regex[(docs/contrib.*)|(docs/examples.*)|(docs/schema.*)]</profileExcludes>
             </properties>
             <dependencies>
                 <dependency>
