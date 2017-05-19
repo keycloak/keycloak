@@ -2355,6 +2355,14 @@ module.controller('PolicyEvaluateCtrl', function($scope, $http, $route, $locatio
     }
 });
 
+getManageClientId = function(realm) {
+    if (realm.realm == masterRealm) {
+        return 'master-realm';
+    } else {
+        return 'realm-management';
+    }
+}
+
 module.controller('RealmRolePermissionsCtrl', function($scope, $http, $route, $location, realm, role, RoleManagementPermissions, Client, Notifications) {
     console.log('RealmRolePermissionsCtrl');
     $scope.role = role;
@@ -2362,7 +2370,7 @@ module.controller('RealmRolePermissionsCtrl', function($scope, $http, $route, $l
     RoleManagementPermissions.get({realm: realm.realm, role: role.id}, function(data) {
         $scope.permissions = data;
     });
-    Client.query({realm: realm.realm, clientId: 'realm-management'}, function(data) {
+    Client.query({realm: realm.realm, clientId: getManageClientId(realm)}, function(data) {
         $scope.realmManagementClientId = data[0].id;
     });
     $scope.setEnabled = function() {
@@ -2394,7 +2402,7 @@ module.controller('UsersPermissionsCtrl', function($scope, $http, $route, $locat
     UsersManagementPermissions.get({realm: realm.realm}, function(data) {
         $scope.permissions = data;
     });
-    Client.query({realm: realm.realm, clientId: 'realm-management'}, function(data) {
+    Client.query({realm: realm.realm, clientId: getManageClientId(realm)}, function(data) {
         $scope.realmManagementClientId = data[0].id;
     });
     $scope.changeIt = function() {

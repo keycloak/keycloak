@@ -49,6 +49,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @resource Client Role Mappings
@@ -150,6 +151,9 @@ public class ClientRoleMappingsResource {
         }
 
         Set<RoleModel> available = client.getRoles();
+        available = available.stream().filter(r ->
+                canMapRole(r)
+        ).collect(Collectors.toSet());
         return getAvailableRoles(user, available);
     }
 
@@ -205,12 +209,16 @@ public class ClientRoleMappingsResource {
     }
 
     private void checkMapRolePermission(RoleModel roleModel) {
-        if (!new MgmtPermissions(session, realm, auth.getAuth()).roles().canMapRole(roleModel)) {
+        if (!canMapRole(roleModel)) {
             throw new ForbiddenException();
         }
     }
 
-        /**
+    private boolean canMapRole(RoleModel roleModel) {
+        return new MgmtPermissions(session, realm, auth.getAuth()).roles().canMapRole(roleModel);
+    }
+
+    /**
          * Delete client-level roles from user role mapping
          *
          * @param roles

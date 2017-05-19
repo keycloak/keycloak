@@ -87,17 +87,17 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
         // realm-role and role-namespace.client-role will have a role policy associated with their map-role permission
         {
-            permissions.roles().setPermissionsEnabled(realmRole, true);
-            Policy mapRolePermission = permissions.roles().mapRolePermission(realmRole);
-            ResourceServer server = permissions.roles().resourceServer(realmRole);
+            permissions.roles().setPermissionsEnabled(client1Role, true);
+            Policy mapRolePermission = permissions.roles().mapRolePermission(client1Role);
+            ResourceServer server = permissions.roles().resourceServer(client1Role);
             Policy mapperPolicy = permissions.roles().rolePolicy(server, mapperRole);
             mapRolePermission.addAssociatedPolicy(mapperPolicy);
         }
 
         {
-            permissions.roles().setPermissionsEnabled(client1Role, true);
-            Policy mapRolePermission = permissions.roles().mapRolePermission(client1Role);
-            ResourceServer server = permissions.roles().resourceServer(client1Role);
+            permissions.roles().setPermissionsEnabled(realmRole, true);
+            Policy mapRolePermission = permissions.roles().mapRolePermission(realmRole);
+            ResourceServer server = permissions.roles().resourceServer(realmRole);
             Policy mapperPolicy = permissions.roles().rolePolicy(server, mapperRole);
             mapRolePermission.addAssociatedPolicy(mapperPolicy);
         }
@@ -128,6 +128,13 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         RoleModel mapperRole = realm.getRole("mapper");
         RoleModel managerRole = realm.getRole("manager");
         RoleModel compositeRole = realm.getRole("composite-role");
+        ClientModel realmManagementClient = realm.getClientByClientId("realm-management");
+        RoleModel adminRole = realmManagementClient.getRole(AdminRoles.REALM_ADMIN);
+
+        UserModel nomapAdmin = session.users().addUser(realm, "nomap-admin");
+        nomapAdmin.setEnabled(true);
+        session.userCredentialManager().updateCredential(realm, nomapAdmin, UserCredentialModel.password("password"));
+        nomapAdmin.grantRole(adminRole);
 
         UserModel authorizedUser = session.users().addUser(realm, "authorized");
         authorizedUser.setEnabled(true);
@@ -220,7 +227,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
     }
 
 
-    @Test
+    //@Test
     public void testUI() throws Exception {
         testingClient.server().run(FineGrainAdminUnitTest::setupPolices);
         testingClient.server().run(FineGrainAdminUnitTest::setupUsers);
@@ -331,6 +338,9 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         }
 
     }
+
+    // testRestEvaluationMasterRealm
+    // testRestEvaluationMasterAdminTestRealm
 
 
 }
