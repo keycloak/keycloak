@@ -96,22 +96,11 @@ public class KeycloakServerDeploymentProcessor implements DeploymentUnitProcesso
     }
 
     private void addInfinispanCaches(DeploymentPhaseContext context) {
-        // TODO Can be removed once we upgrade to WildFly 11
-        ServiceName wf10CacheContainerService = ServiceName.of("jboss", "infinispan", "keycloak");
-        boolean legacy = context.getServiceRegistry().getService(wf10CacheContainerService) != null;
-
-        if (!legacy) {
-            ServiceTarget st = context.getServiceTarget();
-            CapabilityServiceSupport support = context.getDeploymentUnit().getAttachment(Attachments.CAPABILITY_SERVICE_SUPPORT);
-            for (String c : CACHES) {
-                ServiceName sn = support.getCapabilityServiceName("org.wildfly.clustering.infinispan.cache.keycloak." + c);
-                st.addDependency(sn);
-            }
-        } else {
-            ServiceTarget st = context.getServiceTarget();
-            for (String c : CACHES) {
-                st.addDependency(wf10CacheContainerService.append(c));
-            }
+        ServiceTarget st = context.getServiceTarget();
+        CapabilityServiceSupport support = context.getDeploymentUnit().getAttachment(Attachments.CAPABILITY_SERVICE_SUPPORT);
+        for (String c : CACHES) {
+            ServiceName sn = support.getCapabilityServiceName("org.wildfly.clustering.infinispan.cache", "keycloak", c);
+            st.addDependency(sn);
         }
     }
 
