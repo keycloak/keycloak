@@ -335,13 +335,15 @@ public class ExportUtils {
     private static PolicyRepresentation createPolicyRepresentation(AuthorizationProvider authorizationProvider, Policy policy) {
         KeycloakSession session = authorizationProvider.getKeycloakSession();
         RealmModel realm = authorizationProvider.getRealm();
-        StoreFactory storeFactory = authorizationProvider.getStoreFactory();
+
         try {
             PolicyRepresentation rep = toRepresentation(policy, PolicyRepresentation.class, authorizationProvider);
 
             rep.setId(null);
 
-            Map<String, String> config = rep.getConfig();
+            Map<String, String> config = new HashMap<>(rep.getConfig());
+
+            rep.setConfig(config);
 
             String roles = config.get("roles");
 
