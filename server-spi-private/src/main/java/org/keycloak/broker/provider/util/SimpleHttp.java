@@ -133,9 +133,10 @@ public class SimpleHttp {
     }
 
     private HttpResponse makeRequest(HttpClient httpClient) throws IOException {
-    	System.out.println("makeRequest: " + url);
-        boolean get = method.equals("GET");
-        boolean post = method.equals("POST");
+        final String PROXY = System.getenv("PROXY_URL");
+        final String IDCS_URL = System.getenv("IDCS_URL");
+        boolean get = method.equals(GET);
+        boolean post = method.equals(POST);
         HttpRequestBase httpRequest = null;
         if (get) {
             httpRequest = new HttpGet(appendParameterToUrl(url));
@@ -146,9 +147,9 @@ public class SimpleHttp {
             throw new IOException("method: " + method + " is not supported.");
         }
 
-        if (!url.contains("identity.c9dev0.oc9qadev.com")) {
+        if (PROXY != null && (IDCS_URL == null || !url.contains(IDCS_URL))) {
             RequestConfig.Builder builder = RequestConfig.custom();
-            HttpHost proxy = HttpHost.create("http://www-proxy.us.oracle.com:80");
+            HttpHost proxy = HttpHost.create(PROXY);
             builder = builder.setProxy(proxy);
             RequestConfig config = builder.build();
             httpRequest.setConfig(config);
