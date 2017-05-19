@@ -1,5 +1,6 @@
 package org.keycloak.authorization.policy.provider.resource;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.keycloak.Config;
@@ -64,7 +65,7 @@ public class ResourcePolicyProviderFactory implements PolicyProviderFactory<Reso
             //TODO: remove this check once we migrate to new API
             if (ResourcePermissionRepresentation.class.equals(representation.getClass())) {
                 ResourcePermissionRepresentation resourcePermission = ResourcePermissionRepresentation.class.cast(representation);
-                Map<String, String> config = policy.getConfig();
+                Map<String, String> config = new HashMap(policy.getConfig());
 
                 config.compute("defaultResourceType", (key, value) -> {
                     String resourceType = resourcePermission.getResourceType();

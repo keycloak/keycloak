@@ -23,13 +23,12 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.forms.login.LoginFormsProvider;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.resources.LoginActionsService;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -40,8 +39,7 @@ import java.net.URI;
  * @version $Revision: 1 $
  */
 public class RequiredActionContextResult implements RequiredActionContext {
-    protected UserSessionModel userSession;
-    protected ClientSessionModel clientSession;
+    protected AuthenticationSessionModel authenticationSession;
     protected RealmModel realm;
     protected EventBuilder eventBuilder;
     protected KeycloakSession session;
@@ -51,12 +49,11 @@ public class RequiredActionContextResult implements RequiredActionContext {
     protected UserModel user;
     protected RequiredActionFactory factory;
 
-    public RequiredActionContextResult(UserSessionModel userSession, ClientSessionModel clientSession,
+    public RequiredActionContextResult(AuthenticationSessionModel authSession,
                                        RealmModel realm, EventBuilder eventBuilder, KeycloakSession session,
                                        HttpRequest httpRequest,
                                        UserModel user, RequiredActionFactory factory) {
-        this.userSession = userSession;
-        this.clientSession = clientSession;
+        this.authenticationSession = authSession;
         this.realm = realm;
         this.eventBuilder = eventBuilder;
         this.session = session;
@@ -81,13 +78,8 @@ public class RequiredActionContextResult implements RequiredActionContext {
     }
 
     @Override
-    public ClientSessionModel getClientSession() {
-        return clientSession;
-    }
-
-    @Override
-    public UserSessionModel getUserSession() {
-        return userSession;
+    public AuthenticationSessionModel getAuthenticationSession() {
+        return authenticationSession;
     }
 
     @Override
@@ -142,14 +134,14 @@ public class RequiredActionContextResult implements RequiredActionContext {
     public URI getActionUrl(String code) {
         return LoginActionsService.requiredActionProcessor(getUriInfo())
                 .queryParam(OAuth2Constants.CODE, code)
-                .queryParam("action", factory.getId())
+                .queryParam("execution", factory.getId())
                 .build(getRealm().getName());
     }
 
     @Override
     public String generateCode() {
-        ClientSessionCode accessCode = new ClientSessionCode(session, getRealm(), getClientSession());
-        clientSession.setTimestamp(Time.currentTime());
+        ClientSessionCode<AuthenticationSessionModel> accessCode = new ClientSessionCode<>(session, getRealm(), getAuthenticationSession());
+        authenticationSession.setTimestamp(Time.currentTime());
         return accessCode.getCode();
     }
 

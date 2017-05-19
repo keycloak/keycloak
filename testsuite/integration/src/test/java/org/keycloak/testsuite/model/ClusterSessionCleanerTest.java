@@ -75,7 +75,7 @@ public class ClusterSessionCleanerTest {
         RealmModel realm1 = session1.realms().getRealmByName(REALM_NAME);
         UserModel user1 = session1.users().getUserByUsername("test-user@localhost", realm1);
         for (int i=0 ; i<15 ; i++) {
-            session1.sessions().createUserSession(realm1, user1, user1.getUsername(), "127.0.0.1", "form", true, null, null);
+            session1.sessions().createUserSession("123", realm1, user1, user1.getUsername(), "127.0.0.1", "form", true, null, null);
         }
         session1 = commit(server1, session1);
 
@@ -87,7 +87,7 @@ public class ClusterSessionCleanerTest {
         Assert.assertEquals(user2.getId(), user1.getId());
 
         for (int i=0 ; i<15 ; i++) {
-            session2.sessions().createUserSession(realm2, user2, user2.getUsername(), "127.0.0.1", "form", true, null, null);
+            session2.sessions().createUserSession("456", realm2, user2, user2.getUsername(), "127.0.0.1", "form", true, null, null);
         }
         session2 = commit(server2, session2);
 

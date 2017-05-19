@@ -304,6 +304,31 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
     }
 
+
+    @Test
+    public void promptLoginDifferentUser() throws Exception {
+        String sss = oauth.getLoginFormUrl();
+        System.out.println(sss);
+
+        // Login user
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
+
+        // Assert need to re-authenticate with prompt=login
+        driver.navigate().to(oauth.getLoginFormUrl() + "&prompt=login");
+
+        // Authenticate as different user
+        loginPage.assertCurrent();
+        loginPage.login("john-doh@localhost", "password");
+
+        errorPage.assertCurrent();
+        Assert.assertTrue(errorPage.getError().startsWith("You are already authenticated as different user"));
+    }
+
     // DISPLAY & OTHERS
 
     @Test
@@ -324,6 +349,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
     @Test
     public void requestParamUnsigned() throws Exception {
+        oauth.stateParamHardcoded("mystate2");
+
         String validRedirectUri = oauth.getRedirectUri();
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
 
@@ -344,12 +371,14 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         oauth.request(requestStr);
         OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
         Assert.assertNotNull(response.getCode());
-        Assert.assertEquals("mystate", response.getState());
+        Assert.assertEquals("mystate2", response.getState());
         assertTrue(appPage.isCurrent());
     }
 
     @Test
     public void requestUriParamUnsigned() throws Exception {
+        oauth.stateParamHardcoded("mystate1");
+
         String validRedirectUri = oauth.getRedirectUri();
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
 
@@ -367,12 +396,14 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
         OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
         Assert.assertNotNull(response.getCode());
-        Assert.assertEquals("mystate", response.getState());
+        Assert.assertEquals("mystate1", response.getState());
         assertTrue(appPage.isCurrent());
     }
 
     @Test
     public void requestUriParamSigned() throws Exception {
+        oauth.stateParamHardcoded("mystate3");
+
         String validRedirectUri = oauth.getRedirectUri();
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
 
@@ -412,7 +443,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         // Check signed request_uri will pass
         OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
         Assert.assertNotNull(response.getCode());
-        Assert.assertEquals("mystate", response.getState());
+        Assert.assertEquals("mystate3", response.getState());
         assertTrue(appPage.isCurrent());
 
         // Revert requiring signature for client

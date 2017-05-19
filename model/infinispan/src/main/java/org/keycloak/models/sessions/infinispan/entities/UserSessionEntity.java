@@ -46,11 +46,11 @@ public class UserSessionEntity extends SessionEntity {
 
     private int lastSessionRefresh;
 
-    private Set<String> clientSessions = new CopyOnWriteArraySet<>();
-
     private UserSessionModel.State state;
 
     private Map<String, String> notes = new ConcurrentHashMap<>();
+
+    private Map<String, AuthenticatedClientSessionEntity> authenticatedClientSessions  = new ConcurrentHashMap<>();
 
     public String getUser() {
         return user;
@@ -108,16 +108,20 @@ public class UserSessionEntity extends SessionEntity {
         this.lastSessionRefresh = lastSessionRefresh;
     }
 
-    public Set<String> getClientSessions() {
-        return clientSessions;
-    }
-
     public Map<String, String> getNotes() {
         return notes;
     }
 
     public void setNotes(Map<String, String> notes) {
         this.notes = notes;
+    }
+
+    public Map<String, AuthenticatedClientSessionEntity> getAuthenticatedClientSessions() {
+        return authenticatedClientSessions;
+    }
+
+    public void setAuthenticatedClientSessions(Map<String, AuthenticatedClientSessionEntity> authenticatedClientSessions) {
+        this.authenticatedClientSessions = authenticatedClientSessions;
     }
 
     public UserSessionModel.State getState() {

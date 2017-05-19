@@ -168,10 +168,7 @@ public class UsersPermissions {
         ResourceServer server = resourceServer();
         if (server == null) return null;
 
-        Resource resource =  authz.getStoreFactory().getResourceStore().findByName(USERS_RESOURCE, server.getId());
-        if (resource == null) return null;
-        return  authz.getStoreFactory().getResourceStore().findById(resource.getId(), server.getId());
-
+        return  authz.getStoreFactory().getResourceStore().findByName(USERS_RESOURCE, server.getId());
     }
 
     /**
@@ -242,10 +239,7 @@ public class UsersPermissions {
 
     public Policy managePermission() {
         ResourceServer server = resourceServer();
-        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(MANAGE_PERMISSION_USERS, server.getId());
-        // have to do this because findByName returns a Jpa Entity todo change when fixed
-        return authz.getStoreFactory().getPolicyStore().findById(policy.getId(), server.getId());
-
+        return authz.getStoreFactory().getPolicyStore().findByName(MANAGE_PERMISSION_USERS, server.getId());
     }
 
 

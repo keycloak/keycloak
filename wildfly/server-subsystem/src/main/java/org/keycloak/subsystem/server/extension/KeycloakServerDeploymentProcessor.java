@@ -41,12 +41,12 @@ import java.util.List;
 public class KeycloakServerDeploymentProcessor implements DeploymentUnitProcessor {
 
     private static final String[] CACHES = new String[] {
-        "realms", "users","sessions","offlineSessions","loginFailures","work","authorization","keys"
+        "realms", "users","sessions","authenticationSessions","offlineSessions","loginFailures","work","authorization","keys","actionTokens"
     };
 
     // This param name is defined again in Keycloak Services class
     // org.keycloak.services.resources.KeycloakApplication.  We have this value in
-    // two places to avoid dependency between Keycloak Subsystem and Keyclaok Services module.
+    // two places to avoid dependency between Keycloak Subsystem and Keycloak Services module.
     public static final String KEYCLOAK_CONFIG_PARAM_NAME = "org.keycloak.server-subsystem.Config";
 
     @Override
@@ -96,22 +96,11 @@ public class KeycloakServerDeploymentProcessor implements DeploymentUnitProcesso
     }
 
     private void addInfinispanCaches(DeploymentPhaseContext context) {
-        // TODO Can be removed once we upgrade to WildFly 11
-        ServiceName wf10CacheContainerService = ServiceName.of("jboss", "infinispan", "keycloak");
-        boolean legacy = context.getServiceRegistry().getService(wf10CacheContainerService) != null;
-
-        if (!legacy) {
-            ServiceTarget st = context.getServiceTarget();
-            CapabilityServiceSupport support = context.getDeploymentUnit().getAttachment(Attachments.CAPABILITY_SERVICE_SUPPORT);
-            for (String c : CACHES) {
-                ServiceName sn = support.getCapabilityServiceName("org.wildfly.clustering.infinispan.cache.keycloak." + c);
-                st.addDependency(sn);
-            }
-        } else {
-            ServiceTarget st = context.getServiceTarget();
-            for (String c : CACHES) {
-                st.addDependency(wf10CacheContainerService.append(c));
-            }
+        ServiceTarget st = context.getServiceTarget();
+        CapabilityServiceSupport support = context.getDeploymentUnit().getAttachment(Attachments.CAPABILITY_SERVICE_SUPPORT);
+        for (String c : CACHES) {
+            ServiceName sn = support.getCapabilityServiceName("org.wildfly.clustering.infinispan.cache", "keycloak", c);
+            st.addDependency(sn);
         }
     }
 

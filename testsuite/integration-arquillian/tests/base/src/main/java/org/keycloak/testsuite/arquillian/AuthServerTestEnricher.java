@@ -71,6 +71,8 @@ public class AuthServerTestEnricher {
     private static final String AUTH_SERVER_CLUSTER_PROPERTY = "auth.server.cluster";
     public static final boolean AUTH_SERVER_CLUSTER = Boolean.parseBoolean(System.getProperty(AUTH_SERVER_CLUSTER_PROPERTY, "false"));
 
+    private static final boolean AUTH_SERVER_UNDERTOW_CLUSTER = Boolean.parseBoolean(System.getProperty("auth.server.undertow.cluster", "false"));
+
     private static final Boolean START_MIGRATION_CONTAINER = "auto".equals(System.getProperty("migration.mode")) || 
             "manual".equals(System.getProperty("migration.mode"));
 
@@ -112,9 +114,25 @@ public class AuthServerTestEnricher {
 
         suiteContext = new SuiteContext(containers);
 
-        String authServerFrontend = AUTH_SERVER_CLUSTER
-                ? "auth-server-balancer-wildfly" // if cluster mode enabled, load-balancer is the frontend
-                : AUTH_SERVER_CONTAINER; // single-node mode
+        String authServerFrontend = null;
+
+        if (AUTH_SERVER_CLUSTER) {
+            // if cluster mode enabled, load-balancer is the frontend
+            for (ContainerInfo c : containers) {
+                if (c.getQualifier().startsWith("auth-server-balancer")) {
+                    authServerFrontend = c.getQualifier();
+                }
+            }
+
+            if (authServerFrontend != null) {
+                log.info("Using frontend container: " + authServerFrontend);
+            } else {
+                throw new IllegalStateException("Not found frontend container");
+            }
+        } else {
+            authServerFrontend = AUTH_SERVER_CONTAINER; // single-node mode
+        }
+
         String authServerBackend = AUTH_SERVER_CONTAINER + "-backend";
         int backends = 0;
         for (ContainerInfo container : suiteContext.getContainers()) {
@@ -129,6 +147,11 @@ public class AuthServerTestEnricher {
                 suiteContext.getAuthServerBackendsInfo().add(container);
             }
         }
+
+        // Setup with 2 undertow backend nodes and no loadbalancer.
+//        if (AUTH_SERVER_UNDERTOW_CLUSTER && suiteContext.getAuthServerInfo() == null && !suiteContext.getAuthServerBackendsInfo().isEmpty()) {
+//            suiteContext.setAuthServerInfo(suiteContext.getAuthServerBackendsInfo().get(0));
+//        }
 
         // validate auth server setup
         if (suiteContext.getAuthServerInfo() == null) {

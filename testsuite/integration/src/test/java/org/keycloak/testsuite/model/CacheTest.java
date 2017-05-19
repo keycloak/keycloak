@@ -103,7 +103,7 @@ public class CacheTest {
             user.setFirstName("firstName");
             user.addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP);
 
-            UserSessionModel userSession = session.sessions().createUserSession(realm, user, "testAddUserNotAddedToCache", "127.0.0.1", "auth", false, null, null);
+            UserSessionModel userSession = session.sessions().createUserSession("123", realm, user, "testAddUserNotAddedToCache", "127.0.0.1", "auth", false, null, null);
             UserModel user2 = userSession.getUser();
 
             user.setLastName("lastName");

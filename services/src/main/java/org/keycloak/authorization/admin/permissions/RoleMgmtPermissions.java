@@ -88,17 +88,14 @@ public class RoleMgmtPermissions {
         Resource resource = authz.getStoreFactory().getResourceStore().findByName(getRoleResourceName(role), server.getId());
         if (resource == null) return null;
 
-        Policy policy =  authz.getStoreFactory().getPolicyStore().findByName(getMapRoleScopePermissionName(role), server.getId());
-        return authz.getStoreFactory().getPolicyStore().findById(policy.getId(), server.getId());
+        return  authz.getStoreFactory().getPolicyStore().findByName(getMapRoleScopePermissionName(role), server.getId());
     }
 
     public Resource resource(RoleModel role) {
         ResourceStore resourceStore = authz.getStoreFactory().getResourceStore();
         ResourceServer server = resourceServer(role);
         if (server == null) return null;
-        Resource resource =  resourceStore.findByName(getRoleResourceName(role), server.getId());
-        if (resource == null) return null;
-        return resourceStore.findById(resource.getId(), server.getId());
+        return  resourceStore.findByName(getRoleResourceName(role), server.getId());
     }
 
     public ResourceServer resourceServer(RoleModel role) {

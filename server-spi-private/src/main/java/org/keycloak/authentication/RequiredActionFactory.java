@@ -35,4 +35,13 @@ public interface RequiredActionFactory extends ProviderFactory<RequiredActionPro
      * @return
      */
     String getDisplayText();
+
+    /**
+     * Flag indicating whether the execution of the required action by the same circumstances
+     * (e.g. by one and the same action token) should only be permitted once.
+     * @return
+     */
+    default boolean isOneTimeAction() {
+        return false;
+    }
 }

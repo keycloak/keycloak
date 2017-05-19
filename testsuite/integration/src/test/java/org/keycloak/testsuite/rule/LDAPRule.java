@@ -88,7 +88,7 @@ public class LDAPRule implements TestRule {
             return true;
         }
 
-        if (ldapTestConfiguration.isStartEmbeddedLdapLerver()) {
+        if (ldapTestConfiguration.isStartEmbeddedLdapServer()) {
             ldapEmbeddedServer = createServer();
             ldapEmbeddedServer.init();
             ldapEmbeddedServer.start();

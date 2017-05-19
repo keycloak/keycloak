@@ -28,6 +28,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import javax.ws.rs.core.Response;
+
 import org.junit.Before;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
@@ -39,7 +41,6 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -131,7 +132,10 @@ public abstract class AbstractPolicyManagementTest extends AbstractKeycloakTest 
         resources.add(new ResourceRepresentation("Resource B", scopes));
         resources.add(new ResourceRepresentation("Resource C", scopes));
 
-        resources.forEach(resource -> getClient().authorization().resources().create(resource));
+        resources.forEach(resource -> {
+            Response response = getClient().authorization().resources().create(resource);
+            response.close();
+        });
     }
 
     private void createPolicies(RealmResource realm, ClientResource client) throws IOException {
@@ -147,7 +151,8 @@ public abstract class AbstractPolicyManagementTest extends AbstractKeycloakTest 
         representation.setName(name);
         representation.addUser(userId);
 
-        client.authorization().policies().user().create(representation);
+        Response response = client.authorization().policies().user().create(representation);
+        response.close();
     }
 
     protected ClientResource getClient() {
@@ -161,7 +166,7 @@ public abstract class AbstractPolicyManagementTest extends AbstractKeycloakTest 
 
     protected RealmResource getRealm() {
         try {
-            return AdminClientUtil.createAdminClient().realm("authz-test");
+            return adminClient.realm("authz-test");
         } catch (Exception cause) {
             throw new RuntimeException("Failed to create admin client", cause);
         }

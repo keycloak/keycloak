@@ -20,6 +20,7 @@ package org.keycloak.authorization.jpa.store;
 
 import javax.persistence.EntityManager;
 
+import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.ResourceStore;
@@ -36,11 +37,11 @@ public class JPAStoreFactory implements StoreFactory {
     private final ResourceStore resourceStore;
     private final ScopeStore scopeStore;
 
-    public JPAStoreFactory(EntityManager entityManager) {
-        policyStore = new JPAPolicyStore(entityManager);
-        resourceServerStore = new JPAResourceServerStore(entityManager);
-        resourceStore = new JPAResourceStore(entityManager);
-        scopeStore = new JPAScopeStore(entityManager);
+    public JPAStoreFactory(EntityManager entityManager, AuthorizationProvider provider) {
+        policyStore = new JPAPolicyStore(entityManager, provider);
+        resourceServerStore = new JPAResourceServerStore(entityManager, provider);
+        resourceStore = new JPAResourceStore(entityManager, provider);
+        scopeStore = new JPAScopeStore(entityManager, provider);
     }
 
     @Override

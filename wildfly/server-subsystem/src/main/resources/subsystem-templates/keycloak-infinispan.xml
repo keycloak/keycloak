@@ -32,15 +32,20 @@
                     <eviction max-entries="10000" strategy="LRU"/>
                 </local-cache>
                 <local-cache name="sessions"/>
+                <local-cache name="authenticationSessions"/>
                 <local-cache name="offlineSessions"/>
                 <local-cache name="loginFailures"/>
                 <local-cache name="work"/>
                 <local-cache name="authorization">
-                    <eviction max-entries="100" strategy="LRU"/>
+                    <eviction max-entries="10000" strategy="LRU"/>
                 </local-cache>
                 <local-cache name="keys">
                     <eviction max-entries="1000" strategy="LRU"/>
                     <expiration max-idle="3600000" />
+                </local-cache>
+                <local-cache name="actionTokens">
+                    <eviction max-entries="-1" strategy="NONE"/>
+                    <expiration max-idle="-1" interval="300000"/>
                 </local-cache>
             </cache-container>
             <cache-container name="server" default-cache="default" module="org.wildfly.clustering.server">
@@ -97,6 +102,7 @@
                     <eviction max-entries="10000" strategy="LRU"/>
                 </local-cache>
                 <distributed-cache name="sessions" mode="SYNC" owners="1"/>
+                <distributed-cache name="authenticationSessions" mode="SYNC" owners="1"/>
                 <distributed-cache name="offlineSessions" mode="SYNC" owners="1"/>
                 <distributed-cache name="loginFailures" mode="SYNC" owners="1"/>
                 <local-cache name="authorization">
@@ -106,6 +112,10 @@
                 <local-cache name="keys">
                     <eviction max-entries="1000" strategy="LRU"/>
                     <expiration max-idle="3600000" />
+                </local-cache>
+                <local-cache name="actionTokens">
+                    <eviction max-entries="-1" strategy="NONE"/>
+                    <expiration max-idle="-1" interval="300000"/>
                 </local-cache>
             </cache-container>
             <cache-container name="server" aliases="singleton cluster" default-cache="default" module="org.wildfly.clustering.server">

@@ -24,12 +24,12 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticatorConfigModel;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.resources.LoginActionsService;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -93,7 +93,7 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
 
         @Override
         public UserModel getUser() {
-            return getClientSession().getAuthenticatedUser();
+            return getAuthenticationSession().getAuthenticatedUser();
         }
 
         @Override
@@ -107,8 +107,8 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
         }
 
         @Override
-        public ClientSessionModel getClientSession() {
-            return processor.getClientSession();
+        public AuthenticationSessionModel getAuthenticationSession() {
+            return processor.getAuthenticationSession();
         }
 
         @Override
@@ -166,19 +166,19 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
         if (!actionExecution.equals(formExecution.getId())) {
             throw new AuthenticationFlowException("action is not current execution", AuthenticationFlowError.INTERNAL_ERROR);
         }
-        Map<String, ClientSessionModel.ExecutionStatus> executionStatus = new HashMap<>();
+        Map<String, AuthenticationSessionModel.ExecutionStatus> executionStatus = new HashMap<>();
         List<FormAction> requiredActions = new LinkedList<>();
         List<ValidationContextImpl> successes = new LinkedList<>();
         List<ValidationContextImpl> errors = new LinkedList<>();
         for (AuthenticationExecutionModel formActionExecution : formActionExecutions) {
             if (!formActionExecution.isEnabled()) {
-                executionStatus.put(formActionExecution.getId(), ClientSessionModel.ExecutionStatus.SKIPPED);
+                executionStatus.put(formActionExecution.getId(), AuthenticationSessionModel.ExecutionStatus.SKIPPED);
                 continue;
             }
             FormActionFactory factory = (FormActionFactory)processor.getSession().getKeycloakSessionFactory().getProviderFactory(FormAction.class, formActionExecution.getAuthenticator());
             FormAction action = factory.create(processor.getSession());
 
-            UserModel authUser = processor.getClientSession().getAuthenticatedUser();
+            UserModel authUser = processor.getAuthenticationSession().getAuthenticatedUser();
             if (action.requiresUser() && authUser == null) {
                 throw new AuthenticationFlowException("form action: " + formExecution.getAuthenticator() + " requires user", AuthenticationFlowError.UNKNOWN_USER);
             }
@@ -189,14 +189,14 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
                     if (formActionExecution.isRequired()) {
                         if (factory.isUserSetupAllowed()) {
                             AuthenticationProcessor.logger.debugv("authenticator SETUP_REQUIRED: {0}", formExecution.getAuthenticator());
-                            executionStatus.put(formActionExecution.getId(), ClientSessionModel.ExecutionStatus.SETUP_REQUIRED);
+                            executionStatus.put(formActionExecution.getId(), AuthenticationSessionModel.ExecutionStatus.SETUP_REQUIRED);
                             requiredActions.add(action);
                             continue;
                         } else {
                             throw new AuthenticationFlowException(AuthenticationFlowError.CREDENTIAL_SETUP_REQUIRED);
                         }
                     } else if (formActionExecution.isOptional()) {
-                        executionStatus.put(formActionExecution.getId(), ClientSessionModel.ExecutionStatus.SKIPPED);
+                        executionStatus.put(formActionExecution.getId(), AuthenticationSessionModel.ExecutionStatus.SKIPPED);
                         continue;
                     }
                 }
@@ -205,10 +205,10 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
             ValidationContextImpl result = new ValidationContextImpl(formActionExecution, action);
             action.validate(result);
             if (result.success) {
-                executionStatus.put(formActionExecution.getId(), ClientSessionModel.ExecutionStatus.SUCCESS);
+                executionStatus.put(formActionExecution.getId(), AuthenticationSessionModel.ExecutionStatus.SUCCESS);
                 successes.add(result);
             } else {
-                executionStatus.put(formActionExecution.getId(), ClientSessionModel.ExecutionStatus.CHALLENGED);
+                executionStatus.put(formActionExecution.getId(), AuthenticationSessionModel.ExecutionStatus.CHALLENGED);
                 errors.add(result);
             }
         }
@@ -234,16 +234,15 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
             context.action.success(context);
         }
         // set status and required actions only if form is fully successful
-        for (Map.Entry<String, ClientSessionModel.ExecutionStatus> entry : executionStatus.entrySet()) {
-            processor.getClientSession().setExecutionStatus(entry.getKey(), entry.getValue());
+        for (Map.Entry<String, AuthenticationSessionModel.ExecutionStatus> entry : executionStatus.entrySet()) {
+            processor.getAuthenticationSession().setExecutionStatus(entry.getKey(), entry.getValue());
         }
         for (FormAction action : requiredActions) {
-            action.setRequiredActions(processor.getSession(), processor.getRealm(), processor.getClientSession().getAuthenticatedUser());
+            action.setRequiredActions(processor.getSession(), processor.getRealm(), processor.getAuthenticationSession().getAuthenticatedUser());
 
         }
-        processor.getClientSession().setExecutionStatus(actionExecution, ClientSessionModel.ExecutionStatus.SUCCESS);
-        processor.getClientSession().removeNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION);
-        processor.setActionSuccessful();
+        processor.getAuthenticationSession().setExecutionStatus(actionExecution, AuthenticationSessionModel.ExecutionStatus.SUCCESS);
+        processor.getAuthenticationSession().removeAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION);
         return null;
     }
 
@@ -262,7 +261,7 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
 
     public Response renderForm(MultivaluedMap<String, String> formData, List<FormMessage> errors) {
         String executionId = formExecution.getId();
-        processor.getClientSession().setNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION, executionId);
+        processor.getAuthenticationSession().setAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION, executionId);
         String code = processor.generateCode();
         URI actionUrl = getActionUrl(executionId, code);
         LoginFormsProvider form = processor.getSession().getProvider(LoginFormsProvider.class)

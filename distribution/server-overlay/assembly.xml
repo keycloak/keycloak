@@ -27,35 +27,87 @@
 
     <fileSets>
         <fileSet>
-            <directory>${project.build.directory}/cli</directory>
+            <directory>target/${project.build.finalName}</directory>
+            <outputDirectory/>
+            <filtered>true</filtered>
             <includes>
-                <include>*.cli</include>
+                <include>**/module.xml</include>
             </includes>
-            <outputDirectory>bin</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>${project.build.directory}/unpacked/${serverDistDir}</directory>
+            <directory>target/${project.build.finalName}</directory>
             <outputDirectory/>
-            <includes>
-                <include>**/**</include>
-            </includes>
+            <filtered>false</filtered>
             <excludes>
-                <exclude>modules/**</exclude>
+                <exclude>.installation</exclude>
+                <exclude>docs/**</exclude>
+                <exclude>domain/**</exclude>
+                <exclude>standalone/**</exclude>
+                <exclude>bin/*.sh</exclude>
+                <exclude>module.xml</exclude>
+                <exclude>welcome-content/**</exclude>
+                <exclude>appclient/**</exclude>
+                <exclude>bin/appclient.*</exclude>
+                <exclude>copyright.txt</exclude>
+                <exclude>README.txt</exclude>
+                <exclude>themes/**</exclude>
+                <exclude>version.txt</exclude>
+                <exclude>${profileExcludes}</exclude>
             </excludes>
         </fileSet>
         <fileSet>
-            <directory>${project.build.directory}/unpacked/${serverDistDir}/modules/system/layers/keycloak</directory>
-            <outputDirectory>modules/system/${identityType}/keycloak</outputDirectory>
+            <directory>target/${project.build.finalName}</directory>
+            <outputDirectory/>
             <includes>
-                <include>**/**</include>
+                <include>bin/*.sh</include>
             </includes>
+            <fileMode>0755</fileMode>
+        </fileSet>
+        <fileSet>
+            <directory>target/${project.build.finalName}</directory>
+            <outputDirectory/>
+            <includes>
+                <include>themes/**</include>
+            </includes>
+            <fileMode>0444</fileMode>
+        </fileSet>
+        <fileSet>
+            <directory>src/main/welcome-content</directory>
+            <outputDirectory>welcome-content</outputDirectory>
+            <includes>
+                <include>*.*</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>src/main/modules</directory>
+            <outputDirectory>modules</outputDirectory>
+            <includes>
+                <include>layers.conf</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>src/main</directory>
+            <outputDirectory></outputDirectory>
+            <includes>
+                <include>${readmeInclude}</include>
+            </includes>
+            <filtered>true</filtered>
+        </fileSet>
+        <fileSet>
+            <directory>target/cli</directory>
+            <outputDirectory>bin</outputDirectory>
+            <includes>
+                <include>*.cli</include>
+            </includes>
+            <filtered>true</filtered>
         </fileSet>
     </fileSets>
 
     <files>
         <file>
-            <source>target/README.txt</source>
-            <outputDirectory></outputDirectory>
+            <source>src/main/version.txt</source>
+            <outputDirectory/>
+            <filtered>true</filtered>
         </file>
     </files>
 

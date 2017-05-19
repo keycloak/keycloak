@@ -33,6 +33,8 @@ public class Messages {
 
     public static final String EXPIRED_CODE = "expiredCodeMessage";
 
+    public static final String EXPIRED_ACTION = "expiredActionMessage";
+
     public static final String MISSING_FIRST_NAME = "missingFirstNameMessage";
 
     public static final String MISSING_LAST_NAME = "missingLastNameMessage";
@@ -197,5 +199,10 @@ public class Messages {
     public static final String FAILED_LOGOUT = "failedLogout";
 
     public static final String CONSENT_DENIED="consentDenied";
+
     public static final String ALREADY_LOGGED_IN="alreadyLoggedIn";
+
+    public static final String DIFFERENT_USER_AUTHENTICATED = "differentUserAuthenticated";
+
+    public static final String BROKER_LINKING_SESSION_EXPIRED = "brokerLinkingSessionExpired";
 }

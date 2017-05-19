@@ -28,6 +28,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 
+import javax.ws.rs.core.Response;
+
 import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.BeforeClass;
@@ -199,7 +201,8 @@ public abstract class AbstractServletAuthzAdapterTest extends AbstractExampleAda
 
         assertFalse(policy.getUsers().isEmpty());
 
-        getAuthorizationResource().policies().user().create(policy);
+        Response response = getAuthorizationResource().policies().user().create(policy);
+        response.close();
     }
 
     protected interface ExceptionRunnable {

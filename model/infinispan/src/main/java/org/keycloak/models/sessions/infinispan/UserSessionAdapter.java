@@ -18,11 +18,13 @@
 package org.keycloak.models.sessions.infinispan;
 
 import org.infinispan.Cache;
-import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
@@ -60,6 +62,36 @@ public class UserSessionAdapter implements UserSessionModel {
         this.offline = offline;
     }
 
+    @Override
+    public Map<String, AuthenticatedClientSessionModel> getAuthenticatedClientSessions() {
+        Map<String, AuthenticatedClientSessionEntity> clientSessionEntities = entity.getAuthenticatedClientSessions();
+        Map<String, AuthenticatedClientSessionModel> result = new HashMap<>();
+
+        List<String> removedClientUUIDS = new LinkedList<>();
+
+        if (clientSessionEntities != null) {
+            clientSessionEntities.forEach((String key, AuthenticatedClientSessionEntity value) -> {
+                // Check if client still exists
+                ClientModel client = realm.getClientById(key);
+                if (client != null) {
+                    result.put(key, new AuthenticatedClientSessionAdapter(value, client, this, provider, cache));
+                } else {
+                    removedClientUUIDS.add(key);
+                }
+            });
+        }
+
+        // Update user session
+        if (!removedClientUUIDS.isEmpty()) {
+            for (String clientUUID : removedClientUUIDS) {
+                entity.getAuthenticatedClientSessions().remove(clientUUID);
+            }
+            update();
+        }
+
+        return Collections.unmodifiableMap(result);
+    }
+
     public String getId() {
         return entity.getId();
     }
@@ -80,6 +112,12 @@ public class UserSessionAdapter implements UserSessionModel {
     }
     public UserModel getUser() {
         return session.users().getUserById(entity.getUser(), realm);
+    }
+
+    @Override
+    public void setUser(UserModel user) {
+        entity.setUser(user.getId());
+        update();
     }
 
     @Override
@@ -121,9 +159,6 @@ public class UserSessionAdapter implements UserSessionModel {
 
     @Override
     public void setNote(String name, String value) {
-        if (entity.getNotes() == null) {
-            entity.setNotes(new ConcurrentHashMap<>());
-        }
         if (value == null) {
             if (entity.getNotes().containsKey(name)) {
                 removeNote(name);
@@ -159,19 +194,14 @@ public class UserSessionAdapter implements UserSessionModel {
     }
 
     @Override
-    public List<ClientSessionModel> getClientSessions() {
-        if (entity.getClientSessions() != null) {
-            List<ClientSessionModel> clientSessions = new LinkedList<>();
-            for (String c : entity.getClientSessions()) {
-                ClientSessionModel clientSession = provider.getClientSession(realm, c, offline);
-                if (clientSession != null) {
-                    clientSessions.add(clientSession);
-                }
-            }
-            return clientSessions;
-        } else {
-            return Collections.emptyList();
-        }
+    public void restartSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
+        provider.updateSessionEntity(entity, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId);
+
+        entity.setState(null);
+        entity.getNotes().clear();
+        entity.getAuthenticatedClientSessions().clear();
+
+        update();
     }
 
     @Override
@@ -196,4 +226,7 @@ public class UserSessionAdapter implements UserSessionModel {
         provider.getTx().replace(cache, entity.getId(), entity);
     }
 
+    Cache<String, SessionEntity> getCache() {
+        return cache;
+    }
 }

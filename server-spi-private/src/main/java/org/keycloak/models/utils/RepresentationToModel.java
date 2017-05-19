@@ -189,6 +189,14 @@ public class RepresentationToModel {
             newRealm.setAccessCodeLifespanLogin(rep.getAccessCodeLifespanLogin());
         else newRealm.setAccessCodeLifespanLogin(1800);
 
+        if (rep.getActionTokenGeneratedByAdminLifespan() != null)
+            newRealm.setActionTokenGeneratedByAdminLifespan(rep.getActionTokenGeneratedByAdminLifespan());
+        else newRealm.setActionTokenGeneratedByAdminLifespan(12 * 60 * 60);
+
+        if (rep.getActionTokenGeneratedByUserLifespan() != null)
+            newRealm.setActionTokenGeneratedByUserLifespan(rep.getActionTokenGeneratedByUserLifespan());
+        else newRealm.setActionTokenGeneratedByUserLifespan(newRealm.getAccessCodeLifespanUserAction());
+
         if (rep.getSslRequired() != null)
             newRealm.setSslRequired(SslRequired.valueOf(rep.getSslRequired().toUpperCase()));
         if (rep.isRegistrationAllowed() != null) newRealm.setRegistrationAllowed(rep.isRegistrationAllowed());
@@ -812,6 +820,10 @@ public class RepresentationToModel {
             realm.setAccessCodeLifespanUserAction(rep.getAccessCodeLifespanUserAction());
         if (rep.getAccessCodeLifespanLogin() != null)
             realm.setAccessCodeLifespanLogin(rep.getAccessCodeLifespanLogin());
+        if (rep.getActionTokenGeneratedByAdminLifespan() != null)
+            realm.setActionTokenGeneratedByAdminLifespan(rep.getActionTokenGeneratedByAdminLifespan());
+        if (rep.getActionTokenGeneratedByUserLifespan() != null)
+            realm.setActionTokenGeneratedByUserLifespan(rep.getActionTokenGeneratedByUserLifespan());
         if (rep.getNotBefore() != null) realm.setNotBefore(rep.getNotBefore());
         if (rep.getRevokeRefreshToken() != null) realm.setRevokeRefreshToken(rep.getRevokeRefreshToken());
         if (rep.getAccessTokenLifespan() != null) realm.setAccessTokenLifespan(rep.getAccessTokenLifespan());
@@ -2098,7 +2110,7 @@ public class RepresentationToModel {
             }
         }
 
-        policy.getConfig().remove("scopes");
+        policy.removeConfig("scopes");
     }
 
     private static void updateAssociatedPolicies(Set<String> policyIds, Policy policy, StoreFactory storeFactory) {
@@ -2151,7 +2163,7 @@ public class RepresentationToModel {
             }
         }
 
-        policy.getConfig().remove("applyPolicies");
+        policy.removeConfig("applyPolicies");
     }
 
     private static void updateResources(Set<String> resourceIds, Policy policy, StoreFactory storeFactory) {
@@ -2197,7 +2209,7 @@ public class RepresentationToModel {
             }
         }
 
-        policy.getConfig().remove("resources");
+        policy.removeConfig("resources");
     }
 
     public static Resource toModel(ResourceRepresentation resource, ResourceServer resourceServer, AuthorizationProvider authorization) {

@@ -18,6 +18,11 @@
             <xsl:value-of select="$sessionCacheOwners"/>
         </xsl:attribute>
     </xsl:template>
+    <xsl:template match="//i:cache-container/i:distributed-cache[@name='authenticationSessions']/@owners">
+        <xsl:attribute name="owners">
+            <xsl:value-of select="$sessionCacheOwners"/>
+        </xsl:attribute>
+    </xsl:template>
     <xsl:template match="//i:cache-container/i:distributed-cache[@name='offlineSessions']/@owners">
         <xsl:attribute name="owners">
             <xsl:value-of select="$offlineSessionCacheOwners"/>

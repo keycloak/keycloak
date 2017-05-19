@@ -138,11 +138,8 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
         }
 
         try {
-            Map<String, String> config = policy.getConfig();
 
-            config.put("users", JsonSerialization.writeValueAsString(updatedUsers));
-
-            policy.setConfig(config);
+            policy.putConfig("users", JsonSerialization.writeValueAsString(updatedUsers));
         } catch (IOException cause) {
             throw new RuntimeException("Failed to serialize users", cause);
         }
@@ -181,7 +178,7 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
                                 if (users.isEmpty()) {
                                     policyStore.delete(policy.getId());
                                 } else {
-                                    policy.getConfig().put("users", JsonSerialization.writeValueAsString(users));
+                                    policy.putConfig("users", JsonSerialization.writeValueAsString(users));
                                 }
                             } catch (IOException e) {
                                 throw new RuntimeException("Error while synchronizing users with policy [" + policy.getName() + "].", e);

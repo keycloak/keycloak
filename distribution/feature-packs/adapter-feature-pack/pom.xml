@@ -41,6 +41,10 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-wildfly-elytron-oidc-adapter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-servlet-oauth-client</artifactId>
         </dependency>
         <dependency>

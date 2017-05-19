@@ -339,6 +339,56 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
     }
 
+    @Test
+    public void testMasterRealm() throws Exception {
+        // test that master realm can still perform operations when policies are in place
+        //
+        testingClient.server().run(FineGrainAdminUnitTest::setupPolices);
+        testingClient.server().run(FineGrainAdminUnitTest::setupUsers);
+
+        UserRepresentation user1 = adminClient.realm(TEST).users().search("user1").get(0);
+        UserRepresentation user2 = adminClient.realm(TEST).users().search("user2").get(0);
+        UserRepresentation user3 = adminClient.realm(TEST).users().search("user3").get(0);
+        UserRepresentation user4 = adminClient.realm(TEST).users().search("user4").get(0);
+        RoleRepresentation realmRole = adminClient.realm(TEST).roles().get("realm-role").toRepresentation();
+        List<RoleRepresentation> realmRoleSet = new LinkedList<>();
+        realmRoleSet.add(realmRole);
+        RoleRepresentation realmRole2 = adminClient.realm(TEST).roles().get("realm-role2").toRepresentation();
+        List<RoleRepresentation> realmRole2Set = new LinkedList<>();
+        realmRole2Set.add(realmRole);
+        ClientRepresentation client = adminClient.realm(TEST).clients().findByClientId("role-namespace").get(0);
+        RoleRepresentation clientRole = adminClient.realm(TEST).clients().get(client.getId()).roles().get("client-role").toRepresentation();
+        List<RoleRepresentation> clientRoleSet = new LinkedList<>();
+        clientRoleSet.add(clientRole);
+
+
+        {
+            Keycloak realmClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting());
+            realmClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().add(realmRoleSet);
+            List<RoleRepresentation> roles = adminClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().listAll();
+            Assert.assertTrue(roles.stream().anyMatch((r) -> {
+                return r.getName().equals("realm-role");
+            }));
+            realmClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().remove(realmRoleSet);
+            roles = adminClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().listAll();
+            Assert.assertTrue(roles.stream().noneMatch((r) -> {
+                return r.getName().equals("realm-role");
+            }));
+
+            realmClient.realm(TEST).users().get(user1.getId()).roles().clientLevel(client.getId()).add(clientRoleSet);
+            roles = adminClient.realm(TEST).users().get(user1.getId()).roles().clientLevel(client.getId()).listAll();
+            Assert.assertTrue(roles.stream().anyMatch((r) -> {
+                return r.getName().equals("client-role");
+            }));
+            realmClient.realm(TEST).users().get(user1.getId()).roles().clientLevel(client.getId()).remove(clientRoleSet);
+            roles = adminClient.realm(TEST).users().get(user1.getId()).roles().clientLevel(client.getId()).listAll();
+            Assert.assertTrue(roles.stream().noneMatch((r) -> {
+                return r.getName().equals("client-role");
+            }));
+            realmClient.close();
+        }
+
+    }
     // testRestEvaluationMasterRealm
     // testRestEvaluationMasterAdminTestRealm
 

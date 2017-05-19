@@ -1,6 +1,7 @@
 package org.keycloak.authorization.policy.provider.time;
 
 import java.text.SimpleDateFormat;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.keycloak.Config;
@@ -118,7 +119,7 @@ public class TimePolicyProviderFactory implements PolicyProviderFactory<TimePoli
             validateFormat(noa);
         }
 
-        Map<String, String> config = policy.getConfig();
+        Map<String, String> config = new HashMap(policy.getConfig());
 
         config.compute("nbf", (s, s2) -> nbf != null ? nbf : null);
         config.compute("noa", (s, s2) -> noa != null ? noa : null);

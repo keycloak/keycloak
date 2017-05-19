@@ -17,34 +17,22 @@
  */
 package org.keycloak.authorization.client;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import org.apache.http.client.HttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.keycloak.util.BasicAuthHelper;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import org.apache.http.client.HttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.keycloak.representations.adapters.config.AdapterConfig;
+import org.keycloak.util.BasicAuthHelper;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class Configuration {
+public class Configuration extends AdapterConfig {
 
     @JsonIgnore
     private HttpClient httpClient;
-
-    @JsonProperty("auth-server-url")
-    protected String authServerUrl;
-
-    @JsonProperty("realm")
-    protected String realm;
-
-    @JsonProperty("resource")
-    protected String clientId;
-
-    @JsonProperty("credentials")
-    protected Map<String, Object> clientCredentials = new HashMap<>();
 
     public Configuration() {
 
@@ -52,9 +40,10 @@ public class Configuration {
 
     public Configuration(String authServerUrl, String realm, String clientId, Map<String, Object> clientCredentials, HttpClient httpClient) {
         this.authServerUrl = authServerUrl;
-        this.realm = realm;
-        this.clientId = clientId;
-        this.clientCredentials = clientCredentials;
+        setAuthServerUrl(authServerUrl);
+        setRealm(realm);
+        setResource(clientId);
+        setCredentials(clientCredentials);
         this.httpClient = httpClient;
     }
 
@@ -62,13 +51,13 @@ public class Configuration {
     private ClientAuthenticator clientAuthenticator = new ClientAuthenticator() {
         @Override
         public void configureClientCredentials(HashMap<String, String> requestParams, HashMap<String, String> requestHeaders) {
-            String secret = (String) clientCredentials.get("secret");
+            String secret = (String) getCredentials().get("secret");
 
             if (secret == null) {
                 throw new RuntimeException("Client secret not provided.");
             }
 
-            requestHeaders.put("Authorization", BasicAuthHelper.createHeader(clientId, secret));
+            requestHeaders.put("Authorization", BasicAuthHelper.createHeader(getResource(), secret));
         }
     };
 
@@ -80,23 +69,7 @@ public class Configuration {
         return httpClient;
     }
 
-    public String getClientId() {
-        return clientId;
-    }
-
-    public String getAuthServerUrl() {
-        return authServerUrl;
-    }
-
     public ClientAuthenticator getClientAuthenticator() {
         return this.clientAuthenticator;
-    }
-
-    public Map<String, Object> getClientCredentials() {
-        return clientCredentials;
-    }
-
-    public String getRealm() {
-        return realm;
     }
 }

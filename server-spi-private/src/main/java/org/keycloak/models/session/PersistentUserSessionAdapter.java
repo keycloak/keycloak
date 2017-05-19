@@ -18,7 +18,7 @@
 package org.keycloak.models.session;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -27,7 +27,6 @@ import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -38,7 +37,7 @@ public class PersistentUserSessionAdapter implements UserSessionModel {
     private final PersistentUserSessionModel model;
     private final UserModel user;
     private final RealmModel realm;
-    private final List<ClientSessionModel> clientSessions;
+    private final Map<String, AuthenticatedClientSessionModel> authenticatedClientSessions;
 
     private PersistentUserSessionData data;
 
@@ -51,7 +50,9 @@ public class PersistentUserSessionAdapter implements UserSessionModel {
         data.setNotes(other.getNotes());
         data.setRememberMe(other.isRememberMe());
         data.setStarted(other.getStarted());
-        data.setState(other.getState());
+        if (other.getState() != null) {
+            data.setState(other.getState().toString());
+        }
 
         this.model = new PersistentUserSessionModel();
         this.model.setUserSessionId(other.getId());
@@ -59,14 +60,14 @@ public class PersistentUserSessionAdapter implements UserSessionModel {
 
         this.user = other.getUser();
         this.realm = other.getRealm();
-        this.clientSessions = other.getClientSessions();
+        this.authenticatedClientSessions = other.getAuthenticatedClientSessions();
     }
 
-    public PersistentUserSessionAdapter(PersistentUserSessionModel model, RealmModel realm, UserModel user, List<ClientSessionModel> clientSessions) {
+    public PersistentUserSessionAdapter(PersistentUserSessionModel model, RealmModel realm, UserModel user, Map<String, AuthenticatedClientSessionModel> clientSessions) {
         this.model = model;
         this.realm = realm;
         this.user = user;
-        this.clientSessions = clientSessions;
+        this.authenticatedClientSessions = clientSessions;
     }
 
     // Lazily init data
@@ -115,6 +116,11 @@ public class PersistentUserSessionAdapter implements UserSessionModel {
     }
 
     @Override
+    public void setUser(UserModel user) {
+        throw new IllegalStateException("Not supported");
+    }
+
+    @Override
     public RealmModel getRealm() {
         return realm;
     }
@@ -155,8 +161,8 @@ public class PersistentUserSessionAdapter implements UserSessionModel {
     }
 
     @Override
-    public List<ClientSessionModel> getClientSessions() {
-        return clientSessions;
+    public Map<String, AuthenticatedClientSessionModel> getAuthenticatedClientSessions() {
+        return authenticatedClientSessions;
     }
 
     @Override
@@ -188,12 +194,29 @@ public class PersistentUserSessionAdapter implements UserSessionModel {
 
     @Override
     public State getState() {
-        return getData().getState();
+        String state = getData().getState();
+
+        if (state == null) {
+            return null;
+        }
+
+        // Migration to Keycloak 3.2
+        if (state.equals("LOGGING_IN")) {
+            return State.LOGGED_IN;
+        }
+
+        return State.valueOf(state);
     }
 
     @Override
     public void setState(State state) {
-        getData().setState(state);
+        String stateStr = state==null ? null : state.toString();
+        getData().setState(stateStr);
+    }
+
+    @Override
+    public void restartSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
+        throw new IllegalStateException("Not supported");
     }
 
     @Override
@@ -234,7 +257,7 @@ public class PersistentUserSessionAdapter implements UserSessionModel {
         private Map<String, String> notes;
 
         @JsonProperty("state")
-        private State state;
+        private String state;
 
         public String getBrokerSessionId() {
             return brokerSessionId;
@@ -292,11 +315,11 @@ public class PersistentUserSessionAdapter implements UserSessionModel {
             this.notes = notes;
         }
 
-        public State getState() {
+        public String getState() {
             return state;
         }
 
-        public void setState(State state) {
+        public void setState(String state) {
             this.state = state;
         }
     }

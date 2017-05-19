@@ -79,6 +79,9 @@ public enum EventType {
     RESET_PASSWORD(true),
     RESET_PASSWORD_ERROR(true),
 
+    RESTART_AUTHENTICATION(true),
+    RESTART_AUTHENTICATION_ERROR(true),
+
     INVALID_SIGNATURE(false),
     INVALID_SIGNATURE_ERROR(false),
     REGISTER_NODE(false),
@@ -89,6 +92,8 @@ public enum EventType {
     USER_INFO_REQUEST(false),
     USER_INFO_REQUEST_ERROR(false),
 
+    IDENTITY_PROVIDER_LINK_ACCOUNT(true),
+    IDENTITY_PROVIDER_LINK_ACCOUNT_ERROR(true),
     IDENTITY_PROVIDER_LOGIN(false),
     IDENTITY_PROVIDER_LOGIN_ERROR(false),
     IDENTITY_PROVIDER_FIRST_LOGIN(true),
@@ -105,6 +110,8 @@ public enum EventType {
     CUSTOM_REQUIRED_ACTION_ERROR(true),
     EXECUTE_ACTIONS(true),
     EXECUTE_ACTIONS_ERROR(true),
+    EXECUTE_ACTION_TOKEN(true),
+    EXECUTE_ACTION_TOKEN_ERROR(true),
 
     CLIENT_INFO(false),
     CLIENT_INFO_ERROR(false),
@@ -124,6 +131,10 @@ public enum EventType {
         this.saveByDefault = saveByDefault;
     }
 
+    /**
+     * Determines whether this event is stored when the admin has not set a specific set of event types to save.
+     * @return
+     */
     public boolean isSaveByDefault() {
         return saveByDefault;
     }

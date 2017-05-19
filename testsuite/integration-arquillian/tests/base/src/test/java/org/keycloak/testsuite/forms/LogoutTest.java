@@ -126,7 +126,7 @@ public class LogoutTest extends AbstractTestRealmKeycloakTest {
 
          // Check session 1 not logged-in
         oauth.openLoginForm();
-        assertEquals(oauth.getLoginFormUrl(), driver.getCurrentUrl());
+        loginPage.assertCurrent();
 
         // Login session 3
         oauth.doLogin("test-user@localhost", "password");

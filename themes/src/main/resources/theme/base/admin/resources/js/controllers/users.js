@@ -482,7 +482,7 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
     }
 });
 
-module.controller('UserCredentialsCtrl', function($scope, realm, user, $route, RequiredActions, User, UserExecuteActionsEmail, UserCredentials, Notifications, Dialog) {
+module.controller('UserCredentialsCtrl', function($scope, realm, user, $route, RequiredActions, User, UserExecuteActionsEmail, UserCredentials, Notifications, Dialog, TimeUnit2) {
     console.log('UserCredentialsCtrl');
 
     $scope.realm = realm;
@@ -548,6 +548,7 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, $route, R
     };
 
     $scope.emailActions = [];
+    $scope.emailActionsTimeout = TimeUnit2.asUnit(realm.actionTokenGeneratedByAdminLifespan);
     $scope.disableableCredentialTypes = [];
 
     $scope.sendExecuteActionsEmail = function() {
@@ -556,7 +557,7 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, $route, R
             return;
         }
         Dialog.confirm('Send Email', 'Are you sure you want to send email to user?', function() {
-            UserExecuteActionsEmail.update({ realm: realm.realm, userId: user.id }, $scope.emailActions, function() {
+            UserExecuteActionsEmail.update({ realm: realm.realm, userId: user.id, lifespan: $scope.emailActionsTimeout.toSeconds() }, $scope.emailActions, function() {
                 Notifications.success("Email sent to user");
                 $scope.emailActions = [];
             }, function() {

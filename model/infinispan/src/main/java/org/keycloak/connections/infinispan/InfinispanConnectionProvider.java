@@ -36,12 +36,23 @@ public interface InfinispanConnectionProvider extends Provider {
     String SESSION_CACHE_NAME = "sessions";
     String OFFLINE_SESSION_CACHE_NAME = "offlineSessions";
     String LOGIN_FAILURE_CACHE_NAME = "loginFailures";
+    String AUTHENTICATION_SESSIONS_CACHE_NAME = "authenticationSessions";
     String WORK_CACHE_NAME = "work";
     String AUTHORIZATION_CACHE_NAME = "authorization";
+    String AUTHORIZATION_REVISIONS_CACHE_NAME = "authorizationRevisions";
+    int AUTHORIZATION_REVISIONS_CACHE_DEFAULT_MAX = 20000;
+
+    String ACTION_TOKEN_CACHE = "actionTokens";
+    int ACTION_TOKEN_CACHE_DEFAULT_MAX = -1;
+    int ACTION_TOKEN_MAX_IDLE_SECONDS = -1;
+    long ACTION_TOKEN_WAKE_UP_INTERVAL_SECONDS = 5 * 60 * 1000l;
 
     String KEYS_CACHE_NAME = "keys";
     int KEYS_CACHE_DEFAULT_MAX = 1000;
     int KEYS_CACHE_MAX_IDLE_SECONDS = 3600;
+
+    // System property used on Wildfly to identify distributedCache address and sticky session route
+    String JBOSS_NODE_NAME = "jboss.node.name";
 
 
     <K, V> Cache<K, V> getCache(String name);

@@ -210,12 +210,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         oauth.redirectUri(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth/admin/test/console/nosuch.html");
         oauth.openLoginForm();
 
-        String actionUrl = driver.getPageSource().split("action=\"")[1].split("\"")[0].replaceAll("&amp;", "&");
-        actionUrl = actionUrl.replaceFirst("&execution=.*", "");
-
-        String loginPageCode = actionUrl.split("code=")[1].split("&")[0];
-
-        driver.navigate().to(actionUrl);
+        String loginPageCode = driver.getPageSource().split("code=")[1].split("&")[0].split("\"")[0];
 
         oauth.fillLoginForm("test-user@localhost", "password");
 
@@ -452,7 +447,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         Assert.assertEquals(400, response.getStatusCode());
 
         EventRepresentation event = events.poll();
-        assertNotNull(event.getDetails().get(Details.CODE_ID));
+        assertNull(event.getDetails().get(Details.CODE_ID));
 
         UserManager.realm(adminClient.realm("test")).user(user).removeRequiredAction(UserModel.RequiredAction.UPDATE_PROFILE.toString());
     }

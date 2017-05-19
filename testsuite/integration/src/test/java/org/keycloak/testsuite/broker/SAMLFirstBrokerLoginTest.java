@@ -23,6 +23,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.KeycloakServer;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
+import org.junit.Test;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

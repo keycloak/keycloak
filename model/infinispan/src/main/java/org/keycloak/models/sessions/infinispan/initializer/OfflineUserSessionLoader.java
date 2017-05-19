@@ -19,7 +19,6 @@ package org.keycloak.models.sessions.infinispan.initializer;
 
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.session.UserSessionPersisterProvider;
@@ -64,12 +63,7 @@ public class OfflineUserSessionLoader implements SessionLoader {
         for (UserSessionModel persistentSession : sessions) {
 
             // Save to memory/infinispan
-            UserSessionModel offlineUserSession = session.sessions().importUserSession(persistentSession, true);
-
-            for (ClientSessionModel persistentClientSession : persistentSession.getClientSessions()) {
-                ClientSessionModel offlineClientSession = session.sessions().importClientSession(persistentClientSession, true);
-                offlineClientSession.setUserSession(offlineUserSession);
-            }
+            UserSessionModel offlineUserSession = session.sessions().importUserSession(persistentSession, true, true);
         }
 
         return true;

@@ -25,8 +25,8 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
@@ -492,8 +492,11 @@ public class ClientResource {
             UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(userSession);
 
             // Update lastSessionRefresh with the timestamp from clientSession
-            for (ClientSessionModel clientSession : userSession.getClientSessions()) {
-                if (client.getId().equals(clientSession.getClient().getId())) {
+            for (Map.Entry<String, AuthenticatedClientSessionModel> csEntry : userSession.getAuthenticatedClientSessions().entrySet()) {
+                String clientUuid = csEntry.getKey();
+                AuthenticatedClientSessionModel clientSession = csEntry.getValue();
+
+                if (client.getId().equals(clientUuid)) {
                     rep.setLastAccess(Time.toMillis(clientSession.getTimestamp()));
                     break;
                 }

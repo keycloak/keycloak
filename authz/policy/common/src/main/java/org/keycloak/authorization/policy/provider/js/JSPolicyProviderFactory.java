@@ -70,9 +70,7 @@ public class JSPolicyProviderFactory implements PolicyProviderFactory<JSPolicyRe
     }
 
     private void updatePolicy(Policy policy, String code) {
-        Map<String, String> config = policy.getConfig();
-        config.put("code", code);
-        policy.setConfig(config);
+        policy.putConfig("code", code);
     }
 
     @Override

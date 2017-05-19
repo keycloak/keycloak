@@ -1,4 +1,4 @@
-/subsystem=keycloak-server:add(web-context=auth,master-realm-name=master,scheduled-task-interval=900,providers=[classpath:${jboss.home.dir}/providers/*])
+/subsystem=keycloak-server:add(web-context=auth,master-realm-name=master,scheduled-task-interval=900)
 /subsystem=keycloak-server/theme=defaults/:add(dir=${jboss.home.dir}/themes,staticMaxAge=2592000,cacheTemplates=true,cacheThemes=true)
 /subsystem=keycloak-server/spi=eventsStore/:add
 /subsystem=keycloak-server/spi=eventsStore/provider=jpa/:add(properties={exclude-events => "[\"REFRESH_TOKEN\"]"},enabled=true)

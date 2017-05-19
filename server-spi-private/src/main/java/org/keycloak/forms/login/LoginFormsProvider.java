@@ -17,12 +17,12 @@
 
 package org.keycloak.forms.login;
 
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.provider.Provider;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -68,15 +68,15 @@ public interface LoginFormsProvider extends Provider {
 
     public Response createIdpLinkEmailPage();
 
+    public Response createLoginExpiredPage();
+
     public Response createErrorPage();
 
-    public Response createOAuthGrant(ClientSessionModel clientSessionModel);
+    public Response createOAuthGrant();
 
     public Response createCode();
 
     public LoginFormsProvider setClientSessionCode(String accessCode);
-
-    public LoginFormsProvider setClientSession(ClientSessionModel clientSession);
 
     public LoginFormsProvider setAccessRequest(List<RoleModel> realmRolesRequested, MultivaluedMap<String,RoleModel> resourceRolesRequested, List<ProtocolMapperModel> protocolMappers);
     public LoginFormsProvider setAccessRequest(String message);

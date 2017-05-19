@@ -17,18 +17,23 @@
 
 package org.keycloak.testsuite.federation.kerberos;
 
+import java.net.URI;
+import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.common.constants.KerberosConstants;
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
 import org.keycloak.federation.kerberos.KerberosConfig;
@@ -148,15 +153,24 @@ public class KerberosStandaloneTest extends AbstractKerberosTest {
         Response spnegoResponse = spnegoLogin("hnelson", "secret");
         String context = spnegoResponse.readEntity(String.class);
         spnegoResponse.close();
+
+        Assert.assertTrue(context.contains("Log in to test"));
+
         Pattern pattern = Pattern.compile("action=\"([^\"]+)\"");
         Matcher m = pattern.matcher(context);
         Assert.assertTrue(m.find());
         String url = m.group(1);
-        driver.navigate().to(url);
-        Assert.assertTrue(loginPage.isCurrent());
-        loginPage.login("test-user@localhost", "password");
-        String pageSource = driver.getPageSource();
-        assertAuthenticationSuccess(driver.getCurrentUrl());
+
+
+        // Follow login with HttpClient. Improve if needed
+        MultivaluedMap<String, String> params = new javax.ws.rs.core.MultivaluedHashMap<>();
+        params.putSingle("username", "test-user@localhost");
+        params.putSingle("password", "password");
+        Response response = client.target(url).request()
+                .post(Entity.form(params));
+
+        URI redirectUri = response.getLocation();
+        assertAuthenticationSuccess(redirectUri.toString());
 
         events.clear();
         testRealmResource().components().add(kerberosProvider);
