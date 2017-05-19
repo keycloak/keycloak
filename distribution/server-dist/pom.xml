@@ -35,6 +35,11 @@
             <artifactId>keycloak-server-feature-pack</artifactId>
             <type>zip</type>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-client-cli-dist</artifactId>
+            <type>zip</type>
+        </dependency>
     </dependencies>
 
     <build>
@@ -51,7 +56,7 @@
                         </goals>
                         <phase>compile</phase>
                         <configuration>
-                            <config-file>server-provisioning.xml</config-file>
+                            <config-file>../server-provisioning.xml</config-file>
                         </configuration>
                     </execution>
                 </executions>
@@ -79,29 +84,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>unpack-client-cli-dist</id>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>unpack</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-client-cli-dist</artifactId>
-                                    <type>zip</type>
-                                    <outputDirectory>${project.build.directory}/unpacked</outputDirectory>
-                                </artifactItem>
-                            </artifactItems>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
 
@@ -123,13 +105,6 @@
         </profile>
 
         <profile>
-            <id>wf11</id>
-            <properties>
-                <build-tools.version>${wildfly11.build-tools.version}</build-tools.version>
-            </properties>
-        </profile>
-
-        <profile>
             <id>product</id>
             <activation>
                 <property>
@@ -139,7 +114,7 @@
             <properties>
                 <build-tools.version>${eap.build-tools.version}</build-tools.version>
                 <assemblyFile>assembly.xml</assemblyFile>
-                <profileExcludes>%regex[(providers.*)|(docs/contrib.*)|(docs/examples.*)|(docs/schema.*)]</profileExcludes>
+                <profileExcludes>%regex[(docs/contrib.*)|(docs/examples.*)|(docs/schema.*)]</profileExcludes>
             </properties>
             <dependencies>
                 <dependency>

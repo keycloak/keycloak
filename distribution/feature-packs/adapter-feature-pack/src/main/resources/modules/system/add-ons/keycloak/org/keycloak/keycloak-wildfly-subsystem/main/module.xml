@@ -21,8 +21,8 @@
     <properties>
         <property name="jboss.api" value="private"/>
     </properties>
-
     <resources>
+        <resource-root path="."/>
         <artifact name="${org.keycloak:keycloak-wildfly-subsystem}"/>
     </resources>
 

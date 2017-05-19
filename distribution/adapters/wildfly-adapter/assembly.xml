@@ -39,20 +39,8 @@
             <outputDirectory/>
             <filtered>false</filtered>
             <excludes>
-                <exclude>.installation</exclude>
                 <exclude>docs/**</exclude>
-                <exclude>domain/**</exclude>
-                <exclude>standalone/**</exclude>
-                <exclude>bin/*.sh</exclude>
-                <exclude>module.xml</exclude>
-                <exclude>welcome-content/**</exclude>
-                <exclude>appclient/**</exclude>
-                <exclude>bin/appclient.*</exclude>
-                <exclude>copyright.txt</exclude>
-                <exclude>README.txt</exclude>
-                <exclude>themes/**</exclude>
-                <exclude>version.txt</exclude>
-                <exclude>${profileExcludes}</exclude>
+                <exclude>README.md</exclude>
             </excludes>
         </fileSet>
         <fileSet>
@@ -72,42 +60,29 @@
             <fileMode>0444</fileMode>
         </fileSet>
         <fileSet>
-            <directory>src/main/welcome-content</directory>
-            <outputDirectory>welcome-content</outputDirectory>
-            <includes>
-                <include>*.*</include>
-            </includes>
-        </fileSet>
-        <fileSet>
             <directory>src/main/modules</directory>
             <outputDirectory>modules</outputDirectory>
             <includes>
                 <include>layers.conf</include>
             </includes>
         </fileSet>
-        <fileSet>
-            <directory>src/main</directory>
-            <outputDirectory></outputDirectory>
-            <includes>
-                <include>${readmeInclude}</include>
-            </includes>
-            <filtered>true</filtered>
-        </fileSet>
-        <fileSet>
-            <directory>target/cli</directory>
-            <outputDirectory>bin</outputDirectory>
-            <includes>
-                <include>*.cli</include>
-            </includes>
-            <filtered>true</filtered>
-        </fileSet>
     </fileSets>
-
     <files>
         <file>
-            <source>src/main/version.txt</source>
-            <outputDirectory/>
-            <filtered>true</filtered>
+            <source>../shared-cli/adapter-install.cli</source>
+            <outputDirectory>bin</outputDirectory>
+        </file>
+        <file>
+            <source>cli/adapter-install-offline.cli</source>
+            <outputDirectory>bin</outputDirectory>
+        </file>
+        <file>
+            <source>../shared-cli/adapter-elytron-install.cli</source>
+            <outputDirectory>bin</outputDirectory>
+        </file>
+        <file>
+            <source>cli/adapter-elytron-install-offline.cli</source>
+            <outputDirectory>bin</outputDirectory>
         </file>
     </files>
 

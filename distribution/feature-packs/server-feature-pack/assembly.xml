@@ -28,9 +28,6 @@
         <fileSet>
             <directory>target/${project.build.finalName}</directory>
             <outputDirectory/>
-            <excludes>
-                <exclude>configuration/**</exclude>
-            </excludes>
         </fileSet>
         <fileSet>
             <directory>target/unpacked-themes/theme</directory>
@@ -51,13 +48,6 @@
             </includes>
             <outputDirectory>content/bin</outputDirectory>
             <filtered>true</filtered>
-        </fileSet>
-        <fileSet>
-            <directory>${configDir}</directory>
-            <includes>
-                <include>**/**</include>
-            </includes>
-            <outputDirectory>configuration</outputDirectory>
         </fileSet>
         <fileSet>
             <directory>../../../</directory>
