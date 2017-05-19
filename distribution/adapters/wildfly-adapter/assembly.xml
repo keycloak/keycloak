@@ -39,16 +39,8 @@
             <outputDirectory/>
             <filtered>false</filtered>
             <excludes>
-                <exclude>bin/*.sh</exclude>
-                <exclude>module.xml</exclude>
-                <exclude>welcome-content/**</exclude>
-                <exclude>appclient/**</exclude>
-                <exclude>bin/appclient.*</exclude>
-                <exclude>copyright.txt</exclude>
-                <exclude>README.txt</exclude>
-                <exclude>themes/**</exclude>
-                <exclude>version.txt</exclude>
-                <exclude>${profileExcludes}</exclude>
+                <exclude>docs/**</exclude>
+                <exclude>README.md</exclude>
             </excludes>
         </fileSet>
         <fileSet>
@@ -68,8 +60,8 @@
             <fileMode>0444</fileMode>
         </fileSet>
         <fileSet>
-            <directory>src/main/welcome-content</directory>
-            <outputDirectory>welcome-content</outputDirectory>
+            <directory>cli</directory>
+            <outputDirectory>bin</outputDirectory>
             <includes>
                 <include>*.*</include>
             </includes>
@@ -82,13 +74,5 @@
             </includes>
         </fileSet>
     </fileSets>
-
-    <files>
-        <file>
-            <source>src/main/version.txt</source>
-            <outputDirectory/>
-            <filtered>true</filtered>
-        </file>
-    </files>
 
 </assembly>
