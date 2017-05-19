@@ -38,6 +38,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -91,10 +92,10 @@ public interface RealmResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<EventRepresentation> getEvents(@QueryParam("type") List<String> types, @QueryParam("client") String client,
-            @QueryParam("user") String user, @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
-            @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
-            @QueryParam("max") Integer maxResults);
+    List<EventRepresentation> getEvents(@QueryParam("type") List<String> types, @QueryParam("client") String client,
+                                        @QueryParam("user") String user, @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
+                                        @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
+                                        @QueryParam("max") Integer maxResults);
 
     @DELETE
     @Path("admin-events")
@@ -117,31 +118,31 @@ public interface RealmResource {
     @GET
     @Path("events/config")
     @Produces(MediaType.APPLICATION_JSON)
-    public RealmEventsConfigRepresentation getRealmEventsConfig();
+    RealmEventsConfigRepresentation getRealmEventsConfig();
 
     @PUT
     @Path("events/config")
     @Consumes(MediaType.APPLICATION_JSON)
-    public void updateRealmEventsConfig(RealmEventsConfigRepresentation rep);
+    void updateRealmEventsConfig(RealmEventsConfigRepresentation rep);
 
     @GET
     @Path("group-by-path/{path: .*}")
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public GroupRepresentation getGroupByPath(@PathParam("path") String path);
+    GroupRepresentation getGroupByPath(@PathParam("path") String path);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("default-groups")
-    public List<GroupRepresentation> getDefaultGroups();
+    List<GroupRepresentation> getDefaultGroups();
 
     @PUT
     @Path("default-groups/{groupId}")
-    public void addDefaultGroup(@PathParam("groupId") String groupId);
+    void addDefaultGroup(@PathParam("groupId") String groupId);
 
     @DELETE
     @Path("default-groups/{groupId}")
-    public void removeDefaultGroup(@PathParam("groupId") String groupId);
+    void removeDefaultGroup(@PathParam("groupId") String groupId);
 
     @Path("identity-provider")
     IdentityProvidersResource identityProviders();
@@ -163,7 +164,7 @@ public interface RealmResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response partialImport(PartialImportRepresentation rep);
+    Response partialImport(PartialImportRepresentation rep);
 
     @Path("authentication")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -178,6 +179,11 @@ public interface RealmResource {
     Response testLDAPConnection(@QueryParam("action") String action, @QueryParam("connectionUrl") String connectionUrl,
                                 @QueryParam("bindDn") String bindDn, @QueryParam("bindCredential") String bindCredential,
                                 @QueryParam("useTruststoreSpi") String useTruststoreSpi, @QueryParam("connectionTimeout") String connectionTimeout);
+
+    @Path("testSMTPConnection")
+    @GET
+    @NoCache
+    Response testSMTPConnection(@QueryParam("settings") String settings) throws IOException;
 
     @Path("clear-realm-cache")
     @POST
