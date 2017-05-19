@@ -36,6 +36,7 @@ import org.keycloak.testsuite.util.RealmBuilder;
 
 import javax.ws.rs.core.Response;
 import java.util.List;
+import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 
 /**
  *
@@ -46,6 +47,14 @@ public abstract class AbstractClientTest extends AbstractAuthTest {
     @Rule
     public AssertAdminEvents assertAdminEvents = new AssertAdminEvents(this);
 
+    @Override
+    public void setDefaultPageUriParameters() {
+        super.setDefaultPageUriParameters();
+        testRealmPage.setAuthRealm(MASTER);
+        testRealmLoginPage.setAuthRealm(testRealmPage);
+        testRealmAccountPage.setAuthRealm(testRealmPage);
+    }    
+    
     @Before
     public void setupAdminEvents() {
         RealmRepresentation realm = testRealmResource().toRepresentation();
@@ -66,7 +75,7 @@ public abstract class AbstractClientTest extends AbstractAuthTest {
     }
 
     protected String getRealmId() {
-        return "master";
+        return MASTER;
     }
 
     // returns UserRepresentation retrieved from server, with all fields, including id
