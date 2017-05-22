@@ -7,9 +7,9 @@ You then have to provide some extra configuration via normal Spring Boot configu
 [[_spring_boot_adapter_installation]]
 ===== Adapter Installation
 
-The Keycloak Spring Boot adapter takes advantage of Spring Boot's autoconfiguration so all you need to do is add the Keycloak Spring Boot adapter JAR to your project.
-Depending on what container you are using with Spring Boot, you also need to add the appropriate Keycloak container adapter.
-If you are using Maven, add the following to your pom.xml (using Tomcat as an example):
+The Keycloak Spring Boot adapter takes advantage of Spring Boot's autoconfiguration so all you need to do is add the Keycloak Spring Boot starter to your project.
+They Keycloak Spring Boot Starter is also directly available from the http://start.spring.io/[Spring Start Page].
+To add it manually and if you are using Maven, add the following to your dependencies :
 
 
 [source,xml,subs="attributes+"]
@@ -18,17 +18,33 @@ If you are using Maven, add the following to your pom.xml (using Tomcat as an ex
 
 <dependency>
     <groupId>org.keycloak</groupId>
-    <artifactId>keycloak-spring-boot-adapter</artifactId>
-    <version>{{book.project.versionMvn}}</version>
+    <artifactId>keycloak-spring-boot-starter</artifactId>
 </dependency>
-<dependency>
-    <groupId>org.keycloak</groupId>
-    <artifactId>keycloak-tomcat8-adapter</artifactId>
-    <version>{{book.project.versionMvn}}</version>
-</dependency>
+
 ----
 
-Currently the following embedded containers are supported :
+Make also sure to add the Adapter BOM dependency :
+
+[source,xml,subs="attributes+"]
+----
+
+
+<dependencyManagement>
+  <dependencies>
+    <dependency>
+      <groupId>org.keycloak.bom</groupId>
+      <artifactId>keycloak-adapter-bom</artifactId>
+      <version>{{book.project.versionMvn}}</version>
+      <type>pom</type>
+      <scope>import</scope>
+    </dependency>
+  </dependencies>
+</dependencyManagement>
+
+----
+
+
+Currently the following embedded containers are supported and do not require any extra dependencies if using the Starter:
 
 * Tomcat
 * Undertow
