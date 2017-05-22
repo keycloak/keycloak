@@ -872,8 +872,6 @@ public class ModelToRepresentation {
                 return scope;
             }).collect(Collectors.toSet()));
 
-            resource.setTypedScopes(new ArrayList<>());
-
             if (resource.getType() != null) {
                 ResourceStore resourceStore = authorization.getStoreFactory().getResourceStore();
                 for (Resource typed : resourceStore.findByType(resource.getType(), resourceServer.getId())) {

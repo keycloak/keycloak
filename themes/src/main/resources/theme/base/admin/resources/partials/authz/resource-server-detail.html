@@ -57,29 +57,6 @@
                 </div>
             </div>
         </fieldset>
-
-        <fieldset class="border-top" data-ng-show="server.id">
-            <legend><span class="text">{{:: 'authz-export-settings' | translate}}</span>
-                <kc-tooltip>{{:: 'authz-export-settings.tooltip' | translate}}</kc-tooltip>
-            </legend>
-            <div class="form-group">
-                <label class="col-md-2 control-label" for="server.allowRemoteResourceManagement">{{:: 'authz-export-settings' | translate}}</label>
-                <div class="col-md-6">
-                    <button data-ng-click="export()" class="btn btn-primary" data-ng-hide="settings">{{:: 'export' | translate}}</button>
-                    <button data-ng-click="downloadSettings()" class="btn btn-primary" data-ng-show="settings">{{:: 'download' | translate}}</button>
-                    <button data-ng-click="cancelExport()" class="btn btn-primary" data-ng-show="settings">{{:: 'cancel' | translate}}</button>
-                </div>
-                <kc-tooltip>{{:: 'authz-export-settings.tooltip' | translate}}</kc-tooltip>
-            </div>
-            <fieldset class="margin-top">
-                <div class="form-group" ng-show="settings">
-                    <div class="col-sm-12">
-                        <a class="btn btn-primary btn-lg" data-ng-click="download()" type="submit" ng-show="installation">{{:: 'download' | translate}}</a>
-                        <textarea class="form-control" rows="20" kc-select-action="click">{{settings}}</textarea>
-                    </div>
-                </div>
-            </fieldset>
-        </fieldset>
     </form>
 </div>
 
