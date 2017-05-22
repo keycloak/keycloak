@@ -81,7 +81,7 @@
   "browserSecurityHeaders": {
     "xContentTypeOptions": "nosniff",
     "xFrameOptions": "SAMEORIGIN",
-    "contentSecurityPolicy": "frame-src 'self'"
+    "contentSecurityPolicy": "child-src 'self'"
   },
   "smtpServer": {
     "host": "localhost",
@@ -615,7 +615,7 @@
     "_browser_header.xContentTypeOptions": "nosniff",
     "bruteForceProtected": "false",
     "maxFailureWaitSeconds": "900",
-    "_browser_header.contentSecurityPolicy": "frame-src 'self'",
+    "_browser_header.contentSecurityPolicy": "child-src 'self'",
     "minimumQuickLoginWaitSeconds": "60",
     "waitIncrementSeconds": "60"
   }

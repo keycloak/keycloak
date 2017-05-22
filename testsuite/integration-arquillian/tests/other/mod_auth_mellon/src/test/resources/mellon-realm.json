@@ -1002,7 +1002,7 @@
   } ],
   "clientTemplates" : [ ],
   "browserSecurityHeaders" : {
-    "contentSecurityPolicy" : "frame-src 'self'",
+    "contentSecurityPolicy" : "child-src 'self'",
     "xFrameOptions" : "SAMEORIGIN"
   },
   "smtpServer" : { },

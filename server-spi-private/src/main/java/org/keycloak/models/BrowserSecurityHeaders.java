@@ -39,7 +39,7 @@ public class BrowserSecurityHeaders {
 
         Map<String, String> dh = new HashMap<>();
         dh.put("xFrameOptions", "SAMEORIGIN");
-        dh.put("contentSecurityPolicy", "frame-src 'self'");
+        dh.put("contentSecurityPolicy", "child-src 'self'");
         dh.put("xContentTypeOptions", "nosniff");
         dh.put("xRobotsTag", "none");
         dh.put("xXSSProtection", "1; mode=block");

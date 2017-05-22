@@ -63,7 +63,7 @@ public class MergeAttributesTest {
                 "  \"smtpServer\" : { },\n" +
                 "  \"attributes\" : {\n" +
                 "    \"_browser_header.xFrameOptions\" : \"SAMEORIGIN\",\n" +
-                "    \"_browser_header.contentSecurityPolicy\" : \"frame-src 'self'\"\n" +
+                "    \"_browser_header.contentSecurityPolicy\" : \"child-src 'self'\"\n" +
                 "  }\n" +
                 "}";
 
@@ -85,7 +85,7 @@ public class MergeAttributesTest {
                 "  \"attributes\" : {\n" +
                 "    \"_browser_header.xFrameOptions\" : \"SAMEORIGIN\",\n" +
                 "    \"_browser_header.x\" : \"ORIGIN\",\n" +
-                "    \"_browser_header.contentSecurityPolicy\" : \"frame-src 'self'\"\n" +
+                "    \"_browser_header.contentSecurityPolicy\" : \"child-src 'self'\"\n" +
                 "  }\n" +
                 "}";
 
