@@ -14,7 +14,6 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-
 package org.keycloak.testsuite.admin.event;
 
 import org.junit.Before;
@@ -23,6 +22,7 @@ import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
 
 import java.util.Collections;
+import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 
 /**
  *
@@ -31,6 +31,14 @@ import java.util.Collections;
 public abstract class AbstractEventTest extends AbstractAuthTest {
 
     protected RealmEventsConfigRepresentation configRep;
+
+    @Override
+    public void setDefaultPageUriParameters() {
+        super.setDefaultPageUriParameters();
+        testRealmPage.setAuthRealm(MASTER);
+        testRealmLoginPage.setAuthRealm(testRealmPage);
+        testRealmAccountPage.setAuthRealm(testRealmPage);
+    }
 
     @Before
     public void setConfigRep() {

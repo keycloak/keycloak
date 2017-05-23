@@ -1,1 +1,3 @@
 org.keycloak.testsuite.federation.DummyUserFederationProviderFactory
+org.keycloak.testsuite.federation.UserMapStorageFactory
+org.keycloak.testsuite.federation.UserPropertyFileStorageFactory
