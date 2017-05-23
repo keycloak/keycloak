@@ -59,6 +59,7 @@ import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.OAuthClient;
 
+import static org.junit.Assert.assertNull;
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT_LINKS;
 import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
@@ -132,6 +133,7 @@ public class MigrationTest extends AbstractKeycloakTest {
         testMigrationTo2_5_0();
         testMigrationTo2_5_1();
         testMigrationTo3_0_0();
+        testMigrationTo3_2_0();
     }
     
     @Test
@@ -210,7 +212,12 @@ public class MigrationTest extends AbstractKeycloakTest {
     private void testMigrationTo3_0_0() {
         testRoleManageAccountLinks(masterRealm, migrationRealm);
     }
-    
+
+    private void testMigrationTo3_2_0() {
+        assertNull(masterRealm.toRepresentation().getPasswordPolicy());
+        assertNull(migrationRealm.toRepresentation().getPasswordPolicy());
+    }
+
     private void testRoleManageAccountLinks(RealmResource... realms) {
         log.info("testing role manage account links");
         for (RealmResource realm : realms) {
