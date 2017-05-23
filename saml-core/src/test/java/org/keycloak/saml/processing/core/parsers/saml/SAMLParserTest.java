@@ -200,4 +200,20 @@ public class SAMLParserTest {
             assertThat(parsedObject, instanceOf(EntityDescriptorType.class));
         }
     }
+
+    @Test
+    public void testEmptyAttributeValue() throws Exception {
+        try (InputStream st = SAMLParserTest.class.getResourceAsStream("KEYCLOAK-4790-Empty-attribute-value.xml")) {
+            Object parsedObject = parser.parse(st);
+            assertThat(parsedObject, instanceOf(ResponseType.class));
+        }
+    }
+
+    @Test
+    public void testEmptyAttributeValueLast() throws Exception {
+        try (InputStream st = SAMLParserTest.class.getResourceAsStream("KEYCLOAK-4790-Empty-attribute-value-last.xml")) {
+            Object parsedObject = parser.parse(st);
+            assertThat(parsedObject, instanceOf(ResponseType.class));
+        }
+    }
 }
