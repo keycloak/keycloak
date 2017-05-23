@@ -444,14 +444,10 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
     
     private String generateS256CodeChallenge(String codeVerifier) throws Exception {
         MessageDigest md = MessageDigest.getInstance("SHA-256");
-        md.update(codeVerifier.getBytes());
-        StringBuilder sb = new StringBuilder();
-        for (byte b : md.digest()) {
-            String hex = String.format("%02x", b);
-            sb.append(hex);
-        }
-        String codeChallenge = Base64Url.encode(sb.toString().getBytes());
-    	return codeChallenge;
+        md.update(codeVerifier.getBytes("ISO_8859_1"));
+        byte[] digestBytes = md.digest();
+        String codeChallenge = Base64Url.encode(digestBytes);
+        return codeChallenge;
     }
  
     private void expectSuccessfulResponseFromTokenEndpoint(String codeId, String sessionId, String code)  throws Exception {
