@@ -504,7 +504,7 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
           && Objects.equals(responseType.getStatus().getStatusCode().getValue().toString(), JBossSAMLURIConstants.STATUS_SUCCESS.get());
     }
 
-    private Document buildAssertionDocument(final SAMLDocumentHolder responseHolder, AssertionType assertion) throws ConfigurationException, ProcessingException {
+    private Document buildAssertionDocument(final SAMLDocumentHolder responseHolder, AssertionType assertionType) throws ConfigurationException, ProcessingException {
         Element encryptedAssertion = org.keycloak.saml.common.util.DocumentUtil.getElement(responseHolder.getSamlDocument(), new QName(JBossSAMLConstants.ENCRYPTED_ASSERTION.get()));
         if (encryptedAssertion != null) {
             // encrypted assertion.
@@ -516,7 +516,15 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
             assertionDocument.appendChild(assertionDocument.importNode(assertionElement, true));
             return assertionDocument;
         }
-        return AssertionUtil.asDocument(assertion);
+        Element assertion = org.keycloak.saml.common.util.DocumentUtil.getElement(responseHolder.getSamlDocument(), new QName(JBossSAMLConstants.ASSERTION.get()));
+        if (assertion != null) {
+            // assertion retrieved from responseHolder.
+            // Put it in a new document.
+            Document assertionDocument = DocumentUtil.createDocument();
+            assertionDocument.appendChild(assertionDocument.importNode(assertion, true));
+            return assertionDocument;
+        }
+        return AssertionUtil.asDocument(assertionType);
     }
 
     private String getAttributeValue(Object attrValue) {
