@@ -73,7 +73,7 @@ public class HistoryPasswordPolicyProvider implements PasswordPolicyProvider {
 
     @Override
     public Object parseConfig(String value) {
-        return value != null ? Integer.parseInt(value) : HistoryPasswordPolicyProviderFactory.DEFAULT_VALUE;
+        return parseInteger(value, HistoryPasswordPolicyProviderFactory.DEFAULT_VALUE);
     }
 
     @Override
