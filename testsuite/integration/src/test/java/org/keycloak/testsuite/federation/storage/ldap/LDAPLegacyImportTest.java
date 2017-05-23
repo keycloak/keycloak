@@ -61,7 +61,7 @@ public class LDAPLegacyImportTest {
 
     // This test is executed just for the embedded LDAP server
     private static LDAPRule ldapRule = new LDAPRule((Map<String, String> ldapConfig) -> {
-        return Boolean.parseBoolean(ldapConfig.get("startEmbeddedLdapServer"));
+        return !Boolean.parseBoolean(ldapConfig.get("startEmbeddedLdapServer"));
     });
 
     private static ComponentModel ldapModel = null;
