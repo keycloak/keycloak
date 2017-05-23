@@ -15,6 +15,10 @@
           <groupId>org.keycloak</groupId>
           <artifactId>keycloak-spring-boot-adapter</artifactId>
       </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-authz-client</artifactId>
+        </dependency>
       <dependency>
           <groupId>org.springframework.boot</groupId>
           <artifactId>spring-boot-starter</artifactId>
