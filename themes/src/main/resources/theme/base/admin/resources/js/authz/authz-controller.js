@@ -2082,12 +2082,20 @@ module.controller('PolicyEvaluateCtrl', function($scope, $http, $route, $locatio
     $scope.client = client;
     $scope.clients = clients;
     $scope.roles = roles;
-    $scope.authzRequest = {};
-    $scope.authzRequest.resources = [];
-    $scope.authzRequest.context = {};
-    $scope.authzRequest.context.attributes = {};
-    $scope.authzRequest.roleIds = [];
+    authzRequest = {};
+    authzRequest.resources = [];
+    authzRequest.context = {};
+    authzRequest.context.attributes = {};
+    authzRequest.roleIds = [];
     $scope.resultUrl = resourceUrl + '/partials/authz/policy/resource-server-policy-evaluate-result.html';
+
+    $scope.authzRequest = angular.copy(authzRequest);
+
+    $scope.$watch('authzRequest', function() {
+        if (!angular.equals($scope.authzRequest, authzRequest)) {
+            $scope.changed = true;
+        }
+    }, true);
 
     $scope.addContextAttribute = function() {
         if (!$scope.newContextAttribute.value || $scope.newContextAttribute.value == '') {
@@ -2395,5 +2403,10 @@ module.controller('PolicyEvaluateCtrl', function($scope, $http, $route, $locatio
         }
 
         $scope.authzRequest.userId = user.id;
+    }
+
+    $scope.reset = function() {
+        $scope.authzRequest = angular.copy(authzRequest);
+        $scope.changed = false;
     }
 });
