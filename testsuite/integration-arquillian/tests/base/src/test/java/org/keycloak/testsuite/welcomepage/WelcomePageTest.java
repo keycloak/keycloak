@@ -50,9 +50,16 @@ public class WelcomePageTest extends AbstractKeycloakTest {
     @Page
     protected OIDCLogin loginPage;
 
+    /*
+     * Assume adding user is skipped.
+     *
+     * Assume we are not testing migration. In migration scenario there is admin user 
+     * migrated from previous version.
+     */
     @BeforeClass
     public static void beforeWelcomePageTest() {
         Assume.assumeTrue(Boolean.parseBoolean(System.getProperty("skip.add.user.json")));
+        Assume.assumeFalse(Boolean.parseBoolean(System.getProperty("skip.welcome.page.test")));
     }
 
     @Override
