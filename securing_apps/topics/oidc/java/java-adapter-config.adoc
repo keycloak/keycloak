@@ -232,3 +232,8 @@ public-key-cache-ttl::
   Adapter will always try to download new public key when it recognize token with unknown `kid` . If it recognize token with known `kid`, it will
   just use the public key downloaded previously. However at least once per this configured interval (1 day by default) will be new
   public key always downloaded even if the `kid` of token is already known.
+
+ignore-oauth-query-parameter::
+  Defaults to `false`, if set to `true` will turn off processing of the `access_token`
+  query parameter for bearer token processing.  Users will not be able to authenticate
+  if they only pass in an `access_token`
