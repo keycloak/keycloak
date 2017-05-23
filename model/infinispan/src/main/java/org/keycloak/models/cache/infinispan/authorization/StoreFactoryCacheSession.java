@@ -16,6 +16,18 @@
  */
 package org.keycloak.models.cache.infinispan.authorization;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
 import org.jboss.logging.Logger;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
@@ -34,7 +46,12 @@ import org.keycloak.models.cache.infinispan.authorization.entities.CachedResourc
 import org.keycloak.models.cache.infinispan.authorization.entities.CachedResourceServer;
 import org.keycloak.models.cache.infinispan.authorization.entities.CachedScope;
 import org.keycloak.models.cache.infinispan.authorization.entities.PolicyListQuery;
+import org.keycloak.models.cache.infinispan.authorization.entities.PolicyQuery;
+import org.keycloak.models.cache.infinispan.authorization.entities.PolicyResourceListQuery;
+import org.keycloak.models.cache.infinispan.authorization.entities.PolicyScopeListQuery;
 import org.keycloak.models.cache.infinispan.authorization.entities.ResourceListQuery;
+import org.keycloak.models.cache.infinispan.authorization.entities.ResourceQuery;
+import org.keycloak.models.cache.infinispan.authorization.entities.ResourceScopeListQuery;
 import org.keycloak.models.cache.infinispan.authorization.entities.ResourceServerListQuery;
 import org.keycloak.models.cache.infinispan.authorization.entities.ScopeListQuery;
 import org.keycloak.models.cache.infinispan.authorization.events.PolicyRemovedEvent;
@@ -47,12 +64,6 @@ import org.keycloak.models.cache.infinispan.authorization.events.ScopeRemovedEve
 import org.keycloak.models.cache.infinispan.authorization.events.ScopeUpdatedEvent;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
-
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -233,20 +244,20 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         invalidationEvents.add(ScopeUpdatedEvent.create(id, name, serverId));
     }
 
-    public void registerResourceInvalidation(String id, String name, String serverId) {
-        cache.resourceUpdated(id, name, serverId, invalidations);
+    public void registerResourceInvalidation(String id, String name, String type, String uri, Set<String> scopes, String serverId) {
+        cache.resourceUpdated(id, name, type, uri, scopes, serverId, invalidations);
         ResourceAdapter adapter = managedResources.get(id);
         if (adapter != null) adapter.invalidateFlag();
 
-        invalidationEvents.add(ResourceUpdatedEvent.create(id, name, serverId));
+        invalidationEvents.add(ResourceUpdatedEvent.create(id, name, type, uri, scopes, serverId));
     }
 
-    public void registerPolicyInvalidation(String id, String name, String serverId) {
-        cache.policyUpdated(id, name, serverId, invalidations);
+    public void registerPolicyInvalidation(String id, String name, Set<String> resources, String serverId) {
+        cache.policyUpdated(id, name, resources, serverId, invalidations);
         PolicyAdapter adapter = managedPolicies.get(id);
         if (adapter != null) adapter.invalidateFlag();
 
-        invalidationEvents.add(PolicyUpdatedEvent.create(id, name, serverId));
+        invalidationEvents.add(PolicyUpdatedEvent.create(id, name, resources, serverId));
     }
 
     public ResourceServerStore getResourceServerStoreDelegate() {
@@ -277,8 +288,36 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         return "resource.name." + name + "." + serverId;
     }
 
+    public static String getResourceByOwnerCacheKey(String owner, String serverId) {
+        return "resource.owner." + owner + "." + serverId;
+    }
+
+    public static String getResourceByTypeCacheKey(String type, String serverId) {
+        return "resource.type." + type + "." + serverId;
+    }
+
+    public static String getResourceByUriCacheKey(String uri, String serverId) {
+        return "resource.uri." + uri + "." + serverId;
+    }
+
+    public static String getResourceByScopeCacheKey(String scopeId, String serverId) {
+        return "resource.scope." + scopeId + "." + serverId;
+    }
+
     public static String getPolicyByNameCacheKey(String name, String serverId) {
         return "policy.name." + name + "." + serverId;
+    }
+
+    public static String getPolicyByResource(String resourceId, String serverId) {
+        return "policy.resource." + resourceId + "." + serverId;
+    }
+
+    public static String getPolicyByResourceType(String type, String serverId) {
+        return "policy.resource.type." + type + "." + serverId;
+    }
+
+    public static String getPolicyByScope(String scope, String serverId) {
+        return "policy.scope." + scope + "." + serverId;
     }
 
     public StoreFactory getDelegate() {
@@ -451,7 +490,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         @Override
         public Resource create(String name, ResourceServer resourceServer, String owner) {
             Resource resource = getResourceStoreDelegate().create(name, resourceServer, owner);
-            registerResourceInvalidation(resource.getId(), resource.getName(), resourceServer.getId());
+            registerResourceInvalidation(resource.getId(), resource.getName(), resource.getType(), resource.getUri(), resource.getScopes().stream().map(scope -> scope.getId()).collect(Collectors.toSet()), resourceServer.getId());
             return resource;
         }
 
@@ -462,8 +501,8 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             if (resource == null) return;
 
             cache.invalidateObject(id);
-            invalidationEvents.add(ResourceRemovedEvent.create(id, resource.getName(), resource.getResourceServer().getId()));
-            cache.resourceRemoval(id, resource.getName(), resource.getResourceServer().getId(), invalidations);
+            invalidationEvents.add(ResourceRemovedEvent.create(id, resource.getName(), resource.getType(), resource.getUri(), resource.getOwner(), resource.getScopes().stream().map(scope -> scope.getId()).collect(Collectors.toSet()), resource.getResourceServer().getId()));
+            cache.resourceRemoval(id, resource.getName(), resource.getType(), resource.getUri(), resource.getOwner(), resource.getScopes().stream().map(scope -> scope.getId()).collect(Collectors.toSet()), resource.getResourceServer().getId(), invalidations);
             getResourceStoreDelegate().delete(id);
 
         }
@@ -498,37 +537,37 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         public Resource findByName(String name, String resourceServerId) {
             if (name == null) return null;
             String cacheKey = getResourceByNameCacheKey(name, resourceServerId);
-            ResourceListQuery query = cache.get(cacheKey, ResourceListQuery.class);
-            if (query != null) {
-                logger.tracev("resource by name cache hit: {0}", name);
-            }
-            if (query == null) {
-                Long loaded = cache.getCurrentRevision(cacheKey);
-                Resource model = getResourceStoreDelegate().findByName(name, resourceServerId);
-                if (model == null) return null;
-                if (invalidations.contains(model.getId())) return model;
-                query = new ResourceListQuery(loaded, cacheKey, model.getId(), resourceServerId);
-                cache.addRevisioned(query, startupRevision);
-                return model;
-            } else if (invalidations.contains(cacheKey)) {
-                return getResourceStoreDelegate().findByName(name, resourceServerId);
-            } else {
-                String id = query.getResources().iterator().next();
-                if (invalidations.contains(id)) {
-                    return getResourceStoreDelegate().findByName(name, resourceServerId);
+            List<Resource> result = cacheQuery(cacheKey, ResourceListQuery.class, () -> {
+                Resource resource = getResourceStoreDelegate().findByName(name, resourceServerId);
+
+                if (resource == null) {
+                    return Collections.emptyList();
                 }
-                return findById(id, query.getResourceServerId());
+
+                return Arrays.asList(resource);
+            },
+                    (revision, resources) -> new ResourceListQuery(revision, cacheKey, resources.stream().map(resource -> resource.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId);
+
+            if (result.isEmpty()) {
+                return null;
             }
+
+            return result.get(0);
         }
 
         @Override
         public List<Resource> findByOwner(String ownerId, String resourceServerId) {
-            return getResourceStoreDelegate().findByOwner(ownerId, resourceServerId);
+            String cacheKey = getResourceByOwnerCacheKey(ownerId, resourceServerId);
+            return cacheQuery(cacheKey, ResourceListQuery.class, () -> getResourceStoreDelegate().findByOwner(ownerId, resourceServerId),
+                    (revision, resources) -> new ResourceListQuery(revision, cacheKey, resources.stream().map(resource -> resource.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId);
         }
 
         @Override
         public List<Resource> findByUri(String uri, String resourceServerId) {
-            return getResourceStoreDelegate().findByUri(uri, resourceServerId);
+            if (uri == null) return null;
+            String cacheKey = getResourceByUriCacheKey(uri, resourceServerId);
+            return cacheQuery(cacheKey, ResourceListQuery.class, () -> getResourceStoreDelegate().findByUri(uri, resourceServerId),
+                    (revision, resources) -> new ResourceListQuery(revision, cacheKey, resources.stream().map(resource -> resource.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId);
         }
 
         @Override
@@ -543,21 +582,52 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
 
         @Override
         public List<Resource> findByScope(List<String> ids, String resourceServerId) {
-            return getResourceStoreDelegate().findByScope(ids, resourceServerId);
+            if (ids == null) return null;
+            List<Resource> result = new ArrayList<>();
+
+            for (String id : ids) {
+                String cacheKey = getResourceByScopeCacheKey(id, resourceServerId);
+                result.addAll(cacheQuery(cacheKey, ResourceScopeListQuery.class, () -> getResourceStoreDelegate().findByScope(Arrays.asList(id), resourceServerId), (revision, resources) -> new ResourceScopeListQuery(revision, cacheKey, id, resources.stream().map(resource -> resource.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId));
+            }
+
+            return result;
         }
 
          @Override
         public List<Resource> findByType(String type, String resourceServerId) {
-             return getResourceStoreDelegate().findByType(type, resourceServerId);
+             if (type == null) return null;
+             String cacheKey = getResourceByTypeCacheKey(type, resourceServerId);
+             return cacheQuery(cacheKey, ResourceListQuery.class, () -> getResourceStoreDelegate().findByType(type, resourceServerId),
+                     (revision, resources) -> new ResourceListQuery(revision, cacheKey, resources.stream().map(resource -> resource.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId);
+        }
+
+        private <R, Q extends ResourceQuery> List<R> cacheQuery(String cacheKey, Class<Q> queryType, Supplier<List<R>> resultSupplier, BiFunction<Long, List<R>, Q> querySupplier, String resourceServerId) {
+            Q query = cache.get(cacheKey, queryType);
+            if (query != null) {
+                logger.tracev("cache hit for key: {0}", cacheKey);
+            }
+            if (query == null) {
+                Long loaded = cache.getCurrentRevision(cacheKey);
+                List<R> model = resultSupplier.get();
+                if (model == null) return null;
+                if (invalidations.contains(cacheKey)) return model;
+                query = querySupplier.apply(loaded, model);
+                cache.addRevisioned(query, startupRevision);
+                return model;
+            } else if (query.isInvalid(invalidations)) {
+                return resultSupplier.get();
+            } else {
+                return query.getResources().stream().map(resourceId -> (R) findById(resourceId, resourceServerId)).collect(Collectors.toList());
+            }
         }
     }
 
     protected class PolicyCache implements PolicyStore {
         @Override
         public Policy create(AbstractPolicyRepresentation representation, ResourceServer resourceServer) {
-            Policy resource = getPolicyStoreDelegate().create(representation, resourceServer);
-            registerPolicyInvalidation(resource.getId(), resource.getName(), resourceServer.getId());
-            return resource;
+            Policy policy = getPolicyStoreDelegate().create(representation, resourceServer);
+            registerPolicyInvalidation(policy.getId(), policy.getName(), policy.getResources().stream().map(resource1 -> resource1.getId()).collect(Collectors.toSet()), resourceServer.getId());
+            return policy;
         }
 
         @Override
@@ -567,8 +637,8 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             if (policy == null) return;
 
             cache.invalidateObject(id);
-            invalidationEvents.add(PolicyRemovedEvent.create(id, policy.getName(), policy.getResourceServer().getId()));
-            cache.policyRemoval(id, policy.getName(), policy.getResourceServer().getId(), invalidations);
+            invalidationEvents.add(PolicyRemovedEvent.create(id, policy.getName(), policy.getResources().stream().map(resource1 -> resource1.getId()).collect(Collectors.toSet()), policy.getResourceServer().getId()));
+            cache.policyRemoval(id, policy.getName(), policy.getResources().stream().map(resource1 -> resource1.getId()).collect(Collectors.toSet()), policy.getResourceServer().getId(), invalidations);
             getPolicyStoreDelegate().delete(id);
 
         }
@@ -604,27 +674,22 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         public Policy findByName(String name, String resourceServerId) {
             if (name == null) return null;
             String cacheKey = getPolicyByNameCacheKey(name, resourceServerId);
-            PolicyListQuery query = cache.get(cacheKey, PolicyListQuery.class);
-            if (query != null) {
-                logger.tracev("policy by name cache hit: {0}", name);
-            }
-            if (query == null) {
-                Long loaded = cache.getCurrentRevision(cacheKey);
-                Policy model = getPolicyStoreDelegate().findByName(name, resourceServerId);
-                if (model == null) return null;
-                if (invalidations.contains(model.getId())) return model;
-                query = new PolicyListQuery(loaded, cacheKey, model.getId(), resourceServerId);
-                cache.addRevisioned(query, startupRevision);
-                return model;
-            } else if (invalidations.contains(cacheKey)) {
-                return getPolicyStoreDelegate().findByName(name, resourceServerId);
-            } else {
-                String id = query.getPolicies().iterator().next();
-                if (invalidations.contains(id)) {
-                    return getPolicyStoreDelegate().findByName(name, resourceServerId);
+            List<Policy> result = cacheQuery(cacheKey, PolicyListQuery.class, () -> {
+                Policy policy = getPolicyStoreDelegate().findByName(name, resourceServerId);
+
+                if (policy == null) {
+                    return Collections.emptyList();
                 }
-                return findById(id, query.getResourceServerId());
+
+                return Arrays.asList(policy);
+            },
+                    (revision, policies) -> new PolicyListQuery(revision, cacheKey, policies.stream().map(policy -> policy.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId);
+
+            if (result.isEmpty()) {
+                return null;
             }
+
+            return result.get(0);
         }
 
         @Override
@@ -639,17 +704,29 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
 
         @Override
         public List<Policy> findByResource(String resourceId, String resourceServerId) {
-            return getPolicyStoreDelegate().findByResource(resourceId, resourceServerId);
+            String cacheKey = getPolicyByResource(resourceId, resourceServerId);
+            return cacheQuery(cacheKey, PolicyResourceListQuery.class, () -> getPolicyStoreDelegate().findByResource(resourceId, resourceServerId),
+                    (revision, policies) -> new PolicyResourceListQuery(revision, cacheKey, resourceId, policies.stream().map(policy -> policy.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId);
         }
 
         @Override
         public List<Policy> findByResourceType(String resourceType, String resourceServerId) {
-            return getPolicyStoreDelegate().findByResourceType(resourceType, resourceServerId);
+            String cacheKey = getPolicyByResourceType(resourceType, resourceServerId);
+            return cacheQuery(cacheKey, PolicyResourceListQuery.class, () -> getPolicyStoreDelegate().findByResourceType(resourceType, resourceServerId),
+                    (revision, policies) -> new PolicyResourceListQuery(revision, cacheKey, resourceType, policies.stream().map(policy -> policy.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId);
         }
 
         @Override
         public List<Policy> findByScopeIds(List<String> scopeIds, String resourceServerId) {
-            return getPolicyStoreDelegate().findByScopeIds(scopeIds, resourceServerId);
+            if (scopeIds == null) return null;
+            List<Policy> result = new ArrayList<>();
+
+            for (String id : scopeIds) {
+                String cacheKey = getPolicyByScope(id, resourceServerId);
+                result.addAll(cacheQuery(cacheKey, PolicyScopeListQuery.class, () -> getPolicyStoreDelegate().findByScopeIds(Arrays.asList(id), resourceServerId), (revision, resources) -> new PolicyScopeListQuery(revision, cacheKey, id, resources.stream().map(resource -> resource.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId));
+            }
+
+            return result;
         }
 
         @Override
@@ -660,6 +737,26 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         @Override
         public List<Policy> findDependentPolicies(String id, String resourceServerId) {
             return getPolicyStoreDelegate().findDependentPolicies(id, resourceServerId);
+        }
+
+        private <R, Q extends PolicyQuery> List<R> cacheQuery(String cacheKey, Class<Q> queryType, Supplier<List<R>> resultSupplier, BiFunction<Long, List<R>, Q> querySupplier, String resourceServerId) {
+            Q query = cache.get(cacheKey, queryType);
+            if (query != null) {
+                logger.tracev("cache hit for key: {0}", cacheKey);
+            }
+            if (query == null) {
+                Long loaded = cache.getCurrentRevision(cacheKey);
+                List<R> model = resultSupplier.get();
+                if (model == null) return null;
+                if (invalidations.contains(cacheKey)) return model;
+                query = querySupplier.apply(loaded, model);
+                cache.addRevisioned(query, startupRevision);
+                return model;
+            } else if (query.isInvalid(invalidations)) {
+                return resultSupplier.get();
+            } else {
+                return query.getPolicies().stream().map(resourceId -> (R) findById(resourceId, resourceServerId)).collect(Collectors.toList());
+            }
         }
     }
 

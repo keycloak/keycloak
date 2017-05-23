@@ -17,10 +17,10 @@
 
 package org.keycloak.models.cache.infinispan.authorization.events;
 
+import java.util.Set;
+
 import org.keycloak.models.cache.infinispan.authorization.StoreFactoryCacheManager;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
-
-import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -29,12 +29,14 @@ public class PolicyRemovedEvent extends InvalidationEvent implements Authorizati
 
     private String id;
     private String name;
+    private Set<String> resources;
     private String serverId;
 
-    public static PolicyRemovedEvent create(String id, String name, String serverId) {
+    public static PolicyRemovedEvent create(String id, String name, Set<String> resources, String serverId) {
         PolicyRemovedEvent event = new PolicyRemovedEvent();
         event.id = id;
         event.name = name;
+        event.resources = resources;
         event.serverId = serverId;
         return event;
     }
@@ -51,6 +53,6 @@ public class PolicyRemovedEvent extends InvalidationEvent implements Authorizati
 
     @Override
     public void addInvalidations(StoreFactoryCacheManager cache, Set<String> invalidations) {
-        cache.policyRemoval(id, name, serverId, invalidations);
+        cache.policyRemoval(id, name, resources, serverId, invalidations);
     }
 }

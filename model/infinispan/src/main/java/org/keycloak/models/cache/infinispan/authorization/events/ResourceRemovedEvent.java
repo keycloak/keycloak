@@ -29,12 +29,20 @@ public class ResourceRemovedEvent extends InvalidationEvent implements Authoriza
 
     private String id;
     private String name;
+    private String owner;
     private String serverId;
+    private String type;
+    private String uri;
+    private Set<String> scopes;
 
-    public static ResourceRemovedEvent create(String id, String name, String serverId) {
+    public static ResourceRemovedEvent create(String id, String name, String type, String uri, String owner, Set<String> scopes, String serverId) {
         ResourceRemovedEvent event = new ResourceRemovedEvent();
         event.id = id;
         event.name = name;
+        event.type = type;
+        event.uri = uri;
+        event.owner = owner;
+        event.scopes = scopes;
         event.serverId = serverId;
         return event;
     }
@@ -51,6 +59,6 @@ public class ResourceRemovedEvent extends InvalidationEvent implements Authoriza
 
     @Override
     public void addInvalidations(StoreFactoryCacheManager cache, Set<String> invalidations) {
-        cache.resourceRemoval(id, name, serverId, invalidations);
+        cache.resourceRemoval(id, name, type, uri, owner, scopes, serverId, invalidations);
     }
 }
