@@ -445,6 +445,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     }
 
     @Test
+    @Ignore
     public void testVersion() {
         Client client = ClientBuilder.newClient();
         WebTarget target = client.target(authServerPage.createUriBuilder()).path("version");
