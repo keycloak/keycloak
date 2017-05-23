@@ -67,7 +67,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -87,6 +86,7 @@ import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.SPMetadataDescriptor;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import java.util.Map;
 
 /**
  * Resource class for the saml connect token service
@@ -98,8 +98,13 @@ public class SamlService extends AuthorizationEndpointBase {
 
     protected static final Logger logger = Logger.getLogger(SamlService.class);
 
-    public SamlService(RealmModel realm, EventBuilder event) {
+    private final Map<String, Integer> knownPorts;
+    private final Map<Integer, String> knownProtocols;
+
+    public SamlService(RealmModel realm, EventBuilder event, Map<String, Integer> knownPorts, Map<Integer, String> knownProtocols) {
         super(realm, event);
+        this.knownPorts = knownPorts;
+        this.knownProtocols = knownProtocols;
     }
 
     public abstract class BindingProtocol {
@@ -239,7 +244,7 @@ public class SamlService extends AuthorizationEndpointBase {
         protected Response loginRequest(String relayState, AuthnRequestType requestAbstractType, ClientModel client) {
             SamlClient samlClient = new SamlClient(client);
             // validate destination
-            if (requestAbstractType.getDestination() != null && !uriInfo.getAbsolutePath().equals(requestAbstractType.getDestination())) {
+            if (! isValidDestination(requestAbstractType.getDestination())) {
                 event.detail(Details.REASON, "invalid_destination");
                 event.error(Errors.INVALID_SAML_AUTHN_REQUEST);
                 return ErrorPage.error(session, Messages.INVALID_REQUEST);
@@ -341,7 +346,7 @@ public class SamlService extends AuthorizationEndpointBase {
         protected Response logoutRequest(LogoutRequestType logoutRequest, ClientModel client, String relayState) {
             SamlClient samlClient = new SamlClient(client);
             // validate destination
-            if (logoutRequest.getDestination() != null && !uriInfo.getAbsolutePath().equals(logoutRequest.getDestination())) {
+            if (! isValidDestination(logoutRequest.getDestination())) {
                 event.detail(Details.REASON, "invalid_destination");
                 event.error(Errors.INVALID_SAML_LOGOUT_REQUEST);
                 return ErrorPage.error(session, Messages.INVALID_REQUEST);
@@ -683,11 +688,35 @@ public class SamlService extends AuthorizationEndpointBase {
     @NoCache
     @Consumes({"application/soap+xml",MediaType.TEXT_XML})
     public Response soapBinding(InputStream inputStream) {
-        SamlEcpProfileService bindingService = new SamlEcpProfileService(realm, event);
+        SamlEcpProfileService bindingService = new SamlEcpProfileService(realm, event, knownPorts, knownProtocols);
 
         ResteasyProviderFactory.getInstance().injectProperties(bindingService);
 
         return bindingService.authenticate(inputStream);
+    }
+
+    private boolean isValidDestination(URI destination) {
+        if (destination == null) {
+            return false;
+        }
+
+        URI expected = uriInfo.getAbsolutePath();
+
+        if (Objects.equals(expected, destination)) {
+            return true;
+        }
+
+        Integer portByScheme = knownPorts.get(expected.getScheme());
+        if (expected.getPort() < 0 && portByScheme != null) {
+            return Objects.equals(uriInfo.getRequestUriBuilder().port(portByScheme).build(), destination);
+        }
+
+        String protocolByPort = knownProtocols.get(expected.getPort());
+        if (expected.getPort() >= 0 && Objects.equals(protocolByPort, expected.getScheme())) {
+            return Objects.equals(uriInfo.getRequestUriBuilder().port(-1).build(), destination);
+        }
+
+        return false;
     }
 
 }

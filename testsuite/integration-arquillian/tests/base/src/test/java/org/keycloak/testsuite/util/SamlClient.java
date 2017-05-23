@@ -398,6 +398,14 @@ public class SamlClient {
         this.samlEndpoint = samlEndpoint;
     }
 
+    public HttpClientContext getContext() {
+        return context;
+    }
+
+    public URI getSamlEndpoint() {
+        return samlEndpoint;
+    }
+
     /**
      * Send request for login form and then login using user param. Check whether client requires consent and handle consent page.
      *
@@ -415,21 +423,22 @@ public class SamlClient {
                                     Document samlRequest, String relayState, Binding requestBinding, Binding expectedResponseBinding, boolean consentRequired, boolean consent) {
         return getSamlResponse(expectedResponseBinding, (client, context, strategy) -> {
             HttpUriRequest post = requestBinding.createSamlUnsignedRequest(samlEndpoint, relayState, samlRequest);
-            CloseableHttpResponse response = client.execute(post, context);
+            String loginPageText;
 
-            assertThat(response, statusCodeIsHC(Response.Status.OK));
-            String loginPageText = EntityUtils.toString(response.getEntity(), "UTF-8");
-            response.close();
-
-            assertThat(loginPageText, containsString("login"));
+            try (CloseableHttpResponse response = client.execute(post, context)) {
+                assertThat(response, statusCodeIsHC(Response.Status.OK));
+                loginPageText = EntityUtils.toString(response.getEntity(), "UTF-8");
+                assertThat(loginPageText, containsString("login"));
+            }
 
             HttpUriRequest loginRequest = handleLoginPage(user, loginPageText);
 
             if (consentRequired) {
                 // Client requires consent
-                response = client.execute(loginRequest, context);
-                String consentPageText = EntityUtils.toString(response.getEntity(), "UTF-8");
-                loginRequest = handleConsentPage(consentPageText, consent);
+                try (CloseableHttpResponse response = client.execute(loginRequest, context)) {
+                    String consentPageText = EntityUtils.toString(response.getEntity(), "UTF-8");
+                    loginRequest = handleConsentPage(consentPageText, consent);
+                }
             }
 
             strategy.setRedirectable(false);
