@@ -94,6 +94,8 @@ import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsernameId;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createRoleNameMapper;
+
+import org.keycloak.util.TokenUtil;
 import org.openqa.selenium.By;
 
 /**
@@ -994,7 +996,8 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         Form form = new Form();
         form.param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD)
                 .param("username", username)
-                .param("password", password);
+                .param("password", password)
+                .param(OAuth2Constants.SCOPE, OAuth2Constants.SCOPE_OPENID);
         return grantTarget.request()
                 .header(HttpHeaders.AUTHORIZATION, header)
                 .post(Entity.form(form));
