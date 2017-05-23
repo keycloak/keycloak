@@ -21,6 +21,7 @@ import org.keycloak.broker.provider.DefaultDataMarshaller;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
+import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.StaxUtil;
@@ -66,7 +67,7 @@ public class SAMLDataMarshaller extends DefaultDataMarshaller {
                 throw new RuntimeException(pe);
             }
 
-            return new String(bos.toByteArray());
+            return new String(bos.toByteArray(), GeneralConstants.SAML_CHARSET);
         } else {
             return super.serialize(obj);
         }
@@ -79,12 +80,12 @@ public class SAMLDataMarshaller extends DefaultDataMarshaller {
 
             try {
                 if (clazz.equals(ResponseType.class) || clazz.equals(AssertionType.class)) {
-                    byte[] bytes = xmlString.getBytes();
+                    byte[] bytes = xmlString.getBytes(GeneralConstants.SAML_CHARSET);
                     InputStream is = new ByteArrayInputStream(bytes);
                     Object respType = new SAMLParser().parse(is);
                     return clazz.cast(respType);
                 } else if (clazz.equals(AuthnStatementType.class)) {
-                    byte[] bytes = xmlString.getBytes();
+                    byte[] bytes = xmlString.getBytes(GeneralConstants.SAML_CHARSET);
                     InputStream is = new ByteArrayInputStream(bytes);
                     XMLEventReader xmlEventReader = new SAMLParser().createEventReader(is);
                     AuthnStatementType authnStatement = SAMLParserUtil.parseAuthnStatement(xmlEventReader);
