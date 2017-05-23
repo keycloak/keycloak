@@ -178,7 +178,14 @@ public class SharedAttributeDefinitons {
             .setXmlName("autodetect-bearer-only")
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(false))
-            .build(); 
+            .build();
+
+    protected static final SimpleAttributeDefinition IGNORE_OAUTH_QUERY_PARAMETER =
+            new SimpleAttributeDefinitionBuilder("ignore-oauth-query-parameter", ModelType.BOOLEAN, true)
+            .setXmlName("ignore-oauth-query-parameter")
+            .setAllowExpression(true)
+            .setDefaultValue(new ModelNode(false))
+            .build();
 
     protected static final List<SimpleAttributeDefinition> ATTRIBUTES = new ArrayList<SimpleAttributeDefinition>();
     static {
@@ -206,6 +213,7 @@ public class SharedAttributeDefinitons {
         ATTRIBUTES.add(TOKEN_STORE);
         ATTRIBUTES.add(PRINCIPAL_ATTRIBUTE);
         ATTRIBUTES.add(AUTODETECT_BEARER_ONLY);
+        ATTRIBUTES.add(IGNORE_OAUTH_QUERY_PARAMETER);
     }
 
     /**

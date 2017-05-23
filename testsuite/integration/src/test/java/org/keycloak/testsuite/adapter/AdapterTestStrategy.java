@@ -67,6 +67,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Tests Undertow Adapter
  *
  * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
+ * @author <a href="mailto:john.ament@spartasystems.com">John Ament</a>
  */
 public class AdapterTestStrategy extends ExternalResource {
 
@@ -812,6 +813,15 @@ public class AdapterTestStrategy extends ExternalResource {
         pageSource = driver.getPageSource();
         Assert.assertTrue(pageSource.contains("Counter=2"));
 
+    }
+
+    void checkThatAccessTokenCanBeSentPublicly() {
+        // test login to customer-portal which does a bearer request to customer-db
+        final String applicationURL = APP_SERVER_BASE_URL + "/no-access-token?access_token=invalid_token";
+        driver.navigate().to(applicationURL);
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        Assert.assertEquals(applicationURL, driver.getCurrentUrl());
+        inputPage.execute("hello");
     }
 
 }

@@ -19,20 +19,18 @@ package org.keycloak.testsuite.adapter;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.common.util.Encode;
-import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 
 import java.net.URL;
-import java.security.PublicKey;
 
 /**
  * Tests Undertow Adapter
  *
  * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
+ * @author <a href="mailto:john.ament@spartasystems.com">John Ament</a>
  */
 public class AdapterTest {
 
@@ -91,6 +89,12 @@ public class AdapterTest {
             url = getClass().getResource("/adapter-test/input-keycloak.json");
             createApplicationDeployment()
                     .name("input-portal").contextPath("/input-portal")
+                    .servletClass(InputServlet.class).adapterConfigPath(url.getPath())
+                    .role("user").constraintUrl("/secured/*").deployApplication();
+
+            url = getClass().getResource("/adapter-test/no-access-token.json");
+            createApplicationDeployment()
+                    .name("no-access-token").contextPath("/no-access-token")
                     .servletClass(InputServlet.class).adapterConfigPath(url.getPath())
                     .role("user").constraintUrl("/secured/*").deployApplication();
         }
@@ -236,5 +240,10 @@ public class AdapterTest {
     public void testRestCallWithAccessTokenAsQueryParameter() throws Exception {
         testStrategy.testRestCallWithAccessTokenAsQueryParameter();
 
+    }
+
+    @Test
+    public void testCallURLWithAccessToken() throws Exception {
+        testStrategy.checkThatAccessTokenCanBeSentPublicly();
     }
 }

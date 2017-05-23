@@ -35,6 +35,8 @@ import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @author <a href="mailto:brad.culley@spartasystems.com">Brad Culley</a>
+ * @author <a href="mailto:john.ament@spartasystems.com">John D. Ament</a>
  * @version $Revision: 1 $
  */
 public class KeycloakDeployment {
@@ -88,6 +90,7 @@ public class KeycloakDeployment {
 
     // https://tools.ietf.org/html/rfc7636
     protected boolean pkce = false;
+    protected boolean ignoreOAuthQueryParameter;
 
     public KeycloakDeployment() {
     }
@@ -436,4 +439,11 @@ public class KeycloakDeployment {
         this.pkce = pkce;
     }
 
+    public void setIgnoreOAuthQueryParameter(boolean ignoreOAuthQueryParameter) {
+        this.ignoreOAuthQueryParameter = ignoreOAuthQueryParameter;
+    }
+
+    public boolean isOAuthQueryParameterEnabled() {
+        return !this.ignoreOAuthQueryParameter;
+    }
 }
