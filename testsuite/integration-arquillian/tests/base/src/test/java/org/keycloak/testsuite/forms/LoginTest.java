@@ -27,6 +27,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.Constants;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -54,6 +55,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -600,9 +602,13 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
 
         driver.manage().deleteAllCookies();
 
-        // Cookies are expired including KC_RESTART. No way to continue login. Error page must be shown
+        // Cookies are expired including KC_RESTART. No way to continue login. Error page must be shown with the "back to application" link
         loginPage.login("login@test.com", "password");
         errorPage.assertCurrent();
+        String link = errorPage.getBackToApplicationLink();
+
+        ClientRepresentation thirdParty = findClientByClientId(adminClient.realm("test"), "third-party").toRepresentation();
+        Assert.assertNotNull(link, thirdParty.getBaseUrl());
     }
 
 

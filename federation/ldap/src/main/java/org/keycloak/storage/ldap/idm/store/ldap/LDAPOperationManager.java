@@ -326,6 +326,10 @@ public class LDAPOperationManager {
             filter = "(&(objectClass=*)(" + getUuidAttributeName() + LDAPConstants.EQUAL + id + "))";
         }
 
+        if (logger.isTraceEnabled()) {
+            logger.tracef("Using filter for lookup user by LDAP ID: %s", filter);
+        }
+
         return filter;
     }
 

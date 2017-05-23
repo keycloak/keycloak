@@ -74,7 +74,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
             Twitter twitter = new TwitterFactory().getInstance();
             twitter.setOAuthConsumer(getConfig().getClientId(), getConfig().getClientSecret());
 
-            URI uri = new URI(request.getRedirectUri() + "?state=" + request.getState());
+            URI uri = new URI(request.getRedirectUri() + "?state=" + request.getState().getEncodedState());
 
             RequestToken requestToken = twitter.getOAuthRequestToken(uri.toString());
             AuthenticationSessionModel authSession = request.getAuthenticationSession();

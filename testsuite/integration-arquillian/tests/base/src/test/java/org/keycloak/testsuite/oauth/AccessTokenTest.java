@@ -56,6 +56,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -210,7 +211,8 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         oauth.redirectUri(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth/admin/test/console/nosuch.html");
         oauth.openLoginForm();
 
-        String loginPageCode = driver.getPageSource().split("code=")[1].split("&")[0].split("\"")[0];
+        String actionURI = ActionURIUtils.getActionURIFromPageSource(driver.getPageSource());
+        String loginPageCode = ActionURIUtils.parseQueryParamsFromActionURI(actionURI).get("code");
 
         oauth.fillLoginForm("test-user@localhost", "password");
 
@@ -441,7 +443,8 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
         oauth.doLogin("test-user@localhost", "password");
 
-        String code = driver.getPageSource().split("code=")[1].split("&")[0].split("\"")[0];
+        String actionURI = ActionURIUtils.getActionURIFromPageSource(driver.getPageSource());
+        String code = ActionURIUtils.parseQueryParamsFromActionURI(actionURI).get("code");
 
         OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
         Assert.assertEquals(400, response.getStatusCode());

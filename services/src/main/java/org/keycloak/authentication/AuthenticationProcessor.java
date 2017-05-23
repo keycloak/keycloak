@@ -33,6 +33,7 @@ import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -485,15 +486,17 @@ public class AuthenticationProcessor {
             return LoginActionsService.loginActionsBaseUrl(getUriInfo())
                     .path(AuthenticationProcessor.this.flowPath)
                     .queryParam(OAuth2Constants.CODE, code)
-                    .queryParam("execution", getExecution().getId())
+                    .queryParam(Constants.EXECUTION, getExecution().getId())
+                    .queryParam(Constants.CLIENT_ID, getAuthenticationSession().getClient().getClientId())
                     .build(getRealm().getName());
         }
 
         @Override
         public URI getActionTokenUrl(String tokenString) {
             return LoginActionsService.actionTokenProcessor(getUriInfo())
-                    .queryParam("key", tokenString)
-                    .queryParam("execution", getExecution().getId())
+                    .queryParam(Constants.KEY, tokenString)
+                    .queryParam(Constants.EXECUTION, getExecution().getId())
+                    .queryParam(Constants.CLIENT_ID, getAuthenticationSession().getClient().getClientId())
                     .build(getRealm().getName());
         }
 
@@ -501,7 +504,8 @@ public class AuthenticationProcessor {
         public URI getRefreshExecutionUrl() {
             return LoginActionsService.loginActionsBaseUrl(getUriInfo())
                     .path(AuthenticationProcessor.this.flowPath)
-                    .queryParam("execution", getExecution().getId())
+                    .queryParam(Constants.EXECUTION, getExecution().getId())
+                    .queryParam(Constants.CLIENT_ID, getAuthenticationSession().getClient().getClientId())
                     .build(getRealm().getName());
         }
 

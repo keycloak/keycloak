@@ -120,16 +120,8 @@ public class LoginActionsServiceChecks {
             LoginFormsProvider loginForm = context.getSession().getProvider(LoginFormsProvider.class)
               .setSuccess(Messages.ALREADY_LOGGED_IN);
 
-            ClientModel client = null;
-            String lastClientUuid = userSession.getNote(AuthenticationManager.LAST_AUTHENTICATED_CLIENT);
-            if (lastClientUuid != null) {
-                client = context.getRealm().getClientById(lastClientUuid);
-            }
-
-            if (client != null) {
-                context.getSession().getContext().setClient(client);
-            } else {
-                loginForm.setAttribute("skipLink", true);
+            if (context.getSession().getContext().getClient() == null) {
+                loginForm.setAttribute(Constants.SKIP_LINK, true);
             }
 
             throw new LoginActionsServiceException(loginForm.createInfoPage());

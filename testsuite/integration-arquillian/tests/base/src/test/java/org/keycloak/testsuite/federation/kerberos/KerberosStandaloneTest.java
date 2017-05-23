@@ -43,6 +43,7 @@ import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.util.KerberosRule;
 
 /**
@@ -156,10 +157,7 @@ public class KerberosStandaloneTest extends AbstractKerberosTest {
 
         Assert.assertTrue(context.contains("Log in to test"));
 
-        Pattern pattern = Pattern.compile("action=\"([^\"]+)\"");
-        Matcher m = pattern.matcher(context);
-        Assert.assertTrue(m.find());
-        String url = m.group(1);
+        String url = ActionURIUtils.getActionURIFromPageSource(context);
 
 
         // Follow login with HttpClient. Improve if needed

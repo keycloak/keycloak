@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
@@ -32,6 +33,7 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
+import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfileEditUsernameAllowedPage;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -52,6 +54,9 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
 
     @Page
     protected LoginUpdateProfileEditUsernameAllowedPage updateProfilePage;
+
+    @Page
+    protected ErrorPage errorPage;
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -292,6 +297,25 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
         Assert.assertEquals("Email already exists.", updateProfilePage.getError());
 
         events.assertEmpty();
+    }
+
+    @Test
+    public void updateProfileExpiredCookies() {
+        loginPage.open();
+        loginPage.login("john-doh@localhost", "password");
+
+        updateProfilePage.assertCurrent();
+
+        // Expire cookies and assert the page with "back to application" link present
+        driver.manage().deleteAllCookies();
+
+        updateProfilePage.update("New first", "New last", "keycloak-user@localhost", "test-user@localhost");
+        errorPage.assertCurrent();
+
+        String backToAppLink = errorPage.getBackToApplicationLink();
+
+        ClientRepresentation client = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app").toRepresentation();
+        Assert.assertEquals(backToAppLink, client.getBaseUrl());
     }
 
 }
