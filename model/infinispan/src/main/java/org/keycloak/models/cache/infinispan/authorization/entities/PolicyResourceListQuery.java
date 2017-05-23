@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,9 +16,27 @@
  */
 package org.keycloak.models.cache.infinispan.authorization.entities;
 
+import java.util.Set;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public interface InScope {
-    String getScopeId();
+public class PolicyResourceListQuery extends PolicyListQuery implements InResource {
+
+    private final String resourceId;
+
+    public PolicyResourceListQuery(Long revision, String id, String resourceId, Set<String> policies, String serverId) {
+        super(revision, id, policies, serverId);
+        this.resourceId = resourceId;
+    }
+
+    @Override
+    public boolean isInvalid(Set<String> invalidations) {
+        return super.isInvalid(invalidations) || invalidations.contains(getResourceId());
+    }
+
+    @Override
+    public String getResourceId() {
+        return resourceId;
+    }
 }

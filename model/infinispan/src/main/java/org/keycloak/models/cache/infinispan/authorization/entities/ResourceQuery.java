@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,9 +16,15 @@
  */
 package org.keycloak.models.cache.infinispan.authorization.entities;
 
+import java.util.Set;
+
+import org.keycloak.models.cache.infinispan.entities.Revisioned;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public interface InScope {
-    String getScopeId();
+public interface ResourceQuery extends Revisioned {
+
+    Set<String> getResources();
+    boolean isInvalid(Set<String> invalidations);
 }

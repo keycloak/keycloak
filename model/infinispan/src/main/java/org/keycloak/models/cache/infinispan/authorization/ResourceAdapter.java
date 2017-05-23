@@ -95,6 +95,7 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
     @Override
     public void setName(String name) {
         getDelegateForUpdate();
+        cacheSession.registerResourceInvalidation(cached.getId(), name, cached.getType(), cached.getUri(), cached.getScopesIds(), cached.getResourceServerId());
         updated.setName(name);
 
     }
@@ -126,8 +127,8 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
     @Override
     public void setUri(String uri) {
         getDelegateForUpdate();
+        cacheSession.registerResourceInvalidation(cached.getId(), cached.getName(), cached.getType(), uri, cached.getScopesIds(), cached.getResourceServerId());
         updated.setUri(uri);
-
     }
 
     @Override
@@ -139,6 +140,7 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
     @Override
     public void setType(String type) {
         getDelegateForUpdate();
+        cacheSession.registerResourceInvalidation(cached.getId(), cached.getName(), type, cached.getUri(), cached.getScopesIds(), cached.getResourceServerId());
         updated.setType(type);
 
     }

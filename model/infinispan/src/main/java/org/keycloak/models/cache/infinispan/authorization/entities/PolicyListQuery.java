@@ -9,7 +9,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class PolicyListQuery extends AbstractRevisioned implements InResourceServer {
+public class PolicyListQuery extends AbstractRevisioned implements PolicyQuery {
     private final Set<String> policies;
     private final String serverId;
 
@@ -32,5 +32,10 @@ public class PolicyListQuery extends AbstractRevisioned implements InResourceSer
 
     public Set<String> getPolicies() {
         return policies;
+    }
+
+    @Override
+    public boolean isInvalid(Set<String> invalidations) {
+        return invalidations.contains(getId()) || invalidations.contains(getResourceServerId());
     }
 }

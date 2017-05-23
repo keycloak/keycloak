@@ -21,6 +21,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.models.cache.infinispan.CacheManager;
 import org.keycloak.models.cache.infinispan.RealmCacheManager;
 import org.keycloak.models.cache.infinispan.authorization.events.AuthorizationCacheInvalidationEvent;
+import org.keycloak.models.cache.infinispan.authorization.stream.InResourcePredicate;
 import org.keycloak.models.cache.infinispan.authorization.stream.InResourceServerPredicate;
 import org.keycloak.models.cache.infinispan.authorization.stream.InScopePredicate;
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
@@ -80,6 +81,7 @@ public class StoreFactoryCacheManager extends CacheManager {
 
         if (type != null) {
             invalidations.add(StoreFactoryCacheSession.getResourceByTypeCacheKey(type, serverId));
+            addInvalidations(InResourcePredicate.create().resource(type), invalidations);
         }
 
         if (uri != null) {
@@ -89,6 +91,7 @@ public class StoreFactoryCacheManager extends CacheManager {
         if (scopes != null) {
             for (String scope : scopes) {
                 invalidations.add(StoreFactoryCacheSession.getResourceByScopeCacheKey(scope, serverId));
+                addInvalidations(InScopePredicate.create().scope(scope), invalidations);
             }
         }
     }
@@ -96,15 +99,22 @@ public class StoreFactoryCacheManager extends CacheManager {
     public void resourceRemoval(String id, String name, String type, String uri, String owner, Set<String> scopes, String serverId, Set<String> invalidations) {
         resourceUpdated(id, name, type, uri, scopes, serverId, invalidations);
         invalidations.add(StoreFactoryCacheSession.getResourceByOwnerCacheKey(owner, serverId));
+        addInvalidations(InResourcePredicate.create().resource(id), invalidations);
     }
 
-    public void policyUpdated(String id, String name, String serverId, Set<String> invalidations) {
+    public void policyUpdated(String id, String name, Set<String> resources, String serverId, Set<String> invalidations) {
         invalidations.add(id);
         invalidations.add(StoreFactoryCacheSession.getPolicyByNameCacheKey(name, serverId));
+
+        if (resources != null) {
+            for (String resource : resources) {
+                invalidations.add(StoreFactoryCacheSession.getPolicyByResource(resource, serverId));
+            }
+        }
     }
 
-    public void policyRemoval(String id, String name, String serverId, Set<String> invalidations) {
-        policyUpdated(id, name, serverId, invalidations);
+    public void policyRemoval(String id, String name, Set<String> resources, String serverId, Set<String> invalidations) {
+        policyUpdated(id, name, resources, serverId, invalidations);
     }
 
 
