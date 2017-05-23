@@ -97,7 +97,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
             fail("Expected error");
         } catch (BadRequestException e) {
             ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
-            assertEquals("Password hashing provider not found", error.getErrorMessage());
+            assertEquals("Invalid config for hashAlgorithm: Password hashing provider not found", error.getErrorMessage());
         }
     }
 

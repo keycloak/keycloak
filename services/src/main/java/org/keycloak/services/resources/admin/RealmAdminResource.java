@@ -328,8 +328,6 @@ public class RealmAdminResource {
             }
             
             return Response.noContent().build();
-        } catch (PatternSyntaxException e) {
-            return ErrorResponse.error("Specified regex pattern(s) is invalid.", Response.Status.BAD_REQUEST);
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("Realm with same name exists");
         } catch (ModelException e) {

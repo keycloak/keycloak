@@ -47,7 +47,7 @@ public class LengthPasswordPolicyProvider implements PasswordPolicyProvider {
 
     @Override
     public Object parseConfig(String value) {
-        return value != null ? Integer.parseInt(value) : 8;
+        return parseInteger(value, 8);
     }
 
     @Override
