@@ -17,6 +17,8 @@
 package org.keycloak.authorization.admin;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.Path;
 
@@ -87,5 +89,11 @@ public class PolicyTypeService extends PolicyService {
     protected AbstractPolicyRepresentation toRepresentation(Policy policy, AuthorizationProvider authorization) {
         PolicyProviderFactory providerFactory = authorization.getProviderFactory(policy.getType());
         return ModelToRepresentation.toRepresentation(policy, providerFactory.getRepresentationType(), authorization);
+    }
+
+    @Override
+    protected List<Object> doSearch(Integer firstResult, Integer maxResult, Map<String, String[]> filters) {
+        filters.put("type", new String[] {type});
+        return super.doSearch(firstResult, maxResult, filters);
     }
 }
