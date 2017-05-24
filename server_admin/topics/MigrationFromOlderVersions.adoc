@@ -207,8 +207,12 @@ The version specific section below will mention if any changes are required to a
 ===== New Password Hashing algorithms
 
 We've added two new password hashing algorithms (pbkdf2-sha256 and pbkdf2-sha512). New realms will use the pbkdf2-sha256
-hashing algorithm with 25000 hashing iterations. Existing realms are not updated during migration and this change will
-have to be applied manually to the password policy for existing realms if wanted.
+hashing algorithm with 27500 hashing iterations. Since pbkdf2-sha256 is slightly faster than pbkdf2 the iterations was
+increased to 27500 from 20000.
+
+Existing realms are upgraded if the password policy contains the default value for hashing algorithm (not specified) and
+iteration (20000). If you have changed the hashing iterations you need to manually change to pbkdf2-sha256 if you'd like
+to use the more secure hashing algorithm.
 
 ==== Migrating to 2.5.1
 
