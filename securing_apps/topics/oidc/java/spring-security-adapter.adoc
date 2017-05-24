@@ -229,6 +229,18 @@ public class RemoteProductService implements ProductService {
 
 The Spring Boot and the Spring Security adapters can be combined.
 
+If you are using the Keycloak Spring Boot Starter to make use of the Spring Security adapter you just need to add the Spring Security starter :
+
+[source]
+----
+
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-security</artifactId>
+</dependency>
+
+----
+
 ====== Using Spring Boot Configuration
 
 By Default, the Spring Security Adapter looks for a `keycloak.json` configuration file. You can make sure it looks at the configuration provided by the Spring Boot Adapter by adding this bean :
