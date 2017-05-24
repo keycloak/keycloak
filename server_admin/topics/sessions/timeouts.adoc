@@ -42,4 +42,10 @@ Let's walk through each of the items on this page.
 
 |Login action timeout
 |Maximum time a user can spend on any one page in the authentication process.
+
+|User-Initiated Action Lifespan
+|Maximum time before an action permit sent by a user (e.g. forgot password e-mail) is expired. This value is recommended to be short because it is expected that the user would react to self-created action quickly.
+
+|Default Admin-Initiated Action Lifespan
+|Maximum time before an action permit sent to a user by an admin is expired. This value is recommended to be long to allow admins send e-mails for users that are currently offline. The default timeout can be overridden right before issuing the token.
 |===
