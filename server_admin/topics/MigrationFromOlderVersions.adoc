@@ -202,6 +202,14 @@ The version specific section below will mention if any changes are required to a
 
 === Version specific migration
 
+==== Migrating to 3.2.0
+
+===== New Password Hashing algorithms
+
+We've added two new password hashing algorithms (pbkdf2-sha256 and pbkdf2-sha512). New realms will use the pbkdf2-sha256
+hashing algorithm with 25000 hashing iterations. Existing realms are not updated during migration and this change will
+have to be applied manually to the password policy for existing realms if wanted.
+
 ==== Migrating to 2.5.1
 
 ===== Migration of old offline tokens
