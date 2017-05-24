@@ -308,6 +308,11 @@ public class SAMLParserUtil {
                     return parseNameIDType(xmlEventReader);
                 }
             } else if (xmlEvent instanceof EndElement) {
+                // consume the end element tag
+                EndElement end = StaxParserUtil.getNextEndElement(xmlEventReader);
+                String endElementTag = StaxParserUtil.getEndElementName(end);
+                if (! StaxParserUtil.matches(end, JBossSAMLConstants.ATTRIBUTE_VALUE.get()))
+                    throw logger.parserUnknownEndElement(endElementTag);
                 return "";
             }
 
