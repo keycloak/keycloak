@@ -45,7 +45,6 @@ import org.keycloak.exceptions.TokenNotActiveException;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
@@ -235,7 +234,7 @@ public class LoginActionsService {
         event.event(EventType.LOGIN);
 
         SessionCodeChecks checks = checksForCode(code, execution, clientId, AUTHENTICATE_PATH);
-        if (!checks.verifyActiveAndValidAction(ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
+        if (!checks.verifyActiveAndValidAction(AuthenticationSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
             return checks.getResponse();
         }
 
@@ -320,7 +319,7 @@ public class LoginActionsService {
     }
 
     /**
-     * Endpoint for executing reset credentials flow.  If token is null, a client session is created with the account
+     * Endpoint for executing reset credentials flow.  If token is null, a authentication session is created with the account
      * service as the client.  Successful reset sends you to the account page.  Note, account service must be enabled.
      *
      * @param code
@@ -357,7 +356,7 @@ public class LoginActionsService {
         // set up the account service as the endpoint to call.
         ClientModel client = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
         authSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, client, true);
-        authSession.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
+        authSession.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
         //authSession.setNote(AuthenticationManager.END_AFTER_REQUIRED_ACTIONS, "true");
         authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         String redirectUri = Urls.accountBase(uriInfo.getBaseUri()).path("/").build(realm.getName()).toString();
@@ -376,7 +375,7 @@ public class LoginActionsService {
      */
     protected Response resetCredentials(String code, String execution, String clientId) {
         SessionCodeChecks checks = checksForCode(code, execution, clientId, RESET_CREDENTIALS_PATH);
-        if (!checks.verifyActiveAndValidAction(ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.USER)) {
+        if (!checks.verifyActiveAndValidAction(AuthenticationSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.USER)) {
             return checks.getResponse();
         }
         final AuthenticationSessionModel authSession = checks.getAuthenticationSession();
@@ -613,7 +612,7 @@ public class LoginActionsService {
         }
 
         SessionCodeChecks checks = checksForCode(code, execution, clientId, REGISTRATION_PATH);
-        if (!checks.verifyActiveAndValidAction(ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
+        if (!checks.verifyActiveAndValidAction(AuthenticationSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
             return checks.getResponse();
         }
 
@@ -665,7 +664,7 @@ public class LoginActionsService {
         event.event(eventType);
 
         SessionCodeChecks checks = checksForCode(code, execution, clientId, flowPath);
-        if (!checks.verifyActiveAndValidAction(ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
+        if (!checks.verifyActiveAndValidAction(AuthenticationSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
             return checks.getResponse();
         }
         event.detail(Details.CODE_ID, code);
@@ -675,7 +674,7 @@ public class LoginActionsService {
         SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromAuthenticationSession(authSession, noteKey);
         if (serializedCtx == null) {
             ServicesLogger.LOGGER.notFoundSerializedCtxInClientSession(noteKey);
-            throw new WebApplicationException(ErrorPage.error(session, "Not found serialized context in clientSession."));
+            throw new WebApplicationException(ErrorPage.error(session, "Not found serialized context in authenticationSession."));
         }
         BrokeredIdentityContext brokerContext = serializedCtx.deserialize(session, authSession);
         final String identityProviderAlias = brokerContext.getIdpConfig().getAlias();
@@ -745,7 +744,7 @@ public class LoginActionsService {
         String code = formData.getFirst("code");
         String clientId = uriInfo.getQueryParameters().getFirst(Constants.CLIENT_ID);
         SessionCodeChecks checks = checksForCode(code, null, clientId, REQUIRED_ACTION);
-        if (!checks.verifyRequiredAction(ClientSessionModel.Action.OAUTH_GRANT.name())) {
+        if (!checks.verifyRequiredAction(AuthenticationSessionModel.Action.OAUTH_GRANT.name())) {
             return checks.getResponse();
         }
 
