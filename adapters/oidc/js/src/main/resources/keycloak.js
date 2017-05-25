@@ -832,7 +832,7 @@
             document.body.appendChild(iframe);
 
             var messageCallback = function(event) {
-                if ((event.origin !== loginIframe.iframeOrigin) || (loginIframe.iframe.contentWindow !== event.source)) {
+                if ((event.origin !== loginIframe.iframeOrigin) || (loginIframe.iframe.contentWindow !== event.source)) {
                     return;
                 }
 
