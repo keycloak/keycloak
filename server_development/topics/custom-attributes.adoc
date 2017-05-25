@@ -17,7 +17,7 @@ As an example to add a mobile number to the registration page add the following 
        <label for="user.attributes.mobile" class="${properties.kcLabelClass!}">Mobile number</label>
    </div>
 
-   <div class="col-sm-10 col-md-10">
+   <div class="${properties.kcInputWrapperClass!}">
        <input type="text" class="${properties.kcInputClass!}"  id="user.attributes.mobile" name="user.attributes.mobile"/>
    </div>
 </div>
