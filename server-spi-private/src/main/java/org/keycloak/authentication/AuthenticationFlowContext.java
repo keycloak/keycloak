@@ -58,7 +58,7 @@ public interface AuthenticationFlowContext extends AbstractAuthenticationFlowCon
 
 
     /**
-     * ClientSessionModel attached to this flow
+     * AuthenticationSessionModel attached to this flow
      *
      * @return
      */
@@ -74,7 +74,7 @@ public interface AuthenticationFlowContext extends AbstractAuthenticationFlowCon
     /**
      * Get the action URL for the required action.
      *
-     * @param code client session access code
+     * @param code authentication session access code
      * @return
      */
     URI getActionUrl(String code);
@@ -114,7 +114,7 @@ public interface AuthenticationFlowContext extends AbstractAuthenticationFlowCon
     void resetFlow(Runnable afterResetListener);
 
     /**
-     * Fork the current flow.  The client session will be cloned and set to point at the realm's browser login flow.  The Response will be the result
+     * Fork the current flow.  The authentication session will be cloned and set to point at the realm's browser login flow.  The Response will be the result
      * of this fork.  The previous flow will still be set at the current execution.  This is used by reset password when it sends an email.
      * It sends an email linking to the current flow and redirects the browser to a new browser login flow.
      *
@@ -125,7 +125,7 @@ public interface AuthenticationFlowContext extends AbstractAuthenticationFlowCon
     void fork();
 
     /**
-     * Fork the current flow.  The client session will be cloned and set to point at the realm's browser login flow.  The Response will be the result
+     * Fork the current flow.  The authentication session will be cloned and set to point at the realm's browser login flow.  The Response will be the result
      * of this fork.  The previous flow will still be set at the current execution.  This is used by reset password when it sends an email.
      * It sends an email linking to the current flow and redirects the browser to a new browser login flow.
      *
@@ -135,7 +135,7 @@ public interface AuthenticationFlowContext extends AbstractAuthenticationFlowCon
      */
     void forkWithSuccessMessage(FormMessage message);
     /**
-     * Fork the current flow.  The client session will be cloned and set to point at the realm's browser login flow.  The Response will be the result
+     * Fork the current flow.  The authentication session will be cloned and set to point at the realm's browser login flow.  The Response will be the result
      * of this fork.  The previous flow will still be set at the current execution.  This is used by reset password when it sends an email.
      * It sends an email linking to the current flow and redirects the browser to a new browser login flow.
      *

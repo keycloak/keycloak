@@ -32,7 +32,6 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -41,7 +40,6 @@ import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ServicesLogger;
-import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
@@ -215,7 +213,7 @@ public class SessionCodeChecks {
                 logger.debugf("Transition between flows! Current flow: %s, Previous flow: %s", flowPath, lastFlow);
 
                 // Don't allow moving to different flow if I am on requiredActions already
-                if (ClientSessionModel.Action.AUTHENTICATE.name().equals(authSession.getAction())) {
+                if (AuthenticationSessionModel.Action.AUTHENTICATE.name().equals(authSession.getAction())) {
                     authSession.setAuthNote(AuthenticationProcessor.CURRENT_FLOW_PATH, flowPath);
                     authSession.removeAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION);
                     lastExecFromSession = null;
@@ -271,7 +269,7 @@ public class SessionCodeChecks {
 
         if (!clientCode.isValidAction(expectedAction)) {
             AuthenticationSessionModel authSession = getAuthenticationSession();
-            if (ClientSessionModel.Action.REQUIRED_ACTIONS.name().equals(authSession.getAction())) {
+            if (AuthenticationSessionModel.Action.REQUIRED_ACTIONS.name().equals(authSession.getAction())) {
                 logger.debugf("Incorrect action '%s' . User authenticated already.", authSession.getAction());
                 response = showPageExpired(authSession);
                 return false;
@@ -308,7 +306,7 @@ public class SessionCodeChecks {
             return false;
         }
 
-        if (!clientCode.isValidAction(ClientSessionModel.Action.REQUIRED_ACTIONS.name())) {
+        if (!clientCode.isValidAction(AuthenticationSessionModel.Action.REQUIRED_ACTIONS.name())) {
             logger.debugf("Expected required action, but session action is '%s' . Showing expired page now.", authSession.getAction());
             event.error(Errors.INVALID_CODE);
 

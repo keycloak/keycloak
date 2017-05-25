@@ -82,7 +82,7 @@ public class LoginActionsServiceChecks {
 
         private final ActionTokenContext<?> context;
 
-        private final ClientSessionModel.Action expectedAction;
+        private final AuthenticationSessionModel.Action expectedAction;
 
         public IsActionRequired(ActionTokenContext<?> context, Action expectedAction) {
             this.context = context;
@@ -94,7 +94,7 @@ public class LoginActionsServiceChecks {
             AuthenticationSessionModel authSession = context.getAuthenticationSession();
 
             if (authSession != null && ! Objects.equals(authSession.getAction(), this.expectedAction.name())) {
-                if (Objects.equals(ClientSessionModel.Action.REQUIRED_ACTIONS.name(), authSession.getAction())) {
+                if (Objects.equals(AuthenticationSessionModel.Action.REQUIRED_ACTIONS.name(), authSession.getAction())) {
                     throw new LoginActionsServiceException(
                       AuthenticationManager.nextActionAfterAuthentication(context.getSession(), authSession,
                         context.getClientConnection(), context.getRequest(), context.getUriInfo(), context.getEvent()));
