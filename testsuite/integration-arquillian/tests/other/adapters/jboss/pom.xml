@@ -152,6 +152,12 @@
             </modules>
         </profile>
         <profile>
+            <id>app-server-wildfly10</id>
+            <modules>
+                <module>wildfly10</module>
+            </modules>
+        </profile>
+        <profile>
             <id>app-server-relative</id>
             <modules>
                 <module>relative</module>

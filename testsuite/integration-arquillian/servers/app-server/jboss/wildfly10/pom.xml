@@ -25,17 +25,17 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>integration-arquillian-servers-app-server-eap</artifactId>
+    <artifactId>integration-arquillian-servers-app-server-wildfly10</artifactId>
     <packaging>pom</packaging>
-    <name>App Server - JBoss - EAP</name>
+    <name>App Server - JBoss - Wildfly 10</name>
     
     <properties>
-        <app.server.jboss>eap</app.server.jboss>
+        <app.server.jboss>wildfly10</app.server.jboss>
         
-        <app.server.jboss.groupId>org.jboss.eap</app.server.jboss.groupId>
+        <app.server.jboss.groupId>org.wildfly</app.server.jboss.groupId>
         <app.server.jboss.artifactId>wildfly-dist</app.server.jboss.artifactId>
-        <app.server.jboss.version>${eap.version}</app.server.jboss.version>
-        <app.server.jboss.unpacked.folder.name>jboss-eap-7.1</app.server.jboss.unpacked.folder.name>
+        <app.server.jboss.version>${wildfly10.version}</app.server.jboss.version>
+        <app.server.jboss.unpacked.folder.name>wildfly-${wildfly10.version}</app.server.jboss.unpacked.folder.name>
         
         <app.server.oidc.adapter.artifactId>keycloak-wildfly-adapter-dist</app.server.oidc.adapter.artifactId>
         <app.server.saml.adapter.artifactId>keycloak-saml-wildfly-adapter-dist</app.server.saml.adapter.artifactId>
