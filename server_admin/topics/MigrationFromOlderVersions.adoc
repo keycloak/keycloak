@@ -214,6 +214,16 @@ Existing realms are upgraded if the password policy contains the default value f
 iteration (20000). If you have changed the hashing iterations you need to manually change to pbkdf2-sha256 if you'd like
 to use the more secure hashing algorithm.
 
+===== ID Token requires scope=openid
+
+OpenID Connect specification requires that parameter `scope` with value `openid` is used in initial authorization request. So in {{book.project.name}}
+2.1.0 we changed our adapters to use `scope=openid` in the redirect URI to {{book.project.name}}. Now we changed the server part too and ID token
+will be sent to the application just if `scope=openid` is really used. If it's not used, then ID token will be skipped and just Access token and Refresh token will be sent to the application.
+This also allows that you can ommit the generation of ID Token on purpose - for example for space or performance purposes.
+
+Direct grants (OAuth2 Resource Owner Password Credentials Grant) and Service accounts login (OAuth2 Client credentials grant) also don't use ID Token by default now.
+You need to explicitly add `scope=openid` parameter to have ID Token included.
+
 ==== Migrating to 2.5.1
 
 ===== Migration of old offline tokens
