@@ -16,20 +16,18 @@
  */
 package org.keycloak.saml.processing.core.util;
 
-import org.keycloak.saml.common.PicketLinkLogger;
-import org.keycloak.saml.common.PicketLinkLoggerFactory;
-import org.keycloak.saml.common.util.StringUtil;
-import org.w3c.dom.ls.LSInput;
-import org.w3c.dom.ls.LSResourceResolver;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.net.URL;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import org.jboss.logging.Logger;
+import org.w3c.dom.ls.LSInput;
+import org.w3c.dom.ls.LSResourceResolver;
 
 /**
  * An LSResource Resolver for schema validation
@@ -39,22 +37,22 @@ import java.util.Map;
  */
 public class IDFedLSInputResolver implements LSResourceResolver {
 
-    private static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
+    protected static final Logger logger = Logger.getLogger(IDFedLSInputResolver.class);
 
-    private static Map<String, LSInput> lsmap = new HashMap<String, LSInput>();
-
-    private static Map<String, String> schemaLocationMap = new LinkedHashMap<String, String>();
+    private static Map<String, String> schemaLocationMap = new LinkedHashMap<String, String>(); // thread safe for reading
 
     static {
         // XML Schema/DTD
         schemaLocationMap.put("datatypes.dtd", "schema/w3c/xmlschema/datatypes.dtd");
         schemaLocationMap.put("XMLSchema.dtd", "schema/w3c/xmlschema/XMLSchema.dtd");
+        schemaLocationMap.put("http://www.w3.org/2001/XMLSchema.dtd", "schema/w3c/xmlschema/XMLSchema.dtd");        
         schemaLocationMap.put("http://www.w3.org/2001/xml.xsd", "schema/w3c/xmlschema/xml.xsd");
 
         // XML DSIG
         schemaLocationMap.put("http://www.w3.org/2000/09/xmldsig#", "schema/w3c/xmldsig/xmldsig-core-schema.xsd");
         schemaLocationMap.put("http://www.w3.org/TR/2002/REC-xmldsig-core-20020212/xmldsig-core-schema.xsd",
                 "schema/w3c/xmldsig/xmldsig-core-schema.xsd");
+        schemaLocationMap.put("http://www.w3.org/TR/xmldsig-core/xmldsig-core-schema.xsd", "schema/w3c/xmldsig/xmldsig-core-schema.xsd");
 
         // XML Enc
         schemaLocationMap.put("http://www.w3.org/2001/04/xmlenc#", "schema/w3c/xmlenc/xenc-schema.xsd");
@@ -63,14 +61,17 @@ public class IDFedLSInputResolver implements LSResourceResolver {
 
         // XACML
         schemaLocationMap.put("access_control-xacml-2.0-context-schema-os.xsd",
-                "schema/access_control-xacml-2.0-context-schema-os.xsd");
+                "schema/xacml/access_control-xacml-2.0-context-schema-os.xsd");
+        schemaLocationMap.put("http://docs.oasis-open.org/xacml/2.0/access_control-xacml-2.0-context-schema-os.xsd",
+                "schema/xacml/access_control-xacml-2.0-context-schema-os.xsd");        
         schemaLocationMap.put("access_control-xacml-2.0-policy-schema-os.xsd",
-                "schema/access_control-xacml-2.0-policy-schema-os.xsd");
+                "schema/xacml/access_control-xacml-2.0-policy-schema-os.xsd");
 
         // SAML
-
         schemaLocationMap.put("saml-schema-assertion-2.0.xsd", "schema/saml/v2/saml-schema-assertion-2.0.xsd");
+        schemaLocationMap.put("http://www.oasis-open.org/committees/download.php/11027/sstc-saml-schema-assertion-2.0.xsd", "schema/saml/v2/saml-schema-assertion-2.0.xsd");
         schemaLocationMap.put("saml-schema-protocol-2.0.xsd", "schema/saml/v2/saml-schema-protocol-2.0.xsd");
+        schemaLocationMap.put("http://www.oasis-open.org/committees/download.php/11026/sstc-saml-schema-protocol-2.0.xsd", "schema/saml/v2/saml-schema-protocol-2.0.xsd");
         schemaLocationMap.put("saml-schema-metadata-2.0.xsd", "schema/saml/v2/saml-schema-metadata-2.0.xsd");
         schemaLocationMap.put("saml-schema-x500-2.0.xsd", "schema/saml/v2/saml-schema-x500-2.0.xsd");
         schemaLocationMap.put("saml-schema-xacml-2.0.xsd", "schema/saml/v2/saml-schema-xacml-2.0.xsd");
@@ -89,7 +90,8 @@ public class IDFedLSInputResolver implements LSResourceResolver {
 
         schemaLocationMap.put("access_control-xacml-2.0-saml-protocol-schema-os.xsd",
                 "schema/saml/v2/access_control-xacml-2.0-saml-protocol-schema-os.xsd");
-
+        
+        
         // WS-T
         schemaLocationMap.put("http://docs.oasis-open.org/ws-sx/ws-trust/200512", "schema/wstrust/v1_3/ws-trust-1.3.xsd");
         schemaLocationMap.put("http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd",
@@ -97,42 +99,33 @@ public class IDFedLSInputResolver implements LSResourceResolver {
         schemaLocationMap.put("http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd",
                 "schema/wstrust/v1_3/oasis-200401-wss-wssecurity-utility-1.0.xsd");
         schemaLocationMap.put("http://schemas.xmlsoap.org/ws/2004/09/policy", "schema/wstrust/v1_3/ws-policy.xsd");
+        schemaLocationMap.put("http://schemas.xmlsoap.org/ws/2004/09/policy/ws-policy.xsd", "schema/wstrust/v1_3/ws-policy.xsd");
         schemaLocationMap.put("http://www.w3.org/2005/08/addressing", "schema/wstrust/v1_3/ws-addr.xsd");
+        schemaLocationMap.put("http://www.w3.org/2006/03/addressing/ws-addr.xsd", "schema/wstrust/v1_3/ws-addr.xsd");
     }
 
     public static Collection<String> schemas() {
-        Collection<String> schemaValues = schemaLocationMap.values();
+        Collection<String> schemaValues = new HashSet<String>(schemaLocationMap.values());
         schemaValues.remove("schema/w3c/xmlschema/datatypes.dtd");
         schemaValues.remove("schema/w3c/xmlschema/XMLSchema.dtd");
         logger.info("Considered the schemas:" + schemaValues);
         return schemaValues;
     }
 
-    public LSInput resolveResource(String type, String namespaceURI, final String publicId, final String systemId,
-                                   final String baseURI) {
-        LSInput lsi = null;
-        if (systemId == null)
-            throw logger.nullValueError("systemid");
-        if (StringUtil.isNotNull(systemId) && systemId.endsWith("dtd") && StringUtil.isNotNull(baseURI)) {
-            lsi = lsmap.get(baseURI);
+    public IDFedLSInput resolveResource(String type, String namespaceURI, final String publicId, final String systemId, final String baseURI) {
+        if (systemId == null) {
+            throw new IllegalArgumentException("Expected systemId");
         }
-        if (lsi == null)
-            lsi = lsmap.get(systemId);
-        if (lsi == null) {
-            final String loc = schemaLocationMap.get(systemId);
-            if (loc == null)
-                return null;
-
-            lsi = new PicketLinkLSInput(baseURI, loc, publicId, systemId);
-
-            logger.trace("Loaded:" + lsi);
-
-            lsmap.put(systemId, lsi);
+        
+        final String loc = schemaLocationMap.get(systemId);
+        if (loc == null) {
+            return null;
         }
-        return lsi;
+        
+        return new IDFedLSInput(baseURI, loc, publicId, systemId);
     }
 
-    public static class PicketLinkLSInput implements LSInput {
+    public static class IDFedLSInput implements LSInput {
 
         private final String baseURI;
 
@@ -142,7 +135,7 @@ public class IDFedLSInputResolver implements LSResourceResolver {
 
         private final String systemId;
 
-        public PicketLinkLSInput(String baseURI, String loc, String publicID, String systemID) {
+        public IDFedLSInput(String baseURI, String loc, String publicID, String systemID) {
             this.baseURI = baseURI;
             this.loc = loc;
             this.publicId = publicID;
@@ -159,10 +152,11 @@ public class IDFedLSInputResolver implements LSResourceResolver {
             try {
                 is = url.openStream();
             } catch (IOException e) {
-                throw new RuntimeException(logger.classNotLoadedError(loc));
+                throw new RuntimeException(e);
             }
-            if (is == null)
-                throw logger.nullValueError("inputstream is null for " + loc);
+            if (is == null) {
+                throw new RuntimeException("inputstream is null for " + loc);
+            }
             return is;
         }
 
