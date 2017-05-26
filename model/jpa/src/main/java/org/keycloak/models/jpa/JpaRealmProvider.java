@@ -46,6 +46,7 @@ import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @author <a href="mailto:john.ament@spartasystems.com">John D. Ament</a>
  * @version $Revision: 1 $
  */
 public class JpaRealmProvider implements RealmProvider {
@@ -239,7 +240,7 @@ public class JpaRealmProvider implements RealmProvider {
         query.setParameter("realm", realm.getId());
         List<String> roles = query.getResultList();
 
-        if (roles.isEmpty()) return Collections.EMPTY_SET;
+        if (roles.isEmpty()) return Collections.emptySet();
         Set<RoleModel> list = new HashSet<RoleModel>();
         for (String id : roles) {
             list.add(session.realms().getRoleById(id, realm));
@@ -306,11 +307,18 @@ public class JpaRealmProvider implements RealmProvider {
 
     @Override
     public RoleModel getRoleById(String id, RealmModel realm) {
-        RoleEntity entity = em.find(RoleEntity.class, id);
-        if (entity == null) return null;
-        if (!realm.getId().equals(entity.getRealmId())) return null;
-        RoleAdapter adapter = new RoleAdapter(session, realm, em, entity);
-        return adapter;
+        try {
+            RoleEntity entity = em.createNamedQuery("getRealmRoleByIdAndRealm", RoleEntity.class)
+                    .setParameter("id", id)
+                    .setParameter("realmId",realm.getId())
+                    .getSingleResult();
+            if (entity == null) return null;
+            return new RoleAdapter(session, realm, em, entity);
+        }
+        catch (Exception e) {
+            logger.warn("Unable to fetch role by id "+id,e);
+            return null;
+        }
     }
 
     @Override
@@ -339,7 +347,7 @@ public class JpaRealmProvider implements RealmProvider {
     public List<GroupModel> getGroups(RealmModel realm) {
         List<String> groups =  em.createNamedQuery("getAllGroupIdsByRealm", String.class)
                 .setParameter("realm", realm.getId()).getResultList();
-        if (groups == null) return Collections.EMPTY_LIST;
+        if (groups == null) return Collections.emptyList();
         List<GroupModel> list = new LinkedList<>();
         for (String id : groups) {
             list.add(session.realms().getGroupById(id, realm));
@@ -352,7 +360,7 @@ public class JpaRealmProvider implements RealmProvider {
         List<String> groups =  em.createNamedQuery("getTopLevelGroupIds", String.class)
                 .setParameter("realm", realm.getId())
                 .getResultList();
-        if (groups == null) return Collections.EMPTY_LIST;
+        if (groups == null) return Collections.emptyList();
         List<GroupModel> list = new LinkedList<>();
         for (String id : groups) {
             list.add(session.realms().getGroupById(id, realm));
@@ -449,7 +457,7 @@ public class JpaRealmProvider implements RealmProvider {
         TypedQuery<String> query = em.createNamedQuery("getClientIdsByRealm", String.class);
         query.setParameter("realm", realm.getId());
         List<String> clients = query.getResultList();
-        if (clients.isEmpty()) return Collections.EMPTY_LIST;
+        if (clients.isEmpty()) return Collections.emptyList();
         List<ClientModel> list = new LinkedList<>();
         for (String id : clients) {
             ClientModel client = session.realms().getClientById(id, realm);

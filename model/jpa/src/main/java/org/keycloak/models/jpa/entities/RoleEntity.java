@@ -36,6 +36,7 @@ import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @author <a href="mailto:john.ament@spartasystems.com">John D. Ament</a>
  * @version $Revision: 1 $
  */
 @Entity
@@ -45,13 +46,10 @@ import java.util.Set;
         @UniqueConstraint(columnNames = { "NAME", "CLIENT_REALM_CONSTRAINT" })
 })
 @NamedQueries({
-        @NamedQuery(name="getClientRoles", query="select role from RoleEntity role where role.client = :client"),
+        @NamedQuery(name="getRealmRoleByIdAndRealm", query="select role from RoleEntity role left join role.compositeRoles left join role.client where role.id = :id and role.realmId = :realmId"),
         @NamedQuery(name="getClientRoleIds", query="select role.id from RoleEntity role where role.client.id = :client"),
-        @NamedQuery(name="getClientRoleByName", query="select role from RoleEntity role where role.name = :name and role.client = :client"),
         @NamedQuery(name="getClientRoleIdByName", query="select role.id from RoleEntity role where role.name = :name and role.client.id = :client"),
-        @NamedQuery(name="getRealmRoles", query="select role from RoleEntity role where role.clientRole = false and role.realm = :realm"),
         @NamedQuery(name="getRealmRoleIds", query="select role.id from RoleEntity role where role.clientRole = false and role.realm.id = :realm"),
-        @NamedQuery(name="getRealmRoleByName", query="select role from RoleEntity role where role.clientRole = false and role.name = :name and role.realm = :realm"),
         @NamedQuery(name="getRealmRoleIdByName", query="select role.id from RoleEntity role where role.clientRole = false and role.name = :name and role.realm.id = :realm")
 })
 
