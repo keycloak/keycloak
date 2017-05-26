@@ -36,6 +36,7 @@
 ... link:server_installation/topics/clustering/recommended.adoc[Recommended Network Architecture]
 ... link:server_installation/topics/clustering/example.adoc[Cluster Example]
 ... link:server_installation/topics/clustering/load-balancer.adoc[Setting Up a Load Balancer or Proxy]
+... link:server_installation/topics/clustering/sticky-sessions.adoc[Sticky Sessions Support]
 ... link:server_installation/topics/clustering/multicast.adoc[Multicast Network Setup]
 ... link:server_installation/topics/clustering/securing-cluster-comm.adoc[Securing Cluster Communication]
 ... link:server_installation/topics/clustering/serialized.adoc[Serialized Cluster Startup]
