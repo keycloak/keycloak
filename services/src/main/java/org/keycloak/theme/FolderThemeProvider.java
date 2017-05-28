@@ -20,8 +20,11 @@ package org.keycloak.theme;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -29,10 +32,10 @@ import java.util.Set;
  */
 public class FolderThemeProvider implements ThemeProvider {
 
-    private File themesDir;
+    private final List<File> themesDirs;
 
-    public FolderThemeProvider(File themesDir) {
-        this.themesDir = themesDir;
+    public FolderThemeProvider(List<File> themesDir) {
+        this.themesDirs = themesDir;
     }
 
     @Override
@@ -43,21 +46,27 @@ public class FolderThemeProvider implements ThemeProvider {
     @Override
     public Theme getTheme(String name, Theme.Type type) throws IOException {
         File themeDir = getThemeDir(name, type);
-        return themeDir.isDirectory() ? new FolderTheme(themeDir, name, type) : null;
+        return themeDir != null ? new FolderTheme(themeDir, name, type) : null;
     }
 
     @Override
     public Set<String> nameSet(Theme.Type type) {
         final String typeName = type.name().toLowerCase();
-        File[] themeDirs = themesDir.listFiles(new FileFilter() {
-            @Override
-            public boolean accept(File pathname) {
-                return pathname.isDirectory() && new File(pathname, typeName).isDirectory();
+        List<File> allThemeDirs = new ArrayList();
+        for (File dir : themesDirs) {
+            File[] themeDirs = dir.listFiles(new FileFilter() {
+                @Override
+                public boolean accept(File pathname) {
+                    return pathname.isDirectory() && new File(pathname, typeName).isDirectory();
+                }
+            });
+            if (themeDirs != null) {
+                allThemeDirs.addAll(Arrays.asList(themeDirs));
             }
-        });
-        if (themeDirs != null) {
+        }
+        if (!allThemeDirs.isEmpty()) {
             Set<String> names = new HashSet<String>();
-            for (File themeDir : themeDirs) {
+            for (File themeDir : allThemeDirs) {
                 names.add(themeDir.getName());
             }
             return names;
@@ -68,7 +77,7 @@ public class FolderThemeProvider implements ThemeProvider {
 
     @Override
     public boolean hasTheme(String name, Theme.Type type) {
-        return getThemeDir(name, type).isDirectory();
+        return getThemeDir(name, type) != null;
     }
 
     @Override
@@ -76,7 +85,12 @@ public class FolderThemeProvider implements ThemeProvider {
     }
 
     private File getThemeDir(String name, Theme.Type type) {
-        return new File(themesDir, name + File.separator + type.name().toLowerCase());
+        for (File dir : themesDirs) {
+            File themeDir = new File(dir, name + File.separator + type.name().toLowerCase());
+            if (themeDir.isDirectory()) return themeDir;
+        }
+        
+        return null;
     }
 
 }
