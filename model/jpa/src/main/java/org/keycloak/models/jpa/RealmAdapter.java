@@ -58,7 +58,6 @@ import org.keycloak.models.utils.ComponentUtil;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -68,7 +67,10 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -1375,16 +1377,10 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public List<AuthenticationFlowModel> getAuthenticationFlows() {
-        TypedQuery<AuthenticationFlowEntity> query = em.createNamedQuery("getAuthenticationFlowsByRealm", AuthenticationFlowEntity.class);
-        query.setParameter("realm", realm);
-        List<AuthenticationFlowEntity> flows = query.getResultList();
-        if (flows.isEmpty()) return Collections.EMPTY_LIST;
-        List<AuthenticationFlowModel> models = new LinkedList<>();
-        for (AuthenticationFlowEntity entity : flows) {
-            AuthenticationFlowModel model = entityToModel(entity);
-            models.add(model);
-        }
-        return Collections.unmodifiableList(models);
+        return realm.getAuthenticationFlows().stream()
+                .map(this::entityToModel)
+                .collect(Collectors.collectingAndThen(
+                        Collectors.toList(), Collections::unmodifiableList));
     }
 
     @Override
@@ -1461,26 +1457,20 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         entity.setRealm(realm);
         realm.getAuthenticationFlows().add(entity);
         em.persist(entity);
-        em.flush();
         model.setId(entity.getId());
         return model;
     }
 
     @Override
     public List<AuthenticationExecutionModel> getAuthenticationExecutions(String flowId) {
-        TypedQuery<AuthenticationExecutionEntity> query = em.createNamedQuery("getAuthenticationExecutionsByFlow", AuthenticationExecutionEntity.class);
         AuthenticationFlowEntity flow = em.getReference(AuthenticationFlowEntity.class, flowId);
-        query.setParameter("realm", realm);
-        query.setParameter("parentFlow", flow);
-        List<AuthenticationExecutionEntity> queryResult = query.getResultList();
-        if (queryResult.isEmpty()) return Collections.EMPTY_LIST;
-        List<AuthenticationExecutionModel> executions = new LinkedList<>();
-        for (AuthenticationExecutionEntity entity : queryResult) {
-            AuthenticationExecutionModel model = entityToModel(entity);
-            executions.add(model);
-        }
-        Collections.sort(executions, AuthenticationExecutionModel.ExecutionComparator.SINGLETON);
-        return Collections.unmodifiableList(executions);
+
+        return flow.getExecutions().stream()
+                .filter(e -> getId().equals(e.getRealm().getId()))
+                .map(this::entityToModel)
+                .sorted(AuthenticationExecutionModel.ExecutionComparator.SINGLETON)
+                .collect(Collectors.collectingAndThen(
+                        Collectors.toList(), Collections::unmodifiableList));
     }
 
     public AuthenticationExecutionModel entityToModel(AuthenticationExecutionEntity entity) {
@@ -1519,7 +1509,6 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         entity.setRealm(realm);
         entity.setAutheticatorFlow(model.isAuthenticatorFlow());
         em.persist(entity);
-        em.flush();
         model.setId(entity.getId());
         return model;
 
@@ -1557,7 +1546,6 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         auth.setConfig(model.getConfig());
         realm.getAuthenticatorConfigs().add(auth);
         em.persist(auth);
-        em.flush();
         model.setId(auth.getId());
         return model;
     }
@@ -1850,12 +1838,14 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         c.setSubType(model.getSubType());
         c.setRealm(realm);
         em.persist(c);
+        realm.getComponents().add(c);
         setConfig(model, c);
         model.setId(c.getId());
         return model;
     }
 
     protected void setConfig(ComponentModel model, ComponentEntity c) {
+        c.getComponentConfigs().clear();
         for (String key : model.getConfig().keySet()) {
             List<String> vals = model.getConfig().get(key);
             if (vals == null) {
@@ -1867,7 +1857,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
                 config.setName(key);
                 config.setValue(val);
                 config.setComponent(c);
-                em.persist(config);
+                c.getComponentConfigs().add(config);
             }
         }
     }
@@ -1884,8 +1874,6 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         c.setProviderType(component.getProviderType());
         c.setParentId(component.getParentId());
         c.setSubType(component.getSubType());
-        em.createNamedQuery("deleteComponentConfigByComponent").setParameter("component", c).executeUpdate();
-        em.flush();
         setConfig(component, c);
         ComponentUtil.notifyUpdated(session, this, old, component);
 
@@ -1898,55 +1886,39 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         if (c == null) return;
         session.users().preRemove(this, component);
         removeComponents(component.getId());
-        em.createNamedQuery("deleteComponentConfigByComponent").setParameter("component", c).executeUpdate();
-        em.remove(c);
+        getEntity().getComponents().remove(c);
     }
 
     @Override
     public void removeComponents(String parentId) {
-        TypedQuery<String> query = em.createNamedQuery("getComponentIdsByParent", String.class)
-                .setParameter("realm", realm)
-                .setParameter("parentId", parentId);
-        List<String> results = query.getResultList();
-        if (results.isEmpty()) return;
-        for (String id : results) {
-            session.users().preRemove(this, getComponent(id));
-        }
-        em.createNamedQuery("deleteComponentConfigByParent").setParameter("parentId", parentId).executeUpdate();
-        em.createNamedQuery("deleteComponentByParent").setParameter("parentId", parentId).executeUpdate();
+        Predicate<ComponentEntity> sameParent = c -> Objects.equals(parentId, c.getParentId());
 
+        getEntity().getComponents().stream()
+                .filter(sameParent)
+                .map(this::entityToModel)
+                .forEach(c -> session.users().preRemove(this, c));
+
+        getEntity().getComponents().removeIf(sameParent);
     }
 
     @Override
-    public List<ComponentModel> getComponents(String parentId, String providerType) {
+    public List<ComponentModel> getComponents(String parentId, final String providerType) {
         if (parentId == null) parentId = getId();
-        TypedQuery<ComponentEntity> query = em.createNamedQuery("getComponentsByParentAndType", ComponentEntity.class)
-                .setParameter("realm", realm)
-                .setParameter("parentId", parentId)
-                .setParameter("providerType", providerType);
-        List<ComponentEntity> results = query.getResultList();
-        List<ComponentModel> rtn = new LinkedList<>();
-        for (ComponentEntity c : results) {
-            ComponentModel model = entityToModel(c);
-            rtn.add(model);
+        final String parent = parentId;
 
-        }
-        return rtn;
+        return realm.getComponents().stream()
+                .filter(c -> parent.equals(c.getParentId())
+                        && providerType.equals(c.getProviderType()))
+                .map(this::entityToModel)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public List<ComponentModel> getComponents(String parentId) {
-        TypedQuery<ComponentEntity> query = em.createNamedQuery("getComponentsByParent", ComponentEntity.class)
-                .setParameter("realm", realm)
-                .setParameter("parentId", parentId);
-        List<ComponentEntity> results = query.getResultList();
-        List<ComponentModel> rtn = new LinkedList<>();
-        for (ComponentEntity c : results) {
-            ComponentModel model = entityToModel(c);
-            rtn.add(model);
-
-        }
-        return rtn;
+    public List<ComponentModel> getComponents(final String parentId) {
+        return realm.getComponents().stream()
+                .filter(c -> parentId.equals(c.getParentId()))
+                .map(this::entityToModel)
+                .collect(Collectors.toList());
     }
 
     protected ComponentModel entityToModel(ComponentEntity c) {
@@ -1958,10 +1930,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         model.setSubType(c.getSubType());
         model.setParentId(c.getParentId());
         MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
-        TypedQuery<ComponentConfigEntity> configQuery = em.createNamedQuery("getComponentConfig", ComponentConfigEntity.class)
-                .setParameter("component", c);
-        List<ComponentConfigEntity> configResults = configQuery.getResultList();
-        for (ComponentConfigEntity configEntity : configResults) {
+        for (ComponentConfigEntity configEntity : c.getComponentConfigs()) {
             config.add(configEntity.getName(), configEntity.getValue());
         }
         model.setConfig(config);
@@ -1970,16 +1939,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public List<ComponentModel> getComponents() {
-        TypedQuery<ComponentEntity> query = em.createNamedQuery("getComponents", ComponentEntity.class)
-                .setParameter("realm", realm);
-        List<ComponentEntity> results = query.getResultList();
-        List<ComponentModel> rtn = new LinkedList<>();
-        for (ComponentEntity c : results) {
-            ComponentModel model = entityToModel(c);
-            rtn.add(model);
-
-        }
-        return rtn;
+        return realm.getComponents().stream().map(this::entityToModel).collect(Collectors.toList());
     }
 
     @Override

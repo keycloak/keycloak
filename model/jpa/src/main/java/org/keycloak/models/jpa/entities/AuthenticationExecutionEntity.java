@@ -37,11 +37,6 @@ import javax.persistence.Table;
  */
 @Table(name="AUTHENTICATION_EXECUTION")
 @Entity
-@NamedQueries({
-        @NamedQuery(name="getAuthenticationExecutionsByFlow", query="select authenticator from AuthenticationExecutionEntity authenticator where authenticator.realm = :realm and authenticator.parentFlow = :parentFlow"),
-        @NamedQuery(name="deleteAuthenticationExecutionsByRealm", query="delete from AuthenticationExecutionEntity authenticator where authenticator.realm = :realm"),
-        @NamedQuery(name="deleteAuthenticationExecutionsByRealmAndFlow", query="delete from AuthenticationExecutionEntity authenticator where authenticator.realm = :realm and authenticator.parentFlow = :parentFlow"),
-})
 public class AuthenticationExecutionEntity {
     @Id
     @Column(name="ID", length = 36)

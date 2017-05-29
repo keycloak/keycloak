@@ -101,7 +101,6 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
             if (composite.equals(entity)) return;
         }
         getEntity().getCompositeRoles().add(entity);
-        em.flush();
     }
 
     @Override
