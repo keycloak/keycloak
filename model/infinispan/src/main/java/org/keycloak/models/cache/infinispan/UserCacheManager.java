@@ -95,9 +95,7 @@ public class UserCacheManager extends CacheManager {
 
     @Override
     protected void addInvalidationsFromEvent(InvalidationEvent event, Set<String> invalidations) {
-        if (event instanceof UserCacheInvalidationEvent) {
-            ((UserCacheInvalidationEvent) event).addInvalidations(this, invalidations);
-        }
+        ((UserCacheInvalidationEvent) event).addInvalidations(this, invalidations);
     }
 
     public void invalidateRealmUsers(String realm, Set<String> invalidations) {

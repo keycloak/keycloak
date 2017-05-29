@@ -50,6 +50,7 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
+import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
@@ -73,10 +74,22 @@ import java.util.*;
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public class OAuthClient {
-    public static final String SERVER_ROOT = AuthServerTestEnricher.getAuthServerContextRoot();
-    public static String AUTH_SERVER_ROOT = SERVER_ROOT + "/auth";
-    public static final String APP_ROOT = AUTH_SERVER_ROOT + "/realms/master/app";
+    public static String SERVER_ROOT;
+    public static String AUTH_SERVER_ROOT;
+    public static String APP_ROOT;
     private static final boolean sslRequired = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required"));
+
+    static {
+        updateURLs(AuthServerTestEnricher.getAuthServerContextRoot());
+    }
+
+    // Workaround, but many tests directly use system properties like OAuthClient.AUTH_SERVER_ROOT instead of taking the URL from suite context
+    public static void updateURLs(String serverRoot) {
+        SERVER_ROOT = serverRoot;
+        AUTH_SERVER_ROOT = SERVER_ROOT + "/auth";
+        APP_ROOT = AUTH_SERVER_ROOT + "/realms/master/app";
+    }
+
 
     private Keycloak adminClient;
 

@@ -17,6 +17,8 @@
 
 package org.keycloak.testsuite.rest.resource;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -28,8 +30,15 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import org.infinispan.Cache;
+import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.remoting.transport.Transport;
+import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
+import org.jgroups.JChannel;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
+import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
+import org.keycloak.testsuite.rest.representation.JGroupsStats;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -77,4 +86,55 @@ public class TestCacheResource {
     public void clear() {
         cache.clear();
     }
+
+    @GET
+    @Path("/jgroups-stats")
+    @Produces(MediaType.APPLICATION_JSON)
+    public JGroupsStats getJgroupsStats() {
+        Transport transport = cache.getCacheManager().getTransport();
+        if (transport == null) {
+            return new JGroupsStats(0, 0, 0, 0);
+        } else {
+            try {
+                // Need to use reflection due some incompatibilities between ispn 8.2.6 and 9.0.1
+                JChannel channel = (JChannel) transport.getClass().getMethod("getChannel").invoke(transport);
+
+                return new JGroupsStats(channel.getSentBytes(), channel.getSentMessages(), channel.getReceivedBytes(), channel.getReceivedMessages());
+            } catch (Exception nsme) {
+                throw new RuntimeException(nsme);
+            }
+        }
+    }
+
+
+    @GET
+    @Path("/remote-cache-stats")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String, String> getRemoteCacheStats() {
+        RemoteCache remoteCache = InfinispanUtil.getRemoteCache(cache);
+        if (remoteCache == null) {
+            return new HashMap<>();
+        } else {
+            return remoteCache.stats().getStatsMap();
+        }
+    }
+
+
+    @GET
+    @Path("/remote-cache-last-session-refresh/{user-session-id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public int getRemoteCacheLastSessionRefresh(@PathParam("user-session-id") String userSessionId) {
+        RemoteCache remoteCache = InfinispanUtil.getRemoteCache(cache);
+        if (remoteCache == null) {
+            return -1;
+        } else {
+            UserSessionEntity userSession = (UserSessionEntity) remoteCache.get(userSessionId);
+            if (userSession == null) {
+                return -1;
+            } else {
+                return userSession.getLastSessionRefresh();
+            }
+        }
+    }
+
 }

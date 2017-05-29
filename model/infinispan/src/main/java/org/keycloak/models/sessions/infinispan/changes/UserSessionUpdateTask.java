@@ -15,27 +15,24 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.sessions.infinispan.mapreduce;
+package org.keycloak.models.sessions.infinispan.changes;
 
-import org.infinispan.distexec.mapreduce.Reducer;
-
-import java.util.Iterator;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
 /**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class LargestResultReducer implements Reducer<String, Integer> {
+public abstract class UserSessionUpdateTask implements SessionUpdateTask<UserSessionEntity> {
 
     @Override
-    public Integer reduce(String reducedKey, Iterator<Integer> itr) {
-        Integer largest = itr.next();
-        while (itr.hasNext()) {
-            Integer next = itr.next();
-            if (next > largest) {
-                largest = next;
-            }
-        }
-        return largest;
+    public CacheOperation getOperation(UserSessionEntity session) {
+        return CacheOperation.REPLACE;
     }
 
+    @Override
+    public CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<UserSessionEntity> sessionWrapper) {
+        return CrossDCMessageStatus.SYNC;
+    }
 }

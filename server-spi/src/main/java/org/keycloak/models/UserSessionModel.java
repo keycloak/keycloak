@@ -62,8 +62,6 @@ public interface UserSessionModel {
     State getState();
     void setState(State state);
 
-    void setUser(UserModel user);
-
     // Will completely restart whole state of user session. It will just keep same ID.
     void restartSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId);
 

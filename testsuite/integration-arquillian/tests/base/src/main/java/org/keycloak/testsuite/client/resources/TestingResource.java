@@ -192,6 +192,11 @@ public interface TestingResource {
     @Produces(MediaType.APPLICATION_JSON)
     void removeExpired(@QueryParam("realm") final String realm);
 
+    @GET
+    @Path("/get-client-sessions-count")
+    @Produces(MediaType.APPLICATION_JSON)
+    Integer getClientSessionsCountInUserSession(@QueryParam("realm") final String realmName, @QueryParam("session") final String sessionId);
+
     @Path("/cache/{cache}")
     TestingCacheResource cache(@PathParam("cache") String cacheName);
 

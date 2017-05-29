@@ -41,6 +41,7 @@ public class InfinispanCacheStoreFactoryProviderFactory implements CachedStorePr
 
     private static final Logger log = Logger.getLogger(InfinispanCacheStoreFactoryProviderFactory.class);
     public static final String AUTHORIZATION_CLEAR_CACHE_EVENTS = "AUTHORIZATION_CLEAR_CACHE_EVENTS";
+    public static final String AUTHORIZATION_INVALIDATION_EVENTS = "AUTHORIZATION_INVALIDATION_EVENTS";
 
     protected volatile StoreFactoryCacheManager storeCache;
 
@@ -59,11 +60,11 @@ public class InfinispanCacheStoreFactoryProviderFactory implements CachedStorePr
                     storeCache = new StoreFactoryCacheManager(cache, revisions);
                     ClusterProvider cluster = session.getProvider(ClusterProvider.class);
 
-                    cluster.registerListener(ClusterProvider.ALL, (ClusterEvent event) -> {
-                        if (event instanceof InvalidationEvent) {
-                            InvalidationEvent invalidationEvent = (InvalidationEvent) event;
-                            storeCache.invalidationEventReceived(invalidationEvent);
-                        }
+                    cluster.registerListener(AUTHORIZATION_INVALIDATION_EVENTS, (ClusterEvent event) -> {
+
+                        InvalidationEvent invalidationEvent = (InvalidationEvent) event;
+                        storeCache.invalidationEventReceived(invalidationEvent);
+
                     });
 
                     cluster.registerListener(AUTHORIZATION_CLEAR_CACHE_EVENTS, (ClusterEvent event) -> storeCache.clear());

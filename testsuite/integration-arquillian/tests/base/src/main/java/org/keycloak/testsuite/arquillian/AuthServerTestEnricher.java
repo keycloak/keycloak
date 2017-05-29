@@ -81,8 +81,6 @@ public class AuthServerTestEnricher {
     private static final String AUTH_SERVER_CROSS_DC_PROPERTY = "auth.server.crossdc";
     public static final boolean AUTH_SERVER_CROSS_DC = Boolean.parseBoolean(System.getProperty(AUTH_SERVER_CROSS_DC_PROPERTY, "false"));
 
-    private static final boolean AUTH_SERVER_UNDERTOW_CLUSTER = Boolean.parseBoolean(System.getProperty("auth.server.undertow.cluster", "false"));
-
     private static final Boolean START_MIGRATION_CONTAINER = "auto".equals(System.getProperty("migration.mode")) || 
             "manual".equals(System.getProperty("migration.mode"));
 
@@ -195,11 +193,6 @@ public class AuthServerTestEnricher {
             suiteContext.setAuthServerInfo(container);
         }
 
-        // Setup with 2 undertow backend nodes and no loadbalancer.
-//        if (AUTH_SERVER_UNDERTOW_CLUSTER && suiteContext.getAuthServerInfo() == null && !suiteContext.getAuthServerBackendsInfo().isEmpty()) {
-//            suiteContext.setAuthServerInfo(suiteContext.getAuthServerBackendsInfo().get(0));
-//        }
-
         if (START_MIGRATION_CONTAINER) {
             // init migratedAuthServerInfo
             for (ContainerInfo container : suiteContext.getContainers()) {
@@ -268,6 +261,8 @@ public class AuthServerTestEnricher {
     }
 
     public void initializeOAuthClient(@Observes(precedence = 3) BeforeClass event) {
+        // TODO workaround. Check if can be removed
+        OAuthClient.updateURLs(suiteContext.getAuthServerInfo().getContextRoot().toString());
         OAuthClient oAuthClient = new OAuthClient();
         oAuthClientProducer.set(oAuthClient);
     }

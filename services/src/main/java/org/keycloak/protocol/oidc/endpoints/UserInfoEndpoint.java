@@ -42,6 +42,7 @@ import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.UserSessionCrossDCManager;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.utils.MediaType;
 
@@ -139,18 +140,6 @@ public class UserInfoEndpoint {
             throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Token invalid: " + e.getMessage(), Response.Status.UNAUTHORIZED);
         }
 
-        UserSessionModel userSession = findValidSession(token, event);
-
-        UserModel userModel = userSession.getUser();
-        if (userModel == null) {
-            event.error(Errors.USER_NOT_FOUND);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "User not found", Response.Status.BAD_REQUEST);
-        }
-
-        event.user(userModel)
-                .detail(Details.USERNAME, userModel.getUsername());
-
-
         ClientModel clientModel = realm.getClientByClientId(token.getIssuedFor());
         if (clientModel == null) {
             event.error(Errors.CLIENT_NOT_FOUND);
@@ -164,11 +153,20 @@ public class UserInfoEndpoint {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client disabled", Response.Status.BAD_REQUEST);
         }
 
-        AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(clientModel.getId());
-        if (clientSession == null) {
-            event.error(Errors.SESSION_EXPIRED);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Session expired", Response.Status.UNAUTHORIZED);
+        UserSessionModel userSession = findValidSession(token, event, clientModel);
+
+        UserModel userModel = userSession.getUser();
+        if (userModel == null) {
+            event.error(Errors.USER_NOT_FOUND);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "User not found", Response.Status.BAD_REQUEST);
         }
+
+        event.user(userModel)
+                .detail(Details.USERNAME, userModel.getUsername());
+
+
+        // Existence of authenticatedClientSession for our client already handled before
+        AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(clientModel.getId());
 
         AccessToken userInfo = new AccessToken();
         tokenManager.transformUserInfoAccessToken(session, userInfo, realm, clientModel, userModel, userSession, clientSession);
@@ -209,14 +207,14 @@ public class UserInfoEndpoint {
     }
 
 
-    private UserSessionModel findValidSession(AccessToken token, EventBuilder event) {
-        UserSessionModel userSession = session.sessions().getUserSession(realm, token.getSessionState());
+    private UserSessionModel findValidSession(AccessToken token, EventBuilder event, ClientModel client) {
+        UserSessionModel userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), false, client.getId());
         UserSessionModel offlineUserSession = null;
         if (AuthenticationManager.isSessionValid(realm, userSession)) {
             event.session(userSession);
             return userSession;
         } else {
-            offlineUserSession = session.sessions().getOfflineUserSession(realm, token.getSessionState());
+            offlineUserSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), true, client.getId());
             if (AuthenticationManager.isOfflineSessionValid(realm, offlineUserSession)) {
                 event.session(offlineUserSession);
                 return offlineUserSession;
@@ -225,7 +223,7 @@ public class UserInfoEndpoint {
 
         if (userSession == null && offlineUserSession == null) {
             event.error(Errors.USER_SESSION_NOT_FOUND);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "User session not found", Response.Status.BAD_REQUEST);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "User session not found or doesn't have client attached on it", Response.Status.UNAUTHORIZED);
         }
 
         if (userSession != null) {

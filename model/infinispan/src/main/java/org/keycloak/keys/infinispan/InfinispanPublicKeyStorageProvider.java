@@ -69,7 +69,7 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
     public void clearCache() {
         keys.clear();
         ClusterProvider cluster = session.getProvider(ClusterProvider.class);
-        cluster.notify(InfinispanPublicKeyStorageProviderFactory.KEYS_CLEAR_CACHE_EVENTS, new ClearCacheEvent(), true);
+        cluster.notify(InfinispanPublicKeyStorageProviderFactory.KEYS_CLEAR_CACHE_EVENTS, new ClearCacheEvent(), true, ClusterProvider.DCNotify.ALL_DCS);
     }
 
 
@@ -122,7 +122,7 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
 
         for (String cacheKey : invalidations) {
             keys.remove(cacheKey);
-            cluster.notify(cacheKey, PublicKeyStorageInvalidationEvent.create(cacheKey), true);
+            cluster.notify(InfinispanPublicKeyStorageProviderFactory.PUBLIC_KEY_STORAGE_INVALIDATION_EVENT, PublicKeyStorageInvalidationEvent.create(cacheKey), true, ClusterProvider.DCNotify.ALL_DCS);
         }
     }
 

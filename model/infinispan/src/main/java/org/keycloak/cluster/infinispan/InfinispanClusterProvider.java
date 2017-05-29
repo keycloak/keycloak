@@ -25,6 +25,11 @@ import org.keycloak.cluster.ExecutionResult;
 import org.keycloak.common.util.Time;
 
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -43,11 +48,14 @@ public class InfinispanClusterProvider implements ClusterProvider {
     private final CrossDCAwareCacheFactory crossDCAwareCacheFactory;
     private final InfinispanNotificationsManager notificationsManager; // Just to extract notifications related stuff to separate class
 
-    public InfinispanClusterProvider(int clusterStartupTime, String myAddress, CrossDCAwareCacheFactory crossDCAwareCacheFactory, InfinispanNotificationsManager notificationsManager) {
+    private final ExecutorService localExecutor;
+
+    public InfinispanClusterProvider(int clusterStartupTime, String myAddress, CrossDCAwareCacheFactory crossDCAwareCacheFactory, InfinispanNotificationsManager notificationsManager, ExecutorService localExecutor) {
         this.myAddress = myAddress;
         this.clusterStartupTime = clusterStartupTime;
         this.crossDCAwareCacheFactory = crossDCAwareCacheFactory;
         this.notificationsManager = notificationsManager;
+        this.localExecutor = localExecutor;
     }
 
 
@@ -86,16 +94,43 @@ public class InfinispanClusterProvider implements ClusterProvider {
 
 
     @Override
+    public Future<Boolean> executeIfNotExecutedAsync(String taskKey, int taskTimeoutInSeconds, Callable task) {
+        TaskCallback newCallback = new TaskCallback();
+        TaskCallback callback = this.notificationsManager.registerTaskCallback(TASK_KEY_PREFIX + taskKey, newCallback);
+
+        // We successfully submitted our task
+        if (newCallback == callback) {
+            Callable<Boolean> wrappedTask = () -> {
+                boolean executed = executeIfNotExecuted(taskKey, taskTimeoutInSeconds, task).isExecuted();
+
+                if (!executed) {
+                    logger.infof("Task already in progress on other cluster node. Will wait until it's finished");
+                }
+
+                callback.getTaskCompletedLatch().await(taskTimeoutInSeconds, TimeUnit.SECONDS);
+                return callback.isSuccess();
+            };
+
+            Future<Boolean> future = localExecutor.submit(wrappedTask);
+            callback.setFuture(future);
+        } else {
+            logger.infof("Task already in progress on this cluster node. Will wait until it's finished");
+        }
+
+        return callback.getFuture();
+    }
+
+
+    @Override
     public void registerListener(String taskKey, ClusterListener task) {
         this.notificationsManager.registerListener(taskKey, task);
     }
 
 
     @Override
-    public void notify(String taskKey, ClusterEvent event, boolean ignoreSender) {
-        this.notificationsManager.notify(taskKey, event, ignoreSender);
+    public void notify(String taskKey, ClusterEvent event, boolean ignoreSender, DCNotify dcNotify) {
+        this.notificationsManager.notify(taskKey, event, ignoreSender, dcNotify);
     }
-
 
     private LockEntry createLockEntry() {
         LockEntry lock = new LockEntry();

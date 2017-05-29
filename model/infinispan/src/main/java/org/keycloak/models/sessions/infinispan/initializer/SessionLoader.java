@@ -24,11 +24,51 @@ import java.io.Serializable;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface SessionLoader extends Serializable {
+public interface SessionLoader {
 
+    /**
+     * Will be triggered just once on cluster coordinator node to perform some generic initialization tasks (Eg. update DB before starting load).
+     *
+     * NOTE: This shouldn't be used for the initialization of loader instance itself!
+     *
+     * @param session
+     */
     void init(KeycloakSession session);
 
+
+    /**
+     * Will be triggered just once on cluster coordinator node to count the number of sessions
+     *
+     * @param session
+     * @return
+     */
     int getSessionsCount(KeycloakSession session);
 
+
+    /**
+     * Will be called on all cluster nodes to load the specified page.
+     *
+     * @param session
+     * @param first
+     * @param max
+     * @return
+     */
     boolean loadSessions(KeycloakSession session, int first, int max);
+
+
+    /**
+     * This will be called on nodes to check if loading is finished. It allows loader to notify that loading is finished for some reason.
+     *
+     * @param initializer
+     * @return
+     */
+    boolean isFinished(BaseCacheInitializer initializer);
+
+
+    /**
+     * Callback triggered on cluster coordinator once it recognize that all sessions were successfully loaded
+     *
+     * @param initializer
+     */
+    void afterAllSessionsLoaded(BaseCacheInitializer initializer);
 }

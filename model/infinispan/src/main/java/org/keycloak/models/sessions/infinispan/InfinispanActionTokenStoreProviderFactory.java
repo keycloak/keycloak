@@ -70,24 +70,24 @@ public class InfinispanActionTokenStoreProviderFactory implements ActionTokenSto
 
         ClusterProvider cluster = session.getProvider(ClusterProvider.class);
 
-        cluster.registerListener(ClusterProvider.ALL, event -> {
-            if (event instanceof RemoveActionTokensSpecificEvent) {
-                RemoveActionTokensSpecificEvent e = (RemoveActionTokensSpecificEvent) event;
+        cluster.registerListener(ACTION_TOKEN_EVENTS, event -> {
 
-                LOG.debugf("[%s] Removing token invalidation for user+action: userId=%s, actionId=%s", cacheAddress, e.getUserId(), e.getActionId());
+            RemoveActionTokensSpecificEvent e = (RemoveActionTokensSpecificEvent) event;
 
-                AdvancedCache<ActionTokenReducedKey, ActionTokenValueEntity> localCache = cache
-                  .getAdvancedCache()
-                  .withFlags(Flag.CACHE_MODE_LOCAL, Flag.SKIP_CACHE_LOAD);
+            LOG.debugf("[%s] Removing token invalidation for user+action: userId=%s, actionId=%s", cacheAddress, e.getUserId(), e.getActionId());
 
-                List<ActionTokenReducedKey> toRemove = localCache
-                  .keySet()
-                  .stream()
-                  .filter(k -> Objects.equals(k.getUserId(), e.getUserId()) && Objects.equals(k.getActionId(), e.getActionId()))
-                  .collect(Collectors.toList());
+            AdvancedCache<ActionTokenReducedKey, ActionTokenValueEntity> localCache = cache
+                    .getAdvancedCache()
+                    .withFlags(Flag.CACHE_MODE_LOCAL, Flag.SKIP_CACHE_LOAD);
 
-                toRemove.forEach(localCache::remove);
-            }
+            List<ActionTokenReducedKey> toRemove = localCache
+                    .keySet()
+                    .stream()
+                    .filter(k -> Objects.equals(k.getUserId(), e.getUserId()) && Objects.equals(k.getActionId(), e.getActionId()))
+                    .collect(Collectors.toList());
+
+            toRemove.forEach(localCache::remove);
+
         });
 
         LOG.debugf("[%s] Registered cluster listeners", cacheAddress);

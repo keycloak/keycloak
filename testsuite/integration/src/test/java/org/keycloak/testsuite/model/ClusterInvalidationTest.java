@@ -67,7 +67,7 @@ import org.keycloak.testsuite.util.cli.TestCacheUtils;
  *
  *  <local-cache name="work" start="EAGER" batching="false" />
  *
- * Finally, add this system property when running the test: -Dkeycloak.connectionsInfinispan.remoteStoreEnabled=true
+ * Finally, add this system properties when running the test: -Dkeycloak.connectionsInfinispan.remoteStoreEnabled=true -Dkeycloak.connectionsInfinispan.siteName=dc-0
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */

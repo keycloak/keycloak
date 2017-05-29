@@ -55,8 +55,25 @@ public interface InfinispanConnectionProvider extends Provider {
     String JBOSS_NODE_NAME = "jboss.node.name";
     String JGROUPS_UDP_MCAST_ADDR = "jgroups.udp.mcast_addr";
 
+    // TODO This property is not in Wildfly. Check if corresponding property in Wildfly exists
+    String JBOSS_SITE_NAME = "jboss.site.name";
+
     String JMX_DOMAIN = "jboss.datagrid-infinispan";
 
+    // Constant used as the prefix of the current node if "jboss.node.name" is not configured
+    String NODE_PREFIX = "node_";
+
     <K, V> Cache<K, V> getCache(String name);
+
+    /**
+     * @return Address of current node in cluster. In non-cluster environment, it returns some other non-null value (eg. hostname with some random value like "host-123456" )
+     */
+    String getNodeName();
+
+    /**
+     *
+     * @return siteName or null if we're not in environment with multiple sites (data centers)
+     */
+    String getSiteName();
 
 }

@@ -216,7 +216,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             cache.invalidateObject(id);
         }
 
-        cache.sendInvalidationEvents(session, invalidationEvents);
+        cache.sendInvalidationEvents(session, invalidationEvents, InfinispanCacheStoreFactoryProviderFactory.AUTHORIZATION_INVALIDATION_EVENTS);
     }
 
 

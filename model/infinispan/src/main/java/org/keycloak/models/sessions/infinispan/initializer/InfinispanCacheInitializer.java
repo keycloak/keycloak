@@ -18,15 +18,10 @@
 package org.keycloak.models.sessions.infinispan.initializer;
 
 import org.infinispan.Cache;
-import org.infinispan.context.Flag;
 import org.infinispan.distexec.DefaultExecutorService;
-import org.infinispan.lifecycle.ComponentStatus;
 import org.infinispan.remoting.transport.Transport;
 import org.jboss.logging.Logger;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.KeycloakSessionTask;
-import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.io.Serializable;
 import java.util.LinkedList;
@@ -37,131 +32,34 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 /**
- * Startup initialization for reading persistent userSessions/clientSessions to be filled into infinispan/memory . In cluster,
+ * Startup initialization for reading persistent userSessions to be filled into infinispan/memory . In cluster,
  * the initialization is distributed among all cluster nodes, so the startup time is even faster
  *
  * TODO: Move to clusterService. Implementation is already pretty generic and doesn't contain any "userSession" specific stuff. All sessions-specific logic is in the SessionLoader implementation
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class InfinispanUserSessionInitializer {
+public class InfinispanCacheInitializer extends BaseCacheInitializer {
 
-    private static final String STATE_KEY_PREFIX = "distributed::";
+    private static final Logger log = Logger.getLogger(InfinispanCacheInitializer.class);
 
-    private static final Logger log = Logger.getLogger(InfinispanUserSessionInitializer.class);
-
-    private final KeycloakSessionFactory sessionFactory;
-    private final Cache<String, Serializable> workCache;
-    private final SessionLoader sessionLoader;
     private final int maxErrors;
-    private final int sessionsPerSegment;
-    private final String stateKey;
 
 
-    public InfinispanUserSessionInitializer(KeycloakSessionFactory sessionFactory, Cache<String, Serializable> workCache, SessionLoader sessionLoader, int maxErrors, int sessionsPerSegment, String stateKeySuffix) {
-        this.sessionFactory = sessionFactory;
-        this.workCache = workCache;
-        this.sessionLoader = sessionLoader;
+    public InfinispanCacheInitializer(KeycloakSessionFactory sessionFactory, Cache<String, Serializable> workCache, SessionLoader sessionLoader, String stateKeySuffix, int sessionsPerSegment, int maxErrors) {
+        super(sessionFactory, workCache, sessionLoader, stateKeySuffix, sessionsPerSegment);
         this.maxErrors = maxErrors;
-        this.sessionsPerSegment = sessionsPerSegment;
-        this.stateKey = STATE_KEY_PREFIX + stateKeySuffix;
     }
 
+    @Override
     public void initCache() {
         this.workCache.getAdvancedCache().getComponentRegistry().registerComponent(sessionFactory, KeycloakSessionFactory.class);
     }
 
 
-    public void loadPersistentSessions() {
-        if (isFinished()) {
-            return;
-        }
-
-        while (!isFinished()) {
-            if (!isCoordinator()) {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ie) {
-                    log.error("Interrupted", ie);
-                }
-            } else {
-                startLoading();
-            }
-        }
-    }
-
-
-    private boolean isFinished() {
-        InitializerState state = getStateFromCache();
-        return state != null && state.isFinished();
-    }
-
-
-    private InitializerState getOrCreateInitializerState() {
-        InitializerState state = getStateFromCache();
-        if (state == null) {
-            final int[] count = new int[1];
-
-            // Rather use separate transactions for update and counting
-
-            KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
-                @Override
-                public void run(KeycloakSession session) {
-                    sessionLoader.init(session);
-                }
-
-            });
-
-            KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
-                @Override
-                public void run(KeycloakSession session) {
-                    count[0] = sessionLoader.getSessionsCount(session);
-                }
-
-            });
-
-            state = new InitializerState();
-            state.init(count[0], sessionsPerSegment);
-            saveStateToCache(state);
-        }
-        return state;
-
-    }
-
-    private InitializerState getStateFromCache() {
-        // TODO: We ignore cacheStore for now, so that in Cross-DC scenario (with RemoteStore enabled) is the remoteStore ignored. This means that every DC needs to load offline sessions separately.
-        return (InitializerState) workCache.getAdvancedCache()
-                .withFlags(Flag.SKIP_CACHE_STORE, Flag.SKIP_CACHE_LOAD)
-                .get(stateKey);
-    }
-
-    private void saveStateToCache(final InitializerState state) {
-
-        // 3 attempts to send the message (it may fail if some node fails in the meantime)
-        retry(3, new Runnable() {
-
-            @Override
-            public void run() {
-
-                // Save this synchronously to ensure all nodes read correct state
-                // TODO: We ignore cacheStore for now, so that in Cross-DC scenario (with RemoteStore enabled) is the remoteStore ignored. This means that every DC needs to load offline sessions separately.
-                InfinispanUserSessionInitializer.this.workCache.getAdvancedCache().
-                        withFlags(Flag.IGNORE_RETURN_VALUES, Flag.FORCE_SYNCHRONOUS, Flag.SKIP_CACHE_STORE, Flag.SKIP_CACHE_LOAD)
-                        .put(stateKey, state);
-            }
-
-        });
-    }
-
-
-    private boolean isCoordinator() {
-        Transport transport = workCache.getCacheManager().getTransport();
-        return transport == null || transport.isCoordinator();
-    }
-
-
     // Just coordinator will run this
-    private void startLoading() {
+    @Override
+    protected void startLoading() {
         InitializerState state = getOrCreateInitializerState();
 
         // Assume each worker has same processor's count
@@ -230,6 +128,10 @@ public class InfinispanUserSessionInitializer {
                     log.debug("New initializer state pushed. The state is: " + state.printState());
                 }
             }
+
+            // Loader callback after the task is finished
+            this.sessionLoader.afterAllSessionsLoaded(this);
+
         } finally {
             if (distributed) {
                 executorService.shutdown();
@@ -238,25 +140,6 @@ public class InfinispanUserSessionInitializer {
         }
     }
 
-    private void retry(int retry, Runnable runnable) {
-        while (true) {
-            try {
-                runnable.run();
-                return;
-            } catch (RuntimeException e) {
-                ComponentStatus status = workCache.getStatus();
-                if (status.isStopping() || status.isTerminated()) {
-                    log.warn("Failed to put initializerState to the cache. Cache is already terminating");
-                    log.debug(e.getMessage(), e);
-                    return;
-                }
-                retry--;
-                if (retry == 0) {
-                    throw e;
-                }
-            }
-        }
-    }
 
     public static class WorkerResult implements Serializable {
 

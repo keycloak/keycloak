@@ -95,11 +95,9 @@ public class RealmCacheManager extends CacheManager {
 
     @Override
     protected void addInvalidationsFromEvent(InvalidationEvent event, Set<String> invalidations) {
-        if (event instanceof RealmCacheInvalidationEvent) {
-            invalidations.add(event.getId());
+        invalidations.add(event.getId());
 
-            ((RealmCacheInvalidationEvent) event).addInvalidations(this, invalidations);
-        }
+        ((RealmCacheInvalidationEvent) event).addInvalidations(this, invalidations);
     }
 
 }

@@ -242,6 +242,7 @@
                 <property name="dataCenter">0</property>
                 <property name="keycloakConfigPropertyOverrides">{
                     "keycloak.connectionsInfinispan.jgroupsUdpMcastAddr": "234.56.78.1",
+                    "keycloak.connectionsInfinispan.siteName": "dc-0",
                     "keycloak.connectionsInfinispan.nodeName": "auth-server-undertow-cross-dc-0_1",
                     "keycloak.connectionsInfinispan.clustered": "${keycloak.connectionsInfinispan.clustered:true}",
                     "keycloak.connectionsInfinispan.remoteStoreServer": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
@@ -265,6 +266,7 @@
                 <property name="dataCenter">0</property>
                 <property name="keycloakConfigPropertyOverrides">{
                     "keycloak.connectionsInfinispan.jgroupsUdpMcastAddr": "234.56.78.1",
+                    "keycloak.connectionsInfinispan.siteName": "dc-0",
                     "keycloak.connectionsInfinispan.nodeName": "auth-server-undertow-cross-dc-0_2-manual",
                     "keycloak.connectionsInfinispan.clustered": "${keycloak.connectionsInfinispan.clustered:true}",
                     "keycloak.connectionsInfinispan.remoteStoreServer": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
@@ -289,6 +291,7 @@
                 <property name="dataCenter">1</property>
                 <property name="keycloakConfigPropertyOverrides">{
                     "keycloak.connectionsInfinispan.jgroupsUdpMcastAddr": "234.56.78.2",
+                    "keycloak.connectionsInfinispan.siteName": "dc-1",
                     "keycloak.connectionsInfinispan.nodeName": "auth-server-undertow-cross-dc-1_1",
                     "keycloak.connectionsInfinispan.clustered": "${keycloak.connectionsInfinispan.clustered:true}",
                     "keycloak.connectionsInfinispan.remoteStoreServer": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
@@ -312,6 +315,7 @@
                 <property name="dataCenter">1</property>
                 <property name="keycloakConfigPropertyOverrides">{
                     "keycloak.connectionsInfinispan.jgroupsUdpMcastAddr": "234.56.78.2",
+                    "keycloak.connectionsInfinispan.siteName": "dc-1",
                     "keycloak.connectionsInfinispan.nodeName": "auth-server-undertow-cross-dc-1_2-manual",
                     "keycloak.connectionsInfinispan.clustered": "${keycloak.connectionsInfinispan.clustered:true}",
                     "keycloak.connectionsInfinispan.remoteStoreServer": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
