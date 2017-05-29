@@ -2,17 +2,17 @@ AuthenticationFlowError = Java.type("org.keycloak.authentication.AuthenticationF
 
 function authenticate(context) {
 
-    if (clientSession.getRealm().getName() != "${realm}") {
+    if (authenticationSession.getRealm().getName() != "${realm}") {
         context.failure(AuthenticationFlowError.INVALID_CLIENT_SESSION);
         return;
     }
 
-    if (clientSession.getClient().getClientId() != "${clientId}") {
+    if (authenticationSession.getClient().getClientId() != "${clientId}") {
         context.failure(AuthenticationFlowError.UNKNOWN_CLIENT);
         return;
     }
 
-    if (clientSession.getProtocol() != "${authMethod}") {
+    if (authenticationSession.getProtocol() != "${authMethod}") {
         context.failure(AuthenticationFlowError.INVALID_CLIENT_SESSION);
         return;
     }
