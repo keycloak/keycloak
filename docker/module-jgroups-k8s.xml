@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module xmlns="urn:jboss:module:1.0" name="org.jgroups.kubernetes.kubernetes">
+
+  <resources>
+    <resource-root path="kubernetes-$JGROUPS_K8S_VERSION.jar"/>
+    <resource-root path="dns-$JGROUPS_K8S_VERSION.jar"/>
+    <resource-root path="common-$JGROUPS_K8S_VERSION.jar"/>
+    <resource-root path="oauth-$OAUTH_VERSION.jar"/>
+  </resources>
+
+  <dependencies>
+    <module name="javax.api"/>
+    <module name="io.undertow.core"/>
+    <module name="org.jboss.dmr"/>
+    <module name="org.jgroups"/>
+  </dependencies>
+</module>
