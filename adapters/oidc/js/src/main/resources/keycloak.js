@@ -883,9 +883,8 @@
                 if (loginIframe.callbackList.length == 1) {
                     loginIframe.iframe.contentWindow.postMessage(msg, origin);
                 }
-            } else {
-                promise.setSuccess();
             }
+            promise.setSuccess();
 
             return promise.promise;
         }
