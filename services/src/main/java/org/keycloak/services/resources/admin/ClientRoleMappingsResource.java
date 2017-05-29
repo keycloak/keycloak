@@ -19,7 +19,7 @@ package org.keycloak.services.resources.admin;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
-import org.keycloak.authorization.admin.permissions.MgmtPermissions;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
@@ -61,29 +61,28 @@ public class ClientRoleMappingsResource {
 
     protected KeycloakSession session;
     protected RealmModel realm;
-    protected RealmAuth auth;
+    protected AdminPermissionEvaluator auth;
     protected RoleMapperModel user;
     protected ClientModel client;
     protected AdminEventBuilder adminEvent;
     private UriInfo uriInfo;
-    private RoleMapperResource.ManageResourcePermissionCheck manageResourcePermissionCheck;
+    protected AdminPermissionEvaluator.RequirePermissionCheck managePermission;
+    protected AdminPermissionEvaluator.RequirePermissionCheck viewPermission;
 
 
-    public ClientRoleMappingsResource(UriInfo uriInfo, KeycloakSession session, RealmModel realm, RealmAuth auth, RoleMapperModel user, ClientModel client, AdminEventBuilder adminEvent) {
+    public ClientRoleMappingsResource(UriInfo uriInfo, KeycloakSession session, RealmModel realm, AdminPermissionEvaluator auth,
+                                      RoleMapperModel user, ClientModel client, AdminEventBuilder adminEvent,
+                                      AdminPermissionEvaluator.RequirePermissionCheck manageCheck, AdminPermissionEvaluator.RequirePermissionCheck viewCheck ) {
         this.uriInfo = uriInfo;
         this.session = session;
         this.realm = realm;
         this.auth = auth;
         this.user = user;
         this.client = client;
+        this.managePermission = manageCheck;
+        this.viewPermission = viewCheck;
         this.adminEvent = adminEvent.resource(ResourceType.CLIENT_ROLE_MAPPING);
     }
-
-    public void setManageCheck(RoleMapperResource.ManageResourcePermissionCheck mapperPermissions) {
-        this.manageResourcePermissionCheck = mapperPermissions;
-    }
-
-
 
     /**
      * Get client-level role mappings for the user, and the app
@@ -94,11 +93,7 @@ public class ClientRoleMappingsResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public List<RoleRepresentation> getClientRoleMappings() {
-        auth.requireView();
-
-        if (user == null || client == null) {
-            throw new NotFoundException("Not found");
-        }
+        viewPermission.require();
 
         Set<RoleModel> mappings = user.getClientRoleMappings(client);
         List<RoleRepresentation> mapRep = new ArrayList<RoleRepresentation>();
@@ -120,11 +115,8 @@ public class ClientRoleMappingsResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public List<RoleRepresentation> getCompositeClientRoleMappings() {
-        auth.requireView();
+        viewPermission.require();
 
-        if (user == null || client == null) {
-            throw new NotFoundException("Not found");
-        }
 
         Set<RoleModel> roles = client.getRoles();
         List<RoleRepresentation> mapRep = new ArrayList<RoleRepresentation>();
@@ -144,11 +136,7 @@ public class ClientRoleMappingsResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public List<RoleRepresentation> getAvailableClientRoleMappings() {
-        auth.requireView();
-
-        if (user == null || client == null) {
-            throw new NotFoundException("Not found");
-        }
+        viewPermission.require();
 
         Set<RoleModel> available = client.getRoles();
         available = available.stream().filter(r ->
@@ -171,17 +159,6 @@ public class ClientRoleMappingsResource {
         return mappings;
     }
 
-    private void checkManagePermission() {
-        if (manageResourcePermissionCheck == null) {
-            auth.requireManage();
-        } else {
-            if (!manageResourcePermissionCheck.canManage()) {
-                throw new ForbiddenException();
-            }
-        }
-    }
-
-
     /**
      * Add client-level roles to the user role mapping
      *
@@ -190,11 +167,7 @@ public class ClientRoleMappingsResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public void addClientRoleMapping(List<RoleRepresentation> roles) {
-        checkManagePermission();
-
-        if (user == null || client == null) {
-            throw new NotFoundException("Not found");
-        }
+        managePermission.require();
 
         for (RoleRepresentation role : roles) {
             RoleModel roleModel = client.getRole(role.getName());
@@ -215,7 +188,7 @@ public class ClientRoleMappingsResource {
     }
 
     private boolean canMapRole(RoleModel roleModel) {
-        return new MgmtPermissions(session, realm, auth.getAuth()).roles().canMapRole(roleModel);
+        return auth.roles().canMapRole(roleModel);
     }
 
     /**
@@ -226,11 +199,7 @@ public class ClientRoleMappingsResource {
     @DELETE
     @Consumes(MediaType.APPLICATION_JSON)
     public void deleteClientRoleMapping(List<RoleRepresentation> roles) {
-        checkManagePermission();
-
-        if (user == null || client == null) {
-            throw new NotFoundException("Not found");
-        }
+        managePermission.require();
 
         if (roles == null) {
             Set<RoleModel> roleModels = user.getClientRoleMappings(client);
@@ -257,7 +226,7 @@ public class ClientRoleMappingsResource {
                 try {
                     user.deleteRoleMapping(roleModel);
                 } catch (ModelException me) {
-                    Properties messages = AdminRoot.getMessages(session, realm, auth.getAuth().getToken().getLocale());
+                    Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
                     throw new ErrorResponseException(me.getMessage(), MessageFormat.format(messages.getProperty(me.getMessage(), me.getMessage()), me.getParameters()),
                             Response.Status.BAD_REQUEST);
                 }

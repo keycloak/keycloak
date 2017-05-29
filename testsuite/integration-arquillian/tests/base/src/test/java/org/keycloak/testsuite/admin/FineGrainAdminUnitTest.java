@@ -19,8 +19,9 @@ package org.keycloak.testsuite.admin;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.authorization.admin.permissions.MgmtPermissions;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
+import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.models.AdminRoles;
@@ -35,24 +36,14 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.representations.idm.authorization.DecisionEffect;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
-import org.keycloak.representations.idm.authorization.PolicyEvaluationRequest;
-import org.keycloak.representations.idm.authorization.PolicyEvaluationResponse;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.util.AdminClientUtil;
 
 import javax.ws.rs.ClientErrorException;
-import javax.ws.rs.ForbiddenException;
-import javax.ws.rs.core.Response;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
-import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
-import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 /**
@@ -73,7 +64,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
     public static void setupPolices(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName(TEST);
-        MgmtPermissions permissions = new MgmtPermissions(session, realm);
+        AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
         RoleModel realmRole = realm.addRole("realm-role");
         RoleModel realmRole2 = realm.addRole("realm-role2");
         ClientModel client1 = realm.addClient("role-namespace");
@@ -110,7 +101,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         // setup Users manage policies
         {
             permissions.users().setPermissionsEnabled(true);
-            ResourceServer server = permissions.users().resourceServer();
+            ResourceServer server = permissions.realmResourceServer();
             Policy managerPolicy = permissions.roles().rolePolicy(server, managerRole);
             Policy permission = permissions.users().managePermission();
             permission.addAssociatedPolicy(managerPolicy);
@@ -177,9 +168,8 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         // test authorized
         {
             UserModel user = session.users().getUserByUsername("authorized", realm);
-            MgmtPermissions permissionsForAdmin = new MgmtPermissions(session, realm);
-            permissionsForAdmin.setIdentity(user);
-            Assert.assertTrue(permissionsForAdmin.users().canManage(user));
+            AdminPermissionEvaluator permissionsForAdmin = AdminPermissions.evaluator(session, realm, realm, user);
+            Assert.assertTrue(permissionsForAdmin.users().canManage());
             Assert.assertTrue(permissionsForAdmin.roles().canMapRole(realmRole));
             Assert.assertTrue(permissionsForAdmin.roles().canMapRole(realmRole2));
             Assert.assertTrue(permissionsForAdmin.roles().canMapRole(clientRole));
@@ -187,9 +177,8 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         // test composite role
         {
             UserModel user = session.users().getUserByUsername("authorizedComposite", realm);
-            MgmtPermissions permissionsForAdmin = new MgmtPermissions(session, realm);
-            permissionsForAdmin.setIdentity(user);
-            Assert.assertTrue(permissionsForAdmin.users().canManage(user));
+            AdminPermissionEvaluator permissionsForAdmin = AdminPermissions.evaluator(session, realm, realm, user);
+            Assert.assertTrue(permissionsForAdmin.users().canManage());
             Assert.assertTrue(permissionsForAdmin.roles().canMapRole(realmRole));
             Assert.assertTrue(permissionsForAdmin.roles().canMapRole(realmRole2));
             Assert.assertTrue(permissionsForAdmin.roles().canMapRole(clientRole));
@@ -198,9 +187,8 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         // test unauthorized
         {
             UserModel user = session.users().getUserByUsername("unauthorized", realm);
-            MgmtPermissions permissionsForAdmin = new MgmtPermissions(session, realm);
-            permissionsForAdmin.setIdentity(user);
-            Assert.assertFalse(permissionsForAdmin.users().canManage(user));
+            AdminPermissionEvaluator permissionsForAdmin = AdminPermissions.evaluator(session, realm, realm, user);
+            Assert.assertFalse(permissionsForAdmin.users().canManage());
             Assert.assertFalse(permissionsForAdmin.roles().canMapRole(realmRole));
             Assert.assertFalse(permissionsForAdmin.roles().canMapRole(clientRole));
 
@@ -210,9 +198,8 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         // test unauthorized mapper
         {
             UserModel user = session.users().getUserByUsername("unauthorizedMapper", realm);
-            MgmtPermissions permissionsForAdmin = new MgmtPermissions(session, realm);
-            permissionsForAdmin.setIdentity(user);
-            Assert.assertTrue(permissionsForAdmin.users().canManage(user));
+            AdminPermissionEvaluator permissionsForAdmin = AdminPermissions.evaluator(session, realm, realm, user);
+            Assert.assertTrue(permissionsForAdmin.users().canManage());
             Assert.assertFalse(permissionsForAdmin.roles().canMapRole(realmRole));
             Assert.assertFalse(permissionsForAdmin.roles().canMapRole(clientRole));
             // will result to true because realmRole2 does not have any policies attached to this permission
@@ -391,6 +378,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
     }
     // testRestEvaluationMasterRealm
     // testRestEvaluationMasterAdminTestRealm
+    // test role deletion that it cleans up authz objects
 
 
 }

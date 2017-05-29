@@ -49,6 +49,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
 /**
  * @resource Groups
@@ -58,11 +59,11 @@ public class GroupResource {
 
     private final RealmModel realm;
     private final KeycloakSession session;
-    private final RealmAuth auth;
+    private final AdminPermissionEvaluator auth;
     private final AdminEventBuilder adminEvent;
     private final GroupModel group;
 
-    public GroupResource(RealmModel realm, GroupModel group, KeycloakSession session, RealmAuth auth, AdminEventBuilder adminEvent) {
+    public GroupResource(RealmModel realm, GroupModel group, KeycloakSession session, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.realm = realm;
         this.session = session;
         this.auth = auth;
@@ -81,11 +82,7 @@ public class GroupResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public GroupRepresentation getGroup() {
-        this.auth.requireView();
-
-        if (group == null) {
-            throw new NotFoundException("Could not find group by id");
-        }
+        this.auth.groups().requireView(group);
 
         return ModelToRepresentation.toGroupHierarchy(group, true);
     }
@@ -98,11 +95,7 @@ public class GroupResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     public void updateGroup(GroupRepresentation rep) {
-        this.auth.requireManage();
-
-        if (group == null) {
-            throw new NotFoundException("Could not find group by id");
-        }
+        this.auth.groups().requireManage(group);
 
         updateGroup(rep, group);
         adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
@@ -112,11 +105,7 @@ public class GroupResource {
 
     @DELETE
     public void deleteGroup() {
-        this.auth.requireManage();
-
-        if (group == null) {
-            throw new NotFoundException("Could not find group by id");
-        }
+        this.auth.groups().requireManage(group);
 
         realm.removeGroup(group);
         adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
@@ -135,12 +124,8 @@ public class GroupResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response addChild(GroupRepresentation rep) {
-        this.auth.requireManage();
+        this.auth.groups().requireManage(group);
 
-        if (group == null) {
-            throw new NotFoundException("Could not find group by id");
-        }
-        
         for (GroupModel group : group.getSubGroups()) {
             if (group.getName().equals(rep.getName())) {
                 return ErrorResponse.exists("Parent already contains subgroup named '" + rep.getName() + "'");
@@ -191,9 +176,9 @@ public class GroupResource {
 
     @Path("role-mappings")
     public RoleMapperResource getRoleMappings() {
-        auth.init(RealmAuth.Resource.USER);
-
-        RoleMapperResource resource =  new RoleMapperResource(realm, auth, group, adminEvent);
+        AdminPermissionEvaluator.RequirePermissionCheck manageCheck = () -> auth.groups().requireManage(group);
+        AdminPermissionEvaluator.RequirePermissionCheck viewCheck = () -> auth.groups().requireView(group);
+        RoleMapperResource resource =  new RoleMapperResource(realm, auth, group, adminEvent, manageCheck, viewCheck);
         ResteasyProviderFactory.getInstance().injectProperties(resource);
         return resource;
 
@@ -214,11 +199,8 @@ public class GroupResource {
     @Produces(MediaType.APPLICATION_JSON)
     public List<UserRepresentation> getMembers(@QueryParam("first") Integer firstResult,
                                                @QueryParam("max") Integer maxResults) {
-        auth.requireView();
+        this.auth.groups().requireViewMembers(group);
 
-        if (group == null) {
-            throw new NotFoundException("Could not find group by id");
-        }
 
         firstResult = firstResult != null ? firstResult : 0;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;

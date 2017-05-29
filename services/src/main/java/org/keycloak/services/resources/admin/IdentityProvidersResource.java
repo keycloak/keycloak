@@ -37,6 +37,7 @@ import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
@@ -65,14 +66,13 @@ public class IdentityProvidersResource {
 
     private final RealmModel realm;
     private final KeycloakSession session;
-    private RealmAuth auth;
+    private AdminPermissionEvaluator auth;
     private AdminEventBuilder adminEvent;
 
-    public IdentityProvidersResource(RealmModel realm, KeycloakSession session, RealmAuth auth, AdminEventBuilder adminEvent) {
+    public IdentityProvidersResource(RealmModel realm, KeycloakSession session, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.realm = realm;
         this.session = session;
         this.auth = auth;
-        this.auth.init(RealmAuth.Resource.IDENTITY_PROVIDER);
         this.adminEvent = adminEvent.resource(ResourceType.IDENTITY_PROVIDER);
     }
 
@@ -87,7 +87,7 @@ public class IdentityProvidersResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Response getIdentityProviders(@PathParam("provider_id") String providerId) {
-        this.auth.requireView();
+        this.auth.realm().requireViewIdentityProviders();
         IdentityProviderFactory providerFactory = getProviderFactorytById(providerId);
         if (providerFactory != null) {
             return Response.ok(providerFactory).build();
@@ -108,7 +108,7 @@ public class IdentityProvidersResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, String> importFrom(@Context UriInfo uriInfo, MultipartFormDataInput input) throws IOException {
-        this.auth.requireManage();
+        this.auth.realm().requireManageIdentityProviders();
         Map<String, List<InputPart>> formDataMap = input.getFormDataMap();
         if (!(formDataMap.containsKey("providerId") && formDataMap.containsKey("file"))) {
             throw new BadRequestException();
@@ -134,7 +134,7 @@ public class IdentityProvidersResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, String> importFrom(@Context UriInfo uriInfo, Map<String, Object> data) throws IOException {
-        this.auth.requireManage();
+        this.auth.realm().requireManageIdentityProviders();
         if (!(data.containsKey("providerId") && data.containsKey("fromUrl"))) {
             throw new BadRequestException();
         }
@@ -164,7 +164,7 @@ public class IdentityProvidersResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public List<IdentityProviderRepresentation> getIdentityProviders() {
-        this.auth.requireView();
+        this.auth.realm().requireViewIdentityProviders();
 
         List<IdentityProviderRepresentation> representations = new ArrayList<IdentityProviderRepresentation>();
 
@@ -185,7 +185,7 @@ public class IdentityProvidersResource {
     @Path("instances")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response create(@Context UriInfo uriInfo, IdentityProviderRepresentation representation) {
-        this.auth.requireManage();
+        this.auth.realm().requireManageIdentityProviders();
 
         try {
             IdentityProviderModel identityProvider = RepresentationToModel.toModel(realm, representation);
@@ -203,7 +203,7 @@ public class IdentityProvidersResource {
 
     @Path("instances/{alias}")
     public IdentityProviderResource getIdentityProvider(@PathParam("alias") String alias) {
-        this.auth.requireView();
+        this.auth.realm().requireViewIdentityProviders();
         IdentityProviderModel identityProviderModel = null;
 
         for (IdentityProviderModel storedIdentityProvider : this.realm.getIdentityProviders()) {

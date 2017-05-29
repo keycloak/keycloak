@@ -34,6 +34,8 @@ import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -191,13 +193,7 @@ public class RealmsAdminResource {
                 && !auth.getRealm().equals(realm)) {
             throw new ForbiddenException();
         }
-        RealmAuth realmAuth;
-
-        if (auth.getRealm().equals(realmManager.getKeycloakAdminstrationRealm())) {
-            realmAuth = new RealmAuth(auth, realm.getMasterAdminClient());
-        } else {
-            realmAuth = new RealmAuth(auth, realm.getClientByClientId(realmManager.getRealmAdminClientId(auth.getRealm())));
-        }
+        AdminPermissionEvaluator realmAuth = AdminPermissions.evaluator(session, realm, auth);
 
         AdminEventBuilder adminEvent = new AdminEventBuilder(realm, auth, session, clientConnection);
         session.getContext().setRealm(realm);

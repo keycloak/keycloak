@@ -51,6 +51,7 @@ import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.resources.KeycloakApplication;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.validation.ClientValidator;
 import org.keycloak.services.validation.PairwiseClientValidator;
 import org.keycloak.services.validation.ValidationMessages;
@@ -89,7 +90,7 @@ import static java.lang.Boolean.TRUE;
 public class ClientResource {
     protected static final Logger logger = Logger.getLogger(ClientResource.class);
     protected RealmModel realm;
-    private RealmAuth auth;
+    private AdminPermissionEvaluator auth;
     private AdminEventBuilder adminEvent;
     protected ClientModel client;
     protected KeycloakSession session;
@@ -104,19 +105,19 @@ public class ClientResource {
         return keycloak;
     }
 
-    public ClientResource(RealmModel realm, RealmAuth auth, ClientModel clientModel, KeycloakSession session, AdminEventBuilder adminEvent) {
+    public ClientResource(RealmModel realm, AdminPermissionEvaluator auth, ClientModel clientModel, KeycloakSession session, AdminEventBuilder adminEvent) {
         this.realm = realm;
         this.auth = auth;
         this.client = clientModel;
         this.session = session;
         this.adminEvent = adminEvent.resource(ResourceType.CLIENT);
-
-        auth.init(RealmAuth.Resource.CLIENT);
     }
 
     @Path("protocol-mappers")
     public ProtocolMappersResource getProtocolMappers() {
-        ProtocolMappersResource mappers = new ProtocolMappersResource(realm, client, auth, adminEvent);
+        AdminPermissionEvaluator.RequirePermissionCheck manageCheck = () -> auth.clients().requireManage(client);
+        AdminPermissionEvaluator.RequirePermissionCheck viewCheck = () -> auth.clients().requireView(client);
+        ProtocolMappersResource mappers = new ProtocolMappersResource(realm, client, auth, adminEvent, manageCheck, viewCheck);
         ResteasyProviderFactory.getInstance().injectProperties(mappers);
         return mappers;
     }
@@ -129,15 +130,11 @@ public class ClientResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     public Response update(final ClientRepresentation rep) {
-        auth.requireManage();
-
-        if (client == null) {
-            throw new NotFoundException("Could not find client");
-        }
+        auth.clients().requireManage(client);
 
         ValidationMessages validationMessages = new ValidationMessages();
         if (!ClientValidator.validate(rep, validationMessages) || !PairwiseClientValidator.validate(session, rep, validationMessages)) {
-            Properties messages = AdminRoot.getMessages(session, realm, auth.getAuth().getToken().getLocale());
+            Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
             throw new ErrorResponseException(
                     validationMessages.getStringMessages(),
                     validationMessages.getStringMessages(messages),
@@ -187,11 +184,7 @@ public class ClientResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public ClientRepresentation getClient() {
-        auth.requireView();
-
-        if (client == null) {
-            throw new NotFoundException("Could not find client");
-        }
+        auth.clients().requireView(client);
 
         ClientRepresentation representation = ModelToRepresentation.toRepresentation(client);
 
@@ -217,11 +210,7 @@ public class ClientResource {
     @NoCache
     @Path("installation/providers/{providerId}")
     public Response getInstallationProvider(@PathParam("providerId") String providerId) {
-        auth.requireView();
-
-        if (client == null) {
-            throw new NotFoundException("Could not find client");
-        }
+        auth.clients().requireView(client);
 
         ClientInstallationProvider provider = session.getProvider(ClientInstallationProvider.class, providerId);
         if (provider == null) throw new NotFoundException("Unknown Provider");
@@ -235,7 +224,7 @@ public class ClientResource {
     @DELETE
     @NoCache
     public void deleteClient() {
-        auth.requireManage();
+        auth.clients().requireManage(client);
 
         if (client == null) {
             throw new NotFoundException("Could not find client");
@@ -256,11 +245,7 @@ public class ClientResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public CredentialRepresentation regenerateSecret() {
-        auth.requireManage();
-
-        if (client == null) {
-            throw new NotFoundException("Could not find client");
-        }
+        auth.clients().requireManage(client);
 
         logger.debug("regenerateSecret");
         UserCredentialModel cred = KeycloakModelUtils.generateSecret(client);
@@ -279,11 +264,7 @@ public class ClientResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public ClientRepresentation regenerateRegistrationAccessToken() {
-        auth.requireManage();
-
-        if (client == null) {
-            throw new NotFoundException("Could not find client");
-        }
+        auth.clients().requireManage(client);
 
         String token = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, realm, uriInfo, client, RegistrationAuth.AUTHENTICATED);
 
@@ -304,11 +285,7 @@ public class ClientResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public CredentialRepresentation getClientSecret() {
-        auth.requireView();
-
-        if (client == null) {
-            throw new NotFoundException("Could not find client");
-        }
+        auth.clients().requireView(client);
 
         logger.debug("getClientSecret");
         UserCredentialModel model = UserCredentialModel.secret(client.getSecret());
@@ -323,12 +300,16 @@ public class ClientResource {
      */
     @Path("scope-mappings")
     public ScopeMappedResource getScopeMappedResource() {
-        return new ScopeMappedResource(realm, auth, client, session, adminEvent);
+        AdminPermissionEvaluator.RequirePermissionCheck manageCheck = () -> auth.clients().requireManage(client);
+        AdminPermissionEvaluator.RequirePermissionCheck viewCheck = () -> auth.clients().requireView(client);
+        return new ScopeMappedResource(realm, auth, client, session, adminEvent, manageCheck, viewCheck);
     }
 
     @Path("roles")
     public RoleContainerResource getRoleContainerResource() {
-        return new RoleContainerResource(session, uriInfo, realm, auth, client, adminEvent);
+        AdminPermissionEvaluator.RequirePermissionCheck manageCheck = () -> auth.clients().requireManage(client);
+        AdminPermissionEvaluator.RequirePermissionCheck viewCheck = () -> auth.clients().requireView(client);
+        return new RoleContainerResource(session, uriInfo, realm, auth, client, adminEvent, manageCheck, viewCheck);
     }
 
     /**
@@ -341,11 +322,7 @@ public class ClientResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public UserRepresentation getServiceAccountUser() {
-        auth.requireView();
-
-        if (client == null) {
-            throw new NotFoundException("Could not find client");
-        }
+        auth.clients().requireView(client);
 
         UserModel user = session.users().getServiceAccount(client);
         if (user == null) {
@@ -369,11 +346,7 @@ public class ClientResource {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     public GlobalRequestResult pushRevocation() {
-        auth.requireManage();
-
-        if (client == null) {
-            throw new NotFoundException("Could not find client");
-        }
+        auth.clients().requireManage(client);
 
         adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).resource(ResourceType.CLIENT).success();
         return new ResourceAdminManager(session).pushClientRevocationPolicy(uriInfo.getRequestUri(), realm, client);
@@ -396,11 +369,7 @@ public class ClientResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, Long> getApplicationSessionCount() {
-        auth.requireView();
-
-        if (client == null) {
-            throw new NotFoundException("Could not find client");
-        }
+        auth.clients().requireView(client);
 
         Map<String, Long> map = new HashMap<>();
         map.put("count", session.sessions().getActiveUserSessions(client.getRealm(), client));
@@ -421,11 +390,7 @@ public class ClientResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public List<UserSessionRepresentation> getUserSessions(@QueryParam("first") Integer firstResult, @QueryParam("max") Integer maxResults) {
-        auth.requireView();
-
-        if (client == null) {
-            throw new NotFoundException("Could not find client");
-        }
+        auth.clients().requireView(client);
 
         firstResult = firstResult != null ? firstResult : -1;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
@@ -453,11 +418,7 @@ public class ClientResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, Long> getOfflineSessionCount() {
-        auth.requireView();
-
-        if (client == null) {
-            throw new NotFoundException("Could not find client");
-        }
+        auth.clients().requireView(client);
 
         Map<String, Long> map = new HashMap<>();
         map.put("count", session.sessions().getOfflineSessionsCount(client.getRealm(), client));
@@ -478,11 +439,7 @@ public class ClientResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public List<UserSessionRepresentation> getOfflineUserSessions(@QueryParam("first") Integer firstResult, @QueryParam("max") Integer maxResults) {
-        auth.requireView();
-
-        if (client == null) {
-            throw new NotFoundException("Could not find client");
-        }
+        auth.clients().requireView(client);
 
         firstResult = firstResult != null ? firstResult : -1;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
@@ -519,11 +476,7 @@ public class ClientResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public void registerNode(Map<String, String> formParams) {
-        auth.requireManage();
-
-        if (client == null) {
-            throw new NotFoundException("Could not find client");
-        }
+        auth.clients().requireManage(client);
 
         String node = formParams.get("node");
         if (node == null) {
@@ -543,11 +496,7 @@ public class ClientResource {
     @DELETE
     @NoCache
     public void unregisterNode(final @PathParam("node") String node) {
-        auth.requireManage();
-
-        if (client == null) {
-            throw new NotFoundException("Could not find client");
-        }
+        auth.clients().requireManage(client);
 
         if (logger.isDebugEnabled()) logger.debug("Unregister node: " + node);
 
@@ -571,11 +520,7 @@ public class ClientResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public GlobalRequestResult testNodesAvailable() {
-        auth.requireManage();
-
-        if (client == null) {
-            throw new NotFoundException("Could not find client");
-        }
+        auth.clients().requireManage(client);
 
         logger.debug("Test availability of cluster nodes");
         GlobalRequestResult result = new ResourceAdminManager(session).testNodesAvailability(uriInfo.getRequestUri(), realm, client);

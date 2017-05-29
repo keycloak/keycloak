@@ -52,7 +52,7 @@ import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentati
 import org.keycloak.representations.idm.authorization.PolicyProviderRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.services.ErrorResponseException;
-import org.keycloak.services.resources.admin.RealmAuth;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.util.JsonSerialization;
 
 /**
@@ -62,9 +62,9 @@ public class PolicyService {
 
     protected final ResourceServer resourceServer;
     protected final AuthorizationProvider authorization;
-    protected final RealmAuth auth;
+    protected final AdminPermissionEvaluator auth;
 
-    public PolicyService(ResourceServer resourceServer, AuthorizationProvider authorization, RealmAuth auth) {
+    public PolicyService(ResourceServer resourceServer, AuthorizationProvider authorization, AdminPermissionEvaluator auth) {
         this.resourceServer = resourceServer;
         this.authorization = authorization;
         this.auth = auth;
@@ -92,7 +92,7 @@ public class PolicyService {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public Response create(String payload) {
-        this.auth.requireManage();
+        this.auth.realm().requireManageAuthorization();
 
         AbstractPolicyRepresentation representation = doCreateRepresentation(payload);
         Policy policy = create(representation);
@@ -130,7 +130,7 @@ public class PolicyService {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public Response findByName(@QueryParam("name") String name) {
-        this.auth.requireView();
+        this.auth.realm().requireViewAuthorization();
         StoreFactory storeFactory = authorization.getStoreFactory();
 
         if (name == null) {
@@ -157,7 +157,7 @@ public class PolicyService {
                             @QueryParam("permission") Boolean permission,
                             @QueryParam("first") Integer firstResult,
                             @QueryParam("max") Integer maxResult) {
-        this.auth.requireView();
+        this.auth.realm().requireViewAuthorization();
 
         Map<String, String[]> search = new HashMap<>();
 
@@ -236,7 +236,7 @@ public class PolicyService {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public Response findPolicyProviders() {
-        this.auth.requireView();
+        this.auth.realm().requireViewAuthorization();
         return Response.ok(
                 authorization.getProviderFactories().stream()
                         .map(provider -> {
@@ -254,7 +254,7 @@ public class PolicyService {
 
     @Path("evaluate")
     public PolicyEvaluationService getPolicyEvaluateResource() {
-        this.auth.requireView();
+        this.auth.realm().requireViewAuthorization();
         PolicyEvaluationService resource = new PolicyEvaluationService(this.resourceServer, this.authorization, this.auth);
 
         ResteasyProviderFactory.getInstance().injectProperties(resource);
