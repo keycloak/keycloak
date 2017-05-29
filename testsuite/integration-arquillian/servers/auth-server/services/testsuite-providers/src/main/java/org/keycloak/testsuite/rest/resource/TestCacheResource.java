@@ -20,6 +20,7 @@ package org.keycloak.testsuite.rest.resource;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -70,4 +71,10 @@ public class TestCacheResource {
         return cache.size();
     }
 
+    @GET
+    @Path("/clear")
+    @Consumes(MediaType.TEXT_PLAIN)
+    public void clear() {
+        cache.clear();
+    }
 }
