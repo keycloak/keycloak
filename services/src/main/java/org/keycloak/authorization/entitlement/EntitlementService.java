@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -37,8 +36,6 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -48,7 +45,6 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.authorization.AuthorizationTokenService;
 import org.keycloak.authorization.common.KeycloakEvaluationContext;
 import org.keycloak.authorization.common.KeycloakIdentity;
 import org.keycloak.authorization.entitlement.representation.EntitlementRequest;
@@ -57,7 +53,6 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
-import org.keycloak.authorization.policy.evaluation.DecisionResultCollector;
 import org.keycloak.authorization.policy.evaluation.Result;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
@@ -74,7 +69,6 @@ import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
-import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.Cors;
 
@@ -106,7 +100,7 @@ public class EntitlementService {
     @GET()
     @Produces("application/json")
     @Consumes("application/json")
-    public void getAll(@PathParam("resource_server_id") String resourceServerId, @Suspended AsyncResponse asyncResponse) {
+    public Response getAll(@PathParam("resource_server_id") String resourceServerId) {
         KeycloakIdentity identity = new KeycloakIdentity(this.authorization.getKeycloakSession());
 
         if (resourceServerId == null) {
@@ -123,39 +117,18 @@ public class EntitlementService {
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(client.getId());
 
-        authorization.evaluators().from(Permissions.all(resourceServer, identity, authorization), new KeycloakEvaluationContext(this.authorization.getKeycloakSession())).evaluate(new DecisionResultCollector() {
+        if (resourceServer == null) {
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client does not support permissions", Status.FORBIDDEN);
+        }
 
-            @Override
-            public void onError(Throwable cause) {
-                logger.error("failed", cause);
-                asyncResponse.resume(cause);
-            }
-
-            @Override
-            protected void onComplete(List<Result> results) {
-                List<Permission> entitlements = Permissions.permits(results, authorization, resourceServer.getId());
-
-                if (entitlements.isEmpty()) {
-                    HashMap<Object, Object> error = new HashMap<>();
-
-                    error.put(OAuth2Constants.ERROR, "not_authorized");
-
-                    asyncResponse.resume(Cors.add(request, Response.status(Status.FORBIDDEN)
-                            .entity(error))
-                            .allowedOrigins(identity.getAccessToken())
-                            .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build());
-                } else {
-                    asyncResponse.resume(Cors.add(request, Response.ok().entity(new EntitlementResponse(createRequestingPartyToken(entitlements, identity.getAccessToken())))).allowedOrigins(identity.getAccessToken()).allowedMethods("GET").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build());
-                }
-            }
-        });
+        return evaluate(Permissions.all(resourceServer, identity, authorization), identity, resourceServer);
     }
 
     @Path("{resource_server_id}")
     @POST
     @Consumes("application/json")
     @Produces("application/json")
-    public void get(@PathParam("resource_server_id") String resourceServerId, EntitlementRequest entitlementRequest, @Suspended AsyncResponse asyncResponse) {
+    public Response get(@PathParam("resource_server_id") String resourceServerId, EntitlementRequest entitlementRequest) {
         KeycloakIdentity identity = new KeycloakIdentity(this.authorization.getKeycloakSession());
 
         if (entitlementRequest == null) {
@@ -177,41 +150,34 @@ public class EntitlementService {
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(client.getId());
 
-        try {
-            authorization.evaluators().from(createPermissions(entitlementRequest, resourceServer, authorization), new KeycloakEvaluationContext(this.authorization.getKeycloakSession())).evaluate(new DecisionResultCollector() {
-                @Override
-                public void onError(Throwable cause) {
-                    logger.error("failed", cause);
-                    asyncResponse.resume(cause);
-                }
-
-                @Override
-                protected void onComplete(List<Result> results) {
-                    List<Permission> entitlements = Permissions.permits(results, authorization, resourceServer.getId());
-
-                    if (entitlements.isEmpty()) {
-                        HashMap<Object, Object> error = new HashMap<>();
-
-                        error.put(OAuth2Constants.ERROR, "not_authorized");
-
-                        asyncResponse.resume(Cors.add(request, Response.status(Status.FORBIDDEN)
-                                .entity(error))
-                                .allowedOrigins(identity.getAccessToken())
-                                .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build());
-                    } else {
-                        asyncResponse.resume(Cors.add(request, Response.ok().entity(new EntitlementResponse(createRequestingPartyToken(entitlements, identity.getAccessToken())))).allowedOrigins(identity.getAccessToken()).allowedMethods("GET").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build());
-                    }
-                }
-            });
-        } catch (Exception e) {
-            String message = e.getMessage();
-
-            if (message == null) {
-                message = "Could not process authorization request";
-            }
-
-            asyncResponse.resume(ErrorResponse.error(message, Status.BAD_REQUEST));
+        if (resourceServer == null) {
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client does not support permissions", Status.FORBIDDEN);
         }
+
+        return evaluate(createPermissions(entitlementRequest, resourceServer, authorization), identity, resourceServer);
+    }
+
+    private Response evaluate(List<ResourcePermission> permissions, KeycloakIdentity identity, ResourceServer resourceServer) {
+        try {
+            List<Result> result = authorization.evaluators().from(permissions, new KeycloakEvaluationContext(this.authorization.getKeycloakSession())).evaluate();
+            List<Permission> entitlements = Permissions.permits(result, authorization, resourceServer.getId());
+
+            if (!entitlements.isEmpty()) {
+                return Cors.add(request, Response.ok().entity(new EntitlementResponse(createRequestingPartyToken(entitlements, identity.getAccessToken())))).allowedOrigins(identity.getAccessToken()).allowedMethods("GET").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
+            }
+        } catch (Exception cause) {
+            logger.error(cause);
+            throw new ErrorResponseException(OAuthErrorException.SERVER_ERROR, "Error while evaluating permissions.", Status.INTERNAL_SERVER_ERROR);
+        }
+
+        HashMap<Object, Object> error = new HashMap<>();
+
+        error.put(OAuth2Constants.ERROR, "not_authorized");
+
+        return Cors.add(request, Response.status(Status.FORBIDDEN)
+                .entity(error))
+                .allowedOrigins(identity.getAccessToken())
+                .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
     }
 
     private String createRequestingPartyToken(List<Permission> permissions, AccessToken accessToken) {
