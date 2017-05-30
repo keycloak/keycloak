@@ -70,23 +70,23 @@ The Username/Password form is not executed if there is an SSO Cookie set or a su
 Let's walk through the steps from when a client first redirects to keycloak to authenticate the user. 
 
 . The OpenID Connect or SAML protocol provider unpacks relevent data, verifies the client and any signatures.
-  It creates a ClientSessionModel.
+  It creates a AuthenticationSessionModel.
   It looks up what the browser flow should be, then starts executing the flow. 
 . The flow looks at the cookie execution and sees that it is an alternative.
   It loads the cookie provider.
-  It checks to see if the cookie provider requires that a user already be associated with the client session.
+  It checks to see if the cookie provider requires that a user already be associated with the authentication session.
   Cookie provider does not require a user.
   If it did, the flow would abort and the user would see an error screen.
   Cookie provider then executes.
   Its purpose is to see if there is an SSO cookie set.
-  If there is one set, it is validated and the UserSessionModel is verified and associated with the ClientSessionModel.
+  If there is one set, it is validated and the UserSessionModel is verified and associated with the AuthenticationSessionModel.
   The Cookie provider returns a success() status if the SSO cookie exists and is validated.
   Since the cookie provider returned success and each execution at this level of the flow is ALTERNATIVE, no other execution is executed and this results in a successful login.
   If there is no SSO cookie, the cookie provider returns with a status of attempted().  This means there was no error condition, but no success either.
   The provider tried, but the request just wasn't set up to handle this authenticator. 
 . Next the flow looks at the Kerberos execution.
   This is also an alternative.
-  The kerberos provider also does not require a user to be already set up and associated with the ClientSessionModel so this provider is executed.
+  The kerberos provider also does not require a user to be already set up and associated with the AuthenticationSessionModel so this provider is executed.
   Kerberos uses the SPNEGO browser protocol.
   This requires a series of challenge/responses between the server and client exchanging negotiation headers.
   The kerberos provider does not see any negotiate header, so it assumes that this is the first interaction between the server and client.
@@ -94,7 +94,7 @@ Let's walk through the steps from when a client first redirects to keycloak to a
   A forceChallenge() means that this HTTP response cannot be ignored by the flow and must be returned to the client.
   If instead the provider returned a challenge() status, the flow would hold the challenge response until all other alternatives are attempted.
   So, in this initial phase, the flow would stop and the challenge response would be sent back to the browser.
-  If the browser then responds with a successful negotiate header, the provider associates the user with the ClientSession and the flow ends because the rest of the executions on this level of the flow are all alternatives.
+  If the browser then responds with a successful negotiate header, the provider associates the user with the AuthenticationSession and the flow ends because the rest of the executions on this level of the flow are all alternatives.
   Otherwise, again, the kerberos provider sets an attempted() status and the flow continues. 
 . The next execution is a subflow called Forms.
   The executions for this subflow are loaded and the same processing logic occurs 
@@ -107,7 +107,7 @@ Let's walk through the steps from when a client first redirects to keycloak to a
   If the user entered an invalid username or password, a new challenge response is created and a status of failureChallenge() is set for this execution.
   A failureChallenge() means that there is a challenge, but that the flow should log this as an error in the error log.
   This error log can be used to lock accounts or IP Addresses that have had too many login failures.
-  If the username and password is valid, the provider associated the UserModel with the ClientSessionModel and returns a status of success() 
+  If the username and password is valid, the provider associated the UserModel with the AuthenticationSessionModel and returns a status of success()
 . The next execution is the OTP Form.
   This provider requires that a user has been associated with the flow.
   This requirement is satisfied because the UsernamePassword provider already associated the user with the flow.
@@ -115,7 +115,7 @@ Let's walk through the steps from when a client first redirects to keycloak to a
   If user is not configured, and this execution is required, then the flow will then set up a required action that the user must perform after authentication is complete.
   For OTP, this means the OTP setup page.
   If the execution was optional, then this execution is skipped. 
-. After the flow is complete, the authentication processor creates a UserSessionModel and associates it with the ClientSessionModel.
+. After the flow is complete, the authentication processor creates a UserSessionModel and associates it with the AuthenticationSessionModel.
   It then checks to see if the user is required to complete any required actions before logging in. 
 . First, each required action's evaluateTriggers() method is called.
   This allows the required action provider to figure out if there is some state that might trigger the action to be fired.

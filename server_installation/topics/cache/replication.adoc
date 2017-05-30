@@ -1,7 +1,7 @@
 
 === Replication and Failover
 
-The `sessions`, `offlineSessions` and `loginFailures` caches are the only caches that may perform replication.  Entries are
+The `sessions`, `authenticationSessions`, `offlineSessions` and `loginFailures` caches are the only caches that may perform replication.  Entries are
 not replicated to every single node, but instead one or more nodes is chosen as an owner of that data.  If a node is not the owner of a specific cache entry it queries
 the cluster to obtain it.  What this means for failover is that if all the nodes that own a piece of data go down, that data
 is lost forever.  By default, {{book.project.name}} only specifies one owner for data.  So if that one node goes down

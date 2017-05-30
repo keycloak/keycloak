@@ -214,6 +214,38 @@ Existing realms are upgraded if the password policy contains the default value f
 iteration (20000). If you have changed the hashing iterations you need to manually change to pbkdf2-sha256 if you'd like
 to use the more secure hashing algorithm.
 
+===== ID Token requires scope=openid
+
+OpenID Connect specification requires that parameter `scope` with value `openid` is used in initial authorization request. So in {{book.project.name}}
+2.1.0 we changed our adapters to use `scope=openid` in the redirect URI to {{book.project.name}}. Now we changed the server part too and ID token
+will be sent to the application just if `scope=openid` is really used. If it's not used, then ID token will be skipped and just Access token and Refresh token will be sent to the application.
+This also allows that you can ommit the generation of ID Token on purpose - for example for space or performance purposes.
+
+Direct grants (OAuth2 Resource Owner Password Credentials Grant) and Service accounts login (OAuth2 Client credentials grant) also don't use ID Token by default now.
+You need to explicitly add `scope=openid` parameter to have ID Token included.
+
+===== Authentication sessions and Action tokens
+
+We are working on support for multiple datacenters. As the initial step, we introduced authentication session and action tokens.
+Authentication session replaces Client session, which was used in previous versions. Action tokens are used especially for the scenarios, where the authenticator or requiredActionProvider
+requires sending email to the user and requires user to click on the link in email.
+
+Here are concrete changes related to this, which may affect you for the migration.
+
+First change related to this is introducing new infinispan caches `authenticationSessions` and `actionTokens` in `standalone.xml` or `standalone-ha.xml`. If you use our migration CLI, you
+don't need to care much as your `standalone(-ha).xml` files will be migrated automatically.
+
+Second change is changing of some signatures in methods of authentication SPI. This may affect you if you use custom `Authenticator` or
+`RequiredActionProvider`. Classes `AuthenticationFlowContext` and `RequiredActionContext` now allow to retrieve authentication session
+instead of client session.
+
+We also added some initial support for sticky sessions. You may want to change your loadbalancer/proxy server and configure it if you want to suffer from it and have better performance.
+The route is added to the new `AUTH_SESSION_ID` cookie. More info in the clustering documentation.
+
+Another change is, that `token.getClientSession()` was removed. This may affect you for example if you're using Client Initiated Identity Broker Linking feature.
+
+Finally we added some new timeouts to the admin console. This allows you for example to specify different timeouts for the email actions triggered by admin and by user himself.
+
 ==== Migrating to 2.5.1
 
 ===== Migration of old offline tokens
