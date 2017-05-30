@@ -42,6 +42,6 @@ public final class Evaluators {
     }
 
     public PermissionEvaluator schedule(List<ResourcePermission> permissions, EvaluationContext evaluationContext) {
-        return new DefaultPermissionEvaluator(new IterablePermissionEvaluator(permissions.iterator(), evaluationContext, this.policyEvaluator));
+        return new IterablePermissionEvaluator(permissions.iterator(), evaluationContext, this.policyEvaluator);
     }
 }

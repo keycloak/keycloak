@@ -25,11 +25,11 @@ import org.keycloak.authorization.authorization.representation.AuthorizationRequ
 import org.keycloak.authorization.authorization.representation.AuthorizationResponse;
 import org.keycloak.authorization.common.KeycloakEvaluationContext;
 import org.keycloak.authorization.common.KeycloakIdentity;
+import org.keycloak.authorization.entitlement.representation.EntitlementResponse;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
-import org.keycloak.authorization.policy.evaluation.DecisionResultCollector;
 import org.keycloak.authorization.policy.evaluation.Result;
 import org.keycloak.authorization.protection.permission.PermissionTicket;
 import org.keycloak.authorization.store.ResourceStore;
@@ -47,14 +47,11 @@ import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.Cors;
-import org.keycloak.services.resources.RealmsResource;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.Produces;
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -97,7 +94,7 @@ public class AuthorizationTokenService {
     @POST
     @Consumes("application/json")
     @Produces("application/json")
-    public void authorize(AuthorizationRequest authorizationRequest, @Suspended AsyncResponse asyncResponse) {
+    public Response authorize(AuthorizationRequest authorizationRequest) {
         KeycloakEvaluationContext evaluationContext = new KeycloakEvaluationContext(this.authorization.getKeycloakSession());
         KeycloakIdentity identity = (KeycloakIdentity) evaluationContext.getIdentity();
 
@@ -109,40 +106,40 @@ public class AuthorizationTokenService {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Invalid authorization request.", Status.BAD_REQUEST);
         }
 
-        PermissionTicket ticket = verifyPermissionTicket(authorizationRequest);
+        try {
+            PermissionTicket ticket = verifyPermissionTicket(authorizationRequest);
+            List<Result> result = authorization.evaluators().from(createPermissions(ticket, authorizationRequest, authorization), evaluationContext).evaluate();
+            List<Permission> entitlements = Permissions.permits(result, authorization, ticket.getResourceServerId());
 
-        authorization.evaluators().from(createPermissions(ticket, authorizationRequest, authorization), evaluationContext).evaluate(new DecisionResultCollector() {
-            @Override
-            public void onComplete(List<Result> results) {
-                List<Permission> entitlements = Permissions.permits(results, authorization, ticket.getResourceServerId());
-
-                if (entitlements.isEmpty()) {
-                    HashMap<Object, Object> error = new HashMap<>();
-
-                    error.put(OAuth2Constants.ERROR, "not_authorized");
-
-                    asyncResponse.resume(Cors.add(httpRequest, Response.status(Status.FORBIDDEN)
-                            .entity(error))
-                            .allowedOrigins(identity.getAccessToken())
-                            .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build());
-                } else {
-                    AuthorizationResponse response = new AuthorizationResponse(createRequestingPartyToken(entitlements, identity.getAccessToken()));
-                    asyncResponse.resume(Cors.add(httpRequest, Response.status(Status.CREATED).entity(response)).allowedOrigins(identity.getAccessToken())
-                            .allowedMethods("POST")
-                            .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build());
-                }
+            if (!entitlements.isEmpty()) {
+                AuthorizationResponse response = new AuthorizationResponse(createRequestingPartyToken(entitlements, identity.getAccessToken()));
+                return Cors.add(httpRequest, Response.status(Status.CREATED).entity(response)).allowedOrigins(identity.getAccessToken())
+                        .allowedMethods("POST")
+                        .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
             }
+        } catch (Exception cause) {
+            logger.error(cause);
+            throw new ErrorResponseException(OAuthErrorException.SERVER_ERROR, "Error while evaluating permissions.", Status.INTERNAL_SERVER_ERROR);
+        }
 
-            @Override
-            public void onError(Throwable cause) {
-                logger.error("failed authorize", cause);
-                asyncResponse.resume(cause);
-            }
-        });
+        HashMap<Object, Object> error = new HashMap<>();
+
+        error.put(OAuth2Constants.ERROR, "not_authorized");
+
+        return Cors.add(httpRequest, Response.status(Status.FORBIDDEN)
+                .entity(error))
+                .allowedOrigins(identity.getAccessToken())
+                .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
     }
 
     private List<ResourcePermission> createPermissions(PermissionTicket ticket, AuthorizationRequest request, AuthorizationProvider authorization) {
         StoreFactory storeFactory = authorization.getStoreFactory();
+        ResourceServer resourceServer = authorization.getStoreFactory().getResourceServerStore().findById(ticket.getResourceServerId());
+
+        if (resourceServer == null) {
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client does not support permissions", Status.FORBIDDEN);
+        }
+
         Map<String, Set<String>> permissionsToEvaluate = new HashMap<>();
 
         ticket.getResources().forEach(requestedResource -> {
@@ -230,8 +227,6 @@ public class AuthorizationTokenService {
                 }
             }
         }
-
-        ResourceServer resourceServer = authorization.getStoreFactory().getResourceServerStore().findById(ticket.getResourceServerId());
 
         return permissionsToEvaluate.entrySet().stream()
                 .flatMap((Function<Entry<String, Set<String>>, Stream<ResourcePermission>>) entry -> {
