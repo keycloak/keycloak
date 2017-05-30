@@ -227,8 +227,8 @@ You need to explicitly add `scope=openid` parameter to have ID Token included.
 ===== Authentication sessions and Action tokens
 
 We are working on support for multiple datacenters. As the initial step, we introduced authentication session and action tokens.
-Authentication session replaces Client session, which was used in previous versions. Action tokens are used especially for the scenarios, where the authenticator or requiredActionProvider
-requires sending email to the user and requires user to click on the link in email.
+Authentication session replaces Client session, which was used in previous versions. Action tokens are currently used especially for the scenarios, where
+the authenticator or requiredActionProvider requires sending email to the user and requires user to click on the link in email.
 
 Here are concrete changes related to this, which may affect you for the migration.
 
@@ -243,6 +243,8 @@ We also added some initial support for sticky sessions. You may want to change y
 The route is added to the new `AUTH_SESSION_ID` cookie. More info in the clustering documentation.
 
 Another change is, that `token.getClientSession()` was removed. This may affect you for example if you're using Client Initiated Identity Broker Linking feature.
+
+The `ScriptBasedAuthenticator` changed the binding name from `clientSession` to `authenticationSession`, so you would need to update your scripts if you're using this authenticator.
 
 Finally we added some new timeouts to the admin console. This allows you for example to specify different timeouts for the email actions triggered by admin and by user himself.
 
