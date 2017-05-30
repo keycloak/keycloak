@@ -37,12 +37,14 @@ public class Pbkdf2PasswordHashProvider implements PasswordHashProvider {
     private final String providerId;
 
     private final String pbkdf2Algorithm;
+    private int defaultIterations;
 
     public static final int DERIVED_KEY_SIZE = 512;
 
-    public Pbkdf2PasswordHashProvider(String providerId, String pbkdf2Algorithm) {
+    public Pbkdf2PasswordHashProvider(String providerId, String pbkdf2Algorithm, int defaultIterations) {
         this.providerId = providerId;
         this.pbkdf2Algorithm = pbkdf2Algorithm;
+        this.defaultIterations = defaultIterations;
     }
 
     @Override
@@ -52,6 +54,10 @@ public class Pbkdf2PasswordHashProvider implements PasswordHashProvider {
 
     @Override
     public void encode(String rawPassword, int iterations, CredentialModel credential) {
+        if (iterations == -1) {
+            iterations = defaultIterations;
+        }
+
         byte[] salt = getSalt();
         String encodedPassword = encode(rawPassword, iterations, salt);
 
