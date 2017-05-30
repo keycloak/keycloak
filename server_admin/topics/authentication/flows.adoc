@@ -68,6 +68,8 @@ The following script `javax.script.Bindings` are available for convenient use wi
   the current `UserModel`
 `session`::
   the active `KeycloakSession`
+`authenticationSession`::
+  the current `AuthenticationSessionModel`
 `httpRequest`::
   the current `org.jboss.resteasy.spi.HttpRequest`
 `LOG`::
