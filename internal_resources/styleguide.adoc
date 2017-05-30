@@ -21,8 +21,8 @@
   not `this_style`, or `ThisStyle`.
 * Use `++`backticks`++` for filesystem names and paths, symbols,
   and literals.
-* Use *bold* for GUI items and web links.  Match the capitalization of
-  the button or link text.
+* Use *bold* for GUI items.  Match the capitalization of
+  the button.
 * Stick to one file per chapter unless the content is too long,
   excluding reusable topics.
 * Use gerunds not imperatives for chapter and topic titles -
@@ -30,15 +30,11 @@
 * Terminate bulleted and numbered lists with periods unless the items
   listed are simple names.
 * Use `$ sudo`, not `#` for superuser console commands.
-* Use `<some-var>` for placeholders in filesystem paths or console
-  output.  Mark it bold in paths (`*<install-dir>*/examples`) to
-  highlight its special meaning.
-* Use `<broker-instance-dir>` to refer the location of the user's
-  broker instance.
-* Use `<install-dir>` for the component install directory.
+* Use `++`__SOME_VAR__`++` for placeholders in filesystem 
+  paths or console output. (For example : `__INSTALL_DIR__`/examples)
 * Don't use contractions, ;).
 * Use `++_yay_++` for emphasis, not `++*yay*++`.
-* Use `[discrete]` for unnumbered titled sections.  Don't use `.Some
+* Use `[discrete]` for unnumbered titled sections.  Do not use `.Some
   Title` for this.
 * Use title case for table and block titles (`.Example Title of Note`).
 ** Unsure of the proper capitalization? See link:http://titlecase.com/[http://titlecase.com/]
@@ -47,27 +43,25 @@
   them.
 * Refer to the top-level sections of books as chapters, not sections
   or topics.
-* Spell out small integers - "four", not "4" - all the way up to nine.
-* Use "e.g.", not "eg".  Consider using "for example"
-  instead.  Note that you almost always want to follow either
-  expression with a comma.
-* Use "i.e.", not "ie".  Consider using "that is" instead, and these
-  also will want a comma.
+* Spell out integers that are less than 10 - "four", not "4".
+** Always use numerals in ranges, even when either or both of the numbers are less than 10.
+* Do not use Latin abbreviations, such as e.g., etc., and i.e.
+** Instead of etc. use "and so on" when you list a clear sequence of elements, such as "1, 2, 3, and
+so on".  Otherwise, rewrite the sentence to replace etc. with something more descriptive, 
+such as "and other output."
+** Instead of i.e. use "that is".
+** Instead of e.g. use "for example".
 * Niggles
-** Don't use "&" in place of "and".
-** Don't use "and/or".  Pick one.
-** The words "server" and "broker" are not capitalized unless they
-   begin a sentence or appear in a title.
+** Do not use "&" in place of "and".
+** Do not use "and/or".  Pick one.
 ** Use "heartbeating", not "heart-beating".
 ** Avoid the word "simply" unless it clarifies.
-** Use "etc.", not "etc".
 
 == Tips
 
 * For substitution of `{attr}` in code blocks, use `[subs=+attributes]`.
 * For styling of `++*bold*++` (`*bold*`) in code blocks, use
   `[subs=+quotes]`.
-
 == See Also
 
 * link:screenshots.adoc[Screenshot Guide]
