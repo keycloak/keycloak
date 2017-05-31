@@ -34,6 +34,25 @@ public class PermissionRequest {
 
     private Set<String> scopes;
 
+    public PermissionRequest() {
+
+    }
+
+    public PermissionRequest(String resourceSetId, String resourceSetName, Set<String> scopes) {
+        this.resourceSetId = resourceSetId;
+        this.resourceSetName = resourceSetName;
+        this.scopes = scopes;
+    }
+
+    public PermissionRequest(String resourceSetName) {
+        this.resourceSetName = resourceSetName;
+    }
+
+    public PermissionRequest(String resourceSetName, Set<String> scopes) {
+        this.resourceSetName = resourceSetName;
+        this.scopes = scopes;
+    }
+
     public String getResourceSetId() {
         return this.resourceSetId;
     }

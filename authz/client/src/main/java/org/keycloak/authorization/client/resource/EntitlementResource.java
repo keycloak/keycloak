@@ -1,9 +1,11 @@
 package org.keycloak.authorization.client.resource;
 
 import org.keycloak.authorization.client.AuthorizationDeniedException;
+import org.keycloak.authorization.client.representation.AuthorizationRequestMetadata;
 import org.keycloak.authorization.client.representation.EntitlementRequest;
 import org.keycloak.authorization.client.representation.EntitlementResponse;
 import org.keycloak.authorization.client.util.Http;
+import org.keycloak.authorization.client.util.HttpMethod;
 import org.keycloak.authorization.client.util.HttpResponseException;
 import org.keycloak.util.JsonSerialization;
 
@@ -22,10 +24,27 @@ public class EntitlementResource {
 
     public EntitlementResponse getAll(String resourceServerId) {
         try {
-            return this.http.<EntitlementResponse>get("/authz/entitlement/" + resourceServerId)
-                    .authorizationBearer(this.eat)
-                    .response()
-                        .json(EntitlementResponse.class).execute();
+            return getAll(resourceServerId, null);
+        } catch (HttpResponseException e) {
+            if (403 == e.getStatusCode()) {
+                throw new AuthorizationDeniedException(e);
+            }
+            throw new RuntimeException("Failed to obtain entitlements.", e);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to obtain entitlements.", e);
+        }
+    }
+
+    public EntitlementResponse getAll(String resourceServerId, AuthorizationRequestMetadata metadata) {
+        try {
+            HttpMethod<EntitlementResponse> method = this.http.<EntitlementResponse>get("/authz/entitlement/" + resourceServerId)
+                    .authorizationBearer(this.eat);
+
+            if (metadata != null) {
+                method.param("include_resource_name", String.valueOf(metadata.isIncludeResourceName()));
+            }
+
+            return method.response().json(EntitlementResponse.class).execute();
         } catch (HttpResponseException e) {
             if (403 == e.getStatusCode()) {
                 throw new AuthorizationDeniedException(e);

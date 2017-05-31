@@ -36,6 +36,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -45,6 +46,7 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.authorization.representation.AuthorizationRequestMetadata;
 import org.keycloak.authorization.common.KeycloakEvaluationContext;
 import org.keycloak.authorization.common.KeycloakIdentity;
 import org.keycloak.authorization.entitlement.representation.EntitlementRequest;
@@ -100,7 +102,7 @@ public class EntitlementService {
     @GET()
     @Produces("application/json")
     @Consumes("application/json")
-    public Response getAll(@PathParam("resource_server_id") String resourceServerId) {
+    public Response getAll(@PathParam("resource_server_id") String resourceServerId, @QueryParam("include_resource_name") Boolean includeResourceName) {
         KeycloakIdentity identity = new KeycloakIdentity(this.authorization.getKeycloakSession());
 
         if (resourceServerId == null) {
@@ -121,7 +123,16 @@ public class EntitlementService {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client does not support permissions", Status.FORBIDDEN);
         }
 
-        return evaluate(Permissions.all(resourceServer, identity, authorization), identity, resourceServer);
+        AuthorizationRequestMetadata metadata;
+
+        if (includeResourceName != null) {
+            metadata = new AuthorizationRequestMetadata();
+            metadata.setIncludeResourceName(includeResourceName);
+        } else {
+            metadata = null;
+        }
+
+        return evaluate(metadata, Permissions.all(resourceServer, identity, authorization), identity, resourceServer);
     }
 
     @Path("{resource_server_id}")
@@ -154,13 +165,13 @@ public class EntitlementService {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client does not support permissions", Status.FORBIDDEN);
         }
 
-        return evaluate(createPermissions(entitlementRequest, resourceServer, authorization), identity, resourceServer);
+        return evaluate(entitlementRequest.getMetadata(), createPermissions(entitlementRequest, resourceServer, authorization), identity, resourceServer);
     }
 
-    private Response evaluate(List<ResourcePermission> permissions, KeycloakIdentity identity, ResourceServer resourceServer) {
+    private Response evaluate(AuthorizationRequestMetadata metadata, List<ResourcePermission> permissions, KeycloakIdentity identity, ResourceServer resourceServer) {
         try {
             List<Result> result = authorization.evaluators().from(permissions, new KeycloakEvaluationContext(this.authorization.getKeycloakSession())).evaluate();
-            List<Permission> entitlements = Permissions.permits(result, authorization, resourceServer.getId());
+            List<Permission> entitlements = Permissions.permits(result, metadata, authorization, resourceServer);
 
             if (!entitlements.isEmpty()) {
                 return Cors.add(request, Response.ok().entity(new EntitlementResponse(createRequestingPartyToken(entitlements, identity.getAccessToken())))).allowedOrigins(identity.getAccessToken()).allowedMethods("GET").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
