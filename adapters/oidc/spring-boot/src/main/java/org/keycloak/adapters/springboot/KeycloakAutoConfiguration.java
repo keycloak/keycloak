@@ -176,7 +176,6 @@ public class KeycloakAutoConfiguration {
         public void customize(Server server) {
 
             KeycloakJettyAuthenticator keycloakJettyAuthenticator = new KeycloakJettyAuthenticator();
-            keycloakJettyAuthenticator.setConfigResolver(new KeycloakSpringBootConfigResolver());
 
             /* see org.eclipse.jetty.webapp.StandardDescriptorProcessor#visitSecurityConstraint for an example
                on how to map servlet spec to Constraints */
