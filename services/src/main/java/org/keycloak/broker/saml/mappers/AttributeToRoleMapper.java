@@ -33,9 +33,11 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.saml.common.util.StringUtil;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -62,7 +64,7 @@ public class AttributeToRoleMapper extends AbstractIdentityProviderMapper {
         property = new ProviderConfigProperty();
         property.setName(ATTRIBUTE_FRIENDLY_NAME);
         property.setLabel("Friendly Name");
-        property.setHelpText("Friendly name of attribute to search for in assertion.  You can leave this blank and specify a name instead.");
+        property.setHelpText("Friendly-name of attribute to search for in assertion.  You can leave this blank and specify a name instead.");
         property.setType(ProviderConfigProperty.STRING_TYPE);
         configProperties.add(property);
         property = new ProviderConfigProperty();
@@ -115,19 +117,31 @@ public class AttributeToRoleMapper extends AbstractIdentityProviderMapper {
             user.grantRole(role);
         }
     }
+    
+    /**
+     * Check whether there is a match between an Attribute name, friendly-name and/or value. 
+     * The value must be of String type; corresponding to the {@linkplain SAMLParserUtil#parseAttributeValue} xsi-type mapping.
+     * 
+     * @param mapperModel mapping to evaluate
+     * @param context context with Assertion
+     * @return true if present
+     */
 
     protected boolean isAttributePresent(IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+        // match against optional Attribute attributes 'name' and 'friendlyName' and values.
+        // name/friendly-name filters are inactive if configured as null, empty or whitespace
         String name = mapperModel.getConfig().get(ATTRIBUTE_NAME);
-        if (name != null && name.trim().equals("")) name = null;
+        if (!StringUtil.isNotNull(name)) name = null;
         String friendly = mapperModel.getConfig().get(ATTRIBUTE_FRIENDLY_NAME);
-        if (friendly != null && friendly.trim().equals("")) friendly = null;
+        if (!StringUtil.isNotNull(friendly)) friendly = null;
         String desiredValue = mapperModel.getConfig().get(ATTRIBUTE_VALUE);
         AssertionType assertion = (AssertionType)context.getContextData().get(SAMLEndpoint.SAML_ASSERTION);
         for (AttributeStatementType statement : assertion.getAttributeStatements()) {
             for (AttributeStatementType.ASTChoiceType choice : statement.getAttributes()) {
                 AttributeType attr = choice.getAttribute();
-                if (name != null && !name.equals(attr.getName())) continue;
-                if (friendly != null && !name.equals(attr.getFriendlyName())) continue;
+                if (name != null && !Objects.equals(name, attr.getName())) continue;
+                if (friendly != null && !Objects.equals(friendly, attr.getFriendlyName())) continue;
+                // the attribute values are assumed to be non-null Strings. 
                 for (Object val : attr.getAttributeValue()) {
                     if (val.equals(desiredValue)) return true;
                 }
