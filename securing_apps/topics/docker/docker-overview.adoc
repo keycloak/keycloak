@@ -1,6 +1,55 @@
 
 == Docker Registry Configuration
 
+NOTE: Docker authentication is disabled by default. To enable see link:{{book.installguide.profile.link}}[{{book.installguide.profile.name}}].
+
 This section describes how you can configure a Docker registry to use {{book.project.name}} as its authentication server.
 
 Fore more information on how to set up and configure a Docker registry, see the link:https://docs.docker.com/registry/configuration/[Docker Registry Configuration Guide].
+
+
+
+=== Docker Registry Configuration File Installation
+
+For users with more advanced docker registry configurations, it is generally recommended to provide your own registry configuration file.  The {{book.project.name}} docker provider supports this mechanism via the _Registry Config File_ Format Option.  Choosing this option will generate output similar to the following:
+
+	auth:
+	  token:
+	    realm: http://localhost:8080/auth/auth/realms/master/protocol/docker-v2/auth
+	    service: docker-test
+	    issuer: http://localhost:8080/auth/auth/realms/master
+
+This output can then be copied into any existing registry config file.  See the link:https://docs.docker.com/registry/configuration/[registry config file specification] for more information on how the file should be set up, or start with href:https://github.com/docker/distribution/blob/master/cmd/registry/config-example.yml[a basic example].
+
+WARNING: Don't forget to configure the `rootcertbundle` field with the location of the {{book.project.name}} realm's pulic certificate.  The auth configuration will not work without this argument.
+
+
+=== Docker Registry Environment Variable Override Installation
+
+Often times it is appropriate to use a simple environment variable override for develop or POC Docker registries.  While this apporach is usually not recommended for production use, it can be helpful when one requires quick-and-dirty way to stand up a registry.  Simply use the _Variable Override_ Format Option from the client installation tab, and an output should appear like the one below:
+
+    REGISTRY_AUTH_TOKEN_REALM: http://localhost:8080/auth/auth/realms/master/protocol/docker-v2/auth
+    REGISTRY_AUTH_TOKEN_SERVICE: docker-test
+    REGISTRY_AUTH_TOKEN_ISSUER: http://localhost:8080/auth/auth/realms/master
+
+WARNING: Don't forget to configure the `REGISTRY_AUTH_TOKEN_ROOTCERTBUNDLE` override with the location of the {{book.project.name}} realm's pulic certificate.  The auth configuration will not work without this argument.
+
+
+=== Docker Compose YAML File
+
+WARNING: This installation method is meant to be an easy way to get a docker registry authenticating against a keycloak server.  It is intended for development purposes only and should never be used in a production or production-like environment.
+
+The zip file installation mechanism provides a quickstart for developers who want to understand how the keycloak server can interact with the docker registry.  In order to configure:
+
+ 1. From the desired realm, create a client configuration.  At this point you won't have a docker registry - the quickstart will take care of that part.
+ 1. Choose the "Docker Compose YAML" option from the installation tab and download the .zip file
+ 1. Unzip the archive to the desired location, and open the directory.
+ 1. Start the docker registry with `docker-compose up`
+
+INFO: it is recommended that you configure the docker registry client in a realm other than 'master', since the HTTP Basic auth flow will not present forms.
+
+Once the above configuration has taken place, and the keycloak server and docker registry are running, docker authentication should be successful:
+
+	[user ~]# docker login localhost:5000 -u $username
+	Password: *******
+	Login Succeeded

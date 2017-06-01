@@ -38,7 +38,11 @@
     },
     "installguide": {
       "name": "Server Installation and Configuration",
-      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/SNAPSHOT/html-single/server-installation-and-configuration-guide/"
+      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/SNAPSHOT/html-single/server-installation-and-configuration-guide/",
+      "profile": {
+        "name": "Profiles",
+        "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/SNAPSHOT/html-single/server-installation-and-configuration-guide/#profiles"
+      }
     },
     "adapterguide": {
       "name": "Securing Applications and Services Guide",
