@@ -16,6 +16,8 @@
  */
 package org.keycloak.services.resources.admin.permissions;
 
+import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.models.ClientModel;
 
 /**
@@ -23,7 +25,13 @@ import org.keycloak.models.ClientModel;
  * @version $Revision: 1 $
  */
 public interface ClientPermissionManagement {
+    public static final String MAP_ROLES_SCOPE = "map-roles";
+
     boolean isPermissionsEnabled(ClientModel client);
 
     void setPermissionsEnabled(ClientModel client, boolean enable);
+
+    Policy mapRolesPermission(ClientModel client);
+
+    ResourceServer resourceServer(ClientModel client);
 }

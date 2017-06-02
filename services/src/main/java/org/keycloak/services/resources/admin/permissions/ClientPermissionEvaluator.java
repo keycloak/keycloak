@@ -67,4 +67,10 @@ public interface ClientPermissionEvaluator {
     boolean canView(ClientTemplateModel template);
 
     void requireView(ClientTemplateModel template);
+
+    boolean canMapRoles(ClientModel client);
+
+    boolean canMapCompositeRoles(ClientModel client);
+
+    boolean canMapClientScopeRoles(ClientModel client);
 }

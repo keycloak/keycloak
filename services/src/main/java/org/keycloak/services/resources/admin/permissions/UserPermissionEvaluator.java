@@ -34,6 +34,10 @@ public interface UserPermissionEvaluator {
 
     void requireQuery();
 
+    boolean canQuery(UserModel user);
+
+    void requireQuery(UserModel user);
+
     boolean canView();
     boolean canView(UserModel user);
     void requireView(UserModel user);

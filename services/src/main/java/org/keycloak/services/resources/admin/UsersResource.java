@@ -192,11 +192,11 @@ public class UsersResource {
      */
     @Path("{id}")
     public UserResource user(final @PathParam("id") String id) {
-        auth.users().requireQuery();
-
         UserModel user = session.users().getUserById(id, realm);
         if (user == null) {
-            throw new NotFoundException("User not found");
+            // we do this to make sure somebody can't phish ids
+            if (auth.users().canQuery()) throw new NotFoundException("User not found");
+            else throw new ForbiddenException();
         }
         UserResource resource = new UserResource(realm, user, auth, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(resource);

@@ -143,6 +143,9 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         if (!root.isAdminSameRealm()) {
             return root.users().canManage();
         }
+        if (role.getContainer() instanceof ClientModel) {
+            if (root.clients().canMapRoles((ClientModel)role.getContainer())) return true;
+        }
         if (!isPermissionsEnabled(role)){
             return root.users().canManage();
         }
@@ -216,6 +219,9 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         if (!root.isAdminSameRealm()) {
             return canManage(role);
         }
+        if (role.getContainer() instanceof ClientModel) {
+            if (root.clients().canMapCompositeRoles((ClientModel)role.getContainer())) return true;
+        }
         if (!isPermissionsEnabled(role)){
             return canManage(role);
         }
@@ -244,6 +250,9 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
     public boolean canMapClientScope(RoleModel role) {
         if (!root.isAdminSameRealm()) {
             return root.clients().canManage();
+        }
+        if (role.getContainer() instanceof ClientModel) {
+            if (root.clients().canMapClientScopeRoles((ClientModel)role.getContainer())) return true;
         }
         if (!isPermissionsEnabled(role)){
             return root.clients().canManage();

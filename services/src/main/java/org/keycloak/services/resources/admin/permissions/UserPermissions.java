@@ -291,6 +291,19 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
         }
     }
 
+    @Override
+    public boolean canQuery(UserModel user) {
+        return canView(user);
+    }
+
+    @Override
+    public void requireQuery(UserModel user) {
+        if (!canQuery(user)) {
+            throw new ForbiddenException();
+        }
+
+    }
+
 
 
     /**
