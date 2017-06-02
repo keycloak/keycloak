@@ -60,6 +60,7 @@ import java.io.InputStream;
 public abstract class AbstractKeycloakAuthenticatorValve extends FormAuthenticator implements LifecycleListener {
 
     public static final String TOKEN_STORE_NOTE = "TOKEN_STORE_NOTE";
+    private static final String PROTOCOL_CLASSPATH = "classpath:";
 
 	private final static Logger log = Logger.getLogger(AbstractKeycloakAuthenticatorValve.class);
 	protected CatalinaUserSessionManagement userSessionManagement = new CatalinaUserSessionManagement();
@@ -161,7 +162,10 @@ public abstract class AbstractKeycloakAuthenticatorValve extends FormAuthenticat
                 is = context.getServletContext().getResourceAsStream("/WEB-INF/keycloak.json");
             } else {
                 try {
-                    is = new FileInputStream(path);
+                    is = (path.startsWith(PROTOCOL_CLASSPATH))
+                            ?AbstractKeycloakAuthenticatorValve.class.getResourceAsStream(path.replace(PROTOCOL_CLASSPATH, ""))
+                            :
+                            new FileInputStream(path);
                 } catch (FileNotFoundException e) {
                     log.errorv("NOT FOUND {0}", path);
                     throw new RuntimeException(e);
