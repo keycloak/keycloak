@@ -102,7 +102,7 @@ public class EntitlementService {
     @GET()
     @Produces("application/json")
     @Consumes("application/json")
-    public Response getAll(@PathParam("resource_server_id") String resourceServerId, @QueryParam("include_resource_name") Boolean includeResourceName) {
+    public Response getAll(@PathParam("resource_server_id") String resourceServerId, @QueryParam("metadata") String metadataParam) {
         KeycloakIdentity identity = new KeycloakIdentity(this.authorization.getKeycloakSession());
 
         if (resourceServerId == null) {
@@ -123,16 +123,7 @@ public class EntitlementService {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client does not support permissions", Status.FORBIDDEN);
         }
 
-        AuthorizationRequestMetadata metadata;
-
-        if (includeResourceName != null) {
-            metadata = new AuthorizationRequestMetadata();
-            metadata.setIncludeResourceName(includeResourceName);
-        } else {
-            metadata = null;
-        }
-
-        return evaluate(metadata, Permissions.all(resourceServer, identity, authorization), identity, resourceServer);
+        return evaluate(getMetadata(metadataParam), Permissions.all(resourceServer, identity, authorization), identity, resourceServer);
     }
 
     @Path("{resource_server_id}")
@@ -305,5 +296,28 @@ public class EntitlementService {
                         return Permissions.createResourcePermissions(entryResource, entry.getValue(), authorization).stream();
                     }
                 }).collect(Collectors.toList());
+    }
+
+    private AuthorizationRequestMetadata getMetadata(@QueryParam("metadata") String metadataParam) {
+        AuthorizationRequestMetadata metadata;
+
+        if (metadataParam != null) {
+            Map<String, String> claims = new HashMap<>();
+
+            for (String claim : metadataParam.split(",")) {
+                String[] values = claim.split("=");
+
+                if (values.length < 2) {
+                    throw new ErrorResponseException("invalid_metadata", "Invalid metadata", Status.BAD_REQUEST);
+                }
+
+                claims.put(values[0], values[1]);
+            }
+
+            metadata = new AuthorizationRequestMetadata(claims);
+        } else {
+            metadata = null;
+        }
+        return metadata;
     }
 }

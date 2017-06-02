@@ -23,7 +23,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class AuthorizationRequestMetadata {
 
-    @JsonProperty("include_resource_name")
+    public static final String INCLUDE_RESOURCE_NAME = "include_resource_name";
+
+    @JsonProperty(INCLUDE_RESOURCE_NAME)
     private boolean includeResourceName;
 
     public boolean isIncludeResourceName() {

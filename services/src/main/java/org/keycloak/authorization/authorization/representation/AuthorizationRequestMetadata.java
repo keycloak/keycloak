@@ -16,15 +16,30 @@
  */
 package org.keycloak.authorization.authorization.representation;
 
+import java.util.Map;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.sun.org.apache.xpath.internal.operations.Bool;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class AuthorizationRequestMetadata {
 
-    @JsonProperty("include_resource_name")
+    public static final String INCLUDE_RESOURCE_NAME = "include_resource_name";
+
+    @JsonProperty(INCLUDE_RESOURCE_NAME)
     private boolean includeResourceName;
+
+    public AuthorizationRequestMetadata() {
+        this(null);
+    }
+
+    public AuthorizationRequestMetadata(Map<String, String> claims) {
+        if (claims != null) {
+            includeResourceName = Boolean.valueOf(claims.getOrDefault(INCLUDE_RESOURCE_NAME, "true")).booleanValue();
+        }
+    }
 
     public boolean isIncludeResourceName() {
         return includeResourceName;

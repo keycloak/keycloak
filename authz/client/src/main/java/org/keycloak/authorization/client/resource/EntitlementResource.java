@@ -41,7 +41,11 @@ public class EntitlementResource {
                     .authorizationBearer(this.eat);
 
             if (metadata != null) {
-                method.param("include_resource_name", String.valueOf(metadata.isIncludeResourceName()));
+                StringBuilder params = new StringBuilder();
+
+                params.append(AuthorizationRequestMetadata.INCLUDE_RESOURCE_NAME).append("=").append(metadata.isIncludeResourceName());
+
+                method.param("metadata", params.toString());
             }
 
             return method.response().json(EntitlementResponse.class).execute();
