@@ -21,6 +21,7 @@ package org.keycloak.authorization.util;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -136,7 +137,7 @@ public final class Permissions {
     }
 
     public static List<Permission> permits(List<Result> evaluation, AuthorizationRequestMetadata metadata, AuthorizationProvider authorizationProvider, ResourceServer resourceServer) {
-        Map<String, Permission> permissions = new HashMap<>();
+        Map<String, Permission> permissions = new LinkedHashMap<>();
 
         for (Result result : evaluation) {
             Set<Scope> deniedScopes = new HashSet<>();

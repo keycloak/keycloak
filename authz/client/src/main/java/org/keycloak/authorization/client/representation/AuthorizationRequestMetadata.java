@@ -26,7 +26,9 @@ public class AuthorizationRequestMetadata {
     public static final String INCLUDE_RESOURCE_NAME = "include_resource_name";
 
     @JsonProperty(INCLUDE_RESOURCE_NAME)
-    private boolean includeResourceName;
+    private boolean includeResourceName = true;
+
+    private int limit;
 
     public boolean isIncludeResourceName() {
         return includeResourceName;
@@ -34,5 +36,13 @@ public class AuthorizationRequestMetadata {
 
     public void setIncludeResourceName(boolean includeResourceName) {
         this.includeResourceName = includeResourceName;
+    }
+
+    public void setLimit(int limit) {
+        this.limit = limit;
+    }
+
+    public int getLimit() {
+        return limit;
     }
 }

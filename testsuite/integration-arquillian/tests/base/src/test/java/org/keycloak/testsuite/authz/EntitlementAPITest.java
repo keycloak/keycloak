@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.authz;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -80,27 +81,27 @@ public class EntitlementAPITest extends AbstractKeycloakTest {
     public void configureAuthorization() throws Exception {
         ClientResource client = getClient(getRealm());
         AuthorizationResource authorization = client.authorization();
-        ResourceRepresentation resource = new ResourceRepresentation("Resource A");
-
-        Response response = authorization.resources().create(resource);
-        response.close();
 
         JSPolicyRepresentation policy = new JSPolicyRepresentation();
 
         policy.setName("Default Policy");
         policy.setCode("$evaluation.grant();");
 
-        response = authorization.policies().js().create(policy);
-        response.close();
+        authorization.policies().js().create(policy).close();
 
-        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+        for (int i = 1; i <= 20; i++) {
+            ResourceRepresentation resource = new ResourceRepresentation("Resource " + i);
 
-        permission.setName(resource.getName() + " Permission");
-        permission.addResource(resource.getName());
-        permission.addPolicy(policy.getName());
+            authorization.resources().create(resource).close();
 
-        response = authorization.permissions().resource().create(permission);
-        response.close();
+            ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+
+            permission.setName(resource.getName() + " Permission");
+            permission.addResource(resource.getName());
+            permission.addPolicy(policy.getName());
+
+            authorization.permissions().resource().create(permission).close();
+        }
     }
 
     @Test
@@ -109,12 +110,11 @@ public class EntitlementAPITest extends AbstractKeycloakTest {
 
         metadata.setIncludeResourceName(false);
 
-        assertResponse(metadata, () -> getAuthzClient().entitlement(authzClient.obtainAccessToken("marta", "password").getToken()).getAll("resource-server-test", metadata));
         assertResponse(metadata, () -> {
             EntitlementRequest request = new EntitlementRequest();
 
             request.setMetadata(metadata);
-            request.addPermission(new PermissionRequest("Resource A"));
+            request.addPermission(new PermissionRequest("Resource 1"));
 
             return getAuthzClient().entitlement(authzClient.obtainAccessToken("marta", "password").getToken()).get("resource-server-test", request);
         });
@@ -126,13 +126,12 @@ public class EntitlementAPITest extends AbstractKeycloakTest {
 
         metadata.setIncludeResourceName(true);
 
-        assertResponse(metadata, () -> getAuthzClient().entitlement(authzClient.obtainAccessToken("marta", "password").getToken()).getAll("resource-server-test", metadata));
         assertResponse(metadata, () -> getAuthzClient().entitlement(authzClient.obtainAccessToken("marta", "password").getToken()).getAll("resource-server-test"));
 
         EntitlementRequest request = new EntitlementRequest();
 
         request.setMetadata(metadata);
-        request.addPermission(new PermissionRequest("Resource A"));
+        request.addPermission(new PermissionRequest("Resource 13"));
 
         assertResponse(metadata, () -> getAuthzClient().entitlement(authzClient.obtainAccessToken("marta", "password").getToken()).get("resource-server-test", request));
 
@@ -141,17 +140,102 @@ public class EntitlementAPITest extends AbstractKeycloakTest {
         assertResponse(metadata, () -> getAuthzClient().entitlement(authzClient.obtainAccessToken("marta", "password").getToken()).get("resource-server-test", request));
     }
 
-    private void assertResponse(AuthorizationRequestMetadata metadata, Supplier<EntitlementResponse> responseSupplier) {
-        EntitlementResponse response = responseSupplier.get();
-        AccessToken accessToken;
+    @Test
+    public void testPermissionLimit() {
+        EntitlementRequest request = new EntitlementRequest();
 
-        try {
-            accessToken = new JWSInput(response.getRpt()).readJsonContent(AccessToken.class);
-        } catch (JWSInputException cause) {
-            throw new RuntimeException("Failed to deserialize RPT", cause);
+        for (int i = 1; i <= 10; i++) {
+            request.addPermission(new PermissionRequest("Resource " + i));
         }
 
-        AccessToken.Authorization authorization = accessToken.getAuthorization();
+        AuthorizationRequestMetadata metadata = new AuthorizationRequestMetadata();
+
+        metadata.setLimit(10);
+
+        request.setMetadata(metadata);
+
+        EntitlementResponse response = getAuthzClient().entitlement(authzClient.obtainAccessToken("marta", "password").getToken()).get("resource-server-test", request);
+        AccessToken rpt = toAccessToken(response);
+
+        List<Permission> permissions = rpt.getAuthorization().getPermissions();
+
+        assertEquals(10, permissions.size());
+
+        for (int i = 0; i < 10; i++) {
+            assertEquals("Resource " + (i + 1), permissions.get(i).getResourceSetName());
+        }
+
+        request = new EntitlementRequest();
+
+        for (int i = 11; i <= 15; i++) {
+            request.addPermission(new PermissionRequest("Resource " + i));
+        }
+
+        request.setMetadata(metadata);
+        request.setRpt(response.getRpt());
+
+        response = getAuthzClient().entitlement(authzClient.obtainAccessToken("marta", "password").getToken()).get("resource-server-test", request);
+        rpt = toAccessToken(response);
+
+        permissions = rpt.getAuthorization().getPermissions();
+
+        assertEquals(10, permissions.size());
+
+        for (int i = 0; i < 10; i++) {
+            if (i < 5) {
+                assertEquals("Resource " + (i + 11), permissions.get(i).getResourceSetName());
+            } else {
+                assertEquals("Resource " + (i - 4), permissions.get(i).getResourceSetName());
+            }
+        }
+
+        request = new EntitlementRequest();
+
+        for (int i = 16; i <= 18; i++) {
+            request.addPermission(new PermissionRequest("Resource " + i));
+        }
+
+        request.setMetadata(metadata);
+        request.setRpt(response.getRpt());
+
+        response = getAuthzClient().entitlement(authzClient.obtainAccessToken("marta", "password").getToken()).get("resource-server-test", request);
+        rpt = toAccessToken(response);
+
+        permissions = rpt.getAuthorization().getPermissions();
+
+        assertEquals(10, permissions.size());
+        assertEquals("Resource 16", permissions.get(0).getResourceSetName());
+        assertEquals("Resource 17", permissions.get(1).getResourceSetName());
+        assertEquals("Resource 18", permissions.get(2).getResourceSetName());
+        assertEquals("Resource 11", permissions.get(3).getResourceSetName());
+        assertEquals("Resource 12", permissions.get(4).getResourceSetName());
+        assertEquals("Resource 13", permissions.get(5).getResourceSetName());
+        assertEquals("Resource 14", permissions.get(6).getResourceSetName());
+        assertEquals("Resource 15", permissions.get(7).getResourceSetName());
+        assertEquals("Resource 1", permissions.get(8).getResourceSetName());
+        assertEquals("Resource 2", permissions.get(9).getResourceSetName());
+
+        request = new EntitlementRequest();
+
+        metadata.setLimit(5);
+        request.setMetadata(metadata);
+        request.setRpt(response.getRpt());
+
+        response = getAuthzClient().entitlement(authzClient.obtainAccessToken("marta", "password").getToken()).get("resource-server-test", request);
+        rpt = toAccessToken(response);
+
+        permissions = rpt.getAuthorization().getPermissions();
+
+        assertEquals(5, permissions.size());
+        assertEquals("Resource 16", permissions.get(0).getResourceSetName());
+        assertEquals("Resource 17", permissions.get(1).getResourceSetName());
+        assertEquals("Resource 18", permissions.get(2).getResourceSetName());
+        assertEquals("Resource 11", permissions.get(3).getResourceSetName());
+        assertEquals("Resource 12", permissions.get(4).getResourceSetName());
+    }
+
+    private void assertResponse(AuthorizationRequestMetadata metadata, Supplier<EntitlementResponse> responseSupplier) {
+        AccessToken.Authorization authorization = toAccessToken(responseSupplier.get()).getAuthorization();
 
         List<Permission> permissions = authorization.getPermissions();
 
@@ -165,6 +249,17 @@ public class EntitlementAPITest extends AbstractKeycloakTest {
                 assertNull(permission.getResourceSetName());
             }
         }
+    }
+
+    private AccessToken toAccessToken(EntitlementResponse response) {
+        AccessToken accessToken;
+
+        try {
+            accessToken = new JWSInput(response.getRpt()).readJsonContent(AccessToken.class);
+        } catch (JWSInputException cause) {
+            throw new RuntimeException("Failed to deserialize RPT", cause);
+        }
+        return accessToken;
     }
 
     private RealmResource getRealm() throws Exception {

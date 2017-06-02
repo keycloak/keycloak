@@ -24,31 +24,9 @@ public class EntitlementResource {
 
     public EntitlementResponse getAll(String resourceServerId) {
         try {
-            return getAll(resourceServerId, null);
-        } catch (HttpResponseException e) {
-            if (403 == e.getStatusCode()) {
-                throw new AuthorizationDeniedException(e);
-            }
-            throw new RuntimeException("Failed to obtain entitlements.", e);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to obtain entitlements.", e);
-        }
-    }
-
-    public EntitlementResponse getAll(String resourceServerId, AuthorizationRequestMetadata metadata) {
-        try {
-            HttpMethod<EntitlementResponse> method = this.http.<EntitlementResponse>get("/authz/entitlement/" + resourceServerId)
-                    .authorizationBearer(this.eat);
-
-            if (metadata != null) {
-                StringBuilder params = new StringBuilder();
-
-                params.append(AuthorizationRequestMetadata.INCLUDE_RESOURCE_NAME).append("=").append(metadata.isIncludeResourceName());
-
-                method.param("metadata", params.toString());
-            }
-
-            return method.response().json(EntitlementResponse.class).execute();
+            return this.http.<EntitlementResponse>get("/authz/entitlement/" + resourceServerId)
+                    .authorizationBearer(eat)
+                    .response().json(EntitlementResponse.class).execute();
         } catch (HttpResponseException e) {
             if (403 == e.getStatusCode()) {
                 throw new AuthorizationDeniedException(e);
@@ -62,7 +40,7 @@ public class EntitlementResource {
     public EntitlementResponse get(String resourceServerId, EntitlementRequest request) {
         try {
             return this.http.<EntitlementResponse>post("/authz/entitlement/" + resourceServerId)
-                    .authorizationBearer(this.eat)
+                    .authorizationBearer(eat)
                     .json(JsonSerialization.writeValueAsBytes(request))
                     .response().json(EntitlementResponse.class).execute();
         } catch (HttpResponseException e) {
