@@ -17,6 +17,7 @@
 package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.specimpl.ResteasyHttpHeaders;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.UnauthorizedException;
@@ -112,6 +113,7 @@ public class ClientsManagementService {
         }
 
         event.event(EventType.REGISTER_NODE);
+        session.setAttribute("registrationFormData",formData);
 
         if (!realm.isEnabled()) {
             event.error(Errors.REALM_DISABLED);
