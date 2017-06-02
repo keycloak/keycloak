@@ -3,6 +3,7 @@
 
 Before going further, it is important to understand these terms and concepts introduced by {{book.project.name}} {{book.project.module}}.
 
+[[_overview_terminology_resource_server]]
 ==== Resource Server
 
 Per OAuth2 terminology, a resource server is the server hosting the protected resources and capable of accepting and responding to protected resource requests.

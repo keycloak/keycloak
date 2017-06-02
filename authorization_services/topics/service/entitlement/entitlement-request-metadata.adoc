@@ -1,0 +1,45 @@
+[[_service_entitlement_request_metadata]]
+==== Entitlement Request Metadata
+
+When requesting entitlements client applications are allowed to associate metadata information to the request and define how
+they expect to obtain the permissions.
+
+```bash
+curl -X POST -H "Authorization: Bearer ${access_token}" -d '{
+    "metadata" : {
+        "includeresourcename" : false
+    },
+    "permissions" : [
+        ...
+    ]
+}' "http://${host}:${port}/auth/realms/${realm_name}/authz/entitlement/{client_id}"
+```
+
+When using HTTP GET metadata information can be sent using a query parameter ```metadata```. For instance:
+
+```bash
+curl -X GET  "http://${host}:${port}/auth/realms/${realm_name}/authz/entitlement/{client_id}?metadata=includeresourcename=false"
+```
+
+The following sections will explain how and when you can use the different information you can include in an entitlement request as a metadata.
+
+==== Decide whether or not resource's name should be included the response
+
+.includeresourcename
+```bash
+curl -X POST -H "Authorization: Bearer ${access_token}" -d '{
+    "metadata" : {
+        "includeresourcename" : false
+    },
+    "permissions" : [
+        ...
+    ]
+}' "http://${host}:${port}/auth/realms/${realm_name}/authz/entitlement/{client_id}"
+```
+Clients can use ```includeresourcename``` to decide whether or not resource`s name should be included on each permission granted by the server. This option
+can be used to reduce the size of RPTs and optimize client-server communication.
+
+By default, permissions in a RPT contain both the id and name of the resource that was granted for every single permission. This option is specially useful
+when the resource server is capable of map their resources only based on the resource`s id.
+
+
