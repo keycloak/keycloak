@@ -196,7 +196,7 @@ public class KeycloakAutoConfiguration {
                     jettyConstraint.setName(securityCollectionDefinition.getName());
 
                     // according to the servlet spec each security-constraint has at least one URL pattern
-                    for(String pattern : securityCollectionDefinition.getPatterns()) {
+                    for (String pattern : securityCollectionDefinition.getPatterns()) {
 
                         /* the following code is asymmetric as Jetty's ConstraintMapping accepts only one allowed HTTP method,
                            but multiple omitted methods. Therefore we add one ConstraintMapping for each allowed
@@ -205,7 +205,7 @@ public class KeycloakAutoConfiguration {
 
                         if (securityCollectionDefinition.getMethods().size() > 0) {
                             // according to the servlet spec we have either methods ...
-                            for(String method : securityCollectionDefinition.getMethods()) {
+                            for (String method : securityCollectionDefinition.getMethods()) {
                                 ConstraintMapping jettyConstraintMapping = new ConstraintMapping();
                                 jettyConstraintMappings.add(jettyConstraintMapping);
 
@@ -213,7 +213,7 @@ public class KeycloakAutoConfiguration {
                                 jettyConstraintMapping.setPathSpec(pattern);
                                 jettyConstraintMapping.setMethod(method);
                             }
-                        } else if (securityCollectionDefinition.getOmittedMethods().size() > 0){
+                        } else if (securityCollectionDefinition.getOmittedMethods().size() > 0) {
                             // ... omitted methods ...
                             ConstraintMapping jettyConstraintMapping = new ConstraintMapping();
                             jettyConstraintMappings.add(jettyConstraintMapping);
@@ -238,7 +238,7 @@ public class KeycloakAutoConfiguration {
 
             WebAppContext webAppContext = server.getBean(WebAppContext.class);
             //if not found as registered bean let's try the handler
-            if(webAppContext==null){
+            if (webAppContext == null) {
                 webAppContext = (WebAppContext) server.getHandler();
             }
 
