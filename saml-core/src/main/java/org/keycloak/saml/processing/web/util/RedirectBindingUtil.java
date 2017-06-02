@@ -61,6 +61,19 @@ public class RedirectBindingUtil {
     }
 
     /**
+     * On the byte array, apply base64 encoding
+     *
+     * @param stringToEncode
+     *
+     * @return
+     *
+     * @throws IOException
+     */
+    public static String base64Encode(byte[] stringToEncode) throws IOException {
+        return Base64.encodeBytes(stringToEncode, Base64.DONT_BREAK_LINES);
+    }
+
+    /**
      * On the byte array, apply base64 encoding following by URL encoding
      *
      * @param stringToEncode

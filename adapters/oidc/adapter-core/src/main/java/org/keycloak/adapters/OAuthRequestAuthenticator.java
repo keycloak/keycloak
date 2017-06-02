@@ -170,7 +170,7 @@ public class OAuthRequestAuthenticator {
         KeycloakUriBuilder redirectUriBuilder = deployment.getAuthUrl().clone()
                 .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE)
                 .queryParam(OAuth2Constants.CLIENT_ID, deployment.getResourceName())
-                .queryParam(OAuth2Constants.REDIRECT_URI, Encode.encodeQueryParamAsIs(url)) // Need to encode uri ourselves as queryParam() will not encode % characters.
+                .queryParam(OAuth2Constants.REDIRECT_URI, url)
                 .queryParam(OAuth2Constants.STATE, state)
                 .queryParam("login", "true");
         if(loginHint != null && loginHint.length() > 0){
