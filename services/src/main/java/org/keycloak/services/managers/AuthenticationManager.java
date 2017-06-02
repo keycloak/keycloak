@@ -78,9 +78,6 @@ public class AuthenticationManager {
     public static final String END_AFTER_REQUIRED_ACTIONS = "END_AFTER_REQUIRED_ACTIONS";
     public static final String INVALIDATE_ACTION_TOKEN = "INVALIDATE_ACTION_TOKEN";
 
-    // Last authenticated client in userSession.
-    public static final String LAST_AUTHENTICATED_CLIENT = "LAST_AUTHENTICATED_CLIENT";
-
     // userSession note with authTime (time when authentication flow including requiredActions was finished)
     public static final String AUTH_TIME = "AUTH_TIME";
     // clientSession note with flag that clientSession was authenticated through SSO cookie
@@ -95,7 +92,6 @@ public class AuthenticationManager {
     public static final String KEYCLOAK_SESSION_COOKIE = "KEYCLOAK_SESSION";
     public static final String KEYCLOAK_REMEMBER_ME = "KEYCLOAK_REMEMBER_ME";
     public static final String KEYCLOAK_LOGOUT_PROTOCOL = "KEYCLOAK_LOGOUT_PROTOCOL";
-    public static final String CURRENT_REQUIRED_ACTION = "CURRENT_REQUIRED_ACTION";
 
     public static boolean isSessionValid(RealmModel realm, UserSessionModel userSession) {
         if (userSession == null) {
@@ -463,8 +459,6 @@ public class AuthenticationManager {
             userSession.setNote(AUTH_TIME, String.valueOf(authTime));
         }
 
-        userSession.setNote(LAST_AUTHENTICATED_CLIENT, clientSession.getClient().getId());
-
         return protocol.authenticated(userSession, clientSession);
 
     }
@@ -488,7 +482,7 @@ public class AuthenticationManager {
     public static Response redirectToRequiredActions(KeycloakSession session, RealmModel realm, AuthenticationSessionModel authSession, UriInfo uriInfo, String requiredAction) {
         // redirect to non-action url so browser refresh button works without reposting past data
         ClientSessionCode<AuthenticationSessionModel> accessCode = new ClientSessionCode<>(session, realm, authSession);
-        accessCode.setAction(ClientSessionModel.Action.REQUIRED_ACTIONS.name());
+        accessCode.setAction(AuthenticationSessionModel.Action.REQUIRED_ACTIONS.name());
         authSession.setAuthNote(AuthenticationProcessor.CURRENT_FLOW_PATH, LoginActionsService.REQUIRED_ACTION);
         authSession.setAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION, requiredAction);
 
@@ -496,8 +490,10 @@ public class AuthenticationManager {
                 .path(LoginActionsService.REQUIRED_ACTION);
 
         if (requiredAction != null) {
-            uriBuilder.queryParam("execution", requiredAction);
+            uriBuilder.queryParam(Constants.EXECUTION, requiredAction);
         }
+
+        uriBuilder.queryParam(Constants.CLIENT_ID, authSession.getClient().getClientId());
 
         URI redirect = uriBuilder.build(realm.getName());
         return Response.status(302).location(redirect).build();
@@ -526,7 +522,7 @@ public class AuthenticationManager {
                 }
 
             } else {
-                infoPage.setAttribute("skipLink", true);
+                infoPage.setAttribute(Constants.SKIP_LINK, true);
             }
             Response response = infoPage
                     .createInfoPage();

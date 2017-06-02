@@ -151,6 +151,8 @@ public class RepresentationToModel {
         if (rep.getMaxDeltaTimeSeconds() != null) newRealm.setMaxDeltaTimeSeconds(rep.getMaxDeltaTimeSeconds());
         if (rep.getFailureFactor() != null) newRealm.setFailureFactor(rep.getFailureFactor());
         if (rep.isEventsEnabled() != null) newRealm.setEventsEnabled(rep.isEventsEnabled());
+        if (rep.getEnabledEventTypes() != null)
+            newRealm.setEnabledEventTypes(new HashSet<>(rep.getEnabledEventTypes()));
         if (rep.getEventsExpiration() != null) newRealm.setEventsExpiration(rep.getEventsExpiration());
         if (rep.getEventsListeners() != null) newRealm.setEventsListeners(new HashSet<>(rep.getEventsListeners()));
         if (rep.isAdminEventsEnabled() != null) newRealm.setAdminEventsEnabled(rep.isAdminEventsEnabled());

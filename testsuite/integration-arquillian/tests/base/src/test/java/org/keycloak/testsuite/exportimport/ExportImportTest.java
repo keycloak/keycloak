@@ -27,6 +27,7 @@ import org.keycloak.exportimport.dir.DirExportProviderFactory;
 import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
+import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
@@ -35,6 +36,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 
 import java.io.File;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -58,11 +60,29 @@ public class ExportImportTest extends AbstractKeycloakTest {
         testRealm1.getUsers().add(makeUser("user1"));
         testRealm1.getUsers().add(makeUser("user2"));
         testRealm1.getUsers().add(makeUser("user3"));
+
+        setEventsConfig(testRealm1);
         testRealms.add(testRealm1);
 
         RealmRepresentation testRealm2 = loadJson(getClass().getResourceAsStream("/model/testrealm.json"), RealmRepresentation.class);
         testRealm2.setId("test-realm");
         testRealms.add(testRealm2);
+    }
+
+    private void setEventsConfig(RealmRepresentation realm) {
+        realm.setEventsEnabled(true);
+        realm.setAdminEventsEnabled(true);
+        realm.setAdminEventsDetailsEnabled(true);
+        realm.setEventsExpiration(600);
+        realm.setEnabledEventTypes(Arrays.asList("REGISTER", "REGISTER_ERROR", "LOGIN", "LOGIN_ERROR", "LOGOUT_ERROR"));
+    }
+
+    private void checkEventsConfig(RealmEventsConfigRepresentation config) {
+        Assert.assertTrue(config.isEventsEnabled());
+        Assert.assertTrue(config.isAdminEventsEnabled());
+        Assert.assertTrue(config.isAdminEventsDetailsEnabled());
+        Assert.assertEquals((Long) 600L, config.getEventsExpiration());
+        Assert.assertNames(new HashSet(config.getEnabledEventTypes()),"REGISTER", "REGISTER_ERROR", "LOGIN", "LOGIN_ERROR", "LOGOUT_ERROR");
     }
 
     private UserRepresentation makeUser(String userName) {
@@ -222,6 +242,8 @@ public class ExportImportTest extends AbstractKeycloakTest {
 
         String importedSampleClientRoleId = adminClient.realm("test").clients().get(testAppId).roles().get("sample-client-role").toRepresentation().getId();
         assertEquals(sampleClientRoleId, importedSampleClientRoleId);
+
+        checkEventsConfig(adminClient.realm("test").getRealmEventsConfig());
     }
 
     private void assertAuthenticated(String realmName, String username, String password) {

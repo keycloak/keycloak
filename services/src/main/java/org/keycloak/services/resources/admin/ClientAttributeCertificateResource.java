@@ -42,6 +42,7 @@ import org.keycloak.services.util.CertificateInfoHelper;
 import org.keycloak.util.JWKSUtils;
 import org.keycloak.util.JsonSerialization;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -182,7 +183,9 @@ public class ClientAttributeCertificateResource {
         auth.clients().requireManage(client);
         CertificateRepresentation info = new CertificateRepresentation();
         Map<String, List<InputPart>> uploadForm = input.getFormDataMap();
-        String keystoreFormat = uploadForm.get("keystoreFormat").get(0).getBodyAsString();
+        List<InputPart> keystoreFormatPart = uploadForm.get("keystoreFormat");
+        if (keystoreFormatPart == null) throw new BadRequestException();
+        String keystoreFormat = keystoreFormatPart.get(0).getBodyAsString();
         List<InputPart> inputParts = uploadForm.get("file");
         if (keystoreFormat.equals(CERTIFICATE_PEM)) {
             String pem = StreamUtil.readString(inputParts.get(0).getBody(InputStream.class, null));

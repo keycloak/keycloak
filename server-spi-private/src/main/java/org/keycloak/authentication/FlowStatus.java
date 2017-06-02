@@ -62,7 +62,7 @@ public enum FlowStatus {
     ATTEMPTED,
 
     /**
-     * This flow is being forked.  The current client session is being cloned, reset, and redirected to browser login.
+     * This flow is being forked.  The current authentication session is being cloned, reset, and redirected to browser login.
      *
      */
     FORK,

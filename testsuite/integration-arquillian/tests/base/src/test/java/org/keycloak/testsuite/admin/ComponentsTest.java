@@ -17,13 +17,13 @@
 
 package org.keycloak.testsuite.admin;
 
+import org.keycloak.admin.client.resource.ComponentResource;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ComponentsResource;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.representations.idm.AdminEventRepresentation;
-import org.keycloak.representations.idm.ComponentRepresentation;
-import org.keycloak.representations.idm.ErrorRepresentation;
+import org.keycloak.representations.idm.*;
 import org.keycloak.testsuite.components.TestProvider;
 
 import javax.ws.rs.WebApplicationException;
@@ -33,6 +33,10 @@ import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.concurrent.*;
+import java.util.function.BiConsumer;
+import org.apache.commons.lang3.concurrent.BasicThreadFactory;
+import org.hamcrest.Matchers;
 import static org.junit.Assert.*;
 
 /**
@@ -45,6 +49,44 @@ public class ComponentsTest extends AbstractAdminTest {
     @Before
     public void before() throws Exception {
         components = adminClient.realm(REALM_NAME).components();
+    }
+
+    private volatile CountDownLatch remainingDeleteSubmissions;
+
+    private static final int NUMBER_OF_THREADS = 4;
+    private static final int NUMBER_OF_TASKS = NUMBER_OF_THREADS * 5;
+    private static final int NUMBER_OF_CHILDREN = 3;
+
+    private void testConcurrency(BiConsumer<ExecutorService, Integer> taskCreator) throws InterruptedException {
+        ExecutorService s = Executors.newFixedThreadPool(NUMBER_OF_THREADS,
+          new BasicThreadFactory.Builder().daemon(true).uncaughtExceptionHandler((t, e) -> log.error(e.getMessage(), e)).build());
+        this.remainingDeleteSubmissions = new CountDownLatch(NUMBER_OF_TASKS);
+
+        for (int i = 0; i < NUMBER_OF_TASKS; i++) {
+            taskCreator.accept(s, i);
+        }
+
+        try {
+            assertTrue("Did not create all components in time", this.remainingDeleteSubmissions.await(30, TimeUnit.SECONDS));
+            s.shutdown();
+            assertTrue("Did not finish before timeout", s.awaitTermination(30, TimeUnit.SECONDS));
+        } finally {
+            s.shutdownNow();
+        }
+    }
+
+    @Test
+    public void testConcurrencyWithoutChildren() throws InterruptedException {
+        testConcurrency((s, i) -> s.submit(new CreateAndDeleteComponent(s, i)));
+
+        assertThat(realm.components().query(realm.toRepresentation().getId(), TestProvider.class.getName()), Matchers.hasSize(0));
+    }
+
+    @Test
+    public void testConcurrencyWithChildren() throws InterruptedException {
+        testConcurrency((s, i) -> s.submit(new CreateAndDeleteComponentWithFlatChildren(s, i)));
+
+        assertThat(realm.components().query(realm.toRepresentation().getId(), TestProvider.class.getName()), Matchers.hasSize(0));
     }
 
     @Test
@@ -67,7 +109,7 @@ public class ComponentsTest extends AbstractAdminTest {
         try {
             createComponent(rep);
         } catch (WebApplicationException e) {
-            assertErrror(e.getResponse(), "'Required' is required");
+            assertError(e.getResponse(), "'Required' is required");
         }
 
         rep.getConfig().putSingle("required", "Required");
@@ -77,7 +119,7 @@ public class ComponentsTest extends AbstractAdminTest {
         try {
             createComponent(rep);
         } catch (WebApplicationException e) {
-            assertErrror(e.getResponse(), "'Number' should be a number");
+            assertError(e.getResponse(), "'Number' should be a number");
         }
     }
 
@@ -259,16 +301,27 @@ public class ComponentsTest extends AbstractAdminTest {
         assertEquals(value, returned.getConfig().getFirst("val1"));
     }
 
-    private String createComponent(ComponentRepresentation rep) {
-        ComponentsResource components = realm.components();
-        Response response = components.add(rep);
-        String id = ApiUtil.getCreatedId(response);
-        getCleanup().addComponentId(id);
-        response.close();
-        return id;
+    private java.lang.String createComponent(ComponentRepresentation rep) {
+        return createComponent(realm, rep);
     }
 
-    private void assertErrror(Response response, String error) {
+    private String createComponent(RealmResource realm, ComponentRepresentation rep) {
+        Response response = null;
+        try {
+            ComponentsResource components = realm.components();
+            response = components.add(rep);
+            String id = ApiUtil.getCreatedId(response);
+            getCleanup(realm.toRepresentation().getRealm()).addComponentId(id);
+            return id;
+        } finally {
+            if (response != null) {
+                response.bufferEntity();
+                response.close();
+            }
+        }
+    }
+
+    private void assertError(Response response, String error) {
         if (!response.hasEntity()) {
             fail("No error message set");
         }
@@ -288,6 +341,121 @@ public class ComponentsTest extends AbstractAdminTest {
         MultivaluedHashMap config = new MultivaluedHashMap();
         rep.setConfig(config);
         return rep;
+    }
+
+    private class CreateComponent implements Runnable {
+
+        protected final ExecutorService s;
+        protected final int i;
+        protected final RealmResource realm;
+
+        public CreateComponent(ExecutorService s, int i, RealmResource realm) {
+            this.s = s;
+            this.i = i;
+            this.realm = realm;
+        }
+
+        public CreateComponent(ExecutorService s, int i) {
+            this(s, i, ComponentsTest.this.realm);
+        }
+
+        @Override
+        public void run() {
+            log.debugf("Started for i=%d ", i);
+            ComponentRepresentation rep = createComponentRepresentation("test-" + i);
+            rep.getConfig().putSingle("required", "required-value");
+            rep.setParentId(this.realm.toRepresentation().getId());
+            
+            String id = createComponent(this.realm, rep);
+            assertThat(id, Matchers.notNullValue());
+
+            createChildren(id);
+
+            log.debugf("Finished: i=%d, id=%s", i, id);
+
+            scheduleDeleteComponent(id);
+            remainingDeleteSubmissions.countDown();
+        }
+
+        protected void scheduleDeleteComponent(String id) {
+        }
+
+        protected void createChildren(String id) {
+        }
+    }
+
+    private class CreateAndDeleteComponent extends CreateComponent {
+
+        public CreateAndDeleteComponent(ExecutorService s, int i) {
+            super(s, i);
+        }
+
+        @Override
+        protected void scheduleDeleteComponent(String id) {
+            s.submit(new DeleteComponent(id));
+        }
+    }
+
+    private class CreateComponentWithFlatChildren extends CreateComponent {
+
+        public CreateComponentWithFlatChildren(ExecutorService s, int i, RealmResource realm) {
+            super(s, i, realm);
+        }
+
+        public CreateComponentWithFlatChildren(ExecutorService s, int i) {
+            super(s, i);
+        }
+
+        @Override
+        protected void createChildren(String id) {
+            for (int j = 0; j < NUMBER_OF_CHILDREN; j ++) {
+                ComponentRepresentation rep = createComponentRepresentation("test-" + i + ":" + j);
+                rep.setParentId(id);
+                rep.getConfig().putSingle("required", "required-value");
+
+                assertThat(createComponent(this.realm, rep), Matchers.notNullValue());
+            }
+        }
+
+    }
+
+    private class CreateAndDeleteComponentWithFlatChildren extends CreateAndDeleteComponent {
+
+        public CreateAndDeleteComponentWithFlatChildren(ExecutorService s, int i) {
+            super(s, i);
+        }
+
+        @Override
+        protected void createChildren(String id) {
+            for (int j = 0; j < NUMBER_OF_CHILDREN; j ++) {
+                ComponentRepresentation rep = createComponentRepresentation("test-" + i + ":" + j);
+                rep.setParentId(id);
+                rep.getConfig().putSingle("required", "required-value");
+
+                assertThat(createComponent(this.realm, rep), Matchers.notNullValue());
+            }
+        }
+
+    }
+
+    private class DeleteComponent implements Runnable {
+
+        private final String id;
+
+        public DeleteComponent(String id) {
+            this.id = id;
+        }
+
+        @Override
+        public void run() {
+            log.debugf("Started, id=%s", id);
+
+            ComponentResource c = realm.components().component(id);
+            assertThat(c.toRepresentation(), Matchers.notNullValue());
+            c.remove();
+
+            log.debugf("Finished, id=%s", id);
+        }
     }
 
 }

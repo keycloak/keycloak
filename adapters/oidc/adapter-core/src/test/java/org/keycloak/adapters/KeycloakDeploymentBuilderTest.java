@@ -29,10 +29,13 @@ import org.keycloak.common.util.PemUtils;
 import org.keycloak.enums.TokenStore;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * @author <a href="mailto:brad.culley@spartasystems.com">Brad Culley</a>
+ * @author <a href="mailto:john.ament@spartasystems.com">John D. Ament</a>
  */
 public class KeycloakDeploymentBuilderTest {
 
@@ -58,6 +61,7 @@ public class KeycloakDeploymentBuilderTest {
         assertTrue(deployment.isPublicClient());
         assertTrue(deployment.isEnableBasicAuth());
         assertTrue(deployment.isExposeToken());
+        assertFalse(deployment.isOAuthQueryParameterEnabled());
         assertEquals("234234-234234-234234", deployment.getResourceCredentials().get("secret"));
         assertEquals(ClientIdAndSecretCredentialsProvider.PROVIDER_ID, deployment.getClientAuthenticator().getId());
         assertEquals(20, ((ThreadSafeClientConnManager) deployment.getClient().getConnectionManager()).getMaxTotal());

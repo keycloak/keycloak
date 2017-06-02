@@ -26,7 +26,6 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
-import java.util.function.Function;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilderException;
 import javax.ws.rs.core.UriInfo;
@@ -45,7 +44,7 @@ public class ActionTokenContext<T extends JsonWebToken> {
 
     @FunctionalInterface
     public interface ProcessBrokerFlow {
-        Response brokerLoginFlow(String code, String execution, String flowPath);
+        Response brokerLoginFlow(String code, String execution, String clientId, String flowPath);
     };
 
     private final KeycloakSession session;
@@ -113,7 +112,7 @@ public class ActionTokenContext<T extends JsonWebToken> {
         ClientModel client = realm.getClientByClientId(clientId == null ? Constants.ACCOUNT_MANAGEMENT_CLIENT_ID : clientId);
         
         authSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, client, true);
-        authSession.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
+        authSession.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
         authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         String redirectUri = Urls.accountBase(uriInfo.getBaseUri()).path("/").build(realm.getName()).toString();
         authSession.setRedirectUri(redirectUri);
@@ -158,6 +157,7 @@ public class ActionTokenContext<T extends JsonWebToken> {
     }
 
     public Response brokerFlow(String code, String flowPath) {
-        return processBrokerFlow.brokerLoginFlow(code, getExecutionId(), flowPath);
+        ClientModel client = authenticationSession.getClient();
+        return processBrokerFlow.brokerLoginFlow(code, getExecutionId(), client.getClientId(), flowPath);
     }
 }

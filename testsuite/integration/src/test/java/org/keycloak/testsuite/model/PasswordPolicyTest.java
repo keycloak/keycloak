@@ -20,12 +20,14 @@ package org.keycloak.testsuite.model;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
 
 import java.util.regex.PatternSyntaxException;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
@@ -123,7 +125,8 @@ public class PasswordPolicyTest extends AbstractModelTest {
         try {
             realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "noSuchPolicy"));
             Assert.fail("Expected exception");
-        } catch (IllegalArgumentException e) {
+        } catch (ModelException e) {
+            assertEquals("Password policy not found", e.getMessage());
         }
     }
 
@@ -133,22 +136,22 @@ public class PasswordPolicyTest extends AbstractModelTest {
         try {
             realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "regexPattern"));
             fail("Expected NullPointerException: Regex Pattern cannot be null.");
-        } catch (IllegalArgumentException e) {
-            // Expected NPE as regex pattern is null.
+        } catch (ModelException e) {
+            assertEquals("Invalid config for regexPattern: Config required", e.getMessage());
         }
 
         try {
             realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "regexPattern(*)"));
             fail("Expected PatternSyntaxException: Regex Pattern cannot be null.");
-        } catch (PatternSyntaxException e) {
-            // Expected PSE as regex pattern(or any of its token) is not quantifiable.
+        } catch (ModelException e) {
+            assertEquals("Invalid config for regexPattern: Not a valid regular expression", e.getMessage());
         }
 
         try {
             realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "regexPattern(*,**)"));
             fail("Expected PatternSyntaxException: Regex Pattern cannot be null.");
-        } catch (PatternSyntaxException e) {
-            // Expected PSE as regex pattern(or any of its token) is not quantifiable.
+        } catch (ModelException e) {
+            assertEquals("Invalid config for regexPattern: Not a valid regular expression", e.getMessage());
         }
 
         //Fails to match one of the regex pattern

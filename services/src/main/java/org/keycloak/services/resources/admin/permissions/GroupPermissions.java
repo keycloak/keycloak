@@ -111,14 +111,12 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
         String manageMembersPermissionName = getManageMembersPermissionGroup(group);
         Policy manageMembersPermission = authz.getStoreFactory().getPolicyStore().findByName(manageMembersPermissionName, server.getId());
         if (manageMembersPermission == null) {
-            Policy manageUsersPolicy = root.roles().manageUsersPolicy(server);
-            Helper.addScopePermission(authz, server, manageMembersPermissionName, groupResource, manageMembersScope, manageUsersPolicy);
+            Helper.addEmptyScopePermission(authz, server, manageMembersPermissionName, groupResource, manageMembersScope);
         }
         String viewMembersPermissionName = getViewMembersPermissionGroup(group);
         Policy viewMembersPermission = authz.getStoreFactory().getPolicyStore().findByName(viewMembersPermissionName, server.getId());
         if (viewMembersPermission == null) {
-            Policy viewUsersPolicy = root.roles().viewUsersPolicy(server);
-            Helper.addScopePermission(authz, server, viewMembersPermissionName, groupResource, viewMembersScope, viewUsersPolicy);
+            Helper.addEmptyScopePermission(authz, server, viewMembersPermissionName, groupResource, viewMembersScope);
         }
     }
 
@@ -310,6 +308,10 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
 
     @Override
     public boolean canViewMembers(GroupModel group) {
+        return canViewMembersEvaluation(group) || canManageMembers(group);
+    }
+
+    private boolean canViewMembersEvaluation(GroupModel group) {
         if (!root.isAdminSameRealm()) {
             return root.users().canView();
         }
@@ -335,6 +337,7 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
 
         return root.evaluatePermission(resource, scope, server);
     }
+
 
     @Override
     public void requireViewMembers(GroupModel group) {

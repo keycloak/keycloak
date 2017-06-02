@@ -29,6 +29,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.services.ForbiddenException;
 
 import java.util.HashMap;
@@ -176,6 +177,38 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
             throw new ForbiddenException();
         }
 
+    }
+
+    @Override
+    public boolean canManage(RoleContainerModel container) {
+        if (container instanceof RealmModel) {
+            return root.realm().canManageRealm();
+        } else {
+            return root.clients().canManage((ClientModel)container);
+        }
+    }
+
+    @Override
+    public void requireManage(RoleContainerModel container) {
+        if (!canManage(container)) {
+            throw new ForbiddenException();
+        }
+    }
+
+    @Override
+    public boolean canView(RoleContainerModel container) {
+        if (container instanceof RealmModel) {
+            return root.realm().canViewRealm();
+        } else {
+            return root.clients().canView((ClientModel)container);
+        }
+    }
+
+    @Override
+    public void requireView(RoleContainerModel container) {
+        if (!canView(container)) {
+            throw new ForbiddenException();
+        }
     }
 
     @Override
@@ -334,12 +367,14 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         resource.setType("Role");
         Scope mapRoleScope = getMapRoleScope(server);
         Policy policy = manageUsersPolicy(server);
-        Helper.addScopePermission(authz, server, getMapRolePermissionName(role), resource, mapRoleScope, policy);
+        Policy mapRolePermission = Helper.addScopePermission(authz, server, getMapRolePermissionName(role), resource, mapRoleScope, policy);
+        mapRolePermission.setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
 
         Scope mapClientScope = getMapClientScope(server);
         RoleModel mngClients = root.getRealmManagementClient().getRole(AdminRoles.MANAGE_CLIENTS);
         Policy mngClientsPolicy = rolePolicy(server, mngClients);
-        Helper.addScopePermission(authz, server, getMapClientScopePermissionName(role), resource, mapClientScope, mngClientsPolicy);
+        Policy mapClientScopePermission = Helper.addScopePermission(authz, server, getMapClientScopePermissionName(role), resource, mapClientScope, mngClientsPolicy);
+        mapClientScopePermission.setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
 
         Scope mapCompositeScope = getMapCompositeScope(server);
         if (role.getContainer() instanceof RealmModel) {
@@ -349,7 +384,8 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
             policy = mngClientsPolicy;
 
         }
-        Helper.addScopePermission(authz, server, getMapCompositePermissionName(role), resource, mapCompositeScope, policy);
+        Policy mapCompositePermission = Helper.addScopePermission(authz, server, getMapCompositePermissionName(role), resource, mapCompositeScope, policy);
+        mapCompositePermission.setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
         return resource;
     }
 
@@ -362,7 +398,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
     }
 
     private String getMapCompositePermissionName(RoleModel role) {
-        return MAP_ROLE_CLIENT_SCOPE_SCOPE + ".permission." + role.getName();
+        return MAP_ROLE_COMPOSITE_SCOPE + ".permission." + role.getName();
     }
 
     private ResourceServer getResourceServer(RoleModel role) {

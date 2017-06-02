@@ -23,6 +23,7 @@ import org.keycloak.authentication.actiontoken.*;
 import org.keycloak.authentication.authenticators.broker.IdpEmailVerificationAuthenticator;
 import org.keycloak.events.*;
 import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.messages.Messages;
@@ -86,7 +87,7 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
 
             return tokenContext.getSession().getProvider(LoginFormsProvider.class)
                     .setSuccess(Messages.IDENTITY_PROVIDER_LINK_SUCCESS, token.getIdentityProviderAlias(), token.getIdentityProviderUsername())
-                    .setAttribute("skipLink", true)
+                    .setAttribute(Constants.SKIP_LINK, true)
                     .createInfoPage();
         }
 

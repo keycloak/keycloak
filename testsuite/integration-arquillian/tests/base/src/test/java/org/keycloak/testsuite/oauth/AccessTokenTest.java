@@ -56,6 +56,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -93,6 +94,8 @@ import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsernameId;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createRoleNameMapper;
+
+import org.keycloak.util.TokenUtil;
 import org.openqa.selenium.By;
 
 /**
@@ -210,7 +213,8 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         oauth.redirectUri(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth/admin/test/console/nosuch.html");
         oauth.openLoginForm();
 
-        String loginPageCode = driver.getPageSource().split("code=")[1].split("&")[0].split("\"")[0];
+        String actionURI = ActionURIUtils.getActionURIFromPageSource(driver.getPageSource());
+        String loginPageCode = ActionURIUtils.parseQueryParamsFromActionURI(actionURI).get("code");
 
         oauth.fillLoginForm("test-user@localhost", "password");
 
@@ -441,7 +445,8 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
         oauth.doLogin("test-user@localhost", "password");
 
-        String code = driver.getPageSource().split("code=")[1].split("&")[0].split("\"")[0];
+        String actionURI = ActionURIUtils.getActionURIFromPageSource(driver.getPageSource());
+        String code = ActionURIUtils.parseQueryParamsFromActionURI(actionURI).get("code");
 
         OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
         Assert.assertEquals(400, response.getStatusCode());
@@ -991,7 +996,8 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         Form form = new Form();
         form.param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD)
                 .param("username", username)
-                .param("password", password);
+                .param("password", password)
+                .param(OAuth2Constants.SCOPE, OAuth2Constants.SCOPE_OPENID);
         return grantTarget.request()
                 .header(HttpHeaders.AUTHORIZATION, header)
                 .post(Entity.form(form));

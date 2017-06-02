@@ -148,13 +148,13 @@ class RealmPermissions implements RealmPermissionEvaluator {
 
     @Override
     public void requireManageAuthorization() {
-        if (!canManageEvents()) {
+        if (!canManageAuthorization()) {
             throw new ForbiddenException();
         }
     }
     @Override
     public void requireViewAuthorization() {
-        if (!canManageEvents()) {
+        if (!canViewAuthorization()) {
             throw new ForbiddenException();
         }
     }

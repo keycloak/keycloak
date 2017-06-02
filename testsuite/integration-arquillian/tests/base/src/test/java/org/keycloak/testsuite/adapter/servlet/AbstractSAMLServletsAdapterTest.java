@@ -86,14 +86,13 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import java.io.ByteArrayInputStream;
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.security.KeyPair;
 import java.security.PublicKey;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.*;
@@ -107,7 +106,6 @@ import static org.keycloak.testsuite.util.IOUtil.loadXML;
 import static org.keycloak.testsuite.util.IOUtil.modifyDocElementAttribute;
 import static org.keycloak.testsuite.util.Matchers.bodyHC;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
-import static org.keycloak.testsuite.util.SamlClient.Binding.POST;
 import static org.keycloak.testsuite.util.SamlClient.idpInitiatedLogin;
 import static org.keycloak.testsuite.util.SamlClient.login;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
@@ -155,6 +153,9 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
 
     @Page
     protected SalesPostEncServlet salesPostEncServletPage;
+
+    @Page
+    protected SalesPostEncSignAssertionsOnlyServlet salesPostEncSignAssertionsOnlyServletPage;
 
     @Page
     protected SalesPostPassiveServlet salesPostPassiveServletPage;
@@ -257,6 +258,11 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
     @Deployment(name = SalesPostEncServlet.DEPLOYMENT_NAME)
     protected static WebArchive salesPostEnc() {
         return samlServletDeployment(SalesPostEncServlet.DEPLOYMENT_NAME, SendUsernameServlet.class);
+    }
+
+    @Deployment(name = SalesPostEncSignAssertionsOnlyServlet.DEPLOYMENT_NAME)
+    protected static WebArchive salesPostEncSignAssertionsOnly() {
+        return samlServletDeployment(SalesPostEncSignAssertionsOnlyServlet.DEPLOYMENT_NAME, SendUsernameServlet.class);
     }
 
     @Deployment(name = SalesPostPassiveServlet.DEPLOYMENT_NAME)
@@ -623,6 +629,24 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
     @Test
     public void salesPostEncTest() {
         testSuccessfulAndUnauthorizedLogin(salesPostEncServletPage, testRealmSAMLPostLoginPage);
+    }
+
+    @Test
+    public void salesPostEncSignedAssertionsOnlyTest() throws Exception {
+        testSuccessfulAndUnauthorizedLogin(salesPostEncSignAssertionsOnlyServletPage, testRealmSAMLPostLoginPage);
+    }
+
+    @Test
+    public void salesPostEncSignedAssertionsAndDocumentTest() throws Exception {
+        ClientRepresentation salesPostEncClient = testRealmResource().clients().findByClientId(SalesPostEncServlet.CLIENT_NAME).get(0);
+        try (Closeable client = new ClientAttributeUpdater(testRealmResource().clients().get(salesPostEncClient.getId()))
+          .setAttribute(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE, "true")
+          .setAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "true")
+          .update()) {
+            testSuccessfulAndUnauthorizedLogin(salesPostEncServletPage, testRealmSAMLPostLoginPage);
+        } finally {
+            salesPostEncServletPage.logout();
+        }
     }
 
     @Test

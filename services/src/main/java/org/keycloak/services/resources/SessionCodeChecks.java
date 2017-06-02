@@ -32,7 +32,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
@@ -40,7 +40,6 @@ import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ServicesLogger;
-import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
@@ -66,10 +65,11 @@ public class SessionCodeChecks {
 
     private final String code;
     private final String execution;
+    private final String clientId;
     private final String flowPath;
 
 
-    public SessionCodeChecks(RealmModel realm, UriInfo uriInfo, ClientConnection clientConnection, KeycloakSession session, EventBuilder event, String code, String execution, String flowPath) {
+    public SessionCodeChecks(RealmModel realm, UriInfo uriInfo, ClientConnection clientConnection, KeycloakSession session, EventBuilder event, String code, String execution, String clientId, String flowPath) {
         this.realm = realm;
         this.uriInfo = uriInfo;
         this.clientConnection = clientConnection;
@@ -78,6 +78,7 @@ public class SessionCodeChecks {
 
         this.code = code;
         this.execution = execution;
+        this.clientId = clientId;
         this.flowPath = flowPath;
     }
 
@@ -134,6 +135,16 @@ public class SessionCodeChecks {
             return authSession;
         }
 
+        // Setup client to be shown on error/info page based on "client_id" parameter
+        logger.debugf("Will use client '%s' in back-to-application link", clientId);
+        ClientModel client = null;
+        if (clientId != null) {
+            client = realm.getClientByClientId(clientId);
+        }
+        if (client != null) {
+            session.getContext().setClient(client);
+        }
+
         // See if we are already authenticated and userSession with same ID exists.
         String sessionId = new AuthenticationSessionManager(session).getCurrentAuthenticationSessionId(realm);
         if (sessionId != null) {
@@ -143,16 +154,8 @@ public class SessionCodeChecks {
                 LoginFormsProvider loginForm = session.getProvider(LoginFormsProvider.class)
                         .setSuccess(Messages.ALREADY_LOGGED_IN);
 
-                ClientModel client = null;
-                String lastClientUuid = userSession.getNote(AuthenticationManager.LAST_AUTHENTICATED_CLIENT);
-                if (lastClientUuid != null) {
-                    client = realm.getClientById(lastClientUuid);
-                }
-
-                if (client != null) {
-                    session.getContext().setClient(client);
-                } else {
-                    loginForm.setAttribute("skipLink", true);
+                if (client == null) {
+                    loginForm.setAttribute(Constants.SKIP_LINK, true);
                 }
 
                 response = loginForm.createInfoPage();
@@ -210,7 +213,7 @@ public class SessionCodeChecks {
                 logger.debugf("Transition between flows! Current flow: %s, Previous flow: %s", flowPath, lastFlow);
 
                 // Don't allow moving to different flow if I am on requiredActions already
-                if (ClientSessionModel.Action.AUTHENTICATE.name().equals(authSession.getAction())) {
+                if (AuthenticationSessionModel.Action.AUTHENTICATE.name().equals(authSession.getAction())) {
                     authSession.setAuthNote(AuthenticationProcessor.CURRENT_FLOW_PATH, flowPath);
                     authSession.removeAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION);
                     lastExecFromSession = null;
@@ -234,7 +237,7 @@ public class SessionCodeChecks {
                 // In case that is replayed action, but sent to the same FORM like actual FORM, we just re-render the page
                 if (ObjectUtil.isEqualOrBothNull(execution, authSession.getAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION))) {
                     String latestFlowPath = authSession.getAuthNote(AuthenticationProcessor.CURRENT_FLOW_PATH);
-                    URI redirectUri = getLastExecutionUrl(latestFlowPath, execution);
+                    URI redirectUri = getLastExecutionUrl(latestFlowPath, execution, client.getClientId());
 
                     logger.debugf("Invalid action code, but execution matches. So just redirecting to %s", redirectUri);
                     authSession.setAuthNote(LoginActionsService.FORWARDED_ERROR_MESSAGE_NOTE, Messages.EXPIRED_ACTION);
@@ -266,7 +269,7 @@ public class SessionCodeChecks {
 
         if (!clientCode.isValidAction(expectedAction)) {
             AuthenticationSessionModel authSession = getAuthenticationSession();
-            if (ClientSessionModel.Action.REQUIRED_ACTIONS.name().equals(authSession.getAction())) {
+            if (AuthenticationSessionModel.Action.REQUIRED_ACTIONS.name().equals(authSession.getAction())) {
                 logger.debugf("Incorrect action '%s' . User authenticated already.", authSession.getAction());
                 response = showPageExpired(authSession);
                 return false;
@@ -289,7 +292,7 @@ public class SessionCodeChecks {
 
             authSession.setAuthNote(LoginActionsService.FORWARDED_ERROR_MESSAGE_NOTE, Messages.LOGIN_TIMEOUT);
 
-            URI redirectUri = getLastExecutionUrl(LoginActionsService.AUTHENTICATE_PATH, null);
+            URI redirectUri = getLastExecutionUrl(LoginActionsService.AUTHENTICATE_PATH, null, authSession.getClient().getClientId());
             logger.debugf("Flow restart after timeout. Redirecting to %s", redirectUri);
             response = Response.status(Response.Status.FOUND).location(redirectUri).build();
             return false;
@@ -303,7 +306,7 @@ public class SessionCodeChecks {
             return false;
         }
 
-        if (!clientCode.isValidAction(ClientSessionModel.Action.REQUIRED_ACTIONS.name())) {
+        if (!clientCode.isValidAction(AuthenticationSessionModel.Action.REQUIRED_ACTIONS.name())) {
             logger.debugf("Expected required action, but session action is '%s' . Showing expired page now.", authSession.getAction());
             event.error(Errors.INVALID_CODE);
 
@@ -351,7 +354,7 @@ public class SessionCodeChecks {
                 flowPath = LoginActionsService.AUTHENTICATE_PATH;
             }
 
-            URI redirectUri = getLastExecutionUrl(flowPath, null);
+            URI redirectUri = getLastExecutionUrl(flowPath, null, authSession.getClient().getClientId());
             logger.debugf("Authentication session restart from cookie succeeded. Redirecting to %s", redirectUri);
             return Response.status(Response.Status.FOUND).location(redirectUri).build();
         } else {
@@ -367,16 +370,20 @@ public class SessionCodeChecks {
                 .path(LoginActionsService.REQUIRED_ACTION);
 
         if (action != null) {
-            uriBuilder.queryParam("execution", action);
+            uriBuilder.queryParam(Constants.EXECUTION, action);
         }
+
+        ClientModel client = authSession.getClient();
+        uriBuilder.queryParam(Constants.CLIENT_ID, client.getClientId());
+
         URI redirect = uriBuilder.build(realm.getName());
         return Response.status(302).location(redirect).build();
     }
 
 
-    private URI getLastExecutionUrl(String flowPath, String executionId) {
+    private URI getLastExecutionUrl(String flowPath, String executionId, String clientId) {
         return new AuthenticationFlowURLHelper(session, realm, uriInfo)
-                .getLastExecutionUrl(flowPath, executionId);
+                .getLastExecutionUrl(flowPath, executionId, clientId);
     }
 
 

@@ -160,6 +160,12 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
         return root.hasAnyAdminRole();
     }
 
+    @Override
+    public void requireListTemplates() {
+        if (!canListTemplates()) {
+            throw new ForbiddenException();
+        }
+    }
     public boolean canManageClientDefault() {
         return root.hasOneAdminRole(AdminRoles.MANAGE_CLIENTS);
     }

@@ -28,6 +28,8 @@ public interface ClientPermissionEvaluator {
 
     void setPermissionsEnabled(ClientModel client, boolean enable);
 
+    void requireListTemplates();
+
     boolean canManage();
 
     void requireManage();

@@ -36,7 +36,7 @@
             </tr>
             <tr data-ng-hide="scopes.length == 0">
                 <th>{{:: 'name' | translate}}</th>
-                <th colspan="2">{{:: 'actions' | translate}}</th>
+                <th colspan="3">{{:: 'actions' | translate}}</th>
             </tr>
         </thead>
         <tfoot data-ng-show="scopes && (scopes.length >= query.max || query.first > 0)">
@@ -52,7 +52,7 @@
         </tfoot>
         <tbody>
             <tr ng-repeat-start="scope in scopes | filter:search | orderBy:'name'">
-                <td><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/scope/{{scope.id}}">{{scope.name}}</a></td>
+                <td width="70%"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/scope/{{scope.id}}">{{scope.name}}</a></td>
                 <td ng-if="!scope.details.loaded" class="kc-action-cell" data-ng-click="showDetails(scope);">
                     {{:: 'authz-show-details' | translate}}
                 </td>
@@ -62,9 +62,12 @@
                 <td class="kc-action-cell" ng-click="createPolicy(scope);">
                     {{:: 'authz-create-permission' | translate}}
                 </td>
+                <td class="kc-action-cell" ng-click="delete(scope);">
+                    {{:: 'delete' | translate}}
+                </td>
             </tr>
             <tr ng-if="scope.details && scope.details.loaded" ng-repeat-end="">
-                <td colspan="3">
+                <td colspan="4">
                     <div id="details">
                         <table class="table kc-authz-table-expanded table-striped">
                             <thead>

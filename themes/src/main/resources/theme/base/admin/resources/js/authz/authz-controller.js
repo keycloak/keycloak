@@ -2353,6 +2353,11 @@ module.controller('PolicyEvaluateCtrl', function($scope, $http, $route, $locatio
 
         $scope.authzRequest.userId = user.id;
     }
+
+    $scope.reset = function() {
+        $scope.authzRequest = angular.copy(authzRequest);
+        $scope.changed = false;
+    }
 });
 
 getManageClientId = function(realm) {

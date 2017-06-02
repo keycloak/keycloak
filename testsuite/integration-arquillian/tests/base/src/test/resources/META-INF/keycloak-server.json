@@ -133,5 +133,14 @@
             "enabled": true
         }
 
+    },
+
+    "login-protocol": {
+        "saml": {
+            "knownProtocols": [
+                "http=${auth.server.http.port}",
+                "https=${auth.server.https.port}"
+            ]
+        }
     }
 }

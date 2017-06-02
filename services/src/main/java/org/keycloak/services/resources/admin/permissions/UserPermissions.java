@@ -281,7 +281,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
 
     @Override
     public boolean canQuery() {
-        return canViewDefault();
+        return canView();
     }
 
     @Override
@@ -312,6 +312,10 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
             return canViewDefault();
         }
 
+        return hasViewPermission() || canManage();
+    }
+
+    public boolean hasViewPermission() {
         ResourceServer server = root.realmResourceServer();
         if (server == null) return canViewDefault();
 
@@ -346,7 +350,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
      */
     @Override
     public boolean canView(UserModel user) {
-        return canView() || canManage() || canViewByGroup(user) || canManageByGroup(user);
+        return canView() || canViewByGroup(user);
     }
 
     @Override
@@ -358,7 +362,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
 
     @Override
     public void requireView() {
-        if (!(canView() || canManage())) {
+        if (!(canView())) {
             throw new ForbiddenException();
         }
     }

@@ -17,6 +17,7 @@
 
 package org.keycloak.models;
 
+import org.keycloak.policy.PasswordPolicyConfigException;
 import org.keycloak.policy.PasswordPolicyProvider;
 
 import java.io.Serializable;
@@ -68,10 +69,17 @@ public class PasswordPolicy implements Serializable {
 
                 PasswordPolicyProvider provider = session.getProvider(PasswordPolicyProvider.class, key);
                 if (provider == null) {
-                    throw new IllegalArgumentException("Unsupported policy");
+                    throw new PasswordPolicyConfigException("Password policy not found");
                 }
 
-                policyConfig.put(key, provider.parseConfig(config));
+                Object o;
+                try {
+                    o = provider.parseConfig(config);
+                } catch (PasswordPolicyConfigException e) {
+                    throw new ModelException("Invalid config for " + key + ": " + e.getMessage());
+                }
+
+                policyConfig.put(key, o);
             }
         }
 

@@ -53,6 +53,7 @@ import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.util.TokenUtil;
 
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
@@ -340,10 +341,16 @@ public class TokenEndpoint {
 
         AccessToken token = tokenManager.createClientAccessToken(session, parseResult.getCode().getRequestedRoles(), realm, client, user, userSession, clientSession);
 
-        AccessTokenResponse res = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSession)
+        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSession)
                 .accessToken(token)
-                .generateIDToken()
-                .generateRefreshToken().build();
+                .generateRefreshToken();
+
+        String scopeParam = clientSession.getNote(OAuth2Constants.SCOPE);
+        if (TokenUtil.isOIDCRequest(scopeParam)) {
+            responseBuilder.generateIDToken();
+        }
+
+        AccessTokenResponse res = responseBuilder.build();
 
         event.success();
 
@@ -450,11 +457,16 @@ public class TokenEndpoint {
         UserSessionModel userSession = processor.getUserSession();
         updateUserSessionFromClientAuth(userSession);
 
-        AccessTokenResponse res = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSession)
+        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSession)
                 .generateAccessToken()
-                .generateRefreshToken()
-                .generateIDToken()
-                .build();
+                .generateRefreshToken();
+
+        String scopeParam = clientSession.getNote(OAuth2Constants.SCOPE);
+        if (TokenUtil.isOIDCRequest(scopeParam)) {
+            responseBuilder.generateIDToken();
+        }
+
+        AccessTokenResponse res = responseBuilder.build();
 
 
         event.success();
@@ -515,11 +527,16 @@ public class TokenEndpoint {
 
         updateUserSessionFromClientAuth(userSession);
 
-        AccessTokenResponse res = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSession)
+        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSession)
                 .generateAccessToken()
-                .generateRefreshToken()
-                .generateIDToken()
-                .build();
+                .generateRefreshToken();
+
+        String scopeParam = clientSession.getNote(OAuth2Constants.SCOPE);
+        if (TokenUtil.isOIDCRequest(scopeParam)) {
+            responseBuilder.generateIDToken();
+        }
+
+        AccessTokenResponse res = responseBuilder.build();
 
         event.success();
 

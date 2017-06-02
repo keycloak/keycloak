@@ -307,9 +307,7 @@ public class ClientResource {
 
     @Path("roles")
     public RoleContainerResource getRoleContainerResource() {
-        AdminPermissionEvaluator.RequirePermissionCheck manageCheck = () -> auth.clients().requireManage(client);
-        AdminPermissionEvaluator.RequirePermissionCheck viewCheck = () -> auth.clients().requireView(client);
-        return new RoleContainerResource(session, uriInfo, realm, auth, client, adminEvent, manageCheck, viewCheck);
+        return new RoleContainerResource(session, uriInfo, realm, auth, client, adminEvent);
     }
 
     /**

@@ -76,15 +76,13 @@ public class ClientTemplatesResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public List<ClientTemplateRepresentation> getClientTemplates() {
+        auth.clients().requireView();
 
         List<ClientTemplateRepresentation> rep = new ArrayList<>();
         List<ClientTemplateModel> clientModels = realm.getClientTemplates();
 
-        boolean view = auth.clients().canViewTemplates();
         for (ClientTemplateModel clientModel : clientModels) {
-            if (view || auth.clients().canView(clientModel)) {
-                rep.add(ModelToRepresentation.toRepresentation(clientModel));
-            }
+            rep.add(ModelToRepresentation.toRepresentation(clientModel));
         }
         return rep;
     }
@@ -122,6 +120,7 @@ public class ClientTemplatesResource {
      */
     @Path("{id}")
     public ClientTemplateResource getClient(final @PathParam("id") String id) {
+        auth.clients().requireListTemplates();
         ClientTemplateModel clientModel = realm.getClientTemplateById(id);
         if (clientModel == null) {
             throw new NotFoundException("Could not find client template");

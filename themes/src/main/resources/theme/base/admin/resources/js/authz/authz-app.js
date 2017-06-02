@@ -59,6 +59,23 @@ module.config(['$routeProvider', function ($routeProvider) {
             }
         },
         controller: 'ResourceServerDetailCtrl'
+    }).when('/realms/:realm/clients/:client/authz/resource-server/export-settings', {
+              templateUrl: resourceUrl + '/partials/authz/resource-server-export-settings.html',
+              resolve: {
+                  realm: function (RealmLoader) {
+                      return RealmLoader();
+                  },
+                  client : function(ClientLoader) {
+                      return ClientLoader();
+                  },
+                  clients: function (ClientListLoader) {
+                      return ClientListLoader();
+                  },
+                  serverInfo: function (ServerInfoLoader) {
+                      return ServerInfoLoader();
+                  }
+              },
+              controller: 'ResourceServerDetailCtrl'
     }).when('/realms/:realm/clients/:client/authz/resource-server/evaluate', {
         templateUrl: resourceUrl + '/partials/authz/policy/resource-server-policy-evaluate.html',
         resolve: {

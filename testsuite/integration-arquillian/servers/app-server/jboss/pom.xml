@@ -34,6 +34,8 @@
         <assembly.xml>${project.parent.basedir}/assembly.xml</assembly.xml>
         <app.server.jboss.home>${containers.home}/${app.server.jboss.unpacked.folder.name}</app.server.jboss.home>
         <security.xslt>security.xsl</security.xslt>
+        <oidc-adapter.version>${project.version}</oidc-adapter.version>
+        <saml-adapter.version>${project.version}</saml-adapter.version>
     </properties>
 
     <profiles>
@@ -92,7 +94,7 @@
                                         <artifactItem>
                                             <groupId>org.keycloak</groupId>
                                             <artifactId>${app.server.oidc.adapter.artifactId}</artifactId>
-                                            <version>${project.version}</version>
+                                            <version>${oidc-adapter.version}</version>
                                             <type>zip</type>
                                             <outputDirectory>${app.server.jboss.home}</outputDirectory>
                                         </artifactItem>
@@ -273,7 +275,7 @@
                                         <artifactItem>
                                             <groupId>org.keycloak</groupId>
                                             <artifactId>${app.server.saml.adapter.artifactId}</artifactId>
-                                            <version>${project.version}</version>
+                                            <version>${saml-adapter.version}</version>
                                             <type>zip</type>
                                             <outputDirectory>${app.server.jboss.home}</outputDirectory>
                                         </artifactItem>
@@ -456,6 +458,6 @@
                 <app.server.elytron.adapter.supported>true</app.server.elytron.adapter.supported>
             </properties>
         </profile>
-    </profiles>    
+    </profiles>
 
 </project>

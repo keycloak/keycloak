@@ -43,6 +43,14 @@ public class ErrorPage extends AbstractPage {
         backToApplicationLink.click();
     }
 
+    public String getBackToApplicationLink() {
+        if (backToApplicationLink == null) {
+            return null;
+        } else {
+            return backToApplicationLink.getAttribute("href");
+        }
+    }
+
     public boolean isCurrent() {
         return driver.getTitle() != null && driver.getTitle().equals("We're sorry...");
     }

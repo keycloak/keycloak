@@ -30,6 +30,7 @@ import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.provider.IdentityProviderMapper;
+import org.keycloak.broker.provider.util.IdentityBrokerState;
 import org.keycloak.broker.saml.SAMLEndpoint;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.ClientConnection;
@@ -56,6 +57,8 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
@@ -338,14 +341,14 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
     @POST
     @Path("/{provider_id}/login")
-    public Response performPostLogin(@PathParam("provider_id") String providerId, @QueryParam("code") String code) {
-        return performLogin(providerId, code);
+    public Response performPostLogin(@PathParam("provider_id") String providerId, @QueryParam("code") String code, @QueryParam("client_id") String clientId) {
+        return performLogin(providerId, code, clientId);
     }
 
     @GET
     @NoCache
     @Path("/{provider_id}/login")
-    public Response performLogin(@PathParam("provider_id") String providerId, @QueryParam("code") String code) {
+    public Response performLogin(@PathParam("provider_id") String providerId, @QueryParam("code") String code, @QueryParam("client_id") String clientId) {
         this.event.detail(Details.IDENTITY_PROVIDER, providerId);
 
         if (isDebugEnabled()) {
@@ -353,7 +356,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         }
 
         try {
-            ParsedCodeContext parsedCode = parseClientSessionCode(code);
+            ParsedCodeContext parsedCode = parseSessionCode(code, clientId);
             if (parsedCode.response != null) {
                 return parsedCode.response;
             }
@@ -479,7 +482,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         if (context.getContextData().get(SAMLEndpoint.SAML_IDP_INITIATED_CLIENT_ID) != null) {
             parsedCode = samlIdpInitiatedSSO((String) context.getContextData().get(SAMLEndpoint.SAML_IDP_INITIATED_CLIENT_ID));
         } else {
-            parsedCode = parseClientSessionCode(context.getCode());
+            parsedCode = parseEncodedSessionCode(context.getCode());
         }
         if (parsedCode.response != null) {
             return parsedCode.response;
@@ -549,6 +552,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             ctx.saveToAuthenticationSession(authenticationSession, AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE);
 
             URI redirect = LoginActionsService.firstBrokerLoginProcessor(uriInfo)
+                    .queryParam(Constants.CLIENT_ID, authenticationSession.getClient().getClientId())
                     .build(realmModel.getName());
             return Response.status(302).location(redirect).build();
 
@@ -584,8 +588,8 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     @GET
     @NoCache
     @Path("/after-first-broker-login")
-    public Response afterFirstBrokerLogin(@QueryParam("code") String code) {
-        ParsedCodeContext parsedCode = parseClientSessionCode(code);
+    public Response afterFirstBrokerLogin(@QueryParam("code") String code, @QueryParam("client_id") String clientId) {
+        ParsedCodeContext parsedCode = parseSessionCode(code, clientId);
         if (parsedCode.response != null) {
             return parsedCode.response;
         }
@@ -701,6 +705,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             authSession.setAuthNote(PostBrokerLoginConstants.PBL_AFTER_FIRST_BROKER_LOGIN, String.valueOf(wasFirstBrokerLogin));
 
             URI redirect = LoginActionsService.postBrokerLoginProcessor(uriInfo)
+                    .queryParam(Constants.CLIENT_ID, authSession.getClient().getClientId())
                     .build(realmModel.getName());
             return Response.status(302).location(redirect).build();
         }
@@ -711,8 +716,8 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     @GET
     @NoCache
     @Path("/after-post-broker-login")
-    public Response afterPostBrokerLoginFlow(@QueryParam("code") String code) {
-        ParsedCodeContext parsedCode = parseClientSessionCode(code);
+    public Response afterPostBrokerLoginFlow(@QueryParam("code") String code, @QueryParam("client_id") String clientId) {
+        ParsedCodeContext parsedCode = parseSessionCode(code, clientId);
         if (parsedCode.response != null) {
             return parsedCode.response;
         }
@@ -804,7 +809,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
     @Override
     public Response cancelled(String code) {
-        ParsedCodeContext parsedCode = parseClientSessionCode(code);
+        ParsedCodeContext parsedCode = parseEncodedSessionCode(code);
         if (parsedCode.response != null) {
             return parsedCode.response;
         }
@@ -820,7 +825,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
     @Override
     public Response error(String code, String message) {
-        ParsedCodeContext parsedCode = parseClientSessionCode(code);
+        ParsedCodeContext parsedCode = parseEncodedSessionCode(code);
         if (parsedCode.response != null) {
             return parsedCode.response;
         }
@@ -960,14 +965,21 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         }
     }
 
-    private ParsedCodeContext parseClientSessionCode(String code) {
-        if (code == null) {
-            logger.debugf("Invalid request. Authorization code was null");
+    private ParsedCodeContext parseEncodedSessionCode(String encodedCode) {
+        IdentityBrokerState state = IdentityBrokerState.encoded(encodedCode);
+        String code = state.getDecodedState();
+        String clientId = state.getClientId();
+        return parseSessionCode(code, clientId);
+    }
+
+    private ParsedCodeContext parseSessionCode(String code, String clientId) {
+        if (code == null || clientId == null) {
+            logger.debugf("Invalid request. Authorization code or clientId was null. Code=" + code + ", clientId=" + clientId);
             Response staleCodeError = redirectToErrorPage(Messages.INVALID_REQUEST);
             return ParsedCodeContext.response(staleCodeError);
         }
 
-        SessionCodeChecks checks = new SessionCodeChecks(realmModel, uriInfo, clientConnection, session, event, code, null, LoginActionsService.AUTHENTICATE_PATH);
+        SessionCodeChecks checks = new SessionCodeChecks(realmModel, uriInfo, clientConnection, session, event, code, null, clientId, LoginActionsService.AUTHENTICATE_PATH);
         checks.initialVerify();
         if (!checks.verifyActiveAndValidAction(AuthenticationSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
 
@@ -1017,7 +1029,8 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             return ParsedCodeContext.response(redirectToErrorPage(Messages.CLIENT_NOT_FOUND));
         }
 
-        SamlService samlService = new SamlService(realmModel, event);
+        LoginProtocolFactory factory = (LoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, SamlProtocol.LOGIN_PROTOCOL);
+        SamlService samlService = (SamlService) factory.createProtocolEndpoint(realmModel, event);
         ResteasyProviderFactory.getInstance().injectProperties(samlService);
         AuthenticationSessionModel authSession = samlService.getOrCreateLoginSessionForIdpInitiatedSso(session, realmModel, oClient.get(), null);
 
@@ -1041,14 +1054,15 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
     private AuthenticationRequest createAuthenticationRequest(String providerId, ClientSessionCode<AuthenticationSessionModel> clientSessionCode) {
         AuthenticationSessionModel authSession = null;
-        String relayState = null;
+        IdentityBrokerState encodedState = null;
 
         if (clientSessionCode != null) {
             authSession = clientSessionCode.getClientSession();
-            relayState = clientSessionCode.getCode();
+            String relayState = clientSessionCode.getCode();
+            encodedState = IdentityBrokerState.decoded(relayState, authSession.getClient().getClientId());
         }
 
-        return new AuthenticationRequest(this.session, this.realmModel, authSession, this.request, this.uriInfo, relayState, getRedirectUri(providerId));
+        return new AuthenticationRequest(this.session, this.realmModel, authSession, this.request, this.uriInfo, encodedState, getRedirectUri(providerId));
     }
 
     private String getRedirectUri(String providerId) {

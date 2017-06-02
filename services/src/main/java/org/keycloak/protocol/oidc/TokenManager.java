@@ -250,11 +250,16 @@ public class TokenManager {
         validation.clientSession.setTimestamp(currentTime);
         validation.userSession.setLastSessionRefresh(currentTime);
 
-        AccessTokenResponse res = responseBuilder(realm, authorizedClient, event, session, validation.userSession, validation.clientSession)
+        AccessTokenResponseBuilder responseBuilder = responseBuilder(realm, authorizedClient, event, session, validation.userSession, validation.clientSession)
                 .accessToken(validation.newToken)
-                .generateIDToken()
-                .generateRefreshToken()
-                .build();
+                .generateRefreshToken();
+
+        String scopeParam = validation.clientSession.getNote(OAuth2Constants.SCOPE);
+        if (TokenUtil.isOIDCRequest(scopeParam)) {
+            responseBuilder.generateIDToken();
+        }
+
+        AccessTokenResponse res = responseBuilder.build();
 
         return new RefreshResult(res, TokenUtil.TOKEN_TYPE_OFFLINE.equals(refreshToken.getType()));
     }

@@ -75,12 +75,16 @@ public class PolicyService {
         PolicyProviderFactory providerFactory = getPolicyProviderFactory(type);
 
         if (providerFactory != null) {
-            return new PolicyTypeService(type, resourceServer, authorization, auth);
+            return doCreatePolicyTypeResource(type);
         }
 
         Policy policy = authorization.getStoreFactory().getPolicyStore().findById(type, resourceServer.getId());
 
         return doCreatePolicyResource(policy);
+    }
+
+    protected PolicyTypeService doCreatePolicyTypeResource(String type) {
+        return new PolicyTypeService(type, resourceServer, authorization, auth);
     }
 
     protected Object doCreatePolicyResource(Policy policy) {

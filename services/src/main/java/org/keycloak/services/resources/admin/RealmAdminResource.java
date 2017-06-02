@@ -39,6 +39,8 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.exportimport.ClientDescriptionConverter;
 import org.keycloak.exportimport.ClientDescriptionConverterFactory;
+import org.keycloak.exportimport.util.ExportOptions;
+import org.keycloak.exportimport.util.ExportUtils;
 import org.keycloak.keys.PublicKeyStorageProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -101,6 +103,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.PatternSyntaxException;
+
+import static org.keycloak.models.utils.StripSecretsUtils.stripForExport;
 
 /**
  * Base resource class for the admin REST api of one realm
@@ -234,9 +238,7 @@ public class RealmAdminResource {
      */
     @Path("roles")
     public RoleContainerResource getRoleContainerResource() {
-        AdminPermissionEvaluator.RequirePermissionCheck manageCheck = () -> auth.realm().requireManageRealm();
-        AdminPermissionEvaluator.RequirePermissionCheck viewCheck = () -> auth.realm().requireViewRealm();
-        return new RoleContainerResource(session, uriInfo, realm, auth, realm, adminEvent, manageCheck, viewCheck);
+        return new RoleContainerResource(session, uriInfo, realm, auth, realm, adminEvent);
     }
 
     /**
@@ -326,8 +328,6 @@ public class RealmAdminResource {
             }
             
             return Response.noContent().build();
-        } catch (PatternSyntaxException e) {
-            return ErrorResponse.error("Specified regex pattern(s) is invalid.", Response.Status.BAD_REQUEST);
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("Realm with same name exists");
         } catch (ModelException e) {
@@ -901,6 +901,27 @@ public class RealmAdminResource {
 
         PartialImportManager partialImport = new PartialImportManager(rep, session, realm, adminEvent);
         return partialImport.saveResources();
+    }
+
+    /**
+     * Partial export of existing realm into a JSON file.
+     *
+     * @param exportGroupsAndRoles
+     * @param exportClients
+     * @return
+     */
+    @Path("partial-export")
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    public RealmRepresentation partialExport(@QueryParam("exportGroupsAndRoles") Boolean exportGroupsAndRoles,
+                                                     @QueryParam("exportClients") Boolean exportClients) {
+
+        boolean groupsAndRolesExported = exportGroupsAndRoles != null && exportGroupsAndRoles;
+        boolean clientsExported = exportClients != null && exportClients;
+
+        ExportOptions options = new ExportOptions(false, clientsExported, groupsAndRolesExported);
+        RealmRepresentation rep = ExportUtils.exportRealm(session, realm, options);
+        return stripForExport(session, rep);
     }
 
     /**

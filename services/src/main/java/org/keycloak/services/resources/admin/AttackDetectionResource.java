@@ -18,6 +18,7 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -83,7 +84,11 @@ public class AttackDetectionResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, Object> bruteForceUserStatus(@PathParam("userId") String userId) {
         UserModel user = session.users().getUserById(userId, realm);
-        auth.users().requireView(user);
+        if (user == null) {
+            auth.users().requireView();
+        } else {
+            auth.users().requireView(user);
+        }
 
         Map<String, Object> data = new HashMap<>();
         data.put("disabled", false);
@@ -114,10 +119,14 @@ public class AttackDetectionResource {
     @Path("brute-force/users/{userId}")
     @DELETE
     public void clearBruteForceForUser(@PathParam("userId") String userId) {
+        UserModel user = session.users().getUserById(userId, realm);
+        if (user == null) {
+            auth.users().requireManage();
+        } else {
+            auth.users().requireManage(user);
+        }
         UserLoginFailureModel model = session.sessions().getUserLoginFailure(realm, userId);
         if (model != null) {
-            UserModel user = session.users().getUserById(userId, realm);
-            auth.users().requireView(user);
             session.sessions().removeUserLoginFailure(realm, userId);
             adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
         }

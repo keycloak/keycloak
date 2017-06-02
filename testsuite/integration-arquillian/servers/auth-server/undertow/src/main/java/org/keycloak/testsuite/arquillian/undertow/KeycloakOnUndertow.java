@@ -233,15 +233,17 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
         Reflections.setAccessible(containerField);
         ServletContainer container = (ServletContainer) Reflections.getFieldValue(containerField, undertow);
 
-        DeploymentManager deployment = container.getDeployment(archive.getName());
-        if (deployment != null) {
+        DeploymentManager deploymentMgr = container.getDeployment(archive.getName());
+        if (deploymentMgr != null) {
+            DeploymentInfo deployment = deploymentMgr.getDeployment().getDeploymentInfo();
+
             try {
-                deployment.stop();
+                deploymentMgr.stop();
             } catch (ServletException se) {
                 throw new DeploymentException(se.getMessage(), se);
             }
 
-            deployment.undeploy();
+            deploymentMgr.undeploy();
 
             Field rootField = Reflections.findDeclaredField(UndertowJaxrsServer.class, "root");
             Reflections.setAccessible(rootField);
@@ -249,6 +251,8 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
 
             String path = deployedArchivesToContextPath.get(archive.getName());
             root.removePrefixPath(path);
+
+            container.removeDeployment(deployment);
         } else {
             log.warnf("Deployment '%s' not found", archive.getName());
         }

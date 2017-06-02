@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AddressMapper;
 import org.keycloak.representations.AccessToken;
@@ -148,7 +149,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         }
 
         {
-            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+            OAuthClient.AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
 
             IDToken idToken = oauth.verifyIDToken(response.getIdToken());
             assertNotNull(idToken.getAddress());
@@ -197,6 +198,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             assertTrue(accessToken.getRealmAccess().getRoles().contains("realm-user"));
             Assert.assertFalse(accessToken.getResourceAccess("test-app").getRoles().contains("customer-user"));
             assertTrue(accessToken.getResourceAccess("app").getRoles().contains("hardcoded"));
+
+            oauth.openLogout();
         }
 
         // undo mappers
@@ -224,13 +227,15 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
 
         {
-            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+            OAuthClient.AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
             IDToken idToken = oauth.verifyIDToken(response.getIdToken());
             assertNull(idToken.getAddress());
             assertNull(idToken.getOtherClaims().get("home_phone"));
             assertNull(idToken.getOtherClaims().get("hard"));
             assertNull(idToken.getOtherClaims().get("nested"));
             assertNull(idToken.getOtherClaims().get("department"));
+
+            oauth.openLogout();
         }
 
 
@@ -248,7 +253,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         protocolMappers.createMapper(Arrays.asList(realmMapper, clientMapper));
 
         // Login user
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        OAuthClient.AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
         IDToken idToken = oauth.verifyIDToken(response.getIdToken());
 
         // Verify attribute is filled
@@ -257,11 +262,11 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         String realmRoleMappings = (String) roleMappings.get("realm");
         String testAppMappings = (String) roleMappings.get("test-app");
         assertRolesString(realmRoleMappings,
-          "pref.user",                      // from direct assignment in user definition
-          "pref.offline_access"             // from direct assignment in user definition
+                "pref.user",                      // from direct assignment in user definition
+                "pref.offline_access"             // from direct assignment in user definition
         );
         assertRolesString(testAppMappings,
-          "customer-user"                   // from direct assignment in user definition
+                "customer-user"                   // from direct assignment in user definition
         );
 
         // Revert
@@ -282,7 +287,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         protocolMappers.createMapper(Arrays.asList(realmMapper, clientMapper));
 
         // Login user
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        OAuthClient.AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
         IDToken idToken = oauth.verifyIDToken(response.getIdToken());
 
         // Verify attribute is filled
@@ -294,11 +299,11 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         List<String> realmRoleMappings = (List<String>) roleMappings.get("realm");
         List<String> testAppMappings = (List<String>) roleMappings.get("test-app");
         assertRoles(realmRoleMappings,
-          "pref.user",                      // from direct assignment in user definition
-          "pref.offline_access"             // from direct assignment in user definition
+                "pref.user",                      // from direct assignment in user definition
+                "pref.offline_access"             // from direct assignment in user definition
         );
         assertRoles(testAppMappings,
-          "customer-user"                   // from direct assignment in user definition
+                "customer-user"                   // from direct assignment in user definition
         );
 
         // Revert
@@ -316,7 +321,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         protocolMappers.createMapper(Arrays.asList(realmMapper, clientMapper));
 
         // Login user
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "rich.roles@redhat.com", "password");
+        OAuthClient.AccessTokenResponse response = browserLogin("password", "rich.roles@redhat.com", "password");
         IDToken idToken = oauth.verifyIDToken(response.getIdToken());
 
         // Verify attribute is filled
@@ -354,8 +359,15 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         // Login user
         ClientManager.realm(adminClient.realm("test")).clientId(clientId).directAccessGrant(true);
         oauth.clientId(clientId);
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "rich.roles@redhat.com", "password");
+
+        String oldRedirectUri = oauth.getRedirectUri();
+        oauth.redirectUri(UriUtils.getOrigin(oldRedirectUri) + "/test-app-authz");
+
+        OAuthClient.AccessTokenResponse response = browserLogin("secret", "rich.roles@redhat.com", "password");
         IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+
+        // revert redirect_uri
+        oauth.redirectUri(oldRedirectUri);
 
         // Verify attribute is filled
         Map<String, Object> roleMappings = (Map<String, Object>)idToken.getOtherClaims().get("roles-custom");
@@ -387,7 +399,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         // Login user
         ClientManager.realm(adminClient.realm("test")).clientId(clientId).directAccessGrant(true);
         oauth.clientId(clientId);
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "rich.roles@redhat.com", "password");
+        OAuthClient.AccessTokenResponse response = browserLogin("password", "rich.roles@redhat.com", "password");
         IDToken idToken = oauth.verifyIDToken(response.getIdToken());
 
         // Verify attribute is filled
@@ -419,7 +431,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         // Login user
         ClientManager.realm(adminClient.realm("test")).clientId(clientId).directAccessGrant(true);
         oauth.clientId(clientId);
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "rich.roles@redhat.com", "password");
+        OAuthClient.AccessTokenResponse response = browserLogin("password", "rich.roles@redhat.com", "password");
         IDToken idToken = oauth.verifyIDToken(response.getIdToken());
 
         // Verify attribute is filled
@@ -466,6 +478,11 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         rep.setConsentRequired(true);
         rep.setConsentText("Test Consent Text");
         return rep;
+    }
+
+    private OAuthClient.AccessTokenResponse browserLogin(String clientSecret, String username, String password) {
+        OAuthClient.AuthorizationEndpointResponse authzEndpointResponse = oauth.doLogin(username, password);
+        return oauth.doAccessTokenRequest(authzEndpointResponse.getCode(), clientSecret);
     }
 
 }

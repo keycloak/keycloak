@@ -64,7 +64,7 @@
         <h2.version>1.3.173</h2.version>
         <hibernate.entitymanager.version>5.0.7.Final</hibernate.entitymanager.version>
         <hibernate.javax.persistence.version>1.0.0.Final</hibernate.javax.persistence.version>
-        <infinispan.version>8.1.0.Final</infinispan.version>
+        <infinispan.version>8.2.6.Final</infinispan.version>
         <jackson.version>2.5.4</jackson.version>
         <javax.mail.version>1.5.5</javax.mail.version>
         <jboss.logging.version>3.3.0.Final</jboss.logging.version>
@@ -79,7 +79,7 @@
         <sun.istack.version>2.21</sun.istack.version>
         <sun.jaxb.version>2.2.11</sun.jaxb.version>
         <sun.xsom.version>20140925</sun.xsom.version>
-        <undertow.version>1.3.15.Final</undertow.version>
+        <undertow.version>1.4.11.Final</undertow.version>
         <xmlsec.version>2.0.5</xmlsec.version>
 
         <!-- Authorization Drools Policy Provider -->

@@ -65,6 +65,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -238,10 +239,7 @@ public class AuthorizationTokenService {
 
                     if ("$KC_SCOPE_PERMISSION".equals(key)) {
                         ScopeStore scopeStore = authorization.getStoreFactory().getScopeStore();
-                        List<Scope> scopes = entry.getValue().stream().map(scopeName -> {
-                            Scope byName = scopeStore.findByName(scopeName, resourceServer.getId());
-                            return byName;
-                        }).collect(Collectors.toList());
+                        List<Scope> scopes = entry.getValue().stream().map(scopeName -> scopeStore.findByName(scopeName, resourceServer.getId())).filter(scope -> Objects.nonNull(scope)).collect(Collectors.toList());
                         return Arrays.asList(new ResourcePermission(null, scopes, resourceServer)).stream();
                     } else {
                         Resource entryResource = storeFactory.getResourceStore().findById(key, resourceServer.getId());

@@ -2712,3 +2712,40 @@ module.controller('RealmImportCtrl', function($scope, realm, $route,
     }
 
 });
+
+module.controller('RealmExportCtrl', function($scope, realm, $http,
+                                              $httpParamSerializer, Notifications, Dialog) {
+    $scope.realm = realm;
+    $scope.exportGroupsAndRoles = false;
+    $scope.exportClients = false;
+
+    $scope.export = function() {
+        if ($scope.exportGroupsAndRoles || $scope.exportClients) {
+            Dialog.confirm('Export', 'This operation may make server unresponsive for a while.\n\nAre you sure you want to proceed?', download);
+        } else {
+            download();
+        }
+    }
+
+    function download() {
+        var exportUrl = authUrl + '/admin/realms/' + realm.realm + '/partial-export';
+        var params = {};
+        if ($scope.exportGroupsAndRoles) {
+            params['exportGroupsAndRoles'] = true;
+        }
+        if ($scope.exportClients) {
+            params['exportClients'] = true;
+        }
+        if (Object.keys(params).length > 0) {
+            exportUrl += '?' + $httpParamSerializer(params);
+        }
+        $http.post(exportUrl)
+            .success(function(data, status, headers) {
+                var download = angular.fromJson(data);
+                download = angular.toJson(download, true);
+                saveAs(new Blob([download], { type: 'application/json' }), 'realm-export.json');
+            }).error(function() {
+                Notifications.error("Sorry, something went wrong.");
+            });
+    }
+});

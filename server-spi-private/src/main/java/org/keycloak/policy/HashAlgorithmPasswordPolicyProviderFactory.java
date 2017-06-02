@@ -91,7 +91,7 @@ public class HashAlgorithmPasswordPolicyProviderFactory implements PasswordPolic
         String providerId = value != null && value.length() > 0 ? value : PasswordPolicy.HASH_ALGORITHM_DEFAULT;
         PasswordHashProvider provider = session.getProvider(PasswordHashProvider.class, providerId);
         if (provider == null) {
-            throw new ModelException("Password hashing provider not found");
+            throw new PasswordPolicyConfigException("Password hashing provider not found");
         }
         return providerId;
     }

@@ -110,6 +110,11 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
         return client;
     }
 
+    @Override
+    public AuthorizationProvider authz() {
+        return authz;
+    }
+
 
 
     public boolean hasAnyAdminRole() {

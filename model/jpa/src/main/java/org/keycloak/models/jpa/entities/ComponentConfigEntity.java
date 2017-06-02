@@ -33,12 +33,6 @@ import javax.persistence.Table;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@NamedQueries({
-        @NamedQuery(name="getComponentConfig", query="select attr from ComponentConfigEntity attr where attr.component = :component"),
-        @NamedQuery(name="deleteComponentConfigByComponent", query="delete from  ComponentConfigEntity attr where attr.component = :component"),
-        @NamedQuery(name="deleteComponentConfigByRealm", query="delete from  ComponentConfigEntity attr where attr.component IN (select u from ComponentEntity u where u.realm=:realm)"),
-        @NamedQuery(name="deleteComponentConfigByParent", query="delete from  ComponentConfigEntity attr where attr.component IN (select u from ComponentEntity u where u.parentId=:parentId)"),
-})
 @Table(name="COMPONENT_CONFIG")
 @Entity
 public class ComponentConfigEntity {

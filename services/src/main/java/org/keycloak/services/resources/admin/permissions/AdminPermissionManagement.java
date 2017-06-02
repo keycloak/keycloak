@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin.permissions;
 
+import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.ResourceServer;
 
 /**
@@ -25,6 +26,8 @@ import org.keycloak.authorization.model.ResourceServer;
 public interface AdminPermissionManagement {
     public static final String MANAGE_SCOPE = "manage";
     public static final String VIEW_SCOPE = "view";
+
+    AuthorizationProvider authz();
 
     RolePermissionManagement roles();
     UserPermissionManagement users();

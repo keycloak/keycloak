@@ -56,6 +56,7 @@
                         || path[2] == 'events-settings'
                         || path[2] == 'admin-events') && 'active'"><a href="#/realms/{{realm.realm}}/events"><i class="fa fa-calendar"></i> {{:: 'events' | translate}}</a></li>
             <li data-ng-show="access.manageRealm" ng-class="(path[2] =='partial-import') && 'active'"><a href="#/realms/{{realm.realm}}/partial-import"><span class="pficon pficon-import"></span> {{:: 'import' | translate}}</a></li>
+            <li data-ng-show="access.manageRealm" ng-class="(path[2] =='partial-export') && 'active'"><a href="#/realms/{{realm.realm}}/partial-export"><span class="pficon pficon-export"></span> {{:: 'export' | translate}}</a></li>
         </ul>
     </div>
 </div>

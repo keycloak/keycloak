@@ -62,12 +62,12 @@
                 <th>{{:: 'name' | translate}}</th>
                 <th>{{:: 'description' | translate}}</th>
                 <th>{{:: 'type' | translate}}</th>
-                <th>{{:: 'actions' | translate}}</th>
+                <th colspan="3">{{:: 'actions' | translate}}</th>
             </tr>
         </thead>
         <tfoot data-ng-show="policies && (policies.length >= query.max || query.first > 0)">
         <tr>
-            <td colspan="7">
+            <td colspan="8">
                 <div class="table-nav">
                     <button data-ng-click="firstPage()" class="first" ng-disabled="query.first == 0">{{:: 'first-page' | translate}}</button>
                     <button data-ng-click="previousPage()" class="prev" ng-disabled="query.first == 0">{{:: 'previous-page' | translate}}</button>
@@ -87,9 +87,12 @@
                 <td ng-if="policy.details.loaded" class="kc-action-cell" data-ng-click="showDetails(policy);">
                     {{:: 'authz-hide-details' | translate}}
                 </td>
+                <td class="kc-action-cell" ng-click="delete(policy);">
+                    {{:: 'delete' | translate}}
+                </td>
             </tr>
             <tr ng-if="policy.details && policy.details.loaded" ng-repeat-end="">
-                <td colspan="4">
+                <td colspan="5">
                     <div id="details">
                         <table class="table kc-authz-table-expanded table-striped">
                             <thead>

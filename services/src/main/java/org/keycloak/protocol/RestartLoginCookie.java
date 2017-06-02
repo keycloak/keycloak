@@ -114,12 +114,12 @@ public class RestartLoginCookie {
 
     public RestartLoginCookie() {
     }
-    public RestartLoginCookie(AuthenticationSessionModel clientSession) {
-        this.action = clientSession.getAction();
-        this.clientId = clientSession.getClient().getClientId();
-        this.authMethod = clientSession.getProtocol();
-        this.redirectUri = clientSession.getRedirectUri();
-        for (Map.Entry<String, String> entry : clientSession.getClientNotes().entrySet()) {
+    public RestartLoginCookie(AuthenticationSessionModel authSession) {
+        this.action = authSession.getAction();
+        this.clientId = authSession.getClient().getClientId();
+        this.authMethod = authSession.getProtocol();
+        this.redirectUri = authSession.getRedirectUri();
+        for (Map.Entry<String, String> entry : authSession.getClientNotes().entrySet()) {
             notes.put(entry.getKey(), entry.getValue());
         }
     }

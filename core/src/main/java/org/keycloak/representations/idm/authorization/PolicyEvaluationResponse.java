@@ -19,13 +19,11 @@
 package org.keycloak.representations.idm.authorization;
 
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.idm.authorization.DecisionEffect;
-import org.keycloak.representations.idm.authorization.PolicyRepresentation;
-import org.keycloak.representations.idm.authorization.ResourceRepresentation;
-import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -123,7 +121,7 @@ public class PolicyEvaluationResponse {
         private PolicyRepresentation policy;
         private DecisionEffect status;
         private List<PolicyResultRepresentation> associatedPolicies;
-        private List<ScopeRepresentation> scopes = new ArrayList<>();
+        private Set<String> scopes = new HashSet<>();
 
         public PolicyRepresentation getPolicy() {
             return policy;
@@ -162,11 +160,11 @@ public class PolicyEvaluationResponse {
             return this.policy.equals(policy.getPolicy());
         }
 
-        public void setScopes(List<ScopeRepresentation> scopes) {
+        public void setScopes(Set<String> scopes) {
             this.scopes = scopes;
         }
 
-        public List<ScopeRepresentation> getScopes() {
+        public Set<String> getScopes() {
             return scopes;
         }
     }

@@ -203,6 +203,8 @@ public class ClientsResource {
      */
     @Path("{id}")
     public ClientResource getClient(final @PathParam("id") String id) {
+        auth.clients().requireList();
+
         ClientModel clientModel = realm.getClientById(id);
         if (clientModel == null) {
             throw new NotFoundException("Could not find client");

@@ -44,4 +44,13 @@ public interface RolePermissionEvaluator {
 
     boolean canMapComposite(RoleModel role);
     void requireMapComposite(RoleModel role);
+
+    boolean canManage(RoleContainerModel container);
+
+    void requireManage(RoleContainerModel container);
+
+    boolean canView(RoleContainerModel container);
+
+    void requireView(RoleContainerModel container);
+
 }

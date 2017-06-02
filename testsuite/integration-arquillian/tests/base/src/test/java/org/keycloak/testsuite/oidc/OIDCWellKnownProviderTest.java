@@ -121,7 +121,8 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
 
     @Test
     public void testIssuerMatches() throws Exception {
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        OAuthClient.AuthorizationEndpointResponse authzResp = oauth.doLogin("test-user@localhost", "password");
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(authzResp.getCode(), "password");
         Assert.assertEquals(200, response.getStatusCode());
         IDToken idToken = oauth.verifyIDToken(response.getIdToken());
 

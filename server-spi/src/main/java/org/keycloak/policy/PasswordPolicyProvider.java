@@ -33,4 +33,12 @@ public interface PasswordPolicyProvider extends Provider {
     PolicyError validate(String user, String password);
     Object parseConfig(String value);
 
+    default Integer parseInteger(String value, Integer defaultValue) {
+        try {
+            return value != null ? Integer.parseInt(value) : defaultValue;
+        } catch (NumberFormatException e) {
+            throw new PasswordPolicyConfigException("Not a valid number");
+        }
+    }
+
 }

@@ -27,8 +27,6 @@ import org.keycloak.representations.idm.authorization.Logic;
 
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -49,7 +47,7 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
     @Override
     public Policy getDelegateForUpdate() {
         if (updated == null) {
-            cacheSession.registerPolicyInvalidation(cached.getId(), cached.getName(), cached.getResourceServerId());
+            cacheSession.registerPolicyInvalidation(cached.getId(), cached.getName(), cached.getResourcesIds(), cached.getResourceServerId());
             updated = cacheSession.getPolicyStoreDelegate().findById(cached.getId(), cached.getResourceServerId());
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
@@ -98,6 +96,7 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
     @Override
     public void setName(String name) {
         getDelegateForUpdate();
+        cacheSession.registerPolicyInvalidation(cached.getId(), name, cached.getResourcesIds(), cached.getResourceServerId());
         updated.setName(name);
 
     }
@@ -208,7 +207,6 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
     public void addScope(Scope scope) {
         getDelegateForUpdate();
         updated.addScope(scope);
-
     }
 
     @Override
@@ -235,6 +233,9 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
     @Override
     public void addResource(Resource resource) {
         getDelegateForUpdate();
+        HashSet<String> resources = new HashSet<>();
+        resources.add(resource.getId());
+        cacheSession.registerPolicyInvalidation(cached.getId(), cached.getName(), resources, cached.getResourceServerId());
         updated.addResource(resource);
 
     }
@@ -242,6 +243,9 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
     @Override
     public void removeResource(Resource resource) {
         getDelegateForUpdate();
+        HashSet<String> resources = new HashSet<>();
+        resources.add(resource.getId());
+        cacheSession.registerPolicyInvalidation(cached.getId(), cached.getName(), resources, cached.getResourceServerId());
         updated.removeResource(resource);
 
     }

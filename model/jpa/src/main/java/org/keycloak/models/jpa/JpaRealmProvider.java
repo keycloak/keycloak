@@ -43,6 +43,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -133,14 +134,6 @@ public class JpaRealmProvider implements RealmProvider {
 
         int num = em.createNamedQuery("deleteGroupRoleMappingsByRealm")
                 .setParameter("realm", realm).executeUpdate();
-        num = em.createNamedQuery("deleteGroupAttributesByRealm")
-                .setParameter("realm", realm).executeUpdate();
-        num = em.createNamedQuery("deleteGroupsByRealm")
-                .setParameter("realm", realm).executeUpdate();
-        num = em.createNamedQuery("deleteComponentConfigByRealm")
-                .setParameter("realm", realm).executeUpdate();
-        num = em.createNamedQuery("deleteComponentByRealm")
-                .setParameter("realm", realm).executeUpdate();
 
         TypedQuery<String> query = em.createNamedQuery("getClientIdsByRealm", String.class);
         query.setParameter("realm", realm.getId());
@@ -228,7 +221,6 @@ public class JpaRealmProvider implements RealmProvider {
         roleEntity.setClientRole(true);
         roleEntity.setRealmId(realm.getId());
         em.persist(roleEntity);
-        em.flush();
         RoleAdapter adapter = new RoleAdapter(session, realm, em, roleEntity);
         return adapter;
     }
@@ -281,10 +273,11 @@ public class JpaRealmProvider implements RealmProvider {
         RoleEntity roleEntity = em.getReference(RoleEntity.class, role.getId());
         String compositeRoleTable = JpaUtils.getTableNameForNativeQuery("COMPOSITE_ROLE", em);
         em.createNativeQuery("delete from " + compositeRoleTable + " where CHILD_ROLE = :role").setParameter("role", roleEntity).executeUpdate();
-        em.createNamedQuery("deleteScopeMappingByRole").setParameter("role", roleEntity).executeUpdate();
+        realm.getClients().forEach(c -> c.deleteScopeMapping(role));
         em.createNamedQuery("deleteTemplateScopeMappingByRole").setParameter("role", roleEntity).executeUpdate();
         int val = em.createNamedQuery("deleteGroupRoleMappingsByRole").setParameter("roleId", roleEntity.getId()).executeUpdate();
 
+        em.flush();
         em.remove(roleEntity);
 
         session.getKeycloakSessionFactory().publish(new RoleContainerModel.RoleRemovedEvent() {
@@ -337,27 +330,23 @@ public class JpaRealmProvider implements RealmProvider {
 
     @Override
     public List<GroupModel> getGroups(RealmModel realm) {
-        List<String> groups =  em.createNamedQuery("getAllGroupIdsByRealm", String.class)
-                .setParameter("realm", realm.getId()).getResultList();
-        if (groups == null) return Collections.EMPTY_LIST;
-        List<GroupModel> list = new LinkedList<>();
-        for (String id : groups) {
-            list.add(session.realms().getGroupById(id, realm));
-        }
-        return Collections.unmodifiableList(list);
+        RealmEntity ref = em.getReference(RealmEntity.class, realm.getId());
+
+        return ref.getGroups().stream()
+                .map(g -> session.realms().getGroupById(g.getId(), realm))
+                .collect(Collectors.collectingAndThen(
+                        Collectors.toList(), Collections::unmodifiableList));
     }
 
     @Override
     public List<GroupModel> getTopLevelGroups(RealmModel realm) {
-        List<String> groups =  em.createNamedQuery("getTopLevelGroupIds", String.class)
-                .setParameter("realm", realm.getId())
-                .getResultList();
-        if (groups == null) return Collections.EMPTY_LIST;
-        List<GroupModel> list = new LinkedList<>();
-        for (String id : groups) {
-            list.add(session.realms().getGroupById(id, realm));
-        }
-        return Collections.unmodifiableList(list);
+        RealmEntity ref = em.getReference(RealmEntity.class, realm.getId());
+
+        return ref.getGroups().stream()
+                .filter(g -> g.getParent() == null)
+                .map(g -> session.realms().getGroupById(g.getId(), realm))
+                .collect(Collectors.collectingAndThen(
+                        Collectors.toList(), Collections::unmodifiableList));
     }
 
     @Override
@@ -377,9 +366,11 @@ public class JpaRealmProvider implements RealmProvider {
         if (!groupEntity.getRealm().getId().equals(realm.getId())) {
             return false;
         }
-        // I don't think we need this as GroupEntity has cascade removal.  It causes batch errors if you turn this on.
-        // em.createNamedQuery("deleteGroupAttributesByGroup").setParameter("group", groupEntity).executeUpdate();
         em.createNamedQuery("deleteGroupRoleMappingsByGroup").setParameter("group", groupEntity).executeUpdate();
+
+        RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
+        realmEntity.getGroups().remove(groupEntity);
+
         em.remove(groupEntity);
         return true;
 
@@ -401,6 +392,7 @@ public class JpaRealmProvider implements RealmProvider {
         RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
         groupEntity.setRealm(realmEntity);
         em.persist(groupEntity);
+        realmEntity.getGroups().add(groupEntity);
 
         GroupAdapter adapter = new GroupAdapter(realm, em, groupEntity);
         return adapter;
@@ -493,9 +485,6 @@ public class JpaRealmProvider implements RealmProvider {
         }
 
         ClientEntity clientEntity = ((ClientAdapter)client).getEntity();
-
-        em.createNamedQuery("deleteScopeMappingByClient").setParameter("client", clientEntity).executeUpdate();
-        em.flush();
 
         session.getKeycloakSessionFactory().publish(new RealmModel.ClientRemovedEvent() {
             @Override

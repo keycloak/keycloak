@@ -23,6 +23,8 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -132,9 +134,11 @@ public class RequiredActionContextResult implements RequiredActionContext {
 
     @Override
     public URI getActionUrl(String code) {
+        ClientModel client = authenticationSession.getClient();
         return LoginActionsService.requiredActionProcessor(getUriInfo())
                 .queryParam(OAuth2Constants.CODE, code)
-                .queryParam("execution", factory.getId())
+                .queryParam(Constants.EXECUTION, factory.getId())
+                .queryParam(Constants.CLIENT_ID, client.getClientId())
                 .build(getRealm().getName());
     }
 

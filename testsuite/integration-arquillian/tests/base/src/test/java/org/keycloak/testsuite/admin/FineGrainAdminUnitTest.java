@@ -19,6 +19,9 @@ package org.keycloak.testsuite.admin;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
@@ -69,6 +72,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         RoleModel realmRole2 = realm.addRole("realm-role2");
         ClientModel client1 = realm.addClient("role-namespace");
         RoleModel client1Role = client1.addRole("client-role");
+        GroupModel group = realm.createGroup("top");
 
         RoleModel mapperRole = realm.addRole("mapper");
         RoleModel managerRole = realm.addRole("manager");
@@ -106,6 +110,9 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             Policy permission = permissions.users().managePermission();
             permission.addAssociatedPolicy(managerPolicy);
             permission.setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
+        }
+        {
+            permissions.groups().setPermissionsEnabled(group, true);
         }
 
     }
@@ -156,6 +163,35 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         UserModel user4 = session.users().addUser(realm, "user4");
         user4.setEnabled(true);
 
+        // group management
+        AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
+
+        GroupModel group =  KeycloakModelUtils.findGroupByPath(realm, "top");
+        UserModel groupMember = session.users().addUser(realm, "groupMember");
+        groupMember.joinGroup(group);
+        groupMember.setEnabled(true);
+        UserModel groupManager = session.users().addUser(realm, "groupManager");
+        groupManager.setEnabled(true);
+        groupManager.grantRole(mapperRole);
+        session.userCredentialManager().updateCredential(realm, groupManager, UserCredentialModel.password("password"));
+
+        UserModel groupManagerNoMapper = session.users().addUser(realm, "noMapperGroupManager");
+        groupManagerNoMapper.setEnabled(true);
+        session.userCredentialManager().updateCredential(realm, groupManagerNoMapper, UserCredentialModel.password("password"));
+
+        UserPolicyRepresentation groupManagerRep = new UserPolicyRepresentation();
+        groupManagerRep.setName("groupManagers");
+        groupManagerRep.addUser("groupManager");
+        groupManagerRep.addUser("noMapperGroupManager");
+        ResourceServer server = permissions.realmResourceServer();
+        Policy groupManagerPolicy = permissions.authz().getStoreFactory().getPolicyStore().create(groupManagerRep, server);
+        Policy groupManagerPermission = permissions.groups().manageMembersPermission(group);
+        groupManagerPermission.addAssociatedPolicy(groupManagerPolicy);
+
+
+
+
+
     }
 
     public static void evaluateLocally(KeycloakSession session) {
@@ -171,7 +207,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             AdminPermissionEvaluator permissionsForAdmin = AdminPermissions.evaluator(session, realm, realm, user);
             Assert.assertTrue(permissionsForAdmin.users().canManage());
             Assert.assertTrue(permissionsForAdmin.roles().canMapRole(realmRole));
-            Assert.assertTrue(permissionsForAdmin.roles().canMapRole(realmRole2));
+            Assert.assertFalse(permissionsForAdmin.roles().canMapRole(realmRole2));
             Assert.assertTrue(permissionsForAdmin.roles().canMapRole(clientRole));
         }
         // test composite role
@@ -180,7 +216,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             AdminPermissionEvaluator permissionsForAdmin = AdminPermissions.evaluator(session, realm, realm, user);
             Assert.assertTrue(permissionsForAdmin.users().canManage());
             Assert.assertTrue(permissionsForAdmin.roles().canMapRole(realmRole));
-            Assert.assertTrue(permissionsForAdmin.roles().canMapRole(realmRole2));
+            Assert.assertFalse(permissionsForAdmin.roles().canMapRole(realmRole2));
             Assert.assertTrue(permissionsForAdmin.roles().canMapRole(clientRole));
         }
 
@@ -191,9 +227,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             Assert.assertFalse(permissionsForAdmin.users().canManage());
             Assert.assertFalse(permissionsForAdmin.roles().canMapRole(realmRole));
             Assert.assertFalse(permissionsForAdmin.roles().canMapRole(clientRole));
-
-            // will result to true because realmRole2 does not have any policies attached to this permission
-            Assert.assertTrue(permissionsForAdmin.roles().canMapRole(realmRole2));
+            Assert.assertFalse(permissionsForAdmin.roles().canMapRole(realmRole2));
         }
         // test unauthorized mapper
         {
@@ -203,7 +237,22 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             Assert.assertFalse(permissionsForAdmin.roles().canMapRole(realmRole));
             Assert.assertFalse(permissionsForAdmin.roles().canMapRole(clientRole));
             // will result to true because realmRole2 does not have any policies attached to this permission
-            Assert.assertTrue(permissionsForAdmin.roles().canMapRole(realmRole2));
+            Assert.assertFalse(permissionsForAdmin.roles().canMapRole(realmRole2));
+        }
+        // test group management
+        {
+            UserModel admin = session.users().getUserByUsername("groupManager", realm);
+            AdminPermissionEvaluator permissionsForAdmin = AdminPermissions.evaluator(session, realm, realm, admin);
+            UserModel user = session.users().getUserByUsername("authorized", realm);
+            Assert.assertFalse(permissionsForAdmin.users().canManage(user));
+            Assert.assertFalse(permissionsForAdmin.users().canView(user));
+            UserModel member = session.users().getUserByUsername("groupMember", realm);
+            Assert.assertTrue(permissionsForAdmin.users().canManage(member));
+            Assert.assertTrue(permissionsForAdmin.users().canView(member));
+            Assert.assertTrue(permissionsForAdmin.roles().canMapRole(realmRole));
+            Assert.assertTrue(permissionsForAdmin.roles().canMapRole(clientRole));
+            Assert.assertFalse(permissionsForAdmin.roles().canMapRole(realmRole2));
+
         }
 
     }

@@ -100,6 +100,7 @@
                                             <outputDirectory>${project.build.directory}/unpacked</outputDirectory>
                                         </artifactItem>
                                     </artifactItems>
+                                    <excludes>**/product.conf</excludes>
                                 </configuration>
                             </execution>
                             <execution>
@@ -309,6 +310,7 @@
                                                 <artifactId>${auth.server.overlay.artifactId}</artifactId>
                                                 <version>${auth.server.overlay.version}</version>
                                                 <type>zip</type>
+                                                <overWrite>true</overWrite>
                                                 <outputDirectory>${project.build.directory}/unpacked/${overlaid.container.unpacked.folder.name}</outputDirectory>
                                             </artifactItem>
                                         </artifactItems>
