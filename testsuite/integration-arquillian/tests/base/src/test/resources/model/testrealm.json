@@ -283,6 +283,13 @@
                         }
                     },
                     {
+                        "name": "Client and Realm Role Policy",
+                        "type": "role",
+                        "config": {
+                            "roles": "[{\"id\":\"realm-management/impersonation\",\"required\":false},{\"id\":\"realm-management/manage-authorization\",\"required\":true},{\"id\":\"user\",\"required\":false}]"
+                        }
+                    },
+                    {
                         "name": "Only Premium User Policy",
                         "description": "Defines that only premium users can do something",
                         "type": "role",

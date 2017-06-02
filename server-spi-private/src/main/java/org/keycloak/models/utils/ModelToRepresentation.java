@@ -817,7 +817,11 @@ public class ModelToRepresentation {
         representation.setLogic(policy.getLogic());
 
         if (representation instanceof PolicyRepresentation) {
-            PolicyRepresentation.class.cast(representation).setConfig(policy.getConfig());
+            if (providerFactory != null) {
+                providerFactory.onExport(policy, PolicyRepresentation.class.cast(representation), authorization);
+            } else {
+                PolicyRepresentation.class.cast(representation).setConfig(policy.getConfig());
+            }
         } else {
             representation = (R) providerFactory.toRepresentation(policy, representation);
         }
