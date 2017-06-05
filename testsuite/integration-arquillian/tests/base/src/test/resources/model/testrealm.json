@@ -290,6 +290,15 @@
                         }
                     },
                     {
+                        "name": "Client Test Policy",
+                        "type": "client",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "clients": "[\"broker\",\"admin-cli\"]"
+                        }
+                    },
+                    {
                         "name": "Only Premium User Policy",
                         "description": "Defines that only premium users can do something",
                         "type": "role",

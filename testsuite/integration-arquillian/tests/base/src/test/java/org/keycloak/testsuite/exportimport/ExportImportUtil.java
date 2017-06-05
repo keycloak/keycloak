@@ -627,11 +627,12 @@ public class ExportImportUtil {
         assertPredicate(scopes, scopePredicates);
 
         List<PolicyRepresentation> policies = authzResource.policies().policies();
-        Assert.assertEquals(12, policies.size());
+        Assert.assertEquals(13, policies.size());
         List<Predicate<PolicyRepresentation>> policyPredicates = new ArrayList<>();
         policyPredicates.add(policyRepresentation -> "Any Admin Policy".equals(policyRepresentation.getName()));
         policyPredicates.add(policyRepresentation -> "Any User Policy".equals(policyRepresentation.getName()));
-        policyPredicates.add(representation -> "Client and Realm Role Policy".equals(representation.getName()) && representation.getConfig().get("roles").contains("\"id\":\"realm-management/impersonation\""));
+        policyPredicates.add(representation -> "Client and Realm Role Policy".equals(representation.getName()));
+        policyPredicates.add(representation -> "Client Test Policy".equals(representation.getName()));
         policyPredicates.add(policyRepresentation -> "Only Premium User Policy".equals(policyRepresentation.getName()));
         policyPredicates.add(policyRepresentation -> "wburke policy".equals(policyRepresentation.getName()));
         policyPredicates.add(policyRepresentation -> "All Users Policy".equals(policyRepresentation.getName()));

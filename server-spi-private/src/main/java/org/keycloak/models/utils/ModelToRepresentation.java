@@ -799,6 +799,10 @@ public class ModelToRepresentation {
     }
 
     public static <R extends AbstractPolicyRepresentation> R toRepresentation(Policy policy, Class<R> representationType, AuthorizationProvider authorization) {
+        return toRepresentation(policy, representationType, authorization, false);
+    }
+
+    public static <R extends AbstractPolicyRepresentation> R toRepresentation(Policy policy, Class<R> representationType, AuthorizationProvider authorization, boolean export) {
         R representation;
 
         try {
@@ -817,7 +821,7 @@ public class ModelToRepresentation {
         representation.setLogic(policy.getLogic());
 
         if (representation instanceof PolicyRepresentation) {
-            if (providerFactory != null) {
+            if (providerFactory != null && export) {
                 providerFactory.onExport(policy, PolicyRepresentation.class.cast(representation), authorization);
             } else {
                 PolicyRepresentation.class.cast(representation).setConfig(policy.getConfig());

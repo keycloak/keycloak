@@ -358,11 +358,8 @@ public class ExportUtils {
     }
 
     private static PolicyRepresentation createPolicyRepresentation(AuthorizationProvider authorizationProvider, Policy policy) {
-        KeycloakSession session = authorizationProvider.getKeycloakSession();
-        RealmModel realm = authorizationProvider.getRealm();
-
         try {
-            PolicyRepresentation rep = toRepresentation(policy, PolicyRepresentation.class, authorizationProvider);
+            PolicyRepresentation rep = toRepresentation(policy, PolicyRepresentation.class, authorizationProvider, true);
 
             rep.setId(null);
 
