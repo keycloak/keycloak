@@ -2419,3 +2419,35 @@ module.controller('UsersPermissionsCtrl', function($scope, $http, $route, $locat
 
 });
 
+module.controller('ClientPermissionsCtrl', function($scope, $http, $route, $location, realm, client, ClientManagementPermissions, Notifications) {
+    $scope.client = client;
+    $scope.realm = realm;
+    ClientManagementPermissions.get({realm: realm.realm, client: client.id}, function(data) {
+        $scope.permissions = data;
+    });
+    $scope.setEnabled = function() {
+        var param = { enabled: $scope.permissions.enabled};
+        $scope.permissions = ClientManagementPermissions.update({realm: realm.realm, client: client.id}, param);
+    };
+
+
+});
+
+module.controller('GroupPermissionsCtrl', function($scope, $http, $route, $location, realm, group, GroupManagementPermissions, Client, Notifications) {
+    $scope.group = group;
+    $scope.realm = realm;
+    Client.query({realm: realm.realm, clientId: getManageClientId(realm)}, function(data) {
+        $scope.realmManagementClientId = data[0].id;
+    });
+    GroupManagementPermissions.get({realm: realm.realm, group: group.id}, function(data) {
+        $scope.permissions = data;
+    });
+    $scope.setEnabled = function() {
+        var param = { enabled: $scope.permissions.enabled};
+        $scope.permissions = GroupManagementPermissions.update({realm: realm.realm, group: group.id}, param);
+    };
+
+
+});
+
+

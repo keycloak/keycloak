@@ -175,7 +175,11 @@ public abstract class AbstractKeycloakTest {
 
             // Cleanup objects
             for (TestCleanup cleanup : testContext.getCleanups().values()) {
-                if (cleanup != null) cleanup.executeCleanup();
+                try {
+                    if (cleanup != null) cleanup.executeCleanup();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
             }
             testContext.getCleanups().clear();
         }

@@ -30,7 +30,9 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.services.ForbiddenException;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -67,11 +69,11 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
     private String getMapRolesPermissionName(ClientModel client) {
         return MAP_ROLES_SCOPE + ".permission.client." + client.getId();
     }
-    private String getMapRoleClientScopePermissionName(ClientModel client) {
-        return RolePermissionManagement.MAP_ROLE_CLIENT_SCOPE_SCOPE + ".permission.client." + client.getId();
+    private String getMapRolesClientScopePermissionName(ClientModel client) {
+        return MAP_ROLES_CLIENT_SCOPE + ".permission.client." + client.getId();
     }
-    private String getMapRoleCompositePermissionName(ClientModel client) {
-        return RolePermissionManagement.MAP_ROLE_COMPOSITE_SCOPE + ".permission.client." + client.getId();
+    private String getMapRolesCompositePermissionName(ClientModel client) {
+        return MAP_ROLES_COMPOSITE_SCOPE + ".permission.client." + client.getId();
     }
 
     private void initialize(ClientModel client) {
@@ -88,13 +90,13 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
         if (mapRoleScope == null) {
             mapRoleScope = authz.getStoreFactory().getScopeStore().create(MAP_ROLES_SCOPE, server);
         }
-        Scope mapRoleClientScope = mapRoleClientScope(server);
+        Scope mapRoleClientScope = authz.getStoreFactory().getScopeStore().findByName(MAP_ROLES_CLIENT_SCOPE, server.getId());
         if (mapRoleClientScope == null) {
-            mapRoleClientScope = authz.getStoreFactory().getScopeStore().create(RolePermissionManagement.MAP_ROLE_CLIENT_SCOPE_SCOPE, server);
+            mapRoleClientScope = authz.getStoreFactory().getScopeStore().create(MAP_ROLES_CLIENT_SCOPE, server);
         }
-        Scope mapRoleCompositeScope = mapRoleCompositeScope(server);
+        Scope mapRoleCompositeScope = authz.getStoreFactory().getScopeStore().findByName(MAP_ROLES_COMPOSITE_SCOPE, server.getId());
         if (mapRoleCompositeScope == null) {
-            mapRoleCompositeScope = authz.getStoreFactory().getScopeStore().create(RolePermissionManagement.MAP_ROLE_COMPOSITE_SCOPE, server);
+            mapRoleCompositeScope = authz.getStoreFactory().getScopeStore().create(MAP_ROLES_COMPOSITE_SCOPE, server);
         }
 
         String resourceName = getResourceName(client);
@@ -129,12 +131,12 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
         if (mapRolePermission == null) {
             Helper.addEmptyScopePermission(authz, server, mapRolePermissionName, resource, mapRoleScope);
         }
-        String mapRoleClientScopePermissionName = getMapRoleClientScopePermissionName(client);
+        String mapRoleClientScopePermissionName = getMapRolesClientScopePermissionName(client);
         Policy mapRoleClientScopePermission = authz.getStoreFactory().getPolicyStore().findByName(mapRoleClientScopePermissionName, server.getId());
         if (mapRoleClientScopePermission == null) {
             Helper.addEmptyScopePermission(authz, server, mapRoleClientScopePermissionName, resource, mapRoleClientScope);
         }
-        String mapRoleCompositePermissionName = getMapRoleCompositePermissionName(client);
+        String mapRoleCompositePermissionName = getMapRolesCompositePermissionName(client);
         Policy mapRoleCompositePermission = authz.getStoreFactory().getPolicyStore().findByName(mapRoleCompositePermissionName, server.getId());
         if (mapRoleCompositePermission == null) {
             Helper.addEmptyScopePermission(authz, server, mapRoleCompositePermissionName, resource, mapRoleCompositeScope);
@@ -155,8 +157,8 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
         deletePolicy(getManagePermissionName(client), client, server);
         deletePolicy(getViewPermissionName(client), client, server);
         deletePolicy(getMapRolesPermissionName(client), client, server);
-        deletePolicy(getMapRoleClientScopePermissionName(client), client, server);
-        deletePolicy(getMapRoleCompositePermissionName(client), client, server);
+        deletePolicy(getMapRolesClientScopePermissionName(client), client, server);
+        deletePolicy(getMapRolesCompositePermissionName(client), client, server);
         Resource resource = authz.getStoreFactory().getResourceStore().findByName(getResourceName(client), server.getId());;
         if (resource != null) authz.getStoreFactory().getResourceStore().delete(resource.getId());
     }
@@ -189,12 +191,6 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
     }
     private Scope mapRolesScope(ResourceServer server) {
         return authz.getStoreFactory().getScopeStore().findByName(MAP_ROLES_SCOPE, server.getId());
-    }
-    private Scope mapRoleClientScope(ResourceServer server) {
-        return authz.getStoreFactory().getScopeStore().findByName(RolePermissionManagement.MAP_ROLE_CLIENT_SCOPE_SCOPE, server.getId());
-    }
-    private Scope mapRoleCompositeScope(ResourceServer server) {
-        return authz.getStoreFactory().getScopeStore().findByName(RolePermissionManagement.MAP_ROLE_COMPOSITE_SCOPE, server.getId());
     }
 
     @Override
@@ -249,6 +245,27 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
             throw new ForbiddenException();
         }
     }
+
+    @Override
+    public Resource resource(ClientModel client) {
+        ResourceServer server = resourceServer(client);
+        if (server == null) return null;
+        Resource resource =  authz.getStoreFactory().getResourceStore().findByName(getResourceName(client), server.getId());
+        if (resource == null) return null;
+        return resource;
+    }
+
+    @Override
+    public Map<String, String> getPermissions(ClientModel client) {
+        Map<String, String> scopes = new HashMap<>();
+        scopes.put(MAP_ROLES_SCOPE,  mapRolesPermission(client).getId());
+        scopes.put(MAP_ROLES_CLIENT_SCOPE, mapRolesClientScopePermission(client).getId());
+        scopes.put(MAP_ROLES_COMPOSITE_SCOPE, mapRolesCompositePermission(client).getId());
+        scopes.put(AdminPermissionManagement.VIEW_SCOPE, viewPermission(client).getId());
+        scopes.put(AdminPermissionManagement.MANAGE_SCOPE, managePermission(client).getId());
+        return scopes;
+    }
+
 
     @Override
     public boolean canManage(ClientModel client) {
@@ -398,6 +415,34 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
     }
 
     @Override
+    public Policy mapRolesClientScopePermission(ClientModel client) {
+        ResourceServer server = resourceServer(client);
+        if (server == null) return null;
+        return authz.getStoreFactory().getPolicyStore().findByName(getMapRolesClientScopePermissionName(client), server.getId());
+    }
+
+    @Override
+    public Policy mapRolesCompositePermission(ClientModel client) {
+        ResourceServer server = resourceServer(client);
+        if (server == null) return null;
+        return authz.getStoreFactory().getPolicyStore().findByName(getMapRolesCompositePermissionName(client), server.getId());
+    }
+
+    @Override
+    public Policy managePermission(ClientModel client) {
+        ResourceServer server = resourceServer(client);
+        if (server == null) return null;
+        return authz.getStoreFactory().getPolicyStore().findByName(getManagePermissionName(client), server.getId());
+    }
+
+    @Override
+    public Policy viewPermission(ClientModel client) {
+        ResourceServer server = resourceServer(client);
+        if (server == null) return null;
+        return authz.getStoreFactory().getPolicyStore().findByName(getViewPermissionName(client), server.getId());
+    }
+
+    @Override
     public ResourceServer resourceServer(ClientModel client) {
         return authz.getStoreFactory().getResourceServerStore().findByClient(client.getId());
     }
@@ -410,7 +455,7 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
         Resource resource =  authz.getStoreFactory().getResourceStore().findByName(getResourceName(client), server.getId());
         if (resource == null) return false;
 
-        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(getMapRoleCompositePermissionName(client), server.getId());
+        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(getMapRolesCompositePermissionName(client), server.getId());
         if (policy == null) {
             return false;
         }
@@ -421,7 +466,7 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
             return false;
         }
 
-        Scope scope = mapRoleCompositeScope(server);
+        Scope scope = authz.getStoreFactory().getScopeStore().findByName(MAP_ROLES_COMPOSITE_SCOPE, server.getId());
         return root.evaluatePermission(resource, scope, server);
     }
     @Override
@@ -432,7 +477,7 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
         Resource resource =  authz.getStoreFactory().getResourceStore().findByName(getResourceName(client), server.getId());
         if (resource == null) return false;
 
-        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(getMapRoleClientScopePermissionName(client), server.getId());
+        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(getMapRolesClientScopePermissionName(client), server.getId());
         if (policy == null) {
             return false;
         }
@@ -443,7 +488,7 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
             return false;
         }
 
-        Scope scope = mapRoleClientScope(server);
+        Scope scope = authz.getStoreFactory().getScopeStore().findByName(MAP_ROLES_CLIENT_SCOPE, server.getId());
         return root.evaluatePermission(resource, scope, server);
     }
 

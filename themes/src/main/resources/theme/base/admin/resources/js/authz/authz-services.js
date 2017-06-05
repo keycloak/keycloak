@@ -145,3 +145,49 @@ module.service('AuthzDialog', function($modal) {
 
     return dialog;
 });
+
+module.factory('RoleManagementPermissions', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/roles-by-id/:role/management/permissions', {
+        realm : '@realm',
+        role : '@role'
+    }, {
+        update: {
+            method: 'PUT'
+        }
+    });
+});
+
+module.factory('UsersManagementPermissions', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/users-management-permissions', {
+        realm : '@realm'
+    }, {
+        update: {
+            method: 'PUT'
+        }
+    });
+});
+
+module.factory('ClientManagementPermissions', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/management/permissions', {
+        realm : '@realm',
+        client : '@client'
+    }, {
+        update: {
+            method: 'PUT'
+        }
+    });
+});
+
+module.factory('GroupManagementPermissions', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/groups/:group/management/permissions', {
+        realm : '@realm',
+        group : '@group'
+    }, {
+        update: {
+            method: 'PUT'
+        }
+    });
+});
+
+
+

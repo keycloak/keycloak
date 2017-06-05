@@ -424,6 +424,30 @@ module.config(['$routeProvider', function ($routeProvider) {
         },
         controller : 'UsersPermissionsCtrl'
     })
+        .when('/realms/:realm/clients/:client/permissions', {
+            templateUrl : resourceUrl + '/partials/authz/mgmt/client-permissions.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                client : function(ClientLoader) {
+                    return ClientLoader();
+                }
+            },
+            controller : 'ClientPermissionsCtrl'
+        })
+        .when('/realms/:realm/groups/:group/permissions', {
+            templateUrl : resourceUrl + '/partials/authz/mgmt/group-permissions.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                group : function(GroupLoader) {
+                    return GroupLoader();
+                }
+            },
+            controller : 'GroupPermissionsCtrl'
+        })
     ;
 }]);
 

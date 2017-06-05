@@ -21,6 +21,7 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -28,6 +29,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.UserRepresentation;
 
 import javax.ws.rs.Consumes;
@@ -50,6 +52,8 @@ import java.util.Map;
 import java.util.Set;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
+import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 
 /**
  * @resource Groups
@@ -214,4 +218,55 @@ public class GroupResource {
         return results;
     }
 
+    /**
+     * Return object stating whether client Authorization permissions have been initialized or not and a reference
+     *
+     * @return
+     */
+    @Path("management/permissions")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    public ManagementPermissionReference getManagementPermissions() {
+        auth.groups().requireView(group);
+
+        AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
+        if (!permissions.groups().isPermissionsEnabled(group)) {
+            return new ManagementPermissionReference();
+        }
+        return toMgmtRef(group, permissions);
+    }
+
+    public static ManagementPermissionReference toMgmtRef(GroupModel group, AdminPermissionManagement permissions) {
+        ManagementPermissionReference ref = new ManagementPermissionReference();
+        ref.setEnabled(true);
+        ref.setResource(permissions.groups().resource(group).getId());
+        ref.setScopePermissions(permissions.groups().getPermissions(group));
+        return ref;
+    }
+
+
+    /**
+     * Return object stating whether client Authorization permissions have been initialized or not and a reference
+     *
+     *
+     * @return initialized manage permissions reference
+     */
+    @Path("management/permissions")
+    @PUT
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @NoCache
+    public ManagementPermissionReference setManagementPermissionsEnabled(ManagementPermissionReference ref) {
+        auth.groups().requireManage(group);
+        if (ref.isEnabled()) {
+            AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
+            permissions.groups().setPermissionsEnabled(group, ref.isEnabled());
+            return toMgmtRef(group, permissions);
+        } else {
+            return new ManagementPermissionReference();
+        }
+    }
+
 }
+

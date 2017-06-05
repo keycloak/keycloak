@@ -17,8 +17,11 @@
 package org.keycloak.services.resources.admin.permissions;
 
 import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.models.ClientModel;
+
+import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -26,12 +29,26 @@ import org.keycloak.models.ClientModel;
  */
 public interface ClientPermissionManagement {
     public static final String MAP_ROLES_SCOPE = "map-roles";
+    public static final String MAP_ROLES_CLIENT_SCOPE = "map-roles-client-scope";
+    public static final String MAP_ROLES_COMPOSITE_SCOPE = "map-roles-composite";
 
     boolean isPermissionsEnabled(ClientModel client);
 
     void setPermissionsEnabled(ClientModel client, boolean enable);
 
+    Resource resource(ClientModel client);
+
+    Map<String, String> getPermissions(ClientModel client);
+
     Policy mapRolesPermission(ClientModel client);
+
+    Policy mapRolesClientScopePermission(ClientModel client);
+
+    Policy mapRolesCompositePermission(ClientModel client);
+
+    Policy managePermission(ClientModel client);
+
+    Policy viewPermission(ClientModel client);
 
     ResourceServer resourceServer(ClientModel client);
 }

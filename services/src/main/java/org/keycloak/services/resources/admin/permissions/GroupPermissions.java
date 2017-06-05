@@ -23,13 +23,16 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.models.AdminRoles;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.services.ForbiddenException;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -54,16 +57,16 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
     }
 
     private static String getGroupResourceName(GroupModel group) {
-        return "group.resource." + getGroupSuffix(group);
+        return "group.resource." + group.getId();
     }
 
 
     public static String getManagePermissionGroup(GroupModel group) {
-        return "manage.permission.group." + getGroupSuffix(group);
+        return "manage.permission.group." + group.getId();
     }
 
     public static String getManageMembersPermissionGroup(GroupModel group) {
-        return "manage.members.permission.group." + getGroupSuffix(group);
+        return "manage.members.permission.group." + group.getId();
     }
 
     public static String getGroupSuffix(GroupModel group) {
@@ -71,11 +74,11 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
     }
 
     public static String getViewPermissionGroup(GroupModel group) {
-        return "view.permission.group." + getGroupSuffix(group);
+        return "view.permission.group." + group.getId();
     }
 
     public static String getViewMembersPermissionGroup(GroupModel group) {
-        return "view.members.permission.group." + getGroupSuffix(group);
+        return "view.members.permission.group." + group.getId();
     }
 
     private void initialize(GroupModel group) {
@@ -102,7 +105,7 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
             Policy manageUsersPolicy = root.roles().manageUsersPolicy(server);
             Helper.addScopePermission(authz, server, managePermissionName, groupResource, manageScope, manageUsersPolicy);
         }
-        String viewPermissionName = getManagePermissionGroup(group);
+        String viewPermissionName = getViewPermissionGroup(group);
         Policy viewPermission = authz.getStoreFactory().getPolicyStore().findByName(viewPermissionName, server.getId());
         if (viewPermission == null) {
             Policy viewUsersPolicy = root.roles().viewUsersPolicy(server);
@@ -212,6 +215,27 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
         String managePermissionName = getManagePermissionGroup(group);
         return authz.getStoreFactory().getPolicyStore().findByName(managePermissionName, server.getId());
     }
+
+    @Override
+    public Resource resource(GroupModel group) {
+        ResourceServer server = root.realmResourceServer();
+        if (server == null) return null;
+        Resource resource =  authz.getStoreFactory().getResourceStore().findByName(getGroupResourceName(group), server.getId());
+        if (resource == null) return null;
+        return resource;
+    }
+
+    @Override
+    public Map<String, String> getPermissions(GroupModel group) {
+        Map<String, String> scopes = new HashMap<>();
+        scopes.put(AdminPermissionManagement.VIEW_SCOPE, viewPermissionGroup(group).getId());
+        scopes.put(AdminPermissionManagement.MANAGE_SCOPE, managePermissionGroup(group).getId());
+        scopes.put(MANAGE_MEMBERS_SCOPE, manageMembersPermission(group).getId());
+        scopes.put(VIEW_MEMBERS_SCOPE, viewMembersPermission(group).getId());
+        return scopes;
+    }
+
+
 
 
     @Override

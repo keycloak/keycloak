@@ -141,19 +141,19 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
     @Override
     public boolean canMapRole(RoleModel role) {
         if (!root.isAdminSameRealm()) {
-            return root.users().canManage();
+            return root.users().canManageDefault();
         }
         if (role.getContainer() instanceof ClientModel) {
             if (root.clients().canMapRoles((ClientModel)role.getContainer())) return true;
         }
         if (!isPermissionsEnabled(role)){
-            return root.users().canManage();
+            return root.users().canManageDefault();
         }
 
         ResourceServer resourceServer = getResourceServer(role);
         Policy policy = authz.getStoreFactory().getPolicyStore().findByName(getMapRolePermissionName(role), resourceServer.getId());
         if (policy.getAssociatedPolicies().isEmpty()) {
-            return root.users().canManage(); // if no policies applied, just do default
+            return root.users().canManageDefault(); // if no policies applied, just do default
         }
 
         Resource roleResource = resource(role);

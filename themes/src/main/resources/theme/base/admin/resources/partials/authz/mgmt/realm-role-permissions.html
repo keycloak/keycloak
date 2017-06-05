@@ -28,7 +28,7 @@
         <tbody>
         <tr ng-repeat="(scopeName, scopeId) in permissions.scopePermissions">
             <td><a href="#/realms/{{realm.realm}}/clients/{{realmManagementClientId}}/authz/resource-server/permission/scope/{{scopeId}}">{{scopeName}}</a></td>
-            <td translate="{{scopeName}}-mgmt-scope-description"></td>
+            <td translate="{{scopeName}}-authz-role-scope-description"></td>
             <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/clients/{{realmManagementClientId}}/authz/resource-server/permission/scope/{{scopeId}}">{{:: 'edit' | translate}}</td>
         </tr>
         </tbody>

@@ -842,28 +842,6 @@ module.factory('Role', function($resource) {
     });
 });
 
-module.factory('RoleManagementPermissions', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/roles-by-id/:role/management/permissions', {
-        realm : '@realm',
-        role : '@role'
-    }, {
-        update: {
-            method: 'PUT'
-        }
-    });
-});
-
-module.factory('UsersManagementPermissions', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/users-management-permissions', {
-        realm : '@realm'
-    }, {
-        update: {
-            method: 'PUT'
-        }
-    });
-});
-
-
 module.factory('RoleById', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/roles-by-id/:role', {
         realm : '@realm',

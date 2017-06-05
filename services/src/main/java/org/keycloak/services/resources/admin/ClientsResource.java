@@ -207,7 +207,7 @@ public class ClientsResource {
         ClientModel clientModel = realm.getClientById(id);
         if (clientModel == null) {
             // we do this to make sure somebody can't phish ids
-            if (!auth.clients().canList()) throw new NotFoundException("Could not find client");
+            if (auth.clients().canList()) throw new NotFoundException("Could not find client");
             else throw new ForbiddenException();
         }
 

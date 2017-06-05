@@ -31,6 +31,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -41,6 +42,7 @@ import org.keycloak.protocol.ClientInstallationProvider;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.services.ErrorResponse;
@@ -52,6 +54,8 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
+import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.services.validation.ClientValidator;
 import org.keycloak.services.validation.PairwiseClientValidator;
 import org.keycloak.services.validation.ValidationMessages;
@@ -536,4 +540,55 @@ public class ClientResource {
 
         return resource;
     }
+
+    /**
+     * Return object stating whether client Authorization permissions have been initialized or not and a reference
+     *
+     * @return
+     */
+    @Path("management/permissions")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    public ManagementPermissionReference getManagementPermissions() {
+        auth.roles().requireView(client);
+
+        AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
+        if (!permissions.clients().isPermissionsEnabled(client)) {
+            return new ManagementPermissionReference();
+        }
+        return toMgmtRef(client, permissions);
+    }
+
+    public static ManagementPermissionReference toMgmtRef(ClientModel client, AdminPermissionManagement permissions) {
+        ManagementPermissionReference ref = new ManagementPermissionReference();
+        ref.setEnabled(true);
+        ref.setResource(permissions.clients().resource(client).getId());
+        ref.setScopePermissions(permissions.clients().getPermissions(client));
+        return ref;
+    }
+
+
+    /**
+     * Return object stating whether client Authorization permissions have been initialized or not and a reference
+     *
+     *
+     * @return initialized manage permissions reference
+     */
+    @Path("management/permissions")
+    @PUT
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @NoCache
+    public ManagementPermissionReference setManagementPermissionsEnabled(ManagementPermissionReference ref) {
+        auth.clients().requireManage(client);
+         if (ref.isEnabled()) {
+            AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
+            permissions.clients().setPermissionsEnabled(client, ref.isEnabled());
+            return toMgmtRef(client, permissions);
+        } else {
+            return new ManagementPermissionReference();
+        }
+    }
+
 }
