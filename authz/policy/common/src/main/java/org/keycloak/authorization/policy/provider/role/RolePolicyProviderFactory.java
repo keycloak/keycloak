@@ -108,6 +108,30 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
         }
     }
 
+    @Override
+    public void onExport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorizationProvider) {
+        Map<String, String> config = new HashMap<>();
+        Set<RolePolicyRepresentation.RoleDefinition> roles = toRepresentation(policy, new RolePolicyRepresentation()).getRoles();
+
+        for (RolePolicyRepresentation.RoleDefinition roleDefinition : roles) {
+            RoleModel role = authorizationProvider.getRealm().getRoleById(roleDefinition.getId());
+
+            if (role.isClientRole()) {
+                roleDefinition.setId(ClientModel.class.cast(role.getContainer()).getClientId() + "/" + role.getName());
+            } else {
+                roleDefinition.setId(role.getName());
+            }
+        }
+
+        try {
+            config.put("roles", JsonSerialization.writeValueAsString(roles));
+        } catch (IOException cause) {
+            throw new RuntimeException("Failed to export role policy [" + policy.getName() + "]", cause);
+        }
+
+        representation.setConfig(config);
+    }
+
     private void updateRoles(Policy policy, RolePolicyRepresentation representation, AuthorizationProvider authorization) {
         updateRoles(policy, authorization, representation.getRoles());
     }
