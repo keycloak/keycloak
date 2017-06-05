@@ -19,6 +19,7 @@
 package org.keycloak.authorization.policy.evaluation;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -33,7 +34,7 @@ import org.keycloak.representations.idm.authorization.DecisionStrategy;
  */
 public abstract class DecisionResultCollector implements Decision<DefaultEvaluation> {
 
-    private Map<ResourcePermission, Result> results = new HashMap();
+    private Map<ResourcePermission, Result> results = new LinkedHashMap<>();
 
     @Override
     public void onDecision(DefaultEvaluation evaluation) {

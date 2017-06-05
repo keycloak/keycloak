@@ -108,8 +108,15 @@ public class AuthorizationTokenService {
 
         try {
             PermissionTicket ticket = verifyPermissionTicket(authorizationRequest);
+            ResourceServer resourceServer = authorization.getStoreFactory().getResourceServerStore().findById(ticket.getResourceServerId());
+
+            if (resourceServer == null) {
+                throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client does not support permissions", Status.FORBIDDEN);
+            }
+
             List<Result> result = authorization.evaluators().from(createPermissions(ticket, authorizationRequest, authorization), evaluationContext).evaluate();
-            List<Permission> entitlements = Permissions.permits(result, authorization, ticket.getResourceServerId());
+
+            List<Permission> entitlements = Permissions.permits(result, authorizationRequest.getMetadata(), authorization, resourceServer);
 
             if (!entitlements.isEmpty()) {
                 AuthorizationResponse response = new AuthorizationResponse(createRequestingPartyToken(entitlements, identity.getAccessToken()));
