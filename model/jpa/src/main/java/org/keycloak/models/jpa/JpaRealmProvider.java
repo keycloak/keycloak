@@ -20,29 +20,13 @@ package org.keycloak.models.jpa;
 import org.jboss.logging.Logger;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.migration.MigrationModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientTemplateModel;
-import org.keycloak.models.GroupModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RealmProvider;
-import org.keycloak.models.RoleContainerModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.jpa.entities.ClientEntity;
-import org.keycloak.models.jpa.entities.ClientTemplateEntity;
-import org.keycloak.models.jpa.entities.GroupEntity;
-import org.keycloak.models.jpa.entities.RealmEntity;
-import org.keycloak.models.jpa.entities.RoleEntity;
+import org.keycloak.models.*;
+import org.keycloak.models.jpa.entities.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -350,6 +334,24 @@ public class JpaRealmProvider implements RealmProvider {
     }
 
     @Override
+    public List<GroupModel> getTopLevelGroups(RealmModel realm, Integer first, Integer max) {
+        List<String> groupIds =  em.createNamedQuery("getTopLevelGroupIds", String.class)
+                .setParameter("realm", realm.getId())
+                .setFirstResult(first)
+                    .setMaxResults(max)
+                    .getResultList();
+        List<GroupModel> list = new ArrayList<>();
+        if(Objects.nonNull(groupIds) && !groupIds.isEmpty()) {
+            for (String id : groupIds) {
+                GroupModel group = getGroupById(id, realm);
+                list.add(group);
+            }
+        }
+
+        return Collections.unmodifiableList(list);
+    }
+
+    @Override
     public boolean removeGroup(RealmModel realm, GroupModel group) {
         if (group == null) {
             return false;
@@ -518,5 +520,22 @@ public class JpaRealmProvider implements RealmProvider {
         if (app == null || !realm.getId().equals(app.getRealm().getId())) return null;
         ClientTemplateAdapter adapter = new ClientTemplateAdapter(realm, em, session, app);
         return adapter;
+    }
+
+    @Override
+    public List<GroupModel> searchForGroupByName(RealmModel realm, String search, Integer first, Integer max) {
+        TypedQuery<String> query = em.createNamedQuery("getGroupIdsByNameContaining", String.class)
+                .setParameter("realm", realm.getId())
+                .setParameter("search", search);
+        if(Objects.nonNull(first) && Objects.nonNull(max)) {
+            query= query.setFirstResult(first).setMaxResults(max);
+        }
+        List<String> groups =  query.getResultList();
+        if (Objects.isNull(groups)) return Collections.EMPTY_LIST;
+        List<GroupModel> list = new LinkedList<>();
+        for (String id : groups) {
+            list.add(session.realms().getGroupById(id, realm));
+        }
+        return Collections.unmodifiableList(list);
     }
 }

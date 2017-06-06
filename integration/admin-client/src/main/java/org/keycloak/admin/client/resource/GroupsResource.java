@@ -20,12 +20,7 @@ package org.keycloak.admin.client.resource;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.representations.idm.GroupRepresentation;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.List;
@@ -35,10 +30,42 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public interface GroupsResource {
+
+    /**
+     * Get all groups.
+     * @return A list containing all groups.
+     */
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     List<GroupRepresentation> groups();
+
+    /**
+     * Get groups by pagination params.
+     * @param first index of the first element
+     * @param max max number of occurrences
+     * @return A list containing the slice of all groups.
+     */
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    List<GroupRepresentation> groups(@QueryParam("first") Integer first, @QueryParam("max") Integer max);
+
+    /**
+     * Get groups by pagination params.
+     * @param search max number of occurrences
+     * @param first index of the first element
+     * @param max max number of occurrences
+     * @return A list containing the slice of all groups.
+     */
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    List<GroupRepresentation> groups(@QueryParam("search") String search,
+                                     @QueryParam("first") Integer first,
+                                     @QueryParam("max") Integer max);
 
     /**
      * create or add a top level realm groupSet or create child.  This will update the group and set the parent if it exists.  Create it and set the parent

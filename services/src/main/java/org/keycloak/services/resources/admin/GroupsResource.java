@@ -26,20 +26,16 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.services.ErrorResponse;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.List;
-import org.keycloak.services.ErrorResponse;
+import java.util.Objects;
 
 /**
  * @resource Groups
@@ -71,10 +67,22 @@ public class GroupsResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<GroupRepresentation> getGroups() {
+    public List<GroupRepresentation> getGroupsByName(@QueryParam("search") String search,
+                                               @QueryParam("first") Integer firstResult,
+                                               @QueryParam("max") Integer maxResults) {
         auth.requireView();
 
-        return ModelToRepresentation.toGroupHierarchy(realm, false);
+        List<GroupRepresentation> results;
+
+        if (Objects.nonNull(search)) {
+            results = ModelToRepresentation.searchForGroupByName(realm, search.trim(), firstResult, maxResults);
+        } else if(Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
+            results = ModelToRepresentation.toGroupHierarchy(realm, false, firstResult, maxResults);
+        } else {
+            results = ModelToRepresentation.toGroupHierarchy(realm, false);
+        }
+
+        return results;
     }
 
     /**
@@ -109,7 +117,7 @@ public class GroupsResource {
                 return ErrorResponse.exists("Top level group named '" + rep.getName() + "' already exists.");
             }
         }
-        
+
         GroupModel child = null;
         Response.ResponseBuilder builder = Response.status(204);
         if (rep.getId() != null) {
