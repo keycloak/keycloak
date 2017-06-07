@@ -9,7 +9,7 @@
 
         <h2><span>{{client.clientId}}</span> {{:: 'scope-mappings' | translate}} </h2>
         <p class="subtitle"></p>
-        <form class="form-horizontal" name="allowScope" novalidate kc-read-only="!access.manageClients">
+        <form class="form-horizontal" name="allowScope" novalidate kc-read-only="!client.access.manage">
             <fieldset class="border-top">
                 <div class="form-group" ng-show="client.clientTemplate">
                     <label class="col-md-2 control-label" for="useTemplateScope">Inherit Template Scope</label>
@@ -41,7 +41,7 @@
             </fieldset>
         </form>
 
-        <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageClients" data-ng-hide="hideRoleSelector()">
+        <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!client.access.manage" data-ng-hide="hideRoleSelector()">
             <div class="form-group">
                 <label class="col-md-2 control-label" class="control-label">{{:: 'realm-roles' | translate}}</label>
                 <div class="col-md-10">

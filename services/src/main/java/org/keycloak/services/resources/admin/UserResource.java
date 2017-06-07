@@ -249,6 +249,7 @@ public class UserResource {
         if (session.getProvider(BruteForceProtector.class).isTemporarilyDisabled(session, realm, user)) {
             rep.setEnabled(false);
         }
+        rep.setAccess(auth.users().getAccess(user));
 
         return rep;
     }
@@ -761,6 +762,7 @@ public class UserResource {
         if (group == null) {
             throw new NotFoundException("Group not found");
         }
+        auth.groups().requireManageMembers(group);
 
         try {
             if (user.isMemberOf(group)){
@@ -783,6 +785,7 @@ public class UserResource {
         if (group == null) {
             throw new NotFoundException("Group not found");
         }
+        //auth.groups().requireManageMembers(group);
         if (!user.isMemberOf(group)){
             user.joinGroup(group);
             adminEvent.operation(OperationType.CREATE).resource(ResourceType.GROUP_MEMBERSHIP).representation(ModelToRepresentation.toRepresentation(group, true)).resourcePath(uriInfo).success();

@@ -77,7 +77,7 @@ public class GroupResource {
 
     @Context private UriInfo uriInfo;
 
-    /**
+     /**
      *
      *
      * @return
@@ -88,7 +88,11 @@ public class GroupResource {
     public GroupRepresentation getGroup() {
         this.auth.groups().requireView(group);
 
-        return ModelToRepresentation.toGroupHierarchy(group, true);
+        GroupRepresentation rep = ModelToRepresentation.toGroupHierarchy(group, true);
+
+        rep.setAccess(auth.groups().getAccess(group));
+
+        return rep;
     }
 
     /**

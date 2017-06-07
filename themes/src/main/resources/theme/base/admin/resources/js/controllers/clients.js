@@ -728,9 +728,9 @@ module.controller('ClientImportCtrl', function($scope, $location, $upload, realm
 });
 
 
-module.controller('ClientListCtrl', function($scope, realm, clients, Client, serverInfo, $route, Dialog, Notifications, filterFilter) {
+module.controller('ClientListCtrl', function($scope, realm, Client, serverInfo, $route, Dialog, Notifications, filterFilter) {
     $scope.realm = realm;
-    $scope.clients = clients;
+    $scope.clients = Client.query({realm: realm.realm, viewableOnly: true});
     $scope.currentPage = 1;
     $scope.currentPageInput = 1;
     $scope.pageSize = 20;

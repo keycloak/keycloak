@@ -18,6 +18,8 @@ package org.keycloak.services.resources.admin.permissions;
 
 import org.keycloak.models.UserModel;
 
+import java.util.Map;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -47,4 +49,6 @@ public interface UserPermissionEvaluator {
     boolean canImpersonate(UserModel user);
 
     void requireImpersonate(UserModel user);
+
+    Map<String, Boolean> getAccess(UserModel user);
 }

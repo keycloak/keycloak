@@ -23,7 +23,6 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.models.AdminRoles;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -125,7 +124,7 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
 
     @Override
     public boolean canList() {
-        return root.hasOneAdminRole(AdminRoles.VIEW_USERS, AdminRoles.MANAGE_USERS);
+        return root.hasOneAdminRole(AdminRoles.VIEW_USERS, AdminRoles.MANAGE_USERS, AdminRoles.QUERY_GROUPS);
     }
 
     @Override
@@ -164,11 +163,11 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
     private void deletePermissions(GroupModel group) {
         ResourceServer server = root.realmResourceServer();
         if (server == null) return;
-        Policy managePermission = managePermissionGroup(group);
+        Policy managePermission = managePermission(group);
         if (managePermission != null) {
             authz.getStoreFactory().getPolicyStore().delete(managePermission.getId());
         }
-        Policy viewPermission = viewPermissionGroup(group);
+        Policy viewPermission = viewPermission(group);
         if (viewPermission != null) {
             authz.getStoreFactory().getPolicyStore().delete(viewPermission.getId());
         }
@@ -201,7 +200,7 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
     }
 
     @Override
-    public Policy viewPermissionGroup(GroupModel group) {
+    public Policy viewPermission(GroupModel group) {
         ResourceServer server = root.realmResourceServer();
         if (server == null) return null;
         String viewPermissionName = getViewPermissionGroup(group);
@@ -209,7 +208,7 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
     }
 
     @Override
-    public Policy managePermissionGroup(GroupModel group) {
+    public Policy managePermission(GroupModel group) {
         ResourceServer server = root.realmResourceServer();
         if (server == null) return null;
         String managePermissionName = getManagePermissionGroup(group);
@@ -228,8 +227,8 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
     @Override
     public Map<String, String> getPermissions(GroupModel group) {
         Map<String, String> scopes = new HashMap<>();
-        scopes.put(AdminPermissionManagement.VIEW_SCOPE, viewPermissionGroup(group).getId());
-        scopes.put(AdminPermissionManagement.MANAGE_SCOPE, managePermissionGroup(group).getId());
+        scopes.put(AdminPermissionManagement.VIEW_SCOPE, viewPermission(group).getId());
+        scopes.put(AdminPermissionManagement.MANAGE_SCOPE, managePermission(group).getId());
         scopes.put(MANAGE_MEMBERS_SCOPE, manageMembersPermission(group).getId());
         scopes.put(VIEW_MEMBERS_SCOPE, viewMembersPermission(group).getId());
         return scopes;
@@ -250,7 +249,7 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
         Resource resource =  authz.getStoreFactory().getResourceStore().findByName(getGroupResourceName(group), server.getId());
         if (resource == null) return canManage();
 
-        Policy policy = managePermissionGroup(group);
+        Policy policy = managePermission(group);
         if (policy == null) {
             return canManage();
         }
@@ -283,7 +282,7 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
         Resource resource =  authz.getStoreFactory().getResourceStore().findByName(getGroupResourceName(group), server.getId());
         if (resource == null) return canView();
 
-        Policy policy = viewPermissionGroup(group);
+        Policy policy = viewPermission(group);
         if (policy == null) {
             return canView();
         }
@@ -404,6 +403,15 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
             throw new ForbiddenException();
         }
     }
+
+    @Override
+    public Map<String, Boolean> getAccess(GroupModel group) {
+        Map<String, Boolean> map = new HashMap<>();
+        map.put("view", canView(group));
+        map.put("manage", canManage(group));
+        return map;
+    }
+
 
 
 

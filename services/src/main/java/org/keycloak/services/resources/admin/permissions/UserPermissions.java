@@ -281,7 +281,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
 
     @Override
     public boolean canQuery() {
-        return canView();
+        return canView() || root.hasOneAdminRole(AdminRoles.QUERY_USERS);
     }
 
     @Override
@@ -390,6 +390,14 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
         if (!canImpersonate(user)) {
             throw new ForbiddenException();
         }
+    }
+
+    @Override
+    public Map<String, Boolean> getAccess(UserModel user) {
+        Map<String, Boolean> map = new HashMap<>();
+        map.put("view", canView(user));
+        map.put("manage", canManage(user));
+        return map;
     }
 
 

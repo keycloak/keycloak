@@ -6,7 +6,7 @@
 
     <kc-tabs-group></kc-tabs-group>
 
-    <form class=form-horizontal" name="enableForm" novalidate kc-read-only="!access.manageAuthorization">
+    <form class=form-horizontal" name="enableForm" novalidate kc-read-only="!group.access.manage || !access.manageAuthorization">
         <fieldset class="border-top">
         <div class="form-group">
             <label class="col-md-2 control-label" for="permissionsEnabled">{{:: 'permissions-enabled-role' | translate}}</label>

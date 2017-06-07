@@ -114,6 +114,7 @@ public class ClientsResource {
                     }
 
                     rep.add(representation);
+                    representation.setAccess(auth.clients().getAccess(clientModel));
                 } else if (!viewableOnly) {
                     ClientRepresentation client = new ClientRepresentation();
                     client.setId(clientModel.getId());
@@ -126,7 +127,9 @@ public class ClientsResource {
             ClientModel clientModel = realm.getClientByClientId(clientId);
             if (clientModel != null) {
                 if (auth.clients().canView(clientModel)) {
-                    rep.add(ModelToRepresentation.toRepresentation(clientModel));
+                    ClientRepresentation representation = ModelToRepresentation.toRepresentation(clientModel);
+                    representation.setAccess(auth.clients().getAccess(clientModel));
+                    rep.add(representation);
                 } else if (!viewableOnly && auth.clients().canList()){
                     ClientRepresentation client = new ClientRepresentation();
                     client.setId(clientModel.getId());

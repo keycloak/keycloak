@@ -198,6 +198,18 @@ public class RealmManager {
         }
 
     }
+    public void addQueryCompositeRoles(ClientModel realmAccess) {
+        RoleModel queryClients = realmAccess.getRole(AdminRoles.QUERY_CLIENTS);
+        RoleModel queryUsers = realmAccess.getRole(AdminRoles.QUERY_USERS);
+        RoleModel queryGroups = realmAccess.getRole(AdminRoles.QUERY_GROUPS);
+
+        RoleModel viewClients = realmAccess.getRole(AdminRoles.VIEW_CLIENTS);
+        viewClients.addCompositeRole(queryClients);
+        RoleModel viewUsers = realmAccess.getRole(AdminRoles.VIEW_USERS);
+        viewUsers.addCompositeRole(queryUsers);
+        viewUsers.addCompositeRole(queryGroups);
+    }
+
 
     public String getRealmAdminClientId(RealmModel realm) {
         return Constants.REALM_MANAGEMENT_CLIENT_ID;
@@ -327,6 +339,7 @@ public class RealmManager {
             role.setScopeParamRequired(false);
             adminRole.addCompositeRole(role);
         }
+        addQueryCompositeRoles(realmAdminApp);
     }
 
     private void checkMasterAdminManagementRoles(RealmModel realm) {
@@ -340,6 +353,7 @@ public class RealmManager {
                 addAndSetAdminRole(r, masterAdminClient, adminRole);
             }
         }
+        addQueryCompositeRoles(masterAdminClient);
     }
 
 
@@ -362,6 +376,7 @@ public class RealmManager {
         for (String r : AdminRoles.ALL_REALM_ROLES) {
             addAndSetAdminRole(r, realmAdminClient, adminRole);
         }
+        addQueryCompositeRoles(realmAdminClient);
     }
 
     private void addAndSetAdminRole(String roleName, ClientModel parentClient, RoleModel parentRole) {
@@ -385,6 +400,7 @@ public class RealmManager {
                 addAndSetAdminRole(r, realmAdminClient, adminRole);
             }
         }
+        addQueryCompositeRoles(realmAdminClient);
     }
 
 
@@ -502,7 +518,8 @@ public class RealmManager {
         // I need to postpone impersonation because it needs "realm-management" client and its roles set
         if (postponeImpersonationSetup) {
             setupImpersonationService(realm);
-        }
+            String realmAdminClientId = getRealmAdminClientId(realm);
+         }
 
         if (postponeAdminCliSetup) {
             setupAdminCli(realm);

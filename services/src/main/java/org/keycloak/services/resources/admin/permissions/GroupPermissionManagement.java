@@ -33,8 +33,8 @@ public interface GroupPermissionManagement {
 
     Policy viewMembersPermission(GroupModel group);
     Policy manageMembersPermission(GroupModel group);
-    Policy viewPermissionGroup(GroupModel group);
-    Policy managePermissionGroup(GroupModel group);
+    Policy viewPermission(GroupModel group);
+    Policy managePermission(GroupModel group);
 
     Resource resource(GroupModel group);
 

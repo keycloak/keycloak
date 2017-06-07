@@ -56,6 +56,8 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 //@Ignore
 public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
+    public static final String CLIENT_NAME = "application";
+
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation testRealmRep = new RealmRepresentation();
@@ -70,7 +72,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
         RoleModel realmRole = realm.addRole("realm-role");
         RoleModel realmRole2 = realm.addRole("realm-role2");
-        ClientModel client1 = realm.addClient("role-namespace");
+        ClientModel client1 = realm.addClient(CLIENT_NAME);
         RoleModel client1Role = client1.addRole("client-role");
         GroupModel group = realm.createGroup("top");
 
@@ -80,7 +82,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         compositeRole.addCompositeRole(mapperRole);
         compositeRole.addCompositeRole(managerRole);
 
-        // realm-role and role-namespace.client-role will have a role policy associated with their map-role permission
+        // realm-role and application.client-role will have a role policy associated with their map-role permission
         {
             permissions.roles().setPermissionsEnabled(client1Role, true);
             Policy mapRolePermission = permissions.roles().mapRolePermission(client1Role);
@@ -122,7 +124,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
     public static void setupUsers(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName(TEST);
-        ClientModel client = realm.getClientByClientId("role-namespace");
+        ClientModel client = realm.getClientByClientId(CLIENT_NAME);
         RoleModel realmRole = realm.getRole("realm-role");
         RoleModel realmRole2 = realm.getRole("realm-role2");
         RoleModel clientRole = client.getRole("client-role");
@@ -131,6 +133,9 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         RoleModel compositeRole = realm.getRole("composite-role");
         ClientModel realmManagementClient = realm.getClientByClientId("realm-management");
         RoleModel adminRole = realmManagementClient.getRole(AdminRoles.REALM_ADMIN);
+        RoleModel queryGroupsRole = realmManagementClient.getRole(AdminRoles.QUERY_GROUPS);
+        RoleModel queryUsersRole = realmManagementClient.getRole(AdminRoles.QUERY_USERS);
+        RoleModel queryClientsRole = realmManagementClient.getRole(AdminRoles.QUERY_CLIENTS);
 
         UserModel nomapAdmin = session.users().addUser(realm, "nomap-admin");
         nomapAdmin.setEnabled(true);
@@ -168,6 +173,8 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         groupMember.joinGroup(group);
         groupMember.setEnabled(true);
         UserModel groupManager = session.users().addUser(realm, "groupManager");
+        groupManager.grantRole(queryGroupsRole);
+        groupManager.grantRole(queryUsersRole);
         groupManager.setEnabled(true);
         groupManager.grantRole(mapperRole);
         session.userCredentialManager().updateCredential(realm, groupManager, UserCredentialModel.password("password"));
@@ -175,6 +182,8 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         UserModel groupManagerNoMapper = session.users().addUser(realm, "noMapperGroupManager");
         groupManagerNoMapper.setEnabled(true);
         session.userCredentialManager().updateCredential(realm, groupManagerNoMapper, UserCredentialModel.password("password"));
+        groupManagerNoMapper.grantRole(queryGroupsRole);
+        groupManagerNoMapper.grantRole(queryUsersRole);
 
         UserPolicyRepresentation groupManagerRep = new UserPolicyRepresentation();
         groupManagerRep.setName("groupManagers");
@@ -184,10 +193,12 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         Policy groupManagerPolicy = permissions.authz().getStoreFactory().getPolicyStore().create(groupManagerRep, server);
         Policy groupManagerPermission = permissions.groups().manageMembersPermission(group);
         groupManagerPermission.addAssociatedPolicy(groupManagerPolicy);
+        permissions.groups().viewPermission(group).addAssociatedPolicy(groupManagerPolicy);
 
         UserModel clientMapper = session.users().addUser(realm, "clientMapper");
         clientMapper.setEnabled(true);
         clientMapper.grantRole(managerRole);
+        clientMapper.grantRole(queryUsersRole);
         session.userCredentialManager().updateCredential(realm, clientMapper, UserCredentialModel.password("password"));
         Policy clientMapperPolicy = permissions.clients().mapRolesPermission(client);
         UserPolicyRepresentation userRep = new UserPolicyRepresentation();
@@ -195,6 +206,19 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         userRep.addUser("clientMapper");
         Policy userPolicy = permissions.authz().getStoreFactory().getPolicyStore().create(userRep, permissions.clients().resourceServer(client));
         clientMapperPolicy.addAssociatedPolicy(userPolicy);
+
+        UserModel clientManager = session.users().addUser(realm, "clientManager");
+        clientManager.setEnabled(true);
+        clientManager.grantRole(queryClientsRole);
+        session.userCredentialManager().updateCredential(realm, clientManager, UserCredentialModel.password("password"));
+
+        Policy clientManagerPolicy = permissions.clients().managePermission(client);
+        userRep = new UserPolicyRepresentation();
+        userRep.setName("clientManager");
+        userRep.addUser("clientManager");
+        userPolicy = permissions.authz().getStoreFactory().getPolicyStore().create(userRep, permissions.clients().resourceServer(client));
+        clientManagerPolicy.addAssociatedPolicy(userPolicy);
+
 
 
 
@@ -206,7 +230,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         RealmModel realm = session.realms().getRealmByName(TEST);
         RoleModel realmRole = realm.getRole("realm-role");
         RoleModel realmRole2 = realm.getRole("realm-role2");
-        ClientModel client = realm.getClientByClientId("role-namespace");
+        ClientModel client = realm.getClientByClientId(CLIENT_NAME);
         RoleModel clientRole = client.getRole("client-role");
 
         // test authorized
@@ -309,7 +333,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         RoleRepresentation realmRole2 = adminClient.realm(TEST).roles().get("realm-role2").toRepresentation();
         List<RoleRepresentation> realmRole2Set = new LinkedList<>();
         realmRole2Set.add(realmRole2);
-        ClientRepresentation client = adminClient.realm(TEST).clients().findByClientId("role-namespace").get(0);
+        ClientRepresentation client = adminClient.realm(TEST).clients().findByClientId(CLIENT_NAME).get(0);
         RoleRepresentation clientRole = adminClient.realm(TEST).clients().get(client.getId()).roles().get("client-role").toRepresentation();
         List<RoleRepresentation> clientRoleSet = new LinkedList<>();
         clientRoleSet.add(clientRole);
@@ -463,7 +487,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         RoleRepresentation realmRole2 = adminClient.realm(TEST).roles().get("realm-role2").toRepresentation();
         List<RoleRepresentation> realmRole2Set = new LinkedList<>();
         realmRole2Set.add(realmRole);
-        ClientRepresentation client = adminClient.realm(TEST).clients().findByClientId("role-namespace").get(0);
+        ClientRepresentation client = adminClient.realm(TEST).clients().findByClientId(CLIENT_NAME).get(0);
         RoleRepresentation clientRole = adminClient.realm(TEST).clients().get(client.getId()).roles().get("client-role").toRepresentation();
         List<RoleRepresentation> clientRoleSet = new LinkedList<>();
         clientRoleSet.add(clientRole);

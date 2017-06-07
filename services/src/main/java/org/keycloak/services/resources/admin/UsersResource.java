@@ -259,7 +259,9 @@ public class UsersResource {
         boolean canViewGlobal = auth.users().canView();
         for (UserModel user : userModels) {
             if (!canViewGlobal  && !auth.users().canView(user)) continue;
-            results.add(ModelToRepresentation.toRepresentation(session, realm, user));
+            UserRepresentation userRep = ModelToRepresentation.toRepresentation(session, realm, user);
+            userRep.setAccess(auth.users().getAccess(user));
+            results.add(userRep);
         }
         return results;
     }

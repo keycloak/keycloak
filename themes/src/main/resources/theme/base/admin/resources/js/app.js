@@ -1398,9 +1398,6 @@ module.config([ '$routeProvider', function($routeProvider) {
                 realm : function(RealmLoader) {
                     return RealmLoader();
                 },
-                clients : function(ClientListLoader) {
-                    return ClientListLoader();
-                },
                 serverInfo : function(ServerInfoLoader) {
                     return ServerInfoLoader();
                 }

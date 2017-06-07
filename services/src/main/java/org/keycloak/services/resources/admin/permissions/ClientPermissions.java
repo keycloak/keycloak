@@ -492,4 +492,13 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
         return root.evaluatePermission(resource, scope, server);
     }
 
+    @Override
+    public Map<String, Boolean> getAccess(ClientModel client) {
+        Map<String, Boolean> map = new HashMap<>();
+        map.put("view", canView(client));
+        map.put("manage", canManage(client));
+        return map;
+    }
+
+
 }

@@ -195,6 +195,7 @@ public class ClientResource {
         if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
             representation.setAuthorizationServicesEnabled(authorization().isEnabled());
         }
+        representation.setAccess(auth.clients().getAccess(client));
 
         return representation;
     }

@@ -7,7 +7,7 @@
 
     <kc-tabs-client-role></kc-tabs-client-role>
 
-    <form class=form-horizontal" name="enableForm" novalidate kc-read-only="!access.manageAuthorization">
+    <form class=form-horizontal" name="enableForm" novalidate kc-read-only="!client.access.manage || !access.manageAuthorization">
         <fieldset class="border-top">
         <div class="form-group">
             <label class="col-md-2 control-label" for="permissionsEnabled">{{:: 'permissions-enabled-role' | translate}}</label>

@@ -62,6 +62,7 @@ public class UserRepresentation {
     protected List<SocialLinkRepresentation> socialLinks;
 
     protected List<String> groups;
+    private Map<String, Boolean> access;
 
     public String getSelf() {
         return self;
@@ -263,5 +264,13 @@ public class UserRepresentation {
 
     public void setDisableableCredentialTypes(Set<String> disableableCredentialTypes) {
         this.disableableCredentialTypes = disableableCredentialTypes;
+    }
+
+    public Map<String, Boolean> getAccess() {
+        return access;
+    }
+
+    public void setAccess(Map<String, Boolean> access) {
+        this.access = access;
     }
 }

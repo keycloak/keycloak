@@ -1,81 +1,95 @@
+function getAccess(Auth, Current, role) {
+    if (!Current.realm)return false;
+    var realmAccess = Auth.user && Auth.user['realm_access'];
+    if (realmAccess) {
+        realmAccess = realmAccess[Current.realm.realm];
+        if (realmAccess) {
+            return realmAccess.indexOf(role) >= 0;
+        }
+    }
+    return false;
+}
+
+function getAccessObject(Auth, Current) {
+    return {
+        get createRealm() {
+            return Auth.user && Auth.user.createRealm;
+        },
+
+        get queryUsers() {
+            return getAccess(Auth, Current, 'query-users') || this.viewUsers;
+        },
+
+        get queryGroups() {
+            return getAccess(Auth, Current, 'query-groups') || this.viewUsers;
+        },
+
+        get queryClients() {
+            return getAccess(Auth, Current, 'query-clients') || this.viewClients;
+        },
+
+        get viewRealm() {
+            return getAccess(Auth, Current, 'view-realm') || getAccess(Auth, Current, 'manage-realm') || this.manageRealm;
+        },
+
+        get viewClients() {
+            return getAccess(Auth, Current, 'view-clients') || getAccess(Auth, Current, 'manage-clients') || this.manageClients;
+        },
+
+        get viewUsers() {
+            return getAccess(Auth, Current, 'view-users') || getAccess(Auth, Current, 'manage-users') || this.manageClients;
+        },
+
+        get viewEvents() {
+            return getAccess(Auth, Current, 'view-events') || getAccess(Auth, Current, 'manage-events') || this.manageClients;
+        },
+
+        get viewIdentityProviders() {
+            return getAccess(Auth, Current, 'view-identity-providers') || getAccess(Auth, Current, 'manage-identity-providers') || this.manageIdentityProviders;
+        },
+
+        get viewAuthorization() {
+            return getAccess(Auth, Current, 'view-authorization') || this.manageAuthorization;
+        },
+
+        get manageRealm() {
+            return getAccess(Auth, Current, 'manage-realm');
+        },
+
+        get manageClients() {
+            return getAccess(Auth, Current, 'manage-clients');
+        },
+
+        get manageUsers() {
+            return getAccess(Auth, Current, 'manage-users');
+        },
+
+        get manageEvents() {
+            return getAccess(Auth, Current, 'manage-events');
+        },
+
+        get manageIdentityProviders() {
+            return getAccess(Auth, Current, 'manage-identity-providers');
+        },
+
+        get manageAuthorization() {
+            return getAccess(Auth, Current, 'manage-authorization');
+        },
+
+        get impersonation() {
+            return getAccess(Auth, Current, 'impersonation');
+        }
+    };
+}
+
+
 module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location, Notifications, ServerInfo) {
     $scope.authUrl = authUrl;
     $scope.resourceUrl = resourceUrl;
     $scope.auth = Auth;
     $scope.serverInfo = ServerInfo.get();
 
-    function getAccess(role) {
-        if (!Current.realm) {
-            return false;
-        }
-
-        var realmAccess = Auth.user && Auth.user['realm_access'];
-        if (realmAccess) {
-            realmAccess = realmAccess[Current.realm.realm];
-            if (realmAccess) {
-                return realmAccess.indexOf(role) >= 0;
-            }
-        }
-        return false;
-    }
-
-    $scope.access = {
-        get createRealm() {
-            return Auth.user && Auth.user.createRealm;
-        },
-
-        get viewRealm() {
-            return getAccess('view-realm') || getAccess('manage-realm') || this.manageRealm;
-        },
-
-        get viewClients() {
-            return getAccess('view-clients') || getAccess('manage-clients') || this.manageClients;
-        },
-
-        get viewUsers() {
-            return getAccess('view-users') || getAccess('manage-users') || this.manageClients;
-        },
-
-        get viewEvents() {
-            return getAccess('view-events') || getAccess('manage-events') || this.manageClients;
-        },
-
-        get viewIdentityProviders() {
-            return getAccess('view-identity-providers') || getAccess('manage-identity-providers') || this.manageIdentityProviders;
-        },
-
-        get viewAuthorization() {
-            return getAccess('view-authorization') || this.manageAuthorization;
-        },
-
-        get manageRealm() {
-            return getAccess('manage-realm');
-        },
-
-        get manageClients() {
-            return getAccess('manage-clients');
-        },
-
-        get manageUsers() {
-            return getAccess('manage-users');
-        },
-
-        get manageEvents() {
-            return getAccess('manage-events');
-        },
-
-        get manageIdentityProviders() {
-            return getAccess('manage-identity-providers');
-        },
-
-        get manageAuthorization() {
-            return getAccess('manage-authorization');
-        },
-
-        get impersonation() {
-            return getAccess('impersonation');
-        }
-    };
+    $scope.access = getAccessObject(Auth, Current);
 
     $scope.$watch(function() {
         return $location.path();
@@ -85,20 +99,36 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location
     });
 });
 
-module.controller('HomeCtrl', function(Realm, Auth, $location) {
+module.controller('HomeCtrl', function(Realm, Auth, Current, $location) {
+
     Realm.query(null, function(realms) {
         var realm;
         if (realms.length == 1) {
-            realm = realms[0].realm;
+            realm = realms[0];
         } else if (realms.length == 2) {
             if (realms[0].realm == Auth.user.realm) {
-                realm = realms[1].realm;
+                realm = realms[1];
             } else if (realms[1].realm == Auth.user.realm) {
-                realm = realms[0].realm;
+                realm = realms[0];
             }
         }
         if (realm) {
-            $location.url('/realms/' + realm);
+            Current.realms = realms;
+            Current.realm = realm;
+            var access = getAccessObject(Auth, Current);
+            if (access.viewRealm || access.manageRealm) {
+                $location.url('/realms/' + realm.realm );
+            } else if (access.queryClients) {
+                $location.url('/realms/' + realm.realm + "/clients");
+            } else if (access.viewIdentityProviders) {
+                $location.url('/realms/' + realm.realm + "/identity-provider-settings");
+            } else if (access.queryUsers) {
+                $location.url('/realms/' + realm.realm + "/users");
+            } else if (access.queryGroups) {
+                $location.url('/realms/' + realm.realm + "/groups");
+            } else if (access.viewEvents) {
+                $location.url('/realms/' + realm.realm + "/events");
+            }
         } else {
             $location.url('/realms');
         }
