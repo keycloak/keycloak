@@ -39,6 +39,7 @@
                         ${adapter.test.props}
                     </property>
                     <property name="javaVmArguments">
+                        ${app.server.jboss.jvm.debug.args}
                         ${app.server.memory.settings}
                         -Djava.net.preferIPv4Stack=true
                     </property>

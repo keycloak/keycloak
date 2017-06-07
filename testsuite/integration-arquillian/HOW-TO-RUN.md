@@ -45,7 +45,23 @@ and adapter are all in the same JVM and you can debug them easily. If it is not 
    
 and you will be able to attach remote debugger to the test. Unfortunately server and adapter are running in different JVMs, so this won't help to debug those. 
 
-TODO: Improve and add more info about Wildfly debugging...
+### JBoss auth server debugging
+
+When tests are run on JBoss based container (WildFly/EAP) there is possibility to attach a debugger, by default on localhost:5005.
+
+The server won't wait to attach the debugger. There are some properties what can change the default behaviour.
+
+    -Dauth.server.debug.port=$PORT
+    -Dauth.server.debug.suspend=y
+
+More info: http://javahowto.blogspot.cz/2010/09/java-agentlibjdwp-for-attaching.html
+
+### JBoss app server debugging
+
+Analogically, there is the same behaviour for JBoss based app server as for auth server. The default port is set to 5006. There are app server properties.
+
+    -Dapp.server.debug.port=$PORT
+    -Dapp.server.debug.suspend=y    
 
 ## Testsuite logging
 
