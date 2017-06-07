@@ -36,6 +36,7 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public class KeycloakAuthenticationProvider implements AuthenticationProvider {
+    private String prefixRole = "ROLE_";
     private GrantedAuthoritiesMapper grantedAuthoritiesMapper;
 
     public void setGrantedAuthoritiesMapper(GrantedAuthoritiesMapper grantedAuthoritiesMapper) {
@@ -48,7 +49,7 @@ public class KeycloakAuthenticationProvider implements AuthenticationProvider {
         List<GrantedAuthority> grantedAuthorities = new ArrayList<GrantedAuthority>();
 
         for (String role : token.getAccount().getRoles()) {
-            grantedAuthorities.add(new KeycloakRole(role));
+            grantedAuthorities.add(new KeycloakRole( this.prefixRole + role ));
         }
         return new KeycloakAuthenticationToken(token.getAccount(), mapAuthorities(grantedAuthorities));
     }
