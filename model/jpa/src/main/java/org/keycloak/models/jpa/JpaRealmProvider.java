@@ -323,6 +323,25 @@ public class JpaRealmProvider implements RealmProvider {
     }
 
     @Override
+    public Long getGroupsCount(RealmModel realm) {
+        Long count = em.createNamedQuery("getGroupCount", Long.class)
+                .setParameter("realm", realm.getId())
+                .getSingleResult();
+
+        return count;
+    }
+
+    @Override
+    public Long getGroupsCountByNameContaining(RealmModel realm, String search) {
+        Long count = em.createNamedQuery("getGroupCountByNameContaining", Long.class)
+                .setParameter("realm", realm.getId())
+                .setParameter("name", search)
+                .getSingleResult();
+
+        return count;
+    }
+
+    @Override
     public List<GroupModel> getTopLevelGroups(RealmModel realm) {
         RealmEntity ref = em.getReference(RealmEntity.class, realm.getId());
 

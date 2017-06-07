@@ -102,6 +102,25 @@ public class GroupsResource {
     }
 
     /**
+     * Returns the groups counts.
+     *
+     * @return
+     */
+    @GET
+    @NoCache
+    @Path("/count")
+    public Response getGroupCount(@QueryParam("search") String search) {
+        auth.requireView();
+        Long results;
+        if (Objects.nonNull(search)) {
+            results = realm.getGroupsCountByNameContaining(search);
+        } else {
+            results = realm.getGroupsCount();
+        }
+        return Response.ok(results).build();
+    }
+
+    /**
      * create or add a top level realm groupSet or create child.  This will update the group and set the parent if it exists.  Create it and set the parent
      * if the group doesn't exist.
      *
