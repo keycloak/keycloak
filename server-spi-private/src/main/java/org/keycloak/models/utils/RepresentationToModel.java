@@ -2171,13 +2171,13 @@ public class RepresentationToModel {
     private static void updateResources(Set<String> resourceIds, Policy policy, StoreFactory storeFactory) {
         if (resourceIds != null) {
             if (resourceIds.isEmpty()) {
-                for (Scope scope : new HashSet<Scope>(policy.getScopes())) {
-                    policy.removeScope(scope);
+                for (Resource resource : new HashSet<>(policy.getResources())) {
+                    policy.removeResource(resource);
                 }
             }
             for (String resourceId : resourceIds) {
                 boolean hasResource = false;
-                for (Resource resourceModel : new HashSet<Resource>(policy.getResources())) {
+                for (Resource resourceModel : new HashSet<>(policy.getResources())) {
                     if (resourceModel.getId().equals(resourceId) || resourceModel.getName().equals(resourceId)) {
                         hasResource = true;
                     }
@@ -2196,7 +2196,7 @@ public class RepresentationToModel {
                 }
             }
 
-            for (Resource resourceModel : new HashSet<Resource>(policy.getResources())) {
+            for (Resource resourceModel : new HashSet<>(policy.getResources())) {
                 boolean hasResource = false;
 
                 for (String resourceId : resourceIds) {

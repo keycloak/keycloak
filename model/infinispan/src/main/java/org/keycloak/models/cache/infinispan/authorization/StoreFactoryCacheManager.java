@@ -102,7 +102,7 @@ public class StoreFactoryCacheManager extends CacheManager {
         addInvalidations(InResourcePredicate.create().resource(id), invalidations);
     }
 
-    public void policyUpdated(String id, String name, Set<String> resources, String serverId, Set<String> invalidations) {
+    public void policyUpdated(String id, String name, Set<String> resources, Set<String> resourceTypes, Set<String> scopes, String serverId, Set<String> invalidations) {
         invalidations.add(id);
         invalidations.add(StoreFactoryCacheSession.getPolicyByNameCacheKey(name, serverId));
 
@@ -111,10 +111,22 @@ public class StoreFactoryCacheManager extends CacheManager {
                 invalidations.add(StoreFactoryCacheSession.getPolicyByResource(resource, serverId));
             }
         }
+
+        if (resourceTypes != null) {
+            for (String type : resourceTypes) {
+                invalidations.add(StoreFactoryCacheSession.getPolicyByResourceType(type, serverId));
+            }
+        }
+
+        if (scopes != null) {
+            for (String scope : scopes) {
+                invalidations.add(StoreFactoryCacheSession.getPolicyByScope(scope, serverId));
+            }
+        }
     }
 
-    public void policyRemoval(String id, String name, Set<String> resources, String serverId, Set<String> invalidations) {
-        policyUpdated(id, name, resources, serverId, invalidations);
+    public void policyRemoval(String id, String name, Set<String> resources, Set<String> resourceTypes, Set<String> scopes, String serverId, Set<String> invalidations) {
+        policyUpdated(id, name, resources, resourceTypes, scopes, serverId, invalidations);
     }
 
 

@@ -21,14 +21,17 @@ package org.keycloak.authorization;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.evaluator.Evaluators;
 import org.keycloak.authorization.policy.evaluation.DefaultPolicyEvaluator;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
-import org.keycloak.authorization.store.AuthorizationStoreFactory;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.ResourceStore;
@@ -37,7 +40,6 @@ import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.cache.authorization.CachedStoreFactoryProvider;
-import org.keycloak.models.cache.authorization.CachedStoreProviderFactory;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
@@ -143,6 +145,61 @@ public final class AuthorizationProvider implements Provider {
                 return new PolicyStore() {
                     @Override
                     public Policy create(AbstractPolicyRepresentation representation, ResourceServer resourceServer) {
+                        Set<String> resources = representation.getResources();
+
+                        if (resources != null) {
+                            representation.setResources(resources.stream().map(id -> {
+                                Resource resource = getResourceStore().findById(id, resourceServer.getId());
+
+                                if (resource == null) {
+                                    resource = getResourceStore().findByName(id, resourceServer.getId());
+                                }
+
+                                if (resource == null) {
+                                    throw new RuntimeException("Resource [" + id + "] does not exist");
+                                }
+
+                                return resource.getId();
+                            }).collect(Collectors.toSet()));
+                        }
+
+                        Set<String> scopes = representation.getScopes();
+
+                        if (scopes != null) {
+                            representation.setScopes(scopes.stream().map(id -> {
+                                Scope scope = getScopeStore().findById(id, resourceServer.getId());
+
+                                if (scope == null) {
+                                    scope = getScopeStore().findByName(id, resourceServer.getId());
+                                }
+
+                                if (scope == null) {
+                                    throw new RuntimeException("Scope [" + id + "] does not exist");
+                                }
+
+                                return scope.getId();
+                            }).collect(Collectors.toSet()));
+                        }
+
+
+                        Set<String> policies = representation.getPolicies();
+
+                        if (policies != null) {
+                            representation.setPolicies(policies.stream().map(id -> {
+                                Policy policy = getPolicyStore().findById(id, resourceServer.getId());
+
+                                if (policy == null) {
+                                    policy = getPolicyStore().findByName(id, resourceServer.getId());
+                                }
+
+                                if (policy == null) {
+                                    throw new RuntimeException("Policy [" + id + "] does not exist");
+                                }
+
+                                return policy.getId();
+                            }).collect(Collectors.toSet()));
+                        }
+
                         return RepresentationToModel.toModel(representation, AuthorizationProvider.this, policyStore.create(representation, resourceServer));
                     }
 
