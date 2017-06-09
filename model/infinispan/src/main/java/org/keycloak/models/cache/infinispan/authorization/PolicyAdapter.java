@@ -47,7 +47,7 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
     @Override
     public Policy getDelegateForUpdate() {
         if (updated == null) {
-            cacheSession.registerPolicyInvalidation(cached.getId(), cached.getName(), cached.getResourcesIds(), cached.getResourceServerId());
+            cacheSession.registerPolicyInvalidation(cached.getId(), cached.getName(), cached.getResourcesIds(), cached.getScopesIds(), cached.getResourceServerId());
             updated = cacheSession.getPolicyStoreDelegate().findById(cached.getId(), cached.getResourceServerId());
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
@@ -96,7 +96,7 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
     @Override
     public void setName(String name) {
         getDelegateForUpdate();
-        cacheSession.registerPolicyInvalidation(cached.getId(), name, cached.getResourcesIds(), cached.getResourceServerId());
+        cacheSession.registerPolicyInvalidation(cached.getId(), name, cached.getResourcesIds(), cached.getScopesIds(), cached.getResourceServerId());
         updated.setName(name);
 
     }
@@ -235,7 +235,7 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
         getDelegateForUpdate();
         HashSet<String> resources = new HashSet<>();
         resources.add(resource.getId());
-        cacheSession.registerPolicyInvalidation(cached.getId(), cached.getName(), resources, cached.getResourceServerId());
+        cacheSession.registerPolicyInvalidation(cached.getId(), cached.getName(), resources, cached.getScopesIds(), cached.getResourceServerId());
         updated.addResource(resource);
 
     }
@@ -245,7 +245,7 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
         getDelegateForUpdate();
         HashSet<String> resources = new HashSet<>();
         resources.add(resource.getId());
-        cacheSession.registerPolicyInvalidation(cached.getId(), cached.getName(), resources, cached.getResourceServerId());
+        cacheSession.registerPolicyInvalidation(cached.getId(), cached.getName(), resources, cached.getScopesIds(), cached.getResourceServerId());
         updated.removeResource(resource);
 
     }

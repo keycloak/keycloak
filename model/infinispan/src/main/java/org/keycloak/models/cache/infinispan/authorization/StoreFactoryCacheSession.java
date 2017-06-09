@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
@@ -252,12 +253,30 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         invalidationEvents.add(ResourceUpdatedEvent.create(id, name, type, uri, scopes, serverId));
     }
 
-    public void registerPolicyInvalidation(String id, String name, Set<String> resources, String serverId) {
-        cache.policyUpdated(id, name, resources, serverId, invalidations);
+    public void registerPolicyInvalidation(String id, String name, Set<String> resources, Set<String> scopes, String serverId) {
+        Set<String> resourceTypes = getResourceTypes(resources, serverId);
+        cache.policyUpdated(id, name, resources, resourceTypes, scopes, serverId, invalidations);
         PolicyAdapter adapter = managedPolicies.get(id);
         if (adapter != null) adapter.invalidateFlag();
 
-        invalidationEvents.add(PolicyUpdatedEvent.create(id, name, resources, serverId));
+        invalidationEvents.add(PolicyUpdatedEvent.create(id, name, resources, resourceTypes, scopes, serverId));
+    }
+
+    private Set<String> getResourceTypes(Set<String> resources, String serverId) {
+        if (resources == null) {
+            return Collections.emptySet();
+        }
+
+        return resources.stream().map(resourceId -> {
+            Resource resource = getResourceStore().findById(resourceId, serverId);
+            String type = resource.getType();
+
+            if (type != null) {
+                return type;
+            }
+
+            return null;
+        }).filter(Objects::nonNull).collect(Collectors.toSet());
     }
 
     public ResourceServerStore getResourceServerStoreDelegate() {
@@ -626,7 +645,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         @Override
         public Policy create(AbstractPolicyRepresentation representation, ResourceServer resourceServer) {
             Policy policy = getPolicyStoreDelegate().create(representation, resourceServer);
-            registerPolicyInvalidation(policy.getId(), policy.getName(), policy.getResources().stream().map(resource1 -> resource1.getId()).collect(Collectors.toSet()), resourceServer.getId());
+            registerPolicyInvalidation(policy.getId(), representation.getName(), representation.getResources(), representation.getScopes(), resourceServer.getId());
             return policy;
         }
 
@@ -637,8 +656,12 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             if (policy == null) return;
 
             cache.invalidateObject(id);
-            invalidationEvents.add(PolicyRemovedEvent.create(id, policy.getName(), policy.getResources().stream().map(resource1 -> resource1.getId()).collect(Collectors.toSet()), policy.getResourceServer().getId()));
-            cache.policyRemoval(id, policy.getName(), policy.getResources().stream().map(resource1 -> resource1.getId()).collect(Collectors.toSet()), policy.getResourceServer().getId(), invalidations);
+            Set<String> resources = policy.getResources().stream().map(resource -> resource.getId()).collect(Collectors.toSet());
+            ResourceServer resourceServer = policy.getResourceServer();
+            Set<String> resourceTypes = getResourceTypes(resources, resourceServer.getId());
+            Set<String> scopes = policy.getScopes().stream().map(scope -> scope.getId()).collect(Collectors.toSet());
+            invalidationEvents.add(PolicyRemovedEvent.create(id, policy.getName(), resources, resourceTypes, scopes, resourceServer.getId()));
+            cache.policyRemoval(id, policy.getName(), resources, resourceTypes, scopes, resourceServer.getId(), invalidations);
             getPolicyStoreDelegate().delete(id);
 
         }
