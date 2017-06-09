@@ -16,6 +16,7 @@
  */
 package org.keycloak.storage.user;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -146,4 +147,14 @@ public interface UserQueryProvider {
      * @return
      */
     List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm);
+    
+    /**
+     * Search for users with role assigned.
+     * 
+     * @param realm
+     * @param client
+     * @param roleId
+     * @return
+     */
+    List<UserModel> getUsersInRole(RealmModel realm, ClientModel client, String roleId);
 }

@@ -620,6 +620,11 @@ public class UserCacheSession implements UserCache {
     }
 
     @Override
+    public List<UserModel> getUsersInRole(RealmModel realm, ClientModel client, String roleId) {
+    	return getDelegate().getUsersInRole(realm, client, roleId);
+    }
+    
+    @Override
     public List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm) {
         return getDelegate().searchForUserByUserAttribute(attrName, attrValue, realm);
     }

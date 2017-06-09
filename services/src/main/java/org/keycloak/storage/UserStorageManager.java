@@ -484,6 +484,18 @@ public class UserStorageManager implements UserProvider, OnUserCache, OnCreateCo
     }
 
     @Override
+	public List<UserModel> getUsersInRole(RealmModel realm, ClientModel client, String roleId) {
+    	List<UserModel> results = query((provider, first, max) -> {
+            if (provider instanceof UserQueryProvider) {
+                return ((UserQueryProvider)provider).getUsersInRole(realm, client, roleId);
+
+            }
+            return Collections.EMPTY_LIST;
+        }, realm, 0, Integer.MAX_VALUE);
+        return importValidation(realm, results);
+	}
+    
+    @Override
     public List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm) {
         List<UserModel> results = query((provider, first, max) -> {
             if (provider instanceof UserQueryProvider) {

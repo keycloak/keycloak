@@ -27,6 +27,7 @@ import org.keycloak.credential.CredentialInputValidator;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
 import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -334,6 +335,11 @@ public class LDAPStorageProvider implements UserStorageProvider,
         return searchResults;
     }
 
+    @Override
+	public List<UserModel> getUsersInRole(RealmModel realm, ClientModel client, String roleId) {
+    	return Collections.EMPTY_LIST;
+	}
+    
     @Override
     public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group) {
         return getGroupMembers(realm, group, 0, Integer.MAX_VALUE - 1);

@@ -19,6 +19,7 @@ package org.keycloak.testsuite.federation.storage;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialInputValidator;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -197,6 +198,11 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
         return searchForUser(username, realm, firstResult, maxResults);
     }
 
+    @Override
+    public List<UserModel> getUsersInRole(RealmModel realm, ClientModel client, String roleId) {
+    	return Collections.EMPTY_LIST;
+    }
+    
     @Override
     public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
         return Collections.EMPTY_LIST;

@@ -704,6 +704,28 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         for (UserEntity entity : results) users.add(new UserAdapter(session, realm, em, entity));
         return users;
     }
+    
+    @Override
+    public List<UserModel> getUsersInRole(RealmModel realm, ClientModel client, String roleId) {
+    	StringBuilder builder = new StringBuilder("SELECT m.user FROM UserRoleMappingEntity m WHERE m.user.realmId = :realmId ");
+    	builder.append("AND m.roleId IN (SELECT rle.id FROM RoleEntity rle WHERE rle.name = :roleId and rle.client.clientId = :clientId) ");
+    	builder.append("OR m.roleId IN (SELECT rle2.id FROM RoleEntity rle2 INNER JOIN rle2.compositeRoles cmp WHERE cmp.name = :roleId and rle2.client.clientId = :clientId) ");
+    	builder.append("order by m.user.username");
+        
+    	TypedQuery<UserEntity> query = em.createQuery(builder.toString(), UserEntity.class);
+        query.setParameter("realmId", realm.getId());
+        query.setParameter("roleId", roleId);
+        query.setParameter("clientId", client.getClientId());
+        
+        List<UserEntity> results = query.getResultList();
+        List<UserModel> users = new ArrayList<UserModel>();
+        
+        for (UserEntity entity : results){
+        	users.add(new UserAdapter(session, realm, em, entity));
+        }
+        
+        return users;
+    }
 
     @Override
     public List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm) {
