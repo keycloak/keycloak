@@ -129,7 +129,7 @@ public class ClientsResource {
     }
 
     private AuthorizationService getAuthorizationService(ClientModel clientModel) {
-        return new AuthorizationService(session, clientModel, auth);
+        return new AuthorizationService(session, clientModel, auth, adminEvent);
     }
 
     /**
@@ -167,13 +167,13 @@ public class ClientsResource {
                 }
             }
 
+            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, clientModel.getId()).representation(rep).success();
+
             if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
                 if (TRUE.equals(rep.getAuthorizationServicesEnabled())) {
-                    getAuthorizationService(clientModel).enable();
+                    getAuthorizationService(clientModel).enable(true);
                 }
             }
-
-            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, clientModel.getId()).representation(rep).success();
 
             return Response.created(uriInfo.getAbsolutePathBuilder().path(clientModel.getId()).build()).build();
         } catch (ModelDuplicateException e) {

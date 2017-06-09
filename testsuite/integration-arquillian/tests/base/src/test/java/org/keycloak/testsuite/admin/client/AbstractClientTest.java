@@ -107,7 +107,9 @@ public abstract class AbstractClientTest extends AbstractAuthTest {
         clientRep.setPublicClient(Boolean.FALSE);
         clientRep.setAuthorizationServicesEnabled(Boolean.TRUE);
         clientRep.setServiceAccountsEnabled(Boolean.TRUE);
-        return createClient(clientRep);
+        String id = createClient(clientRep);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientResourcePath(id), ResourceType.AUTHORIZATION_RESOURCE_SERVER);
+        return id;
     }
 
     protected ClientRepresentation createOidcClientRep(String name) {

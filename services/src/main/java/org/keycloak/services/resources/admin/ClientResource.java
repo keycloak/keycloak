@@ -148,33 +148,10 @@ public class ClientResource {
         try {
             updateClientFromRep(rep, client, session);
             adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
+            updateAuthorizationSettings(rep);
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("Client " + rep.getClientId() + " already exists");
-        }
-    }
-
-    public void updateClientFromRep(ClientRepresentation rep, ClientModel client, KeycloakSession session) throws ModelDuplicateException {
-        if (TRUE.equals(rep.isServiceAccountsEnabled())) {
-            UserModel serviceAccount = this.session.users().getServiceAccount(client);
-
-            if (serviceAccount == null) {
-                new ClientManager(new RealmManager(session)).enableServiceAccount(client);
-            }
-        }
-
-        if (!rep.getClientId().equals(client.getClientId())) {
-            new ClientManager(new RealmManager(session)).clientIdChanged(client, rep.getClientId());
-        }
-
-        RepresentationToModel.updateClient(rep, client);
-
-        if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
-            if (TRUE.equals(rep.getAuthorizationServicesEnabled())) {
-                authorization().enable();
-            } else {
-                authorization().disable();
-            }
         }
     }
 
@@ -587,10 +564,36 @@ public class ClientResource {
     public AuthorizationService authorization() {
         ProfileHelper.requireFeature(Profile.Feature.AUTHORIZATION);
 
-        AuthorizationService resource = new AuthorizationService(this.session, this.client, this.auth);
+        AuthorizationService resource = new AuthorizationService(this.session, this.client, this.auth, adminEvent);
 
         ResteasyProviderFactory.getInstance().injectProperties(resource);
 
         return resource;
+    }
+
+    private void updateClientFromRep(ClientRepresentation rep, ClientModel client, KeycloakSession session) throws ModelDuplicateException {
+        if (TRUE.equals(rep.isServiceAccountsEnabled())) {
+            UserModel serviceAccount = this.session.users().getServiceAccount(client);
+
+            if (serviceAccount == null) {
+                new ClientManager(new RealmManager(session)).enableServiceAccount(client);
+            }
+        }
+
+        if (!rep.getClientId().equals(client.getClientId())) {
+            new ClientManager(new RealmManager(session)).clientIdChanged(client, rep.getClientId());
+        }
+
+        RepresentationToModel.updateClient(rep, client);
+    }
+
+    private void updateAuthorizationSettings(ClientRepresentation rep) {
+        if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
+            if (TRUE.equals(rep.getAuthorizationServicesEnabled())) {
+                authorization().enable(false);
+            } else {
+                authorization().disable();
+            }
+        }
     }
 }
