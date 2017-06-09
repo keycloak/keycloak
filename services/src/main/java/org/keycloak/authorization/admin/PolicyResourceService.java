@@ -26,8 +26,10 @@ import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.UriInfo;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.authorization.AuthorizationProvider;
@@ -36,12 +38,15 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.RealmAuth;
 import org.keycloak.util.JsonSerialization;
 
@@ -54,19 +59,21 @@ public class PolicyResourceService {
     protected final ResourceServer resourceServer;
     protected final AuthorizationProvider authorization;
     protected final RealmAuth auth;
+    private final AdminEventBuilder adminEvent;
 
-    public PolicyResourceService(Policy policy, ResourceServer resourceServer, AuthorizationProvider authorization, RealmAuth auth) {
+    public PolicyResourceService(Policy policy, ResourceServer resourceServer, AuthorizationProvider authorization, RealmAuth auth, AdminEventBuilder adminEvent) {
         this.policy = policy;
         this.resourceServer = resourceServer;
         this.authorization = authorization;
         this.auth = auth;
+        this.adminEvent = adminEvent.resource(ResourceType.AUTHORIZATION_POLICY);
     }
 
     @PUT
     @Consumes("application/json")
     @Produces("application/json")
     @NoCache
-    public Response update(String payload) {
+    public Response update(@Context UriInfo uriInfo,  String payload) {
         this.auth.requireManage();
 
         AbstractPolicyRepresentation representation = doCreateRepresentation(payload);
@@ -79,11 +86,14 @@ public class PolicyResourceService {
 
         RepresentationToModel.toModel(representation, authorization, policy);
 
+
+        audit(uriInfo, representation, OperationType.UPDATE);
+
         return Response.status(Status.CREATED).build();
     }
 
     @DELETE
-    public Response delete() {
+    public Response delete(@Context UriInfo uriInfo) {
         this.auth.requireManage();
 
         if (policy == null) {
@@ -97,6 +107,10 @@ public class PolicyResourceService {
         resource.onRemove(policy, authorization);
 
         policyStore.delete(policy.getId());
+
+        if (authorization.getRealm().isAdminEventsEnabled()) {
+            audit(uriInfo, toRepresentation(policy, authorization), OperationType.DELETE);
+        }
 
         return Response.noContent().build();
     }
@@ -224,5 +238,11 @@ public class PolicyResourceService {
 
     protected Policy getPolicy() {
         return policy;
+    }
+
+    private void audit(@Context UriInfo uriInfo, AbstractPolicyRepresentation policy, OperationType operation) {
+        if (authorization.getRealm().isAdminEventsEnabled()) {
+            adminEvent.operation(operation).resourcePath(uriInfo).representation(policy).success();
+        }
     }
 }
