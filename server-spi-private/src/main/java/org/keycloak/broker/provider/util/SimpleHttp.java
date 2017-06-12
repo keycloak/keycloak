@@ -19,11 +19,16 @@ package org.keycloak.broker.provider.util;
 
 import org.apache.http.*;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.DefaultSchemePortResolver;
+import org.apache.http.impl.conn.SystemDefaultRoutePlanner;
 import org.apache.http.message.BasicNameValuePair;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.models.KeycloakSession;
@@ -32,6 +37,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
+import java.net.ProxySelector;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -47,6 +53,8 @@ import java.util.zip.GZIPInputStream;
  */
 public class SimpleHttp {
 
+    public static final String GET = "GET";
+    public static final String POST = "POST";
     private KeycloakSession session;
 
     private String url;
@@ -61,11 +69,11 @@ public class SimpleHttp {
     }
 
     public static SimpleHttp doGet(String url, KeycloakSession session) {
-        return new SimpleHttp(url, "GET", session);
+        return new SimpleHttp(url, GET, session);
     }
 
     public static SimpleHttp doPost(String url, KeycloakSession session) {
-        return new SimpleHttp(url, "POST", session);
+        return new SimpleHttp(url, POST, session);
     }
 
     public SimpleHttp header(String name, String value) {
@@ -88,7 +96,10 @@ public class SimpleHttp {
         HttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
 
         HttpResponse response = makeRequest(httpClient);
-
+        Header[] allHeaders = response.getAllHeaders();
+        for (Header header: allHeaders) {
+            System.out.println("header: " + header.getName() + "=" + header.getValue());
+        }
         InputStream is;
         HttpEntity entity = response.getEntity();
         if (entity != null) {
@@ -101,8 +112,9 @@ public class SimpleHttp {
                         is = new GZIPInputStream(is);
                     }
                 }
-
-                return toString(is);
+                String ret =  toString(is);
+                System.out.println("=====" + ret);
+                return ret;
             } finally {
                 if (is != null) {
                     is.close();
@@ -121,16 +133,26 @@ public class SimpleHttp {
     }
 
     private HttpResponse makeRequest(HttpClient httpClient) throws IOException {
-        boolean get = method.equals("GET");
-        boolean post = method.equals("POST");
-
-        HttpRequestBase httpRequest = new HttpPost(url);
+        final String PROXY = System.getenv("PROXY_URL");
+        final String IDCS_URL = System.getenv("IDCS_URL");
+        boolean get = method.equals(GET);
+        boolean post = method.equals(POST);
+        HttpRequestBase httpRequest = null;
         if (get) {
             httpRequest = new HttpGet(appendParameterToUrl(url));
+        } else if (post) {
+            httpRequest = new HttpPost(url);
+            ((HttpPost) httpRequest).setEntity(getFormEntityFromParameter());
+        } else {
+            throw new IOException("method: " + method + " is not supported.");
         }
 
-        if (post) {
-            ((HttpPost) httpRequest).setEntity(getFormEntityFromParameter());
+        if (PROXY != null && (IDCS_URL == null || !url.contains(IDCS_URL))) {
+            RequestConfig.Builder builder = RequestConfig.custom();
+            HttpHost proxy = HttpHost.create(PROXY);
+            builder = builder.setProxy(proxy);
+            RequestConfig config = builder.build();
+            httpRequest.setConfig(config);
         }
 
         if (headers != null) {
@@ -149,8 +171,10 @@ public class SimpleHttp {
             URIBuilder uriBuilder = new URIBuilder(url);
 
             if (params != null) {
+                System.out.println("appendParameterToUrl");
                 for (Map.Entry<String, String> p : params.entrySet()) {
                     uriBuilder.setParameter(p.getKey(), p.getValue());
+                    System.out.println(p.getKey() + ": "  +p.getValue());
                 }
             }
 
@@ -165,8 +189,10 @@ public class SimpleHttp {
         List<NameValuePair> urlParameters = new ArrayList<>();
 
         if (params != null) {
+            System.out.println("getFormEntityFromParameter");
             for (Map.Entry<String, String> p : params.entrySet()) {
                 urlParameters.add(new BasicNameValuePair(p.getKey(), p.getValue()));
+                System.out.println(p.getKey() + ": "  +p.getValue());
             }
         }
 
