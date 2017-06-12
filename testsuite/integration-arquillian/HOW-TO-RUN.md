@@ -417,4 +417,22 @@ and argument: `-p 8181`
 
 3) Run loadbalancer (class `SimpleUndertowLoadBalancer`) without arguments and system properties. Loadbalancer runs on port 8180, so you can access Keycloak on `http://localhost:8180/auth`     
 
+## Cross-DC tests
 
+Cross-DC tests use 2 data centers, each with one automatically started and one manually controlled backend servers
+(currently only Keycloak on Undertow), and 1 frontend loadbalancer server node that sits in front of all servers.
+The browser usually communicates directly with the frontent node and the test controls where the HTTP requests
+land by adjusting load balancer configuration (e.g. to direct the traffic to only a single DC).
+
+For an example of a test, see [org.keycloak.testsuite.crossdc.ActionTokenCrossDCTest](tests/base/src/test/java/org/keycloak/testsuite/crossdc/ActionTokenCrossDCTest.java).
+
+The cross DC requires setting a profile specifying used cache server (currently only Infinispan) by specifying
+`cache-server-infinispan` profile in maven.
+
+#### Run Cross-DC Tests from Maven
+
+Run the following command (adjust the test specification according to your needs):
+
+  `mvn -Pcache-server-infinispan -Dtest=*.crossdc.* -pl testsuite/integration-arquillian/tests/base test`
+
+_Someone using IntelliJ IDEA, please describe steps for that IDE_

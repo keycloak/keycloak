@@ -46,6 +46,7 @@
         <arquillian-drone.version>2.0.1.Final</arquillian-drone.version>
         <arquillian-graphene.version>2.1.0.Alpha3</arquillian-graphene.version>
         <arquillian-wildfly-container.version>2.1.0.Alpha2</arquillian-wildfly-container.version>
+        <arquillian-infinispan-container.version>1.2.0.Beta2</arquillian-infinispan-container.version>
         <version.shrinkwrap.resolvers>2.2.2</version.shrinkwrap.resolvers>
         <undertow-embedded.version>1.0.0.Alpha2</undertow-embedded.version>
 
@@ -86,6 +87,11 @@
                 <version>${arquillian-drone.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan.arquillian.container</groupId>
+                <artifactId>infinispan-arquillian-impl</artifactId>
+                <version>${arquillian-infinispan-container.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.wildfly.arquillian</groupId>

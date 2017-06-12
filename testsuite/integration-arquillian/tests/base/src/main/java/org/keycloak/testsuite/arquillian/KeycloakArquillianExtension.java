@@ -35,6 +35,7 @@ import org.keycloak.testsuite.arquillian.h2.H2TestEnricher;
 import org.keycloak.testsuite.arquillian.karaf.CustomKarafContainer;
 import org.keycloak.testsuite.arquillian.migration.MigrationTestExecutionDecider;
 import org.keycloak.testsuite.arquillian.provider.AdminClientProvider;
+import org.keycloak.testsuite.arquillian.provider.LoadBalancerControllerProvider;
 import org.keycloak.testsuite.arquillian.provider.OAuthClientProvider;
 import org.keycloak.testsuite.arquillian.provider.SuiteContextProvider;
 import org.keycloak.testsuite.arquillian.provider.TestContextProvider;
@@ -57,7 +58,8 @@ public class KeycloakArquillianExtension implements LoadableExtension {
                 .service(ResourceProvider.class, SuiteContextProvider.class)
                 .service(ResourceProvider.class, TestContextProvider.class)
                 .service(ResourceProvider.class, AdminClientProvider.class)
-                .service(ResourceProvider.class, OAuthClientProvider.class);
+                .service(ResourceProvider.class, OAuthClientProvider.class)
+                .service(ResourceProvider.class, LoadBalancerControllerProvider.class);
 
         builder
                 .service(DeploymentScenarioGenerator.class, DeploymentTargetModifier.class)

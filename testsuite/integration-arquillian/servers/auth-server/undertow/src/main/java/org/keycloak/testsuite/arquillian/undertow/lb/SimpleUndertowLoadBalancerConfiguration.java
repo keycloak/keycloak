@@ -19,13 +19,17 @@ package org.keycloak.testsuite.arquillian.undertow.lb;
 
 import org.arquillian.undertow.UndertowContainerConfiguration;
 import org.jboss.arquillian.container.spi.ConfigurationException;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class SimpleUndertowLoadBalancerConfiguration extends UndertowContainerConfiguration {
 
+    protected static final Logger log = Logger.getLogger(SimpleUndertowLoadBalancerConfiguration.class);
+
     private String nodes = SimpleUndertowLoadBalancer.DEFAULT_NODES;
+    private int bindHttpPortOffset = 0;
 
     public String getNodes() {
         return nodes;
@@ -33,6 +37,14 @@ public class SimpleUndertowLoadBalancerConfiguration extends UndertowContainerCo
 
     public void setNodes(String nodes) {
         this.nodes = nodes;
+    }
+
+    public int getBindHttpPortOffset() {
+        return bindHttpPortOffset;
+    }
+
+    public void setBindHttpPortOffset(int bindHttpPortOffset) {
+        this.bindHttpPortOffset = bindHttpPortOffset;
     }
 
     @Override
@@ -44,5 +56,11 @@ public class SimpleUndertowLoadBalancerConfiguration extends UndertowContainerCo
         } catch (Exception e) {
             throw new ConfigurationException(e);
         }
+
+        int basePort = getBindHttpPort();
+        int newPort = basePort + bindHttpPortOffset;
+        setBindHttpPort(newPort);
+        log.info("SimpleUndertowLoadBalancer will listen on port: " + newPort);
+
     }
 }

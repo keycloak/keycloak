@@ -53,6 +53,7 @@ public interface InfinispanConnectionProvider extends Provider {
 
     // System property used on Wildfly to identify distributedCache address and sticky session route
     String JBOSS_NODE_NAME = "jboss.node.name";
+    String JGROUPS_UDP_MCAST_ADDR = "jgroups.udp.mcast_addr";
 
 
     <K, V> Cache<K, V> getCache(String name);

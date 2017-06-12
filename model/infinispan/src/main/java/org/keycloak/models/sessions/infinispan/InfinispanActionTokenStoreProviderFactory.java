@@ -23,20 +23,26 @@ import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.*;
 
-import org.keycloak.models.cache.infinispan.AddInvalidatedActionTokenEvent;
-import org.keycloak.models.cache.infinispan.RemoveActionTokensSpecificEvent;
+import org.keycloak.models.cache.infinispan.events.AddInvalidatedActionTokenEvent;
+import org.keycloak.models.cache.infinispan.events.RemoveActionTokensSpecificEvent;
 import org.keycloak.models.sessions.infinispan.entities.ActionTokenValueEntity;
 import org.keycloak.models.sessions.infinispan.entities.ActionTokenReducedKey;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import org.infinispan.Cache;
 import org.infinispan.context.Flag;
+import org.infinispan.remoting.transport.Address;
+import org.jboss.logging.Logger;
 
 /**
  *
  * @author hmlnarik
  */
 public class InfinispanActionTokenStoreProviderFactory implements ActionTokenStoreProviderFactory {
+
+    private static final Logger LOG = Logger.getLogger(InfinispanActionTokenStoreProviderFactory.class);
+
+    private volatile Cache<ActionTokenReducedKey, ActionTokenValueEntity> actionTokenCache;
 
     public static final String ACTION_TOKEN_EVENTS = "ACTION_TOKEN_EVENTS";
 
@@ -49,34 +55,7 @@ public class InfinispanActionTokenStoreProviderFactory implements ActionTokenSto
 
     @Override
     public ActionTokenStoreProvider create(KeycloakSession session) {
-        InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
-        Cache<ActionTokenReducedKey, ActionTokenValueEntity> actionTokenCache = connections.getCache(InfinispanConnectionProvider.ACTION_TOKEN_CACHE);
-
-        ClusterProvider cluster = session.getProvider(ClusterProvider.class);
-
-        cluster.registerListener(ACTION_TOKEN_EVENTS, event -> {
-            if (event instanceof RemoveActionTokensSpecificEvent) {
-                RemoveActionTokensSpecificEvent e = (RemoveActionTokensSpecificEvent) event;
-
-                actionTokenCache
-                  .getAdvancedCache()
-                  .withFlags(Flag.CACHE_MODE_LOCAL, Flag.SKIP_CACHE_LOAD)
-                  .keySet()
-                  .stream()
-                  .filter(k -> Objects.equals(k.getUserId(), e.getUserId()) && Objects.equals(k.getActionId(), e.getActionId()))
-                  .forEach(actionTokenCache::remove);
-            } else if (event instanceof AddInvalidatedActionTokenEvent) {
-                AddInvalidatedActionTokenEvent e = (AddInvalidatedActionTokenEvent) event;
-
-                if (e.getExpirationInSecs() == DEFAULT_CACHE_EXPIRATION) {
-                    actionTokenCache.put(e.getKey(), e.getTokenValue());
-                } else {
-                    actionTokenCache.put(e.getKey(), e.getTokenValue(), e.getExpirationInSecs() - Time.currentTime(), TimeUnit.SECONDS);
-                }
-            }
-        });
-
-        return new InfinispanActionTokenStoreProvider(session, actionTokenCache);
+        return new InfinispanActionTokenStoreProvider(session, this.actionTokenCache);
     }
 
     @Override
@@ -84,8 +63,57 @@ public class InfinispanActionTokenStoreProviderFactory implements ActionTokenSto
         this.config = config;
     }
 
+    private static Cache<ActionTokenReducedKey, ActionTokenValueEntity> initActionTokenCache(KeycloakSession session) {
+        InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
+        Cache<ActionTokenReducedKey, ActionTokenValueEntity> cache = connections.getCache(InfinispanConnectionProvider.ACTION_TOKEN_CACHE);
+        final Address cacheAddress = cache.getCacheManager().getAddress();
+
+        ClusterProvider cluster = session.getProvider(ClusterProvider.class);
+
+        cluster.registerListener(ClusterProvider.ALL, event -> {
+            if (event instanceof RemoveActionTokensSpecificEvent) {
+                RemoveActionTokensSpecificEvent e = (RemoveActionTokensSpecificEvent) event;
+
+                LOG.debugf("[%s] Removing token invalidation for user+action: userId=%s, actionId=%s", cacheAddress, e.getUserId(), e.getActionId());
+
+                cache
+                  .getAdvancedCache()
+                  .withFlags(Flag.CACHE_MODE_LOCAL, Flag.SKIP_CACHE_LOAD)
+                  .keySet()
+                  .stream()
+                  .filter(k -> Objects.equals(k.getUserId(), e.getUserId()) && Objects.equals(k.getActionId(), e.getActionId()))
+                  .forEach(cache::remove);
+            } else if (event instanceof AddInvalidatedActionTokenEvent) {
+                AddInvalidatedActionTokenEvent e = (AddInvalidatedActionTokenEvent) event;
+
+                LOG.debugf("[%s] Invalidating token %s", cacheAddress, e.getKey());
+                if (e.getExpirationInSecs() == DEFAULT_CACHE_EXPIRATION) {
+                    cache.put(e.getKey(), e.getTokenValue());
+                } else {
+                    cache.put(e.getKey(), e.getTokenValue(), e.getExpirationInSecs() - Time.currentTime(), TimeUnit.SECONDS);
+                }
+            }
+        });
+
+        LOG.debugf("[%s] Registered cluster listeners", cacheAddress);
+
+        return cache;
+    }
+
     @Override
     public void postInit(KeycloakSessionFactory factory) {
+        Cache<ActionTokenReducedKey, ActionTokenValueEntity> cache = this.actionTokenCache;
+
+        // It is necessary to put the cache initialization here, otherwise the cache would be initialized lazily, that
+        // means also listeners will start only after first cache initialization - that would be too late
+        if (cache == null) {
+            synchronized (this) {
+                cache = this.actionTokenCache;
+                if (cache == null) {
+                    this.actionTokenCache = initActionTokenCache(factory.create());
+                }
+            }
+        }
     }
 
     @Override

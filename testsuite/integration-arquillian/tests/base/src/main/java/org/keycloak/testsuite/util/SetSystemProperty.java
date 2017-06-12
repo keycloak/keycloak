@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.arquillian.undertow;
+package org.keycloak.testsuite.util;
 
 import java.io.Closeable;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-class SetSystemProperty implements Closeable {
+public class SetSystemProperty implements Closeable {
 
     private final String name;
     private final String oldValue;

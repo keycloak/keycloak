@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.cache.infinispan;
+package org.keycloak.models.cache.infinispan.events;
 
 import org.keycloak.cluster.ClusterEvent;
 

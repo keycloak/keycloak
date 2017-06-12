@@ -3,6 +3,8 @@ Test Cross-Data-Center scenario (test with external JDG server)
 
 These are temporary notes. This docs should be removed once we have cross-DC support finished and properly documented. 
 
+Note that these steps are already automated, see Cross-DC tests section in [HOW-TO-RUN.md](../testsuite/integration-arquillian/HOW-TO-RUN.md) document.
+ 
 What is working right now is:
 - Propagating of invalidation messages for "realms" and "users" caches
 - All the other things provided by ClusterProvider, which is:
@@ -18,7 +20,7 @@ Basic setup
 
 This is setup with 2 keycloak nodes, which are NOT in cluster. They just share the same database and they will be configured with "work" infinispan cache with remoteStore, which will point
 to external JDG server.
- 
+
 JDG Server setup
 ----------------
 - Download JDG 7.0 server and unzip to some folder
