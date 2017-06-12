@@ -68,6 +68,7 @@ public class DeploymentBuilder {
         deployment.setNameIDPolicyFormat(sp.getNameIDPolicyFormat());
         deployment.setLogoutPage(sp.getLogoutPage());
         deployment.setSignatureCanonicalizationMethod(sp.getIdp().getSignatureCanonicalizationMethod());
+        deployment.setAutodetectBearerOnly(sp.isAutodetectBearerOnly());
         deployment.setSignatureAlgorithm(SignatureAlgorithm.RSA_SHA256);
         if (sp.getIdp().getSignatureAlgorithm() != null) {
             deployment.setSignatureAlgorithm(SignatureAlgorithm.valueOf(sp.getIdp().getSignatureAlgorithm()));

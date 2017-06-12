@@ -168,6 +168,6 @@ public interface SamlDeployment {
     }
     PrincipalNamePolicy getPrincipalNamePolicy();
     String getPrincipalAttributeName();
-
+    boolean isAutodetectBearerOnly();
 
 }
