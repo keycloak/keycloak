@@ -133,6 +133,14 @@ public class AppServerTestEnricher {
         return getAppServerQualifier(testClass).contains("tomcat");
     }
 
+    public static boolean isWASAppServer(Class testClass) {
+        return getAppServerQualifier(testClass).contains("was");
+    }
+
+    public static boolean isWLSAppServer(Class testClass) {
+        return getAppServerQualifier(testClass).contains("wls");
+    }
+
     public static boolean isOSGiAppServer(Class testClass) {
         String q = getAppServerQualifier(testClass);
         return q.contains("karaf") || q.contains("fuse");

@@ -46,6 +46,7 @@
         <arquillian-drone.version>2.0.1.Final</arquillian-drone.version>
         <arquillian-graphene.version>2.1.0.Alpha3</arquillian-graphene.version>
         <arquillian-wildfly-container.version>2.1.0.Alpha2</arquillian-wildfly-container.version>
+        <arquillian-wls-container.version>1.0.1.Final</arquillian-wls-container.version>
         <arquillian-infinispan-container.version>1.2.0.Beta2</arquillian-infinispan-container.version>
         <version.shrinkwrap.resolvers>2.2.2</version.shrinkwrap.resolvers>
         <undertow-embedded.version>1.0.0.Alpha2</undertow-embedded.version>
@@ -107,6 +108,12 @@
                 <groupId>org.wildfly.arquillian</groupId>
                 <artifactId>wildfly-arquillian-container-domain-managed</artifactId>
                 <version>${arquillian-wildfly-container.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.arquillian.container</groupId>
+                <artifactId>arquillian-wls-remote-12.1.x</artifactId>
+                <version>${arquillian-wls-container.version}</version>
+                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

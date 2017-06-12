@@ -26,8 +26,15 @@ import org.jboss.arquillian.test.spi.annotation.ClassScoped;
 import org.jboss.logging.Logger;
 import org.jboss.logging.Logger.Level;
 import org.jboss.shrinkwrap.api.Archive;
+import org.jboss.shrinkwrap.api.ArchivePath;
+import org.jboss.shrinkwrap.api.Filters;
+import org.jboss.shrinkwrap.api.Node;
+import org.jboss.shrinkwrap.api.asset.ClassAsset;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.jboss.shrinkwrap.resolver.api.maven.Maven;
+import org.jboss.shrinkwrap.resolver.api.maven.MavenFormatStage;
+import org.jboss.shrinkwrap.resolver.api.maven.MavenResolverSystem;
 import org.keycloak.adapters.servlet.KeycloakOIDCFilter;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.testsuite.arquillian.annotation.UseServletFilter;
@@ -35,18 +42,29 @@ import org.keycloak.testsuite.util.IOUtil;
 import org.keycloak.util.JsonSerialization;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
-import javax.xml.transform.TransformerException;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.hasAppServerContainerAnnotation;
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isRelative;
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isTomcatAppServer;
+import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isWLSAppServer;
+import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isWASAppServer;
 import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getAuthServerContextRoot;
-import static org.keycloak.testsuite.util.IOUtil.*;
+import static org.keycloak.testsuite.util.IOUtil.appendChildInDocument;
+import static org.keycloak.testsuite.util.IOUtil.documentToString;
+import static org.keycloak.testsuite.util.IOUtil.getElementTextContent;
+import static org.keycloak.testsuite.util.IOUtil.loadJson;
+import static org.keycloak.testsuite.util.IOUtil.loadXML;
+import static org.keycloak.testsuite.util.IOUtil.modifyDocElementAttribute;
+import static org.keycloak.testsuite.util.IOUtil.modifyDocElementValue;
+import static org.keycloak.testsuite.util.IOUtil.removeElementsFromDoc;
+import static org.keycloak.testsuite.util.IOUtil.removeNodeByAttributeValue;
 
 
 /**
@@ -86,6 +104,21 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
 //        } else {
 //            log.info(testClass.getJavaClass().getSimpleName() + " is not an AdapterTest");
 //        }
+        if (isWLSAppServer(testClass.getJavaClass())) {
+//        {
+            MavenResolverSystem resolver = Maven.resolver();
+            MavenFormatStage dependencies = resolver
+                    .loadPomFromFile("pom.xml")
+                    .importTestDependencies()
+                    .resolve("org.apache.httpcomponents:httpclient")
+                    .withTransitivity();
+
+            ((WebArchive) archive)
+                    .addAsLibraries(dependencies.asFile())
+                    .addClass(org.keycloak.testsuite.arquillian.annotation.AppServerContainer.class)
+                    .addClass(org.keycloak.testsuite.arquillian.annotation.UseServletFilter.class);
+        }
+        
     }
 
     public static boolean isAdapterTest(TestClass testClass) {
@@ -260,11 +293,43 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
             removeElementsFromDoc(webXmlDoc, "web-app", "login-config");
             removeElementsFromDoc(webXmlDoc, "web-app", "security-role");
 
+            if (isWASAppServer(testClass.getJavaClass())) {
+                removeElementsFromDoc(webXmlDoc, "web-app", "servlet-mapping");
+                removeElementsFromDoc(webXmlDoc, "web-app", "servlet");
+            }
+            
+            if (isWLSAppServer(testClass.getJavaClass())) {
 
+                // add <servlet> tag in case it is missing
+                NodeList nodes = webXmlDoc.getElementsByTagName("servlet");
+                if (nodes.getLength() < 1) {
+                    Element servlet = webXmlDoc.createElement("servlet");
+                    Element servletName = webXmlDoc.createElement("servlet-name");
+                    Element servletClass = webXmlDoc.createElement("servlet-class");
+
+                    servletName.setTextContent("javax.ws.rs.core.Application");
+                    servletClass.setTextContent(getServletClassName(archive));
+
+                    servlet.appendChild(servletName);
+                    servlet.appendChild(servletClass);
+
+                    appendChildInDocument(webXmlDoc, "web-app", servlet);
+                }
+            }
         }
-
 
         archive.add(new StringAsset((documentToString(webXmlDoc))), WEBXML_PATH);
     }
-
+    
+    private String getServletClassName(Archive<?> archive) {
+        
+        Map<ArchivePath, Node> content = archive.getContent(Filters.include(".*Servlet.class"));
+        for (ArchivePath path : content.keySet()) {
+            ClassAsset asset = (ClassAsset) content.get(path).getAsset();
+            return asset.getSource().getName();
+        }
+        
+        return null;
+    }
+    
 }
