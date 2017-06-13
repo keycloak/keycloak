@@ -20,6 +20,7 @@ import java.util.Set;
 
 import org.keycloak.representations.idm.authorization.AggregatePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
+import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.console.page.fragment.MultipleStringSelect2;
 import org.keycloak.testsuite.page.Form;
 import org.openqa.selenium.WebElement;
@@ -46,8 +47,8 @@ public class AggregatePolicyForm extends Form {
     @FindBy(id = "s2id_policies")
     private MultipleStringSelect2 policySelect;
 
-    @FindBy(xpath = ACTIVE_DIV_XPATH + "/button[text()='Delete']")
-    private WebElement confirmDelete;
+    @FindBy(xpath = "//div[@class='modal-dialog']")
+    protected ModalDialog modalDialog;
 
     public void populate(AggregatePolicyRepresentation expected) {
         setInputValue(name, expected.getName());
@@ -83,7 +84,7 @@ public class AggregatePolicyForm extends Form {
 
     public void delete() {
         deleteButton.click();
-        confirmDelete.click();
+        modalDialog.confirmDeletion();
     }
 
     public AggregatePolicyRepresentation toRepresentation() {
