@@ -431,7 +431,11 @@ The cross DC requires setting a profile specifying used cache server (currently 
 
 #### Run Cross-DC Tests from Maven
 
-Run the following command (adjust the test specification according to your needs):
+First compile the Infinispan test server via the following command:
+
+  `mvn -Pcache-server-infinispan -f testsuite/integration-arquillian -DskipTests clean install`
+
+Then you can run the tests using the following command (adjust the test specification according to your needs):
 
   `mvn -Pcache-server-infinispan -Dtest=*.crossdc.* -pl testsuite/integration-arquillian/tests/base test`
 
