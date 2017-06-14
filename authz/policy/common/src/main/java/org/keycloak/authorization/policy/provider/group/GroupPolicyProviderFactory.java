@@ -30,9 +30,12 @@ import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
@@ -74,7 +77,7 @@ public class GroupPolicyProviderFactory implements PolicyProviderFactory<GroupPo
     public GroupPolicyRepresentation toRepresentation(Policy policy, GroupPolicyRepresentation representation) {
         representation.setGroupsClaim(policy.getConfig().get("groupsClaim"));
         try {
-            representation.setGroups(new HashSet<>(Arrays.asList(JsonSerialization.readValue(policy.getConfig().get("groups"), GroupPolicyRepresentation.GroupDefinition[].class))));
+            representation.setGroups(getGroupsDefinition(policy.getConfig()));
         } catch (IOException cause) {
             throw new RuntimeException("Failed to deserialize groups", cause);
         }
@@ -99,7 +102,7 @@ public class GroupPolicyProviderFactory implements PolicyProviderFactory<GroupPo
     @Override
     public void onImport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization) {
         try {
-            updatePolicy(policy, representation.getConfig().get("groupsClaim"), JsonSerialization.readValue(representation.getConfig().get("groups"), Set.class), authorization);
+            updatePolicy(policy, representation.getConfig().get("groupsClaim"), getGroupsDefinition(representation.getConfig()), authorization);
         } catch (IOException cause) {
             throw new RuntimeException("Failed to deserialize groups", cause);
         }
@@ -107,7 +110,24 @@ public class GroupPolicyProviderFactory implements PolicyProviderFactory<GroupPo
 
     @Override
     public void onExport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorizationProvider) {
+        Map<String, String> config = new HashMap<>();
+        GroupPolicyRepresentation groupPolicy = toRepresentation(policy, new GroupPolicyRepresentation());
+        Set<GroupPolicyRepresentation.GroupDefinition> groups = groupPolicy.getGroups();
 
+        for (GroupPolicyRepresentation.GroupDefinition definition: groups) {
+            GroupModel group = authorizationProvider.getRealm().getGroupById(definition.getId());
+            definition.setId(null);
+            definition.setPath(ModelToRepresentation.buildGroupPath(group));
+        }
+
+        try {
+            config.put("groupsClaim", groupPolicy.getGroupsClaim());
+            config.put("groups", JsonSerialization.writeValueAsString(groups));
+        } catch (IOException cause) {
+            throw new RuntimeException("Failed to export group policy [" + policy.getName() + "]", cause);
+        }
+
+        representation.setConfig(config);
     }
 
     @Override
@@ -157,9 +177,6 @@ public class GroupPolicyProviderFactory implements PolicyProviderFactory<GroupPo
                     GroupModel parent = null;
 
                     for (String part : parts) {
-                        if ("".trim().equals(part)) {
-                            continue;
-                        }
                         if (parent == null) {
                             parent = topLevelGroups.stream().filter(groupModel -> groupModel.getName().equals(part)).findFirst().orElseThrow(() -> new RuntimeException("Top level group with name [" + part + "] not found"));
                         } else {
@@ -189,5 +206,9 @@ public class GroupPolicyProviderFactory implements PolicyProviderFactory<GroupPo
         }
 
         policy.setConfig(config);
+    }
+
+    private HashSet<GroupPolicyRepresentation.GroupDefinition> getGroupsDefinition(Map<String, String> config) throws IOException {
+        return new HashSet<>(Arrays.asList(JsonSerialization.readValue(config.get("groups"), GroupPolicyRepresentation.GroupDefinition[].class)));
     }
 }
