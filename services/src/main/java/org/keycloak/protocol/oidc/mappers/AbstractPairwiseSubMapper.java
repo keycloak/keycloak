@@ -64,24 +64,32 @@ public abstract class AbstractPairwiseSubMapper extends AbstractOIDCProtocolMapp
     }
 
     @Override
-    public final IDToken transformIDToken(IDToken token, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession) {
-        setSubject(token, generateSub(mappingModel, getSectorIdentifier(clientSession.getClient(), mappingModel), userSession.getUser().getId()));
+    public IDToken transformIDToken(IDToken token, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession) {
+        setIDTokenSubject(token, generateSub(mappingModel, getSectorIdentifier(clientSession.getClient(), mappingModel), userSession.getUser().getId()));
         return token;
     }
 
     @Override
-    public final AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession) {
-        setSubject(token, generateSub(mappingModel, getSectorIdentifier(clientSession.getClient(), mappingModel), userSession.getUser().getId()));
+    public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession) {
+        setAccessTokenSubject(token, generateSub(mappingModel, getSectorIdentifier(clientSession.getClient(), mappingModel), userSession.getUser().getId()));
         return token;
     }
 
     @Override
-    public final AccessToken transformUserInfoToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession) {
-        setSubject(token, generateSub(mappingModel, getSectorIdentifier(clientSession.getClient(), mappingModel), userSession.getUser().getId()));
+    public AccessToken transformUserInfoToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession) {
+        setUserInfoTokenSubject(token, generateSub(mappingModel, getSectorIdentifier(clientSession.getClient(), mappingModel), userSession.getUser().getId()));
         return token;
     }
 
-    private void setSubject(IDToken token, String pairwiseSub) {
+    protected void setIDTokenSubject(IDToken token, String pairwiseSub) {
+        token.setSubject(pairwiseSub);
+    }
+
+    protected void setAccessTokenSubject(IDToken token, String pairwiseSub) {
+        token.setSubject(pairwiseSub);
+    }
+
+    protected void setUserInfoTokenSubject(IDToken token, String pairwiseSub) {
         token.getOtherClaims().put("sub", pairwiseSub);
     }
 
@@ -116,5 +124,3 @@ public abstract class AbstractPairwiseSubMapper extends AbstractOIDCProtocolMapp
         return "oidc-" + getIdPrefix() + PROVIDER_ID_SUFFIX;
     }
 }
-
-
