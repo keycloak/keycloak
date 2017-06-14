@@ -52,6 +52,14 @@
             <outputDirectory>content</outputDirectory>
         </fileSet>
         <fileSet>
+            <directory>src/main/resources/licenses/rh-sso</directory>
+            <outputDirectory>content/docs/licenses-rh-sso</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>target/licenses</directory>
+            <outputDirectory>content/docs/licenses-rh-sso</outputDirectory>
+        </fileSet>
+        <fileSet>
             <directory>../../../themes/src/main/resources/theme</directory>
             <outputDirectory>content/themes</outputDirectory>
             <includes>

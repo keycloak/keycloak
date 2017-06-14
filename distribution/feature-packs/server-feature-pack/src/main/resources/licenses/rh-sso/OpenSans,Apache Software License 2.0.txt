@@ -1,0 +1,1 @@
+org.liquibase,liquibase-core,3.4.1.redhat-2,Apache Software License 2.0.txt
