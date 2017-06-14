@@ -79,7 +79,7 @@ public class SHA256PairwiseSubMapper extends AbstractPairwiseSubMapper {
         Charset charset = Charset.forName("UTF-8");
         byte[] salt = saltStr.getBytes(charset);
         String pairwiseSub = generateSub(sectorIdentifier, localSub, salt);
-        logger.infof("local sub = '%s', pairwise sub = '%s'", localSub, pairwiseSub);
+        logger.tracef("local sub = '%s', pairwise sub = '%s'", localSub, pairwiseSub);
         return pairwiseSub;
     }
 
