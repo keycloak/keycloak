@@ -205,6 +205,12 @@
                 <module>infinispan</module>
             </modules>
         </profile>
+        <profile>
+            <id>cache-server-jdg</id>
+            <modules>
+                <module>jdg</module>
+            </modules>
+        </profile>
     </profiles>
 
 </project>

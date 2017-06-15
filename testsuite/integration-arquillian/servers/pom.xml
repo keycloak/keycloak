@@ -48,6 +48,7 @@
         
         <!-- cache server versions -->
         <infinispan.version>9.0.1.Final</infinispan.version>
+        <jdg.version>8.4.0.Final-redhat-2</jdg.version><!-- JDG 7.1.0 -->
         
         <jboss.default.worker.io-threads>16</jboss.default.worker.io-threads>
         <jboss.default.worker.task-max-threads>128</jboss.default.worker.task-max-threads>
