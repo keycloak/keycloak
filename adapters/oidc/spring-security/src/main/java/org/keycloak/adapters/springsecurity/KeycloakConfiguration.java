@@ -13,6 +13,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 /**
  * Add this annotation to a class that extends {@code KeycloakWebSecurityConfigurerAdapter} to provide
  * a keycloak based Spring security configuration.
+ *
  * @author Hendrik Ebbers
  */
 @Retention(value = RUNTIME)
