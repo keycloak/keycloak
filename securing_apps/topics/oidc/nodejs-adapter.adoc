@@ -64,7 +64,22 @@ settings (public key, realm name, various URLs).  The `keycloak.json` file
 is obtained from the {{book.project.name}} Admin Console.
 
 Instantiation with this method results in all of the reasonable defaults
-being used.
+being used. As alternative, it's also possible to provide a configuration
+object, rather than the `keycloak.json` file:
+
+[source,javascript]
+----
+    let kcConfig = {
+    clientId: 'myclient',
+    bearerOnly: true,
+    serverUrl: 'http://localhost:8080/auth',
+    realm: 'myrealm',
+    realmPublicKey: 'MIIBIjANB...'
+};
+
+let keycloak = new Keycloak({ store: memoryStore }, kcConfig);
+----
+
 
 Configuring a web session store::
 
