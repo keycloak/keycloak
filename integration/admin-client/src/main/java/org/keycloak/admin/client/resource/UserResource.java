@@ -92,6 +92,10 @@ public interface UserResource {
     @Path("reset-password")
     public void resetPassword(CredentialRepresentation credentialRepresentation);
 
+    @GET
+    @Path("validate-password")
+    public void validatePassword(CredentialRepresentation credentialRepresentation);
+
     /**
      * Use executeActionsEmail and pass in the UPDATE_PASSWORD required action
      *

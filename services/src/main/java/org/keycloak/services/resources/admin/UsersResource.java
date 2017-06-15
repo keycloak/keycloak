@@ -37,6 +37,8 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.policy.PasswordPolicyManagerProvider;
+import org.keycloak.policy.PolicyError;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.provider.ProviderFactory;
@@ -773,6 +775,39 @@ public class UsersResource {
 
         adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
     }
+
+    @Path("{id}/validate-password")
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void validatePassword(@PathParam("id") String id, CredentialRepresentation pass) {
+
+        auth.requireManage();
+
+        UserModel user = session.users().getUserById(id, realm);
+        if (user == null) {
+            throw new NotFoundException("User not found");
+        }
+        if (pass == null || pass.getValue() == null || !CredentialRepresentation.PASSWORD.equals(pass.getType())) {
+            throw new BadRequestException("No password provided");
+        }
+        if (Validation.isBlank(pass.getValue())) {
+            throw new BadRequestException("Empty password not allowed");
+        }
+
+        // validate password
+        PasswordPolicyManagerProvider policyManager = session.getProvider(PasswordPolicyManagerProvider.class);
+        PolicyError policyError = policyManager.validate(user.getId(), pass.getValue());
+        if (null != policyError) {
+            Properties messages = AdminRoot.getMessages(session, realm, auth.getAuth().getToken().getLocale());
+            throw new ErrorResponseException(policyError.getMessage(),
+                    MessageFormat.format(messages.getProperty(policyError.getMessage(), policyError.getMessage()), policyError.getParameters()),
+                    Status.BAD_REQUEST);
+        }
+
+
+        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
+
+    }        
 
     /**
      * Remove TOTP from the user

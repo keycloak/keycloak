@@ -72,6 +72,14 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
     public void authenticateClient(ClientAuthenticationFlowContext context) {
         MultivaluedMap<String, String> params = context.getHttpRequest().getDecodedFormParameters();
 
+        if(params.isEmpty()){
+
+            MultivaluedMap<String, String> mMap = (MultivaluedMap<String, String>) context.getSession().getAttribute("registrationFormData");
+            for (String key : mMap.keySet()) {
+                params.add(key,mMap.getFirst(key));
+            }
+        }
+
         String clientAssertionType = params.getFirst(OAuth2Constants.CLIENT_ASSERTION_TYPE);
         String clientAssertion = params.getFirst(OAuth2Constants.CLIENT_ASSERTION);
 
