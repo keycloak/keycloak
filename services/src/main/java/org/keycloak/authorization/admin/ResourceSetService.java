@@ -86,6 +86,7 @@ public class ResourceSetService {
     }
 
     @POST
+    @NoCache
     @Consumes("application/json")
     @Produces("application/json")
     public Response create(@Context UriInfo uriInfo, ResourceRepresentation resource) {
@@ -288,8 +289,8 @@ public class ResourceSetService {
 
     @Path("/search")
     @GET
-    @Produces("application/json")
     @NoCache
+    @Produces("application/json")
     public Response find(@QueryParam("name") String name) {
         this.auth.requireView();
         StoreFactory storeFactory = authorization.getStoreFactory();
