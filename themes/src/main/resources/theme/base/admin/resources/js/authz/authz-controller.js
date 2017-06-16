@@ -2394,6 +2394,7 @@ module.controller('ClientRolePermissionsCtrl', function($scope, $http, $route, $
         $scope.permissions = data;
     });
     $scope.setEnabled = function() {
+        console.log('perssions enabled: ' + $scope.permissions.enabled);
         var param = { enabled: $scope.permissions.enabled};
         $scope.permissions = RoleManagementPermissions.update({realm: realm.realm, role:role.id}, param);
     };

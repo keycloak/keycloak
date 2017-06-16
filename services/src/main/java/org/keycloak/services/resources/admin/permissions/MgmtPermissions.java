@@ -40,6 +40,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.RealmManager;
@@ -51,7 +52,7 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManagement {
+class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManagement, RealmsPermissionEvaluator {
     private static final Logger logger = Logger.getLogger(MgmtPermissions.class);
 
     protected RealmModel realm;
@@ -85,7 +86,21 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
                 && !auth.getRealm().equals(new RealmManager(session).getKeycloakAdminstrationRealm())) {
             throw new ForbiddenException();
         }
-        if (auth.getClient().getClientId().equals(Constants.ADMIN_CLI_CLIENT_ID)) {
+        if (auth.getClient().getClientId().equals(Constants.ADMIN_CLI_CLIENT_ID)
+                || auth.getClient().getClientId().equals(Constants.ADMIN_CONSOLE_CLIENT_ID)) {
+            this.identity = new UserModelIdentity(auth.getRealm(), auth.getUser());
+
+        } else {
+            this.identity = new KeycloakIdentity(auth.getToken(), session);
+        }
+    }
+    MgmtPermissions(KeycloakSession session, AdminAuth auth) {
+        this.session = session;
+        this.auth = auth;
+        this.admin = auth.getUser();
+        this.adminsRealm = auth.getRealm();
+        if (auth.getClient().getClientId().equals(Constants.ADMIN_CLI_CLIENT_ID)
+                || auth.getClient().getClientId().equals(Constants.ADMIN_CONSOLE_CLIENT_ID)) {
             this.identity = new UserModelIdentity(auth.getRealm(), auth.getUser());
 
         } else {
@@ -117,24 +132,42 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
 
 
 
+    @Override
+    public void requireAnyAdminRole() {
+        if (!hasAnyAdminRole()) {
+            throw new ForbiddenException();
+        }
+    }
+
     public boolean hasAnyAdminRole() {
         return hasOneAdminRole(AdminRoles.ALL_REALM_ROLES);
     }
 
+    public boolean hasAnyAdminRole(RealmModel realm) {
+        return hasOneAdminRole(realm, AdminRoles.ALL_REALM_ROLES);
+    }
+
     public boolean hasOneAdminRole(String... adminRoles) {
+        String clientId;
+        RealmModel realm = this.realm;
+        return hasOneAdminRole(realm, adminRoles);
+    }
+
+    public boolean hasOneAdminRole(RealmModel realm, String... adminRoles) {
         String clientId;
         RealmManager realmManager = new RealmManager(session);
         if (adminsRealm.equals(realmManager.getKeycloakAdminstrationRealm())) {
             clientId = realm.getMasterAdminClient().getClientId();
+        } else if (adminsRealm.equals(realm)) {
+            clientId = realm.getClientByClientId(realmManager.getRealmAdminClientId(realm)).getClientId();
         } else {
-            clientId = realm.getClientByClientId(realmManager.getRealmAdminClientId(auth.getRealm())).getClientId();
+            return false;
         }
         for (String adminRole : adminRoles) {
             if (identity.hasClientRole(clientId, adminRole)) return true;
         }
         return false;
     }
-
 
 
     public boolean isAdminSameRealm() {
@@ -273,6 +306,33 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
             session.getContext().setRealm(oldRealm);
         }
     }
+
+    @Override
+    public boolean canView(RealmModel realm) {
+        return hasOneAdminRole(realm, AdminRoles.VIEW_REALM, AdminRoles.MANAGE_REALM);
+    }
+
+    @Override
+    public boolean isAdmin(RealmModel realm) {
+        return hasAnyAdminRole(realm);
+    }
+
+    @Override
+    public boolean canCreateRealm() {
+        RealmManager realmManager = new RealmManager(session);
+        if (!auth.getRealm().equals(realmManager.getKeycloakAdminstrationRealm())) {
+           return false;
+        }
+        return identity.hasRealmRole(AdminRoles.CREATE_REALM);
+    }
+
+    @Override
+    public void requireCreateRealm() {
+        if (!canCreateRealm()) {
+            throw new ForbiddenException();
+        }
+    }
+
 
 
 

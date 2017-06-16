@@ -16,31 +16,18 @@
  */
 package org.keycloak.services.resources.admin.permissions;
 
-import org.keycloak.authorization.model.Policy;
-import org.keycloak.authorization.model.Resource;
-import org.keycloak.models.GroupModel;
-import org.keycloak.models.RoleModel;
-
-import java.util.Map;
+import org.keycloak.models.RealmModel;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface GroupPermissionManagement {
-    boolean isPermissionsEnabled(GroupModel group);
-    void setPermissionsEnabled(GroupModel group, boolean enable);
+public interface RealmsPermissionEvaluator {
+    boolean canView(RealmModel realm);
 
-    Policy viewMembersPermission(GroupModel group);
-    Policy manageMembersPermission(GroupModel group);
+    boolean isAdmin(RealmModel realm);
 
-    Policy manageMembershipPermission(GroupModel group);
+    boolean canCreateRealm();
 
-    Policy viewPermission(GroupModel group);
-    Policy managePermission(GroupModel group);
-
-    Resource resource(GroupModel group);
-
-    Map<String, String> getPermissions(GroupModel group);
-
+    void requireCreateRealm();
 }

@@ -232,7 +232,7 @@ public class RoleMapperResource {
             if (roleModel == null || !roleModel.getId().equals(role.getId())) {
                 throw new NotFoundException("Role not found");
             }
-            checkMapRolePermission(roleModel);
+            auth.roles().requireMapRole(roleModel);
             roleMapper.grantRole(roleModel);
         }
 
@@ -256,7 +256,7 @@ public class RoleMapperResource {
             roles = new LinkedList<>();
 
             for (RoleModel roleModel : roleModels) {
-                checkMapRolePermission(roleModel);
+                auth.roles().requireMapRole(roleModel);
                 roleMapper.deleteRoleMapping(roleModel);
                 roles.add(ModelToRepresentation.toRepresentation(roleModel));
             }
@@ -267,7 +267,7 @@ public class RoleMapperResource {
                 if (roleModel == null || !roleModel.getId().equals(role.getId())) {
                     throw new NotFoundException("Role not found");
                 }
-                checkMapRolePermission(roleModel);
+                auth.roles().requireMapRole(roleModel);
                 try {
                     roleMapper.deleteRoleMapping(roleModel);
                 } catch (ModelException me) {
@@ -281,12 +281,6 @@ public class RoleMapperResource {
 
         adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).representation(roles).success();
 
-    }
-
-    private void checkMapRolePermission(RoleModel roleModel) {
-        if (!canMapRole(roleModel)) {
-            throw new ForbiddenException();
-        }
     }
 
     private boolean canMapRole(RoleModel roleModel) {

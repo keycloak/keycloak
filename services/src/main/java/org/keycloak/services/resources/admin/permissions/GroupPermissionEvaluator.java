@@ -53,5 +53,9 @@ public interface GroupPermissionEvaluator {
 
     void requireManageMembers(GroupModel group);
 
+    boolean canManageMembership(GroupModel group);
+
+    void requireManageMembership(GroupModel group);
+
     Map<String, Boolean> getAccess(GroupModel group);
 }

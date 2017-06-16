@@ -69,10 +69,15 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
        } else {
            ResourceServer server = resourceServer(role);
            if (server == null) return;
+           Policy policy = mapRolePermission(role);
+           if (policy != null) authz.getStoreFactory().getPolicyStore().delete(policy.getId());
+           policy = mapClientScopePermission(role);
+           if (policy != null) authz.getStoreFactory().getPolicyStore().delete(policy.getId());
+           policy = mapCompositePermission(role);
+           if (policy != null) authz.getStoreFactory().getPolicyStore().delete(policy.getId());
+
            Resource resource = authz.getStoreFactory().getResourceStore().findByName(getRoleResourceName(role), server.getId());
            if (resource != null) authz.getStoreFactory().getResourceStore().delete(resource.getId());
-           Policy policy = authz.getStoreFactory().getPolicyStore().findByName(getMapRolePermissionName(role), server.getId());
-           if (policy != null) authz.getStoreFactory().getPolicyStore().delete(policy.getId());
        }
     }
 
@@ -140,20 +145,22 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
      */
     @Override
     public boolean canMapRole(RoleModel role) {
+        if (root.users().canManageDefault()) return true;
         if (!root.isAdminSameRealm()) {
-            return root.users().canManageDefault();
+            return false;
         }
+
         if (role.getContainer() instanceof ClientModel) {
             if (root.clients().canMapRoles((ClientModel)role.getContainer())) return true;
         }
         if (!isPermissionsEnabled(role)){
-            return root.users().canManageDefault();
+            return false;
         }
 
         ResourceServer resourceServer = getResourceServer(role);
         Policy policy = authz.getStoreFactory().getPolicyStore().findByName(getMapRolePermissionName(role), resourceServer.getId());
         if (policy.getAssociatedPolicies().isEmpty()) {
-            return root.users().canManageDefault(); // if no policies applied, just do default
+            return false;
         }
 
         Resource roleResource = resource(role);
@@ -216,20 +223,22 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
 
     @Override
     public boolean canMapComposite(RoleModel role) {
+        if (canManageDefault(role)) return true;
+
         if (!root.isAdminSameRealm()) {
-            return canManage(role);
+            return false;
         }
         if (role.getContainer() instanceof ClientModel) {
             if (root.clients().canMapCompositeRoles((ClientModel)role.getContainer())) return true;
         }
         if (!isPermissionsEnabled(role)){
-            return canManage(role);
+            return false;
         }
 
         ResourceServer resourceServer = getResourceServer(role);
         Policy policy = authz.getStoreFactory().getPolicyStore().findByName(getMapCompositePermissionName(role), resourceServer.getId());
         if (policy.getAssociatedPolicies().isEmpty()) {
-            return canManage(role);
+            return false;
         }
 
         Resource roleResource = resource(role);
@@ -248,20 +257,21 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
 
     @Override
     public boolean canMapClientScope(RoleModel role) {
+        if (root.clients().canManageClientsDefault()) return true;
         if (!root.isAdminSameRealm()) {
-            return root.clients().canManage();
+            return false;
         }
         if (role.getContainer() instanceof ClientModel) {
             if (root.clients().canMapClientScopeRoles((ClientModel)role.getContainer())) return true;
         }
         if (!isPermissionsEnabled(role)){
-            return root.clients().canManage();
+            return false;
         }
 
         ResourceServer resourceServer = getResourceServer(role);
         Policy policy = authz.getStoreFactory().getPolicyStore().findByName(getMapClientScopePermissionName(role), resourceServer.getId());
         if (policy.getAssociatedPolicies().isEmpty()) {
-            return root.clients().canManage();
+            return false;
         }
 
         Resource roleResource = resource(role);
@@ -284,6 +294,16 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         } else if (role.getContainer() instanceof ClientModel) {
             ClientModel client = (ClientModel)role.getContainer();
             return root.clients().canManage(client);
+        }
+        return false;
+    }
+
+    public boolean canManageDefault(RoleModel role) {
+        if (role.getContainer() instanceof RealmModel) {
+            return root.realm().canManageRealmDefault();
+        } else if (role.getContainer() instanceof ClientModel) {
+            ClientModel client = (ClientModel)role.getContainer();
+            return root.clients().canManageClientsDefault();
         }
         return false;
     }
@@ -375,25 +395,15 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         Resource resource =  authz.getStoreFactory().getResourceStore().create(getRoleResourceName(role), server, server.getClientId());
         resource.setType("Role");
         Scope mapRoleScope = getMapRoleScope(server);
-        Policy policy = manageUsersPolicy(server);
-        Policy mapRolePermission = Helper.addScopePermission(authz, server, getMapRolePermissionName(role), resource, mapRoleScope, policy);
+        Policy mapRolePermission = Helper.addEmptyScopePermission(authz, server, getMapRolePermissionName(role), resource, mapRoleScope);
         mapRolePermission.setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
 
         Scope mapClientScope = getMapClientScope(server);
-        RoleModel mngClients = root.getRealmManagementClient().getRole(AdminRoles.MANAGE_CLIENTS);
-        Policy mngClientsPolicy = rolePolicy(server, mngClients);
-        Policy mapClientScopePermission = Helper.addScopePermission(authz, server, getMapClientScopePermissionName(role), resource, mapClientScope, mngClientsPolicy);
+        Policy mapClientScopePermission = Helper.addEmptyScopePermission(authz, server, getMapClientScopePermissionName(role), resource, mapClientScope);
         mapClientScopePermission.setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
 
         Scope mapCompositeScope = getMapCompositeScope(server);
-        if (role.getContainer() instanceof RealmModel) {
-            RoleModel mngRealm = root.getRealmManagementClient().getRole(AdminRoles.MANAGE_REALM);
-            policy = rolePolicy(server, mngRealm);
-        } else {
-            policy = mngClientsPolicy;
-
-        }
-        Policy mapCompositePermission = Helper.addScopePermission(authz, server, getMapCompositePermissionName(role), resource, mapCompositeScope, policy);
+        Policy mapCompositePermission = Helper.addEmptyScopePermission(authz, server, getMapCompositePermissionName(role), resource, mapCompositeScope);
         mapCompositePermission.setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
         return resource;
     }

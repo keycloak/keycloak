@@ -115,16 +115,12 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
         String managePermissionName = getManagePermissionName(client);
         Policy managePermission = authz.getStoreFactory().getPolicyStore().findByName(managePermissionName, server.getId());
         if (managePermission == null) {
-            RoleModel role = root.getRealmManagementClient().getRole(AdminRoles.MANAGE_CLIENTS);
-            Policy manageClientsPolicy = root.roles().rolePolicy(server, role);
-            Helper.addScopePermission(authz, server, managePermissionName, resource, manageScope, manageClientsPolicy);
+            Helper.addEmptyScopePermission(authz, server, managePermissionName, resource, manageScope);
         }
         String viewPermissionName = getViewPermissionName(client);
         Policy viewPermission = authz.getStoreFactory().getPolicyStore().findByName(viewPermissionName, server.getId());
         if (viewPermission == null) {
-            RoleModel role = root.getRealmManagementClient().getRole(AdminRoles.VIEW_CLIENTS);
-            Policy viewClientsPolicy = root.roles().rolePolicy(server, role);
-            Helper.addScopePermission(authz, server, viewPermissionName, resource, viewScope, viewClientsPolicy);
+            Helper.addEmptyScopePermission(authz, server, viewPermissionName, resource, viewScope);
         }
         String mapRolePermissionName = getMapRolesPermissionName(client);
         Policy mapRolePermission = authz.getStoreFactory().getPolicyStore().findByName(mapRolePermissionName, server.getId());
@@ -216,7 +212,7 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
             throw new ForbiddenException();
         }
     }
-    public boolean canManageClientDefault() {
+    public boolean canManageClientsDefault() {
         return root.hasOneAdminRole(AdminRoles.MANAGE_CLIENTS);
     }
     public boolean canViewClientDefault() {
@@ -225,7 +221,7 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
 
     @Override
     public boolean canManage() {
-        return canManageClientDefault();
+        return canManageClientsDefault();
     }
 
     @Override
@@ -236,7 +232,7 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
     }
     @Override
     public boolean canView() {
-        return canManageClientDefault() || canViewClientDefault();
+        return canManageClientsDefault() || canViewClientDefault();
     }
 
     @Override
@@ -269,25 +265,26 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
 
     @Override
     public boolean canManage(ClientModel client) {
+        if (canManageClientsDefault()) return true;
         if (!root.isAdminSameRealm()) {
-            return canManage();
+            return false;
         }
 
         ResourceServer server = resourceServer(client);
-        if (server == null) return canManage();
+        if (server == null) return false;
 
         Resource resource =  authz.getStoreFactory().getResourceStore().findByName(getResourceName(client), server.getId());
-        if (resource == null) return canManage();
+        if (resource == null) return false;
 
         Policy policy = authz.getStoreFactory().getPolicyStore().findByName(getManagePermissionName(client), server.getId());
         if (policy == null) {
-            return canManage();
+            return false;
         }
 
         Set<Policy> associatedPolicies = policy.getAssociatedPolicies();
         // if no policies attached to permission then just do default behavior
         if (associatedPolicies == null || associatedPolicies.isEmpty()) {
-            return canManage();
+            return false;
         }
 
         Scope scope = manageScope(server);
@@ -303,25 +300,30 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
 
     @Override
     public boolean canView(ClientModel client) {
+        return hasView(client) || canManage(client);
+    }
+
+    private boolean hasView(ClientModel client) {
+        if (canView()) return true;
         if (!root.isAdminSameRealm()) {
-            return canView();
+            return false;
         }
 
         ResourceServer server = resourceServer(client);
-        if (server == null) return canView();
+        if (server == null) return false;
 
         Resource resource =  authz.getStoreFactory().getResourceStore().findByName(getResourceName(client), server.getId());
-        if (resource == null) return canView();
+        if (resource == null) return false;
 
         Policy policy = authz.getStoreFactory().getPolicyStore().findByName(getViewPermissionName(client), server.getId());
         if (policy == null) {
-            return canView();
+            return false;
         }
 
         Set<Policy> associatedPolicies = policy.getAssociatedPolicies();
         // if no policies attached to permission then just do default behavior
         if (associatedPolicies == null || associatedPolicies.isEmpty()) {
-            return canView();
+            return false;
         }
 
         Scope scope = viewScope(server);
@@ -344,7 +346,7 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
 
     @Override
     public boolean canManageTemplates() {
-        return canManageClientDefault();
+        return canManageClientsDefault();
     }
 
     @Override
@@ -362,7 +364,7 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
 
     @Override
     public boolean canManage(ClientTemplateModel template) {
-        return canManageClientDefault();
+        return canManageClientsDefault();
     }
 
     @Override

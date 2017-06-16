@@ -25,6 +25,8 @@ import org.keycloak.services.resources.admin.AdminAuth;
 public interface AdminPermissionEvaluator {
     RealmPermissionEvaluator realm();
 
+    void requireAnyAdminRole();
+
     AdminAuth adminAuth();
 
     RolePermissionEvaluator roles();

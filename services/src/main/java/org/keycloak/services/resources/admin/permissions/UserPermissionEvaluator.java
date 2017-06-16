@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin.permissions;
 
+import org.keycloak.authorization.model.Policy;
 import org.keycloak.models.UserModel;
 
 import java.util.Map;
@@ -25,7 +26,7 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public interface UserPermissionEvaluator {
-    boolean canManage();
+     boolean canManage();
 
     void requireManage();
 
@@ -51,4 +52,12 @@ public interface UserPermissionEvaluator {
     void requireImpersonate(UserModel user);
 
     Map<String, Boolean> getAccess(UserModel user);
+
+    boolean canMapRoles(UserModel user);
+
+    void requireMapRoles(UserModel user);
+
+    boolean canManageGroupMembership(UserModel user);
+
+    void requireManageGroupMembership(UserModel user);
 }

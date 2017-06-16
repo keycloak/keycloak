@@ -534,7 +534,7 @@ public class UserResource {
 
     @Path("role-mappings")
     public RoleMapperResource getRoleMappings() {
-        AdminPermissionEvaluator.RequirePermissionCheck manageCheck = () -> auth.users().requireManage(user);
+        AdminPermissionEvaluator.RequirePermissionCheck manageCheck = () -> auth.users().requireMapRoles(user);
         AdminPermissionEvaluator.RequirePermissionCheck viewCheck = () -> auth.users().requireView(user);
         RoleMapperResource resource =  new RoleMapperResource(realm, auth, user, adminEvent, manageCheck, viewCheck);
         ResteasyProviderFactory.getInstance().injectProperties(resource);
@@ -756,13 +756,13 @@ public class UserResource {
     @Path("groups/{groupId}")
     @NoCache
     public void removeMembership(@PathParam("groupId") String groupId) {
-        auth.users().requireManage(user);
+        auth.users().requireManageGroupMembership(user);
 
         GroupModel group = session.realms().getGroupById(groupId, realm);
         if (group == null) {
             throw new NotFoundException("Group not found");
         }
-        auth.groups().requireManageMembers(group);
+        auth.groups().requireManageMembership(group);
 
         try {
             if (user.isMemberOf(group)){
@@ -780,12 +780,12 @@ public class UserResource {
     @Path("groups/{groupId}")
     @NoCache
     public void joinGroup(@PathParam("groupId") String groupId) {
-        auth.users().requireManage(user);
+        auth.users().requireManageGroupMembership(user);
         GroupModel group = session.realms().getGroupById(groupId, realm);
         if (group == null) {
             throw new NotFoundException("Group not found");
         }
-        //auth.groups().requireManageMembers(group);
+        auth.groups().requireManageMembership(group);
         if (!user.isMemberOf(group)){
             user.joinGroup(group);
             adminEvent.operation(OperationType.CREATE).resource(ResourceType.GROUP_MEMBERSHIP).representation(ModelToRepresentation.toRepresentation(group, true)).resourcePath(uriInfo).success();

@@ -76,13 +76,20 @@ public class ClientTemplatesResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public List<ClientTemplateRepresentation> getClientTemplates() {
-        auth.clients().requireView();
+        auth.clients().requireListTemplates();
 
         List<ClientTemplateRepresentation> rep = new ArrayList<>();
         List<ClientTemplateModel> clientModels = realm.getClientTemplates();
 
+        boolean viewable = auth.clients().canViewTemplates();
         for (ClientTemplateModel clientModel : clientModels) {
-            rep.add(ModelToRepresentation.toRepresentation(clientModel));
+            if (viewable) rep.add(ModelToRepresentation.toRepresentation(clientModel));
+            else {
+                ClientTemplateRepresentation tempRep = new ClientTemplateRepresentation();
+                tempRep.setName(clientModel.getName());
+                tempRep.setId(clientModel.getId());
+                tempRep.setProtocol(clientModel.getProtocol());
+            }
         }
         return rep;
     }

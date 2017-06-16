@@ -140,7 +140,7 @@ public class ClientRoleMappingsResource {
 
         Set<RoleModel> available = client.getRoles();
         available = available.stream().filter(r ->
-                canMapRole(r)
+                auth.roles().canMapRole(r)
         ).collect(Collectors.toSet());
         return getAvailableRoles(user, available);
     }
@@ -174,21 +174,11 @@ public class ClientRoleMappingsResource {
             if (roleModel == null || !roleModel.getId().equals(role.getId())) {
                 throw new NotFoundException("Role not found");
             }
-            checkMapRolePermission(roleModel);
+            auth.roles().requireMapRole(roleModel);
             user.grantRole(roleModel);
         }
         adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(roles).success();
 
-    }
-
-    private void checkMapRolePermission(RoleModel roleModel) {
-        if (!canMapRole(roleModel)) {
-            throw new ForbiddenException();
-        }
-    }
-
-    private boolean canMapRole(RoleModel roleModel) {
-        return auth.roles().canMapRole(roleModel);
     }
 
     /**
@@ -210,7 +200,7 @@ public class ClientRoleMappingsResource {
                     ClientModel client = (ClientModel) roleModel.getContainer();
                     if (!client.getId().equals(this.client.getId())) continue;
                 }
-                checkMapRolePermission(roleModel);
+                auth.roles().requireMapRole(roleModel);
                 user.deleteRoleMapping(roleModel);
                 roles.add(ModelToRepresentation.toRepresentation(roleModel));
             }
@@ -222,7 +212,7 @@ public class ClientRoleMappingsResource {
                     throw new NotFoundException("Role not found");
                 }
 
-                checkMapRolePermission(roleModel);
+                auth.roles().requireMapRole(roleModel);
                 try {
                     user.deleteRoleMapping(roleModel);
                 } catch (ModelException me) {

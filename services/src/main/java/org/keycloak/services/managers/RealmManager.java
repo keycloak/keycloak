@@ -159,7 +159,6 @@ public class RealmManager {
             ClientModel realmAdminApp = realm.getClientByClientId(realmAdminApplicationClientId);
             adminRole = realmAdminApp.getRole(AdminRoles.REALM_ADMIN);
         }
-        adminConsole.addScopeMapping(adminRole);
     }
 
     protected void setupAdminConsoleLocaleMapper(RealmModel realm) {
@@ -194,7 +193,6 @@ public class RealmManager {
                 ClientModel realmAdminApp = realm.getClientByClientId(realmAdminApplicationClientId);
                 adminRole = realmAdminApp.getRole(AdminRoles.REALM_ADMIN);
             }
-            adminCli.addScopeMapping(adminRole);
         }
 
     }

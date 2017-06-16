@@ -66,6 +66,43 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         testRealmRep.setEnabled(true);
         testRealms.add(testRealmRep);
     }
+    public static void setupDemo(KeycloakSession session) {
+        RealmModel realm = session.realms().getRealmByName(TEST);
+        ClientModel client = realm.addClient("sales-pipeline-application");
+        RoleModel clientAdmin = client.addRole("admin");
+        client.addRole("leader-creator");
+        client.addRole("viewLeads");
+        ClientModel client2 = realm.addClient("market-analysis-application");
+        RoleModel client2Admin = client2.addRole("admin");
+        client2.addRole("market-manager");
+        client2.addRole("viewMarkets");
+        GroupModel sales = realm.createGroup("sales");
+        RoleModel salesAppsAdminRole = realm.addRole("sales-apps-admin");
+        salesAppsAdminRole.addCompositeRole(clientAdmin);
+        salesAppsAdminRole.addCompositeRole(client2Admin);
+
+
+        UserModel admin = session.users().addUser(realm, "salesManager");
+        admin.setEnabled(true);
+        session.userCredentialManager().updateCredential(realm, admin, UserCredentialModel.password("password"));
+        admin = session.users().addUser(realm, "sales-group-admin");
+        admin.setEnabled(true);
+        session.userCredentialManager().updateCredential(realm, admin, UserCredentialModel.password("password"));
+        admin = session.users().addUser(realm, "sales-it");
+        admin.setEnabled(true);
+        session.userCredentialManager().updateCredential(realm, admin, UserCredentialModel.password("password"));
+        admin = session.users().addUser(realm, "sales-pipeline-admin");
+        admin.setEnabled(true);
+        session.userCredentialManager().updateCredential(realm, admin, UserCredentialModel.password("password"));
+
+        UserModel user = session.users().addUser(realm, "salesman");
+        user.setEnabled(true);
+        user.joinGroup(sales);
+
+        user = session.users().addUser(realm, "saleswoman");
+        user.setEnabled(true);
+
+    }
 
     public static void setupPolices(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName(TEST);
@@ -304,9 +341,14 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
     protected boolean isImportAfterEachMethod() {
         return true;
     }
+    //@Test
+    public void testDemo() throws Exception {
+        testingClient.server().run(FineGrainAdminUnitTest::setupDemo);
+        Thread.sleep(1000000000);
+    }
 
 
-    @Test
+    //@Test
     public void testUI() throws Exception {
         testingClient.server().run(FineGrainAdminUnitTest::setupPolices);
         testingClient.server().run(FineGrainAdminUnitTest::setupUsers);

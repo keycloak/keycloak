@@ -38,4 +38,10 @@ public interface UserPermissionManagement {
     Policy managePermission();
 
     Policy viewPermission();
+
+    Policy manageGroupMembershipPermission();
+
+    Policy mapRolesPermission();
+
+    Policy impersonatePermission();
 }

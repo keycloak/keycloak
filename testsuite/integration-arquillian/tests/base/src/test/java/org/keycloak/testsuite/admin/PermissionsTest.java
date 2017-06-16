@@ -717,7 +717,7 @@ public class PermissionsTest extends AbstractKeycloakTest {
             public void invoke(RealmResource realm) {
                 realm.clientTemplates().findAll();
             }
-        }, Resource.CLIENT, false);
+        }, Resource.CLIENT, false, true);
         invoke(new InvocationWithResponse() {
             public void invoke(RealmResource realm, AtomicReference<Response> response) {
                 ClientTemplateRepresentation template = new ClientTemplateRepresentation();

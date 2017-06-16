@@ -35,6 +35,10 @@ public class AdminPermissions {
         return new MgmtPermissions(session, realm, adminsRealm, admin);
     }
 
+    public static RealmsPermissionEvaluator realms(KeycloakSession session, AdminAuth auth) {
+        return new MgmtPermissions(session, auth);
+    }
+
     public static AdminPermissionManagement management(KeycloakSession session, RealmModel realm) {
         return new MgmtPermissions(session, realm);
     }
