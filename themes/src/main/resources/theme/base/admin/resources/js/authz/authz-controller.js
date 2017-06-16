@@ -367,6 +367,9 @@ module.controller('ResourceServerResourceDetailCtrl', function($scope, $http, $r
     }
 
     this.checkNameAvailability = function (onSuccess) {
+        if (!$scope.resource.name || $scope.resource.name.trim().length == 0) {
+            return;
+        }
         ResourceServerResource.search({
             realm : $route.current.params.realm,
             client : client.id,
@@ -593,6 +596,9 @@ module.controller('ResourceServerScopeDetailCtrl', function($scope, $http, $rout
     }
 
     this.checkNameAvailability = function (onSuccess) {
+        if (!$scope.scope.name || $scope.scope.name.trim().length == 0) {
+            return;
+        }
         ResourceServerScope.search({
             realm : $route.current.params.realm,
             client : client.id,
@@ -2060,6 +2066,9 @@ module.service("PolicyController", function($http, $route, $location, ResourceSe
         }
 
         this.checkNameAvailability = function (onSuccess) {
+            if (!$scope.policy.name || $scope.policy.name.trim().length == 0) {
+                return;
+            }
             ResourceServerPolicy.search({
                 realm: $route.current.params.realm,
                 client: client.id,
