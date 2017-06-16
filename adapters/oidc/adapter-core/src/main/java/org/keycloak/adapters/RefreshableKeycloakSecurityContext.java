@@ -53,13 +53,23 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
 
     @Override
     public AccessToken getToken() {
-        refreshExpiredToken(true);
+        boolean success = refreshExpiredToken(true);
+        if (!success) {
+            // drop token
+            this.token = null;
+            this.tokenString = null;
+        }
         return super.getToken();
     }
 
     @Override
     public String getTokenString() {
-        refreshExpiredToken(true);
+        boolean success = refreshExpiredToken(true);
+        if (!success) {
+            // drop token
+            this.token = null;
+            this.tokenString = null;
+        }
         return super.getTokenString();
     }
 
@@ -104,7 +114,7 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
             if (isActive() && isTokenTimeToLiveSufficient(this.token)) return true;
         }
 
-        if (this.deployment == null || refreshToken == null) return false; // Might be serialized in HttpSession?
+        if (this.deployment == null || refreshToken == null || token == null ) return false; // Might be serialized in HttpSession?
 
         if (!this.getRealm().equals(this.deployment.getRealm())) {
             // this should not happen, but let's check it anyway
