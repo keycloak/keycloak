@@ -829,8 +829,8 @@ module.controller('ResourceServerPolicyDroolsDetailCtrl', function($scope, $http
                 delete policy.config;
 
                 $http.post(authUrl + '/admin/realms/'+ $route.current.params.realm + '/clients/' + client.id + '/authz/resource-server/policy/rules/provider/resolveModules'
-                        , policy).success(function(data) {
-                            $scope.drools.moduleNames = data;
+                        , policy).then(function(response) {
+                            $scope.drools.moduleNames = response.data;
                             $scope.resolveSessions();
                         });
             }
@@ -839,8 +839,8 @@ module.controller('ResourceServerPolicyDroolsDetailCtrl', function($scope, $http
                 delete $scope.policy.config;
 
                 $http.post(authUrl + '/admin/realms/'+ $route.current.params.realm + '/clients/' + client.id + '/authz/resource-server/policy/rules/provider/resolveSessions'
-                        , $scope.policy).success(function(data) {
-                            $scope.drools.moduleSessions = data;
+                        , $scope.policy).then(function(response) {
+                            $scope.drools.moduleSessions = response.data;
                         });
             }
         },
@@ -2283,8 +2283,8 @@ module.controller('PolicyEvaluateCtrl', function($scope, $http, $route, $locatio
         }
 
         $http.post(authUrl + '/admin/realms/'+ $route.current.params.realm + '/clients/' + client.id + '/authz/resource-server/policy/evaluate'
-                , $scope.authzRequest).success(function(data) {
-                    $scope.evaluationResult = data;
+                , $scope.authzRequest).then(function(response) {
+                    $scope.evaluationResult = response.data;
                     $scope.showResultTab();
                 });
     }
@@ -2292,8 +2292,8 @@ module.controller('PolicyEvaluateCtrl', function($scope, $http, $route, $locatio
     $scope.entitlements = function() {
         $scope.authzRequest.entitlements = true;
         $http.post(authUrl + '/admin/realms/'+ $route.current.params.realm + '/clients/' + client.id + '/authz/resource-server/policy/evaluate'
-            , $scope.authzRequest).success(function(data) {
-            $scope.evaluationResult = data;
+            , $scope.authzRequest).then(function(response) {
+            $scope.evaluationResult = response.data;
             $scope.showResultTab();
         });
     }

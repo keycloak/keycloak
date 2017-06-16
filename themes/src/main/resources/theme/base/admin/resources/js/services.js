@@ -324,8 +324,8 @@ module.service('ServerInfo', function($resource, $q, $http) {
     var info = {};
     var delay = $q.defer();
 
-    $http.get(authUrl + '/admin/serverinfo').success(function(data) {
-        angular.copy(data, info);
+    $http.get(authUrl + '/admin/serverinfo').then(function(response) {
+        angular.copy(response.data, info);
         delay.resolve(info);
     });
 
@@ -334,8 +334,8 @@ module.service('ServerInfo', function($resource, $q, $http) {
             return info;
         },
         reload: function() {
-            $http.get(authUrl + '/admin/serverinfo').success(function(data) {
-                angular.copy(data, info);
+            $http.get(authUrl + '/admin/serverinfo').then(function(response) {
+                angular.copy(response.data, info);
             });
         },
         promise: delay.promise
@@ -732,7 +732,7 @@ function roleControl($scope, realm, role, roles, clients,
     $scope.addRealmRole = function() {
         $scope.compositeSwitchDisabled=true;
         $http.post(authUrl + '/admin/realms/' + realm.realm + '/roles-by-id/' + role.id + '/composites',
-                $scope.selectedRealmRoles).success(function() {
+                $scope.selectedRealmRoles).then(function() {
                 for (var i = 0; i < $scope.selectedRealmRoles.length; i++) {
                     var role = $scope.selectedRealmRoles[i];
                     var idx = $scope.realmRoles.indexOf($scope.selectedRealmRoles[i]);
@@ -749,7 +749,7 @@ function roleControl($scope, realm, role, roles, clients,
     $scope.deleteRealmRole = function() {
         $scope.compositeSwitchDisabled=true;
         $http.delete(authUrl + '/admin/realms/' + realm.realm + '/roles-by-id/' + role.id + '/composites',
-            {data : $scope.selectedRealmMappings, headers : {"content-type" : "application/json"}}).success(function() {
+            {data : $scope.selectedRealmMappings, headers : {"content-type" : "application/json"}}).then(function() {
                 for (var i = 0; i < $scope.selectedRealmMappings.length; i++) {
                     var role = $scope.selectedRealmMappings[i];
                     var idx = $scope.realmMappings.indexOf($scope.selectedRealmMappings[i]);
@@ -766,7 +766,7 @@ function roleControl($scope, realm, role, roles, clients,
     $scope.addClientRole = function() {
         $scope.compositeSwitchDisabled=true;
         $http.post(authUrl + '/admin/realms/' + realm.realm + '/roles-by-id/' + role.id + '/composites',
-                $scope.selectedClientRoles).success(function() {
+                $scope.selectedClientRoles).then(function() {
                 for (var i = 0; i < $scope.selectedClientRoles.length; i++) {
                     var role = $scope.selectedClientRoles[i];
                     var idx = $scope.clientRoles.indexOf($scope.selectedClientRoles[i]);
@@ -782,7 +782,7 @@ function roleControl($scope, realm, role, roles, clients,
     $scope.deleteClientRole = function() {
         $scope.compositeSwitchDisabled=true;
         $http.delete(authUrl + '/admin/realms/' + realm.realm + '/roles-by-id/' + role.id + '/composites',
-            {data : $scope.selectedClientMappings, headers : {"content-type" : "application/json"}}).success(function() {
+            {data : $scope.selectedClientMappings, headers : {"content-type" : "application/json"}}).then(function() {
                 for (var i = 0; i < $scope.selectedClientMappings.length; i++) {
                     var role = $scope.selectedClientMappings[i];
                     var idx = $scope.clientMappings.indexOf($scope.selectedClientMappings[i]);

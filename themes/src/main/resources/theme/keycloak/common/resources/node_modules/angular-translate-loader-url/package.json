@@ -1,0 +1,24 @@
+{
+  "name": "angular-translate-loader-url",
+  "version": "2.15.1",
+  "description": "Creates a loading function for a typical dynamic url pattern: \"locale.php?lang=en_US\", \"locale.php?lang=de_DE\", \"locale.php?language=nl_NL\" etc. Prefixing the specified url, the current requested, language id will be applied with \"?{queryParameter}={key}\". Using this service, the response of these urls must be an object of key-value pairs.",
+  "main": "angular-translate-loader-url.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/angular-translate/bower-angular-translate-loader-url.git"
+  },
+  "keywords": [
+    "angular",
+    "translate",
+    "loader"
+  ],
+  "author": "Pascal Precht",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/angular-translate/angular-translate/issues"
+  },
+  "homepage": "https://angular-translate.github.io",
+  "dependencies": {
+    "angular-translate": "~2.15.1"
+  }
+}

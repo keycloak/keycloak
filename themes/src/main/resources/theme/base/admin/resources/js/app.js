@@ -125,6 +125,12 @@ module.config(['$translateProvider', function($translateProvider) {
     $translateProvider.translations(locale, resourceBundle);
 }]);
 
+// Change for upgrade to AngularJS 1.6
+// See https://github.com/angular/angular.js/commit/aa077e81129c740041438688dff2e8d20c3d7b52
+module.config(['$locationProvider', function($locationProvider) {
+  $locationProvider.hashPrefix('');
+}]);
+
 module.config([ '$routeProvider', function($routeProvider) {
     $routeProvider
         .when('/create/realm', {
