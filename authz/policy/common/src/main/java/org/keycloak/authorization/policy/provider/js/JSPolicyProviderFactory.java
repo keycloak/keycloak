@@ -1,9 +1,5 @@
 package org.keycloak.authorization.policy.provider.js;
 
-import java.util.Map;
-
-import javax.script.ScriptEngineManager;
-
 import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
@@ -19,9 +15,7 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
  */
 public class JSPolicyProviderFactory implements PolicyProviderFactory<JSPolicyRepresentation> {
 
-    private static final String ENGINE = "nashorn";
-
-    private JSPolicyProvider provider = new JSPolicyProvider(() -> new ScriptEngineManager().getEngineByName(ENGINE));
+    private JSPolicyProvider provider = new JSPolicyProvider();
 
     @Override
     public String getName() {

@@ -17,37 +17,27 @@
  */
 package org.keycloak.authorization.policy.provider.js;
 
-import java.util.function.Supplier;
-
-import javax.script.ScriptEngine;
-import javax.script.ScriptException;
-
+import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.ScriptModel;
+import org.keycloak.scripting.InvocableScriptAdapter;
+import org.keycloak.scripting.ScriptingProvider;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class JSPolicyProvider implements PolicyProvider {
 
-    private Supplier<ScriptEngine> engineProvider;
-
-    public JSPolicyProvider(Supplier<ScriptEngine> engineProvider) {
-        this.engineProvider = engineProvider;
-    }
-
     @Override
     public void evaluate(Evaluation evaluation) {
-        ScriptEngine engine = engineProvider.get();
-
-        engine.put("$evaluation", evaluation);
-
         Policy policy = evaluation.getPolicy();
 
         try {
-            engine.eval(policy.getConfig().get("code"));
-        } catch (ScriptException e) {
+            getInvocableScriptAdapter(policy, evaluation).eval();
+        } catch (Exception e) {
             throw new RuntimeException("Error evaluating JS Policy [" + policy.getName() + "].", e);
         }
     }
@@ -55,5 +45,25 @@ public class JSPolicyProvider implements PolicyProvider {
     @Override
     public void close() {
 
+    }
+
+    private InvocableScriptAdapter getInvocableScriptAdapter(Policy policy, Evaluation evaluation) {
+        String scriptName = policy.getName();
+        String scriptCode = policy.getConfig().get("code");
+        String scriptDescription = policy.getDescription();
+
+        AuthorizationProvider authorization = evaluation.getAuthorizationProvider();
+        RealmModel realm = authorization.getRealm();
+
+        ScriptingProvider scripting = authorization.getKeycloakSession().getProvider(ScriptingProvider.class);
+
+        //TODO lookup script by scriptId instead of creating it every time
+        ScriptModel script = scripting.createScript(realm.getId(), ScriptModel.TEXT_JAVASCRIPT, scriptName, scriptCode, scriptDescription);
+
+        //how to deal with long running scripts -> timeout?
+        return scripting.prepareInvocableScript(script, bindings -> {
+            bindings.put("script", script);
+            bindings.put("$evaluation", evaluation);
+        });
     }
 }

@@ -78,6 +78,14 @@ public class InvocableScriptAdapter implements Invocable {
         }
     }
 
+    public Object eval() throws ScriptExecutionException {
+        try {
+            return scriptEngine.eval(scriptModel.getCode());
+        } catch (ScriptException e) {
+            throw new ScriptExecutionException(scriptModel, e);
+        }
+    }
+
     @Override
     public <T> T getInterface(Class<T> clazz) {
         return getInvocableEngine().getInterface(clazz);
