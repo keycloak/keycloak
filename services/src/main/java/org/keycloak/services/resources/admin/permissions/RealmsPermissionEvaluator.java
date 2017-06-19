@@ -27,6 +27,8 @@ public interface RealmsPermissionEvaluator {
 
     boolean isAdmin(RealmModel realm);
 
+    boolean isAdmin();
+
     boolean canCreateRealm();
 
     void requireCreateRealm();

@@ -116,6 +116,7 @@ public class TestCleanup {
 
 
     public void executeCleanup() {
+        if (adminClient == null) throw new RuntimeException("ADMIN CLIENT NULL");
         RealmResource realm = adminClient.realm(realmName);
 
         if (userIds != null) {

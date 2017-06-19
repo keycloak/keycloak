@@ -318,6 +318,22 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
     }
 
     @Override
+    public boolean isAdmin() {
+        RealmManager realmManager = new RealmManager(session);
+        if (adminsRealm.equals(realmManager.getKeycloakAdminstrationRealm())) {
+            if (identity.hasRealmRole(AdminRoles.ADMIN) || identity.hasRealmRole(AdminRoles.CREATE_REALM)) {
+                return true;
+            }
+            for (RealmModel realm : session.realms().getRealms()) {
+                if (isAdmin(realm)) return true;
+            }
+            return false;
+        } else {
+            return isAdmin(adminsRealm);
+        }
+    }
+
+    @Override
     public boolean canCreateRealm() {
         RealmManager realmManager = new RealmManager(session);
         if (!auth.getRealm().equals(realmManager.getKeycloakAdminstrationRealm())) {
