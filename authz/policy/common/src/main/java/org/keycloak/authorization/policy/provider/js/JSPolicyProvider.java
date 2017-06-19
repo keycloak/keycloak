@@ -17,27 +17,30 @@
  */
 package org.keycloak.authorization.policy.provider.js;
 
+import java.util.function.BiFunction;
+
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.ScriptModel;
 import org.keycloak.scripting.EvaluatableScriptAdapter;
-import org.keycloak.scripting.ScriptingProvider;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class JSPolicyProvider implements PolicyProvider {
+class JSPolicyProvider implements PolicyProvider {
+
+    private final BiFunction<AuthorizationProvider, Policy, EvaluatableScriptAdapter> evaluatableScript;
+
+    JSPolicyProvider(final BiFunction<AuthorizationProvider, Policy, EvaluatableScriptAdapter> evaluatableScript) {
+        this.evaluatableScript = evaluatableScript;
+    }
 
     @Override
     public void evaluate(Evaluation evaluation) {
         Policy policy = evaluation.getPolicy();
-
         AuthorizationProvider authorization = evaluation.getAuthorizationProvider();
-        ScriptModel script = getScriptModel(policy, authorization);
-        final EvaluatableScriptAdapter adapter = getScriptingProvider(authorization).prepareEvaluatableScript(script);
+        final EvaluatableScriptAdapter adapter = evaluatableScript.apply(authorization, policy);
 
         try {
             //how to deal with long running scripts -> timeout?
@@ -53,21 +56,5 @@ public class JSPolicyProvider implements PolicyProvider {
 
     @Override
     public void close() {
-
-    }
-
-    private ScriptModel getScriptModel(final Policy policy, final AuthorizationProvider authorization) {
-        String scriptName = policy.getName();
-        String scriptCode = policy.getConfig().get("code");
-        String scriptDescription = policy.getDescription();
-
-        RealmModel realm = authorization.getRealm();
-
-        //TODO lookup script by scriptId instead of creating it every time
-        return getScriptingProvider(authorization).createScript(realm.getId(), ScriptModel.TEXT_JAVASCRIPT, scriptName, scriptCode, scriptDescription);
-    }
-
-    private ScriptingProvider getScriptingProvider(final AuthorizationProvider authorization) {
-        return authorization.getKeycloakSession().getProvider(ScriptingProvider.class);
     }
 }
