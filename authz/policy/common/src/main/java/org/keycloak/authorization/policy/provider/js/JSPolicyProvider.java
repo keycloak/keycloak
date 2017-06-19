@@ -23,7 +23,7 @@ import org.keycloak.authorization.policy.evaluation.Evaluation;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.ScriptModel;
-import org.keycloak.scripting.InvocableScriptAdapter;
+import org.keycloak.scripting.EvaluatableScriptAdapter;
 import org.keycloak.scripting.ScriptingProvider;
 
 /**
@@ -35,9 +35,18 @@ public class JSPolicyProvider implements PolicyProvider {
     public void evaluate(Evaluation evaluation) {
         Policy policy = evaluation.getPolicy();
 
+        AuthorizationProvider authorization = evaluation.getAuthorizationProvider();
+        ScriptModel script = getScriptModel(policy, authorization);
+        final EvaluatableScriptAdapter adapter = getScriptingProvider(authorization).prepareEvaluatableScript(script);
+
         try {
-            getInvocableScriptAdapter(policy, evaluation).eval();
-        } catch (Exception e) {
+            //how to deal with long running scripts -> timeout?
+            adapter.eval(bindings -> {
+                bindings.put("script", adapter.getScriptModel());
+                bindings.put("$evaluation", evaluation);
+            });
+        }
+        catch (Exception e) {
             throw new RuntimeException("Error evaluating JS Policy [" + policy.getName() + "].", e);
         }
     }
@@ -47,23 +56,18 @@ public class JSPolicyProvider implements PolicyProvider {
 
     }
 
-    private InvocableScriptAdapter getInvocableScriptAdapter(Policy policy, Evaluation evaluation) {
+    private ScriptModel getScriptModel(final Policy policy, final AuthorizationProvider authorization) {
         String scriptName = policy.getName();
         String scriptCode = policy.getConfig().get("code");
         String scriptDescription = policy.getDescription();
 
-        AuthorizationProvider authorization = evaluation.getAuthorizationProvider();
         RealmModel realm = authorization.getRealm();
 
-        ScriptingProvider scripting = authorization.getKeycloakSession().getProvider(ScriptingProvider.class);
-
         //TODO lookup script by scriptId instead of creating it every time
-        ScriptModel script = scripting.createScript(realm.getId(), ScriptModel.TEXT_JAVASCRIPT, scriptName, scriptCode, scriptDescription);
+        return getScriptingProvider(authorization).createScript(realm.getId(), ScriptModel.TEXT_JAVASCRIPT, scriptName, scriptCode, scriptDescription);
+    }
 
-        //how to deal with long running scripts -> timeout?
-        return scripting.prepareInvocableScript(script, bindings -> {
-            bindings.put("script", script);
-            bindings.put("$evaluation", evaluation);
-        });
+    private ScriptingProvider getScriptingProvider(final AuthorizationProvider authorization) {
+        return authorization.getKeycloakSession().getProvider(ScriptingProvider.class);
     }
 }

@@ -16,12 +16,14 @@
  */
 package org.keycloak.scripting;
 
-import org.keycloak.models.ScriptModel;
-
 import javax.script.Bindings;
-import javax.script.ScriptContext;
+import javax.script.Compilable;
+import javax.script.CompiledScript;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
+
+import org.keycloak.models.ScriptModel;
 
 /**
  * A {@link ScriptingProvider} that uses a {@link ScriptEngineManager} to evaluate scripts with a {@link ScriptEngine}.
@@ -32,8 +34,7 @@ public class DefaultScriptingProvider implements ScriptingProvider {
 
     private final ScriptEngineManager scriptEngineManager;
 
-    public DefaultScriptingProvider(ScriptEngineManager scriptEngineManager) {
-
+    DefaultScriptingProvider(ScriptEngineManager scriptEngineManager) {
         if (scriptEngineManager == null) {
             throw new IllegalStateException("scriptEngineManager must not be null!");
         }
@@ -44,13 +45,22 @@ public class DefaultScriptingProvider implements ScriptingProvider {
     /**
      * Wraps the provided {@link ScriptModel} in a {@link javax.script.Invocable} instance with bindings configured through the {@link ScriptBindingsConfigurer}.
      *
-     * @param scriptModel  must not be {@literal null}
+     * @param scriptModel        must not be {@literal null}
      * @param bindingsConfigurer must not be {@literal null}
-     * @return
      */
     @Override
     public InvocableScriptAdapter prepareInvocableScript(ScriptModel scriptModel, ScriptBindingsConfigurer bindingsConfigurer) {
+        final AbstractEvaluatableScriptAdapter evaluatable = prepareEvaluatableScript(scriptModel);
+        return evaluatable.prepareInvokableScript(bindingsConfigurer);
+    }
 
+    /**
+     * Wraps the provided {@link ScriptModel} in a {@link javax.script.Invocable} instance with bindings configured through the {@link ScriptBindingsConfigurer}.
+     *
+     * @param scriptModel must not be {@literal null}
+     */
+    @Override
+    public AbstractEvaluatableScriptAdapter prepareEvaluatableScript(ScriptModel scriptModel) {
         if (scriptModel == null) {
             throw new IllegalArgumentException("script must not be null");
         }
@@ -59,13 +69,18 @@ public class DefaultScriptingProvider implements ScriptingProvider {
             throw new IllegalArgumentException("script must not be null or empty");
         }
 
-        if (bindingsConfigurer == null) {
-            throw new IllegalArgumentException("bindingsConfigurer must not be null");
+        ScriptEngine engine = createPreparedScriptEngine(scriptModel);
+
+        if (engine instanceof Compilable) {
+            try {
+                final CompiledScript compiledScript = ((Compilable) engine).compile(scriptModel.getCode());
+                return new CompiledEvaluatableScriptAdapter(scriptModel, compiledScript);
+            }
+            catch (ScriptException e) {
+                throw new ScriptExecutionException(scriptModel, e);
+            }
         }
-
-        ScriptEngine engine = createPreparedScriptEngine(scriptModel, bindingsConfigurer);
-
-        return new InvocableScriptAdapter(scriptModel, engine);
+        return new UncompiledEvaluatableScriptAdapter(scriptModel, engine);
     }
 
     //TODO allow scripts to be maintained independently of other components, e.g. with dedicated persistence
@@ -74,36 +89,25 @@ public class DefaultScriptingProvider implements ScriptingProvider {
 
     @Override
     public ScriptModel createScript(String realmId, String mimeType, String scriptName, String scriptCode, String scriptDescription) {
+        return new Script(null /* scriptId */, realmId, scriptName, mimeType, scriptCode, scriptDescription);
+    }
 
-        ScriptModel script = new Script(null /* scriptId */, realmId, scriptName, mimeType, scriptCode, scriptDescription);
-        return script;
+    @Override
+    public void close() {
+        //NOOP
     }
 
     /**
      * Looks-up a {@link ScriptEngine} with prepared {@link Bindings} for the given {@link ScriptModel Script}.
-     *
-     * @param script
-     * @param bindingsConfigurer
-     * @return
      */
-    private ScriptEngine createPreparedScriptEngine(ScriptModel script, ScriptBindingsConfigurer bindingsConfigurer) {
-
+    private ScriptEngine createPreparedScriptEngine(ScriptModel script) {
         ScriptEngine scriptEngine = lookupScriptEngineFor(script);
 
         if (scriptEngine == null) {
             throw new IllegalStateException("Could not find ScriptEngine for script: " + script);
         }
 
-        configureBindings(bindingsConfigurer, scriptEngine);
-
         return scriptEngine;
-    }
-
-    private void configureBindings(ScriptBindingsConfigurer bindingsConfigurer, ScriptEngine engine) {
-
-        Bindings bindings = engine.createBindings();
-        bindingsConfigurer.configureBindings(bindings);
-        engine.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
     }
 
     /**
@@ -114,13 +118,9 @@ public class DefaultScriptingProvider implements ScriptingProvider {
         try {
             Thread.currentThread().setContextClassLoader(DefaultScriptingProvider.class.getClassLoader());
             return scriptEngineManager.getEngineByMimeType(script.getMimeType());
-        } finally {
+        }
+        finally {
             Thread.currentThread().setContextClassLoader(cl);
         }
-    }
-
-    @Override
-    public void close() {
-        //NOOP
     }
 }

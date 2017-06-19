@@ -56,7 +56,7 @@ public class InvocableScriptAdapter implements Invocable {
         }
 
         this.scriptModel = scriptModel;
-        this.scriptEngine = loadScriptIntoEngine(scriptModel, scriptEngine);
+        this.scriptEngine = scriptEngine;
     }
 
     @Override
@@ -74,14 +74,6 @@ public class InvocableScriptAdapter implements Invocable {
         try {
             return getInvocableEngine().invokeFunction(name, args);
         } catch (ScriptException | NoSuchMethodException e) {
-            throw new ScriptExecutionException(scriptModel, e);
-        }
-    }
-
-    public Object eval() throws ScriptExecutionException {
-        try {
-            return scriptEngine.eval(scriptModel.getCode());
-        } catch (ScriptException e) {
             throw new ScriptExecutionException(scriptModel, e);
         }
     }
@@ -107,17 +99,6 @@ public class InvocableScriptAdapter implements Invocable {
         Object candidate = scriptEngine.getContext().getAttribute(name);
 
         return candidate != null;
-    }
-
-    private ScriptEngine loadScriptIntoEngine(ScriptModel script, ScriptEngine engine) {
-
-        try {
-            engine.eval(script.getCode());
-        } catch (ScriptException se) {
-            throw new ScriptExecutionException(script, se);
-        }
-
-        return engine;
     }
 
     private Invocable getInvocableEngine() {
