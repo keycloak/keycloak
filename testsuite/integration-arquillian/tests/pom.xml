@@ -41,8 +41,9 @@
     <properties>
         <auth.server>undertow</auth.server>
         <auth.server.undertow>true</auth.server.undertow>
-        <auth.server.undertow.crossdc>true</auth.server.undertow.crossdc>
-
+        <auth.server.undertow.crossdc>false</auth.server.undertow.crossdc>
+        <auth.server.crossdc>false</auth.server.crossdc>
+        
         <auth.server.container>auth-server-${auth.server}</auth.server.container>
         <auth.server.home>${containers.home}/${auth.server.container}</auth.server.home>
         <auth.server.config.dir>${auth.server.home}</auth.server.config.dir>
@@ -67,7 +68,7 @@
         <auth.server.profile/>
         <auth.server.feature/>
 
-        <cache.server>infinispan</cache.server>
+        <cache.server>undefined</cache.server>
         <cache.server.container>cache-server-${cache.server}</cache.server.container>
         <cache.server.home>${containers.home}/${cache.server.container}</cache.server.home>
         <cache.server.port.offset>1010</cache.server.port.offset>
@@ -240,6 +241,22 @@
                             <client.key.passphrase>${client.key.passphrase}</client.key.passphrase>
 
                             <auth.server.ocsp.responder.enabled>${auth.server.ocsp.responder.enabled}</auth.server.ocsp.responder.enabled>
+                            
+                            <!--cache server properties-->
+                            <auth.server.crossdc>${auth.server.crossdc}</auth.server.crossdc>
+                            <auth.server.undertow.crossdc>${auth.server.undertow.crossdc}</auth.server.undertow.crossdc>
+
+                            <cache.server>${cache.server}</cache.server>
+                            <cache.server.port.offset>${cache.server.port.offset}</cache.server.port.offset>
+                            <cache.server.container>${cache.server.container}</cache.server.container>
+                            <cache.server.home>${cache.server.home}</cache.server.home>
+                            <cache.server.console.output>${cache.server.console.output}</cache.server.console.output>
+                            <cache.server.management.port>${cache.server.management.port}</cache.server.management.port>
+
+                            <keycloak.connectionsInfinispan.remoteStorePort>${keycloak.connectionsInfinispan.remoteStorePort}</keycloak.connectionsInfinispan.remoteStorePort>
+                            <keycloak.connectionsInfinispan.remoteStoreServer>${keycloak.connectionsInfinispan.remoteStoreServer}</keycloak.connectionsInfinispan.remoteStoreServer>
+
+                            <keycloak.connectionsJpa.url.crossdc>${keycloak.connectionsJpa.url.crossdc}</keycloak.connectionsJpa.url.crossdc>
                         </systemPropertyVariables>
                         <properties>
                             <property>
@@ -336,6 +353,8 @@
             <id>cache-server-infinispan</id>
             <properties>
                 <cache.server>infinispan</cache.server>
+                <auth.server.undertow.crossdc>true</auth.server.undertow.crossdc>
+                <auth.server.crossdc>true</auth.server.crossdc>
                 <cache.server.jboss>true</cache.server.jboss>
                 <cache.server.config.dir>${cache.server.home}/standalone/configuration</cache.server.config.dir>                
             </properties>
@@ -344,17 +363,6 @@
                     <groupId>org.wildfly.arquillian</groupId>
                     <artifactId>wildfly-arquillian-container-managed</artifactId>
                 </dependency>
-<!--                <dependency>
-                    <groupId>org.infinispan.arquillian.container</groupId>
-                    <artifactId>infinispan-arquillian-impl</artifactId>
-                    <scope>test</scope>
-                    <exclusions>
-                        <exclusion>
-                            <groupId>org.infinispan</groupId>
-                            <artifactId>infinispan-core</artifactId>
-                        </exclusion>
-                    </exclusions>
-                </dependency>-->
             </dependencies>
 
             <build>
@@ -410,26 +418,79 @@
                                 </execution>
                             </executions>
                         </plugin>
-                        <plugin>
-                            <artifactId>maven-surefire-plugin</artifactId>
-                            <configuration>
-                                <systemPropertyVariables>
-                                    <auth.server.crossdc>true</auth.server.crossdc>
-                                    <auth.server.undertow.crossdc>${auth.server.undertow.crossdc}</auth.server.undertow.crossdc>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+        
+        <profile>
+            <id>cache-server-jdg</id>
+            <properties>
+                <cache.server>jdg</cache.server>
+                <auth.server.undertow.crossdc>true</auth.server.undertow.crossdc>
+                <auth.server.crossdc>true</auth.server.crossdc>
+                <cache.server.jboss>true</cache.server.jboss>
+                <cache.server.config.dir>${cache.server.home}/standalone/configuration</cache.server.config.dir>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.wildfly.arquillian</groupId>
+                    <artifactId>wildfly-arquillian-container-managed</artifactId>
+                </dependency>
+            </dependencies>
 
-                                    <cache.server>${cache.server}</cache.server>
-                                    <cache.server.port.offset>${cache.server.port.offset}</cache.server.port.offset>
-                                    <cache.server.container>${cache.server.container}</cache.server.container>
-                                    <cache.server.home>${cache.server.home}</cache.server.home>
-                                    <cache.server.console.output>${cache.server.console.output}</cache.server.console.output>
-                                    <cache.server.management.port>${cache.server.management.port}</cache.server.management.port>
-                                    
-                                    <keycloak.connectionsInfinispan.remoteStorePort>${keycloak.connectionsInfinispan.remoteStorePort}</keycloak.connectionsInfinispan.remoteStorePort>
-                                    <keycloak.connectionsInfinispan.remoteStoreServer>${keycloak.connectionsInfinispan.remoteStoreServer}</keycloak.connectionsInfinispan.remoteStoreServer>
-                                    
-                                    <keycloak.connectionsJpa.url.crossdc>${keycloak.connectionsJpa.url.crossdc}</keycloak.connectionsJpa.url.crossdc>
-                                </systemPropertyVariables>
-                            </configuration>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <!--requireActiveProfile 'auth-server-wildfly/eap' doesn't work unless the profiles are defined in all submodule poms
+                                        using requireProperty instead-->
+                                        <requireProperty>
+                                            <property>cache.server</property>
+                                            <regex>(infinispan)|(jdg)</regex>
+                                            <regexMessage>Profile "cache-server-jdg" requires activation of profile "cache-server-infinispan" or "cache-server-jdg".</regexMessage>
+                                        </requireProperty>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                    </plugin>
+                </plugins>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <artifactId>maven-dependency-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>unpack-cache-server-jdg</id>
+                                    <phase>generate-resources</phase>
+                                    <goals>
+                                        <goal>unpack</goal>
+                                    </goals>
+                                    <configuration>
+                                        <artifactItems>
+                                            <artifactItem>
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>integration-arquillian-servers-cache-server-jdg</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>zip</type>
+                                                <outputDirectory>${containers.home}</outputDirectory>
+                                            </artifactItem>
+                                        </artifactItems>
+                                        <overWriteIfNewer>true</overWriteIfNewer>
+                                    </configuration>
+                                </execution>
+                            </executions>
                         </plugin>
                     </plugins>
                 </pluginManagement>

@@ -126,7 +126,7 @@
                         <exclude>${exclude.account}</exclude>
                         <exclude>${exclude.client}</exclude>
                         <exclude>${exclude.cluster}</exclude>
-                        <exclude>${exclude.crossdc</exclude>
+                        <exclude>${exclude.crossdc}</exclude>
                         <exclude>${exclude.undertow.adapter}</exclude>
                         <exclude>${exclude.x509}</exclude>
                     </excludes>
