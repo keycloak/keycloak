@@ -210,9 +210,9 @@ public class SAML2Signature {
      *
      * @param document SAML document to have its ID attribute configured.
      */
-    private void configureIdAttribute(Document document) {
+    public static void configureIdAttribute(Document document) {
         // Estabilish the IDness of the ID attribute.
-        document.getDocumentElement().setIdAttribute(ID_ATTRIBUTE_NAME, true);
+        configureIdAttribute(document.getDocumentElement());
 
         NodeList nodes = document.getElementsByTagNameNS(JBossSAMLURIConstants.ASSERTION_NSURI.get(),
                 JBossSAMLConstants.ASSERTION.get());
@@ -220,8 +220,13 @@ public class SAML2Signature {
         for (int i = 0; i < nodes.getLength(); i++) {
             Node n = nodes.item(i);
             if (n instanceof Element) {
-                ((Element) n).setIdAttribute(ID_ATTRIBUTE_NAME, true);
+                configureIdAttribute((Element) n);
             }
         }
     }
+
+    public static void configureIdAttribute(Element element) {
+        element.setIdAttribute(JBossSAMLConstants.ID.get(), true);
+    }
+
 }
