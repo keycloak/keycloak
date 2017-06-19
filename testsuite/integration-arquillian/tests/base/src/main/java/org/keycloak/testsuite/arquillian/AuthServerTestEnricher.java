@@ -142,6 +142,7 @@ public class AuthServerTestEnricher {
 
             containers.stream()
               .filter(c -> c.getQualifier().startsWith(AUTH_SERVER_CONTAINER + "-cross-dc-"))
+              .sorted((a, b) -> a.getQualifier().compareTo(b.getQualifier()))
               .forEach(c -> {
                 String portOffsetString = c.getArquillianContainer().getContainerConfiguration().getContainerProperties().getOrDefault("bindHttpPortOffset", "0");
                 String dcString = c.getArquillianContainer().getContainerConfiguration().getContainerProperties().getOrDefault("dataCenter", "0");

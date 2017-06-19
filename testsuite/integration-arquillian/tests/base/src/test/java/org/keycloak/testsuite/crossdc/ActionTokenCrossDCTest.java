@@ -17,16 +17,13 @@
 package org.keycloak.testsuite.crossdc;
 
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.events.admin.OperationType;
-import org.keycloak.events.admin.ResourceType;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Retry;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.ContainerInfo;
 import org.keycloak.testsuite.page.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.ErrorPage;
-import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
 import java.io.IOException;
@@ -36,12 +33,20 @@ import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import javax.ws.rs.core.Response;
 import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
+import org.keycloak.testsuite.arquillian.annotation.JmxInfinispanCacheStatistics;
+import org.keycloak.testsuite.arquillian.annotation.JmxInfinispanChannelStatistics;
+import org.keycloak.testsuite.arquillian.InfinispanStatistics;
+import org.keycloak.testsuite.arquillian.InfinispanStatistics.Constants;
+import java.util.concurrent.TimeUnit;
+import org.hamcrest.Matchers;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 /**
  *
@@ -69,7 +74,16 @@ public class ActionTokenCrossDCTest extends AbstractAdminCrossDCTest {
     }
 
     @Test
-    public void sendResetPasswordEmailSuccessWorksInCrossDc() throws IOException, MessagingException {
+    public void sendResetPasswordEmailSuccessWorksInCrossDc(
+      @JmxInfinispanCacheStatistics(dcIndex=0, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.ACTION_TOKEN_CACHE) InfinispanStatistics cacheDc0Node0Statistics,
+      @JmxInfinispanCacheStatistics(dcIndex=0, dcNodeIndex=1, cacheName=InfinispanConnectionProvider.ACTION_TOKEN_CACHE) InfinispanStatistics cacheDc0Node1Statistics,
+      @JmxInfinispanCacheStatistics(dcIndex=1, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.ACTION_TOKEN_CACHE) InfinispanStatistics cacheDc1Node0Statistics,
+      @JmxInfinispanChannelStatistics() InfinispanStatistics channelStatisticsCrossDc) throws Exception {
+        startBackendNode(0, 1);
+        cacheDc0Node1Statistics.waitToBecomeAvailable(10, TimeUnit.SECONDS);
+
+        Comparable originalNumberOfEntries = cacheDc0Node0Statistics.getSingleStatistics(Constants.STAT_CACHE_NUMBER_OF_ENTRIES);
+
         UserRepresentation userRep = new UserRepresentation();
         userRep.setEnabled(true);
         userRep.setUsername("user1");
@@ -88,21 +102,33 @@ public class ActionTokenCrossDCTest extends AbstractAdminCrossDCTest {
 
         String link = MailUtils.getPasswordResetEmailLink(message);
 
-        driver.navigate().to(link);
+        Retry.execute(() -> channelStatisticsCrossDc.reset(), 3, 100);
+
+        assertSingleStatistics(cacheDc0Node0Statistics, Constants.STAT_CACHE_NUMBER_OF_ENTRIES,
+          () -> driver.navigate().to(link),
+          Matchers::is
+        );
 
         passwordUpdatePage.assertCurrent();
 
-        passwordUpdatePage.changePassword("new-pass", "new-pass");
+        // Verify that there was at least one message sent via the channel
+        assertSingleStatistics(channelStatisticsCrossDc, Constants.STAT_CHANNEL_SENT_MESSAGES,
+          () -> passwordUpdatePage.changePassword("new-pass", "new-pass"),
+          old -> greaterThan((Comparable) 0l)
+        );
+
+        // Verify that the caches are synchronized
+        assertThat(cacheDc0Node0Statistics.getSingleStatistics(Constants.STAT_CACHE_NUMBER_OF_ENTRIES), greaterThan(originalNumberOfEntries));
+        assertThat(cacheDc0Node0Statistics.getSingleStatistics(Constants.STAT_CACHE_NUMBER_OF_ENTRIES),
+                is(cacheDc1Node0Statistics.getSingleStatistics(Constants.STAT_CACHE_NUMBER_OF_ENTRIES)));
 
         assertEquals("Your account has been updated.", driver.getTitle());
 
         disableDcOnLoadBalancer(0);
         enableDcOnLoadBalancer(1);
 
-        Retry.execute(() -> {
-            driver.navigate().to(link);
-            errorPage.assertCurrent();
-        }, 3, 400);
+        driver.navigate().to(link);
+        errorPage.assertCurrent();
     }
 
     @Ignore("KEYCLOAK-5030")
@@ -144,9 +170,10 @@ public class ActionTokenCrossDCTest extends AbstractAdminCrossDCTest {
               loadBalancerCtrl.enableBackendNodeByName(c.getQualifier());
           });
 
-        driver.navigate().to(link);
-
-        errorPage.assertCurrent();
+        Retry.execute(() -> {
+            driver.navigate().to(link);
+            errorPage.assertCurrent();
+        }, 3, 400);
     }
 
 }

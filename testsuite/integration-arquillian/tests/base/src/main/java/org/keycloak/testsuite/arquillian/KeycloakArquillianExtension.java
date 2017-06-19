@@ -32,6 +32,7 @@ import org.jboss.arquillian.graphene.location.CustomizableURLResourceProvider;
 import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
 import org.jboss.arquillian.test.spi.execution.TestExecutionDecider;
 import org.keycloak.testsuite.arquillian.h2.H2TestEnricher;
+import org.keycloak.testsuite.arquillian.jmx.JmxConnectorRegistryCreator;
 import org.keycloak.testsuite.arquillian.karaf.CustomKarafContainer;
 import org.keycloak.testsuite.arquillian.migration.MigrationTestExecutionDecider;
 import org.keycloak.testsuite.arquillian.provider.AdminClientProvider;
@@ -44,6 +45,7 @@ import org.keycloak.testsuite.drone.HtmlUnitScreenshots;
 import org.keycloak.testsuite.drone.KeycloakDronePostSetup;
 import org.keycloak.testsuite.drone.KeycloakHtmlUnitInstantiator;
 import org.keycloak.testsuite.drone.KeycloakWebDriverConfigurator;
+import org.jboss.arquillian.test.spi.TestEnricher;
 
 /**
  *
@@ -65,6 +67,8 @@ public class KeycloakArquillianExtension implements LoadableExtension {
                 .service(DeploymentScenarioGenerator.class, DeploymentTargetModifier.class)
                 .service(ApplicationArchiveProcessor.class, DeploymentArchiveProcessor.class)
                 .service(DeployableContainer.class, CustomKarafContainer.class)
+                .service(TestEnricher.class, CacheStatisticsControllerEnricher.class)
+                .observer(JmxConnectorRegistryCreator.class)
                 .observer(AuthServerTestEnricher.class)
                 .observer(AppServerTestEnricher.class)
                 .observer(H2TestEnricher.class);

@@ -19,13 +19,20 @@ package org.keycloak.testsuite.crossdc;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.events.log.JBossLoggingEventListenerProviderFactory;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.Retry;
+import org.keycloak.testsuite.arquillian.InfinispanStatistics;
 import org.keycloak.testsuite.events.EventsListenerProviderFactory;
 import org.keycloak.testsuite.util.TestCleanup;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import org.hamcrest.Matcher;
 import org.junit.Before;
+import static org.junit.Assert.assertThat;
 
 /**
  *
@@ -78,4 +85,31 @@ public abstract class AbstractAdminCrossDCTest extends AbstractCrossDCTest {
     protected TestCleanup getCleanup() {
         return getCleanup(REALM_NAME);
     }
+
+    protected <T extends Comparable> void assertSingleStatistics(InfinispanStatistics stats, String key, Runnable testedCode, Function<T, Matcher<? super T>> matcherOnOldStat) {
+        stats.reset();
+
+        T oldStat = (T) stats.getSingleStatistics(key);
+        testedCode.run();
+
+        Retry.execute(() -> {
+            T newStat = (T) stats.getSingleStatistics(key);
+
+            Matcher<? super T> matcherInstance = matcherOnOldStat.apply(oldStat);
+            assertThat(newStat, matcherInstance);
+        }, 5, 200);
+    }
+
+    protected void assertStatistics(InfinispanStatistics stats, Runnable testedCode, BiConsumer<Map<String, Object>, Map<String, Object>> assertionOnStats) {
+        stats.reset();
+
+        Map<String, Object> oldStat = stats.getStatistics();
+        testedCode.run();
+
+        Retry.execute(() -> {
+            Map<String, Object> newStat = stats.getStatistics();
+            assertionOnStats.accept(oldStat, newStat);
+        }, 5, 200);
+    }
+
 }

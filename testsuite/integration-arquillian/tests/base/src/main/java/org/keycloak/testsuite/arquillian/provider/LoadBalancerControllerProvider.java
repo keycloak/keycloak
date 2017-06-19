@@ -2,14 +2,8 @@ package org.keycloak.testsuite.arquillian.provider;
 
 import org.keycloak.testsuite.arquillian.annotation.LoadBalancer;
 import java.lang.annotation.Annotation;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import org.jboss.arquillian.container.spi.event.KillContainer;
-import org.jboss.arquillian.container.spi.event.StartContainer;
-import org.jboss.arquillian.container.spi.event.StopContainer;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.annotation.Inject;
-import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
 import org.keycloak.testsuite.arquillian.LoadBalancerController;
