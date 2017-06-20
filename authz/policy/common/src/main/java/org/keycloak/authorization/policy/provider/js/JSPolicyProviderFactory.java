@@ -1,8 +1,8 @@
 package org.keycloak.authorization.policy.provider.js;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
-
-import javax.script.ScriptEngineManager;
 
 import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
@@ -11,17 +11,20 @@ import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.ScriptModel;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.scripting.EvaluatableScriptAdapter;
+import org.keycloak.scripting.ScriptingProvider;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class JSPolicyProviderFactory implements PolicyProviderFactory<JSPolicyRepresentation> {
 
-    private static final String ENGINE = "nashorn";
-
-    private JSPolicyProvider provider = new JSPolicyProvider(() -> new ScriptEngineManager().getEngineByName(ENGINE));
+    private final JSPolicyProvider provider = new JSPolicyProvider(this::getEvaluatableScript);
+    private final Map<String, EvaluatableScriptAdapter> scripts = Collections.synchronizedMap(new HashMap<>());
 
     @Override
     public String getName() {
@@ -69,8 +72,9 @@ public class JSPolicyProviderFactory implements PolicyProviderFactory<JSPolicyRe
         updatePolicy(policy, representation.getConfig().get("code"));
     }
 
-    private void updatePolicy(Policy policy, String code) {
-        policy.putConfig("code", code);
+    @Override
+    public void onRemove(final Policy policy, final AuthorizationProvider authorization) {
+        scripts.remove(policy.getId());
     }
 
     @Override
@@ -91,5 +95,26 @@ public class JSPolicyProviderFactory implements PolicyProviderFactory<JSPolicyRe
     @Override
     public String getId() {
         return "js";
+    }
+
+    private EvaluatableScriptAdapter getEvaluatableScript(final AuthorizationProvider authz, final Policy policy) {
+        return scripts.computeIfAbsent(policy.getId(), id -> {
+            final ScriptingProvider scripting = authz.getKeycloakSession().getProvider(ScriptingProvider.class);
+            ScriptModel script = getScriptModel(policy, authz.getRealm(), scripting);
+            return scripting.prepareEvaluatableScript(script);
+        });
+    }
+
+    private ScriptModel getScriptModel(final Policy policy, final RealmModel realm, final ScriptingProvider scripting) {
+        String scriptName = policy.getName();
+        String scriptCode = policy.getConfig().get("code");
+        String scriptDescription = policy.getDescription();
+
+        //TODO lookup script by scriptId instead of creating it every time
+        return scripting.createScript(realm.getId(), ScriptModel.TEXT_JAVASCRIPT, scriptName, scriptCode, scriptDescription);
+    }
+
+    private void updatePolicy(Policy policy, String code) {
+        policy.putConfig("code", code);
     }
 }

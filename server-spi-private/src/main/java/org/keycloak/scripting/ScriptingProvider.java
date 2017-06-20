@@ -39,6 +39,14 @@ public interface ScriptingProvider extends Provider {
     InvocableScriptAdapter prepareInvocableScript(ScriptModel scriptModel, ScriptBindingsConfigurer bindingsConfigurer);
 
     /**
+     * Returns an {@link EvaluatableScriptAdapter} based on the given {@link ScriptModel}.
+     * <p>The {@code EvaluatableScriptAdapter} wraps a dedicated {@link ScriptEngine} that was populated with empty bindings.</p>
+     *
+     * @param scriptModel the scriptModel to wrap
+     */
+    EvaluatableScriptAdapter prepareEvaluatableScript(ScriptModel scriptModel);
+
+    /**
      * Creates a new {@link ScriptModel} instance.
      *
      * @param realmId
