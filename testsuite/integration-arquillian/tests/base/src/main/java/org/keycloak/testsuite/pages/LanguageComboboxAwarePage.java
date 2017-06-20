@@ -14,37 +14,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.keycloak.testsuite.pages;
 
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 /**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class OAuthGrantPage extends LanguageComboboxAwarePage {
+public abstract class LanguageComboboxAwarePage extends AbstractPage {
 
-    @FindBy(css = "input[name=\"accept\"]")
-    private WebElement acceptButton;
-    @FindBy(css = "input[name=\"cancel\"]")
-    private WebElement cancelButton;
+    @FindBy(id = "kc-current-locale-link")
+    private WebElement languageText;
 
+    @FindBy(id = "kc-locale-dropdown")
+    private WebElement localeDropdown;
 
-    public void accept(){
-        acceptButton.click();
+    public String getLanguageDropdownText() {
+        return languageText.getText();
     }
 
-    public void cancel(){
-        cancelButton.click();
+    public void openLanguage(String language){
+        WebElement langLink = localeDropdown.findElement(By.xpath("//a[text()='" + language + "']"));
+        String url = langLink.getAttribute("href");
+        driver.navigate().to(url);
     }
-
-    @Override
-    public boolean isCurrent() {
-        return driver.getTitle().equals("Grant Access");
-    }
-
-    @Override
-    public void open() {
-    }
-
 }
