@@ -269,6 +269,12 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
     }
 
     private Response checkOIDCParams() {
+        // If request is not OIDC request, but pure OAuth2 request and response_type is just 'token', then 'nonce' is not mandatory
+        boolean isOIDCRequest = TokenUtil.isOIDCRequest(request.getScope());
+        if (!isOIDCRequest && parsedResponseType.toString().equals(OIDCResponseType.TOKEN)) {
+            return null;
+        }
+
         if (parsedResponseType.isImplicitOrHybridFlow() && request.getNonce() == null) {
             ServicesLogger.LOGGER.missingParameter(OIDCLoginProtocol.NONCE_PARAM);
             event.error(Errors.INVALID_REQUEST);
@@ -354,10 +360,12 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
     private void checkRedirectUri() {
         String redirectUriParam = request.getRedirectUriParam();
+        boolean isOIDCRequest = TokenUtil.isOIDCRequest(request.getScope());
 
         event.detail(Details.REDIRECT_URI, redirectUriParam);
 
-        redirectUri = RedirectUtils.verifyRedirectUri(uriInfo, redirectUriParam, realm, client);
+        // redirect_uri parameter is required per OpenID Connect, but optional per OAuth2
+        redirectUri = RedirectUtils.verifyRedirectUri(uriInfo, redirectUriParam, realm, client, isOIDCRequest);
         if (redirectUri == null) {
             event.error(Errors.INVALID_REDIRECT_URI);
             throw new ErrorPageException(session, Messages.INVALID_PARAMETER, OIDCLoginProtocol.REDIRECT_URI_PARAM);
