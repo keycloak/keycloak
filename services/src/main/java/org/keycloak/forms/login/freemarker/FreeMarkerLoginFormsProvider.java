@@ -76,6 +76,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     private Map<String, String> httpResponseHeaders = new HashMap<String, String>();
     private String accessRequestMessage;
     private URI actionUri;
+    private String execution;
 
     private List<FormMessage> messages = null;
     private MessageType messageType = MessageType.ERROR;
@@ -230,6 +231,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                         b = UriBuilder.fromUri(baseUri).path(uriInfo.getPath());
                         break;
                 }
+
+                if (execution != null) {
+                    b.queryParam(Constants.EXECUTION, execution);
+                }
+
                 attributes.put("locale", new LocaleBean(realm, locale, b, messagesBundle));
             }
         }
@@ -366,7 +372,13 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             attributes.put("requiredActionUrl", new RequiredActionUrlFormatterMethod(realm, baseUri));
 
             if (realm.isInternationalizationEnabled()) {
-                UriBuilder b = UriBuilder.fromUri(baseUri).path(uriInfo.getPath());
+                UriBuilder b = UriBuilder.fromUri(baseUri)
+                        .path(uriInfo.getPath());
+
+                if (execution != null) {
+                    b.queryParam(Constants.EXECUTION, execution);
+                }
+
                 attributes.put("locale", new LocaleBean(realm, locale, b, messagesBundle));
             }
         }
@@ -587,6 +599,12 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     @Override
     public LoginFormsProvider setActionUri(URI actionUri) {
         this.actionUri = actionUri;
+        return this;
+    }
+
+    @Override
+    public LoginFormsProvider setExecution(String execution) {
+        this.execution = execution;
         return this;
     }
 

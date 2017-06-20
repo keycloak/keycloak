@@ -120,4 +120,6 @@ public interface LoginFormsProvider extends Provider {
     public LoginFormsProvider setStatus(Response.Status status);
 
     LoginFormsProvider setActionUri(URI requestUri);
+
+    LoginFormsProvider setExecution(String execution);
 }
