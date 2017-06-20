@@ -156,6 +156,65 @@ public class UserStorageRestTest extends AbstractAdminTest {
 
     }
 
+
+    // KEYCLOAK-4438
+    @Test
+    public void testKerberosAuthenticatorDisabledWhenProviderRemoved() {
+        // Assert kerberos authenticator DISABLED
+        AuthenticationExecutionInfoRepresentation kerberosExecution = findKerberosExecution();
+        Assert.assertEquals(kerberosExecution.getRequirement(), AuthenticationExecutionModel.Requirement.DISABLED.toString());
+
+        // create LDAP provider with kerberos
+        ComponentRepresentation ldapRep = new ComponentRepresentation();
+        ldapRep.setName("ldap2");
+        ldapRep.setProviderId("ldap");
+        ldapRep.setProviderType(UserStorageProvider.class.getName());
+        ldapRep.setConfig(new MultivaluedHashMap<>());
+        ldapRep.getConfig().putSingle("priority", Integer.toString(2));
+        ldapRep.getConfig().putSingle(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION, "true");
+
+
+        String id = createComponent(ldapRep);
+
+        // Assert kerberos authenticator ALTERNATIVE
+        kerberosExecution = findKerberosExecution();
+        Assert.assertEquals(kerberosExecution.getRequirement(), AuthenticationExecutionModel.Requirement.ALTERNATIVE.toString());
+
+        // Remove LDAP provider
+        realm.components().component(id).remove();
+
+        // Assert kerberos authenticator DISABLED
+        kerberosExecution = findKerberosExecution();
+        Assert.assertEquals(kerberosExecution.getRequirement(), AuthenticationExecutionModel.Requirement.DISABLED.toString());
+
+        // Add kerberos provider
+        ComponentRepresentation kerberosRep = new ComponentRepresentation();
+        kerberosRep.setName("kerberos");
+        kerberosRep.setProviderId("kerberos");
+        kerberosRep.setProviderType(UserStorageProvider.class.getName());
+        kerberosRep.setConfig(new MultivaluedHashMap<>());
+        kerberosRep.getConfig().putSingle("priority", Integer.toString(2));
+
+        id = createComponent(kerberosRep);
+
+
+        // Assert kerberos authenticator ALTERNATIVE
+        kerberosExecution = findKerberosExecution();
+        Assert.assertEquals(kerberosExecution.getRequirement(), AuthenticationExecutionModel.Requirement.ALTERNATIVE.toString());
+
+        // Switch kerberos authenticator to REQUIRED
+        kerberosExecution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED.toString());
+        realm.flows().updateExecutions("browser", kerberosExecution);
+
+        // Remove Kerberos provider
+        realm.components().component(id).remove();
+
+        // Assert kerberos authenticator DISABLED
+        kerberosExecution = findKerberosExecution();
+        Assert.assertEquals(kerberosExecution.getRequirement(), AuthenticationExecutionModel.Requirement.DISABLED.toString());
+    }
+
+
     @Test
     public void testValidateAndCreateLdapProvider() {
         // Invalid filter
