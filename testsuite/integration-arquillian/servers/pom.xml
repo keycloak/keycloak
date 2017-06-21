@@ -33,9 +33,9 @@
         <script.suffix>sh</script.suffix>
         
         <!--app container versions-->        
+        <wildfly10.version>10.1.0.Final</wildfly10.version>
         <wildfly9.version>9.0.2.Final</wildfly9.version>
         <wildfly8.version>8.2.1.Final</wildfly8.version>
-        <eap.version>7.0.5.GA-redhat-2</eap.version>
         <eap6.version>7.5.14.Final-redhat-2</eap6.version>
         <jboss.as.version>7.1.1.Final</jboss.as.version>
         <tomcat7.version>7.0.68</tomcat7.version>
@@ -46,13 +46,21 @@
         <!--<fuse62.version>6.2.0.redhat-133</fuse62.version>-->
         <fuse62.version>6.2.1.redhat-084</fuse62.version>
         
+        <!-- cache server versions -->
+        <infinispan.version>9.0.1.Final</infinispan.version>
+        <jdg.version>8.4.0.Final-redhat-2</jdg.version><!-- JDG 7.1.0 -->
+        
         <jboss.default.worker.io-threads>16</jboss.default.worker.io-threads>
         <jboss.default.worker.task-max-threads>128</jboss.default.worker.task-max-threads>
+
+        <cache.default.worker.io-threads>2</cache.default.worker.io-threads>
+        <cache.default.worker.task-max-threads>4</cache.default.worker.task-max-threads>
     </properties>
 
     <modules>
         <module>auth-server</module>
         <module>app-server</module>
+        <module>cache-server</module>
     </modules>
 
     <profiles>

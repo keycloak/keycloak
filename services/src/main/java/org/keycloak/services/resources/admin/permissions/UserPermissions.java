@@ -129,43 +129,51 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
         Resource resource =  authz.getStoreFactory().getResourceStore().findByName(USERS_RESOURCE, server.getId());
         if (resource == null) return false;
 
-        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(MANAGE_PERMISSION_USERS, server.getId());
+        Policy policy = managePermission();
 
         return policy != null;
     }
 
     @Override
     public void setPermissionsEnabled(boolean enable) {
-        ClientModel client = root.getRealmManagementClient();
         if (enable) {
             initialize();
         } else {
-            ResourceServer server = authz.getStoreFactory().getResourceServerStore().findByClient(client.getId());
-            if (server == null) return;
-            Policy policy = managePermission();
-            if (policy == null) {
-                authz.getStoreFactory().getPolicyStore().delete(policy.getId());
+            deletePermissionSetup();
+        }
+    }
 
-            }
-            policy = viewPermission();
-            if (policy == null) {
-                authz.getStoreFactory().getPolicyStore().delete(policy.getId());
+    private void deletePermissionSetup() {
+        ResourceServer server = root.realmResourceServer();
+        if (server == null) return;
+        Policy policy = managePermission();
+        if (policy == null) {
+            authz.getStoreFactory().getPolicyStore().delete(policy.getId());
 
-            }
-            policy = mapRolesPermission();
-            if (policy == null) {
-                authz.getStoreFactory().getPolicyStore().delete(policy.getId());
+        }
+        policy = viewPermission();
+        if (policy == null) {
+            authz.getStoreFactory().getPolicyStore().delete(policy.getId());
 
-            }
-            policy = manageGroupMembershipPermission();
-            if (policy == null) {
-                authz.getStoreFactory().getPolicyStore().delete(policy.getId());
+        }
+        policy = mapRolesPermission();
+        if (policy == null) {
+            authz.getStoreFactory().getPolicyStore().delete(policy.getId());
 
-            }
-            Resource usersResource = authz.getStoreFactory().getResourceStore().findByName(USERS_RESOURCE, server.getId());
-            if (usersResource == null) {
-                authz.getStoreFactory().getResourceStore().delete(usersResource.getId());
-            }
+        }
+        policy = manageGroupMembershipPermission();
+        if (policy == null) {
+            authz.getStoreFactory().getPolicyStore().delete(policy.getId());
+
+        }
+        policy = impersonatePermission();
+        if (policy == null) {
+            authz.getStoreFactory().getPolicyStore().delete(policy.getId());
+
+        }
+        Resource usersResource = authz.getStoreFactory().getResourceStore().findByName(USERS_RESOURCE, server.getId());
+        if (usersResource == null) {
+            authz.getStoreFactory().getResourceStore().delete(usersResource.getId());
         }
     }
 

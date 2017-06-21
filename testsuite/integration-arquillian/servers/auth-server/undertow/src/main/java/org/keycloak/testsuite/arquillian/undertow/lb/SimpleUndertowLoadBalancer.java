@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.arquillian.undertow.lb;
 
 import java.net.URI;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -36,6 +35,8 @@ import io.undertow.util.AttachmentKey;
 import io.undertow.util.Headers;
 import org.jboss.logging.Logger;
 import org.keycloak.services.managers.AuthenticationSessionManager;
+import java.util.LinkedHashMap;
+import java.util.StringTokenizer;
 
 /**
  * Loadbalancer on embedded undertow. Supports sticky session over "AUTH_SESSION_ID" cookie and failover to different node when sticky node not available.
@@ -53,8 +54,9 @@ public class SimpleUndertowLoadBalancer {
 
     private final String host;
     private final int port;
-    private final String nodesString;
+    private final Map<String, URI> backendNodes;
     private Undertow undertow;
+    private LoadBalancingProxyClient lb;
 
 
     public static void main(String[] args) throws Exception {
@@ -77,15 +79,14 @@ public class SimpleUndertowLoadBalancer {
     public SimpleUndertowLoadBalancer(String host, int port, String nodesString) {
         this.host = host;
         this.port = port;
-        this.nodesString = nodesString;
-        log.infof("Keycloak nodes: %s", nodesString);
+        this.backendNodes = parseNodes(nodesString);
+        log.infof("Keycloak nodes: %s", backendNodes);
     }
 
 
     public void start() {
-        Map<String, String> nodes = parseNodes(nodesString);
         try {
-            HttpHandler proxyHandler = createHandler(nodes);
+            HttpHandler proxyHandler = createHandler();
 
             undertow = Undertow.builder()
                     .addHttpListener(port, host)
@@ -104,24 +105,51 @@ public class SimpleUndertowLoadBalancer {
         undertow.stop();
     }
 
+    public void enableAllBackendNodes() {
+        backendNodes.forEach((route, uri) -> {
+            lb.removeHost(uri);
+            lb.addHost(uri, route);
+        });
+    }
 
-    static Map<String, String> parseNodes(String nodes) {
-        String[] nodesArray = nodes.split(",");
-        Map<String, String> result = new HashMap<>();
+    public void disableAllBackendNodes() {
+        log.debugf("Load balancer: disabling all nodes");
+        backendNodes.values().forEach(lb::removeHost);
+    }
 
-        for (String nodeStr : nodesArray) {
-            String[] node = nodeStr.trim().split("=");
-            if (node.length != 2) {
-                throw new IllegalArgumentException("Illegal node format in the configuration: " + nodeStr);
-            }
-            result.put(node[0].trim(), node[1].trim());
+    public void enableBackendNodeByName(String nodeName) {
+        URI uri = backendNodes.get(nodeName);
+        if (uri == null) {
+            throw new IllegalArgumentException("Invalid node: " + nodeName);
+        }
+        log.debugf("Load balancer: enabling node %s", nodeName);
+        lb.addHost(uri, nodeName);
+    }
+
+    public void disableBackendNodeByName(String nodeName) {
+        URI uri = backendNodes.get(nodeName);
+        if (uri == null) {
+            throw new IllegalArgumentException("Invalid node: " + nodeName);
+        }
+        log.debugf("Load balancer: disabling node %s", nodeName);
+        lb.removeHost(uri);
+    }
+
+    static Map<String, URI> parseNodes(String nodes) {
+        StringTokenizer st = new StringTokenizer(nodes, ",");
+        Map<String, URI> result = new LinkedHashMap<>();
+
+        while (st.hasMoreElements()) {
+            String nodeStr = st.nextToken();
+            String[] node = nodeStr.trim().split("=", 2);
+            result.put(node[0].trim(), URI.create(node[1].trim()));
         }
 
         return result;
     }
 
 
-    private HttpHandler createHandler(Map<String, String> backendNodes) throws Exception {
+    private HttpHandler createHandler() throws Exception {
 
         // TODO: configurable options if needed
         String sessionCookieNames = AuthenticationSessionManager.AUTH_SESSION_ID;
@@ -133,15 +161,7 @@ public class SimpleUndertowLoadBalancer {
         int connectionIdleTimeout = 60;
         int maxRetryAttempts = backendNodes.size() - 1;
 
-        final LoadBalancingProxyClient lb = new CustomLoadBalancingClient(new ExclusivityChecker() {
-
-            @Override
-            public boolean isExclusivityRequired(HttpServerExchange exchange) {
-                //we always create a new connection for upgrade requests
-                return exchange.getRequestHeaders().contains(Headers.UPGRADE);
-            }
-
-        }, maxRetryAttempts)
+        lb = new CustomLoadBalancingClient(exchange -> exchange.getRequestHeaders().contains(Headers.UPGRADE), maxRetryAttempts)
                 .setConnectionsPerThread(connectionsPerThread)
                 .setMaxQueueSize(requestQueueSize)
                 .setSoftMaxConnectionsPerThread(cachedConnectionsPerThread)
@@ -152,13 +172,10 @@ public class SimpleUndertowLoadBalancer {
             lb.addSessionCookieName(id);
         }
 
-        for (Map.Entry<String, String> node : backendNodes.entrySet()) {
-            String route = node.getKey();
-            URI uri = new URI(node.getValue());
-
+        backendNodes.forEach((route, uri) -> {
             lb.addHost(uri, route);
-            log.infof("Added host: %s, route: %s", uri.toString(), route);
-        }
+            log.debugf("Added host: %s, route: %s", uri.toString(), route);
+        });
 
         ProxyHandler handler = new ProxyHandler(lb, maxTime, ResponseCodeHandler.HANDLE_404);
         return handler;

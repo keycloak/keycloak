@@ -110,6 +110,8 @@ public class RegistryCreator {
             if (isClassPresent(getAdapterImplClassValue(containerDef))) {
                 return DeployableContainer.class.isAssignableFrom(
                         loadClass(getAdapterImplClassValue(containerDef)));
+            } else {
+                log.warn("Cannot load adapterImpl class for " + containerDef.getContainerName());
             }
         }
 

@@ -446,7 +446,7 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
 
     @Override
     public ResourceServer resourceServer(ClientModel client) {
-        return authz.getStoreFactory().getResourceServerStore().findByClient(client.getId());
+        return root.resourceServer(client);
     }
 
     @Override

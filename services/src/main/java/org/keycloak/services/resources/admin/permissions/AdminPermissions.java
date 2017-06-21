@@ -16,9 +16,16 @@
  */
 package org.keycloak.services.resources.admin.permissions;
 
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleContainerModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.provider.ProviderEvent;
+import org.keycloak.provider.ProviderEventListener;
+import org.keycloak.provider.ProviderEventManager;
 import org.keycloak.services.resources.admin.AdminAuth;
 
 /**
@@ -41,6 +48,32 @@ public class AdminPermissions {
 
     public static AdminPermissionManagement management(KeycloakSession session, RealmModel realm) {
         return new MgmtPermissions(session, realm);
+    }
+
+    public static void registerListener(ProviderEventManager manager) {
+        manager.register(new ProviderEventListener() {
+            @Override
+            public void onEvent(ProviderEvent event) {
+                if (event instanceof RoleContainerModel.RoleRemovedEvent) {
+                    RoleContainerModel.RoleRemovedEvent cast = (RoleContainerModel.RoleRemovedEvent)event;
+                    RoleModel role = cast.getRole();
+                    RealmModel realm;
+                    if (role.getContainer() instanceof ClientModel) {
+                        realm = ((ClientModel)role.getContainer()).getRealm();
+
+                    } else {
+                        realm = (RealmModel)role.getContainer();
+                    }
+                    management(cast.getKeycloakSession(), realm).roles().setPermissionsEnabled(role, false);
+                } else if (event instanceof RealmModel.ClientRemovedEvent) {
+                    RealmModel.ClientRemovedEvent cast = (RealmModel.ClientRemovedEvent)event;
+                    management(cast.getKeycloakSession(), cast.getClient().getRealm()).clients().setPermissionsEnabled(cast.getClient(), false);
+                } else if (event instanceof GroupModel.GroupRemovedEvent) {
+                    GroupModel.GroupRemovedEvent cast = (GroupModel.GroupRemovedEvent)event;
+                    management(cast.getKeycloakSession(), cast.getRealm()).groups().setPermissionsEnabled(cast.getGroup(), false);
+                }
+            }
+        });
     }
 
 

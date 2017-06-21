@@ -19,6 +19,7 @@ package org.keycloak.testsuite.client.resources;
 
 import java.util.Set;
 
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -48,4 +49,8 @@ public interface TestingCacheResource {
     @Produces(MediaType.APPLICATION_JSON)
     int size();
 
+    @GET
+    @Path("/clear")
+    @Consumes(MediaType.TEXT_PLAIN)
+    void clear();
 }

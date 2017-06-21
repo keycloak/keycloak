@@ -24,6 +24,7 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.AdminEventBuilder;
 
 import javax.ws.rs.Path;
 
@@ -37,27 +38,29 @@ public class AuthorizationService {
     private final KeycloakSession session;
     private final ResourceServer resourceServer;
     private final AuthorizationProvider authorization;
+    private final AdminEventBuilder adminEvent;
 
-    public AuthorizationService(KeycloakSession session, ClientModel client, AdminPermissionEvaluator auth) {
+    public AuthorizationService(KeycloakSession session, ClientModel client, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.session = session;
         this.client = client;
         this.authorization = session.getProvider(AuthorizationProvider.class);
+        this.adminEvent = adminEvent;
         this.resourceServer = this.authorization.getStoreFactory().getResourceServerStore().findByClient(this.client.getId());
         this.auth = auth;
     }
 
     @Path("/resource-server")
     public ResourceServerService resourceServer() {
-        ResourceServerService resource = new ResourceServerService(this.authorization, this.resourceServer, this.client, this.auth);
+        ResourceServerService resource = new ResourceServerService(this.authorization, this.resourceServer, this.client, this.auth, adminEvent);
 
         ResteasyProviderFactory.getInstance().injectProperties(resource);
 
         return resource;
     }
 
-    public void enable() {
+    public void enable(boolean newClient) {
         if (!isEnabled()) {
-            resourceServer().create();
+            resourceServer().create(newClient);
         }
     }
 

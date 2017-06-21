@@ -20,11 +20,13 @@ package org.keycloak.authorization.policy.provider.user;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
@@ -104,6 +106,23 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
         } catch (IOException cause) {
             throw new RuntimeException("Failed to deserialize users during import", cause);
         }
+    }
+
+    @Override
+    public void onExport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorizationProvider) {
+        UserPolicyRepresentation userRep = toRepresentation(policy, new UserPolicyRepresentation());
+        Map<String, String> config = new HashMap<>();
+
+        try {
+            UserProvider userProvider = authorizationProvider.getKeycloakSession().users();
+            RealmModel realm = authorizationProvider.getRealm();
+
+            config.put("users", JsonSerialization.writeValueAsString(userRep.getUsers().stream().map(id -> userProvider.getUserById(id, realm).getUsername()).collect(Collectors.toList())));
+        } catch (IOException cause) {
+            throw new RuntimeException("Failed to export user policy [" + policy.getName() + "]", cause);
+        }
+
+        representation.setConfig(config);
     }
 
     private void updateUsers(Policy policy, UserPolicyRepresentation representation, AuthorizationProvider authorization) {

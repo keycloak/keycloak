@@ -81,6 +81,11 @@ public class ActionTokenReducedKey implements Serializable {
           && Objects.equals(this.actionVerificationNonce, other.getActionVerificationNonce());
     }
 
+    @Override
+    public String toString() {
+        return "userId=" + userId + ", actionId=" + actionId + ", actionVerificationNonce=" + actionVerificationNonce;
+    }
+
     public static class ExternalizerImpl implements Externalizer<ActionTokenReducedKey> {
 
         @Override

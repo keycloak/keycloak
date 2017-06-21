@@ -24,6 +24,7 @@ import java.util.Set;
 
 import org.keycloak.testsuite.arquillian.migration.MigrationContext;
 
+import java.util.LinkedList;
 import static org.keycloak.testsuite.util.MailServerConfiguration.FROM;
 import static org.keycloak.testsuite.util.MailServerConfiguration.HOST;
 import static org.keycloak.testsuite.util.MailServerConfiguration.PORT;
@@ -36,8 +37,8 @@ public final class SuiteContext {
 
     private final Set<ContainerInfo> container;
 
-    private ContainerInfo authServerInfo;
-    private final List<ContainerInfo> authServerBackendsInfo = new ArrayList<>();
+    private List<ContainerInfo> authServerInfo = new LinkedList<>();
+    private final List<List<ContainerInfo>> authServerBackendsInfo = new ArrayList<>();
 
     private ContainerInfo migratedAuthServerInfo;
     private final MigrationContext migrationContext = new MigrationContext();
@@ -72,15 +73,46 @@ public final class SuiteContext {
     }
 
     public ContainerInfo getAuthServerInfo() {
+        return getAuthServerInfo(0);
+    }
+
+    public ContainerInfo getAuthServerInfo(int dcIndex) {
+        return authServerInfo.get(dcIndex);
+    }
+
+    public List<ContainerInfo> getDcAuthServerInfo() {
         return authServerInfo;
     }
 
     public void setAuthServerInfo(ContainerInfo authServerInfo) {
-        this.authServerInfo = authServerInfo;
+        this.authServerInfo = new LinkedList<>();
+        this.authServerInfo.add(authServerInfo);
+    }
+
+    public void addAuthServerInfo(int dcIndex, ContainerInfo serverInfo) {
+        while (dcIndex >= authServerInfo.size()) {
+            authServerInfo.add(null);
+        }
+        this.authServerInfo.set(dcIndex, serverInfo);
     }
 
     public List<ContainerInfo> getAuthServerBackendsInfo() {
+        return getAuthServerBackendsInfo(0);
+    }
+
+    public List<ContainerInfo> getAuthServerBackendsInfo(int dcIndex) {
+        return authServerBackendsInfo.get(dcIndex);
+    }
+
+    public List<List<ContainerInfo>> getDcAuthServerBackendsInfo() {
         return authServerBackendsInfo;
+    }
+
+    public void addAuthServerBackendsInfo(int dcIndex, ContainerInfo container) {
+        while (dcIndex >= authServerBackendsInfo.size()) {
+            authServerBackendsInfo.add(new LinkedList<>());
+        }
+        authServerBackendsInfo.get(dcIndex).add(container);
     }
 
     public ContainerInfo getMigratedAuthServerInfo() {
@@ -96,7 +128,11 @@ public final class SuiteContext {
     }
 
     public boolean isAuthServerCluster() {
-        return !authServerBackendsInfo.isEmpty();
+        return ! authServerBackendsInfo.isEmpty();
+    }
+
+    public boolean isAuthServerCrossDc() {
+        return authServerBackendsInfo.size() > 1;
     }
 
     public boolean isAuthServerMigrationEnabled() {
@@ -113,19 +149,38 @@ public final class SuiteContext {
 
     @Override
     public String toString() {
-        String containers = "Auth server: " + (isAuthServerCluster() ? "\nFrontend: " : "")
-                + authServerInfo.getQualifier() + "\n";
-        for (ContainerInfo bInfo : getAuthServerBackendsInfo()) {
-            containers += "Backend: " + bInfo + "\n";
+        StringBuilder sb = new StringBuilder("SUITE CONTEXT:\nAuth server: ");
+
+        if (isAuthServerCrossDc()) {
+            for (int i = 0; i < authServerInfo.size(); i ++) {
+                ContainerInfo frontend = this.authServerInfo.get(i);
+                sb.append("\nFrontend (dc=").append(i).append("): ").append(frontend.getQualifier()).append("\n");
+            }
+
+            for (int i = 0; i < authServerBackendsInfo.size(); i ++) {
+                int dcIndex = i;
+                getDcAuthServerBackendsInfo().get(i).forEach(bInfo -> sb.append("Backend (dc=").append(dcIndex).append("): ").append(bInfo).append("\n"));
+            }
+        } else if (isAuthServerCluster()) {
+            sb.append(isAuthServerCluster() ? "\nFrontend: " : "")
+              .append(getAuthServerInfo().getQualifier())
+              .append("\n");
+
+            getAuthServerBackendsInfo().forEach(bInfo -> sb.append("  Backend: ").append(bInfo).append("\n"));
+        } else {
+          sb.append(getAuthServerInfo().getQualifier())
+            .append("\n");
         }
+
+
         if (isAuthServerMigrationEnabled()) {
-            containers += "Migrated from: " + System.getProperty("migrated.auth.server.version") + "\n";
+            sb.append("Migrated from: ").append(System.getProperty("migrated.auth.server.version")).append("\n");
         }
+
         if (isAdapterCompatTesting()) {
-            containers += "Adapter backward compatibility testing mode!\n";
+            sb.append("Adapter backward compatibility testing mode!\n");
         }
-        return "SUITE CONTEXT:\n"
-                + containers;
+        return sb.toString();
     }
 
 }

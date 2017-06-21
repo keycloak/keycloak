@@ -19,8 +19,12 @@ package org.keycloak.testsuite.admin;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.AuthorizationProviderFactory;
+import org.keycloak.authorization.model.Resource;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
@@ -564,7 +568,46 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
     }
     // testRestEvaluationMasterRealm
     // testRestEvaluationMasterAdminTestRealm
+
     // test role deletion that it cleans up authz objects
+    public static void setupDeleteTest(KeycloakSession session )  {
+        RealmModel realm = session.realms().getRealmByName(TEST);
+        RoleModel removedRole = realm.addRole("removedRole");
+        ClientModel client = realm.addClient("removedClient");
+        RoleModel removedClientRole = client.addRole("removedClientRole");
+        GroupModel removedGroup = realm.createGroup("removedGroup");
+        AdminPermissionManagement management = AdminPermissions.management(session, realm);
+        management.roles().setPermissionsEnabled(removedRole, true);
+        management.roles().setPermissionsEnabled(removedClientRole, true);
+        management.groups().setPermissionsEnabled(removedGroup, true);
+        management.clients().setPermissionsEnabled(client, true);
+    }
+
+    public static void invokeDelete(KeycloakSession session)  {
+        RealmModel realm = session.realms().getRealmByName(TEST);
+        AdminPermissionManagement management = AdminPermissions.management(session, realm);
+        List<Resource> byResourceServer = management.authz().getStoreFactory().getResourceStore().findByResourceServer(management.realmResourceServer().getId());
+        Assert.assertEquals(4, byResourceServer.size());
+        RoleModel removedRole = realm.getRole("removedRole");
+        realm.removeRole(removedRole);
+        ClientModel client = realm.getClientByClientId("removedClient");
+        RoleModel removedClientRole = client.getRole("removedClientRole");
+        client.removeRole(removedClientRole);
+        GroupModel group = KeycloakModelUtils.findGroupByPath(realm, "removedGroup");
+        realm.removeGroup(group);
+        byResourceServer = management.authz().getStoreFactory().getResourceStore().findByResourceServer(management.realmResourceServer().getId());
+        Assert.assertEquals(1, byResourceServer.size());
+        realm.removeClient(client.getId());
+        byResourceServer = management.authz().getStoreFactory().getResourceStore().findByResourceServer(management.realmResourceServer().getId());
+        Assert.assertEquals(0, byResourceServer.size());
+    }
+
+    @Test
+    public void testRemoveCleanup() throws Exception {
+        testingClient.server().run(FineGrainAdminUnitTest::setupDeleteTest);
+        testingClient.server().run(FineGrainAdminUnitTest::invokeDelete);
+    }
+
 
 
 }

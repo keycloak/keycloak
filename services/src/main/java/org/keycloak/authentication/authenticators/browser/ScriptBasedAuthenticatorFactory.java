@@ -146,7 +146,7 @@ public class ScriptBasedAuthenticatorFactory implements AuthenticatorFactory, En
         }
         script.setDefaultValue(scriptTemplate);
         script.setHelpText("The script used to authenticate. Scripts must at least define a function with the name 'authenticate(context)' that accepts a context (AuthenticationFlowContext) parameter.\n" +
-                "This authenticator exposes the following additional variables: 'script', 'realm', 'user', 'session', 'httpRequest', 'LOG'");
+                "This authenticator exposes the following additional variables: 'script', 'realm', 'user', 'session', 'authenticationSession', 'httpRequest', 'LOG'");
 
         return asList(name, description, script);
     }

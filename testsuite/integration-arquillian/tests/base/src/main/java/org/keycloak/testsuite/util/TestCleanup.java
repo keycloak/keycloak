@@ -71,6 +71,7 @@ public class TestCleanup {
         if (componentIds == null) {
             componentIds = new LinkedList<>();
         }
+        if (componentId == null) return;
         componentIds.add(componentId);
     }
 

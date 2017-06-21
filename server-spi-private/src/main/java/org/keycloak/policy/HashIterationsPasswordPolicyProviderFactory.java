@@ -60,7 +60,7 @@ public class HashIterationsPasswordPolicyProviderFactory implements PasswordPoli
 
     @Override
     public Object parseConfig(String value) {
-        return value != null ? Integer.parseInt(value) : PasswordPolicy.HASH_ITERATIONS_DEFAULT;
+        return parseInteger(value, -1);
     }
 
     @Override

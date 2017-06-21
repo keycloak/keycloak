@@ -25,6 +25,7 @@ import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.util.JsonSerialization;
 
 /**
@@ -32,8 +33,8 @@ import org.keycloak.util.JsonSerialization;
  */
 public class PolicyTypeResourceService extends PolicyResourceService {
 
-    public PolicyTypeResourceService(Policy policy, ResourceServer resourceServer, AuthorizationProvider authorization, AdminPermissionEvaluator auth) {
-        super(policy, resourceServer, authorization, auth);
+    public PolicyTypeResourceService(Policy policy, ResourceServer resourceServer, AuthorizationProvider authorization, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+        super(policy, resourceServer, authorization, auth, adminEvent);
     }
 
     @Override

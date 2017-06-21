@@ -355,6 +355,24 @@ public class JpaRealmProvider implements RealmProvider {
             return false;
         }
 
+        GroupModel.GroupRemovedEvent event = new GroupModel.GroupRemovedEvent() {
+            @Override
+            public RealmModel getRealm() {
+                return realm;
+            }
+
+            @Override
+            public GroupModel getGroup() {
+                return group;
+            }
+
+            @Override
+            public KeycloakSession getKeycloakSession() {
+                return session;
+            }
+        };
+        session.getKeycloakSessionFactory().publish(event);
+
         session.users().preRemove(realm, group);
 
         realm.removeDefaultGroup(group);

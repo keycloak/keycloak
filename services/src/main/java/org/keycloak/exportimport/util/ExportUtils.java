@@ -343,7 +343,7 @@ public class ExportUtils {
         representation.setPolicies(policies);
 
         List<ScopeRepresentation> scopes = storeFactory.getScopeStore().findByResourceServer(settingsModel.getId()).stream().map(scope -> {
-            ScopeRepresentation rep = toRepresentation(scope, authorization);
+            ScopeRepresentation rep = toRepresentation(scope);
 
             rep.setId(null);
             rep.setPolicies(null);
@@ -358,35 +358,14 @@ public class ExportUtils {
     }
 
     private static PolicyRepresentation createPolicyRepresentation(AuthorizationProvider authorizationProvider, Policy policy) {
-        KeycloakSession session = authorizationProvider.getKeycloakSession();
-        RealmModel realm = authorizationProvider.getRealm();
-
         try {
-            PolicyRepresentation rep = toRepresentation(policy, PolicyRepresentation.class, authorizationProvider);
+            PolicyRepresentation rep = toRepresentation(policy, PolicyRepresentation.class, authorizationProvider, true);
 
             rep.setId(null);
 
             Map<String, String> config = new HashMap<>(rep.getConfig());
 
             rep.setConfig(config);
-
-            String roles = config.get("roles");
-
-            if (roles != null && !roles.isEmpty()) {
-                List<Map> rolesMap = JsonSerialization.readValue(roles, List.class);
-                config.put("roles", JsonSerialization.writeValueAsString(rolesMap.stream().map(roleMap -> {
-                    roleMap.put("id", realm.getRoleById(roleMap.get("id").toString()).getName());
-                    return roleMap;
-                }).collect(Collectors.toList())));
-            }
-
-            String users = config.get("users");
-
-            if (users != null && !users.isEmpty()) {
-                UserProvider userManager = session.users();
-                List<String> userIds = JsonSerialization.readValue(users, List.class);
-                config.put("users", JsonSerialization.writeValueAsString(userIds.stream().map(userId -> userManager.getUserById(userId, realm).getUsername()).collect(Collectors.toList())));
-            }
 
             Set<Scope> scopes = policy.getScopes();
 

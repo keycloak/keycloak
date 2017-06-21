@@ -222,11 +222,11 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
     }
 
     public ResourceServer findOrCreateResourceServer(ClientModel client) {
-        ResourceServer server = authz.getStoreFactory().getResourceServerStore().findByClient(client.getId());
-        if (server == null) {
-            server = authz.getStoreFactory().getResourceServerStore().create(client.getId());
-        }
-        return server;
+         return initializeRealmResourceServer();
+    }
+
+    public ResourceServer resourceServer(ClientModel client) {
+        return realmResourceServer();
     }
 
     @Override
@@ -234,6 +234,7 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
         if (realmResourceServer != null) return realmResourceServer;
         ResourceServerStore resourceServerStore = authz.getStoreFactory().getResourceServerStore();
         ClientModel client = getRealmManagementClient();
+        if (client == null) return null;
         realmResourceServer = authz.getStoreFactory().getResourceServerStore().findByClient(client.getId());
         return realmResourceServer;
 
@@ -242,7 +243,11 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
     public ResourceServer initializeRealmResourceServer() {
         if (realmResourceServer != null) return realmResourceServer;
         ClientModel client = getRealmManagementClient();
-        return findOrCreateResourceServer(client);
+        realmResourceServer = authz.getStoreFactory().getResourceServerStore().findByClient(client.getId());
+        if (realmResourceServer == null) {
+            realmResourceServer = authz.getStoreFactory().getResourceServerStore().create(client.getId());
+        }
+        return realmResourceServer;
     }
 
     protected Scope manageScope;

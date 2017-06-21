@@ -40,6 +40,7 @@
         <exclude.client>-</exclude.client>
         <!--exclude cluster tests by default, enabled by 'auth-server-*-cluster' profiles in tests/pom.xml-->
         <exclude.cluster>**/cluster/**/*Test.java</exclude.cluster>
+        <exclude.crossdc>**/crossdc/**/*Test.java</exclude.crossdc>
         <!-- exclude x509 tests by default, enabled by 'ssl' profile -->
         <exclude.x509>**/x509/*Test.java</exclude.x509>
         <!-- exclude undertow adapter tests. They can be added by -Dtest=org.keycloak.testsuite.adapter.undertow.**.*Test -->
@@ -125,6 +126,7 @@
                         <exclude>${exclude.account}</exclude>
                         <exclude>${exclude.client}</exclude>
                         <exclude>${exclude.cluster}</exclude>
+                        <exclude>${exclude.crossdc}</exclude>
                         <exclude>${exclude.undertow.adapter}</exclude>
                         <exclude>${exclude.x509}</exclude>
                     </excludes>

@@ -103,34 +103,38 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testPasswordRehashedOnAlgorithmChanged() throws Exception {
+        setPasswordPolicy("hashAlgorithm(" + Pbkdf2Sha256PasswordHashProviderFactory.ID + ") and hashIterations(1)");
+
         String username = "testPasswordRehashedOnAlgorithmChanged";
         createUser(username);
 
         CredentialModel credential = fetchCredentials(username);
 
-        assertEquals(Pbkdf2PasswordHashProviderFactory.ID, credential.getAlgorithm());
+        assertEquals(Pbkdf2Sha256PasswordHashProviderFactory.ID, credential.getAlgorithm());
 
-        assertEncoded(credential, "password", credential.getSalt(), "PBKDF2WithHmacSHA1", 20000);
+        assertEncoded(credential, "password", credential.getSalt(), "PBKDF2WithHmacSHA256", 1);
 
-        setPasswordPolicy("hashAlgorithm(" + Pbkdf2Sha256PasswordHashProviderFactory.ID + ")");
+        setPasswordPolicy("hashAlgorithm(" + Pbkdf2PasswordHashProviderFactory.ID + ") and hashIterations(1)");
 
         loginPage.open();
         loginPage.login(username, "password");
 
         credential = fetchCredentials(username);
 
-        assertEquals(Pbkdf2Sha256PasswordHashProviderFactory.ID, credential.getAlgorithm());
-        assertEncoded(credential, "password", credential.getSalt(), "PBKDF2WithHmacSHA256", 20000);
+        assertEquals(Pbkdf2PasswordHashProviderFactory.ID, credential.getAlgorithm());
+        assertEncoded(credential, "password", credential.getSalt(), "PBKDF2WithHmacSHA1", 1);
     }
 
     @Test
     public void testPasswordRehashedOnIterationsChanged() throws Exception {
+        setPasswordPolicy("hashIterations(10000)");
+
         String username = "testPasswordRehashedOnIterationsChanged";
         createUser(username);
 
         CredentialModel credential = fetchCredentials(username);
 
-        assertEquals(20000, credential.getHashIterations());
+        assertEquals(10000, credential.getHashIterations());
 
         setPasswordPolicy("hashIterations(1)");
 
@@ -140,7 +144,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
         credential = fetchCredentials(username);
 
         assertEquals(1, credential.getHashIterations());
-        assertEncoded(credential, "password", credential.getSalt(), "PBKDF2WithHmacSHA1", 1);
+        assertEncoded(credential, "password", credential.getSalt(), "PBKDF2WithHmacSHA256", 1);
     }
 
     @Test
@@ -154,13 +158,23 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void testDefault() throws Exception {
+        setPasswordPolicy("");
+        String username = "testDefault";
+        createUser(username);
+
+        CredentialModel credential = fetchCredentials(username);
+        assertEncoded(credential, "password", credential.getSalt(), "PBKDF2WithHmacSHA256", 27500);
+    }
+
+    @Test
     public void testPbkdf2Sha256() throws Exception {
         setPasswordPolicy("hashAlgorithm(" + Pbkdf2Sha256PasswordHashProviderFactory.ID + ")");
         String username = "testPbkdf2Sha256";
         createUser(username);
 
         CredentialModel credential = fetchCredentials(username);
-        assertEncoded(credential, "password", credential.getSalt(), "PBKDF2WithHmacSHA256", 20000);
+        assertEncoded(credential, "password", credential.getSalt(), "PBKDF2WithHmacSHA256", 27500);
     }
 
     @Test
@@ -170,7 +184,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
         createUser(username);
 
         CredentialModel credential = fetchCredentials(username);
-        assertEncoded(credential, "password", credential.getSalt(), "PBKDF2WithHmacSHA512", 20000);
+        assertEncoded(credential, "password", credential.getSalt(), "PBKDF2WithHmacSHA512", 30000);
     }
 
 

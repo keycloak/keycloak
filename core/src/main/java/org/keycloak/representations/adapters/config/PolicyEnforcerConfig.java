@@ -62,7 +62,7 @@ public class PolicyEnforcerConfig {
     }
 
     public List<PathConfig> getPaths() {
-        return Collections.unmodifiableList(this.paths);
+        return this.paths;
     }
 
     public EnforcementMode getEnforcementMode() {

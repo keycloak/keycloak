@@ -31,7 +31,7 @@ public class LogChecker {
 
     private static final Logger log = Logger.getLogger(LogChecker.class);
 
-    private static final String[] IGNORED = new String[] { ".*Jetty ALPN support not found.*" };
+    private static final String[] IGNORED = new String[] { ".*Jetty ALPN support not found.*", ".*org.keycloak.events.*" };
 
     public static void checkServerLog(File logFile) throws IOException {
         log.info(String.format("Checking server log: '%s'", logFile.getAbsolutePath()));

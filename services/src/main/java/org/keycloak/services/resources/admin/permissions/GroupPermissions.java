@@ -73,10 +73,6 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
         return "manage.membership.permission.group." + group.getId();
     }
 
-    public static String getGroupSuffix(GroupModel group) {
-        return ModelToRepresentation.buildGroupPath(group).replace('/', '.');
-    }
-
     public static String getViewPermissionGroup(GroupModel group) {
         return "view.permission.group." + group.getId();
     }

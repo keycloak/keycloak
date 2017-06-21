@@ -66,14 +66,18 @@ public class ResourcesTable extends DataTable {
     public ResourceRepresentation toRepresentation(WebElement row) {
         ResourceRepresentation representation = null;
         List<WebElement> tds = row.findElements(tagName("td"));
-        if (!(tds.isEmpty() || tds.get(0).getText().isEmpty())) {
-            representation = new ResourceRepresentation();
-            representation.setName(tds.get(0).getText());
-            representation.setType(tds.get(1).getText());
-            representation.setUri(tds.get(2).getText());
-            ResourceOwnerRepresentation owner = new ResourceOwnerRepresentation();
-            owner.setName(tds.get(3).getText());
-            representation.setOwner(owner);
+        try {
+            if (!(tds.isEmpty() || tds.get(0).getText().isEmpty())) {
+                representation = new ResourceRepresentation();
+                representation.setName(tds.get(0).getText());
+                representation.setType(tds.get(1).getText());
+                representation.setUri(tds.get(2).getText());
+                ResourceOwnerRepresentation owner = new ResourceOwnerRepresentation();
+                owner.setName(tds.get(3).getText());
+                representation.setOwner(owner);
+            }
+        } catch (IndexOutOfBoundsException cause) {
+            // is empty
         }
         return representation;
     }
