@@ -1,9 +1,5 @@
 package org.keycloak.authorization.policy.provider.js;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
@@ -24,7 +20,7 @@ import org.keycloak.scripting.ScriptingProvider;
 public class JSPolicyProviderFactory implements PolicyProviderFactory<JSPolicyRepresentation> {
 
     private final JSPolicyProvider provider = new JSPolicyProvider(this::getEvaluatableScript);
-    private final Map<String, EvaluatableScriptAdapter> scripts = Collections.synchronizedMap(new HashMap<>());
+    private ScriptCache scriptCache;
 
     @Override
     public String getName() {
@@ -74,12 +70,14 @@ public class JSPolicyProviderFactory implements PolicyProviderFactory<JSPolicyRe
 
     @Override
     public void onRemove(final Policy policy, final AuthorizationProvider authorization) {
-        scripts.remove(policy.getId());
+        scriptCache.remove(policy.getId());
     }
 
     @Override
     public void init(Config.Scope config) {
-
+        int maxEntries = Integer.parseInt(config.get("cache-max-entries", "100"));
+        int maxAge = Integer.parseInt(config.get("cache-entry-max-age", "-1"));
+        scriptCache = new ScriptCache(maxEntries, maxAge);
     }
 
     @Override
@@ -98,7 +96,7 @@ public class JSPolicyProviderFactory implements PolicyProviderFactory<JSPolicyRe
     }
 
     private EvaluatableScriptAdapter getEvaluatableScript(final AuthorizationProvider authz, final Policy policy) {
-        return scripts.computeIfAbsent(policy.getId(), id -> {
+        return scriptCache.computeIfAbsent(policy.getId(), id -> {
             final ScriptingProvider scripting = authz.getKeycloakSession().getProvider(ScriptingProvider.class);
             ScriptModel script = getScriptModel(policy, authz.getRealm(), scripting);
             return scripting.prepareEvaluatableScript(script);
@@ -115,6 +113,7 @@ public class JSPolicyProviderFactory implements PolicyProviderFactory<JSPolicyRe
     }
 
     private void updatePolicy(Policy policy, String code) {
+        scriptCache.remove(policy.getId());
         policy.putConfig("code", code);
     }
 }
