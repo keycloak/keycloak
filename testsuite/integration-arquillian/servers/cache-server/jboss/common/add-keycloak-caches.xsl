@@ -33,6 +33,14 @@
         </xsl:copy>
     </xsl:template>
 
+    <xsl:template match="//*[local-name()='subsystem' and starts-with(namespace-uri(), $nsCacheServer)]
+                        /*[local-name()='cache-container' and starts-with(namespace-uri(), $nsCacheServer) and @name='clustered']">
+        <xsl:copy>
+            <xsl:apply-templates select="@* | node()" />
+            <replicated-cache name="work" start="EAGER" batching="false" />
+        </xsl:copy>
+    </xsl:template>
+
     <xsl:template match="@*|node()">
         <xsl:copy>
             <xsl:apply-templates select="@*|node()" />

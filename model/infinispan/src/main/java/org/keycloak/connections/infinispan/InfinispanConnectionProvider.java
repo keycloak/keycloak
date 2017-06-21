@@ -55,6 +55,7 @@ public interface InfinispanConnectionProvider extends Provider {
     String JBOSS_NODE_NAME = "jboss.node.name";
     String JGROUPS_UDP_MCAST_ADDR = "jgroups.udp.mcast_addr";
 
+    String JMX_DOMAIN = "jboss.datagrid-infinispan";
 
     <K, V> Cache<K, V> getCache(String name);
 
