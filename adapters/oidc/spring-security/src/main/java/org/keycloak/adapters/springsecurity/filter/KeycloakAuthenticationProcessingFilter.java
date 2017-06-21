@@ -61,15 +61,19 @@ import org.springframework.util.Assert;
  * @version $Revision: 1 $
  */
 public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticationProcessingFilter implements ApplicationContextAware {
-    
+
+    public static final String DEFAULT_LOGIN_URL = "/sso/login";
     public static final String AUTHORIZATION_HEADER = "Authorization";
     public static final String SCHEME_BEARER = "bearer ";
     public static final String SCHEME_BASIC = "basic ";
 
+
     /**
-     * Request matcher that matches all requests.
+     * Request matcher that matches requests to the {@link KeycloakAuthenticationEntryPoint#DEFAULT_LOGIN_URI default login URI}
+     * and any request with a <code>Authorization</code> header.
      */
-    private static RequestMatcher DEFAULT_REQUEST_MATCHER = new AntPathRequestMatcher("/**");
+    public static final RequestMatcher DEFAULT_REQUEST_MATCHER =
+            new OrRequestMatcher(new AntPathRequestMatcher(DEFAULT_LOGIN_URL), new RequestHeaderRequestMatcher(AUTHORIZATION_HEADER));
 
     private static final Logger log = LoggerFactory.getLogger(KeycloakAuthenticationProcessingFilter.class);
 
@@ -107,7 +111,7 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
      *
      */
     public KeycloakAuthenticationProcessingFilter(AuthenticationManager authenticationManager, RequestMatcher
-                requiresAuthenticationRequestMatcher) {
+            requiresAuthenticationRequestMatcher) {
         super(requiresAuthenticationRequestMatcher);
         Assert.notNull(authenticationManager, "authenticationManager cannot be null");
         this.authenticationManager = authenticationManager;
@@ -138,20 +142,27 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
         log.debug("Auth outcome: {}", result);
 
         if (AuthOutcome.FAILED.equals(result)) {
-        	AuthChallenge challenge = authenticator.getChallenge();
+            AuthChallenge challenge = authenticator.getChallenge();
             if (challenge != null) {
                 challenge.challenge(facade);
             }
             throw new KeycloakAuthenticationException("Invalid authorization header, see WWW-Authenticate header for details");
         }
+
         if (AuthOutcome.NOT_ATTEMPTED.equals(result)) {
-        	AuthChallenge challenge = authenticator.getChallenge();
+            AuthChallenge challenge = authenticator.getChallenge();
             if (challenge != null) {
                 challenge.challenge(facade);
             }
-            throw new KeycloakAuthenticationException("Authorization header not found, see WWW-Authenticate header");
+            if (deployment.isBearerOnly()) {
+                // no redirection in this mode, throwing exception for the spring handler
+                throw new KeycloakAuthenticationException("Authorization header not found,  see WWW-Authenticate header");
+            } else {
+                // let continue if challenged, it may redirect
+                return null;
+            }
         }
-       
+
         else if (AuthOutcome.AUTHENTICATED.equals(result)) {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             Assert.notNull(authentication, "Authentication SecurityContextHolder was null");
@@ -193,7 +204,7 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
 
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
-            Authentication authResult) throws IOException, ServletException {
+                                            Authentication authResult) throws IOException, ServletException {
 
         if (!(this.isBearerTokenRequest(request) || this.isBasicAuthRequest(request))) {
             super.successfulAuthentication(request, response, chain, authResult);
@@ -220,10 +231,10 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
     }
 
     @Override
-	protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
-			AuthenticationException failed) throws IOException, ServletException {
-		super.unsuccessfulAuthentication(request, response, failed);
-	}
+    protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
+                                              AuthenticationException failed) throws IOException, ServletException {
+        super.unsuccessfulAuthentication(request, response, failed);
+    }
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {

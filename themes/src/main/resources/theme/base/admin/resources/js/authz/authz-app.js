@@ -324,7 +324,29 @@ module.config(['$routeProvider', function ($routeProvider) {
             }
         },
         controller: 'ResourceServerPolicyRoleDetailCtrl'
-    }).when('/realms/:realm/clients/:client/authz/resource-server/policy/js/create', {
+    }).when('/realms/:realm/clients/:client/authz/resource-server/policy/group/create', {
+          templateUrl: resourceUrl + '/partials/authz/policy/provider/resource-server-policy-group-detail.html',
+          resolve: {
+              realm: function (RealmLoader) {
+                  return RealmLoader();
+              },
+              client : function(ClientLoader) {
+                  return ClientLoader();
+              }
+          },
+          controller: 'ResourceServerPolicyGroupDetailCtrl'
+      }).when('/realms/:realm/clients/:client/authz/resource-server/policy/group/:id', {
+          templateUrl: resourceUrl + '/partials/authz/policy/provider/resource-server-policy-group-detail.html',
+          resolve: {
+              realm: function (RealmLoader) {
+                  return RealmLoader();
+              },
+              client : function(ClientLoader) {
+                  return ClientLoader();
+              }
+          },
+          controller: 'ResourceServerPolicyGroupDetailCtrl'
+      }).when('/realms/:realm/clients/:client/authz/resource-server/policy/js/create', {
         templateUrl: resourceUrl + '/partials/authz/policy/provider/resource-server-policy-js-detail.html',
         resolve: {
             realm: function (RealmLoader) {

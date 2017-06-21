@@ -73,9 +73,12 @@
         <cache.server.home>${containers.home}/${cache.server.container}</cache.server.home>
         <cache.server.port.offset>1010</cache.server.port.offset>
         <cache.server.management.port>11000</cache.server.management.port>
+        <cache.server.2.port.offset>2010</cache.server.2.port.offset>
+        <cache.server.2.management.port>12000</cache.server.2.management.port>
         <cache.server.console.output>true</cache.server.console.output>
         <keycloak.connectionsInfinispan.remoteStoreServer>localhost</keycloak.connectionsInfinispan.remoteStoreServer>
         <keycloak.connectionsInfinispan.remoteStorePort>12232</keycloak.connectionsInfinispan.remoteStorePort>
+        <keycloak.connectionsInfinispan.remoteStorePort.2>13232</keycloak.connectionsInfinispan.remoteStorePort.2>
         <keycloak.connectionsJpa.url.crossdc>jdbc:h2:mem:test-dc-shared</keycloak.connectionsJpa.url.crossdc>
 
         <adapter.test.props/>
@@ -177,6 +180,23 @@
                     </executions>
                 </plugin>
                 <plugin>
+                    <artifactId>maven-antrun-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <id>clean-second-cache-server-arquillian-bug-workaround</id>
+                            <phase>process-test-resources</phase>
+                            <goals><goal>run</goal></goals>
+                            <configuration>
+                                <target>
+                                    <echo>${cache.server.home}/standalone-dc-2</echo>
+                                    <delete failonerror="false" dir="${cache.server.home}/standalone-dc-2" />
+                                    <mkdir dir="${cache.server.home}/standalone-dc-2/deployments" />
+                                </target>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <configuration>
                         <systemPropertyVariables>
@@ -252,8 +272,11 @@
                             <cache.server.home>${cache.server.home}</cache.server.home>
                             <cache.server.console.output>${cache.server.console.output}</cache.server.console.output>
                             <cache.server.management.port>${cache.server.management.port}</cache.server.management.port>
+                            <cache.server.2.port.offset>${cache.server.2.port.offset}</cache.server.2.port.offset>
+                            <cache.server.2.management.port>${cache.server.2.management.port}</cache.server.2.management.port>
 
                             <keycloak.connectionsInfinispan.remoteStorePort>${keycloak.connectionsInfinispan.remoteStorePort}</keycloak.connectionsInfinispan.remoteStorePort>
+                            <keycloak.connectionsInfinispan.remoteStorePort.2>${keycloak.connectionsInfinispan.remoteStorePort.2}</keycloak.connectionsInfinispan.remoteStorePort.2>
                             <keycloak.connectionsInfinispan.remoteStoreServer>${keycloak.connectionsInfinispan.remoteStoreServer}</keycloak.connectionsInfinispan.remoteStoreServer>
 
                             <keycloak.connectionsJpa.url.crossdc>${keycloak.connectionsJpa.url.crossdc}</keycloak.connectionsJpa.url.crossdc>

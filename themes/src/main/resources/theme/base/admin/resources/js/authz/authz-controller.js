@@ -1663,6 +1663,119 @@ module.controller('ResourceServerPolicyRoleDetailCtrl', function($scope, $route,
     }
 });
 
+module.controller('ResourceServerPolicyGroupDetailCtrl', function($scope, $route, realm, client, Client, Groups, Group, PolicyController) {
+    PolicyController.onInit({
+        getPolicyType : function() {
+            return "group";
+        },
+
+        onInit : function() {
+            $scope.tree = [];
+
+            Groups.query({realm: $route.current.params.realm}, function(groups) {
+                $scope.groups = groups;
+                $scope.groupList = [
+                    {"id" : "realm", "name": "Groups",
+                                "subGroups" : groups}
+                ];
+            });
+
+            var isLeaf = function(node) {
+                return node.id != "realm" && (!node.subGroups || node.subGroups.length == 0);
+            }
+
+            $scope.getGroupClass = function(node) {
+                if (node.id == "realm") {
+                    return 'pficon pficon-users';
+                }
+                if (isLeaf(node)) {
+                    return 'normal';
+                }
+                if (node.subGroups.length && node.collapsed) return 'collapsed';
+                if (node.subGroups.length && !node.collapsed) return 'expanded';
+                return 'collapsed';
+
+            }
+
+            $scope.getSelectedClass = function(node) {
+                if (node.selected) {
+                    return 'selected';
+                } else if ($scope.cutNode && $scope.cutNode.id == node.id) {
+                    return 'cut';
+                }
+                return undefined;
+            }
+
+            $scope.selectGroup = function(group) {
+                for (i = 0; i < $scope.selectedGroups.length; i++) {
+                    if ($scope.selectedGroups[i].id == group.id) {
+                        return
+                    }
+                }
+                $scope.selectedGroups.push({id: group.id, path: group.path});
+                $scope.changed = true;
+            }
+
+            $scope.extendChildren = function(group) {
+                $scope.changed = true;
+            }
+
+            $scope.removeFromList = function(group) {
+                var index = $scope.selectedGroups.indexOf(group);
+                if (index != -1) {
+                    $scope.selectedGroups.splice(index, 1);
+                    $scope.changed = true;
+                }
+            }
+        },
+
+        onInitCreate : function(policy) {
+            var selectedGroups = [];
+
+            $scope.selectedGroups = angular.copy(selectedGroups);
+
+            $scope.$watch('selectedGroups', function() {
+                if (!angular.equals($scope.selectedGroups, selectedGroups)) {
+                    $scope.changed = true;
+                } else {
+                    $scope.changed = false;
+                }
+            }, true);
+        },
+
+        onInitUpdate : function(policy) {
+            $scope.selectedGroups = policy.groups;
+
+            angular.forEach($scope.selectedGroups, function(group, index){
+               Group.get({realm: $route.current.params.realm, groupId: group.id}, function (existing) {
+                   group.path = existing.path;
+               });
+            });
+
+            $scope.$watch('selectedGroups', function() {
+                if (!$scope.changed) {
+                    return;
+                }
+                if (!angular.equals($scope.selectedGroups, selectedGroups)) {
+                    $scope.changed = true;
+                } else {
+                    $scope.changed = false;
+                }
+            }, true);
+        },
+
+        onUpdate : function() {
+            $scope.policy.groups = $scope.selectedGroups;
+            delete $scope.policy.config;
+        },
+
+        onCreate : function() {
+            $scope.policy.groups = $scope.selectedGroups;
+            delete $scope.policy.config;
+        }
+    }, realm, client, $scope);
+});
+
 module.controller('ResourceServerPolicyJSDetailCtrl', function($scope, $route, $location, realm, PolicyController, client) {
     PolicyController.onInit({
         getPolicyType : function() {

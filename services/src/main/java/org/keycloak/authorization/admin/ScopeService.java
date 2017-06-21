@@ -77,6 +77,7 @@ public class ScopeService {
     }
 
     @POST
+    @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response create(@Context UriInfo uriInfo,  ScopeRepresentation scope) {
@@ -150,6 +151,7 @@ public class ScopeService {
 
     @Path("{id}")
     @GET
+    @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Response findById(@PathParam("id") String id) {
         this.auth.realm().requireViewAuthorization();
@@ -164,6 +166,7 @@ public class ScopeService {
 
     @Path("{id}/resources")
     @GET
+    @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Response getResources(@PathParam("id") String id) {
         this.auth.realm().requireViewAuthorization();
@@ -186,6 +189,7 @@ public class ScopeService {
 
     @Path("{id}/permissions")
     @GET
+    @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Response getPermissions(@PathParam("id") String id) {
         this.auth.realm().requireViewAuthorization();
@@ -231,6 +235,7 @@ public class ScopeService {
     }
 
     @GET
+    @NoCache
     @Produces("application/json")
     public Response findAll(@QueryParam("scopeId") String id,
                             @QueryParam("name") String name,
