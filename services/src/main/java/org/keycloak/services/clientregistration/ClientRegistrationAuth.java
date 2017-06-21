@@ -85,7 +85,7 @@ public class ClientRegistrationAuth {
         jwt = tokenVerification.getJwt();
 
         if (isInitialAccessToken()) {
-            initialAccessModel = session.sessions().getClientInitialAccessModel(session.getContext().getRealm(), jwt.getId());
+            initialAccessModel = session.realms().getClientInitialAccessModel(session.getContext().getRealm(), jwt.getId());
             if (initialAccessModel == null) {
                 throw unauthorized("Initial Access Token not found");
             }
