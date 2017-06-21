@@ -384,8 +384,14 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
 
     }
 
-
-
+    @Override
+    public void preRemove(KeycloakSession session, RealmModel realm, ComponentModel model) {
+        String allowKerberosCfg = model.getConfig().getFirst(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION);
+        if (Boolean.valueOf(allowKerberosCfg)) {
+            CredentialHelper.setOrReplaceAuthenticationRequirement(session, realm, CredentialRepresentation.KERBEROS,
+                    AuthenticationExecutionModel.Requirement.DISABLED, null);
+        }
+    }
 
     @Override
     public SynchronizationResult sync(KeycloakSessionFactory sessionFactory, String realmId, UserStorageProviderModel model) {

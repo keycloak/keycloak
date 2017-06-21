@@ -17,13 +17,13 @@
 
 package org.keycloak.testsuite.util;
 
-import java.util.LinkedList;
 import java.util.List;
 
 import javax.ws.rs.NotFoundException;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.common.util.ConcurrentMultivaluedHashMap;
 
 /**
  * Enlist resources to be cleaned after test method
@@ -32,18 +32,21 @@ import org.keycloak.admin.client.resource.RealmResource;
  */
 public class TestCleanup {
 
+    private static final String IDENTITY_PROVIDER_ALIASES = "IDENTITY_PROVIDER_ALIASES";
+    private static final String USER_IDS = "USER_IDS";
+    private static final String COMPONENT_IDS = "COMPONENT_IDS";
+    private static final String CLIENT_UUIDS = "CLIENT_UUIDS";
+    private static final String ROLE_IDS = "ROLE_IDS";
+    private static final String GROUP_IDS = "GROUP_IDS";
+    private static final String AUTH_FLOW_IDS = "AUTH_FLOW_IDS";
+    private static final String AUTH_CONFIG_IDS = "AUTH_CONFIG_IDS";
+
     private final Keycloak adminClient;
     private final String realmName;
 
+    // Key is kind of entity (eg. "client", "role", "user" etc), Values are all kind of entities of given type to cleanup
+    private ConcurrentMultivaluedHashMap<String, String> entities = new ConcurrentMultivaluedHashMap<>();
 
-    private List<String> identityProviderAliases;
-    private List<String> userIds;
-    private List<String> componentIds;
-    private List<String> clientUuids;
-    private List<String> roleIds;
-    private List<String> groupIds;
-    private List<String> authFlowIds;
-    private List<String> authConfigIds;
 
     public TestCleanup(Keycloak adminClient, String realmName) {
         this.adminClient = adminClient;
@@ -52,72 +55,49 @@ public class TestCleanup {
 
 
     public void addUserId(String userId) {
-        if (userIds == null) {
-            userIds = new LinkedList<>();
-        }
-        userIds.add(userId);
+        entities.add(USER_IDS, userId);
     }
 
 
     public void addIdentityProviderAlias(String identityProviderAlias) {
-        if (identityProviderAliases == null) {
-            identityProviderAliases = new LinkedList<>();
-        }
-        identityProviderAliases.add(identityProviderAlias);
+        entities.add(IDENTITY_PROVIDER_ALIASES, identityProviderAlias);
     }
 
 
     public void addComponentId(String componentId) {
-        if (componentIds == null) {
-            componentIds = new LinkedList<>();
-        }
-        componentIds.add(componentId);
+        entities.add(COMPONENT_IDS, componentId);
     }
 
 
     public void addClientUuid(String clientUuid) {
-        if (clientUuids == null) {
-            clientUuids = new LinkedList<>();
-        }
-        clientUuids.add(clientUuid);
+        entities.add(CLIENT_UUIDS, clientUuid);
     }
 
 
     public void addRoleId(String roleId) {
-        if (roleIds == null) {
-            roleIds = new LinkedList<>();
-        }
-        roleIds.add(roleId);
+        entities.add(ROLE_IDS, roleId);
     }
 
 
     public void addGroupId(String groupId) {
-        if (groupIds == null) {
-            groupIds = new LinkedList<>();
-        }
-        groupIds.add(groupId);
+        entities.add(GROUP_IDS, groupId);
     }
 
 
     public void addAuthenticationFlowId(String flowId) {
-        if (authFlowIds == null) {
-            authFlowIds = new LinkedList<>();
-        }
-        authFlowIds.add(flowId);
+        entities.add(AUTH_FLOW_IDS, flowId);
     }
 
 
     public void addAuthenticationConfigId(String executionConfigId) {
-        if (authConfigIds == null) {
-            authConfigIds = new LinkedList<>();
-        }
-        authConfigIds.add(executionConfigId);
+        entities.add(AUTH_CONFIG_IDS, executionConfigId);
     }
 
 
     public void executeCleanup() {
         RealmResource realm = adminClient.realm(realmName);
 
+        List<String> userIds = entities.get(USER_IDS);
         if (userIds != null) {
             for (String userId : userIds) {
                 try {
@@ -128,6 +108,7 @@ public class TestCleanup {
             }
         }
 
+        List<String> identityProviderAliases = entities.get(IDENTITY_PROVIDER_ALIASES);
         if (identityProviderAliases != null) {
             for (String idpAlias : identityProviderAliases) {
                 try {
@@ -138,6 +119,7 @@ public class TestCleanup {
             }
         }
 
+        List<String> componentIds = entities.get(COMPONENT_IDS);
         if (componentIds != null) {
             for (String componentId : componentIds) {
                 try {
@@ -148,6 +130,7 @@ public class TestCleanup {
             }
         }
 
+        List<String> clientUuids = entities.get(CLIENT_UUIDS);
         if (clientUuids != null) {
             for (String clientUuId : clientUuids) {
                 try {
@@ -158,6 +141,7 @@ public class TestCleanup {
             }
         }
 
+        List<String> roleIds = entities.get(ROLE_IDS);
         if (roleIds != null) {
             for (String roleId : roleIds) {
                 try {
@@ -168,6 +152,7 @@ public class TestCleanup {
             }
         }
 
+        List<String> groupIds = entities.get(GROUP_IDS);
         if (groupIds != null) {
             for (String groupId : groupIds) {
                 try {
@@ -178,6 +163,7 @@ public class TestCleanup {
             }
         }
 
+        List<String> authFlowIds = entities.get(AUTH_FLOW_IDS);
         if (authFlowIds != null) {
             for (String flowId : authFlowIds) {
                 try {
@@ -188,6 +174,7 @@ public class TestCleanup {
             }
         }
 
+        List<String> authConfigIds = entities.get(AUTH_CONFIG_IDS);
         if (authConfigIds != null) {
             for (String configId : authConfigIds) {
                 try {
