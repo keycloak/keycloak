@@ -68,6 +68,29 @@ public interface GroupsResource {
                                      @QueryParam("max") Integer max);
 
     /**
+     * Counts all groups.
+     * @return The number of groups.
+     */
+    @GET
+    @NoCache
+    @Path("/count")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    Response count();
+
+    /**
+     * Counts groups by name search.
+     * @param search max number of occurrences
+     * @return The number of group containing search therm.
+     */
+    @GET
+    @NoCache
+    @Path("/count")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    Response count(@QueryParam("search") String search);
+
+    /**
      * create or add a top level realm groupSet or create child.  This will update the group and set the parent if it exists.  Create it and set the parent
      * if the group doesn't exist.
      *

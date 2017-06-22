@@ -40,6 +40,10 @@ public interface RealmProvider extends Provider {
 
     List<GroupModel> getGroups(RealmModel realm);
 
+    Long getGroupsCount(RealmModel realm);
+
+    Long getGroupsCountByNameContaining(RealmModel realm, String search);
+
     List<GroupModel> getTopLevelGroups(RealmModel realm);
 
     List<GroupModel> getTopLevelGroups(RealmModel realm, Integer first, Integer max);
@@ -88,6 +92,8 @@ public interface RealmProvider extends Provider {
 
     ClientTemplateModel getClientTemplateById(String id, RealmModel realm);
     GroupModel getGroupById(String id, RealmModel realm);
+
+
 
     List<RealmModel> getRealms();
     boolean removeRealm(String id);

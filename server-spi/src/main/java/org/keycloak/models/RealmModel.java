@@ -397,6 +397,8 @@ public interface RealmModel extends RoleContainerModel {
 
     GroupModel getGroupById(String id);
     List<GroupModel> getGroups();
+    Long getGroupsCount();
+    Long getGroupsCountByNameContaining(String search);
     List<GroupModel> getTopLevelGroups();
     List<GroupModel> getTopLevelGroups(Integer first, Integer max);
     List<GroupModel> searchForGroupByName(String search, Integer first, Integer max);

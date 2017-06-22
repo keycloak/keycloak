@@ -842,6 +842,16 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     @Override
+    public Long getGroupsCount(RealmModel realm) {
+        return getDelegate().getGroupsCount(realm);
+    }
+
+    @Override
+    public Long getGroupsCountByNameContaining(RealmModel realm, String search) {
+        return getDelegate().getGroupsCountByNameContaining(realm, search);
+    }
+
+    @Override
     public List<GroupModel> getTopLevelGroups(RealmModel realm) {
         String cacheKey = getTopGroupsQueryCacheKey(realm.getId());
         boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(realm.getId());
