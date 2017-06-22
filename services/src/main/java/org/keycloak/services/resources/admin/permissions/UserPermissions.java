@@ -451,6 +451,12 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
 
     @Override
     public boolean canImpersonate(UserModel user) {
+        return canImpersonate();
+
+    }
+
+    @Override
+    public boolean canImpersonate() {
         if (root.hasOneAdminRole(ImpersonationConstants.IMPERSONATION_ROLE)) return true;
 
         if (!root.isAdminSameRealm()) {
@@ -476,7 +482,6 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
 
         Scope scope = root.realmScope(IMPERSONATE_SCOPE);
         return root.evaluatePermission(resource, scope, server);
-
     }
 
     @Override

@@ -49,6 +49,8 @@ public interface UserPermissionEvaluator {
 
     boolean canImpersonate(UserModel user);
 
+    boolean canImpersonate();
+
     void requireImpersonate(UserModel user);
 
     Map<String, Boolean> getAccess(UserModel user);
