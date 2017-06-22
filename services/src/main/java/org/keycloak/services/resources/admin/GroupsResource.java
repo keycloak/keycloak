@@ -131,13 +131,12 @@ public class GroupsResource {
     public Response addTopLevelGroup(GroupRepresentation rep) {
         auth.requireManage();
 
-        for (GroupModel group : realm.getGroups()) {
-            if (group.getName().equals(rep.getName())) {
-                return ErrorResponse.exists("Top level group named '" + rep.getName() + "' already exists.");
-            }
+        List<GroupRepresentation> search = ModelToRepresentation.searchForGroupByName(realm, rep.getName(), 0, 1);
+        if (search != null && !search.isEmpty() && Objects.equals(search.get(0).getName(), rep.getName())) {
+            return ErrorResponse.exists("Top level group named '" + rep.getName() + "' already exists.");
         }
 
-        GroupModel child = null;
+        GroupModel child;
         Response.ResponseBuilder builder = Response.status(204);
         if (rep.getId() != null) {
             child = realm.getGroupById(rep.getId());
