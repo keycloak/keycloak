@@ -154,9 +154,14 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
         if (clustered) {
             String nodeName = config.get("nodeName", System.getProperty(InfinispanConnectionProvider.JBOSS_NODE_NAME));
-            configureTransport(gcb, nodeName);
+            String jgroupsUdpMcastAddr = config.get("jgroupsUdpMcastAddr", System.getProperty(InfinispanConnectionProvider.JGROUPS_UDP_MCAST_ADDR));
+            configureTransport(gcb, nodeName, jgroupsUdpMcastAddr);
+            gcb.globalJmxStatistics()
+              .jmxDomain(InfinispanConnectionProvider.JMX_DOMAIN + "-" + nodeName);
         }
-        gcb.globalJmxStatistics().allowDuplicateDomains(allowDuplicateJMXDomains);
+        gcb.globalJmxStatistics()
+          .allowDuplicateDomains(allowDuplicateJMXDomains)
+          .enable();
 
         cacheManager = new DefaultCacheManager(gcb.build());
         containerManaged = false;
@@ -317,24 +322,45 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         return cb.build();
     }
 
-    protected void configureTransport(GlobalConfigurationBuilder gcb, String nodeName) {
+    private static final Object CHANNEL_INIT_SYNCHRONIZER = new Object();
+
+    protected void configureTransport(GlobalConfigurationBuilder gcb, String nodeName, String jgroupsUdpMcastAddr) {
         if (nodeName == null) {
             gcb.transport().defaultTransport();
         } else {
             FileLookup fileLookup = FileLookupFactory.newInstance();
 
-            try {
-                // Compatibility with Wildfly
-                JChannel channel = new JChannel(fileLookup.lookupFileLocation("default-configs/default-jgroups-udp.xml", this.getClass().getClassLoader()));
-                channel.setName(nodeName);
-                JGroupsTransport transport = new JGroupsTransport(channel);
+            synchronized (CHANNEL_INIT_SYNCHRONIZER) {
+                String originalMcastAddr = System.getProperty(InfinispanConnectionProvider.JGROUPS_UDP_MCAST_ADDR);
+                if (jgroupsUdpMcastAddr == null) {
+                    System.getProperties().remove(InfinispanConnectionProvider.JGROUPS_UDP_MCAST_ADDR);
+                } else {
+                    System.setProperty(InfinispanConnectionProvider.JGROUPS_UDP_MCAST_ADDR, jgroupsUdpMcastAddr);
+                }
+                try {
+                    // Compatibility with Wildfly
+                    JChannel channel = new JChannel(fileLookup.lookupFileLocation("default-configs/default-jgroups-udp.xml", this.getClass().getClassLoader()));
+                    channel.setName(nodeName);
+                    JGroupsTransport transport = new JGroupsTransport(channel);
 
-                gcb.transport().nodeName(nodeName);
-                gcb.transport().transport(transport);
+                    gcb.transport()
+                      .nodeName(nodeName)
+                      .transport(transport)
+                      .globalJmxStatistics()
+                        .jmxDomain(InfinispanConnectionProvider.JMX_DOMAIN + "-" + nodeName)
+                        .enable()
+                      ;
 
-                logger.infof("Configured jgroups transport with the channel name: %s", nodeName);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+                    logger.infof("Configured jgroups transport with the channel name: %s", nodeName);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                } finally {
+                    if (originalMcastAddr == null) {
+                        System.getProperties().remove(InfinispanConnectionProvider.JGROUPS_UDP_MCAST_ADDR);
+                    } else {
+                        System.setProperty(InfinispanConnectionProvider.JGROUPS_UDP_MCAST_ADDR, originalMcastAddr);
+                    }
+                }
             }
         }
     }

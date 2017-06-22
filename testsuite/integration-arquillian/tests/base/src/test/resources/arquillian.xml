@@ -49,7 +49,7 @@
     
     <container qualifier="auth-server-undertow" mode="suite" >
         <configuration>
-            <property name="enabled">${auth.server.undertow}</property>
+            <property name="enabled">${auth.server.undertow} &amp;&amp; ! ${auth.server.undertow.crossdc}</property>
             <property name="bindAddress">localhost</property>
             <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.KeycloakOnUndertow</property>
             <property name="bindHttpPort">${auth.server.http.port}</property>
@@ -74,6 +74,7 @@
                 ${auth.server.feature}
             </property>
             <property name="javaVmArguments">
+                ${auth.server.jboss.jvm.debug.args}
                 ${auth.server.memory.settings}
                 -Djava.net.preferIPv4Stack=true
             </property>
@@ -103,6 +104,7 @@
                 <property name="outputToConsole">${backends.console.output}</property>
                 <property name="managementPort">${auth.server.backend1.management.port}</property>
                 <property name="startupTimeoutInSeconds">${auth.server.jboss.startup.timeout}</property>
+                <property name="bindHttpPortOffset">${auth.server.backend1.port.offset}</property>
             </configuration>
         </container>
         <container qualifier="auth-server-${auth.server}-backend2" mode="manual" >
@@ -124,6 +126,7 @@
                 <property name="outputToConsole">${backends.console.output}</property>
                 <property name="managementPort">${auth.server.backend2.management.port}</property>
                 <property name="startupTimeoutInSeconds">${auth.server.jboss.startup.timeout}</property>
+                <property name="bindHttpPortOffset">${auth.server.backend2.port.offset}</property>
             </configuration>
         </container>
     </group>
@@ -160,6 +163,162 @@
                 <property name="bindAddress">localhost</property>
                 <property name="bindHttpPort">${auth.server.http.port}</property>
                 <property name="nodes">node1=http://localhost:8181,node2=http://localhost:8182</property>
+            </configuration>
+        </container>
+    </group>
+
+
+    <!-- Cross DC with embedded undertow. Node numbering is [centre #].[node #] -->
+    <group qualifier="auth-server-undertow-cross-dc">
+        <container qualifier="cache-server-cross-dc-1" mode="suite" >
+            <configuration>
+                <property name="enabled">${auth.server.undertow.crossdc}</property>
+                <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
+                <property name="jbossHome">${cache.server.home}</property>
+                <property name="serverConfig">clustered.xml</property>
+                <property name="jbossArguments">
+                    -Djboss.socket.binding.port-offset=${cache.server.port.offset}
+                    -Djboss.default.multicast.address=234.56.78.99
+                    -Djboss.node.name=cache-server
+                    ${adapter.test.props}
+                    ${auth.server.profile}
+                </property>
+                <property name="javaVmArguments">
+                    ${auth.server.memory.settings}
+                    -Djava.net.preferIPv4Stack=true
+                </property>
+                <property name="outputToConsole">${cache.server.console.output}</property>
+                <property name="managementPort">${cache.server.management.port}</property>
+                <property name="startupTimeoutInSeconds">${auth.server.jboss.startup.timeout}</property>
+            </configuration>
+        </container>
+
+        <container qualifier="cache-server-cross-dc-2" mode="suite" >
+            <configuration>
+                <property name="enabled">${auth.server.undertow.crossdc}</property>
+                <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
+                <property name="jbossHome">${cache.server.home}</property>
+                <property name="setupCleanServerBaseDir">true</property>
+                <property name="cleanServerBaseDir">${cache.server.home}/standalone-dc-2</property>
+                <property name="serverConfig">clustered.xml</property>
+                <property name="jbossArguments">
+                    -Djboss.socket.binding.port-offset=${cache.server.2.port.offset}
+                    -Djboss.default.multicast.address=234.56.78.99
+                    -Djboss.node.name=cache-server-dc-2
+                    ${adapter.test.props}
+                    ${auth.server.profile}
+                </property>
+                <property name="javaVmArguments">
+                    ${auth.server.memory.settings}
+                    -Djava.net.preferIPv4Stack=true
+                </property>
+                <property name="outputToConsole">${cache.server.console.output}</property>
+                <property name="managementPort">${cache.server.2.management.port}</property>
+                <property name="startupTimeoutInSeconds">${auth.server.jboss.startup.timeout}</property>
+            </configuration>
+        </container>
+
+        <container qualifier="auth-server-balancer-cross-dc" mode="suite" >
+            <configuration>
+                <property name="enabled">${auth.server.undertow.crossdc}</property>
+                <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.lb.SimpleUndertowLoadBalancerContainer</property>
+                <property name="bindAddress">localhost</property>
+                <property name="bindHttpPort">${auth.server.http.port}</property>
+                <property name="nodes">auth-server-undertow-cross-dc-0.1=http://localhost:8101,auth-server-undertow-cross-dc-0.2-manual=http://localhost:8102,auth-server-undertow-cross-dc-1.1=http://localhost:8111,auth-server-undertow-cross-dc-1.2-manual=http://localhost:8112</property>
+            </configuration>
+        </container>
+
+        <container qualifier="auth-server-undertow-cross-dc-0_1" mode="suite" >
+            <configuration>
+                <property name="enabled">${auth.server.undertow.crossdc}</property>
+                <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.KeycloakOnUndertow</property>
+                <property name="bindAddress">localhost</property>
+                <property name="bindHttpPort">${auth.server.http.port}</property>
+                <property name="bindHttpPortOffset">-79</property>
+                <property name="route">auth-server-undertow-cross-dc-0_1</property>
+                <property name="remoteMode">${undertow.remote}</property>
+                <property name="dataCenter">0</property>
+                <property name="keycloakConfigPropertyOverrides">{
+                    "keycloak.connectionsInfinispan.jgroupsUdpMcastAddr": "234.56.78.1",
+                    "keycloak.connectionsInfinispan.nodeName": "auth-server-undertow-cross-dc-0_1",
+                    "keycloak.connectionsInfinispan.clustered": "${keycloak.connectionsInfinispan.clustered:true}",
+                    "keycloak.connectionsInfinispan.remoteStoreServer": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
+                    "keycloak.connectionsInfinispan.remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:11222}",
+                    "keycloak.connectionsInfinispan.remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:true}",
+                    "keycloak.connectionsJpa.url": "${keycloak.connectionsJpa.url.crossdc:jdbc:h2:mem:test-dc-shared}",
+                    "keycloak.connectionsJpa.driver": "${keycloak.connectionsJpa.driver.crossdc:org.h2.Driver}",
+                    "keycloak.connectionsJpa.driverDialect": "${keycloak.connectionsJpa.driverDialect.crossdc:}"
+                }</property>
+            </configuration>
+        </container>
+        <container qualifier="auth-server-undertow-cross-dc-0_2-manual" mode="manual" >
+            <configuration>
+                <property name="enabled">${auth.server.undertow.crossdc}</property>
+                <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.KeycloakOnUndertow</property>
+                <property name="bindAddress">localhost</property>
+                <property name="bindHttpPort">${auth.server.http.port}</property>
+                <property name="bindHttpPortOffset">-78</property>
+                <property name="route">auth-server-undertow-cross-dc-0_2-manual</property>
+                <property name="remoteMode">${undertow.remote}</property>
+                <property name="dataCenter">0</property>
+                <property name="keycloakConfigPropertyOverrides">{
+                    "keycloak.connectionsInfinispan.jgroupsUdpMcastAddr": "234.56.78.1",
+                    "keycloak.connectionsInfinispan.nodeName": "auth-server-undertow-cross-dc-0_2-manual",
+                    "keycloak.connectionsInfinispan.clustered": "${keycloak.connectionsInfinispan.clustered:true}",
+                    "keycloak.connectionsInfinispan.remoteStoreServer": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
+                    "keycloak.connectionsInfinispan.remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:11222}",
+                    "keycloak.connectionsInfinispan.remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:true}",
+                    "keycloak.connectionsJpa.url": "${keycloak.connectionsJpa.url.crossdc:jdbc:h2:mem:test-dc-shared}",
+                    "keycloak.connectionsJpa.driver": "${keycloak.connectionsJpa.driver.crossdc:org.h2.Driver}",
+                    "keycloak.connectionsJpa.driverDialect": "${keycloak.connectionsJpa.driverDialect.crossdc:}"
+                }</property>
+            </configuration>
+        </container>
+
+        <container qualifier="auth-server-undertow-cross-dc-1_1" mode="suite" >
+            <configuration>
+                <property name="enabled">${auth.server.undertow.crossdc}</property>
+                <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.KeycloakOnUndertow</property>
+                <property name="bindAddress">localhost</property>
+                <property name="bindHttpPort">${auth.server.http.port}</property>
+                <property name="bindHttpPortOffset">-69</property>
+                <property name="route">auth-server-undertow-cross-dc-1_1</property>
+                <property name="remoteMode">${undertow.remote}</property>
+                <property name="dataCenter">1</property>
+                <property name="keycloakConfigPropertyOverrides">{
+                    "keycloak.connectionsInfinispan.jgroupsUdpMcastAddr": "234.56.78.2",
+                    "keycloak.connectionsInfinispan.nodeName": "auth-server-undertow-cross-dc-1_1",
+                    "keycloak.connectionsInfinispan.clustered": "${keycloak.connectionsInfinispan.clustered:true}",
+                    "keycloak.connectionsInfinispan.remoteStoreServer": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
+                    "keycloak.connectionsInfinispan.remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort.2:11222}",
+                    "keycloak.connectionsInfinispan.remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:true}",
+                    "keycloak.connectionsJpa.url": "${keycloak.connectionsJpa.url.crossdc:jdbc:h2:mem:test-dc-shared}",
+                    "keycloak.connectionsJpa.driver": "${keycloak.connectionsJpa.driver.crossdc:org.h2.Driver}",
+                    "keycloak.connectionsJpa.driverDialect": "${keycloak.connectionsJpa.driverDialect.crossdc:}"
+                }</property>
+            </configuration>
+        </container>
+        <container qualifier="auth-server-undertow-cross-dc-1_2-manual" mode="manual" >
+            <configuration>
+                <property name="enabled">${auth.server.undertow.crossdc}</property>
+                <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.KeycloakOnUndertow</property>
+                <property name="bindAddress">localhost</property>
+                <property name="bindHttpPort">${auth.server.http.port}</property>
+                <property name="bindHttpPortOffset">-68</property>
+                <property name="route">auth-server-undertow-cross-dc-1_2-manual</property>
+                <property name="remoteMode">${undertow.remote}</property>
+                <property name="dataCenter">1</property>
+                <property name="keycloakConfigPropertyOverrides">{
+                    "keycloak.connectionsInfinispan.jgroupsUdpMcastAddr": "234.56.78.2",
+                    "keycloak.connectionsInfinispan.nodeName": "auth-server-undertow-cross-dc-1_2-manual",
+                    "keycloak.connectionsInfinispan.clustered": "${keycloak.connectionsInfinispan.clustered:true}",
+                    "keycloak.connectionsInfinispan.remoteStoreServer": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
+                    "keycloak.connectionsInfinispan.remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort.2:11222}",
+                    "keycloak.connectionsInfinispan.remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:true}",
+                    "keycloak.connectionsJpa.url": "${keycloak.connectionsJpa.url.crossdc:jdbc:h2:mem:test-dc-shared}",
+                    "keycloak.connectionsJpa.driver": "${keycloak.connectionsJpa.driver.crossdc:org.h2.Driver}",
+                    "keycloak.connectionsJpa.driverDialect": "${keycloak.connectionsJpa.driverDialect.crossdc:}"
+                }</property>
             </configuration>
         </container>
     </group>

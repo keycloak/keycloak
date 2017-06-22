@@ -18,10 +18,24 @@
 package org.keycloak.models.jpa;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.migration.MigrationModel;
-import org.keycloak.models.*;
-import org.keycloak.models.jpa.entities.*;
+import org.keycloak.models.ClientInitialAccessModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientTemplateModel;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RealmProvider;
+import org.keycloak.models.RoleContainerModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.jpa.entities.ClientEntity;
+import org.keycloak.models.jpa.entities.ClientInitialAccessEntity;
+import org.keycloak.models.jpa.entities.ClientTemplateEntity;
+import org.keycloak.models.jpa.entities.GroupEntity;
+import org.keycloak.models.jpa.entities.RealmEntity;
+import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
@@ -136,6 +150,8 @@ public class JpaRealmProvider implements RealmProvider {
             removeRole(adapter, role);
         }
 
+        num = em.createNamedQuery("removeClientInitialAccessByRealm")
+                .setParameter("realm", realm).executeUpdate();
 
         em.remove(realm);
 
@@ -556,5 +572,83 @@ public class JpaRealmProvider implements RealmProvider {
             list.add(session.realms().getGroupById(id, realm));
         }
         return Collections.unmodifiableList(list);
+    }
+
+    @Override
+    public ClientInitialAccessModel createClientInitialAccessModel(RealmModel realm, int expiration, int count) {
+        RealmEntity realmEntity = em.find(RealmEntity.class, realm.getId());
+
+        ClientInitialAccessEntity entity = new ClientInitialAccessEntity();
+        entity.setId(KeycloakModelUtils.generateId());
+        entity.setRealm(realmEntity);
+
+        entity.setCount(count);
+        entity.setRemainingCount(count);
+
+        int currentTime = Time.currentTime();
+        entity.setTimestamp(currentTime);
+        entity.setExpiration(expiration);
+
+        em.persist(entity);
+
+        return entityToModel(entity);
+    }
+
+    @Override
+    public ClientInitialAccessModel getClientInitialAccessModel(RealmModel realm, String id) {
+        ClientInitialAccessEntity entity = em.find(ClientInitialAccessEntity.class, id);
+        if (entity == null) {
+            return null;
+        } else {
+            return entityToModel(entity);
+        }
+    }
+
+    @Override
+    public void removeClientInitialAccessModel(RealmModel realm, String id) {
+        ClientInitialAccessEntity entity = em.find(ClientInitialAccessEntity.class, id);
+        if (entity != null) {
+            em.remove(entity);
+            em.flush();
+        }
+    }
+
+    @Override
+    public List<ClientInitialAccessModel> listClientInitialAccess(RealmModel realm) {
+        RealmEntity realmEntity = em.find(RealmEntity.class, realm.getId());
+
+        TypedQuery<ClientInitialAccessEntity> query = em.createNamedQuery("findClientInitialAccessByRealm", ClientInitialAccessEntity.class);
+        query.setParameter("realm", realmEntity);
+        List<ClientInitialAccessEntity> entities = query.getResultList();
+
+        return entities.stream()
+                .map(entity -> entityToModel(entity))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void removeExpiredClientInitialAccess() {
+        int currentTime = Time.currentTime();
+
+        em.createNamedQuery("removeExpiredClientInitialAccess")
+                .setParameter("currentTime", currentTime)
+                .executeUpdate();
+    }
+
+    @Override
+    public void decreaseRemainingCount(RealmModel realm, ClientInitialAccessModel clientInitialAccess) {
+        em.createNamedQuery("decreaseClientInitialAccessRemainingCount")
+                .setParameter("id", clientInitialAccess.getId())
+                .executeUpdate();
+    }
+
+    private ClientInitialAccessModel entityToModel(ClientInitialAccessEntity entity) {
+        ClientInitialAccessModel model = new ClientInitialAccessModel();
+        model.setId(entity.getId());
+        model.setCount(entity.getCount());
+        model.setRemainingCount(entity.getRemainingCount());
+        model.setExpiration(entity.getExpiration());
+        model.setTimestamp(entity.getTimestamp());
+        return model;
     }
 }

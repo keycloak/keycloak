@@ -169,6 +169,7 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
                 .setStatus(Response.Status.OK)
                 .setAttribute(LoginFormsProvider.IDENTITY_PROVIDER_BROKER_CONTEXT, brokerContext)
                 .setActionUri(action)
+                .setExecution(context.getExecution().getId())
                 .createIdpLinkEmailPage();
         context.forceChallenge(challenge);
     }

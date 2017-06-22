@@ -26,6 +26,8 @@ import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -37,6 +39,7 @@ import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentatio
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.RealmAuth;
 
 import javax.ws.rs.Consumes;
@@ -48,8 +51,10 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.UriInfo;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -70,17 +75,26 @@ public class ResourceSetService {
 
     private final AuthorizationProvider authorization;
     private final RealmAuth auth;
+    private final AdminEventBuilder adminEvent;
     private ResourceServer resourceServer;
 
-    public ResourceSetService(ResourceServer resourceServer, AuthorizationProvider authorization, RealmAuth auth) {
+    public ResourceSetService(ResourceServer resourceServer, AuthorizationProvider authorization, RealmAuth auth, AdminEventBuilder adminEvent) {
         this.resourceServer = resourceServer;
         this.authorization = authorization;
         this.auth = auth;
+        this.adminEvent = adminEvent.resource(ResourceType.AUTHORIZATION_RESOURCE);
     }
 
     @POST
+    @NoCache
     @Consumes("application/json")
     @Produces("application/json")
+    public Response create(@Context UriInfo uriInfo, ResourceRepresentation resource) {
+        Response response = create(resource);
+        audit(uriInfo, resource, resource.getId(), OperationType.CREATE);
+        return response;
+    }
+
     public Response create(ResourceRepresentation resource) {
         requireManage();
         StoreFactory storeFactory = this.authorization.getStoreFactory();
@@ -128,7 +142,7 @@ public class ResourceSetService {
     @PUT
     @Consumes("application/json")
     @Produces("application/json")
-    public Response update(@PathParam("id") String id, ResourceRepresentation resource) {
+    public Response update(@Context UriInfo uriInfo, @PathParam("id") String id, ResourceRepresentation resource) {
         requireManage();
         resource.setId(id);
         StoreFactory storeFactory = this.authorization.getStoreFactory();
@@ -141,12 +155,14 @@ public class ResourceSetService {
 
         toModel(resource, resourceServer, authorization);
 
+        audit(uriInfo, resource, OperationType.UPDATE);
+
         return Response.noContent().build();
     }
 
     @Path("{id}")
     @DELETE
-    public Response delete(@PathParam("id") String id) {
+    public Response delete(@Context UriInfo uriInfo, @PathParam("id") String id) {
         requireManage();
         StoreFactory storeFactory = authorization.getStoreFactory();
         Resource resource = storeFactory.getResourceStore().findById(id, resourceServer.getId());
@@ -167,6 +183,10 @@ public class ResourceSetService {
         }
 
         storeFactory.getResourceStore().delete(id);
+
+        if (authorization.getRealm().isAdminEventsEnabled()) {
+            audit(uriInfo, toRepresentation(resource, resourceServer, authorization), OperationType.DELETE);
+        }
 
         return Response.noContent().build();
     }
@@ -269,8 +289,8 @@ public class ResourceSetService {
 
     @Path("/search")
     @GET
-    @Produces("application/json")
     @NoCache
+    @Produces("application/json")
     public Response find(@QueryParam("name") String name) {
         this.auth.requireView();
         StoreFactory storeFactory = authorization.getStoreFactory();
@@ -374,6 +394,20 @@ public class ResourceSetService {
     private void requireManage() {
         if (this.auth != null) {
             this.auth.requireManage();
+        }
+    }
+
+    private void audit(@Context UriInfo uriInfo, ResourceRepresentation resource, OperationType operation) {
+        audit(uriInfo, resource, null, operation);
+    }
+
+    private void audit(@Context UriInfo uriInfo, ResourceRepresentation resource, String id, OperationType operation) {
+        if (authorization.getRealm().isAdminEventsEnabled()) {
+            if (id != null) {
+                adminEvent.operation(operation).resourcePath(uriInfo, id).representation(resource).success();
+            } else {
+                adminEvent.operation(operation).resourcePath(uriInfo).representation(resource).success();
+            }
         }
     }
 }

@@ -53,7 +53,7 @@ public class ActionTokenValueEntity implements ActionTokenValueModel {
         public void writeObject(ObjectOutput output, ActionTokenValueEntity t) throws IOException {
             output.writeByte(VERSION_1);
 
-            output.writeBoolean(! t.notes.isEmpty());
+            output.writeBoolean(t.notes.isEmpty());
             if (! t.notes.isEmpty()) {
                 output.writeObject(t.notes);
             }

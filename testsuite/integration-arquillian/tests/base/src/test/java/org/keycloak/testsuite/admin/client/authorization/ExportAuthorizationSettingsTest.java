@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -120,7 +119,6 @@ public class ExportAuthorizationSettingsTest extends AbstractAuthorizationTest {
     
     //KEYCLOAK-4983
     @Test
-    @Ignore
     public void testRoleBasedPolicyWithMultipleRoles() {
         ClientResource clientResource = getClientResource();
 
@@ -152,31 +150,17 @@ public class ExportAuthorizationSettingsTest extends AbstractAuthorizationTest {
         //export authorization settings
         ResourceServerRepresentation exportSettings = authorizationResource.exportSettings();
         
-        //delete test-resource-server client
-        testRealmResource().clients().get(clientResource.toRepresentation().getId()).remove();
-        
-        //clear cache
-        testRealmResource().clearRealmCache();
-        //workaround for the fact that clearing realm cache doesn't clear authz cache
-        testingClient.testing("test").cache("authorization").clear();
-        
-        //create new client
-        ClientRepresentation client = ClientBuilder.create()
-                .clientId(RESOURCE_SERVER_CLIENT_ID)
-                .authorizationServicesEnabled(true)
-                .serviceAccountsEnabled(true)
-                .build();
-        testRealmResource().clients().create(client).close();
-        
-        //import exported settings
-        AuthorizationResource authorization = testRealmResource().clients().get(getClientByClientId(RESOURCE_SERVER_CLIENT_ID).getId()).authorization();
-        authorization.importSettings(exportSettings);
-        
-        //check imported settings - TODO
-        PolicyRepresentation result = authorization.policies().findByName("role-based-policy");
-        Map<String, String> config1 = result.getConfig();
-        ResourceServerRepresentation settings = authorization.getSettings();
-        System.out.println("");
+        boolean found = false;
+        for (PolicyRepresentation p : exportSettings.getPolicies()) {
+            if (p.getName().equals("role-based-policy")) {
+                found = true;
+                Assert.assertTrue(p.getConfig().get("roles").contains("test-client-1/client-role") && 
+                        p.getConfig().get("roles").contains("test-client-2/client-role"));
+            }
+        }
+        if (!found) {
+            Assert.fail("Policy \"role-based-policy\" was not found in exported settings.");
+        }
     }
     
     private ClientRepresentation getClientByClientId(String clientId) {

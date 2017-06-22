@@ -738,11 +738,7 @@ public class ModelToRepresentation {
         return rep;
     }
 
-    public static ScopeRepresentation toRepresentation(Scope model, AuthorizationProvider authorizationProvider) {
-        return toRepresentation(model, authorizationProvider, true);
-    }
-
-    public static ScopeRepresentation toRepresentation(Scope model, AuthorizationProvider authorizationProvider, boolean deep) {
+    public static ScopeRepresentation toRepresentation(Scope model) {
         ScopeRepresentation scope = new ScopeRepresentation();
 
         scope.setId(model.getId());

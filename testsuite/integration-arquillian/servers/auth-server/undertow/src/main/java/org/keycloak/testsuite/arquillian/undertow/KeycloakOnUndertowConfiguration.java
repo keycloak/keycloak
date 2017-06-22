@@ -17,6 +17,11 @@
 
 package org.keycloak.testsuite.arquillian.undertow;
 
+import org.keycloak.util.JsonSerialization;
+import com.fasterxml.jackson.core.type.TypeReference;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import org.arquillian.undertow.UndertowContainerConfiguration;
 import org.jboss.arquillian.container.spi.ConfigurationException;
 import org.jboss.logging.Logger;
@@ -29,6 +34,8 @@ public class KeycloakOnUndertowConfiguration extends UndertowContainerConfigurat
     private String resourcesHome;
     private boolean remoteMode;
     private String route;
+    private String keycloakConfigPropertyOverrides;
+    private Map<String, String> keycloakConfigPropertyOverridesMap;
 
     private int bindHttpPortOffset = 0;
 
@@ -72,6 +79,18 @@ public class KeycloakOnUndertowConfiguration extends UndertowContainerConfigurat
         this.remoteMode = remoteMode;
     }
 
+    public String getKeycloakConfigPropertyOverrides() {
+        return keycloakConfigPropertyOverrides;
+    }
+
+    public void setKeycloakConfigPropertyOverrides(String keycloakConfigPropertyOverrides) {
+        this.keycloakConfigPropertyOverrides = keycloakConfigPropertyOverrides;
+    }
+
+    public Map<String, String> getKeycloakConfigPropertyOverridesMap() {
+        return keycloakConfigPropertyOverridesMap;
+    }
+
     @Override
     public void validate() throws ConfigurationException {
         super.validate();
@@ -80,6 +99,15 @@ public class KeycloakOnUndertowConfiguration extends UndertowContainerConfigurat
         int newPort = basePort + bindHttpPortOffset;
         setBindHttpPort(newPort);
         log.info("KeycloakOnUndertow will listen on port: " + newPort);
+        
+        if (this.keycloakConfigPropertyOverrides != null) {
+            try {
+                TypeReference<HashMap<String,Object>> typeRef = new TypeReference<HashMap<String,Object>>() {};
+                this.keycloakConfigPropertyOverridesMap = JsonSerialization.sysPropertiesAwareMapper.readValue(this.keycloakConfigPropertyOverrides, typeRef);
+            } catch (IOException ex) {
+                throw new ConfigurationException(ex);
+            }
+        }
 
         // TODO validate workerThreads
         

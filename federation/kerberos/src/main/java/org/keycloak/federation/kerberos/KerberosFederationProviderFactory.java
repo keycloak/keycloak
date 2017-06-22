@@ -156,4 +156,9 @@ public class KerberosFederationProviderFactory implements UserStorageProviderFac
                 AuthenticationExecutionModel.Requirement.ALTERNATIVE, AuthenticationExecutionModel.Requirement.DISABLED);
     }
 
+    @Override
+    public void preRemove(KeycloakSession session, RealmModel realm, ComponentModel model) {
+        CredentialHelper.setOrReplaceAuthenticationRequirement(session, realm, CredentialRepresentation.KERBEROS,
+                AuthenticationExecutionModel.Requirement.DISABLED, null);
+    }
 }

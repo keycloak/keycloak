@@ -20,20 +20,55 @@ package org.keycloak.models;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public interface ClientInitialAccessModel {
+public class ClientInitialAccessModel {
 
-    String getId();
+    private String id;
 
-    RealmModel getRealm();
+    private int timestamp;
 
-    int getTimestamp();
+    private int expiration;
 
-    int getExpiration();
+    private int count;
 
-    int getCount();
+    private int remainingCount;
 
-    int getRemainingCount();
+    public String getId() {
+        return id;
+    }
 
-    void decreaseRemainingCount();
+    public void setId(String id) {
+        this.id = id;
+    }
 
+    public int getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(int timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    public int getExpiration() {
+        return expiration;
+    }
+
+    public void setExpiration(int expiration) {
+        this.expiration = expiration;
+    }
+
+    public int getCount() {
+        return count;
+    }
+
+    public void setCount(int count) {
+        this.count = count;
+    }
+
+    public int getRemainingCount() {
+        return remainingCount;
+    }
+
+    public void setRemainingCount(int remainingCount) {
+        this.remainingCount = remainingCount;
+    }
 }

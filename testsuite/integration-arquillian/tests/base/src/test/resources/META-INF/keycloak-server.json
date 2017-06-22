@@ -85,7 +85,7 @@
 
     "connectionsJpa": {
         "default": {
-            "url": "${keycloak.connectionsJpa.url:jdbc:h2:mem:test}",
+            "url": "${keycloak.connectionsJpa.url:jdbc:h2:mem:test;MVCC=TRUE}",
             "driver": "${keycloak.connectionsJpa.driver:org.h2.Driver}",
             "driverDialect": "${keycloak.connectionsJpa.driverDialect:}",
             "user": "${keycloak.connectionsJpa.user:sa}",
@@ -107,13 +107,21 @@
 
     "connectionsInfinispan": {
         "default": {
+            "jgroupsUdpMcastAddr": "${keycloak.connectionsInfinispan.jgroupsUdpMcastAddr:234.56.78.90}",
+            "nodeName": "${keycloak.connectionsInfinispan.nodeName,jboss.node.name:defaultNodeName}",
             "clustered": "${keycloak.connectionsInfinispan.clustered:false}",
             "async": "${keycloak.connectionsInfinispan.async:false}",
             "sessionsOwners": "${keycloak.connectionsInfinispan.sessionsOwners:1}",
             "l1Lifespan": "${keycloak.connectionsInfinispan.l1Lifespan:600000}",
             "remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:false}",
-            "remoteStoreHost": "${keycloak.connectionsInfinispan.remoteStoreHost:localhost}",
+            "remoteStoreServer": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
             "remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:11222}"
+        }
+    },
+    
+    "stickySessionEncoder": {
+        "infinispan": {
+            "nodeName": "${keycloak.stickySessionEncoder.nodeName,jboss.node.name:defaultNodeName}"
         }
     },
 

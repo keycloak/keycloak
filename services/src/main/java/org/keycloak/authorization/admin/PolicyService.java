@@ -33,9 +33,11 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.UriInfo;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
@@ -46,12 +48,16 @@ import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyProviderRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.RealmAuth;
 import org.keycloak.util.JsonSerialization;
 
@@ -63,11 +69,13 @@ public class PolicyService {
     protected final ResourceServer resourceServer;
     protected final AuthorizationProvider authorization;
     protected final RealmAuth auth;
+    protected final AdminEventBuilder adminEvent;
 
-    public PolicyService(ResourceServer resourceServer, AuthorizationProvider authorization, RealmAuth auth) {
+    public PolicyService(ResourceServer resourceServer, AuthorizationProvider authorization, RealmAuth auth, AdminEventBuilder adminEvent) {
         this.resourceServer = resourceServer;
         this.authorization = authorization;
         this.auth = auth;
+        this.adminEvent = adminEvent.resource(ResourceType.AUTHORIZATION_POLICY);
     }
 
     @Path("{type}")
@@ -84,24 +92,26 @@ public class PolicyService {
     }
 
     protected PolicyTypeService doCreatePolicyTypeResource(String type) {
-        return new PolicyTypeService(type, resourceServer, authorization, auth);
+        return new PolicyTypeService(type, resourceServer, authorization, auth, adminEvent);
     }
 
     protected Object doCreatePolicyResource(Policy policy) {
-        return new PolicyResourceService(policy, resourceServer, authorization, auth);
+        return new PolicyResourceService(policy, resourceServer, authorization, auth, adminEvent);
     }
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public Response create(String payload) {
+    public Response create(@Context UriInfo uriInfo,  String payload) {
         this.auth.requireManage();
 
         AbstractPolicyRepresentation representation = doCreateRepresentation(payload);
         Policy policy = create(representation);
 
         representation.setId(policy.getId());
+
+        audit(uriInfo, representation, representation.getId(), OperationType.CREATE);
 
         return Response.status(Status.CREATED).entity(representation).build();
     }
@@ -279,5 +289,15 @@ public class PolicyService {
             policies.add(associated);
             findAssociatedPolicies(associated, policies);
         });
+    }
+
+    private void audit(@Context UriInfo uriInfo, AbstractPolicyRepresentation resource, String id, OperationType operation) {
+        if (authorization.getRealm().isAdminEventsEnabled()) {
+            if (id != null) {
+                adminEvent.operation(operation).resourcePath(uriInfo, id).representation(resource).success();
+            } else {
+                adminEvent.operation(operation).resourcePath(uriInfo).representation(resource).success();
+            }
+        }
     }
 }

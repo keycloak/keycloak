@@ -22,6 +22,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.AggregatePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
@@ -66,6 +67,9 @@ public class Policies extends Form {
     @Page
     private ClientPolicy clientPolicy;
 
+    @Page
+    private GroupPolicy groupPolicy;
+
     public PoliciesTable policies() {
         return table;
     }
@@ -103,6 +107,10 @@ public class Policies extends Form {
             clientPolicy.form().populate((ClientPolicyRepresentation) expected);
             clientPolicy.form().save();
             return (P) clientPolicy;
+        } else if ("group".equals(type)) {
+            groupPolicy.form().populate((GroupPolicyRepresentation) expected);
+            groupPolicy.form().save();
+            return (P) groupPolicy;
         }
 
         return null;
@@ -130,6 +138,8 @@ public class Policies extends Form {
                     rulePolicy.form().populate((RulePolicyRepresentation) representation);
                 } else if ("client".equals(type)) {
                     clientPolicy.form().populate((ClientPolicyRepresentation) representation);
+                } else if ("group".equals(type)) {
+                    groupPolicy.form().populate((GroupPolicyRepresentation) representation);
                 }
 
                 return;
@@ -158,6 +168,8 @@ public class Policies extends Form {
                     return (P) rulePolicy;
                 } else if ("client".equals(type)) {
                     return (P) clientPolicy;
+                } else if ("group".equals(type)) {
+                    return (P) groupPolicy;
                 }
             }
         }
@@ -187,6 +199,8 @@ public class Policies extends Form {
                     rulePolicy.form().delete();
                 } else if ("client".equals(type)) {
                     clientPolicy.form().delete();
+                } else if ("group".equals(type)) {
+                    groupPolicy.form().delete();
                 }
 
                 return;

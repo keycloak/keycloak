@@ -19,8 +19,8 @@ package org.keycloak.models.sessions.infinispan;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.models.*;
 
-import org.keycloak.models.cache.infinispan.AddInvalidatedActionTokenEvent;
-import org.keycloak.models.cache.infinispan.RemoveActionTokensSpecificEvent;
+import org.keycloak.models.cache.infinispan.events.AddInvalidatedActionTokenEvent;
+import org.keycloak.models.cache.infinispan.events.RemoveActionTokensSpecificEvent;
 import org.keycloak.models.sessions.infinispan.entities.ActionTokenValueEntity;
 import org.keycloak.models.sessions.infinispan.entities.ActionTokenReducedKey;
 import java.util.*;
@@ -58,7 +58,12 @@ public class InfinispanActionTokenStoreProvider implements ActionTokenStoreProvi
         ActionTokenValueEntity tokenValue = new ActionTokenValueEntity(notes);
 
         ClusterProvider cluster = session.getProvider(ClusterProvider.class);
-        this.tx.notify(cluster, InfinispanActionTokenStoreProviderFactory.ACTION_TOKEN_EVENTS, new AddInvalidatedActionTokenEvent(tokenKey, key.getExpiration(), tokenValue), false);
+        AddInvalidatedActionTokenEvent event = new AddInvalidatedActionTokenEvent(tokenKey, key.getExpiration(), tokenValue);
+        this.tx.notify(cluster, generateActionTokenEventId(), event, false);
+    }
+
+    private static String generateActionTokenEventId() {
+        return InfinispanActionTokenStoreProviderFactory.ACTION_TOKEN_EVENTS + "/" + UUID.randomUUID();
     }
 
     @Override
@@ -93,6 +98,6 @@ public class InfinispanActionTokenStoreProvider implements ActionTokenStoreProvi
         }
 
         ClusterProvider cluster = session.getProvider(ClusterProvider.class);
-        this.tx.notify(cluster, InfinispanActionTokenStoreProviderFactory.ACTION_TOKEN_EVENTS, new RemoveActionTokensSpecificEvent(userId, actionId), false);
+        this.tx.notify(cluster, generateActionTokenEventId(), new RemoveActionTokensSpecificEvent(userId, actionId), false);
     }
 }

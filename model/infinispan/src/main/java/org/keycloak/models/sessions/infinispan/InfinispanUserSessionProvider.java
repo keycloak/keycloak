@@ -22,7 +22,6 @@ import org.infinispan.CacheStream;
 import org.infinispan.context.Flag;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
-import org.keycloak.models.ClientInitialAccessModel;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -32,23 +31,19 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.session.UserSessionPersisterProvider;
-import org.keycloak.models.sessions.infinispan.entities.ClientInitialAccessEntity;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
-import org.keycloak.models.sessions.infinispan.stream.ClientInitialAccessPredicate;
 import org.keycloak.models.sessions.infinispan.stream.Comparators;
 import org.keycloak.models.sessions.infinispan.stream.Mappers;
 import org.keycloak.models.sessions.infinispan.stream.SessionPredicate;
 import org.keycloak.models.sessions.infinispan.stream.UserLoginFailurePredicate;
 import org.keycloak.models.sessions.infinispan.stream.UserSessionPredicate;
-import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -271,7 +266,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         log.debugf("Removing expired sessions");
         removeExpiredUserSessions(realm);
         removeExpiredOfflineUserSessions(realm);
-        removeExpiredClientInitialAccess(realm);
     }
 
     private void removeExpiredUserSessions(RealmModel realm) {
@@ -315,14 +309,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         }
 
         log.debugf("Removed %d expired offline user sessions for realm '%s'", counter, realm.getName());
-    }
-
-    private void removeExpiredClientInitialAccess(RealmModel realm) {
-        Iterator<String> itr = sessionCache.getAdvancedCache().withFlags(Flag.CACHE_MODE_LOCAL)
-                .entrySet().stream().filter(ClientInitialAccessPredicate.create(realm.getId()).expired(Time.currentTime())).map(Mappers.sessionId()).iterator();
-        while (itr.hasNext()) {
-            tx.remove(sessionCache, itr.next());
-        }
     }
 
     @Override
@@ -415,19 +401,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
             models.add(wrap(realm, e, offline));
         }
         return models;
-    }
-
-    List<ClientInitialAccessModel> wrapClientInitialAccess(RealmModel realm, Collection<ClientInitialAccessEntity> entities) {
-        List<ClientInitialAccessModel> models = new LinkedList<>();
-        for (ClientInitialAccessEntity e : entities) {
-            models.add(wrap(realm, e));
-        }
-        return models;
-    }
-
-    ClientInitialAccessAdapter wrap(RealmModel realm, ClientInitialAccessEntity entity) {
-        Cache<String, SessionEntity> cache = getCache(false);
-        return entity != null ? new ClientInitialAccessAdapter(session, this, cache, realm, entity) : null;
     }
 
     UserLoginFailureModel wrap(LoginFailureKey key, LoginFailureEntity entity) {
@@ -563,50 +536,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         importedUserSession.update();
 
         return new AuthenticatedClientSessionAdapter(entity, clientSession.getClient(), importedUserSession, this, importedUserSession.getCache());
-    }
-
-    @Override
-    public ClientInitialAccessModel createClientInitialAccessModel(RealmModel realm, int expiration, int count) {
-        String id = KeycloakModelUtils.generateId();
-
-        ClientInitialAccessEntity entity = new ClientInitialAccessEntity();
-        entity.setId(id);
-        entity.setRealm(realm.getId());
-        entity.setTimestamp(Time.currentTime());
-        entity.setExpiration(expiration);
-        entity.setCount(count);
-        entity.setRemainingCount(count);
-
-        tx.put(sessionCache, id, entity);
-
-        return wrap(realm, entity);
-    }
-
-    @Override
-    public ClientInitialAccessModel getClientInitialAccessModel(RealmModel realm, String id) {
-        Cache<String, SessionEntity> cache = getCache(false);
-        ClientInitialAccessEntity entity = (ClientInitialAccessEntity) tx.get(cache, id); // Chance created in this transaction
-
-        if (entity == null) {
-            entity = (ClientInitialAccessEntity) cache.get(id);
-        }
-
-        return wrap(realm, entity);
-    }
-
-    @Override
-    public void removeClientInitialAccessModel(RealmModel realm, String id) {
-        tx.remove(getCache(false), id);
-    }
-
-    @Override
-    public List<ClientInitialAccessModel> listClientInitialAccess(RealmModel realm) {
-        Iterator<Map.Entry<String, SessionEntity>> itr = sessionCache.entrySet().stream().filter(ClientInitialAccessPredicate.create(realm.getId())).iterator();
-        List<ClientInitialAccessModel> list = new LinkedList<>();
-        while (itr.hasNext()) {
-            list.add(wrap(realm, (ClientInitialAccessEntity) itr.next().getValue()));
-        }
-        return list;
     }
 
 }

@@ -17,21 +17,19 @@
 
 package org.keycloak.models.cache.infinispan.authorization;
 
+import static org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderFactory.REALM_CLEAR_CACHE_EVENTS;
+
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.cache.CacheRealmProvider;
-import org.keycloak.models.cache.CacheRealmProviderFactory;
 import org.keycloak.models.cache.authorization.CachedStoreFactoryProvider;
 import org.keycloak.models.cache.authorization.CachedStoreProviderFactory;
-import org.keycloak.models.cache.infinispan.RealmCacheManager;
-import org.keycloak.models.cache.infinispan.RealmCacheSession;
+import org.keycloak.models.cache.infinispan.ClearCacheEvent;
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 
@@ -59,21 +57,17 @@ public class InfinispanCacheStoreFactoryProviderFactory implements CachedStorePr
                     Cache<String, Revisioned> cache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME);
                     Cache<String, Long> revisions = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_NAME);
                     storeCache = new StoreFactoryCacheManager(cache, revisions);
-
                     ClusterProvider cluster = session.getProvider(ClusterProvider.class);
-                    cluster.registerListener(ClusterProvider.ALL, (ClusterEvent event) -> {
 
+                    cluster.registerListener(ClusterProvider.ALL, (ClusterEvent event) -> {
                         if (event instanceof InvalidationEvent) {
                             InvalidationEvent invalidationEvent = (InvalidationEvent) event;
                             storeCache.invalidationEventReceived(invalidationEvent);
                         }
                     });
 
-                    cluster.registerListener(AUTHORIZATION_CLEAR_CACHE_EVENTS, (ClusterEvent event) -> {
-
-                        storeCache.clear();
-
-                    });
+                    cluster.registerListener(AUTHORIZATION_CLEAR_CACHE_EVENTS, (ClusterEvent event) -> storeCache.clear());
+                    cluster.registerListener(REALM_CLEAR_CACHE_EVENTS, (ClusterEvent event) -> storeCache.clear());
 
                     log.debug("Registered cluster listeners");
                 }

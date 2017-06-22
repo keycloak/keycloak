@@ -18,7 +18,9 @@
 package org.keycloak.testsuite.util;
 
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -175,7 +177,15 @@ public class ClientBuilder {
     }
 
     public ClientBuilder authorizationServicesEnabled(boolean enable) {
-        rep.setAuthorizationServicesEnabled(true);
+        rep.setAuthorizationServicesEnabled(enable);
+        return this;
+    }
+
+    public ClientBuilder protocolMapper(ProtocolMapperRepresentation... mappers) {
+        if (rep.getProtocolMappers() == null) {
+            rep.setProtocolMappers(new ArrayList<>());
+        }
+        rep.getProtocolMappers().addAll(Arrays.asList(mappers));
         return this;
     }
 }
