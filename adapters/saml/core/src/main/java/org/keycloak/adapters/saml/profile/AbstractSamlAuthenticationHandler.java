@@ -364,26 +364,26 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
 
         if (deployment.getIDP().getSingleSignOnService().validateAssertionSignature()) {
             try {
-                validateSamlSignature(new SAMLDocumentHolder(buildAssertionDocument(responseHolder, assertion)), postBinding, GeneralConstants.SAML_RESPONSE_KEY);
-            } catch (VerificationException e) {
-                log.error("Failed to verify saml assertion signature", e);
+                if (!AssertionUtil.isSignatureValid(getAssertionFromResponse(responseHolder), deployment.getIDP().getSignatureValidationKeyLocator())) {
+                    log.error("Failed to verify saml assertion signature");
 
-                challenge = new AuthChallenge() {
+                    challenge = new AuthChallenge() {
 
-                    @Override
-                    public boolean challenge(HttpFacade exchange) {
-                        SamlAuthenticationError error = new SamlAuthenticationError(SamlAuthenticationError.Reason.INVALID_SIGNATURE, responseType);
-                        exchange.getRequest().setError(error);
-                        exchange.getResponse().sendError(403);
-                        return true;
-                    }
+                        @Override
+                        public boolean challenge(HttpFacade exchange) {
+                            SamlAuthenticationError error = new SamlAuthenticationError(SamlAuthenticationError.Reason.INVALID_SIGNATURE, responseType);
+                            exchange.getRequest().setError(error);
+                            exchange.getResponse().sendError(403);
+                            return true;
+                        }
 
-                    @Override
-                    public int getResponseCode() {
-                        return 403;
-                    }
-                };
-                return AuthOutcome.FAILED;
+                        @Override
+                        public int getResponseCode() {
+                            return 403;
+                        }
+                    };
+                    return AuthOutcome.FAILED;
+                }
             } catch (Exception e) {
                 log.error("Error processing validation of SAML assertion: " + e.getMessage());
                 challenge = new AuthChallenge() {
@@ -504,19 +504,16 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
           && Objects.equals(responseType.getStatus().getStatusCode().getValue().toString(), JBossSAMLURIConstants.STATUS_SUCCESS.get());
     }
 
-    private Document buildAssertionDocument(final SAMLDocumentHolder responseHolder, AssertionType assertion) throws ConfigurationException, ProcessingException {
-        Element encryptedAssertion = org.keycloak.saml.common.util.DocumentUtil.getElement(responseHolder.getSamlDocument(), new QName(JBossSAMLConstants.ENCRYPTED_ASSERTION.get()));
+    private Element getAssertionFromResponse(final SAMLDocumentHolder responseHolder) throws ConfigurationException, ProcessingException {
+        Element encryptedAssertion = DocumentUtil.getElement(responseHolder.getSamlDocument(), new QName(JBossSAMLConstants.ENCRYPTED_ASSERTION.get()));
         if (encryptedAssertion != null) {
             // encrypted assertion.
             // We'll need to decrypt it first.
             Document encryptedAssertionDocument = DocumentUtil.createDocument();
             encryptedAssertionDocument.appendChild(encryptedAssertionDocument.importNode(encryptedAssertion, true));
-            Element assertionElement = XMLEncryptionUtil.decryptElementInDocument(encryptedAssertionDocument, deployment.getDecryptionKey());
-            Document assertionDocument = DocumentUtil.createDocument();
-            assertionDocument.appendChild(assertionDocument.importNode(assertionElement, true));
-            return assertionDocument;
+            return XMLEncryptionUtil.decryptElementInDocument(encryptedAssertionDocument, deployment.getDecryptionKey());
         }
-        return AssertionUtil.asDocument(assertion);
+        return DocumentUtil.getElement(responseHolder.getSamlDocument(), new QName(JBossSAMLConstants.ASSERTION.get()));
     }
 
     private String getAttributeValue(Object attrValue) {
