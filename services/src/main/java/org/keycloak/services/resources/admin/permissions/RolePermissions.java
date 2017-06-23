@@ -289,7 +289,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         if (root.evaluatePermission(roleResource, mapRoleScope, resourceServer)) {
             return checkAdminRoles(role);
         } else {
-            return true;
+            return false;
         }
     }
 
@@ -348,7 +348,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
 
     @Override
     public boolean canMapComposite(RoleModel role) {
-        if (canManageDefault(role)) return true;
+        if (canManageDefault(role)) return checkAdminRoles(role);
 
         if (!root.isAdminSameRealm()) {
             return false;
@@ -370,7 +370,11 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
 
         Resource roleResource = resource(role);
         Scope scope = mapCompositeScope(resourceServer);
-        return root.evaluatePermission(roleResource, scope, resourceServer);
+        if (root.evaluatePermission(roleResource, scope, resourceServer)) {
+            return checkAdminRoles(role);
+        } else {
+            return false;
+        }
     }
 
     @Override
