@@ -24,6 +24,7 @@ import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
+import org.keycloak.adapters.exception.RefreshTokenException;
 
 import java.io.Serializable;
 import java.security.Principal;
@@ -77,12 +78,18 @@ public class KeycloakUndertowAccount implements Account, Serializable, OidcKeycl
         }
 
         log.debug("session is not active or refresh is enforced. Try refresh");
-        boolean success = session.refreshExpiredToken(false);
-        if (!success || !session.isActive()) {
+        try {
+            session.refreshExpiredToken(false);
+        } catch (RefreshTokenException e) {
             log.debug("session is not active return with failure");
-
             return false;
         }
+
+        if (!session.isActive()) {
+            log.debug("session is not active return with failure");
+            return false;
+        }
+
         log.debug("refresh succeeded");
 
         setRoles(session);

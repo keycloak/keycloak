@@ -27,6 +27,7 @@ import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.RequestAuthenticator;
+import org.keycloak.adapters.exception.RefreshTokenException;
 import org.keycloak.adapters.spi.AdapterSessionStore;
 
 import javax.servlet.http.HttpSession;
@@ -63,8 +64,12 @@ public class JettySessionTokenStore implements AdapterTokenStore {
 
         // FYI: A refresh requires same scope, so same roles will be set.  Otherwise, refresh will fail and token will
         // not be updated
-        boolean success = session.refreshExpiredToken(false);
-        if (success && session.isActive()) return;
+        try {
+            session.refreshExpiredToken(false);
+            if (session.isActive()) return;
+        } catch (RefreshTokenException e) {
+            // do nothing
+        }
 
         // Refresh failed, so user is already logged out from keycloak. Cleanup and expire our session
         request.getSession().removeAttribute(KeycloakSecurityContext.class.getName());

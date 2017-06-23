@@ -28,6 +28,7 @@ import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.RequestAuthenticator;
+import org.keycloak.adapters.exception.RefreshTokenException;
 import org.keycloak.adapters.spi.HttpFacade;
 
 import java.util.Set;
@@ -126,10 +127,12 @@ public class CatalinaCookieTokenStore implements AdapterTokenStore {
         RefreshableKeycloakSecurityContext session = principal.getKeycloakSecurityContext();
 
         if (session.isActive() && !session.getDeployment().isAlwaysRefreshToken()) return principal;
-        boolean success = session.refreshExpiredToken(false);
-        if (success && session.isActive()) return principal;
-
-        log.fine("Cleanup and expire cookie for user " + principal.getName() + " after failed refresh");
+        try {
+            session.refreshExpiredToken(false);
+            if (session.isActive()) return principal;
+        } catch (RefreshTokenException e) {
+            log.fine("Cleanup and expire cookie for user " + principal.getName() + " after failed refresh ( " + e.getError() + " )");
+        }
         request.setUserPrincipal(null);
         request.setAuthType(null);
         CookieTokenStore.removeCookie(facade);

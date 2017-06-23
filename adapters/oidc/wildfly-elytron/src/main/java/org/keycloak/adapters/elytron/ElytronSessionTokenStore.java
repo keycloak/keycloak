@@ -31,6 +31,7 @@ import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.RequestAuthenticator;
+import org.keycloak.adapters.exception.RefreshTokenException;
 import org.wildfly.security.http.HttpScope;
 import org.wildfly.security.http.HttpScopeNotification;
 import org.wildfly.security.http.Scope;
@@ -64,9 +65,12 @@ public class ElytronSessionTokenStore implements ElytronTokeStore {
 
         // FYI: A refresh requires same scope, so same roles will be set.  Otherwise, refresh will fail and token will
         // not be updated
-        boolean success = securityContext.refreshExpiredToken(false);
-        if (success && securityContext.isActive()) return;
-
+        try {
+            securityContext.refreshExpiredToken(false);
+            if (securityContext.isActive()) return;
+        } catch (RefreshTokenException e) {
+            // do nothing
+        }
         // Refresh failed, so user is already logged out from keycloak. Cleanup and expire our session
         session.setAttachment(KeycloakSecurityContext.class.getName(), null);
         session.invalidate();

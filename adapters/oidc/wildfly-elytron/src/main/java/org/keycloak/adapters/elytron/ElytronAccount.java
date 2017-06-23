@@ -24,6 +24,7 @@ import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
+import org.keycloak.adapters.exception.RefreshTokenException;
 import org.wildfly.security.auth.server.SecurityIdentity;
 
 import javax.security.auth.callback.CallbackHandler;
@@ -85,9 +86,12 @@ public class ElytronAccount implements OidcKeycloakAccount {
 
         if (securityContext == null) {
             log.debug("No security context. Aborting refresh.");
+            return false;
         }
 
-        if (securityContext.refreshExpiredToken(false)) {
+        try {
+            securityContext.refreshExpiredToken(false);
+
             SecurityIdentity securityIdentity = SecurityIdentityUtil.authorize(callbackHandler, principal);
 
             if (securityIdentity != null) {
@@ -96,6 +100,9 @@ public class ElytronAccount implements OidcKeycloakAccount {
             }
 
             return false;
+
+        } catch (RefreshTokenException e) {
+            // do nothing
         }
 
         return checkActive();

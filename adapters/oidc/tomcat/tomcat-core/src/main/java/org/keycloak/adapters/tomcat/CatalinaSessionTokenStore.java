@@ -26,6 +26,7 @@ import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.RequestAuthenticator;
+import org.keycloak.adapters.exception.RefreshTokenException;
 
 import java.io.Serializable;
 import java.security.Principal;
@@ -78,20 +79,21 @@ public class CatalinaSessionTokenStore extends CatalinaAdapterSessionStore imple
 
         // FYI: A refresh requires same scope, so same roles will be set.  Otherwise, refresh will fail and token will
         // not be updated
-        boolean success = session.refreshExpiredToken(false);
-        if (success && session.isActive()) {
-            request.setAttribute(KeycloakSecurityContext.class.getName(), session);
-            request.setUserPrincipal(account.getPrincipal());
-            request.setAuthType("KEYCLOAK");
-            return;
+        try {
+            session.refreshExpiredToken(false);
+            if (session.isActive()) {
+                request.setAttribute(KeycloakSecurityContext.class.getName(), session);
+                request.setUserPrincipal(account.getPrincipal());
+                request.setAuthType("KEYCLOAK");
+            }
+        } catch (RefreshTokenException e) {
+            // Refresh failed, so user is already logged out from keycloak. Cleanup and expire our session
+            log.fine("Cleanup and expire session " + catalinaSession.getId() + " after failed refresh ( " + e.getError() + " )");
+            request.setUserPrincipal(null);
+            request.setAuthType(null);
+            cleanSession(catalinaSession);
+            catalinaSession.expire();
         }
-
-        // Refresh failed, so user is already logged out from keycloak. Cleanup and expire our session
-        log.fine("Cleanup and expire session " + catalinaSession.getId() + " after failed refresh");
-        request.setUserPrincipal(null);
-        request.setAuthType(null);
-        cleanSession(catalinaSession);
-        catalinaSession.expire();
     }
 
     protected void cleanSession(Session catalinaSession) {
