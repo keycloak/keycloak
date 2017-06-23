@@ -41,7 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @version $Revision: 1 $
  */
 public class UserAdapter implements CachedUserModel {
-    protected UserModel updated;
+    protected volatile UserModel updated;
     protected CachedUser cached;
     protected UserCacheSession userProviderCache;
     protected KeycloakSession keycloakSession;
