@@ -64,6 +64,11 @@
         <auth.server.jboss.skip.unpack>${auth.server.undertow}</auth.server.jboss.skip.unpack>
         <auth.server.jboss.startup.timeout>300</auth.server.jboss.startup.timeout>
         
+        <!--debug properties-->
+        <auth.server.debug.port>5005</auth.server.debug.port>
+        <auth.server.debug.suspend>n</auth.server.debug.suspend>
+        <auth.server.jboss.jvm.debug.args>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${auth.server.debug.suspend},address=${auth.server.host}:${auth.server.debug.port}</auth.server.jboss.jvm.debug.args>
+        
         <auth.server.remote>false</auth.server.remote>
         <auth.server.profile/>
         <auth.server.feature/>
@@ -226,6 +231,7 @@
                             <auth.server.config.property.name>${auth.server.config.property.name}</auth.server.config.property.name>
                             <auth.server.config.property.value>${auth.server.config.property.value}</auth.server.config.property.value>
                             <auth.server.adapter.impl.class>${auth.server.adapter.impl.class}</auth.server.adapter.impl.class>
+                            <auth.server.jboss.jvm.debug.args>${auth.server.jboss.jvm.debug.args}</auth.server.jboss.jvm.debug.args>
                             
                             <auth.server.profile>${auth.server.profile}</auth.server.profile>
                             <auth.server.feature>${auth.server.feature}</auth.server.feature>

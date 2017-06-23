@@ -164,6 +164,8 @@ public class TestingResourceProvider implements RealmResourceProvider {
 
         session.sessions().removeExpired(realm);
         session.authenticationSessions().removeExpired(realm);
+        session.realms().removeExpiredClientInitialAccess();
+
         return Response.ok().build();
     }
 

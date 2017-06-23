@@ -72,11 +72,6 @@ public interface UserSessionProvider extends Provider {
     /** Triggered by persister during pre-load. It optionally imports authenticatedClientSessions too if requested. Otherwise the imported UserSession will have empty list of AuthenticationSessionModel **/
     UserSessionModel importUserSession(UserSessionModel persistentUserSession, boolean offline, boolean importAuthenticatedClientSessions);
 
-    ClientInitialAccessModel createClientInitialAccessModel(RealmModel realm, int expiration, int count);
-    ClientInitialAccessModel getClientInitialAccessModel(RealmModel realm, String id);
-    void removeClientInitialAccessModel(RealmModel realm, String id);
-    List<ClientInitialAccessModel> listClientInitialAccess(RealmModel realm);
-
     void close();
 
 }

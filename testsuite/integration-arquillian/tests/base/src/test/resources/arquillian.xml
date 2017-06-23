@@ -74,6 +74,7 @@
                 ${auth.server.feature}
             </property>
             <property name="javaVmArguments">
+                ${auth.server.jboss.jvm.debug.args}
                 ${auth.server.memory.settings}
                 -Djava.net.preferIPv4Stack=true
             </property>

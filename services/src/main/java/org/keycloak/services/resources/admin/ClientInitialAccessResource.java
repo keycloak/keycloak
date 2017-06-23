@@ -81,7 +81,7 @@ public class ClientInitialAccessResource {
         int expiration = config.getExpiration() != null ? config.getExpiration() : 0;
         int count = config.getCount() != null ? config.getCount() : 1;
 
-        ClientInitialAccessModel clientInitialAccessModel = session.sessions().createClientInitialAccessModel(realm, expiration, count);
+        ClientInitialAccessModel clientInitialAccessModel = session.realms().createClientInitialAccessModel(realm, expiration, count);
 
         adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, clientInitialAccessModel.getId()).representation(config).success();
 
@@ -101,7 +101,7 @@ public class ClientInitialAccessResource {
     public List<ClientInitialAccessPresentation> list() {
         auth.clients().requireView();
 
-        List<ClientInitialAccessModel> models = session.sessions().listClientInitialAccess(realm);
+        List<ClientInitialAccessModel> models = session.realms().listClientInitialAccess(realm);
         List<ClientInitialAccessPresentation> reps = new LinkedList<>();
         for (ClientInitialAccessModel m : models) {
             ClientInitialAccessPresentation r = wrap(m);
@@ -115,7 +115,7 @@ public class ClientInitialAccessResource {
     public void delete(final @PathParam("id") String id) {
         auth.clients().requireManage();
 
-        session.sessions().removeClientInitialAccessModel(realm, id);
+        session.realms().removeClientInitialAccessModel(realm, id);
         adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
     }
 

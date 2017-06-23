@@ -49,11 +49,12 @@ import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.saml.v2.writers.SAMLAssertionWriter;
 import org.keycloak.saml.processing.core.util.JAXPValidationUtil;
 import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
-
+import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
+import javax.xml.crypto.dsig.XMLSignature;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
 import java.io.ByteArrayInputStream;
@@ -267,42 +268,56 @@ public class AssertionUtil {
     }
 
     /**
-     * Given an assertion element, validate the signature
+     * Given an {@linkplain Element}, validate the Signature direct child element
      *
-     * @param assertionElement
+     * @param element parent {@linkplain Element}
      * @param publicKey the {@link PublicKey}
      *
-     * @return
+     * @return true if signature is present and valid
      */
-    public static boolean isSignatureValid(Element assertionElement, PublicKey publicKey) {
-        try {
-            Document doc = DocumentUtil.createDocument();
-            Node n = doc.importNode(assertionElement, true);
-            doc.appendChild(n);
-
-            return new SAML2Signature().validate(doc, new HardcodedKeyLocator(publicKey));
-        } catch (Exception e) {
-            logger.signatureAssertionValidationError(e);
-        }
-        return false;
+    public static boolean isSignatureValid(Element element, PublicKey publicKey) {
+        return isSignatureValid(element, new HardcodedKeyLocator(publicKey));
     }
 
     /**
-     * Given an assertion element, validate the signature.
+     * Given an {@linkplain Element}, validate the Signature direct child element
+     *
+     * @param element parent {@linkplain Element}
+     * @param keyLocator the {@link KeyLocator}
+     *
+     * @return true if signature is present and valid
      */
-    public static boolean isSignatureValid(Element assertionElement, KeyLocator keyLocator) {
+    
+    public static boolean isSignatureValid(Element element, KeyLocator keyLocator) {
         try {
-            Document doc = DocumentUtil.createDocument();
-            Node n = doc.importNode(assertionElement, true);
-            doc.appendChild(n);
-
-            return new SAML2Signature().validate(doc, keyLocator);
+            SAML2Signature.configureIdAttribute(element);
+            
+            Element signature = getSignature(element);
+            if(signature != null) {
+                return XMLSignatureUtil.validateSingleNode(signature, keyLocator);
+            }
         } catch (Exception e) {
             logger.signatureAssertionValidationError(e);
         }
         return false;
     }
+    
+    /**
+     * 
+     * Given an {@linkplain Element}, check if there is a Signature direct child element
+     * 
+     * @param element parent {@linkplain Element}
+     * @return true if signature is present
+     */
 
+    public static boolean isSignedElement(Element element) {
+        return getSignature(element) != null;
+    }
+    
+    protected static Element getSignature(Element element) {
+        return DocumentUtil.getDirectChildElement(element, XMLSignature.XMLNS, "Signature");
+    }
+    
     /**
      * Check whether the assertion has expired
      *
@@ -570,8 +585,8 @@ public class AssertionUtil {
 
     /**
      * This method modifies the given responseType, and replaces the encrypted assertion with a decrypted version.
-     *
-     * It returns the assertion element as it was decrypted. This can be used in sginature verification.
+     * @param responseType a response containg an encrypted assertion
+     * @return the assertion element as it was decrypted. This can be used in signature verification.
      */
     public static Element decryptAssertion(ResponseType responseType, PrivateKey privateKey) throws ParsingException, ProcessingException, ConfigurationException {
         SAML2Response saml2Response = new SAML2Response();
