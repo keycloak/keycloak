@@ -91,6 +91,8 @@ public class KeycloakDeployment {
     // https://tools.ietf.org/html/rfc7636
     protected boolean pkce = false;
     protected boolean ignoreOAuthQueryParameter;
+    
+    protected Map<String, String> redirectRewriteRules;
 
     public KeycloakDeployment() {
     }
@@ -446,4 +448,14 @@ public class KeycloakDeployment {
     public boolean isOAuthQueryParameterEnabled() {
         return !this.ignoreOAuthQueryParameter;
     }
+
+    public Map<String, String> getRedirectRewriteRules() {
+        return redirectRewriteRules;
+    }
+
+    public void setRewriteRedirectRules(Map<String, String> redirectRewriteRules) {
+        this.redirectRewriteRules = redirectRewriteRules;
+    }
+    
+    
 }
