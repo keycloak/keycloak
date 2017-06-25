@@ -294,6 +294,10 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
         if (identity == null) {
             throw new RuntimeException("Identity of admin is not set for permission query");
         }
+        return evaluatePermission(resource, scope, resourceServer, identity);
+    }
+
+    public boolean evaluatePermission(Resource resource, Scope scope, ResourceServer resourceServer, Identity identity) {
         RealmModel oldRealm = session.getContext().getRealm();
         try {
             session.getContext().setRealm(realm);

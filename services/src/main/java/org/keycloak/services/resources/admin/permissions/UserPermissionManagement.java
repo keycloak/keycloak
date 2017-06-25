@@ -43,5 +43,7 @@ public interface UserPermissionManagement {
 
     Policy mapRolesPermission();
 
-    Policy impersonatePermission();
+    Policy adminImpersonatingPermission();
+
+    Policy userImpersonatedPermission();
 }

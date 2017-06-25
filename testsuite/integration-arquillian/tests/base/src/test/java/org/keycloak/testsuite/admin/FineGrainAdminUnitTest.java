@@ -25,6 +25,7 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
@@ -160,6 +161,19 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         {
             permissions.clients().setPermissionsEnabled(client1, true);
         }
+        // setup Users impersonate policy
+        {
+            ClientModel realmManagementClient = realm.getClientByClientId("realm-management");
+            RoleModel adminRole = realmManagementClient.getRole(AdminRoles.REALM_ADMIN);
+            permissions.users().setPermissionsEnabled(true);
+            ResourceServer server = permissions.realmResourceServer();
+            Policy adminPolicy = permissions.roles().rolePolicy(server, adminRole);
+            adminPolicy.setLogic(Logic.NEGATIVE);
+            Policy permission = permissions.users().userImpersonatedPermission();
+            permission.addAssociatedPolicy(adminPolicy);
+            permission.setDecisionStrategy(DecisionStrategy.UNANIMOUS);
+        }
+
 
     }
 
@@ -182,6 +196,11 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         nomapAdmin.setEnabled(true);
         session.userCredentialManager().updateCredential(realm, nomapAdmin, UserCredentialModel.password("password"));
         nomapAdmin.grantRole(adminRole);
+
+        UserModel anotherAdmin = session.users().addUser(realm, "anotherAdmin");
+        anotherAdmin.setEnabled(true);
+        session.userCredentialManager().updateCredential(realm, anotherAdmin, UserCredentialModel.password("password"));
+        anotherAdmin.grantRole(adminRole);
 
         UserModel authorizedUser = session.users().addUser(realm, "authorized");
         authorizedUser.setEnabled(true);
@@ -372,6 +391,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         testingClient.server().run(FineGrainAdminUnitTest::setupUsers);
 
         UserRepresentation user1 = adminClient.realm(TEST).users().search("user1").get(0);
+        UserRepresentation anotherAdmin = adminClient.realm(TEST).users().search("anotherAdmin").get(0);
         UserRepresentation groupMember = adminClient.realm(TEST).users().search("groupMember").get(0);
         RoleRepresentation realmRole = adminClient.realm(TEST).roles().get("realm-role").toRepresentation();
         List<RoleRepresentation> realmRoleSet = new LinkedList<>();
@@ -383,6 +403,24 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         RoleRepresentation clientRole = adminClient.realm(TEST).clients().get(client.getId()).roles().get("client-role").toRepresentation();
         List<RoleRepresentation> clientRoleSet = new LinkedList<>();
         clientRoleSet.add(clientRole);
+
+        // test illegal impersonation
+        {
+            Keycloak realmClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
+                    TEST, "nomap-admin", "password", Constants.ADMIN_CLI_CLIENT_ID, null);
+            realmClient.realm(TEST).users().get(user1.getId()).impersonate();
+            realmClient.close(); // just in case of cookie settings
+            realmClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
+                    TEST, "nomap-admin", "password", Constants.ADMIN_CLI_CLIENT_ID, null);
+            try {
+                realmClient.realm(TEST).users().get(anotherAdmin.getId()).impersonate();
+                Assert.fail("should fail with forbidden exception");
+            } catch (ClientErrorException e) {
+                Assert.assertEquals(e.getResponse().getStatus(), 403);
+
+            }
+
+        }
 
 
         {
