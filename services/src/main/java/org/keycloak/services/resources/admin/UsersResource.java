@@ -871,7 +871,7 @@ public class UsersResource {
         ClientModel client = realm.getClientByClientId(clientId);
         if (client == null || !client.isEnabled()) {
             throw new WebApplicationException(
-                ErrorResponse.error(clientId + " not enabled", Response.Status.BAD_REQUEST));
+                ErrorResponse.error("The \"" + clientId + "\" client is not enabled.", Response.Status.BAD_REQUEST));
         }
 
         String redirect;
