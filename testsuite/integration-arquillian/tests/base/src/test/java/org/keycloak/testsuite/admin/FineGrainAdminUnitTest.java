@@ -387,7 +387,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
     protected boolean isImportAfterEachMethod() {
         return true;
     }
-    @Test
+    //@Test
     public void testDemo() throws Exception {
         testingClient.server().run(FineGrainAdminUnitTest::setupDemo);
         Thread.sleep(1000000000);
