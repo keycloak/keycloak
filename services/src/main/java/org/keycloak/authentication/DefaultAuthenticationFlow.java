@@ -121,7 +121,20 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
             if (model.isAuthenticatorFlow()) {
                 logger.debug("execution is flow");
                 AuthenticationFlow authenticationFlow = processor.createFlowExecution(model.getFlowId(), model);
-                Response flowChallenge = authenticationFlow.processFlow();
+
+                Response flowChallenge = null;
+                try {
+                    flowChallenge = authenticationFlow.processFlow();
+                } catch (AuthenticationFlowException afe) {
+                    if (model.isAlternative()) {
+                        logger.debug("Thrown exception in alternative Subflow. Ignoring Subflow");
+                        processor.getAuthenticationSession().setExecutionStatus(model.getId(), AuthenticationSessionModel.ExecutionStatus.ATTEMPTED);
+                        continue;
+                    } else {
+                        throw afe;
+                    }
+                }
+
                 if (flowChallenge == null) {
                     processor.getAuthenticationSession().setExecutionStatus(model.getId(), AuthenticationSessionModel.ExecutionStatus.SUCCESS);
                     if (model.isAlternative()) alternativeSuccessful = true;
@@ -183,7 +196,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
 //            if (redirect != null) return redirect;
 
             AuthenticationProcessor.Result context = processor.createAuthenticatorContext(model, authenticator, executions);
-            logger.debug("invoke authenticator.authenticate");
+            logger.debugv("invoke authenticator.authenticate: {0}", factory.getId());
             authenticator.authenticate(context);
             Response response = processResult(context, false);
             if (response != null) return response;
