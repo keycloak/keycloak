@@ -34,7 +34,6 @@ import javax.mail.internet.MimeMessage;
 import javax.ws.rs.core.Response;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
@@ -45,7 +44,6 @@ import org.keycloak.testsuite.arquillian.InfinispanStatistics.Constants;
 import java.util.concurrent.TimeUnit;
 import org.hamcrest.Matchers;
 import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -117,21 +115,23 @@ public class ActionTokenCrossDCTest extends AbstractAdminCrossDCTest {
           old -> greaterThan((Comparable) 0l)
         );
 
-        // Verify that the caches are synchronized
-        assertThat(cacheDc0Node0Statistics.getSingleStatistics(Constants.STAT_CACHE_NUMBER_OF_ENTRIES), greaterThan(originalNumberOfEntries));
-        assertThat(cacheDc0Node0Statistics.getSingleStatistics(Constants.STAT_CACHE_NUMBER_OF_ENTRIES),
-                is(cacheDc1Node0Statistics.getSingleStatistics(Constants.STAT_CACHE_NUMBER_OF_ENTRIES)));
-
         assertEquals("Your account has been updated.", driver.getTitle());
+
+        // Verify that there was an action token added in the node which was targetted by the link
+        assertThat(cacheDc0Node0Statistics.getSingleStatistics(Constants.STAT_CACHE_NUMBER_OF_ENTRIES), greaterThan(originalNumberOfEntries));
 
         disableDcOnLoadBalancer(0);
         enableDcOnLoadBalancer(1);
 
-        driver.navigate().to(link);
+        // Make sure that after going to the link, the invalidated action token has been retrieved from Infinispan server cluster in the other DC
+        assertSingleStatistics(cacheDc1Node0Statistics, Constants.STAT_CACHE_NUMBER_OF_ENTRIES,
+          () -> driver.navigate().to(link),
+          Matchers::greaterThan
+        );
+
         errorPage.assertCurrent();
     }
 
-    @Ignore("KEYCLOAK-5030")
     @Test
     public void sendResetPasswordEmailAfterNewNodeAdded() throws IOException, MessagingException {
         disableDcOnLoadBalancer(1);

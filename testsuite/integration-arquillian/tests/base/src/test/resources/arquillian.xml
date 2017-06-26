@@ -224,7 +224,7 @@
                 <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.lb.SimpleUndertowLoadBalancerContainer</property>
                 <property name="bindAddress">localhost</property>
                 <property name="bindHttpPort">${auth.server.http.port}</property>
-                <property name="nodes">auth-server-undertow-cross-dc-0.1=http://localhost:8101,auth-server-undertow-cross-dc-0.2-manual=http://localhost:8102,auth-server-undertow-cross-dc-1.1=http://localhost:8111,auth-server-undertow-cross-dc-1.2-manual=http://localhost:8112</property>
+                <property name="nodes">auth-server-undertow-cross-dc-0_1=http://localhost:8101,auth-server-undertow-cross-dc-0_2-manual=http://localhost:8102,auth-server-undertow-cross-dc-1_1=http://localhost:8111,auth-server-undertow-cross-dc-1_2-manual=http://localhost:8112</property>
             </configuration>
         </container>
 

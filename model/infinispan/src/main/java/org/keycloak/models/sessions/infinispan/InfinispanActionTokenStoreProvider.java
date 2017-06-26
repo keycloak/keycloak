@@ -17,13 +17,14 @@
 package org.keycloak.models.sessions.infinispan;
 
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.*;
 
-import org.keycloak.models.cache.infinispan.events.AddInvalidatedActionTokenEvent;
 import org.keycloak.models.cache.infinispan.events.RemoveActionTokensSpecificEvent;
 import org.keycloak.models.sessions.infinispan.entities.ActionTokenValueEntity;
 import org.keycloak.models.sessions.infinispan.entities.ActionTokenReducedKey;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import org.infinispan.Cache;
 
 /**
@@ -57,9 +58,7 @@ public class InfinispanActionTokenStoreProvider implements ActionTokenStoreProvi
         ActionTokenReducedKey tokenKey = new ActionTokenReducedKey(key.getUserId(), key.getActionId(), key.getActionVerificationNonce());
         ActionTokenValueEntity tokenValue = new ActionTokenValueEntity(notes);
 
-        ClusterProvider cluster = session.getProvider(ClusterProvider.class);
-        AddInvalidatedActionTokenEvent event = new AddInvalidatedActionTokenEvent(tokenKey, key.getExpiration(), tokenValue);
-        this.tx.notify(cluster, generateActionTokenEventId(), event, false);
+        this.tx.put(actionKeyCache, tokenKey, tokenValue, key.getExpiration() - Time.currentTime(), TimeUnit.SECONDS);
     }
 
     private static String generateActionTokenEventId() {
@@ -92,6 +91,7 @@ public class InfinispanActionTokenStoreProvider implements ActionTokenStoreProvi
         return value;
     }
 
+    @Override
     public void removeAll(String userId, String actionId) {
         if (userId == null || actionId == null) {
             return;

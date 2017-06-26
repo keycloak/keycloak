@@ -19,16 +19,16 @@ package org.keycloak.models.sessions.infinispan;
 import org.keycloak.Config;
 import org.keycloak.Config.Scope;
 import org.keycloak.cluster.ClusterProvider;
-import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.*;
 
-import org.keycloak.models.cache.infinispan.events.AddInvalidatedActionTokenEvent;
 import org.keycloak.models.cache.infinispan.events.RemoveActionTokensSpecificEvent;
 import org.keycloak.models.sessions.infinispan.entities.ActionTokenValueEntity;
 import org.keycloak.models.sessions.infinispan.entities.ActionTokenReducedKey;
+import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import org.infinispan.AdvancedCache;
 import org.infinispan.Cache;
 import org.infinispan.context.Flag;
 import org.infinispan.remoting.transport.Address;
@@ -76,22 +76,17 @@ public class InfinispanActionTokenStoreProviderFactory implements ActionTokenSto
 
                 LOG.debugf("[%s] Removing token invalidation for user+action: userId=%s, actionId=%s", cacheAddress, e.getUserId(), e.getActionId());
 
-                cache
+                AdvancedCache<ActionTokenReducedKey, ActionTokenValueEntity> localCache = cache
                   .getAdvancedCache()
-                  .withFlags(Flag.CACHE_MODE_LOCAL, Flag.SKIP_CACHE_LOAD)
+                  .withFlags(Flag.CACHE_MODE_LOCAL, Flag.SKIP_CACHE_LOAD);
+
+                List<ActionTokenReducedKey> toRemove = localCache
                   .keySet()
                   .stream()
                   .filter(k -> Objects.equals(k.getUserId(), e.getUserId()) && Objects.equals(k.getActionId(), e.getActionId()))
-                  .forEach(cache::remove);
-            } else if (event instanceof AddInvalidatedActionTokenEvent) {
-                AddInvalidatedActionTokenEvent e = (AddInvalidatedActionTokenEvent) event;
+                  .collect(Collectors.toList());
 
-                LOG.debugf("[%s] Invalidating token %s", cacheAddress, e.getKey());
-                if (e.getExpirationInSecs() == DEFAULT_CACHE_EXPIRATION) {
-                    cache.put(e.getKey(), e.getTokenValue());
-                } else {
-                    cache.put(e.getKey(), e.getTokenValue(), e.getExpirationInSecs() - Time.currentTime(), TimeUnit.SECONDS);
-                }
+                toRemove.forEach(localCache::remove);
             }
         });
 
