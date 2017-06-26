@@ -82,11 +82,11 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
     public void getClientWithRegistrationToken() throws ClientRegistrationException {
         ClientRepresentation rep = reg.get(client.getClientId());
         assertNotNull(rep);
-        assertNotEquals(client.getRegistrationAccessToken(), rep.getRegistrationAccessToken());
+        assertEquals(client.getRegistrationAccessToken(), rep.getRegistrationAccessToken());
+        assertNotNull(rep.getRegistrationAccessToken());
 
-        // check registration access token is updated
-        assertRead(client.getClientId(), client.getRegistrationAccessToken(), false);
-        assertRead(client.getClientId(), rep.getRegistrationAccessToken(), true);
+        // KEYCLOAK-4984 check registration access token is not updated
+        assertRead(client.getClientId(), client.getRegistrationAccessToken(), true);
     }
 
     @Test
