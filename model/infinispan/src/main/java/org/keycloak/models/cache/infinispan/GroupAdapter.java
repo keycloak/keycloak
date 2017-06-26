@@ -35,7 +35,7 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class GroupAdapter implements GroupModel {
-    protected GroupModel updated;
+    protected volatile GroupModel updated;
     protected CachedGroup cached;
     protected RealmCacheSession cacheSession;
     protected KeycloakSession keycloakSession;
@@ -56,7 +56,7 @@ public class GroupAdapter implements GroupModel {
         }
     }
 
-    protected boolean invalidated;
+    protected volatile boolean invalidated;
     public void invalidate() {
         invalidated = true;
     }

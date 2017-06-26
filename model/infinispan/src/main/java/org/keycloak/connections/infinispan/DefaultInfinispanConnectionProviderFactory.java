@@ -248,7 +248,14 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         cacheManager.defineConfiguration(InfinispanConnectionProvider.KEYS_CACHE_NAME, getKeysCacheConfig());
         cacheManager.getCache(InfinispanConnectionProvider.KEYS_CACHE_NAME, true);
 
-        cacheManager.defineConfiguration(InfinispanConnectionProvider.ACTION_TOKEN_CACHE, getActionTokenCacheConfig());
+        final ConfigurationBuilder actionTokenCacheConfigBuilder = getActionTokenCacheConfig();
+        if (clustered) {
+            actionTokenCacheConfigBuilder.clustering().cacheMode(async ? CacheMode.REPL_ASYNC : CacheMode.REPL_SYNC);
+        }
+        if (jdgEnabled) {
+            configureRemoteActionTokenCacheStore(actionTokenCacheConfigBuilder, async);
+        }
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.ACTION_TOKEN_CACHE, actionTokenCacheConfigBuilder.build());
         cacheManager.getCache(InfinispanConnectionProvider.ACTION_TOKEN_CACHE, true);
 
         long authzRevisionsMaxEntries = cacheManager.getCache(InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME).getCacheConfiguration().eviction().maxEntries();
@@ -301,6 +308,30 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
     }
 
+    private void configureRemoteActionTokenCacheStore(ConfigurationBuilder builder, boolean async) {
+        String jdgServer = config.get("remoteStoreServer", "localhost");
+        Integer jdgPort = config.getInt("remoteStorePort", 11222);
+
+        builder.persistence()
+                .passivation(false)
+                .addStore(RemoteStoreConfigurationBuilder.class)
+                    .fetchPersistentState(false)
+                    .ignoreModifications(false)
+                    .purgeOnStartup(false)
+                    .preload(true)
+                    .shared(true)
+                    .remoteCacheName(InfinispanConnectionProvider.ACTION_TOKEN_CACHE)
+                    .rawValues(true)
+                    .forceReturnValues(false)
+                    .marshaller(KeycloakHotRodMarshallerFactory.class.getName())
+                    .addServer()
+                        .host(jdgServer)
+                        .port(jdgPort)
+                    .async()
+                        .enabled(async);
+
+    }
+
     protected Configuration getKeysCacheConfig() {
         ConfigurationBuilder cb = new ConfigurationBuilder();
         cb.eviction().strategy(EvictionStrategy.LRU).type(EvictionType.COUNT).size(InfinispanConnectionProvider.KEYS_CACHE_DEFAULT_MAX);
@@ -308,7 +339,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         return cb.build();
     }
 
-    private Configuration getActionTokenCacheConfig() {
+    private ConfigurationBuilder getActionTokenCacheConfig() {
         ConfigurationBuilder cb = new ConfigurationBuilder();
 
         cb.eviction()
@@ -319,7 +350,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                 .maxIdle(InfinispanConnectionProvider.ACTION_TOKEN_MAX_IDLE_SECONDS, TimeUnit.SECONDS)
                 .wakeUpInterval(InfinispanConnectionProvider.ACTION_TOKEN_WAKE_UP_INTERVAL_SECONDS, TimeUnit.SECONDS);
 
-        return cb.build();
+        return cb;
     }
 
     private static final Object CHANNEL_INIT_SYNCHRONIZER = new Object();
