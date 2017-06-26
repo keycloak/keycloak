@@ -56,12 +56,14 @@ public class PasswordCredentialProvider implements CredentialProvider, Credentia
     }
 
     public CredentialModel getPassword(RealmModel realm, UserModel user) {
-        List<CredentialModel> passwords;
+        List<CredentialModel> passwords = null;
         if (user instanceof CachedUserModel && !((CachedUserModel)user).isMarkedForEviction()) {
             CachedUserModel cached = (CachedUserModel)user;
             passwords = (List<CredentialModel>)cached.getCachedWith().get(PASSWORD_CACHE_KEY);
 
-        } else {
+        }
+        // if the model was marked for eviction while passwords were initialized, override it from credentialStore
+        if (! (user instanceof CachedUserModel) || ((CachedUserModel) user).isMarkedForEviction()) {
             passwords = getCredentialStore().getStoredCredentialsByType(realm, user, CredentialModel.PASSWORD);
         }
         if (passwords == null || passwords.isEmpty()) return null;
@@ -207,8 +209,10 @@ public class PasswordCredentialProvider implements CredentialProvider, Credentia
             return true;
         }
 
-        hash.encode(cred.getValue(), policy.getHashIterations(), password);
-        getCredentialStore().updateCredential(realm, user, password);
+        CredentialModel newPassword = password.shallowClone();
+        hash.encode(cred.getValue(), policy.getHashIterations(), newPassword);
+        getCredentialStore().updateCredential(realm, user, newPassword);
+
         UserCache userCache = session.userCache();
         if (userCache != null) {
             userCache.evict(realm, user);
