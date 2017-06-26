@@ -27,6 +27,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
@@ -41,6 +42,7 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.ClientInstallationProvider;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientTemplateRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -134,7 +136,7 @@ public class ClientResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     public Response update(final ClientRepresentation rep) {
-        auth.clients().requireManage(client);
+        auth.clients().requireConfigure(client);
 
         ValidationMessages validationMessages = new ValidationMessages();
         if (!ClientValidator.validate(rep, validationMessages) || !PairwiseClientValidator.validate(session, rep, validationMessages)) {
@@ -227,7 +229,7 @@ public class ClientResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public CredentialRepresentation regenerateSecret() {
-        auth.clients().requireManage(client);
+        auth.clients().requireConfigure(client);
 
         logger.debug("regenerateSecret");
         UserCredentialModel cred = KeycloakModelUtils.generateSecret(client);
@@ -326,7 +328,7 @@ public class ClientResource {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     public GlobalRequestResult pushRevocation() {
-        auth.clients().requireManage(client);
+        auth.clients().requireConfigure(client);
 
         adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).resource(ResourceType.CLIENT).success();
         return new ResourceAdminManager(session).pushClientRevocationPolicy(uriInfo.getRequestUri(), realm, client);
@@ -456,7 +458,7 @@ public class ClientResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public void registerNode(Map<String, String> formParams) {
-        auth.clients().requireManage(client);
+        auth.clients().requireConfigure(client);
 
         String node = formParams.get("node");
         if (node == null) {
@@ -476,7 +478,7 @@ public class ClientResource {
     @DELETE
     @NoCache
     public void unregisterNode(final @PathParam("node") String node) {
-        auth.clients().requireManage(client);
+        auth.clients().requireConfigure(client);
 
         if (logger.isDebugEnabled()) logger.debug("Unregister node: " + node);
 
@@ -500,7 +502,7 @@ public class ClientResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public GlobalRequestResult testNodesAvailable() {
-        auth.clients().requireManage(client);
+        auth.clients().requireConfigure(client);
 
         logger.debug("Test availability of cluster nodes");
         GlobalRequestResult result = new ResourceAdminManager(session).testNodesAvailability(uriInfo.getRequestUri(), realm, client);
@@ -582,6 +584,30 @@ public class ClientResource {
         if (!rep.getClientId().equals(client.getClientId())) {
             new ClientManager(new RealmManager(session)).clientIdChanged(client, rep.getClientId());
         }
+
+        if (rep.isFullScopeAllowed() != null && rep.isFullScopeAllowed().booleanValue() != client.isFullScopeAllowed()) {
+            auth.clients().requireManage(client);
+        }
+
+        if (rep.getClientTemplate() != null) {
+            ClientTemplateModel currTemplate = client.getClientTemplate();
+            if (currTemplate == null) {
+                if (!rep.getClientTemplate().equals(ClientTemplateRepresentation.NONE)) {
+                    auth.clients().requireManage(client);
+                }
+            }  else if (!rep.getClientTemplate().equals(currTemplate.getName())){
+                auth.clients().requireManage(client);
+            }
+            if ((rep.isUseTemplateConfig() != null && rep.isUseTemplateConfig().booleanValue() != client.useTemplateConfig())
+                    || (rep.isUseTemplateScope() != null && rep.isUseTemplateScope().booleanValue() != client.useTemplateScope())
+                    || (rep.isUseTemplateMappers() != null && rep.isUseTemplateMappers().booleanValue() != client.useTemplateMappers())
+
+                    ) {
+                auth.clients().requireManage(client);
+            }
+        }
+
+
 
         RepresentationToModel.updateClient(rep, client);
     }

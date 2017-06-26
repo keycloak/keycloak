@@ -63,6 +63,9 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
     private String getManagePermissionName(ClientModel client) {
         return "manage.permission.client." + client.getId();
     }
+    private String getConfigurePermissionName(ClientModel client) {
+        return "configure.permission.client." + client.getId();
+    }
     private String getViewPermissionName(ClientModel client) {
         return "view.permission.client." + client.getId();
     }
@@ -98,6 +101,10 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
         if (mapRoleCompositeScope == null) {
             mapRoleCompositeScope = authz.getStoreFactory().getScopeStore().create(MAP_ROLES_COMPOSITE_SCOPE, server);
         }
+        Scope configureScope = authz.getStoreFactory().getScopeStore().findByName(CONFIGURE_SCOPE, server.getId());
+        if (configureScope == null) {
+            configureScope = authz.getStoreFactory().getScopeStore().create(CONFIGURE_SCOPE, server);
+        }
 
         String resourceName = getResourceName(client);
         Resource resource = authz.getStoreFactory().getResourceStore().findByName(resourceName, server.getId());
@@ -105,6 +112,7 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
             resource = authz.getStoreFactory().getResourceStore().create(resourceName, server, server.getClientId());
             resource.setType("Client");
             Set<Scope> scopeset = new HashSet<>();
+            scopeset.add(configureScope);
             scopeset.add(manageScope);
             scopeset.add(viewScope);
             scopeset.add(mapRoleScope);
@@ -116,6 +124,11 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
         Policy managePermission = authz.getStoreFactory().getPolicyStore().findByName(managePermissionName, server.getId());
         if (managePermission == null) {
             Helper.addEmptyScopePermission(authz, server, managePermissionName, resource, manageScope);
+        }
+        String configurePermissionName = getConfigurePermissionName(client);
+        Policy configurePermission = authz.getStoreFactory().getPolicyStore().findByName(configurePermissionName, server.getId());
+        if (configurePermission == null) {
+            Helper.addEmptyScopePermission(authz, server, configurePermissionName, resource, configureScope);
         }
         String viewPermissionName = getViewPermissionName(client);
         Policy viewPermission = authz.getStoreFactory().getPolicyStore().findByName(viewPermissionName, server.getId());
@@ -139,8 +152,8 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
         }
     }
 
-    private void deletePolicy(String name, ClientModel client, ResourceServer server) {
-        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(getViewPermissionName(client), server.getId());
+    private void deletePolicy(String name, ResourceServer server) {
+        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(name, server.getId());
         if (policy != null) {
             authz.getStoreFactory().getPolicyStore().delete(policy.getId());
         }
@@ -150,11 +163,12 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
     private void deletePermissions(ClientModel client) {
         ResourceServer server = resourceServer(client);
         if (server == null) return;
-        deletePolicy(getManagePermissionName(client), client, server);
-        deletePolicy(getViewPermissionName(client), client, server);
-        deletePolicy(getMapRolesPermissionName(client), client, server);
-        deletePolicy(getMapRolesClientScopePermissionName(client), client, server);
-        deletePolicy(getMapRolesCompositePermissionName(client), client, server);
+        deletePolicy(getManagePermissionName(client), server);
+        deletePolicy(getViewPermissionName(client), server);
+        deletePolicy(getMapRolesPermissionName(client), server);
+        deletePolicy(getMapRolesClientScopePermissionName(client), server);
+        deletePolicy(getMapRolesCompositePermissionName(client), server);
+        deletePolicy(getConfigurePermissionName(client), server);
         Resource resource = authz.getStoreFactory().getResourceStore().findByName(getResourceName(client), server.getId());;
         if (resource != null) authz.getStoreFactory().getResourceStore().delete(resource.getId());
     }
@@ -180,6 +194,10 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
 
     private Scope manageScope(ResourceServer server) {
         return authz.getStoreFactory().getScopeStore().findByName(AdminPermissionManagement.MANAGE_SCOPE, server.getId());
+    }
+
+    private Scope configureScope(ResourceServer server) {
+        return authz.getStoreFactory().getScopeStore().findByName(CONFIGURE_SCOPE, server.getId());
     }
 
     private Scope viewScope(ResourceServer server) {
@@ -259,6 +277,7 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
         scopes.put(MAP_ROLES_COMPOSITE_SCOPE, mapRolesCompositePermission(client).getId());
         scopes.put(AdminPermissionManagement.VIEW_SCOPE, viewPermission(client).getId());
         scopes.put(AdminPermissionManagement.MANAGE_SCOPE, managePermission(client).getId());
+        scopes.put(CONFIGURE_SCOPE, configurePermission(client).getId());
         return scopes;
     }
 
@@ -292,6 +311,41 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
     }
 
     @Override
+    public boolean canConfigure(ClientModel client) {
+        if (canManage(client)) return true;
+        if (!root.isAdminSameRealm()) {
+            return false;
+        }
+
+        ResourceServer server = resourceServer(client);
+        if (server == null) return false;
+
+        Resource resource =  authz.getStoreFactory().getResourceStore().findByName(getResourceName(client), server.getId());
+        if (resource == null) return false;
+
+        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(getConfigurePermissionName(client), server.getId());
+        if (policy == null) {
+            return false;
+        }
+
+        Set<Policy> associatedPolicies = policy.getAssociatedPolicies();
+        // if no policies attached to permission then just do default behavior
+        if (associatedPolicies == null || associatedPolicies.isEmpty()) {
+            return false;
+        }
+
+        Scope scope = configureScope(server);
+        return root.evaluatePermission(resource, scope, server);
+    }
+    @Override
+    public void requireConfigure(ClientModel client) {
+        if (!canConfigure(client)) {
+            throw new ForbiddenException();
+        }
+    }
+
+
+    @Override
     public void requireManage(ClientModel client) {
         if (!canManage(client)) {
             throw new ForbiddenException();
@@ -300,7 +354,7 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
 
     @Override
     public boolean canView(ClientModel client) {
-        return hasView(client) || canManage(client);
+        return hasView(client) || canConfigure(client);
     }
 
     private boolean hasView(ClientModel client) {
@@ -438,6 +492,13 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
     }
 
     @Override
+    public Policy configurePermission(ClientModel client) {
+        ResourceServer server = resourceServer(client);
+        if (server == null) return null;
+        return authz.getStoreFactory().getPolicyStore().findByName(getConfigurePermissionName(client), server.getId());
+    }
+
+    @Override
     public Policy viewPermission(ClientModel client) {
         ResourceServer server = resourceServer(client);
         if (server == null) return null;
@@ -499,6 +560,7 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
         Map<String, Boolean> map = new HashMap<>();
         map.put("view", canView(client));
         map.put("manage", canManage(client));
+        map.put("configure", canConfigure(client));
         return map;
     }
 

@@ -25,14 +25,14 @@
                     <label class="col-md-2 control-label" for="fullScopeAllowed">{{:: 'full-scope-allowed' | translate}}</label>
                     <kc-tooltip>{{:: 'full-scope-allowed.tooltip' | translate}}</kc-tooltip>
                     <div class="col-md-6">
-                        <input ng-model="client.fullScopeAllowed" ng-click="changeFlag()" name="fullScopeAllowed" id="fullScopeAllowed" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                        <input kc-read-only="!client.access.manage" ng-model="client.fullScopeAllowed" ng-click="changeFlag()" name="fullScopeAllowed" id="fullScopeAllowed" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                     </div>
                 </div>
                 <div class="form-group" ng-show="client.useTemplateScope && template && template.fullScopeAllowed">
                     <label class="col-md-2 control-label" for="fullScopeAllowed">{{:: 'full-scope-allowed' | translate}}</label>
                     <kc-tooltip>Client template has full scope allowed, which means this client will have the full scope of all roles.</kc-tooltip>
                     <div class="col-md-1">
-                        <input ng-model="template.fullScopeAllowed" name="fullScopeAllowed" id="fullScopeAllowed" ng-disabled="true" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                        <input kc-read-only="!client.access.manage" ng-model="template.fullScopeAllowed" name="fullScopeAllowed" id="fullScopeAllowed" ng-disabled="true" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                     </div>
                     <div class="col-md-1">
                         <i>inherited</i>

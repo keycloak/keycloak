@@ -22,9 +22,11 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.AuthorizationProviderFactory;
 import org.keycloak.authorization.model.Resource;
+import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.representations.idm.ClientTemplateRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
@@ -85,6 +87,8 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         RoleModel salesAppsAdminRole = realm.addRole("sales-apps-admin");
         salesAppsAdminRole.addCompositeRole(clientAdmin);
         salesAppsAdminRole.addCompositeRole(client2Admin);
+        ClientModel realmManagementClient = realm.getClientByClientId("realm-management");
+        RoleModel queryClient = realmManagementClient.getRole(AdminRoles.QUERY_CLIENTS);
 
 
         UserModel admin = session.users().addUser(realm, "salesManager");
@@ -98,6 +102,10 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         session.userCredentialManager().updateCredential(realm, admin, UserCredentialModel.password("password"));
         admin = session.users().addUser(realm, "sales-pipeline-admin");
         admin.setEnabled(true);
+        session.userCredentialManager().updateCredential(realm, admin, UserCredentialModel.password("password"));
+        admin = session.users().addUser(realm, "client-admin");
+        admin.setEnabled(true);
+        admin.grantRole(queryClient);
         session.userCredentialManager().updateCredential(realm, admin, UserCredentialModel.password("password"));
 
         UserModel user = session.users().addUser(realm, "salesman");
@@ -115,6 +123,8 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         RoleModel realmRole = realm.addRole("realm-role");
         RoleModel realmRole2 = realm.addRole("realm-role2");
         ClientModel client1 = realm.addClient(CLIENT_NAME);
+        ClientTemplateModel template = realm.addClientTemplate("template");
+        client1.setFullScopeAllowed(false);
         RoleModel client1Role = client1.addRole("client-role");
         GroupModel group = realm.createGroup("top");
 
@@ -280,6 +290,19 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         clientManagerPolicy.addAssociatedPolicy(userPolicy);
 
 
+        UserModel clientConfigurer = session.users().addUser(realm, "clientConfigurer");
+        clientConfigurer.setEnabled(true);
+        clientConfigurer.grantRole(queryClientsRole);
+        session.userCredentialManager().updateCredential(realm, clientConfigurer, UserCredentialModel.password("password"));
+
+        Policy clientConfigurePolicy = permissions.clients().configurePermission(client);
+        userRep = new UserPolicyRepresentation();
+        userRep.setName("clientConfigure");
+        userRep.addUser("clientConfigurer");
+        userPolicy = permissions.authz().getStoreFactory().getPolicyStore().create(userRep, permissions.clients().resourceServer(client));
+        clientConfigurePolicy.addAssociatedPolicy(userPolicy);
+
+
 
 
 
@@ -364,19 +387,12 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
     protected boolean isImportAfterEachMethod() {
         return true;
     }
-    //@Test
+    @Test
     public void testDemo() throws Exception {
         testingClient.server().run(FineGrainAdminUnitTest::setupDemo);
         Thread.sleep(1000000000);
     }
 
-
-    //@Test
-    public void testUI() throws Exception {
-        testingClient.server().run(FineGrainAdminUnitTest::setupPolices);
-        testingClient.server().run(FineGrainAdminUnitTest::setupUsers);
-        Thread.sleep(1000000000);
-    }
 
     @Test
     public void testEvaluationLocal() throws Exception {
@@ -400,9 +416,47 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         List<RoleRepresentation> realmRole2Set = new LinkedList<>();
         realmRole2Set.add(realmRole2);
         ClientRepresentation client = adminClient.realm(TEST).clients().findByClientId(CLIENT_NAME).get(0);
+        ClientTemplateRepresentation template = adminClient.realm(TEST).clientTemplates().findAll().get(0);
         RoleRepresentation clientRole = adminClient.realm(TEST).clients().get(client.getId()).roles().get("client-role").toRepresentation();
         List<RoleRepresentation> clientRoleSet = new LinkedList<>();
         clientRoleSet.add(clientRole);
+
+        // test configure client
+        {
+            Keycloak realmClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
+                    TEST, "clientConfigurer", "password", Constants.ADMIN_CLI_CLIENT_ID, null);
+            client.setAdminUrl("http://nowhere");
+            realmClient.realm(TEST).clients().get(client.getId()).update(client);
+            client.setFullScopeAllowed(true);
+            try {
+                realmClient.realm(TEST).clients().get(client.getId()).update(client);
+                Assert.fail("should fail with forbidden exception");
+            } catch (ClientErrorException e) {
+                Assert.assertEquals(e.getResponse().getStatus(), 403);
+
+            }
+            client.setFullScopeAllowed(false);
+            realmClient.realm(TEST).clients().get(client.getId()).update(client);
+
+            client.setClientTemplate(template.getName());
+            try {
+                realmClient.realm(TEST).clients().get(client.getId()).update(client);
+                Assert.fail("should fail with forbidden exception");
+            } catch (ClientErrorException e) {
+                Assert.assertEquals(e.getResponse().getStatus(), 403);
+
+            }
+            client.setClientTemplate(null);
+            realmClient.realm(TEST).clients().get(client.getId()).update(client);
+
+            try {
+                realmClient.realm(TEST).clients().get(client.getId()).getScopeMappings().realmLevel().add(realmRoleSet);
+                Assert.fail("should fail with forbidden exception");
+            } catch (ClientErrorException e) {
+                Assert.assertEquals(e.getResponse().getStatus(), 403);
+
+            }
+        }
 
         // test illegal impersonation
         {

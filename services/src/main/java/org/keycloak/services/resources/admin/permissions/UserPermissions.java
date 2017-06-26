@@ -127,6 +127,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
         scopes.put(MAP_ROLES_SCOPE, mapRolesPermission().getId());
         scopes.put(MANAGE_GROUP_MEMBERSHIP_SCOPE, manageGroupMembershipPermission().getId());
         scopes.put(IMPERSONATE_SCOPE, adminImpersonatingPermission().getId());
+        scopes.put(USER_IMPERSONATED_SCOPE, userImpersonatedPermission().getId());
         return scopes;
     }
 

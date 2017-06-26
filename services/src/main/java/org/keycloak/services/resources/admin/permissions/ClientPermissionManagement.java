@@ -31,6 +31,7 @@ public interface ClientPermissionManagement {
     public static final String MAP_ROLES_SCOPE = "map-roles";
     public static final String MAP_ROLES_CLIENT_SCOPE = "map-roles-client-scope";
     public static final String MAP_ROLES_COMPOSITE_SCOPE = "map-roles-composite";
+    public static final String CONFIGURE_SCOPE = "configure";
 
     boolean isPermissionsEnabled(ClientModel client);
 
@@ -47,6 +48,8 @@ public interface ClientPermissionManagement {
     Policy mapRolesCompositePermission(ClientModel client);
 
     Policy managePermission(ClientModel client);
+
+    Policy configurePermission(ClientModel client);
 
     Policy viewPermission(ClientModel client);
 

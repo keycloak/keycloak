@@ -41,9 +41,9 @@ import java.util.Set;
 class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManagement {
     private static final Logger logger = Logger.getLogger(GroupPermissions.class);
     public static final String MAP_ROLE_SCOPE = "map-role";
-    public static final String MANAGE_MEMBERSHIP_SCOPE = "manage.membership";
-    public static final String MANAGE_MEMBERS_SCOPE = "manage.members";
-    public static final String VIEW_MEMBERS_SCOPE = "view.members";
+    public static final String MANAGE_MEMBERSHIP_SCOPE = "manage-membership";
+    public static final String MANAGE_MEMBERS_SCOPE = "manage-members";
+    public static final String VIEW_MEMBERS_SCOPE = "view-members";
     protected final KeycloakSession session;
     protected final RealmModel realm;
     protected final AuthorizationProvider authz;

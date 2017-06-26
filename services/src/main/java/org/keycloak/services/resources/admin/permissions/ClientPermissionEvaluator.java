@@ -56,6 +56,10 @@ public interface ClientPermissionEvaluator {
 
     boolean canManage(ClientModel client);
 
+    boolean canConfigure(ClientModel client);
+
+    void requireConfigure(ClientModel client);
+
     void requireManage(ClientModel client);
 
     boolean canView(ClientModel client);

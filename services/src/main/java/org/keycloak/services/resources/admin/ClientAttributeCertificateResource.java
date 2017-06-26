@@ -115,7 +115,7 @@ public class ClientAttributeCertificateResource {
     @Path("generate")
     @Produces(MediaType.APPLICATION_JSON)
     public CertificateRepresentation generate() {
-        auth.clients().requireManage(client);
+        auth.clients().requireConfigure(client);
 
         CertificateRepresentation info = KeycloakModelUtils.generateKeyPairCertificate(client.getClientId());
 
@@ -139,7 +139,7 @@ public class ClientAttributeCertificateResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
     public CertificateRepresentation uploadJks(@Context final UriInfo uriInfo, MultipartFormDataInput input) throws IOException {
-        auth.clients().requireManage(client);
+        auth.clients().requireConfigure(client);
 
         try {
             CertificateRepresentation info = getCertFromRequest(input);
@@ -165,7 +165,7 @@ public class ClientAttributeCertificateResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
     public CertificateRepresentation uploadJksCertificate(@Context final UriInfo uriInfo, MultipartFormDataInput input) throws IOException {
-        auth.clients().requireManage(client);
+        auth.clients().requireConfigure(client);
 
         try {
             CertificateRepresentation info = getCertFromRequest(input);
@@ -306,7 +306,7 @@ public class ClientAttributeCertificateResource {
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
     @Consumes(MediaType.APPLICATION_JSON)
     public byte[] generateAndGetKeystore(final KeyStoreConfig config) {
-        auth.clients().requireManage(client);
+        auth.clients().requireConfigure(client);
 
         if (config.getFormat() != null && !config.getFormat().equals("JKS") && !config.getFormat().equals("PKCS12")) {
             throw new NotAcceptableException("Only support jks or pkcs12 format.");

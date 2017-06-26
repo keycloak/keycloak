@@ -2507,13 +2507,16 @@ module.controller('RealmRolePermissionsCtrl', function($scope, $http, $route, $l
 
 
 });
-module.controller('ClientRolePermissionsCtrl', function($scope, $http, $route, $location, realm, client, role, RoleManagementPermissions, Client, Notifications) {
+module.controller('ClientRolePermissionsCtrl', function($scope, $http, $route, $location, realm, client, role, Client, RoleManagementPermissions, Client, Notifications) {
     console.log('RealmRolePermissionsCtrl');
     $scope.client = client;
     $scope.role = role;
     $scope.realm = realm;
     RoleManagementPermissions.get({realm: realm.realm, role: role.id}, function(data) {
         $scope.permissions = data;
+    });
+    Client.query({realm: realm.realm, clientId: getManageClientId(realm)}, function(data) {
+        $scope.realmManagementClientId = data[0].id;
     });
     $scope.setEnabled = function() {
         console.log('perssions enabled: ' + $scope.permissions.enabled);
@@ -2542,11 +2545,14 @@ module.controller('UsersPermissionsCtrl', function($scope, $http, $route, $locat
 
 });
 
-module.controller('ClientPermissionsCtrl', function($scope, $http, $route, $location, realm, client, ClientManagementPermissions, Notifications) {
+module.controller('ClientPermissionsCtrl', function($scope, $http, $route, $location, realm, client, Client, ClientManagementPermissions, Notifications) {
     $scope.client = client;
     $scope.realm = realm;
     ClientManagementPermissions.get({realm: realm.realm, client: client.id}, function(data) {
         $scope.permissions = data;
+    });
+    Client.query({realm: realm.realm, clientId: getManageClientId(realm)}, function(data) {
+        $scope.realmManagementClientId = data[0].id;
     });
     $scope.setEnabled = function() {
         var param = { enabled: $scope.permissions.enabled};
