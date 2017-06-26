@@ -59,12 +59,6 @@ public class ResourceServerEntity {
     @Column(name = "POLICY_ENFORCE_MODE")
     private PolicyEnforcementMode policyEnforcementMode = PolicyEnforcementMode.ENFORCING;
 
-    @OneToMany(mappedBy = "resourceServer")
-    private List<ResourceEntity> resources;
-
-    @OneToMany (mappedBy = "resourceServer")
-    private List<ScopeEntity> scopes;
-
     public String getId() {
         return this.id;
     }
@@ -95,22 +89,6 @@ public class ResourceServerEntity {
 
     public void setPolicyEnforcementMode(PolicyEnforcementMode policyEnforcementMode) {
         this.policyEnforcementMode = policyEnforcementMode;
-    }
-
-    public List<ResourceEntity> getResources() {
-        return this.resources;
-    }
-
-    public void setResources(final List<ResourceEntity> resources) {
-        this.resources = resources;
-    }
-
-    public List<ScopeEntity> getScopes() {
-        return this.scopes;
-    }
-
-    public void setScopes(final List<ScopeEntity> scopes) {
-        this.scopes = scopes;
     }
 
     @Override

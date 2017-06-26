@@ -9,7 +9,7 @@
 
         <h2><span>{{client.clientId}}</span> {{:: 'scope-mappings' | translate}} </h2>
         <p class="subtitle"></p>
-        <form class="form-horizontal" name="allowScope" novalidate kc-read-only="!access.manageClients">
+        <form class="form-horizontal" name="allowScope" novalidate kc-read-only="!client.access.manage">
             <fieldset class="border-top">
                 <div class="form-group" ng-show="client.clientTemplate">
                     <label class="col-md-2 control-label" for="useTemplateScope">Inherit Template Scope</label>
@@ -25,14 +25,14 @@
                     <label class="col-md-2 control-label" for="fullScopeAllowed">{{:: 'full-scope-allowed' | translate}}</label>
                     <kc-tooltip>{{:: 'full-scope-allowed.tooltip' | translate}}</kc-tooltip>
                     <div class="col-md-6">
-                        <input ng-model="client.fullScopeAllowed" ng-click="changeFlag()" name="fullScopeAllowed" id="fullScopeAllowed" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                        <input kc-read-only="!client.access.manage" ng-model="client.fullScopeAllowed" ng-click="changeFlag()" name="fullScopeAllowed" id="fullScopeAllowed" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                     </div>
                 </div>
                 <div class="form-group" ng-show="client.useTemplateScope && template && template.fullScopeAllowed">
                     <label class="col-md-2 control-label" for="fullScopeAllowed">{{:: 'full-scope-allowed' | translate}}</label>
                     <kc-tooltip>Client template has full scope allowed, which means this client will have the full scope of all roles.</kc-tooltip>
                     <div class="col-md-1">
-                        <input ng-model="template.fullScopeAllowed" name="fullScopeAllowed" id="fullScopeAllowed" ng-disabled="true" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                        <input kc-read-only="!client.access.manage" ng-model="template.fullScopeAllowed" name="fullScopeAllowed" id="fullScopeAllowed" ng-disabled="true" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                     </div>
                     <div class="col-md-1">
                         <i>inherited</i>
@@ -41,7 +41,7 @@
             </fieldset>
         </form>
 
-        <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageClients" data-ng-hide="hideRoleSelector()">
+        <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!client.access.manage" data-ng-hide="hideRoleSelector()">
             <div class="form-group">
                 <label class="col-md-2 control-label" class="control-label">{{:: 'realm-roles' | translate}}</label>
                 <div class="col-md-10">

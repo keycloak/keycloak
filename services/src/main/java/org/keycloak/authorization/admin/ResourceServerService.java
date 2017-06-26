@@ -56,8 +56,8 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
-import org.keycloak.services.resources.admin.RealmAuth;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -65,7 +65,7 @@ import org.keycloak.services.resources.admin.RealmAuth;
 public class ResourceServerService {
 
     private final AuthorizationProvider authorization;
-    private final RealmAuth auth;
+    private final AdminPermissionEvaluator auth;
     private final AdminEventBuilder adminEvent;
     private final KeycloakSession session;
     private ResourceServer resourceServer;
@@ -74,7 +74,7 @@ public class ResourceServerService {
     @Context
     private UriInfo uriInfo;
 
-    public ResourceServerService(AuthorizationProvider authorization, ResourceServer resourceServer, ClientModel client, RealmAuth auth, AdminEventBuilder adminEvent) {
+    public ResourceServerService(AuthorizationProvider authorization, ResourceServer resourceServer, ClientModel client, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.authorization = authorization;
         this.session = authorization.getKeycloakSession();
         this.client = client;
@@ -84,7 +84,7 @@ public class ResourceServerService {
     }
 
     public void create(boolean newClient) {
-        this.auth.requireManage();
+        this.auth.realm().requireManageAuthorization();
 
         UserModel serviceAccount = this.session.users().getServiceAccount(client);
 
@@ -101,8 +101,8 @@ public class ResourceServerService {
     @PUT
     @Consumes("application/json")
     @Produces("application/json")
-    public Response update(@Context UriInfo uriInfo, ResourceServerRepresentation server) {
-        this.auth.requireManage();
+    public Response update(ResourceServerRepresentation server) {
+        this.auth.realm().requireManageAuthorization();
         this.resourceServer.setAllowRemoteResourceManagement(server.isAllowRemoteResourceManagement());
         this.resourceServer.setPolicyEnforcementMode(server.getPolicyEnforcementMode());
         audit(OperationType.UPDATE, uriInfo, false);
@@ -110,7 +110,7 @@ public class ResourceServerService {
     }
 
     public void delete() {
-        this.auth.requireManage();
+        this.auth.realm().requireManageAuthorization();
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceStore resourceStore = storeFactory.getResourceStore();
         String id = resourceServer.getId();
@@ -133,7 +133,7 @@ public class ResourceServerService {
     @GET
     @Produces("application/json")
     public Response findById() {
-        this.auth.requireView();
+        this.auth.realm().requireViewAuthorization();
         return Response.ok(toRepresentation(this.resourceServer, this.client)).build();
     }
 
@@ -141,7 +141,7 @@ public class ResourceServerService {
     @GET
     @Produces("application/json")
     public Response exportSettings() {
-        this.auth.requireManage();
+        this.auth.realm().requireManageAuthorization();
         return Response.ok(ExportUtils.exportAuthorizationSettings(session, client)).build();
     }
 
@@ -149,7 +149,7 @@ public class ResourceServerService {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response importSettings(@Context final UriInfo uriInfo, ResourceServerRepresentation rep) throws IOException {
-        this.auth.requireManage();
+        this.auth.realm().requireManageAuthorization();
 
         rep.setClientId(client.getId());
 
@@ -189,7 +189,7 @@ public class ResourceServerService {
 
     @Path("/permission")
     public Object getPermissionTypeResource() {
-        this.auth.requireView();
+        this.auth.realm().requireViewAuthorization();
         PermissionService resource = new PermissionService(this.resourceServer, this.authorization, this.auth, adminEvent);
 
         ResteasyProviderFactory.getInstance().injectProperties(resource);

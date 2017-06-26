@@ -32,8 +32,8 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
-import org.keycloak.services.resources.admin.RealmAuth;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -65,11 +65,11 @@ import static org.keycloak.models.utils.RepresentationToModel.toModel;
 public class ScopeService {
 
     private final AuthorizationProvider authorization;
-    private final RealmAuth auth;
+    private final AdminPermissionEvaluator auth;
     private final AdminEventBuilder adminEvent;
     private ResourceServer resourceServer;
 
-    public ScopeService(ResourceServer resourceServer, AuthorizationProvider authorization, RealmAuth auth, AdminEventBuilder adminEvent) {
+    public ScopeService(ResourceServer resourceServer, AuthorizationProvider authorization, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.resourceServer = resourceServer;
         this.authorization = authorization;
         this.auth = auth;
@@ -81,7 +81,7 @@ public class ScopeService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response create(@Context UriInfo uriInfo,  ScopeRepresentation scope) {
-        this.auth.requireManage();
+            this.auth.realm().requireManageAuthorization();
         Scope model = toModel(scope, this.resourceServer, authorization);
 
         scope.setId(model.getId());
@@ -96,7 +96,7 @@ public class ScopeService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response update(@Context UriInfo uriInfo, @PathParam("id") String id, ScopeRepresentation scope) {
-        this.auth.requireManage();
+            this.auth.realm().requireManageAuthorization();
         scope.setId(id);
         StoreFactory storeFactory = authorization.getStoreFactory();
         Scope model = storeFactory.getScopeStore().findById(scope.getId(), resourceServer.getId());
@@ -115,7 +115,7 @@ public class ScopeService {
     @Path("{id}")
     @DELETE
     public Response delete(@Context UriInfo uriInfo, @PathParam("id") String id) {
-        this.auth.requireManage();
+        this.auth.realm().requireManageAuthorization();
         StoreFactory storeFactory = authorization.getStoreFactory();
         List<Resource> resources = storeFactory.getResourceStore().findByScope(Arrays.asList(id), resourceServer.getId());
 
@@ -154,7 +154,7 @@ public class ScopeService {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Response findById(@PathParam("id") String id) {
-        this.auth.requireView();
+        this.auth.realm().requireViewAuthorization();
         Scope model = this.authorization.getStoreFactory().getScopeStore().findById(id, resourceServer.getId());
 
         if (model == null) {
@@ -169,7 +169,7 @@ public class ScopeService {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Response getResources(@PathParam("id") String id) {
-        this.auth.requireView();
+        this.auth.realm().requireViewAuthorization();
         StoreFactory storeFactory = this.authorization.getStoreFactory();
         Scope model = storeFactory.getScopeStore().findById(id, resourceServer.getId());
 
@@ -192,7 +192,7 @@ public class ScopeService {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Response getPermissions(@PathParam("id") String id) {
-        this.auth.requireView();
+        this.auth.realm().requireViewAuthorization();
         StoreFactory storeFactory = this.authorization.getStoreFactory();
         Scope model = storeFactory.getScopeStore().findById(id, resourceServer.getId());
 
@@ -218,7 +218,7 @@ public class ScopeService {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public Response find(@QueryParam("name") String name) {
-        this.auth.requireView();
+        this.auth.realm().requireViewAuthorization();
         StoreFactory storeFactory = authorization.getStoreFactory();
 
         if (name == null) {
@@ -241,7 +241,7 @@ public class ScopeService {
                             @QueryParam("name") String name,
                             @QueryParam("first") Integer firstResult,
                             @QueryParam("max") Integer maxResult) {
-        this.auth.requireView();
+        this.auth.realm().requireViewAuthorization();
 
         Map<String, String[]> search = new HashMap<>();
 

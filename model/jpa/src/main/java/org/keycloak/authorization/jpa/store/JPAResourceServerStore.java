@@ -19,9 +19,13 @@ package org.keycloak.authorization.jpa.store;
 
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.jpa.entities.PolicyEntity;
+import org.keycloak.authorization.jpa.entities.ResourceEntity;
 import org.keycloak.authorization.jpa.entities.ResourceServerEntity;
+import org.keycloak.authorization.jpa.entities.ScopeEntity;
 import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
@@ -65,24 +69,45 @@ public class JPAResourceServerStore implements ResourceServerStore {
         //entityManager.createNamedQuery("deletePolicyByResourceServer")
         //        .setParameter("serverId", id).executeUpdate();
 
-        TypedQuery<String> query = entityManager.createNamedQuery("findPolicyIdByServerId", String.class);
-        query.setParameter("serverId", id);
-        List<String> result = query.getResultList();
-        List<Policy> list = new LinkedList<>();
-        for (String policyId : result) {
-            entityManager.remove(entityManager.getReference(PolicyEntity.class, policyId));
+        {
+            TypedQuery<String> query = entityManager.createNamedQuery("findPolicyIdByServerId", String.class);
+            query.setParameter("serverId", id);
+            List<String> result = query.getResultList();
+            for (String policyId : result) {
+                entityManager.remove(entityManager.getReference(PolicyEntity.class, policyId));
+            }
         }
 
-        entityManager.flush();
-        entityManager.createNamedQuery("deleteResourceByResourceServer")
-                .setParameter("serverId", id).executeUpdate();
-        entityManager.flush();
-        entityManager.createNamedQuery("deleteScopeByResourceServer")
-                .setParameter("serverId", id).executeUpdate();
-        entityManager.flush();
+        //entityManager.createNamedQuery("deleteResourceByResourceServer")
+        //        .setParameter("serverId", id).executeUpdate();
+        {
+            TypedQuery<String> query = entityManager.createNamedQuery("findResourceIdByServerId", String.class);
+
+            query.setParameter("serverId", id);
+
+            List<String> result = query.getResultList();
+            List<Resource> list = new LinkedList<>();
+            for (String resourceId : result) {
+                entityManager.remove(entityManager.getReference(ResourceEntity.class, resourceId));
+            }
+        }
+
+        //entityManager.createNamedQuery("deleteScopeByResourceServer")
+        //        .setParameter("serverId", id).executeUpdate();
+        {
+            TypedQuery<String> query = entityManager.createNamedQuery("findScopeIdByResourceServer", String.class);
+
+            query.setParameter("serverId", id);
+
+            List<String> result = query.getResultList();
+            for (String scopeId : result) {
+                entityManager.remove(entityManager.getReference(ScopeEntity.class, scopeId));
+            }
+        }
 
         this.entityManager.remove(entity);
         entityManager.flush();
+        entityManager.detach(entity);
     }
 
     @Override

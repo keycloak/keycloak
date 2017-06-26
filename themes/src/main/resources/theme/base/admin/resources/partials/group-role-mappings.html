@@ -7,7 +7,7 @@
     <kc-tabs-group></kc-tabs-group>
 
     <form class="form-horizontal" name="realmForm" novalidate>
-        <div class="form-group" kc-read-only="!access.manageUsers">
+        <div class="form-group" kc-read-only="!group.access.manage">
             <label class="col-md-2 control-label" class="control-label">{{:: 'realm-roles' | translate}}</label>
 
             <div class="col-md-10">
@@ -54,7 +54,7 @@
                     <span>{{:: 'client-roles' | translate}}</span>
                     <select class="form-control" id="clients" name="clients" ng-change="changeClient()" ng-model="targetClient" ng-options="a.clientId for a in clients | orderBy:'clientId'" ng-disabled="false"></select>
                 </label>
-                <div class="col-md-10" kc-read-only="!access.manageUsers">
+                <div class="col-md-10" kc-read-only="!group.access.manage">
                     <div class="row" data-ng-hide="targetClient">
                         <div class="col-md-4"><span class="text-muted">{{:: 'select-client-to-view-roles' | translate}}</span></div>
                     </div>

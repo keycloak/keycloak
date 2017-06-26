@@ -18,34 +18,28 @@
 
 package org.keycloak.authorization.common;
 
-import org.keycloak.authorization.attribute.Attributes;
 import org.keycloak.authorization.identity.Identity;
-import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.AccessToken;
 
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class KeycloakEvaluationContext implements EvaluationContext {
+public class KeycloakEvaluationContext extends DefaultEvaluationContext {
 
     private final KeycloakIdentity identity;
-    private final KeycloakSession keycloakSession;
 
     public KeycloakEvaluationContext(KeycloakSession keycloakSession) {
         this(new KeycloakIdentity(keycloakSession), keycloakSession);
     }
 
     public KeycloakEvaluationContext(KeycloakIdentity identity, KeycloakSession keycloakSession) {
+        super(identity, keycloakSession);
         this.identity = identity;
-        this.keycloakSession = keycloakSession;
     }
 
     @Override
@@ -54,27 +48,13 @@ public class KeycloakEvaluationContext implements EvaluationContext {
     }
 
     @Override
-    public Attributes getAttributes() {
-        HashMap<String, Collection<String>> attributes = new HashMap<>();
-
-        attributes.put("kc.time.date_time", Arrays.asList(new SimpleDateFormat("MM/dd/yyyy hh:mm:ss").format(new Date())));
-        attributes.put("kc.client.network.ip_address", Arrays.asList(this.keycloakSession.getContext().getConnection().getRemoteAddr()));
-        attributes.put("kc.client.network.host", Arrays.asList(this.keycloakSession.getContext().getConnection().getRemoteHost()));
-
+    public Map<String, Collection<String>> getBaseAttributes() {
+        Map<String, Collection<String>> attributes = super.getBaseAttributes();
         AccessToken accessToken = this.identity.getAccessToken();
 
         if (accessToken != null) {
             attributes.put("kc.client.id", Arrays.asList(accessToken.getIssuedFor()));
         }
-
-        List<String> userAgents = this.keycloakSession.getContext().getRequestHeaders().getRequestHeader("User-Agent");
-
-        if (userAgents != null) {
-            attributes.put("kc.client.user_agent", userAgents);
-        }
-
-        attributes.put("kc.realm.name", Arrays.asList(this.keycloakSession.getContext().getRealm().getName()));
-
-        return Attributes.from(attributes);
+        return attributes;
     }
 }

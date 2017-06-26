@@ -15,24 +15,21 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.resources.admin;
+package org.keycloak.services.resources.admin.permissions;
 
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.services.ForbiddenException;
+import org.keycloak.services.resources.admin.AdminAuth;
 
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class RealmAuth {
+class RealmAuth {
 
-    private Resource resource;
-
-    public enum Resource {
-        CLIENT, USER, REALM, EVENTS, IDENTITY_PROVIDER, IMPERSONATION, AUTHORIZATION
-    }
+    private AdminAuth.Resource resource;
 
     private AdminAuth auth;
     private ClientModel realmAdminApp;
@@ -42,7 +39,7 @@ public class RealmAuth {
         this.realmAdminApp = realmAdminApp;
     }
 
-    public RealmAuth init(Resource resource) {
+    public RealmAuth init(AdminAuth.Resource resource) {
         this.resource = resource;
         return this;
     }
@@ -52,9 +49,13 @@ public class RealmAuth {
     }
 
     public void requireAny() {
-        if (!auth.hasOneOfAppRole(realmAdminApp, AdminRoles.ALL_REALM_ROLES)) {
+        if (!hasAny()) {
             throw new ForbiddenException();
         }
+    }
+
+    public boolean hasAny() {
+        return auth.hasOneOfAppRole(realmAdminApp, AdminRoles.ALL_REALM_ROLES);
     }
 
     public boolean hasView() {
@@ -77,7 +78,7 @@ public class RealmAuth {
         }
     }
 
-    private String getViewRole(Resource resource) {
+    private String getViewRole(AdminAuth.Resource resource) {
         switch (resource) {
             case CLIENT:
                 return AdminRoles.VIEW_CLIENTS;
@@ -96,7 +97,7 @@ public class RealmAuth {
         }
     }
 
-    private String getManageRole(Resource resource) {
+    private String getManageRole(AdminAuth.Resource resource) {
         switch (resource) {
             case CLIENT:
                 return AdminRoles.MANAGE_CLIENTS;

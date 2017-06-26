@@ -3,7 +3,7 @@
     <h1 data-ng-show="create">{{:: 'add-client' | translate}}</h1>
     <h1 data-ng-hide="create">
         {{client.clientId|capitalize}}
-        <i id="removeClient" class="pficon pficon-delete clickable" data-ng-show="access.manageClients" data-ng-click="removeClient()"></i>
+        <i id="removeClient" class="pficon pficon-delete clickable" data-ng-show="client.access.manage" data-ng-click="removeClient()"></i>
     </h1>
 
     <ul class="nav nav-tabs"  data-ng-hide="create && !path[4]">
@@ -42,6 +42,10 @@
         <li ng-class="{active: path[4] == 'service-account-roles'}" data-ng-show="!disableServiceAccountRolesTab && client.serviceAccountsEnabled && !(client.bearerOnly || client.publicClient)">
             <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/service-account-roles">{{:: 'service-account-roles' | translate}}</a>
             <kc-tooltip>{{:: 'service-account-roles.tooltip' | translate}}</kc-tooltip>
+        </li>
+        <li ng-class="{active: path[4] == 'permissions'}" data-ng-show="client.access.manage && access.manageAuthorization">
+            <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/permissions">{{:: 'authz-permissions' | translate}}</a>
+            <kc-tooltip>{{:: 'manage-permissions-client.tooltip' | translate}}</kc-tooltip>
         </li>
     </ul>
 </div>

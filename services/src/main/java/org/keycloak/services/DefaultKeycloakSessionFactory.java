@@ -30,6 +30,7 @@ import org.keycloak.provider.ProviderManager;
 import org.keycloak.provider.ProviderManagerDeployer;
 import org.keycloak.provider.ProviderManagerRegistry;
 import org.keycloak.provider.Spi;
+import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -93,6 +94,7 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
         }
         // make the session factory ready for hot deployment
         ProviderManagerRegistry.SINGLETON.setDeployer(this);
+        AdminPermissions.registerListener(this);
 
     }
     protected Map<Class<? extends Provider>, Map<String, ProviderFactory>> getFactoriesCopy() {

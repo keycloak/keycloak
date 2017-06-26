@@ -43,6 +43,14 @@ import static org.keycloak.testsuite.util.IOUtil.PROJECT_BUILD_DIRECTORY;
 public class AdminClientUtil {
 
     public static Keycloak createAdminClient(boolean ignoreUnknownProperties, String authServerContextRoot) throws Exception {
+        return createAdminClient(ignoreUnknownProperties, authServerContextRoot, MASTER, ADMIN, ADMIN, Constants.ADMIN_CLI_CLIENT_ID, null);
+
+    }
+    public static Keycloak createAdminClient(boolean ignoreUnknownProperties, String realmName, String username, String password, String clientId, String clientSecret) throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
+        return createAdminClient(ignoreUnknownProperties, AuthServerTestEnricher.getAuthServerContextRoot(), realmName, username, password, clientId, clientSecret);
+    }
+
+    public static Keycloak createAdminClient(boolean ignoreUnknownProperties, String authServerContextRoot, String realmName, String username, String password, String clientId, String clientSecret) throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
         SSLContext ssl = null;
         if ("true".equals(System.getProperty("auth.server.ssl.required"))) {
             File trustore = new File(PROJECT_BUILD_DIRECTORY, "dependency/keystore/keycloak.truststore");
@@ -63,11 +71,15 @@ public class AdminClientUtil {
         }
 
         return Keycloak.getInstance(authServerContextRoot + "/auth",
-                MASTER, ADMIN, ADMIN, Constants.ADMIN_CLI_CLIENT_ID, null, ssl, jacksonProvider);
+                realmName, username, password, clientId, clientSecret, ssl, jacksonProvider);
     }
 
     public static Keycloak createAdminClient() throws Exception {
         return createAdminClient(false, AuthServerTestEnricher.getAuthServerContextRoot());
+    }
+
+    public static Keycloak createAdminClient(boolean ignoreUnknownProperties) throws Exception {
+        return createAdminClient(ignoreUnknownProperties, AuthServerTestEnricher.getAuthServerContextRoot());
     }
 
     private static SSLContext getSSLContextWithTrustore(File file, String password) throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {

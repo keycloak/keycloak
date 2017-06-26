@@ -26,6 +26,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
@@ -43,9 +44,9 @@ public class KeyResource {
 
     private RealmModel realm;
     private KeycloakSession session;
-    private RealmAuth auth;
+    private AdminPermissionEvaluator auth;
 
-    public KeyResource(RealmModel realm, KeycloakSession session, RealmAuth auth) {
+    public KeyResource(RealmModel realm, KeycloakSession session, AdminPermissionEvaluator auth) {
         this.realm = realm;
         this.session = session;
         this.auth = auth;
@@ -55,7 +56,7 @@ public class KeyResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public KeysMetadataRepresentation getKeyMetadata() {
-        auth.requireView();
+        auth.realm().requireViewRealm();
 
         KeyManager keystore = session.keys();
 
