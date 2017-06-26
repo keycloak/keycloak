@@ -387,13 +387,11 @@ public class OAuthRequestAuthenticator {
         try {
             URL url = new URL(originalUri);
             Map<String, String> rewriteRules = deployment.getRedirectRewriteRules();
-            if(rewriteRules != null) {
+            if(rewriteRules != null && !rewriteRules.isEmpty()) {
                 Map.Entry<String, String> rule =  rewriteRules.entrySet().iterator().next();
                 StringBuilder redirectUriBuilder = new StringBuilder(url.getProtocol());
                 redirectUriBuilder.append("://"+ url.getAuthority());
-                 System.out.println(rule.getKey() + " : " + rule.getValue());
                 redirectUriBuilder.append(url.getPath().replaceFirst(rule.getKey(), rule.getValue()));
-                System.out.println("REWRITTEN URI : " + redirectUriBuilder.toString());
                 return redirectUriBuilder.toString();
             }
         } catch (MalformedURLException ex) {

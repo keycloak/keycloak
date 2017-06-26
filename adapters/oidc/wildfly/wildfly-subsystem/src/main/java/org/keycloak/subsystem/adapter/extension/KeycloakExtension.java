@@ -48,6 +48,7 @@ public class KeycloakExtension implements Extension {
     static final RealmDefinition REALM_DEFINITION = new RealmDefinition();
     static final SecureDeploymentDefinition SECURE_DEPLOYMENT_DEFINITION = new SecureDeploymentDefinition();
     static final CredentialDefinition CREDENTIAL_DEFINITION = new CredentialDefinition();
+     static final RedirecRewritetRuleDefinition REDIRECT_RULE_DEFINITON = new RedirecRewritetRuleDefinition();
 
     public static StandardResourceDescriptionResolver getResourceDescriptionResolver(final String... keyPrefix) {
         StringBuilder prefix = new StringBuilder(SUBSYSTEM_NAME);
@@ -77,6 +78,7 @@ public class KeycloakExtension implements Extension {
         registration.registerSubModel(REALM_DEFINITION);
         ManagementResourceRegistration secureDeploymentRegistration = registration.registerSubModel(SECURE_DEPLOYMENT_DEFINITION);
         secureDeploymentRegistration.registerSubModel(CREDENTIAL_DEFINITION);
+        secureDeploymentRegistration.registerSubModel(REDIRECT_RULE_DEFINITON);
 
         subsystem.registerXMLElementWriter(PARSER);
     }
