@@ -30,6 +30,7 @@
         <xsl:copy>
             <xsl:apply-templates select="@* | node()" />
             <local-cache name="work" start="EAGER" batching="false" />
+            <local-cache name="actionTokens" start="EAGER" batching="false" />
         </xsl:copy>
     </xsl:template>
 
@@ -38,6 +39,7 @@
         <xsl:copy>
             <xsl:apply-templates select="@* | node()" />
             <replicated-cache name="work" start="EAGER" batching="false" />
+            <replicated-cache name="actionTokens" start="EAGER" batching="false" />
         </xsl:copy>
     </xsl:template>
 

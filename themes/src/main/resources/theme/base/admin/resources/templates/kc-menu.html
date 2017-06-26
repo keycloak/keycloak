@@ -16,7 +16,7 @@
       </div>
     </div>
 
-    <div class="nav-category" data-ng-show="current.realm">
+    <div class="nav-category" data-ng-show="current.realm && (access.viewRealm || access.queryClients || access.viewIdentityProviders)">
         <h2>{{:: 'configure' | translate}}</h2>
         <ul class="nav nav-pills nav-stacked">
             <li data-ng-show="access.viewRealm" data-ng-class="((!path[2]
@@ -32,7 +32,7 @@
     || path[2] == 'keys-settings' || path[2] == 'smtp-settings' || path[2] == 'ldap-settings' || path[2] == 'auth-settings') && path[3] != 'clients') && 'active'">
                 <a href="#/realms/{{realm.realm}}"><span class="pficon pficon-settings"></span> {{:: 'realm-settings' | translate}}</a>
             </li>
-            <li data-ng-show="access.viewClients" data-ng-class="(path[2] == 'clients' || path[3] == 'clients') && 'active'"><a href="#/realms/{{realm.realm}}/clients"><i class="fa fa-cube"></i> {{:: 'clients' | translate}}</a></li>
+            <li data-ng-show="access.queryClients" data-ng-class="(path[2] == 'clients' || path[3] == 'clients') && 'active'"><a href="#/realms/{{realm.realm}}/clients"><i class="fa fa-cube"></i> {{:: 'clients' | translate}}</a></li>
             <li data-ng-show="access.viewClients" data-ng-class="(path[2] == 'client-templates' || path[3] == 'client-templates') && 'active'"><a href="#/realms/{{realm.realm}}/client-templates"><i class="fa fa-cubes"></i> {{:: 'client-templates' | translate}}</a></li>
             <li data-ng-show="access.viewRealm" data-ng-class="(path[2] == 'roles' || path[2] == 'default-roles') && 'active'"><a href="#/realms/{{realm.realm}}/roles"><i class="fa fa-tasks"></i> {{:: 'roles' | translate}}</a></li>
             <li data-ng-show="access.viewIdentityProviders" data-ng-class="(path[2] == 'identity-provider-settings' || path[2] == 'identity-provider-mappers') && 'active'"><a href="#/realms/{{realm.realm}}/identity-provider-settings"><i class="fa fa-exchange"></i> {{:: 'identity-providers' | translate}}</a></li>
@@ -45,12 +45,12 @@
         </ul>
     </div>
 
-    <div class="nav-category" data-ng-show="current.realm">
+    <div class="nav-category" data-ng-show="current.realm && (access.viewRealm || access.queryGroups || access.queryUsers || access.viewEvents)">
         <h2>{{:: 'manage' | translate}}</h2>
         <ul class="nav nav-pills nav-stacked">
-            <li data-ng-show="access.viewUsers" data-ng-class="(path[2] == 'groups' 
+            <li data-ng-show="access.queryGroups" data-ng-class="(path[2] == 'groups'
                         || path[2] == 'default-groups') && 'active'"><a href="#/realms/{{realm.realm}}/groups"><span class="pficon pficon-users"></span> {{:: 'groups' | translate}}</a></li>
-            <li data-ng-show="access.viewUsers" data-ng-class="(path[2] == 'users') && 'active'"><a href="#/realms/{{realm.realm}}/users"><span class="pficon pficon-user"></span> {{:: 'users' | translate}}</a></li>
+            <li data-ng-show="access.queryUsers" data-ng-class="(path[2] == 'users') && 'active'"><a href="#/realms/{{realm.realm}}/users"><span class="pficon pficon-user"></span> {{:: 'users' | translate}}</a></li>
             <li data-ng-show="access.viewRealm" data-ng-class="(path[2] == 'sessions') && 'active'"><a href="#/realms/{{realm.realm}}/sessions/realm"><i class="fa fa-clock-o"></i> {{:: 'sessions' | translate}}</a></li>
             <li data-ng-show="access.viewEvents" data-ng-class="(path[2] == 'events' 
                         || path[2] == 'events-settings'

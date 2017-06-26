@@ -22,6 +22,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.AuthorizationProviderFactory;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
@@ -77,7 +78,8 @@ public class PolicyEvaluationCompositeRoleTest extends AbstractKeycloakTest {
         RoleModel role1 = client.addRole("client-role1");
 
 
-        AuthorizationProvider authz = session.getProvider(AuthorizationProvider.class);
+        AuthorizationProviderFactory factory = (AuthorizationProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(AuthorizationProvider.class);
+        AuthorizationProvider authz = factory.create(session, realm);
         ResourceServer resourceServer = authz.getStoreFactory().getResourceServerStore().create(client.getId());
         Policy policy = createRolePolicy(authz, resourceServer, role1);
 

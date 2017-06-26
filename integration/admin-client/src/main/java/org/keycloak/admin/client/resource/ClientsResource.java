@@ -48,6 +48,10 @@ public interface ClientsResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    public List<ClientRepresentation> findAll(@QueryParam("viewableOnly") boolean viewableOnly);
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
     public List<ClientRepresentation> findByClientId(@QueryParam("clientId") String clientId);
 
 

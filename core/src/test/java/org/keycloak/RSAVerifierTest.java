@@ -234,12 +234,15 @@ public class RSAVerifierTest {
     public void testTokenAuth() throws Exception {
         token = new AccessToken();
         token.subject("CN=Client")
-                .issuer("domain")
+                .issuer("http://localhost:8080/auth/realms/demo")
                 .addAccess("service").addRole("admin").verifyCaller(true);
+        token.setEmail("bill@jboss.org");
 
         String encoded = new JWSBuilder()
                 .jsonContent(token)
                 .rsa256(idpPair.getPrivate());
+
+        System.out.println("token size: " + encoded.length());
 
         AccessToken v = null;
         try {

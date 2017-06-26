@@ -116,11 +116,11 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
      * @return
      */
     protected Keycloak getAdminClientFor(ContainerInfo node) {
-        Keycloak adminClient = backendAdminClients.get(node);
-        if (adminClient == null && node.equals(suiteContext.getAuthServerInfo())) {
-            adminClient = this.adminClient;
+        Keycloak client = backendAdminClients.get(node);
+        if (client == null && node.equals(suiteContext.getAuthServerInfo())) {
+            client = this.adminClient;
         }
-        return adminClient;
+        return client;
     }
 
     /**

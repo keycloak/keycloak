@@ -7,7 +7,7 @@
 
     <kc-tabs-client></kc-tabs-client>
 
-    <form class="form-horizontal" name="keyForm" novalidate kc-read-only="!access.manageRealm">
+    <form class="form-horizontal" name="keyForm" novalidate kc-read-only="!client.access.configure">
         <fieldset class="form-group col-sm-10" data-ng-show="client.attributes['saml.client.signature'] == 'true'">
             <legend uncollapsed><span class="text">{{:: 'signing-key' | translate}}</span>  <kc-tooltip>{{:: 'saml-signing-key' | translate}}</kc-tooltip></legend>
             <div class="form-group" data-ng-hide="!signingKeyInfo.privateKey">
@@ -27,7 +27,7 @@
                 </div>
             </div>
             <div class="form-group">
-                <div class="col-md-10 col-md-offset-2" data-ng-show="access.manageRealm">
+                <div class="col-md-10 col-md-offset-2" data-ng-show="client.access.configure">
                     <button class="btn btn-default" type="submit" data-ng-click="generateSigningKey()">{{:: 'generate-new-keys' | translate}}</button>
                     <button class="btn btn-default" type="submit" data-ng-click="importSigningKey()">{{:: 'import' | translate}}</button>
                     <button class="btn btn-default" type="submit" data-ng-hide="!signingKeyInfo.certificate" data-ng-click="exportSigningKey()">{{:: 'export' | translate}}</button>
@@ -53,7 +53,7 @@
                 </div>
             </div>
             <div class="form-group">
-                <div class="col-md-10 col-md-offset-2" data-ng-show="access.manageRealm">
+                <div class="col-md-10 col-md-offset-2" data-ng-show="client.access.configure">
                     <button class="btn btn-default" type="submit" data-ng-click="generateEncryptionKey()">{{:: 'generate-new-keys' | translate}}</button>
                     <button class="btn btn-default" type="submit" data-ng-click="importEncryptionKey()">{{:: 'import' | translate}}</button>
                     <button class="btn btn-default" type="submit" data-ng-hide="!encryptionKeyInfo.certificate" data-ng-click="exportEncryptionKey()">{{:: 'export' | translate}}</button>

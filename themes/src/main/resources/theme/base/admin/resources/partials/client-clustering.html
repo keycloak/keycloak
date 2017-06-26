@@ -7,7 +7,7 @@
 
     <kc-tabs-client></kc-tabs-client>
 
-    <form class="form-horizontal" name="clusteringForm" novalidate kc-read-only="!access.manageClients">
+    <form class="form-horizontal" name="clusteringForm" novalidate kc-read-only="!client.access.configure">
         <legend><span class="text">{{:: 'basic-configuration' | translate}}</span></legend>
         <fieldset >
             <div class="form-group clearfix">
@@ -31,7 +31,7 @@
             </div>
 
             <div class="form-group">
-                <div class="col-md-10 col-md-offset-2" data-ng-show="access.manageRealm">
+                <div class="col-md-10 col-md-offset-2" data-ng-show="client.access.configure">
                     <button data-kc-save data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
                     <button data-kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
                 </div>
@@ -43,7 +43,7 @@
             <table class="table table-striped table-bordered">
                 <thead>
                     <tr>
-                        <th class="kc-table-actions" colspan="5" data-ng-show="access.manageClients">
+                        <th class="kc-table-actions" colspan="5" data-ng-show="client.access.configure">
                             <div class="pull-right">
                                 <a class="btn btn-default" tooltip="Manually register cluster node. This is usually not needed as cluster node should be registered automatically by adapter"
                                    tooltip-trigger="mouseover mouseout" tooltip-placement="bottom" href="#/register-node/realms/{{realm.realm}}/clients/{{client.id}}/clustering">{{:: 'register-node-manually' | translate}}</a>

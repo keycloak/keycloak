@@ -10,7 +10,7 @@
     <table class="table table-striped table-bordered">
         <thead>
         <tr>
-            <th class="kc-table-actions" colspan="5" data-ng-show="access.manageClients">
+            <th class="kc-table-actions" colspan="5" data-ng-show="client.access.configure">
                 <div class="pull-right">
                     <a class="btn btn-default" href="#/create/role/{{realm.realm}}/clients/{{client.id}}">{{:: 'add-role' | translate}}</a>
                 </div>
@@ -29,7 +29,7 @@
             <td translate="{{role.composite}}"></td>
             <td>{{role.description}}</td>
             <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/clients/{{client.id}}/roles/{{role.id}}">{{:: 'edit' | translate}}</td>
-            <td class="kc-action-cell" data-ng-show="access.manageClients" data-ng-click="removeRole(role)">{{:: 'delete' | translate}}</td>
+            <td class="kc-action-cell" data-ng-show="client.access.configure" data-ng-click="removeRole(role)">{{:: 'delete' | translate}}</td>
         </tr>
         <tr data-ng-show="!roles || roles.length == 0">
             <td>{{:: 'no-client-roles-available' | translate}}</td>

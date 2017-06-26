@@ -10,10 +10,10 @@
     <h1 data-ng-show="create">{{:: 'add-node' | translate}}</h1>
     <h1 data-ng-hide="create">
         {{node.host|capitalize}}
-        <i id="removeClient" class="pficon pficon-delete clickable" data-ng-show="access.manageClients" data-ng-click="unregisterNode()"></i>
+        <i id="removeClient" class="pficon pficon-delete clickable" data-ng-show="client.access.configure" data-ng-click="unregisterNode()"></i>
     </h1>
 
-    <form class="form-horizontal" name="clusteringForm" novalidate kc-read-only="!access.manageClients" data-ng-show="create || registered">
+    <form class="form-horizontal" name="clusteringForm" novalidate kc-read-only="!client.access.configure" data-ng-show="create || registered">
         <div class="form-group">
             <label class="col-md-2 control-label" for="host">{{:: 'host' | translate}}</label>
             <div class="col-sm-6">
@@ -27,7 +27,7 @@
             </div>
         </div>
         <div class="form-group">
-            <div class="col-md-10 col-md-offset-2" data-ng-show="access.manageRealm">
+            <div class="col-md-10 col-md-offset-2" data-ng-show="client.access.configure">
                 <button data-kc-save data-ng-show="create">{{:: 'save' | translate}}</button>
             </div>
         </div>

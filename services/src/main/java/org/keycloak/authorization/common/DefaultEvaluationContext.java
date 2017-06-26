@@ -35,12 +35,19 @@ import java.util.Map;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public abstract class AbstractEvaluationContext implements EvaluationContext {
+public class DefaultEvaluationContext implements EvaluationContext {
 
-    private final KeycloakSession keycloakSession;
+    protected final KeycloakSession keycloakSession;
+    protected final Identity identity;
 
-    public AbstractEvaluationContext(KeycloakSession keycloakSession) {
+    public DefaultEvaluationContext(Identity identity, KeycloakSession keycloakSession) {
         this.keycloakSession = keycloakSession;
+        this.identity = identity;
+    }
+
+    @Override
+    public Identity getIdentity() {
+        return identity;
     }
 
     public Map<String, Collection<String>> getBaseAttributes() {
@@ -59,5 +66,10 @@ public abstract class AbstractEvaluationContext implements EvaluationContext {
         attributes.put("kc.realm.name", Arrays.asList(this.keycloakSession.getContext().getRealm().getName()));
 
         return attributes;
+    }
+
+    @Override
+    public Attributes getAttributes() {
+        return Attributes.from(getBaseAttributes());
     }
 }

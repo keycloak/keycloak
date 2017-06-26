@@ -19,6 +19,8 @@
 package org.keycloak.authorization.util;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -47,6 +49,10 @@ import org.keycloak.representations.idm.authorization.Permission;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public final class Permissions {
+
+    public static List<ResourcePermission> permission(ResourceServer server, Resource resource, Scope scope) {
+       return Arrays.asList(new ResourcePermission(resource, Arrays.asList(scope), server));
+    }
 
     /**
      * Returns a list of permissions for all resources and scopes that belong to the given <code>resourceServer</code> and

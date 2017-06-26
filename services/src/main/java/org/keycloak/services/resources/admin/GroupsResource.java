@@ -36,6 +36,8 @@ import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.List;
 import java.util.Objects;
+import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
 /**
  * @resource Groups
@@ -45,15 +47,14 @@ public class GroupsResource {
 
     private final RealmModel realm;
     private final KeycloakSession session;
-    private final RealmAuth auth;
+    private final AdminPermissionEvaluator auth;
     private final AdminEventBuilder adminEvent;
 
-    public GroupsResource(RealmModel realm, KeycloakSession session, RealmAuth auth, AdminEventBuilder adminEvent) {
+    public GroupsResource(RealmModel realm, KeycloakSession session, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.realm = realm;
         this.session = session;
         this.auth = auth;
         this.adminEvent = adminEvent.resource(ResourceType.GROUP);
-        auth.init(RealmAuth.Resource.USER);
 
     }
 
@@ -67,10 +68,10 @@ public class GroupsResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<GroupRepresentation> getGroupsByName(@QueryParam("search") String search,
+    public List<GroupRepresentation> getGroups(@QueryParam("search") String search,
                                                @QueryParam("first") Integer firstResult,
                                                @QueryParam("max") Integer maxResults) {
-        auth.requireView();
+        auth.groups().requireList();
 
         List<GroupRepresentation> results;
 
@@ -93,9 +94,10 @@ public class GroupsResource {
      */
     @Path("{id}")
     public GroupResource getGroupById(@PathParam("id") String id) {
-        auth.requireView();
-
         GroupModel group = realm.getGroupById(id);
+        if (group == null) {
+            throw new NotFoundException("Could not find group by id");
+        }
         GroupResource resource =  new GroupResource(realm, group, session, this.auth, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(resource);
         return resource;
@@ -129,7 +131,7 @@ public class GroupsResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response addTopLevelGroup(GroupRepresentation rep) {
-        auth.requireManage();
+        auth.groups().requireManage();
 
         List<GroupRepresentation> search = ModelToRepresentation.searchForGroupByName(realm, rep.getName(), 0, 1);
         if (search != null && !search.isEmpty() && Objects.equals(search.get(0).getName(), rep.getName())) {

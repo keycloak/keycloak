@@ -26,6 +26,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.UserStorageSyncManager;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
@@ -55,7 +56,7 @@ public class UserStorageProviderResource {
 
     protected RealmModel realm;
 
-    protected RealmAuth auth;
+    protected AdminPermissionEvaluator auth;
 
     protected AdminEventBuilder adminEvent;
 
@@ -71,12 +72,10 @@ public class UserStorageProviderResource {
     @Context
     protected HttpHeaders headers;
 
-    public UserStorageProviderResource(RealmModel realm, RealmAuth auth, AdminEventBuilder adminEvent) {
+    public UserStorageProviderResource(RealmModel realm, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.auth = auth;
         this.realm = realm;
         this.adminEvent = adminEvent;
-
-        auth.init(RealmAuth.Resource.USER);
     }
 
     /**
@@ -94,7 +93,7 @@ public class UserStorageProviderResource {
     @Produces(MediaType.APPLICATION_JSON)
     public SynchronizationResult syncUsers(@PathParam("id") String id,
                                            @QueryParam("action") String action) {
-        auth.requireManage();
+        auth.users().requireManage();
 
         ComponentModel model = realm.getComponent(id);
         if (model == null) {
@@ -139,7 +138,7 @@ public class UserStorageProviderResource {
     @Path("{id}/remove-imported-users")
     @NoCache
     public void removeImportedUsers(@PathParam("id") String id) {
-        auth.requireManage();
+        auth.users().requireManage();
 
         ComponentModel model = realm.getComponent(id);
         if (model == null) {
@@ -162,7 +161,7 @@ public class UserStorageProviderResource {
     @Path("{id}/unlink-users")
     @NoCache
     public void unlinkUsers(@PathParam("id") String id) {
-        auth.requireManage();
+        auth.users().requireManage();
 
         ComponentModel model = realm.getComponent(id);
         if (model == null) {
@@ -187,7 +186,7 @@ public class UserStorageProviderResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public SynchronizationResult syncMapperData(@PathParam("parentId") String parentId, @PathParam("id") String mapperId, @QueryParam("direction") String direction) {
-        auth.requireManage();
+        auth.users().requireManage();
 
         ComponentModel parentModel = realm.getComponent(parentId);
         if (parentModel == null) throw new NotFoundException("Parent model not found");

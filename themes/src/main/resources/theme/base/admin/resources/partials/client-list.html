@@ -42,7 +42,7 @@
                 </td>
                 <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/clients/{{client.id}}">{{:: 'edit' | translate}}</td>
                 <td class="kc-action-cell" data-ng-click="exportClient(client)">{{:: 'export' | translate}}</td>
-                <td class="kc-action-cell" data-ng-show="access.manageClients" data-ng-click="removeClient(client)">{{:: 'delete' | translate}}</td>
+                <td class="kc-action-cell" data-ng-show="client.access.manage" data-ng-click="removeClient(client)">{{:: 'delete' | translate}}</td>
             </tr>
             <tr data-ng-show="(clients | filter:search).length == 0">
                 <td class="text-muted" colspan="4" data-ng-show="search.clientId">{{:: 'no-results' | translate}}</td>

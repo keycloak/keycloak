@@ -65,6 +65,7 @@ public class ClientRepresentation {
     private Boolean useTemplateScope;
     private Boolean useTemplateMappers;
     private ResourceServerRepresentation authorizationSettings;
+    private Map<String, Boolean> access;
 
 
     public String getId() {
@@ -365,5 +366,13 @@ public class ClientRepresentation {
 
     public void setAuthorizationSettings(ResourceServerRepresentation authorizationSettings) {
         this.authorizationSettings = authorizationSettings;
+    }
+
+    public Map<String, Boolean> getAccess() {
+        return access;
+    }
+
+    public void setAccess(Map<String, Boolean> access) {
+        this.access = access;
     }
 }

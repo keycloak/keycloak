@@ -16,7 +16,7 @@
             </div>
         </fieldset>
 
-        <div class="form-group" data-ng-show="access.manageUsers">
+        <div class="form-group" data-ng-show="group.access.manage">
             <div class="col-md-10 col-md-offset-2">
                 <button kc-save data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
                 <button kc-reset data-ng-disabled="!changed" data-ng-click="cancel()">{{:: 'cancel' | translate}}</button>

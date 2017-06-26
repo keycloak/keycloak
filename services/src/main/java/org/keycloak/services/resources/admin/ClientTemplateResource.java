@@ -31,6 +31,7 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClientTemplateRepresentation;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -54,7 +55,7 @@ import javax.ws.rs.core.UriInfo;
 public class ClientTemplateResource {
     protected static final Logger logger = Logger.getLogger(ClientTemplateResource.class);
     protected RealmModel realm;
-    private RealmAuth auth;
+    private AdminPermissionEvaluator auth;
     private AdminEventBuilder adminEvent;
     protected ClientTemplateModel template;
     protected KeycloakSession session;
@@ -62,19 +63,20 @@ public class ClientTemplateResource {
     @Context
     protected UriInfo uriInfo;
 
-    public ClientTemplateResource(RealmModel realm, RealmAuth auth, ClientTemplateModel template, KeycloakSession session, AdminEventBuilder adminEvent) {
+    public ClientTemplateResource(RealmModel realm, AdminPermissionEvaluator auth, ClientTemplateModel template, KeycloakSession session, AdminEventBuilder adminEvent) {
         this.realm = realm;
         this.auth = auth;
         this.template = template;
         this.session = session;
         this.adminEvent = adminEvent.resource(ResourceType.CLIENT_TEMPLATE);
 
-        auth.init(RealmAuth.Resource.CLIENT);
     }
 
     @Path("protocol-mappers")
     public ProtocolMappersResource getProtocolMappers() {
-        ProtocolMappersResource mappers = new ProtocolMappersResource(realm, template, auth, adminEvent);
+        AdminPermissionEvaluator.RequirePermissionCheck manageCheck = () -> auth.clients().requireManage(template);
+        AdminPermissionEvaluator.RequirePermissionCheck viewCheck = () -> auth.clients().requireView(template);
+        ProtocolMappersResource mappers = new ProtocolMappersResource(realm, template, auth, adminEvent, manageCheck, viewCheck);
         ResteasyProviderFactory.getInstance().injectProperties(mappers);
         return mappers;
     }
@@ -86,7 +88,9 @@ public class ClientTemplateResource {
      */
     @Path("scope-mappings")
     public ScopeMappedResource getScopeMappedResource() {
-        return new ScopeMappedResource(realm, auth, template, session, adminEvent);
+        AdminPermissionEvaluator.RequirePermissionCheck manageCheck = () -> auth.clients().requireManage(template);
+        AdminPermissionEvaluator.RequirePermissionCheck viewCheck = () -> auth.clients().requireView(template);
+        return new ScopeMappedResource(realm, auth, template, session, adminEvent, manageCheck, viewCheck);
     }
 
     /**
@@ -97,11 +101,7 @@ public class ClientTemplateResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     public Response update(final ClientTemplateRepresentation rep) {
-        auth.requireManage();
-
-        if (template == null) {
-            throw new NotFoundException("Could not find client template");
-        }
+        auth.clients().requireManageTemplates();
 
         try {
             RepresentationToModel.updateClientTemplate(rep, template);
@@ -125,11 +125,8 @@ public class ClientTemplateResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public ClientTemplateRepresentation getClient() {
-        auth.requireView();
+        auth.clients().requireView(template);
 
-        if (template == null) {
-            throw new NotFoundException("Could not find client template");
-        }
 
         return ModelToRepresentation.toRepresentation(template);
     }
@@ -141,11 +138,7 @@ public class ClientTemplateResource {
     @DELETE
     @NoCache
     public Response deleteClientTemplate() {
-        auth.requireManage();
-
-        if (template == null) {
-            throw new NotFoundException("Could not find client template");
-        }
+        auth.clients().requireManage(template);
 
         try {
             realm.removeClientTemplate(template.getId());
