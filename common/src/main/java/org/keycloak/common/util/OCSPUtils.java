@@ -317,8 +317,8 @@ public final class OCSPUtils {
         }
         if (certs.size() > 0) {
 
-            X500Name responderName = basicOcspResponse.getResponderId().toASN1Primitive().getName();
-            byte[] responderKey = basicOcspResponse.getResponderId().toASN1Primitive().getKeyHash();
+            X500Name responderName = basicOcspResponse.getResponderId().toASN1Object().getName();
+            byte[] responderKey = basicOcspResponse.getResponderId().toASN1Object().getKeyHash();
 
             if (responderName != null) {
                 logger.log(Level.INFO, "Responder Name: {0}", responderName.toString());

@@ -17,7 +17,7 @@
   ~ limitations under the License.
   -->
 
-<host xmlns="urn:jboss:domain:5.0">
+<host xmlns="urn:jboss:domain:4.0">
     <extensions>
         <?EXTENSIONS?>
     </extensions>
@@ -27,7 +27,7 @@
             <security-realm name="ManagementRealm">
                 <server-identities>
                     <!-- Replace this with either a base64 password of your own, or use a vault with a vault expression -->
-                    <secret value="c2xhdmVfdXMzcl9wYXNzd29yZA=="/>
+                    <secret value="c2xhdmVfdXNlcl9wYXNzd29yZA=="/>
                 </server-identities>
 
                 <authentication>
@@ -39,11 +39,6 @@
                 </authorization>
             </security-realm>
             <security-realm name="ApplicationRealm">
-                <server-identities>
-                    <ssl>
-                        <keystore path="application.keystore" relative-to="jboss.domain.config.dir" keystore-password="password" alias="server" key-password="password" generate-self-signed-certificate-host="localhost"/>
-                    </ssl>
-                </server-identities>
                 <authentication>
                     <local default-user="$local" allowed-users="*" skip-group-loading="true"/>
                     <properties path="application-users.properties" relative-to="jboss.domain.config.dir"/>
@@ -58,8 +53,8 @@
                 <json-formatter name="json-formatter"/>
             </formatters>
             <handlers>
-                <file-handler name="host-file" formatter="json-formatter" path="audit-log.log" relative-to="jboss.domain.data.dir"/>
-                <file-handler name="server-file" formatter="json-formatter" path="audit-log.log" relative-to="jboss.server.data.dir"/>
+                <file-handler name="host-file" formatter="json-formatter" relative-to="jboss.domain.data.dir" path="audit-log.log"/>
+                <file-handler name="server-file" formatter="json-formatter" relative-to="jboss.server.data.dir" path="audit-log.log"/>
             </handlers>
             <logger log-boot="true" log-read-only="false" enabled="false">
                 <handlers>
@@ -80,7 +75,7 @@
     </management>
 
     <domain-controller>
-        <remote username="$local" security-realm="ManagementRealm">
+        <remote security-realm="ManagementRealm">
             <discovery-options>
                 <static-discovery name="primary" protocol="${jboss.domain.master.protocol:remote}" host="${jboss.domain.master.address:127.0.0.1}" port="${jboss.domain.master.port:9999}"/>
             </discovery-options>
@@ -104,8 +99,6 @@
             <heap size="64m" max-size="256m"/>
             <jvm-options>
                 <option value="-server"/>
-                <option value="-XX:MetaspaceSize=96m"/>
-                <option value="-XX:MaxMetaspaceSize=256m"/>
             </jvm-options>
         </jvm>
     </jvms>

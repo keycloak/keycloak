@@ -43,11 +43,11 @@
 
         <!-- WildFly -->
         <jboss.as.version>7.2.0.Final</jboss.as.version>
-        <wildfly.version>11.0.0.Alpha1</wildfly.version>
+        <wildfly.version>10.0.0.Final</wildfly.version>
         <wildfly.build-tools.version>1.2.2.Final</wildfly.build-tools.version>
         <eap.version>7.1.0.Beta1-redhat-5</eap.version>
         <eap.build-tools.version>1.2.2.Final</eap.build-tools.version>
-        <wildfly.core.version>3.0.0.Beta11</wildfly.core.version>
+        <wildfly.core.version>2.0.10.Final</wildfly.core.version>
 
         <version.org.wildfly.security.wildfly-elytron>1.1.0.Beta32</version.org.wildfly.security.wildfly-elytron>
         <version.org.wildfly.security.elytron-web.undertow-server>1.0.0.Beta14</version.org.wildfly.security.elytron-web.undertow-server>
@@ -57,14 +57,14 @@
         <apache.httpcomponents.httpcore.version>4.4.1</apache.httpcomponents.httpcore.version>
         <apache.mime4j.version>0.6</apache.mime4j.version>
         <jboss.dmr.version>1.3.0.Final</jboss.dmr.version>
-        <bouncycastle.version>1.56</bouncycastle.version>
+        <bouncycastle.version>1.52</bouncycastle.version>
         <cxf.version>3.1.5</cxf.version>
         <dom4j.version>1.6.1</dom4j.version>
         <github.relaxng.version>2011.1</github.relaxng.version>
         <h2.version>1.3.173</h2.version>
         <hibernate.entitymanager.version>5.0.7.Final</hibernate.entitymanager.version>
         <hibernate.javax.persistence.version>1.0.0.Final</hibernate.javax.persistence.version>
-        <infinispan.version>8.2.6.Final</infinispan.version>
+        <infinispan.version>8.1.0.Final</infinispan.version>
         <jackson.version>2.5.4</jackson.version>
         <javax.mail.version>1.5.5</javax.mail.version>
         <jboss.logging.version>3.3.0.Final</jboss.logging.version>
@@ -79,7 +79,7 @@
         <sun.istack.version>2.21</sun.istack.version>
         <sun.jaxb.version>2.2.11</sun.jaxb.version>
         <sun.xsom.version>20140925</sun.xsom.version>
-        <undertow.version>1.4.11.Final</undertow.version>
+        <undertow.version>1.3.15.Final</undertow.version>
         <xmlsec.version>2.0.5</xmlsec.version>
 
         <!-- Authorization Drools Policy Provider -->

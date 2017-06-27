@@ -17,7 +17,7 @@
   ~ limitations under the License.
   -->
 
-<domain xmlns="urn:jboss:domain:5.0">
+<domain xmlns="urn:jboss:domain:4.0">
 
     <extensions>
         <?EXTENSIONS?>
@@ -60,6 +60,31 @@
          -->
         <profile name="load-balancer">
             <?SUBSYSTEMS socket-binding-group="load-balancer-sockets"?>
+            <subsystem xmlns="urn:jboss:domain:undertow:3.0">
+                <buffer-cache name="default"/>
+                <server name="default-server">
+                    <http-listener name="default" socket-binding="http" redirect-socket="https"/>
+                    <host name="default-host" alias="localhost">
+                        <location name="/" handler="lb-handler"/>
+                        <filter-ref name="server-header"/>
+                        <filter-ref name="x-powered-by-header"/>
+                    </host>
+                </server>
+                <servlet-container name="default">
+                    <jsp-config/>
+                    <websockets/>
+                </servlet-container>
+                <handlers>
+                    <reverse-proxy name="lb-handler">
+                        <host name="host1" outbound-socket-binding="remote-host1" scheme="ajp" path="/" instance-id="myroute1"/>
+                        <host name="host2" outbound-socket-binding="remote-host2" scheme="ajp" path="/" instance-id="myroute2"/>
+                    </reverse-proxy>
+                </handlers>
+                <filters>
+                    <response-header name="server-header" header-name="Server" header-value="WildFly/10"/>
+                    <response-header name="x-powered-by-header" header-name="X-Powered-By" header-value="Undertow/1"/>
+                </filters>
+            </subsystem>
         </profile>
     </profiles>
 
@@ -71,8 +96,12 @@
          These default configurations require the binding specification to be done in host.xml.
     -->
     <interfaces>
-        <interface name="management"/>
-        <interface name="public"/>
+        <interface name="management">
+            <inet-address value="${jboss.bind.address.management:127.0.0.1}"/>
+        </interface>
+        <interface name="public">
+            <inet-address value="${jboss.bind.address:127.0.0.1}"/>
+        </interface>
         <?INTERFACES?>
     </interfaces>
 
@@ -85,25 +114,32 @@
         </socket-binding-group>
         <!-- load-balancer-sockets should be removed in production systems and replaced with a better softare or hardare based one -->
         <socket-binding-group name="load-balancer-sockets" default-interface="public">
-            <!-- Needed for server groups using the 'load-balancer' profile  -->
+            <socket-binding name="ajp" port="${jboss.ajp.port:8009}"/>
+            <socket-binding name="http" port="${jboss.http.port:8080}"/>
+            <socket-binding name="https" port="${jboss.https.port:8443}"/>
+            <outbound-socket-binding name="remote-host1">
+                <remote-destination host="localhost" port="8159"/>
+            </outbound-socket-binding>
+            <outbound-socket-binding name="remote-host2">
+                <remote-destination host="localhost" port="8259"/>
+            </outbound-socket-binding>
             <?SOCKET-BINDINGS?>
         </socket-binding-group>
     </socket-binding-groups>
 
     <server-groups>
-        <server-group name="auth-server-group" profile="auth-server-clustered">
-            <jvm name="default">
-                <heap size="64m" max-size="512m"/>
-            </jvm>
-            <socket-binding-group ref="ha-sockets"/>
-        </server-group>
-
         <!-- load-balancer-group should be removed in production systems and replaced with a better softare or hardare based one -->
         <server-group name="load-balancer-group" profile="load-balancer">
             <jvm name="default">
                 <heap size="64m" max-size="512m"/>
             </jvm>
             <socket-binding-group ref="load-balancer-sockets"/>
+        </server-group>
+        <server-group name="auth-server-group" profile="auth-server-clustered">
+            <jvm name="default">
+                <heap size="64m" max-size="512m"/>
+            </jvm>
+            <socket-binding-group ref="ha-sockets"/>
         </server-group>
     </server-groups>
 

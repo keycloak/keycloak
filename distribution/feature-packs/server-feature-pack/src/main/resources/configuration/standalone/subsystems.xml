@@ -19,29 +19,28 @@
 <!--  See src/resources/configuration/ReadMe.txt for how the configuration assembly works -->
 <config>
    <subsystems>
-       <subsystem>logging.xml</subsystem>
-       <subsystem>bean-validation.xml</subsystem>
-       <subsystem supplement="default">keycloak-datasources2.xml</subsystem>
-       <subsystem>deployment-scanner.xml</subsystem>
-       <subsystem>ee.xml</subsystem>
-       <subsystem>ejb3.xml</subsystem>
-       <subsystem>io.xml</subsystem>
-       <subsystem>keycloak-infinispan2.xml</subsystem>
-       <subsystem>jaxrs.xml</subsystem>
-       <subsystem>jca.xml</subsystem>
-       <subsystem>jdr.xml</subsystem>
-       <subsystem>jmx.xml</subsystem>
-       <subsystem>jpa.xml</subsystem>
-       <subsystem>jsf.xml</subsystem>
-       <subsystem>mail.xml</subsystem>
-       <subsystem>naming.xml</subsystem>
-       <subsystem>remoting.xml</subsystem>
-       <subsystem>request-controller.xml</subsystem>
-       <subsystem>security-manager.xml</subsystem>
-       <subsystem supplement="standalone-wildfly">elytron.xml</subsystem>
-       <subsystem>security.xml</subsystem>
-       <subsystem>transactions.xml</subsystem>
-       <subsystem>undertow.xml</subsystem>
-       <subsystem>keycloak-server.xml</subsystem>
+      <subsystem>logging.xml</subsystem>
+      <subsystem>bean-validation.xml</subsystem>
+      <subsystem supplement="default">keycloak-datasources.xml</subsystem>
+      <subsystem>deployment-scanner.xml</subsystem>
+      <subsystem>ee.xml</subsystem>
+      <subsystem>ejb3.xml</subsystem>
+      <subsystem>io.xml</subsystem>
+      <subsystem>keycloak-infinispan.xml</subsystem>
+      <subsystem>jaxrs.xml</subsystem>
+      <subsystem>jca.xml</subsystem>
+      <subsystem>jdr.xml</subsystem>
+      <subsystem>jmx.xml</subsystem>
+      <subsystem>jpa.xml</subsystem>
+      <subsystem>jsf.xml</subsystem>
+      <subsystem>mail.xml</subsystem>
+      <subsystem>naming.xml</subsystem>
+      <subsystem>remoting.xml</subsystem>
+      <subsystem>request-controller.xml</subsystem>
+      <subsystem>security-manager.xml</subsystem>
+      <subsystem>security.xml</subsystem>
+      <subsystem>transactions.xml</subsystem>
+      <subsystem>undertow.xml</subsystem>
+      <subsystem>keycloak-server.xml</subsystem>
    </subsystems>
 </config>

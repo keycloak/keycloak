@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 
@@ -172,11 +173,13 @@ public class AuthServerTestEnricher {
             updateWithAuthServerInfo(container);
             suiteContext.setAuthServerInfo(container);
 
+            // TODO: fix to use bindHttpPortOffset configuration option from arquillian.xml similarly to cross-DC setup instead
+            AtomicInteger backendIndex = new AtomicInteger(0);
             containers.stream()
               .filter(c -> c.getQualifier().startsWith(AUTH_SERVER_BACKEND))
+              .sorted((a, b) -> a.getQualifier().compareTo(b.getQualifier()))
               .forEach(c -> {
-                String portOffsetString = c.getArquillianContainer().getContainerConfiguration().getContainerProperties().getOrDefault("bindHttpPortOffset", "0");
-                updateWithAuthServerInfo(c, Integer.valueOf(portOffsetString));
+                updateWithAuthServerInfo(c, backendIndex.incrementAndGet());
                 suiteContext.addAuthServerBackendsInfo(0, c);
               });
 

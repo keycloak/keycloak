@@ -30,17 +30,16 @@
         <subsystem>jaxrs.xml</subsystem>
         <subsystem>jca.xml</subsystem>
         <subsystem>jdr.xml</subsystem>
-        <subsystem supplement="default">jgroups.xml</subsystem>
+        <subsystem>jgroups.xml</subsystem>
         <subsystem>jmx.xml</subsystem>
         <subsystem>jpa.xml</subsystem>
         <subsystem>jsf.xml</subsystem>
         <subsystem>mail.xml</subsystem>
-        <subsystem supplement="default">mod_cluster.xml</subsystem>
+        <subsystem>mod_cluster.xml</subsystem>
         <subsystem>naming.xml</subsystem>
         <subsystem>remoting.xml</subsystem>
         <subsystem>request-controller.xml</subsystem>
         <subsystem>security-manager.xml</subsystem>
-        <subsystem supplement="standalone-wildfly">elytron.xml</subsystem>
         <subsystem>security.xml</subsystem>
         <subsystem>transactions.xml</subsystem>
         <subsystem supplement="ha">undertow.xml</subsystem>

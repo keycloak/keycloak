@@ -45,7 +45,8 @@
         <selenium.version>2.53.0</selenium.version>
         <arquillian-drone.version>2.0.1.Final</arquillian-drone.version>
         <arquillian-graphene.version>2.1.0.Alpha3</arquillian-graphene.version>
-        <arquillian-wildfly-container.version>2.1.0.Alpha2</arquillian-wildfly-container.version>
+        <!-- This reverts change from commit 67bee0dfc2240db237165b9dd988b2c1d74cab92 and needs to be 2.1.0.Alpha2 or later for WF 11 but that fails with WF 10 -->
+        <arquillian-wildfly-container.version>2.0.0.Final</arquillian-wildfly-container.version>
         <arquillian-infinispan-container.version>1.2.0.Beta2</arquillian-infinispan-container.version>
         <version.shrinkwrap.resolvers>2.2.2</version.shrinkwrap.resolvers>
         <undertow-embedded.version>1.0.0.Alpha2</undertow-embedded.version>
