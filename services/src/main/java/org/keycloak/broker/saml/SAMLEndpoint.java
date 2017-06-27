@@ -372,13 +372,13 @@ public class SAMLEndpoint {
                     assertionElement = DocumentUtil.getElement(holder.getSamlDocument(), new QName(JBossSAMLConstants.ASSERTION.get()));
                 }
 
-                if (config.isWantAssertionsSigned() && config.isValidateSignature()) {
-                    if (!AssertionUtil.isSignatureValid(assertionElement, getIDPKeyLocator())) {
-                        logger.error("validation failed");
-                        event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
-                        event.error(Errors.INVALID_SIGNATURE);
-                        return ErrorPage.error(session, Messages.INVALID_REQUESTER);
-                    }
+                boolean signed = AssertionUtil.isSignedElement(assertionElement);
+                if ((config.isWantAssertionsSigned() && !signed)
+                        || (signed && config.isValidateSignature() && !AssertionUtil.isSignatureValid(assertionElement, getIDPKeyLocator()))) {
+                    logger.error("validation failed");
+                    event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
+                    event.error(Errors.INVALID_SIGNATURE);
+                    return ErrorPage.error(session, Messages.INVALID_REQUESTER);
                 }
 
                 AssertionType assertion = responseType.getAssertions().get(0).getAssertion();

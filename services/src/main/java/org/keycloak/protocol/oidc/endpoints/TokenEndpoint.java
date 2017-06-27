@@ -560,13 +560,9 @@ public class TokenEndpoint {
     // https://tools.ietf.org/html/rfc7636#section-4.6
     private String generateS256CodeChallenge(String codeVerifier) throws Exception {
         MessageDigest md = MessageDigest.getInstance("SHA-256");
-        md.update(codeVerifier.getBytes());
-        StringBuilder sb = new StringBuilder();
-        for (byte b : md.digest()) {
-            String hex = String.format("%02x", b);
-            sb.append(hex);
-        }
-        String codeVerifierEncoded = Base64Url.encode(sb.toString().getBytes());
+        md.update(codeVerifier.getBytes("ISO_8859_1"));
+        byte[] digestBytes = md.digest();
+        String codeVerifierEncoded = Base64Url.encode(digestBytes);
         return codeVerifierEncoded;
     }
  

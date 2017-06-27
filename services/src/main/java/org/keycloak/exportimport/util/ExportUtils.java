@@ -343,7 +343,7 @@ public class ExportUtils {
         representation.setPolicies(policies);
 
         List<ScopeRepresentation> scopes = storeFactory.getScopeStore().findByResourceServer(settingsModel.getId()).stream().map(scope -> {
-            ScopeRepresentation rep = toRepresentation(scope, authorization);
+            ScopeRepresentation rep = toRepresentation(scope);
 
             rep.setId(null);
             rep.setPolicies(null);

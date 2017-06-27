@@ -25,6 +25,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.services.clientregistration.ClientRegistrationTokenUtils;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -48,7 +49,7 @@ import java.util.List;
  */
 public class ClientInitialAccessResource {
 
-    private final RealmAuth auth;
+    private final AdminPermissionEvaluator auth;
     private final RealmModel realm;
     private final AdminEventBuilder adminEvent;
 
@@ -58,12 +59,11 @@ public class ClientInitialAccessResource {
     @Context
     protected UriInfo uriInfo;
 
-    public ClientInitialAccessResource(RealmModel realm, RealmAuth auth, AdminEventBuilder adminEvent) {
+    public ClientInitialAccessResource(RealmModel realm, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.auth = auth;
         this.realm = realm;
         this.adminEvent = adminEvent.resource(ResourceType.CLIENT_INITIAL_ACCESS_MODEL);
 
-        auth.init(RealmAuth.Resource.CLIENT);
     }
 
     /**
@@ -76,12 +76,12 @@ public class ClientInitialAccessResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public ClientInitialAccessPresentation create(ClientInitialAccessCreatePresentation config, @Context final HttpServletResponse response) {
-        auth.requireManage();
+        auth.clients().requireManage();
 
         int expiration = config.getExpiration() != null ? config.getExpiration() : 0;
         int count = config.getCount() != null ? config.getCount() : 1;
 
-        ClientInitialAccessModel clientInitialAccessModel = session.sessions().createClientInitialAccessModel(realm, expiration, count);
+        ClientInitialAccessModel clientInitialAccessModel = session.realms().createClientInitialAccessModel(realm, expiration, count);
 
         adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, clientInitialAccessModel.getId()).representation(config).success();
 
@@ -99,9 +99,9 @@ public class ClientInitialAccessResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public List<ClientInitialAccessPresentation> list() {
-        auth.requireView();
+        auth.clients().requireView();
 
-        List<ClientInitialAccessModel> models = session.sessions().listClientInitialAccess(realm);
+        List<ClientInitialAccessModel> models = session.realms().listClientInitialAccess(realm);
         List<ClientInitialAccessPresentation> reps = new LinkedList<>();
         for (ClientInitialAccessModel m : models) {
             ClientInitialAccessPresentation r = wrap(m);
@@ -113,9 +113,9 @@ public class ClientInitialAccessResource {
     @DELETE
     @Path("{id}")
     public void delete(final @PathParam("id") String id) {
-        auth.requireManage();
+        auth.clients().requireManage();
 
-        session.sessions().removeClientInitialAccessModel(realm, id);
+        session.realms().removeClientInitialAccessModel(realm, id);
         adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
     }
 

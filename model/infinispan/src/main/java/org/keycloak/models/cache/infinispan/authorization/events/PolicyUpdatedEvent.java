@@ -30,13 +30,17 @@ public class PolicyUpdatedEvent extends InvalidationEvent implements Authorizati
     private String id;
     private String name;
     private static Set<String> resources;
+    private Set<String> resourceTypes;
+    private Set<String> scopes;
     private String serverId;
 
-    public static PolicyUpdatedEvent create(String id, String name, Set<String> resources, String serverId) {
+    public static PolicyUpdatedEvent create(String id, String name, Set<String> resources, Set<String> resourceTypes, Set<String> scopes, String serverId) {
         PolicyUpdatedEvent event = new PolicyUpdatedEvent();
         event.id = id;
         event.name = name;
         event.resources = resources;
+        event.resourceTypes = resourceTypes;
+        event.scopes = scopes;
         event.serverId = serverId;
         return event;
     }
@@ -53,6 +57,6 @@ public class PolicyUpdatedEvent extends InvalidationEvent implements Authorizati
 
     @Override
     public void addInvalidations(StoreFactoryCacheManager cache, Set<String> invalidations) {
-        cache.policyUpdated(id, name, resources, serverId, invalidations);
+        cache.policyUpdated(id, name, resources, resourceTypes, scopes, serverId, invalidations);
     }
 }

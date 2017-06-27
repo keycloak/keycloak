@@ -46,13 +46,21 @@
         <!--<fuse62.version>6.2.0.redhat-133</fuse62.version>-->
         <fuse62.version>6.2.1.redhat-084</fuse62.version>
         
+        <!-- cache server versions -->
+        <infinispan.version>9.0.1.Final</infinispan.version>
+        <jdg.version>8.4.0.Final-redhat-2</jdg.version><!-- JDG 7.1.0 -->
+        
         <jboss.default.worker.io-threads>16</jboss.default.worker.io-threads>
         <jboss.default.worker.task-max-threads>128</jboss.default.worker.task-max-threads>
+
+        <cache.default.worker.io-threads>2</cache.default.worker.io-threads>
+        <cache.default.worker.task-max-threads>4</cache.default.worker.task-max-threads>
     </properties>
 
     <modules>
         <module>auth-server</module>
         <module>app-server</module>
+        <module>cache-server</module>
     </modules>
 
     <profiles>

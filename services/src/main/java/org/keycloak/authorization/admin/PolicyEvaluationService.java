@@ -71,7 +71,7 @@ import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.resources.admin.RealmAuth;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 /**
@@ -80,13 +80,13 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 public class PolicyEvaluationService {
 
     private final AuthorizationProvider authorization;
-    private final RealmAuth auth;
+    private final AdminPermissionEvaluator auth;
     @Context
     private HttpRequest httpRequest;
 
     private final ResourceServer resourceServer;
 
-    PolicyEvaluationService(ResourceServer resourceServer, AuthorizationProvider authorization, RealmAuth auth) {
+    PolicyEvaluationService(ResourceServer resourceServer, AuthorizationProvider authorization, AdminPermissionEvaluator auth) {
         this.resourceServer = resourceServer;
         this.authorization = authorization;
         this.auth = auth;
@@ -118,7 +118,7 @@ public class PolicyEvaluationService {
     @Consumes("application/json")
     @Produces("application/json")
     public Response evaluate(PolicyEvaluationRequest evaluationRequest) throws Throwable {
-        this.auth.requireView();
+        this.auth.realm().requireViewAuthorization();
         CloseableKeycloakIdentity identity = createIdentity(evaluationRequest);
         try {
             return Response.ok(PolicyEvaluationResponseBuilder.build(evaluate(evaluationRequest, createEvaluationContext(evaluationRequest, identity)), resourceServer, authorization, identity)).build();

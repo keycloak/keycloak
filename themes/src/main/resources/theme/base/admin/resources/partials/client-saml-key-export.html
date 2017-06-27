@@ -9,7 +9,7 @@
 
     <h1>{{:: 'export-saml-key' | translate}} {{client.clientId|capitalize}}</h1>
 
-    <form class="form-horizontal" name="keyForm" novalidate kc-read-only="!access.manageRealm">
+    <form class="form-horizontal" name="keyForm" novalidate kc-read-only="!client.access.configure">
         <input type="text" readonly value="this is not a login form" style="display: none;">
         <input type="password" readonly value="this is not a login form" style="display: none;">
 
@@ -55,7 +55,7 @@
                 <kc-tooltip>{{:: 'store-password.tooltip' | translate}}</kc-tooltip>
            </div>
             <div class="form-group">
-                <div class="col-md-10 col-md-offset-2" data-ng-show="access.manageRealm">
+                <div class="col-md-10 col-md-offset-2" data-ng-show="client.access.configure">
                     <button class="btn btn-primary" type="submit" data-ng-click="download()">{{:: 'download' | translate}}</button>
                 </div>
             </div>

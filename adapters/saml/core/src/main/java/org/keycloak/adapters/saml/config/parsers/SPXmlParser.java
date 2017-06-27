@@ -89,6 +89,7 @@ public class SPXmlParser extends AbstractParser {
         sp.setNameIDPolicyFormat(getAttributeValue(startElement, ConfigXmlConstants.NAME_ID_POLICY_FORMAT_ATTR));
         sp.setForceAuthentication(getBooleanAttributeValue(startElement, ConfigXmlConstants.FORCE_AUTHENTICATION_ATTR));
         sp.setIsPassive(getBooleanAttributeValue(startElement, ConfigXmlConstants.IS_PASSIVE_ATTR));
+        sp.setAutodetectBearerOnly(getBooleanAttributeValue(startElement, ConfigXmlConstants.AUTODETECT_BEARER_ONLY_ATTR));
         sp.setTurnOffChangeSessionIdOnLogin(getBooleanAttributeValue(startElement, ConfigXmlConstants.TURN_OFF_CHANGE_SESSSION_ID_ON_LOGIN_ATTR));
         while (xmlEventReader.hasNext()) {
             XMLEvent xmlEvent = StaxParserUtil.peek(xmlEventReader);

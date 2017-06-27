@@ -7,7 +7,7 @@
 
     <kc-tabs-client></kc-tabs-client>
 
-    <form class="form-horizontal" name="allowScope" novalidate kc-read-only="!access.manageClients">
+    <form class="form-horizontal" name="allowScope" novalidate kc-read-only="!client.access.manage">
         <fieldset class="border-top">
             <div class="form-group" ng-show="client.clientTemplate">
                 <label class="col-md-2 control-label" for="useTemplateScope">Inherit Template Mappers</label>
@@ -35,7 +35,7 @@
                         </div>
                     </div>
 
-                    <div class="pull-right" data-ng-show="access.manageClients">
+                    <div class="pull-right" data-ng-show="client.access.manage">
                         <a class="btn btn-default" href="#/create/client/{{realm.realm}}/{{client.id}}/mappers">{{:: 'create' | translate}}</a>
                         <a class="btn btn-default" href="#/realms/{{realm.realm}}/clients/{{client.id}}/add-mappers">{{:: 'add-builtin' | translate}}</a>
                     </div>
@@ -55,7 +55,7 @@
             <td>{{mapperTypes[mapper.protocolMapper].category}}</td>
             <td>{{mapperTypes[mapper.protocolMapper].name}}</td>
             <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/clients/{{client.id}}/mappers/{{mapper.id}}">{{:: 'edit' | translate}}</td>
-            <td class="kc-action-cell" data-ng-show="access.manageClients" data-ng-click="removeMapper(mapper)">{{:: 'delete' | translate}}</td>
+            <td class="kc-action-cell" data-ng-show="client.access.manage" data-ng-click="removeMapper(mapper)">{{:: 'delete' | translate}}</td>
         </tr>
         <tr data-ng-show="mappers.length == 0">
             <td>{{:: 'no-mappers-available' | translate}}</td>

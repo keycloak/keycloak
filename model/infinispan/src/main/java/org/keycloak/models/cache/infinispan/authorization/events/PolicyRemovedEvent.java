@@ -30,13 +30,17 @@ public class PolicyRemovedEvent extends InvalidationEvent implements Authorizati
     private String id;
     private String name;
     private Set<String> resources;
+    private Set<String> resourceTypes;
+    private Set<String> scopes;
     private String serverId;
 
-    public static PolicyRemovedEvent create(String id, String name, Set<String> resources, String serverId) {
+    public static PolicyRemovedEvent create(String id, String name, Set<String> resources, Set<String> resourceTypes, Set<String> scopes, String serverId) {
         PolicyRemovedEvent event = new PolicyRemovedEvent();
         event.id = id;
         event.name = name;
         event.resources = resources;
+        event.resourceTypes = resourceTypes;
+        event.scopes = scopes;
         event.serverId = serverId;
         return event;
     }
@@ -53,6 +57,6 @@ public class PolicyRemovedEvent extends InvalidationEvent implements Authorizati
 
     @Override
     public void addInvalidations(StoreFactoryCacheManager cache, Set<String> invalidations) {
-        cache.policyRemoval(id, name, resources, serverId, invalidations);
+        cache.policyRemoval(id, name, resources, resourceTypes, scopes, serverId, invalidations);
     }
 }

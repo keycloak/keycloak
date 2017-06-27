@@ -58,6 +58,7 @@ public class SP implements Serializable {
     private PrincipalNameMapping principalNameMapping;
     private Set<String> roleAttributes;
     private IDP idp;
+    private boolean autodetectBearerOnly;
 
     public String getEntityID() {
         return entityID;
@@ -147,4 +148,11 @@ public class SP implements Serializable {
         this.logoutPage = logoutPage;
     }
 
+    public boolean isAutodetectBearerOnly() {
+        return autodetectBearerOnly;
+    }
+
+    public void setAutodetectBearerOnly(boolean autodetectBearerOnly) {
+        this.autodetectBearerOnly = autodetectBearerOnly;
+    }
 }

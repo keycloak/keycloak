@@ -26,6 +26,7 @@ import org.keycloak.services.Urls;
 
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -38,12 +39,16 @@ public class RedirectUtils {
 
     public static String verifyRealmRedirectUri(UriInfo uriInfo, String redirectUri, RealmModel realm) {
         Set<String> validRedirects = getValidateRedirectUris(uriInfo, realm);
-        return verifyRedirectUri(uriInfo, null, redirectUri, realm, validRedirects);
+        return verifyRedirectUri(uriInfo, null, redirectUri, realm, validRedirects, true);
     }
 
     public static String verifyRedirectUri(UriInfo uriInfo, String redirectUri, RealmModel realm, ClientModel client) {
+        return verifyRedirectUri(uriInfo, redirectUri, realm, client, true);
+    }
+
+    public static String verifyRedirectUri(UriInfo uriInfo, String redirectUri, RealmModel realm, ClientModel client, boolean requireRedirectUri) {
         if (client != null)
-            return verifyRedirectUri(uriInfo, client.getRootUrl(), redirectUri, realm, client.getRedirectUris());
+            return verifyRedirectUri(uriInfo, client.getRootUrl(), redirectUri, realm, client.getRedirectUris(), requireRedirectUri);
         return null;
     }
 
@@ -69,10 +74,16 @@ public class RedirectUtils {
         return redirects;
     }
 
-    private static String verifyRedirectUri(UriInfo uriInfo, String rootUrl, String redirectUri, RealmModel realm, Set<String> validRedirects) {
+    private static String verifyRedirectUri(UriInfo uriInfo, String rootUrl, String redirectUri, RealmModel realm, Set<String> validRedirects, boolean requireRedirectUri) {
         if (redirectUri == null) {
-            logger.debug("No Redirect URI parameter specified");
-            return null;
+            if (!requireRedirectUri) {
+                redirectUri = getSingleValidRedirectUri(validRedirects);
+            }
+
+            if (redirectUri == null) {
+                logger.debug("No Redirect URI parameter specified");
+                return null;
+            }
         } else if (validRedirects.isEmpty()) {
             logger.debug("No Redirect URIs supplied");
             redirectUri = null;
@@ -147,6 +158,16 @@ public class RedirectUtils {
             } else if (validRedirect.equals(redirect)) return true;
         }
         return false;
+    }
+
+    private static String getSingleValidRedirectUri(Collection<String> validRedirects) {
+        if (validRedirects.size() != 1) return null;
+        String validRedirect = validRedirects.iterator().next();
+        int idx = validRedirect.indexOf("/*");
+        if (idx > -1) {
+            validRedirect = validRedirect.substring(0, idx);
+        }
+        return validRedirect;
     }
 
 }

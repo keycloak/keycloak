@@ -34,7 +34,8 @@ public class UserModelIdentity implements Identity {
     protected RealmModel realm;
     protected UserModel user;
 
-    public UserModelIdentity(UserModel user) {
+    public UserModelIdentity(RealmModel realm, UserModel user) {
+        this.realm = realm;
         this.user = user;
     }
 

@@ -17,6 +17,8 @@
 
 package org.keycloak.models;
 
+import org.keycloak.provider.ProviderEvent;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -26,6 +28,11 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public interface GroupModel extends RoleMapperModel {
+    interface GroupRemovedEvent extends ProviderEvent {
+        RealmModel getRealm();
+        GroupModel getGroup();
+        KeycloakSession getKeycloakSession();
+    }
     String getId();
 
     String getName();

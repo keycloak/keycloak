@@ -17,13 +17,14 @@
 package org.keycloak.models.sessions.infinispan;
 
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.*;
 
-import org.keycloak.models.cache.infinispan.AddInvalidatedActionTokenEvent;
-import org.keycloak.models.cache.infinispan.RemoveActionTokensSpecificEvent;
+import org.keycloak.models.cache.infinispan.events.RemoveActionTokensSpecificEvent;
 import org.keycloak.models.sessions.infinispan.entities.ActionTokenValueEntity;
 import org.keycloak.models.sessions.infinispan.entities.ActionTokenReducedKey;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import org.infinispan.Cache;
 
 /**
@@ -57,8 +58,11 @@ public class InfinispanActionTokenStoreProvider implements ActionTokenStoreProvi
         ActionTokenReducedKey tokenKey = new ActionTokenReducedKey(key.getUserId(), key.getActionId(), key.getActionVerificationNonce());
         ActionTokenValueEntity tokenValue = new ActionTokenValueEntity(notes);
 
-        ClusterProvider cluster = session.getProvider(ClusterProvider.class);
-        this.tx.notify(cluster, InfinispanActionTokenStoreProviderFactory.ACTION_TOKEN_EVENTS, new AddInvalidatedActionTokenEvent(tokenKey, key.getExpiration(), tokenValue), false);
+        this.tx.put(actionKeyCache, tokenKey, tokenValue, key.getExpiration() - Time.currentTime(), TimeUnit.SECONDS);
+    }
+
+    private static String generateActionTokenEventId() {
+        return InfinispanActionTokenStoreProviderFactory.ACTION_TOKEN_EVENTS + "/" + UUID.randomUUID();
     }
 
     @Override
@@ -87,12 +91,13 @@ public class InfinispanActionTokenStoreProvider implements ActionTokenStoreProvi
         return value;
     }
 
+    @Override
     public void removeAll(String userId, String actionId) {
         if (userId == null || actionId == null) {
             return;
         }
 
         ClusterProvider cluster = session.getProvider(ClusterProvider.class);
-        this.tx.notify(cluster, InfinispanActionTokenStoreProviderFactory.ACTION_TOKEN_EVENTS, new RemoveActionTokensSpecificEvent(userId, actionId), false);
+        this.tx.notify(cluster, generateActionTokenEventId(), new RemoveActionTokensSpecificEvent(userId, actionId), false);
     }
 }

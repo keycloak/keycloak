@@ -1885,6 +1885,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         ComponentEntity c = em.find(ComponentEntity.class, component.getId());
         if (c == null) return;
         session.users().preRemove(this, component);
+        ComponentUtil.notifyPreRemove(session, this, component);
         removeComponents(component.getId());
         getEntity().getComponents().remove(c);
     }
@@ -1896,7 +1897,10 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         getEntity().getComponents().stream()
                 .filter(sameParent)
                 .map(this::entityToModel)
-                .forEach(c -> session.users().preRemove(this, c));
+                .forEach((ComponentModel c) -> {
+                    session.users().preRemove(this, c);
+                    ComponentUtil.notifyPreRemove(session, this, c);
+                });
 
         getEntity().getComponents().removeIf(sameParent);
     }

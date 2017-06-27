@@ -23,6 +23,9 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.Config;
 import org.keycloak.KeyPairVerifier;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
+import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.PemUtils;
@@ -63,6 +66,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -72,7 +76,6 @@ import org.keycloak.services.managers.LDAPConnectionTestManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.UserStorageSyncManager;
-import org.keycloak.services.resources.admin.RealmAuth.Resource;
 import org.keycloak.storage.UserStorageProviderModel;
 
 import javax.ws.rs.Consumes;
@@ -112,7 +115,7 @@ import static org.keycloak.models.utils.StripSecretsUtils.stripForExport;
  */
 public class RealmAdminResource {
     protected static final Logger logger = Logger.getLogger(RealmAdminResource.class);
-    protected RealmAuth auth;
+    protected AdminPermissionEvaluator auth;
     protected RealmModel realm;
     private TokenManager tokenManager;
     private AdminEventBuilder adminEvent;
@@ -129,14 +132,11 @@ public class RealmAdminResource {
     @Context
     protected HttpHeaders headers;
 
-    public RealmAdminResource(RealmAuth auth, RealmModel realm, TokenManager tokenManager, AdminEventBuilder adminEvent) {
+    public RealmAdminResource(AdminPermissionEvaluator auth, RealmModel realm, TokenManager tokenManager, AdminEventBuilder adminEvent) {
         this.auth = auth;
         this.realm = realm;
         this.tokenManager = tokenManager;
         this.adminEvent = adminEvent.realm(realm).resource(ResourceType.REALM);
-
-        auth.init(RealmAuth.Resource.REALM);
-        auth.requireAny();
     }
 
     /**
@@ -149,7 +149,7 @@ public class RealmAdminResource {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     public ClientRepresentation convertClientDescription(String description) {
-        auth.init(Resource.CLIENT).requireManage();
+        auth.clients().requireManage();
 
         if (realm == null) {
             throw new NotFoundException("Realm not found.");
@@ -238,7 +238,7 @@ public class RealmAdminResource {
      */
     @Path("roles")
     public RoleContainerResource getRoleContainerResource() {
-        return new RoleContainerResource(uriInfo, realm, auth, realm, adminEvent);
+        return new RoleContainerResource(session, uriInfo, realm, auth, realm, adminEvent);
     }
 
     /**
@@ -252,15 +252,15 @@ public class RealmAdminResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public RealmRepresentation getRealm() {
-        if (auth.hasView()) {
+        if (auth.realm().canViewRealm()) {
             return ModelToRepresentation.toRepresentation(realm, false);
         } else {
-            auth.requireAny();
+            auth.realm().requireViewRealmNameList();
 
             RealmRepresentation rep = new RealmRepresentation();
             rep.setRealm(realm.getName());
 
-            if (auth.init(Resource.IDENTITY_PROVIDER).hasView()) {
+            if (auth.realm().canViewIdentityProviders()) {
                 RealmRepresentation r = ModelToRepresentation.toRepresentation(realm, false);
                 rep.setIdentityProviders(r.getIdentityProviders());
                 rep.setIdentityProviderMappers(r.getIdentityProviderMappers());
@@ -282,7 +282,7 @@ public class RealmAdminResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     public Response updateRealm(final RealmRepresentation rep) {
-        auth.requireManage();
+        auth.realm().requireManageRealm();
 
         logger.debug("updating realm: " + realm.getName());
 
@@ -344,7 +344,7 @@ public class RealmAdminResource {
      */
     @DELETE
     public void deleteRealm() {
-        auth.requireManage();
+        auth.realm().requireManageRealm();
 
         if (!new RealmManager(session).removeRealm(realm)) {
             throw new NotFoundException("Realm doesn't exist");
@@ -363,6 +363,50 @@ public class RealmAdminResource {
         //resourceContext.initResource(users);
         return users;
     }
+
+    @NoCache
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("users-management-permissions")
+    public ManagementPermissionReference getUserMgmtPermissions() {
+        auth.realm().requireViewRealm();
+
+        AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
+        if (permissions.users().isPermissionsEnabled()) {
+            return toUsersMgmtRef(permissions);
+        } else {
+            return new ManagementPermissionReference();
+        }
+
+    }
+
+    @PUT
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Path("users-management-permissions")
+    public ManagementPermissionReference setUsersManagementPermissionsEnabled(ManagementPermissionReference ref) {
+        auth.realm().requireManageRealm();
+
+        AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
+        permissions.users().setPermissionsEnabled(ref.isEnabled());
+        if (ref.isEnabled()) {
+            return toUsersMgmtRef(permissions);
+        } else {
+            return new ManagementPermissionReference();
+        }
+    }
+
+
+    public static ManagementPermissionReference toUsersMgmtRef(AdminPermissionManagement permissions) {
+        ManagementPermissionReference ref = new ManagementPermissionReference();
+        ref.setEnabled(true);
+        ref.setResource(permissions.users().resource().getId());
+        Map<String, String> scopes = permissions.users().getPermissions();
+        ref.setScopePermissions(scopes);
+        return ref;
+    }
+
 
     @Path("user-storage")
     public UserStorageProviderResource userStorage() {
@@ -388,7 +432,7 @@ public class RealmAdminResource {
      */
     @Path("roles-by-id")
     public RoleByIdResource rolesById() {
-        RoleByIdResource resource = new RoleByIdResource(realm, auth, adminEvent);
+         RoleByIdResource resource = new RoleByIdResource(realm, auth, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(resource);
         //resourceContext.initResource(resource);
         return resource;
@@ -401,7 +445,7 @@ public class RealmAdminResource {
     @Path("push-revocation")
     @POST
     public GlobalRequestResult pushRevocation() {
-        auth.requireManage();
+        auth.realm().requireManageRealm();
 
         GlobalRequestResult result = new ResourceAdminManager(session).pushRealmRevocationPolicy(uriInfo.getRequestUri(), realm);
         adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).representation(result).success();
@@ -416,7 +460,7 @@ public class RealmAdminResource {
     @Path("logout-all")
     @POST
     public GlobalRequestResult logoutAll() {
-        auth.init(RealmAuth.Resource.USER).requireManage();
+        auth.users().requireManage();
 
         session.sessions().removeUserSessions(realm);
         GlobalRequestResult result = new ResourceAdminManager(session).logoutAll(uriInfo.getRequestUri(), realm);
@@ -433,7 +477,7 @@ public class RealmAdminResource {
     @Path("sessions/{session}")
     @DELETE
     public void deleteSession(@PathParam("session") String sessionId) {
-        auth.init(RealmAuth.Resource.USER).requireManage();
+        auth.users().requireManage();
 
         UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
         if (userSession == null) throw new NotFoundException("Sesssion not found");
@@ -455,7 +499,7 @@ public class RealmAdminResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public List<Map<String, String>> getClientSessionStats() {
-        auth.requireView();
+        auth.realm().requireViewRealm();
 
         List<Map<String, String>> data = new LinkedList<Map<String, String>>();
         for (ClientModel client : realm.getClients()) {
@@ -482,7 +526,7 @@ public class RealmAdminResource {
     @Path("events/config")
     @Produces(MediaType.APPLICATION_JSON)
     public RealmEventsConfigRepresentation getRealmEventsConfig() {
-        auth.init(RealmAuth.Resource.EVENTS).requireView();
+        auth.realm().requireViewEvents();
 
         RealmEventsConfigRepresentation config = ModelToRepresentation.toEventsConfigReprensetation(realm);
         if (config.getEnabledEventTypes() == null || config.getEnabledEventTypes().isEmpty()) {
@@ -507,7 +551,7 @@ public class RealmAdminResource {
     @Path("events/config")
     @Consumes(MediaType.APPLICATION_JSON)
     public void updateRealmEventsConfig(final RealmEventsConfigRepresentation rep) {
-        auth.init(RealmAuth.Resource.EVENTS).requireManage();
+        auth.realm().requireManageEvents();
 
         logger.debug("updating realm events config: " + realm.getName());
         new RealmManager(session).updateRealmEventsConfig(rep, realm);
@@ -536,7 +580,7 @@ public class RealmAdminResource {
                                                @QueryParam("user") String user, @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
                                                @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
                                                @QueryParam("max") Integer maxResults) {
-        auth.init(RealmAuth.Resource.EVENTS).requireView();
+        auth.realm().requireViewEvents();
 
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
 
@@ -629,7 +673,7 @@ public class RealmAdminResource {
                                                     @QueryParam("dateTo") String dateTo, @QueryParam("first") Integer firstResult,
                                                     @QueryParam("max") Integer maxResults,
                                                     @QueryParam("resourceTypes") List<String> resourceTypes) {
-        auth.init(RealmAuth.Resource.EVENTS).requireView();
+        auth.realm().requireViewEvents();
 
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         AdminEventQuery query = eventStore.createAdminQuery().realm(realm.getId());;
@@ -722,7 +766,7 @@ public class RealmAdminResource {
     @Path("events")
     @DELETE
     public void clearEvents() {
-        auth.init(RealmAuth.Resource.EVENTS).requireManage();
+        auth.realm().requireManageEvents();
 
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         eventStore.clear(realm.getId());
@@ -735,7 +779,7 @@ public class RealmAdminResource {
     @Path("admin-events")
     @DELETE
     public void clearAdminEvents() {
-        auth.init(RealmAuth.Resource.EVENTS).requireManage();
+        auth.realm().requireManageEvents();
 
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         eventStore.clearAdmin(realm.getId());
@@ -757,7 +801,7 @@ public class RealmAdminResource {
                                        @QueryParam("bindDn") String bindDn, @QueryParam("bindCredential") String bindCredential,
                                        @QueryParam("useTruststoreSpi") String useTruststoreSpi, @QueryParam("connectionTimeout") String connectionTimeout,
                                        @QueryParam("componentId") String componentId) {
-        auth.init(RealmAuth.Resource.REALM).requireManage();
+        auth.realm().requireManageRealm();
 
         if (componentId != null && bindCredential.equals(ComponentRepresentation.SECRET_VALUE)) {
             bindCredential = realm.getComponent(componentId).getConfig().getFirst(LDAPConstants.BIND_CREDENTIAL);
@@ -782,7 +826,7 @@ public class RealmAdminResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("default-groups")
     public List<GroupRepresentation> getDefaultGroups() {
-        auth.requireView();
+        auth.realm().requireViewRealm();
 
         List<GroupRepresentation> defaults = new LinkedList<>();
         for (GroupModel group : realm.getDefaultGroups()) {
@@ -794,7 +838,7 @@ public class RealmAdminResource {
     @NoCache
     @Path("default-groups/{groupId}")
     public void addDefaultGroup(@PathParam("groupId") String groupId) {
-        auth.requireManage();
+        auth.realm().requireManageRealm();
 
         GroupModel group = realm.getGroupById(groupId);
         if (group == null) {
@@ -809,7 +853,7 @@ public class RealmAdminResource {
     @NoCache
     @Path("default-groups/{groupId}")
     public void removeDefaultGroup(@PathParam("groupId") String groupId) {
-        auth.requireManage();
+        auth.realm().requireManageRealm();
 
         GroupModel group = realm.getGroupById(groupId);
         if (group == null) {
@@ -834,13 +878,12 @@ public class RealmAdminResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public GroupRepresentation getGroupByPath(@PathParam("path") String path) {
-        auth.requireView();
-
         GroupModel found = KeycloakModelUtils.findGroupByPath(realm, path);
         if (found == null) {
             throw new NotFoundException("Group path does not exist");
 
         }
+        auth.groups().requireView(found);
         return ModelToRepresentation.toGroupHierarchy(found, true);
     }
 
@@ -854,7 +897,7 @@ public class RealmAdminResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response partialImport(PartialImportRepresentation rep) {
-        auth.requireManage();
+        auth.realm().requireManageRealm();
 
         PartialImportManager partialImport = new PartialImportManager(rep, session, realm, adminEvent);
         return partialImport.saveResources();
@@ -888,7 +931,7 @@ public class RealmAdminResource {
     @Path("clear-realm-cache")
     @POST
     public void clearRealmCache() {
-        auth.requireManage();
+        auth.realm().requireManageRealm();
 
         CacheRealmProvider cache = session.getProvider(CacheRealmProvider.class);
         if (cache != null) {
@@ -905,7 +948,7 @@ public class RealmAdminResource {
     @Path("clear-user-cache")
     @POST
     public void clearUserCache() {
-        auth.requireManage();
+        auth.realm().requireManageRealm();
 
         UserCache cache = session.getProvider(UserCache.class);
         if (cache != null) {
@@ -922,7 +965,7 @@ public class RealmAdminResource {
     @Path("clear-keys-cache")
     @POST
     public void clearKeysCache() {
-        auth.requireManage();
+        auth.realm().requireManageRealm();
 
         PublicKeyStorageProvider cache = session.getProvider(PublicKeyStorageProvider.class);
         if (cache != null) {

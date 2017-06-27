@@ -17,13 +17,15 @@
 
 package org.keycloak.testsuite.arquillian.undertow;
 
+import java.io.Closeable;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-class SetSystemProperty {
+class SetSystemProperty implements Closeable {
 
-    private String name;
-    private String oldValue;
+    private final String name;
+    private final String oldValue;
 
     public SetSystemProperty(String name, String value) {
         this.name = name;
@@ -48,6 +50,11 @@ class SetSystemProperty {
         } else {
             System.setProperty(name, oldValue);
         }
+    }
+
+    @Override
+    public void close() {
+        revert();
     }
 
 }

@@ -38,6 +38,8 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.admin.info.ServerInfoAdminResource;
+import org.keycloak.services.resources.admin.permissions.AdminPermissions;
+import org.keycloak.services.resources.admin.permissions.RealmsPermissionEvaluator;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.ThemeProvider;
 
@@ -229,7 +231,7 @@ public class AdminRoot {
         handlePreflightRequest();
 
         AdminAuth auth = authenticateRealmAdminRequest(headers);
-        if (!isAdmin(auth)) {
+        if (!AdminPermissions.realms(session, auth).isAdmin()) {
             throw new ForbiddenException();
         }
 
@@ -242,26 +244,6 @@ public class AdminRoot {
         ServerInfoAdminResource adminResource = new ServerInfoAdminResource();
         ResteasyProviderFactory.getInstance().injectProperties(adminResource);
         return adminResource;
-    }
-
-    protected boolean isAdmin(AdminAuth auth) {
-
-        RealmManager realmManager = new RealmManager(session);
-        if (auth.getRealm().equals(realmManager.getKeycloakAdminstrationRealm())) {
-            if (auth.hasOneOfRealmRole(AdminRoles.ADMIN, AdminRoles.CREATE_REALM)) {
-                return true;
-            }
-            for (RealmModel realm : session.realms().getRealms()) {
-                ClientModel client = realm.getMasterAdminClient();
-                if (auth.hasOneOfAppRole(client, AdminRoles.ALL_REALM_ROLES)) {
-                    return true;
-                }
-            }
-            return false;
-        } else {
-            ClientModel client = auth.getRealm().getClientByClientId(realmManager.getRealmAdminClientId(auth.getRealm()));
-            return auth.hasOneOfAppRole(client, AdminRoles.ALL_REALM_ROLES);
-        }
     }
 
     protected void handlePreflightRequest() {

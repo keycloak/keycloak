@@ -468,7 +468,7 @@ public class XMLSignatureUtil {
         return true;
     }
 
-    private static boolean validateSingleNode(Node signatureNode, final KeyLocator locator) throws MarshalException, XMLSignatureException {
+    public static boolean validateSingleNode(Node signatureNode, final KeyLocator locator) throws MarshalException, XMLSignatureException {
         KeySelectorUtilizingKeyNameHint sel = new KeySelectorUtilizingKeyNameHint(locator);
         try {
             if (validateUsingKeySelector(signatureNode, sel)) {

@@ -53,6 +53,74 @@ public class KeycloakIdentity implements Identity {
         this(Tokens.getAccessToken(keycloakSession), keycloakSession);
     }
 
+    public KeycloakIdentity(KeycloakSession keycloakSession, AccessToken accessToken) {
+        this(accessToken, keycloakSession, keycloakSession.getContext().getRealm());
+    }
+
+    public KeycloakIdentity(AccessToken accessToken, KeycloakSession keycloakSession, RealmModel realm) {
+        if (accessToken == null) {
+            throw new ErrorResponseException("invalid_bearer_token", "Could not obtain bearer access_token from request.", Status.FORBIDDEN);
+        }
+        if (keycloakSession == null) {
+            throw new ErrorResponseException("no_keycloak_session", "No keycloak session", Status.FORBIDDEN);
+        }
+        if (realm == null) {
+            throw new ErrorResponseException("no_keycloak_session", "No realm set", Status.FORBIDDEN);
+        }
+        this.accessToken = accessToken;
+        this.keycloakSession = keycloakSession;
+        this.realm = realm;
+
+        Map<String, Collection<String>> attributes = new HashMap<>();
+
+        try {
+            ObjectNode objectNode = JsonSerialization.createObjectNode(this.accessToken);
+            Iterator<String> iterator = objectNode.fieldNames();
+
+            while (iterator.hasNext()) {
+                String fieldName = iterator.next();
+                JsonNode fieldValue = objectNode.get(fieldName);
+                List<String> values = new ArrayList<>();
+
+                if (fieldValue.isArray()) {
+                    Iterator<JsonNode> valueIterator = fieldValue.iterator();
+
+                    while (valueIterator.hasNext()) {
+                        values.add(valueIterator.next().asText());
+                    }
+                } else {
+                    String value = fieldValue.asText();
+
+                    if (StringUtil.isNullOrEmpty(value)) {
+                        continue;
+                    }
+
+                    values.add(value);
+                }
+
+                if (!values.isEmpty()) {
+                    attributes.put(fieldName, values);
+                }
+            }
+
+            AccessToken.Access realmAccess = accessToken.getRealmAccess();
+
+            if (realmAccess != null) {
+                attributes.put("kc.realm.roles", realmAccess.getRoles());
+            }
+
+            Map<String, AccessToken.Access> resourceAccess = accessToken.getResourceAccess();
+
+            if (resourceAccess != null) {
+                resourceAccess.forEach((clientId, access) -> attributes.put("kc.client." + clientId + ".roles", access.getRoles()));
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error while reading attributes from security token.", e);
+        }
+
+        this.attributes = Attributes.from(attributes);
+    }
+
     public KeycloakIdentity(AccessToken accessToken, KeycloakSession keycloakSession) {
         if (accessToken == null) {
             throw new ErrorResponseException("invalid_bearer_token", "Could not obtain bearer access_token from request.", Status.FORBIDDEN);

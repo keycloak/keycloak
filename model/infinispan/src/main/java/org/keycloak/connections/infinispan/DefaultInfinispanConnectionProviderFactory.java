@@ -154,9 +154,14 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
         if (clustered) {
             String nodeName = config.get("nodeName", System.getProperty(InfinispanConnectionProvider.JBOSS_NODE_NAME));
-            configureTransport(gcb, nodeName);
+            String jgroupsUdpMcastAddr = config.get("jgroupsUdpMcastAddr", System.getProperty(InfinispanConnectionProvider.JGROUPS_UDP_MCAST_ADDR));
+            configureTransport(gcb, nodeName, jgroupsUdpMcastAddr);
+            gcb.globalJmxStatistics()
+              .jmxDomain(InfinispanConnectionProvider.JMX_DOMAIN + "-" + nodeName);
         }
-        gcb.globalJmxStatistics().allowDuplicateDomains(allowDuplicateJMXDomains);
+        gcb.globalJmxStatistics()
+          .allowDuplicateDomains(allowDuplicateJMXDomains)
+          .enable();
 
         cacheManager = new DefaultCacheManager(gcb.build());
         containerManaged = false;
@@ -243,7 +248,14 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         cacheManager.defineConfiguration(InfinispanConnectionProvider.KEYS_CACHE_NAME, getKeysCacheConfig());
         cacheManager.getCache(InfinispanConnectionProvider.KEYS_CACHE_NAME, true);
 
-        cacheManager.defineConfiguration(InfinispanConnectionProvider.ACTION_TOKEN_CACHE, getActionTokenCacheConfig());
+        final ConfigurationBuilder actionTokenCacheConfigBuilder = getActionTokenCacheConfig();
+        if (clustered) {
+            actionTokenCacheConfigBuilder.clustering().cacheMode(async ? CacheMode.REPL_ASYNC : CacheMode.REPL_SYNC);
+        }
+        if (jdgEnabled) {
+            configureRemoteActionTokenCacheStore(actionTokenCacheConfigBuilder, async);
+        }
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.ACTION_TOKEN_CACHE, actionTokenCacheConfigBuilder.build());
         cacheManager.getCache(InfinispanConnectionProvider.ACTION_TOKEN_CACHE, true);
 
         long authzRevisionsMaxEntries = cacheManager.getCache(InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME).getCacheConfiguration().eviction().maxEntries();
@@ -296,6 +308,30 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
     }
 
+    private void configureRemoteActionTokenCacheStore(ConfigurationBuilder builder, boolean async) {
+        String jdgServer = config.get("remoteStoreServer", "localhost");
+        Integer jdgPort = config.getInt("remoteStorePort", 11222);
+
+        builder.persistence()
+                .passivation(false)
+                .addStore(RemoteStoreConfigurationBuilder.class)
+                    .fetchPersistentState(false)
+                    .ignoreModifications(false)
+                    .purgeOnStartup(false)
+                    .preload(true)
+                    .shared(true)
+                    .remoteCacheName(InfinispanConnectionProvider.ACTION_TOKEN_CACHE)
+                    .rawValues(true)
+                    .forceReturnValues(false)
+                    .marshaller(KeycloakHotRodMarshallerFactory.class.getName())
+                    .addServer()
+                        .host(jdgServer)
+                        .port(jdgPort)
+                    .async()
+                        .enabled(async);
+
+    }
+
     protected Configuration getKeysCacheConfig() {
         ConfigurationBuilder cb = new ConfigurationBuilder();
         cb.eviction().strategy(EvictionStrategy.LRU).type(EvictionType.COUNT).size(InfinispanConnectionProvider.KEYS_CACHE_DEFAULT_MAX);
@@ -303,7 +339,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         return cb.build();
     }
 
-    private Configuration getActionTokenCacheConfig() {
+    private ConfigurationBuilder getActionTokenCacheConfig() {
         ConfigurationBuilder cb = new ConfigurationBuilder();
 
         cb.eviction()
@@ -314,27 +350,48 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                 .maxIdle(InfinispanConnectionProvider.ACTION_TOKEN_MAX_IDLE_SECONDS, TimeUnit.SECONDS)
                 .wakeUpInterval(InfinispanConnectionProvider.ACTION_TOKEN_WAKE_UP_INTERVAL_SECONDS, TimeUnit.SECONDS);
 
-        return cb.build();
+        return cb;
     }
 
-    protected void configureTransport(GlobalConfigurationBuilder gcb, String nodeName) {
+    private static final Object CHANNEL_INIT_SYNCHRONIZER = new Object();
+
+    protected void configureTransport(GlobalConfigurationBuilder gcb, String nodeName, String jgroupsUdpMcastAddr) {
         if (nodeName == null) {
             gcb.transport().defaultTransport();
         } else {
             FileLookup fileLookup = FileLookupFactory.newInstance();
 
-            try {
-                // Compatibility with Wildfly
-                JChannel channel = new JChannel(fileLookup.lookupFileLocation("default-configs/default-jgroups-udp.xml", this.getClass().getClassLoader()));
-                channel.setName(nodeName);
-                JGroupsTransport transport = new JGroupsTransport(channel);
+            synchronized (CHANNEL_INIT_SYNCHRONIZER) {
+                String originalMcastAddr = System.getProperty(InfinispanConnectionProvider.JGROUPS_UDP_MCAST_ADDR);
+                if (jgroupsUdpMcastAddr == null) {
+                    System.getProperties().remove(InfinispanConnectionProvider.JGROUPS_UDP_MCAST_ADDR);
+                } else {
+                    System.setProperty(InfinispanConnectionProvider.JGROUPS_UDP_MCAST_ADDR, jgroupsUdpMcastAddr);
+                }
+                try {
+                    // Compatibility with Wildfly
+                    JChannel channel = new JChannel(fileLookup.lookupFileLocation("default-configs/default-jgroups-udp.xml", this.getClass().getClassLoader()));
+                    channel.setName(nodeName);
+                    JGroupsTransport transport = new JGroupsTransport(channel);
 
-                gcb.transport().nodeName(nodeName);
-                gcb.transport().transport(transport);
+                    gcb.transport()
+                      .nodeName(nodeName)
+                      .transport(transport)
+                      .globalJmxStatistics()
+                        .jmxDomain(InfinispanConnectionProvider.JMX_DOMAIN + "-" + nodeName)
+                        .enable()
+                      ;
 
-                logger.infof("Configured jgroups transport with the channel name: %s", nodeName);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+                    logger.infof("Configured jgroups transport with the channel name: %s", nodeName);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                } finally {
+                    if (originalMcastAddr == null) {
+                        System.getProperties().remove(InfinispanConnectionProvider.JGROUPS_UDP_MCAST_ADDR);
+                    } else {
+                        System.setProperty(InfinispanConnectionProvider.JGROUPS_UDP_MCAST_ADDR, originalMcastAddr);
+                    }
+                }
             }
         }
     }

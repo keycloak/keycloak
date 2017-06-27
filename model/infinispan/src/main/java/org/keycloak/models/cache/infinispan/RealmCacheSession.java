@@ -19,6 +19,7 @@ package org.keycloak.models.cache.infinispan;
 
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.models.ClientInitialAccessModel;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.migration.MigrationModel;
 import org.keycloak.models.ClientModel;
@@ -164,9 +165,8 @@ public class RealmCacheSession implements CacheRealmProvider {
 
     @Override
     public void clear() {
-        cache.clear();
         ClusterProvider cluster = session.getProvider(ClusterProvider.class);
-        cluster.notify(InfinispanCacheRealmProviderFactory.REALM_CLEAR_CACHE_EVENTS, new ClearCacheEvent(), true);
+        cluster.notify(InfinispanCacheRealmProviderFactory.REALM_CLEAR_CACHE_EVENTS, new ClearCacheEvent(), false);
     }
 
     @Override
@@ -1060,4 +1060,34 @@ public class RealmCacheSession implements CacheRealmProvider {
         return adapter;
     }
 
+    // Don't cache ClientInitialAccessModel for now
+    @Override
+    public ClientInitialAccessModel createClientInitialAccessModel(RealmModel realm, int expiration, int count) {
+        return getDelegate().createClientInitialAccessModel(realm, expiration, count);
+    }
+
+    @Override
+    public ClientInitialAccessModel getClientInitialAccessModel(RealmModel realm, String id) {
+        return getDelegate().getClientInitialAccessModel(realm, id);
+    }
+
+    @Override
+    public void removeClientInitialAccessModel(RealmModel realm, String id) {
+        getDelegate().removeClientInitialAccessModel(realm, id);
+    }
+
+    @Override
+    public List<ClientInitialAccessModel> listClientInitialAccess(RealmModel realm) {
+        return getDelegate().listClientInitialAccess(realm);
+    }
+
+    @Override
+    public void removeExpiredClientInitialAccess() {
+        getDelegate().removeExpiredClientInitialAccess();
+    }
+
+    @Override
+    public void decreaseRemainingCount(RealmModel realm, ClientInitialAccessModel clientInitialAccess) {
+        getDelegate().decreaseRemainingCount(realm, clientInitialAccess);
+    }
 }

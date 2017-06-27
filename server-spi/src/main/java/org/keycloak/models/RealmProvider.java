@@ -90,4 +90,11 @@ public interface RealmProvider extends Provider {
     List<RealmModel> getRealms();
     boolean removeRealm(String id);
     void close();
+
+    ClientInitialAccessModel createClientInitialAccessModel(RealmModel realm, int expiration, int count);
+    ClientInitialAccessModel getClientInitialAccessModel(RealmModel realm, String id);
+    void removeClientInitialAccessModel(RealmModel realm, String id);
+    List<ClientInitialAccessModel> listClientInitialAccess(RealmModel realm);
+    void removeExpiredClientInitialAccess();
+    void decreaseRemainingCount(RealmModel realm, ClientInitialAccessModel clientInitialAccess); // Separate provider method to ensure we decrease remainingCount atomically instead of doing classic update
 }

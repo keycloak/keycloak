@@ -71,6 +71,50 @@
             }
         }
     ],
+    "groups": [
+        {
+            "name": "Group A",
+            "path": "/Group A",
+            "attributes": {
+                "topAttribute": [
+                    "true"
+                ]
+            },
+            "subGroups": [
+                {
+                    "name": "Group B",
+                    "path": "/Group A/Group B",
+                    "attributes": {
+                        "level2Attribute": [
+                            "true"
+                        ]
+                    },
+                    "subGroups": []
+                }
+            ]
+        },
+        {
+            "name": "Group C",
+            "path": "/Group C",
+            "attributes": {
+                "topAttribute": [
+                    "true"
+                ]
+            },
+            "subGroups": [
+                {
+                    "name": "Group D",
+                    "path": "/Group C/Group D",
+                    "attributes": {
+                        "level2Attribute": [
+                            "true"
+                        ]
+                    },
+                    "subGroups": []
+                }
+            ]
+        }
+    ],
     "users": [
         {
             "username": "wburke",
@@ -296,6 +340,14 @@
                         "decisionStrategy": "UNANIMOUS",
                         "config": {
                             "clients": "[\"broker\",\"admin-cli\"]"
+                        }
+                    },
+                    {
+                        "name": "Group Policy Test",
+                        "type": "group",
+                        "config": {
+                            "groupsClaim": "groups",
+                            "groups": "[{\"path\":\"/Group A\",\"extendChildren\":true},{\"path\":\"/Group A/Group B\",\"extendChildren\":false},{\"path\":\"/Group C/Group D\",\"extendChildren\":true}]"
                         }
                     },
                     {

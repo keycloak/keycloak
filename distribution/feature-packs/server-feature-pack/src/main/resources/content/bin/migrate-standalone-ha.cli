@@ -211,13 +211,13 @@ if (outcome == failed) of /subsystem=infinispan/cache-container=keycloak/distrib
   echo
 end-if
 
-if (outcome == failed) of /subsystem=infinispan/cache-container=keycloak/local-cache=actionTokens/:read-resource
-  echo Adding local-cache=actionTokens to keycloak cache container...
-  /subsystem=infinispan/cache-container=keycloak/local-cache=actionTokens/:add(indexing=NONE,start=LAZY)
-  /subsystem=infinispan/cache-container=keycloak/local-cache=actionTokens/component=eviction/:write-attribute(name=strategy,value=NONE)
-  /subsystem=infinispan/cache-container=keycloak/local-cache=actionTokens/component=eviction/:write-attribute(name=max-entries,value=-1)
-  /subsystem=infinispan/cache-container=keycloak/local-cache=actionTokens/component=expiration/:write-attribute(name=interval,value=300000)
-  /subsystem=infinispan/cache-container=keycloak/local-cache=actionTokens/component=expiration/:write-attribute(name=max-idle,value=-1)
+if (outcome == failed) of /subsystem=infinispan/cache-container=keycloak/distributed-cache=actionTokens/:read-resource
+  echo Adding distributed-cache=actionTokens to keycloak cache container...
+  /subsystem=infinispan/cache-container=keycloak/distributed-cache=actionTokens/:add(indexing=NONE,mode=SYNC,owners=2)
+  /subsystem=infinispan/cache-container=keycloak/distributed-cache=actionTokens/component=eviction/:write-attribute(name=strategy,value=NONE)
+  /subsystem=infinispan/cache-container=keycloak/distributed-cache=actionTokens/component=eviction/:write-attribute(name=max-entries,value=-1)
+  /subsystem=infinispan/cache-container=keycloak/distributed-cache=actionTokens/component=expiration/:write-attribute(name=interval,value=300000)
+  /subsystem=infinispan/cache-container=keycloak/distributed-cache=actionTokens/component=expiration/:write-attribute(name=max-idle,value=-1)
   echo
 end-if
 

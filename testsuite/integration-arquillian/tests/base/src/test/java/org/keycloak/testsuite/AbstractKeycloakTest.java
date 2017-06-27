@@ -167,6 +167,7 @@ public abstract class AbstractKeycloakTest {
                 removeRealm(testRealm.getRealm());
             }
         } else {
+            log.info("calling all TestCleanup");
             // Logout all users after the test
             List<RealmRepresentation> realms = testContext.getTestRealmReps();
             for (RealmRepresentation realm : realms) {
@@ -175,7 +176,12 @@ public abstract class AbstractKeycloakTest {
 
             // Cleanup objects
             for (TestCleanup cleanup : testContext.getCleanups().values()) {
-                cleanup.executeCleanup();
+                try {
+                    if (cleanup != null) cleanup.executeCleanup();
+                } catch (Exception e) {
+                    log.error("failed cleanup!", e);
+                    throw new RuntimeException(e);
+                }
             }
             testContext.getCleanups().clear();
         }

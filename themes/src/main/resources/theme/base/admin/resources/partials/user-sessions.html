@@ -8,9 +8,9 @@
 
     <table class="table table-striped table-bordered">
         <thead>
-        <tr data-ng-show="access.manageUsers">
+        <tr data-ng-show="user.access.manage">
             <th class="kc-table-actions" colspan="6">
-                <div class="pull-right" data-ng-show="access.manageUsers">
+                <div class="pull-right" data-ng-show="user.access.manage">
                     <a id="logoutAllSessions" class="btn btn-default" ng-click="logoutAll()">{{:: 'logout-all-sessions' | translate}}</a>
                 </div>
             </th>
@@ -20,7 +20,7 @@
             <th>{{:: 'started' | translate}}</th>
             <th>{{:: 'last-access' | translate}}</th>
             <th>{{:: 'clients' | translate}}</th>
-            <th data-ng-show="access.manageUsers">{{:: 'action' | translate}}</th>
+            <th data-ng-show="user.access.manage">{{:: 'action' | translate}}</th>
         </tr>
         </thead>
         <tbody>
@@ -34,7 +34,7 @@
                 </div>
             </ul>
             </td>
-            <td class="kc-action-cell" data-ng-show="access.manageUsers" ng-click="logoutSession(session.id)">{{:: 'logout' | translate}}</td>
+            <td class="kc-action-cell" data-ng-show="user.access.manage" ng-click="logoutSession(session.id)">{{:: 'logout' | translate}}</td>
         </tr>
         </tbody>
     </table>
