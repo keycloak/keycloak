@@ -75,6 +75,7 @@ public class KeycloakDeploymentBuilderTest {
         assertEquals(10, deployment.getTokenMinimumTimeToLive());
         assertEquals(20, deployment.getMinTimeBetweenJwksRequests());
         assertEquals(120, deployment.getPublicKeyCacheTtl());
+        assertEquals("/api/$1", deployment.getRedirectRewriteRules().get("^/wsmaster/api/(.*)$"));
     }
 
     @Test
