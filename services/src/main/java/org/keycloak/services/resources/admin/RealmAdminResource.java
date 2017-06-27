@@ -829,7 +829,7 @@ public class RealmAdminResource {
         });
 
         try {
-            UserModel user = auth.getAuth().getUser();
+            UserModel user = auth.adminAuth().getUser();
             if (user.getEmail() == null) {
                 return ErrorResponse.error("Logged in user does not have an e-mail.", Response.Status.INTERNAL_SERVER_ERROR);
             }
