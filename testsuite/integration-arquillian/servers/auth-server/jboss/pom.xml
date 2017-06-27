@@ -100,7 +100,6 @@
                                             <outputDirectory>${project.build.directory}/unpacked</outputDirectory>
                                         </artifactItem>
                                     </artifactItems>
-                                    <excludes>**/product.conf</excludes>
                                 </configuration>
                             </execution>
                             <execution>
