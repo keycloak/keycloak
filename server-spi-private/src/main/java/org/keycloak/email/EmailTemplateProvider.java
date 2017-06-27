@@ -22,6 +22,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
 
+import java.util.Map;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -45,6 +47,15 @@ public interface EmailTemplateProvider extends Provider {
      * @throws EmailException
      */
     public void sendPasswordReset(String link, long expirationInMinutes) throws EmailException;
+
+    /**
+     * Test SMTP connection with current logged in user
+     *
+     * @param config SMTP server configuration
+     * @param user SMTP recipient
+     * @throws EmailException
+     */
+    public void sendSmtpTestEmail(Map<String, String> config, UserModel user) throws EmailException;
 
     /**
      * Send to confirm that user wants to link his account with identity broker link
