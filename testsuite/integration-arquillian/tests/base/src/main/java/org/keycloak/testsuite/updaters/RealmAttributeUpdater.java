@@ -1,7 +1,7 @@
-package org.keycloak.testsuite.util;
+package org.keycloak.testsuite.updaters;
 
-import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.representations.idm.RealmRepresentation;
 import java.io.Closeable;
 import java.util.HashMap;
 import java.util.Map;
@@ -10,23 +10,23 @@ import java.util.Map;
  *
  * @author hmlnarik
  */
-public class ClientAttributeUpdater {
+public class RealmAttributeUpdater {
 
     private final Map<String, String> originalAttributes = new HashMap<>();
 
-    private final ClientResource clientResource;
+    private final RealmResource realmResource;
 
-    private final ClientRepresentation rep;
+    private final RealmRepresentation rep;
 
-    public ClientAttributeUpdater(ClientResource clientResource) {
-        this.clientResource = clientResource;
-        this.rep = clientResource.toRepresentation();
+    public RealmAttributeUpdater(RealmResource realmResource) {
+        this.realmResource = realmResource;
+        this.rep = realmResource.toRepresentation();
         if (this.rep.getAttributes() == null) {
             this.rep.setAttributes(new HashMap<>());
         }
     }
 
-    public ClientAttributeUpdater setAttribute(String name, String value) {
+    public RealmAttributeUpdater setAttribute(String name, String value) {
         if (! originalAttributes.containsKey(name)) {
             this.originalAttributes.put(name, this.rep.getAttributes().put(name, value));
         } else {
@@ -35,7 +35,7 @@ public class ClientAttributeUpdater {
         return this;
     }
 
-    public ClientAttributeUpdater removeAttribute(String name) {
+    public RealmAttributeUpdater removeAttribute(String name) {
         if (! originalAttributes.containsKey(name)) {
             this.originalAttributes.put(name, this.rep.getAttributes().put(name, null));
         } else {
@@ -45,11 +45,11 @@ public class ClientAttributeUpdater {
     }
 
     public Closeable update() {
-        clientResource.update(rep);
+        realmResource.update(rep);
 
         return () -> {
             rep.getAttributes().putAll(originalAttributes);
-            clientResource.update(rep);
+            realmResource.update(rep);
         };
     }
 }
