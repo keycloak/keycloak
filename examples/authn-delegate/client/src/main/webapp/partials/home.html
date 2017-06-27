@@ -1,0 +1,22 @@
+<h2><span>Welcome To Photoz, {{Identity.claims.name}}</span></h2>
+<div data-ng-show="Identity.isAdmin()"><b>Administration: </b> [<a href="#/admin/album" id="admin-albums">All Albums</a>]</div>
+<hr/>
+<br/>
+<div data-ng-show="!Identity.isAdmin()">
+<a href="#/album/create" id="create-album">Create Album</a> | <a href="#/profile">My Profile</a>
+<br/>
+<br/>
+<span data-ng-show="albums.length == 0" id="resource-list-empty">You don't have any albums, yet.</span>
+<table class="table" data-ng-show="albums.length > 0">
+    <thead>
+    <tr>
+        <th>Your Albums</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr data-ng-repeat="p in albums">
+        <td><a id="view-{{p.name}}" href="#/album/{{p.id}}">{{p.name}}</a> - [<a href="#" id="delete-{{p.name}}" ng-click="deleteAlbum(p)">X</a>]</td>
+    </tr>
+    </tbody>
+</table>
+</div>

@@ -1,0 +1,11 @@
+
+{
+  "realm": "authn-delegation",
+  "auth-server-url": "http://localhost:8080/auth",
+  "ssl-required": "external",
+  "resource": "authn-delegation-client",
+  "expose-token": true,
+  "credentials": {
+    "secret": "ee580b23-f164-4efa-b318-a0909cc9b31f"
+  }
+}

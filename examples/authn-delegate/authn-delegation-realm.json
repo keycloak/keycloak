@@ -1,0 +1,588 @@
+{
+    "realm": "authn-delegation",
+    "enabled": true,
+    "accessTokenLifespan": 300,
+    "accessTokenLifespanForImplicitFlow":900,
+    "accessCodeLifespan": 60,
+    "accessCodeLifespanUserAction": 300,
+    "accessCodeLifespanLogin":1800,
+    "ssoSessionIdleTimeout": 1800,
+    "ssoSessionMaxLifespan": 36000,
+    "offlineSessionIdleTimeout":2592000,
+    "revokeRefreshToken":false,
+    "sslRequired": "external",
+    "registrationAllowed": false,
+    "eventsEnabled":true,
+    "eventsListeners":["jboss-logging"],
+    "enabledEventTypes":[
+        "REGISTER",
+        "LOGOUT",
+        "USER_INFO_REQUEST",
+        "EXECUTE_ACTIONS_ERROR",
+        "REVOKE_GRANT",
+        "LOGIN_ERROR",
+        "CLIENT_LOGIN",
+        "INTROSPECT_TOKEN_ERROR",
+        "REFRESH_TOKEN",
+        "INTROSPECT_TOKEN",
+        "CODE_TO_TOKEN_ERROR",
+        "CLIENT_LOGIN_ERROR",
+        "REFRESH_TOKEN_ERROR",
+        "VALIDATE_ACCESS_TOKEN_ERROR",
+        "REGISTER_ERROR",
+        "EXECUTE_ACTIONS",
+        "CUSTOM_REQUIRED_ACTION_ERROR",
+        "REVOKE_GRANT_ERROR",
+        "LOGOUT_ERROR",
+        "VALIDATE_ACCESS_TOKEN",
+        "LOGIN",
+        "CODE_TO_TOKEN",
+        "USER_INFO_REQUEST_ERROR"
+    ],
+    "adminEventsEnabled":true,
+    "adminEventsDetailsEnabled":true,
+    "roles" : {
+        "realm" : [
+            {
+                "name": "user",
+                "description": "User privileges"
+            },
+            {
+                "name": "admin",
+                "description": "Administrator privileges"
+            }
+        ]
+    },
+    "defaultRoles" : ["user"],
+    "clients": [
+        {
+            "clientId": "authn-delegation-client",
+            "enabled": true,
+            "rootUrl": "http://localhost:8380",
+            "adminUrl": "/authn-delegation-client",
+            "baseUrl": "/authn-delegation-client",
+            "redirectUris": [
+                "/authn-delegation-client/*"
+            ],
+            "clientAuthenticatorType": "client-secret",
+            "secret": "ee580b23-f164-4efa-b318-a0909cc9b31f",
+            "bearerOnly": false,
+            "consentRequired": false,
+            "standardFlowEnabled": true,
+            "implicitFlowEnabled": false,
+            "directAccessGrantsEnabled": false,
+            "serviceAccountsEnabled": false,
+            "publicClient": false,
+            "frontchannelLogout": false,
+            "fullScopeAllowed": true,
+            "protocol": "openid-connect",
+            "protocolMappers": [
+                {
+                    "name": "delegetedAmr",
+                    "protocol": "openid-connect",
+                    "protocolMapper": "oidc-usermodel-attribute-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "usermodel.realmRoleMapping.rolePrefix": "",
+                        "multivalued": "",
+                        "userinfo.token.claim": "true",
+                        "user.attribute": "delegated_amr",
+                        "id.token.claim": "true",
+                        "access.token.claim": "true",
+                        "claim.name": "delegated_amr",
+                        "jsonType.label": "String"
+                    }
+                },
+                {
+                    "name": "firstName",
+                    "protocol": "openid-connect",
+                    "protocolMapper": "oidc-usermodel-attribute-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "multivalued": "",
+                        "userinfo.token.claim": "true",
+                        "user.attribute": "firstName",
+                        "id.token.claim": "true",
+                        "access.token.claim": "true",
+                        "claim.name": "firstName",
+                        "jsonType.label": "String"
+                    }
+                },
+                {
+                    "name": "full name",
+                    "protocol": "openid-connect",
+                    "protocolMapper": "oidc-full-name-mapper",
+                    "consentRequired": true,
+                    "consentText": "${fullName}",
+                    "config": {
+                        "id.token.claim": "true",
+                        "access.token.claim": "true"
+                    }
+                },
+                {
+                    "name": "lastName",
+                    "protocol": "openid-connect",
+                    "protocolMapper": "oidc-usermodel-attribute-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "usermodel.realmRoleMapping.rolePrefix": "",
+                        "multivalued": "",
+                        "userinfo.token.claim": "true",
+                        "user.attribute": "lastName",
+                        "id.token.claim": "true",
+                        "access.token.claim": "true",
+                        "claim.name": "lastName",
+                        "jsonType.label": "String"
+                    }
+                },
+                {
+                    "name": "customerRank",
+                    "protocol": "openid-connect",
+                    "protocolMapper": "oidc-usermodel-attribute-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "usermodel.realmRoleMapping.rolePrefix": "",
+                        "multivalued": "",
+                        "userinfo.token.claim": "true",
+                        "user.attribute": "customerRank",
+                        "id.token.claim": "true",
+                        "access.token.claim": "true",
+                        "claim.name": "customerRank",
+                        "jsonType.label": "String"
+                    }
+                },
+                {
+                    "name": "username",
+                    "protocol": "openid-connect",
+                    "protocolMapper": "oidc-usermodel-property-mapper",
+                    "consentRequired": true,
+                    "consentText": "${username}",
+                    "config": {
+                        "userinfo.token.claim": "true",
+                        "user.attribute": "username",
+                        "id.token.claim": "true",
+                        "access.token.claim": "true",
+                        "claim.name": "preferred_username",
+                        "jsonType.label": "String"
+                    }
+                },
+                {
+                    "name": "given name",
+                    "protocol": "openid-connect",
+                    "protocolMapper": "oidc-usermodel-property-mapper",
+                    "consentRequired": true,
+                    "consentText": "${givenName}",
+                    "config": {
+                        "userinfo.token.claim": "true",
+                        "user.attribute": "firstName",
+                        "id.token.claim": "true",
+                        "access.token.claim": "true",
+                        "claim.name": "given_name",
+                        "jsonType.label": "String"
+                    }
+                },
+                {
+                    "name": "age",
+                    "protocol": "openid-connect",
+                    "protocolMapper": "oidc-usermodel-attribute-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "usermodel.realmRoleMapping.rolePrefix": "",
+                        "multivalued": "",
+                        "userinfo.token.claim": "true",
+                        "user.attribute": "age",
+                        "id.token.claim": "true",
+                        "access.token.claim": "true",
+                        "claim.name": "age",
+                        "jsonType.label": "String"
+                    }
+                },
+                {
+                    "name": "attributeEmail",
+                    "protocol": "openid-connect",
+                    "protocolMapper": "oidc-usermodel-attribute-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "usermodel.realmRoleMapping.rolePrefix": "",
+                        "multivalued": "",
+                        "userinfo.token.claim": "true",
+                        "user.attribute": "email",
+                        "id.token.claim": "true",
+                        "access.token.claim": "true",
+                        "claim.name": "email",
+                        "jsonType.label": "String"
+                    }
+                },
+                {
+                    "name": "scopes",
+                    "protocol": "openid-connect",
+                    "protocolMapper": "oidc-usermodel-attribute-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "usermodel.realmRoleMapping.rolePrefix": "",
+                        "multivalued": "true",
+                        "userinfo.token.claim": "true",
+                        "user.attribute": "scopes",
+                        "id.token.claim": "true",
+                        "access.token.claim": "true",
+                        "claim.name": "scopes",
+                        "jsonType.label": "String"
+                    }
+                },
+                {
+                    "name": "delegatedAcr",
+                    "protocol": "openid-connect",
+                    "protocolMapper": "oidc-usermodel-attribute-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "multivalued": "",
+                        "userinfo.token.claim": "true",
+                        "user.attribute": "delegated_acr",
+                        "id.token.claim": "true",
+                        "access.token.claim": "true",
+                        "claim.name": "delegated_acr",
+                        "jsonType.label": "String"
+                    }
+                },
+                {
+                    "name": "email",
+                    "protocol": "openid-connect",
+                    "protocolMapper": "oidc-usermodel-property-mapper",
+                    "consentRequired": true,
+                    "consentText": "${email}",
+                    "config": {
+                        "userinfo.token.claim": "true",
+                        "user.attribute": "email",
+                        "id.token.claim": "true",
+                        "access.token.claim": "true",
+                        "claim.name": "email",
+                        "jsonType.label": "String"
+                    }
+                },
+                {
+                    "name": "family name",
+                    "protocol": "openid-connect",
+                    "protocolMapper": "oidc-usermodel-property-mapper",
+                    "consentRequired": true,
+                    "consentText": "${familyName}",
+                    "config": {
+                        "userinfo.token.claim": "true",
+                        "user.attribute": "lastName",
+                        "id.token.claim": "true",
+                        "access.token.claim": "true",
+                        "claim.name": "family_name",
+                        "jsonType.label": "String"
+                    }
+                },
+                {
+                    "name": "delegatedAuthenticator",
+                    "protocol": "openid-connect",
+                    "protocolMapper": "oidc-usermodel-attribute-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "usermodel.realmRoleMapping.rolePrefix": "",
+                        "multivalued": "",
+                        "userinfo.token.claim": "true",
+                        "user.attribute": "delegated_authenticator",
+                        "id.token.claim": "true",
+                        "access.token.claim": "true",
+                        "claim.name": "delegated_authenticator",
+                        "jsonType.label": "String"
+                    }
+                },
+                {
+                    "name": "sex",
+                    "protocol": "openid-connect",
+                    "protocolMapper": "oidc-usermodel-attribute-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "usermodel.realmRoleMapping.rolePrefix": "",
+                        "multivalued": "",
+                        "userinfo.token.claim": "true",
+                        "user.attribute": "sex",
+                        "id.token.claim": "true",
+                        "access.token.claim": "true",
+                        "claim.name": "sex",
+                        "jsonType.label": "String"
+                    }
+                },
+                {
+                    "name": "role list",
+                    "protocol": "saml",
+                    "protocolMapper": "saml-role-list-mapper",
+                    "consentRequired": false,
+                    "config": {
+                        "single": "false",
+                        "attribute.nameformat": "Basic",
+                        "attribute.name": "Role"
+                    }
+                }
+            ]
+        }
+    ],
+    "components" : {
+        "org.keycloak.storage.UserStorageProvider": [
+            {
+                "name" : "Authentication Delegated Server",
+                "providerId" : "readonly-delegated-server",
+                "subComponents" : { },
+                "config" : {
+                    "userstorage.external.authentication.server.userinfo.uri":["http://localhost:8280/authn-delegation-server/userinfo"],
+                    "maxLifespan":["5000"],
+                    "cachePolicy":["MAX_LIFESPAN"],
+                    "priority":["0"],
+                    "userstorage.external.authentication.backend.communication.ssl.required":["false"]
+                }
+            }
+        ]
+    },
+    "browserFlow" : "Authentication Delegation",
+    "registrationFlow" : "registration",
+    "directGrantFlow" : "direct grant",
+    "resetCredentialsFlow" : "reset credentials",
+    "clientAuthenticationFlow" : "clients",
+    "authenticatorConfig": [
+        {
+            "alias": "ExternalAuthenticationServer",
+            "config": {
+                "external.authentication.server.authenticated.user.id.endpoint":"http://localhost:8280/authn-delegation-server/userid",
+                "properties.forwarding.query.parameters":"${jboss.server.config.dir}/forwarding-query-parameters.properties",
+                "external.authentication.backend.communication.ssl.required":"false",
+                "external.authentication.server.authentication.uri":"http://localhost:8280/authn-delegation-server/authenticate",
+                "external.authentication.forwarding.form.post":"false",
+                "properties.forwarding.http.headers":"${jboss.server.config.dir}/forwarding-http-headers.properties"
+            }
+        },
+        {
+            "alias": "review profile config",
+            "config": {
+                "update.profile.on.first.login":"missing"
+            }
+        },
+        {
+            "alias": "create unique user config",
+            "config": {
+                "require.password.update.after.registration":"false"
+            }
+        }
+    ],
+    "authenticationFlows": [
+        {
+            "alias":"Authentication Delegation",
+            "description":"Authentication Delegation",
+            "providerId":"basic-flow",
+            "topLevel":true,
+            "builtIn":false,
+            "authenticationExecutions": [
+                {
+                     "authenticator":"auth-redirect",
+                     "authenticatorConfig":"ExternalAuthenticationServer",
+                     "requirement":"REQUIRED",
+                     "priority":0,
+                     "userSetupAllowed":false,
+                     "autheticatorFlow":false
+                }
+            ]
+        },
+        {
+            "alias":"forms",
+            "description":"Username, password, otp and other auth forms.",
+            "providerId":"basic-flow",
+            "topLevel":false,
+            "builtIn":true,
+            "authenticationExecutions": []
+        },
+        {
+            "alias":"registration form",
+            "description":"registration form",
+            "providerId":"form-flow",
+            "topLevel":false,
+            "builtIn":true,
+            "authenticationExecutions": []
+        },
+        {
+            "alias":"Handle Existing Account",
+            "description":"Handle what to do if there is existing account with same email/username like authenticated identity provider",
+            "providerId":"basic-flow",
+            "topLevel":false,
+            "builtIn":true,
+            "authenticationExecutions": []
+        },
+        {
+            "alias":"browser",
+            "description":"browser based authentication",
+            "providerId":"basic-flow",
+            "topLevel":true,
+            "builtIn":true,
+            "authenticationExecutions": [
+                {
+                    "authenticator":"auth-cookie",
+                    "requirement":"ALTERNATIVE",
+                    "priority":10,
+                    "userSetupAllowed":false,
+                    "autheticatorFlow":false
+                },
+                {
+                    "authenticator":"auth-spnego",
+                    "requirement":"DISABLED",
+                    "priority":20,
+                    "userSetupAllowed":false,
+                    "autheticatorFlow":false
+                },
+                {
+                    "authenticator":"identity-provider-redirector",
+                    "requirement":"ALTERNATIVE",
+                    "priority":25,
+                    "userSetupAllowed":false,
+                    "autheticatorFlow":false
+                },
+                {
+                    "requirement":"ALTERNATIVE",
+                    "priority":30,
+                    "flowAlias":"forms",
+                    "userSetupAllowed":false,
+                    "autheticatorFlow":true
+                }
+            ]
+        },
+        {
+            "alias":"direct grant",
+            "description":"OpenID Connect Resource Owner Grant",
+            "providerId":"basic-flow",
+            "topLevel":true,
+            "builtIn":true,
+            "authenticationExecutions": [
+                {
+                    "authenticator":"direct-grant-validate-username",
+                    "requirement":"REQUIRED",
+                    "priority":10,
+                    "userSetupAllowed":false,
+                    "autheticatorFlow":false
+                },
+                {
+                    "authenticator":"direct-grant-validate-password",
+                    "requirement":"REQUIRED",
+                    "priority":20,
+                    "userSetupAllowed":false,
+                    "autheticatorFlow":false
+                },
+                {
+                    "authenticator":"direct-grant-validate-otp",
+                    "requirement":"OPTIONAL",
+                    "priority":30,
+                    "userSetupAllowed":false,
+                    "autheticatorFlow":false
+                }
+            ]
+        },
+        {
+            "alias":"registration",
+            "description":"registration flow",
+            "providerId":"basic-flow",
+            "topLevel":true,
+            "builtIn":true,
+            "authenticationExecutions": [
+                {
+                    "authenticator":"registration-page-form",
+                    "requirement":"REQUIRED",
+                    "priority":10,
+                    "flowAlias":"registration form",
+                    "userSetupAllowed":false,
+                    "autheticatorFlow":true
+                }
+            ]
+        },
+        {
+            "alias":"reset credentials",
+            "description":"Reset credentials for a user if they forgot their password or something",
+            "providerId":"basic-flow",
+            "topLevel":true,
+            "builtIn":true,
+            "authenticationExecutions": [
+                {
+                    "authenticator":"reset-credentials-choose-user",
+                    "requirement":"REQUIRED",
+                    "priority":10,
+                    "userSetupAllowed":false,
+                    "autheticatorFlow":false
+                },
+                {
+                    "authenticator":"reset-credential-email",
+                    "requirement":"REQUIRED",
+                    "priority":20,
+                    "userSetupAllowed":false,
+                    "autheticatorFlow":false
+                },
+                {
+                    "authenticator":"reset-password",
+                    "requirement":"REQUIRED",
+                    "priority":30,
+                    "userSetupAllowed":false,
+                    "autheticatorFlow":false
+                },
+                {
+                    "authenticator":"reset-otp",
+                    "requirement":"OPTIONAL",
+                    "priority":40,
+                    "userSetupAllowed":false,
+                    "autheticatorFlow":false
+                }
+            ]
+        },
+        {
+            "alias":"clients",
+            "description":"Base authentication for clients",
+            "providerId":"client-flow",
+            "topLevel":true,
+            "builtIn":true,
+            "authenticationExecutions": [
+                {
+                    "authenticator":"client-secret",
+                    "requirement":"ALTERNATIVE",
+                    "priority":10,
+                    "userSetupAllowed":false,
+                    "autheticatorFlow":false
+                },
+                {
+                    "authenticator":"client-jwt",
+                    "requirement":"ALTERNATIVE",
+                    "priority":20,
+                    "userSetupAllowed":false,
+                    "autheticatorFlow":false
+                }
+            ]
+        },
+        {
+            "alias":"first broker login",
+            "description":"Actions taken after first broker login with identity provider account which is not yet linked to any Keycloak account",
+            "providerId":"basic-flow",
+            "topLevel":true,
+            "builtIn":true,
+            "authenticationExecutions":[
+                {
+                    "authenticatorConfig":"review profile config",
+                    "authenticator":"idp-review-profile",
+                    "requirement":"REQUIRED",
+                    "priority":10,
+                    "userSetupAllowed":false,
+                    "autheticatorFlow":false
+                },
+                {
+                    "authenticatorConfig":"create unique user config",
+                    "authenticator":"idp-create-user-if-unique",
+                    "requirement":"ALTERNATIVE",
+                    "priority":20,
+                    "userSetupAllowed":false,
+                    "autheticatorFlow":false
+                },
+                {
+                    "requirement":"ALTERNATIVE",
+                    "priority":30,
+                    "flowAlias":"Handle Existing Account",
+                    "userSetupAllowed":false,
+                    "autheticatorFlow":true
+                }
+            ]
+        }
+    ]
+}

@@ -67,5 +67,6 @@
         <module>saml</module>
         <module>ldap</module>
         <module>authz</module>
+        <module>authn-delegate</module>
     </modules>
 </project>
