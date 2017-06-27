@@ -44,6 +44,13 @@ public class ClientRegistrationTokenUtils {
     public static final String TYPE_INITIAL_ACCESS_TOKEN = "InitialAccessToken";
     public static final String TYPE_REGISTRATION_ACCESS_TOKEN = "RegistrationAccessToken";
 
+    public static String getRegistrationAccessToken(KeycloakSession session, ClientModel client, RegistrationAuth registrationAuth) {
+        RegistrationAccessToken regToken = new RegistrationAccessToken();
+        regToken.setRegistrationAuth(registrationAuth.toString().toLowerCase());
+
+        return setupToken(regToken, session, session.getContext().getRealm(), session.getContext().getUri(), client.getRegistrationToken(), TYPE_REGISTRATION_ACCESS_TOKEN, 0);
+    }
+
     public static String updateRegistrationAccessToken(KeycloakSession session, ClientModel client, RegistrationAuth registrationAuth) {
         return updateRegistrationAccessToken(session, session.getContext().getRealm(), session.getContext().getUri(), client, registrationAuth);
     }
