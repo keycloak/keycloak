@@ -262,6 +262,8 @@ The UI tests are focused on the Admin Console as well as on some login scenarios
 
 The tests also use some constants placed in [test-constants.properties](tests/base/src/test/resources/test-constants.properties). A different file can be specified by `-Dtestsuite.constants=path/to/different-test-constants.properties`
 
+In case a custom `settings.xml` is used for Maven, you need to specify it also in `-Dkie.maven.settings.custom=path/to/settings.xml`.
+
 #### Execution example
 ```
 mvn -f testsuite/integration-arquillian/tests/other/console/pom.xml \

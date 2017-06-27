@@ -21,6 +21,7 @@ import static org.openqa.selenium.By.tagName;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.URLUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -51,7 +52,7 @@ public class Scopes extends Form {
         for (WebElement row : scopes().rows()) {
             ScopeRepresentation actual = scopes().toRepresentation(row);
             if (actual.getName().equalsIgnoreCase(name)) {
-                row.findElements(tagName("a")).get(0).click();
+                URLUtils.navigateToUri(driver, row.findElements(tagName("a")).get(0).getAttribute("href"), true);
                 scope.form().populate(representation);
             }
         }
@@ -61,7 +62,7 @@ public class Scopes extends Form {
         for (WebElement row : scopes().rows()) {
             ScopeRepresentation actual = scopes().toRepresentation(row);
             if (actual.getName().equalsIgnoreCase(name)) {
-                row.findElements(tagName("a")).get(0).click();
+                URLUtils.navigateToUri(driver, row.findElements(tagName("a")).get(0).getAttribute("href"), true);
                 scope.form().delete();
             }
         }

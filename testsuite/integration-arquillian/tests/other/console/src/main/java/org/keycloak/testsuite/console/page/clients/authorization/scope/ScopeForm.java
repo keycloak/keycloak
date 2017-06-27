@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.console.page.clients.authorization.scope;
 
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.page.Form;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -35,8 +36,8 @@ public class ScopeForm extends Form {
     @FindBy(xpath = "//i[contains(@class,'pficon-delete')]")
     private WebElement deleteButton;
 
-    @FindBy(xpath = ACTIVE_DIV_XPATH + "/button[text()='Delete']")
-    private WebElement confirmDelete;
+    @FindBy(xpath = "//div[@class='modal-dialog']")
+    protected ModalDialog modalDialog;
 
     public void populate(ScopeRepresentation expected) {
         setInputValue(name, expected.getName());
@@ -46,6 +47,6 @@ public class ScopeForm extends Form {
 
     public void delete() {
         deleteButton.click();
-        confirmDelete.click();
+        modalDialog.confirmDeletion();
     }
 }

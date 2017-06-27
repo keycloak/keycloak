@@ -16,7 +16,9 @@
  */
 package org.keycloak.testsuite.console.page.fragment;
 
+import org.jboss.arquillian.graphene.fragment.Root;
 import org.keycloak.testsuite.page.AbstractAlert;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -44,6 +46,9 @@ public class AdminConsoleAlert extends AbstractAlert {
 
     public void close() {
         closeButton.click();
+        WaitUtils.pause(500); // Sometimes, when a test is too fast,
+                                    // one of the consecutive alerts is not displayed;
+                                    // to prevent this we need to slow down a bit
     }
 
 }
