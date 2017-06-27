@@ -57,6 +57,8 @@ public class ClientRegistrationAuth {
     private RealmModel realm;
     private JsonWebToken jwt;
     private ClientInitialAccessModel initialAccessModel;
+    private String kid;
+    private String token;
 
     public ClientRegistrationAuth(KeycloakSession session, ClientRegistrationProvider provider, EventBuilder event) {
         this.session = session;
@@ -78,10 +80,13 @@ public class ClientRegistrationAuth {
             return;
         }
 
-        ClientRegistrationTokenUtils.TokenVerification tokenVerification = ClientRegistrationTokenUtils.verifyToken(session, realm, uri, split[1]);
+        token = split[1];
+
+        ClientRegistrationTokenUtils.TokenVerification tokenVerification = ClientRegistrationTokenUtils.verifyToken(session, realm, uri, token);
         if (tokenVerification.getError() != null) {
             throw unauthorized(tokenVerification.getError().getMessage());
         }
+        kid = tokenVerification.getKid();
         jwt = tokenVerification.getJwt();
 
         if (isInitialAccessToken()) {
@@ -90,6 +95,18 @@ public class ClientRegistrationAuth {
                 throw unauthorized("Initial Access Token not found");
             }
         }
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public String getKid() {
+        return kid;
+    }
+
+    public JsonWebToken getJwt() {
+        return jwt;
     }
 
     private boolean isBearerToken() {
