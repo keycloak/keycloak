@@ -1201,6 +1201,7 @@ public class RepresentationToModel {
         if (rep.isUseTemplateScope() != null) resource.setUseTemplateScope(rep.isUseTemplateScope());
         if (rep.isUseTemplateMappers() != null) resource.setUseTemplateMappers(rep.isUseTemplateMappers());
 
+        if (rep.getSecret() != null) resource.setSecret(rep.getSecret());
 
         if (rep.getClientTemplate() != null) {
             if (rep.getClientTemplate().equals(ClientTemplateRepresentation.NONE)) {
