@@ -68,6 +68,8 @@
             <property name="jbossArguments">
                 -Djboss.socket.binding.port-offset=${auth.server.port.offset}
                 -Djboss.bind.address=0.0.0.0 
+                -Dauth.server.http.port=${auth.server.http.port}
+                -Dauth.server.https.port=${auth.server.https.port}
                 ${adapter.test.props}
                 ${migration.import.properties}
                 ${auth.server.profile}
