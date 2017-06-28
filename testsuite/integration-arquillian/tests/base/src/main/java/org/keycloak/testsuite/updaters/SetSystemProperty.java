@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.util;
+package org.keycloak.testsuite.updaters;
 
 import java.io.Closeable;
 

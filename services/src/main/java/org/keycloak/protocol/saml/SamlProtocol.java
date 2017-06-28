@@ -193,7 +193,7 @@ public class SamlProtocol implements LoginProtocol {
                     if (samlClient.requiresEncryption()) {
                         PublicKey publicKey;
                         try {
-                            publicKey = SamlProtocolUtils.getEncryptionValidationKey(client);
+                            publicKey = SamlProtocolUtils.getEncryptionKey(client);
                         } catch (Exception e) {
                             logger.error("failed", e);
                             return ErrorPage.error(session, Messages.FAILED_TO_PROCESS_RESPONSE);
@@ -457,7 +457,7 @@ public class SamlProtocol implements LoginProtocol {
         if (samlClient.requiresEncryption()) {
             PublicKey publicKey = null;
             try {
-                publicKey = SamlProtocolUtils.getEncryptionValidationKey(client);
+                publicKey = SamlProtocolUtils.getEncryptionKey(client);
             } catch (Exception e) {
                 logger.error("failed", e);
                 return ErrorPage.error(session, Messages.FAILED_TO_PROCESS_RESPONSE);

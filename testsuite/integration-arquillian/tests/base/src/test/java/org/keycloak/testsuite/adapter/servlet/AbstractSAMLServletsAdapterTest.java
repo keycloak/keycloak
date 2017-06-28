@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.adapter.servlet;
 
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
