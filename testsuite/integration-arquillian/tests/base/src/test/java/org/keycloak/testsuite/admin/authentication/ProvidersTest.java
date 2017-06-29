@@ -151,6 +151,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Validates the password supplied as a 'password' form parameter in direct grant request");
         addProviderInfo(result, "direct-grant-validate-username", "Username Validation",
                 "Validates the username supplied as a 'username' form parameter in direct grant request");
+        addProviderInfo(result, "docker-http-basic-authenticator", "Docker Authenticator", "Uses HTTP Basic authentication to validate docker users, returning a docker error token on auth failure");
         addProviderInfo(result, "expected-param-authenticator", "TEST: Expected Parameter",
                 "You will be approved if you send query string parameter 'foo' with expected value.");
         addProviderInfo(result, "http-basic-authenticator", "HTTP Basic Authentication", "Validates username and password from Authorization HTTP header");

@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.broker;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -14,7 +13,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.ConsentPage;
 import org.keycloak.testsuite.util.*;
 
@@ -40,6 +38,8 @@ import static org.keycloak.testsuite.broker.BrokerTestTools.*;
 
 public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
 
+    protected IdentityProviderResource identityProviderResource;
+
     @Before
     public void beforeBrokerTest() {
         log.debug("creating user for realm " + bc.providerRealmName());
@@ -61,7 +61,8 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
 
         log.debug("adding identity provider to realm " + bc.consumerRealmName());
         RealmResource realm = adminClient.realm(bc.consumerRealmName());
-        realm.identityProviders().create(bc.setUpIdentityProvider(suiteContext));
+        realm.identityProviders().create(bc.setUpIdentityProvider(suiteContext)).close();
+        identityProviderResource = realm.identityProviders().get(bc.getIDPAlias());
 
         // addClients
         List<ClientRepresentation> clients = bc.createProviderClients(suiteContext);
@@ -70,7 +71,7 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
             for (ClientRepresentation client : clients) {
                 log.debug("adding client " + client.getName() + " to realm " + bc.providerRealmName());
 
-                providerRealm.clients().create(client);
+                providerRealm.clients().create(client).close();
             }
         }
 
@@ -80,7 +81,7 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
             for (ClientRepresentation client : clients) {
                 log.debug("adding client " + client.getName() + " to realm " + bc.consumerRealmName());
 
-                consumerRealm.clients().create(client);
+                consumerRealm.clients().create(client).close();
             }
         }
 
@@ -90,6 +91,12 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
 
     @Test
     public void testLogInAsUserInIDP() {
+        loginUser();
+
+        testSingleLogout();
+    }
+
+    protected void loginUser() {
         driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
 
         log.debug("Clicking social " + bc.getIDPAlias());
@@ -98,16 +105,16 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
         waitForPage(driver, "log in to");
 
         Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+          driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
 
         log.debug("Logging in");
         accountLoginPage.login(bc.getUserLogin(), bc.getUserPassword());
 
         waitForPage(driver, "update account information");
 
-        Assert.assertTrue(updateAccountInformationPage.isCurrent());
+        updateAccountInformationPage.assertCurrent();
         Assert.assertTrue("We must be on correct realm right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+          driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
 
         log.debug("Updating info on updateAccount page");
         updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
@@ -128,9 +135,7 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
         }
 
         Assert.assertTrue("There must be user " + bc.getUserLogin() + " in realm " + bc.consumerRealmName(),
-                isUserFound);
-
-        testSingleLogout();
+          isUserFound);
     }
 
     @Test

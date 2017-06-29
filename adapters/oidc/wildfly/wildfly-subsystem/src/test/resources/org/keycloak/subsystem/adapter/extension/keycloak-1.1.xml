@@ -53,6 +53,7 @@
         <auth-server-url>http://localhost:8080/auth</auth-server-url>
         <ssl-required>EXTERNAL</ssl-required>
         <credential name="secret">0aa31d98-e0aa-404c-b6e0-e771dba1e798</credential>
+        <redirect-rewrite-rule name="^/wsmaster/api/(.*)$">api/$1/</redirect-rewrite-rule>
     </secure-deployment>
     <secure-deployment name="http-endpoint">
         <realm>master</realm>
@@ -66,5 +67,6 @@
         <credential name="jwt">
             <client-keystore-file>/tmp/keystore.jks</client-keystore-file>
         </credential>
+        <redirect-rewrite-rule name="^/wsmaster/api/(.*)$">/api/$1/</redirect-rewrite-rule>
     </secure-deployment>
 </subsystem>

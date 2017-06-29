@@ -49,7 +49,6 @@ import org.keycloak.util.TokenUtil;
 import javax.ws.rs.GET;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
-
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -169,21 +168,6 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         return this;
     }
 
-
-    private void checkSsl() {
-        if (!uriInfo.getBaseUri().getScheme().equals("https") && realm.getSslRequired().isRequired(clientConnection)) {
-            event.error(Errors.SSL_REQUIRED);
-            throw new ErrorPageException(session, Messages.HTTPS_REQUIRED);
-        }
-    }
-
-    private void checkRealm() {
-        if (!realm.isEnabled()) {
-            event.error(Errors.REALM_DISABLED);
-            throw new ErrorPageException(session, Messages.REALM_NOT_ENABLED);
-        }
-    }
-
     private void checkClient(String clientId) {
         if (clientId == null) {
             event.error(Errors.INVALID_REQUEST);
@@ -288,24 +272,24 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
     private Response checkPKCEParams() {
         String codeChallenge = request.getCodeChallenge();
         String codeChallengeMethod = request.getCodeChallengeMethod();
-        
+
         // PKCE not adopted to OAuth2 Implicit Grant and OIDC Implicit Flow,
         // adopted to OAuth2 Authorization Code Grant and OIDC Authorization Code Flow, Hybrid Flow
         // Namely, flows using authorization code.
         if (parsedResponseType.isImplicitFlow()) return null;
-        
+
         if (codeChallenge == null && codeChallengeMethod != null) {
             logger.info("PKCE supporting Client without code challenge");
             event.error(Errors.INVALID_REQUEST);
             return redirectErrorToClient(parsedResponseMode, OAuthErrorException.INVALID_REQUEST, "Missing parameter: code_challenge");
         }
-        
+
         // based on code_challenge value decide whether this client(RP) supports PKCE
         if (codeChallenge == null) {
             logger.debug("PKCE non-supporting Client");
             return null;
         }
-        
+
         if (codeChallengeMethod != null) {
         	// https://tools.ietf.org/html/rfc7636#section-4.2
         	// plain or S256
@@ -319,13 +303,13 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         	// default code_challenge_method is plane
         	codeChallengeMethod = OIDCLoginProtocol.PKCE_METHOD_PLAIN;
         }
-        
+
         if (!isValidPkceCodeChallenge(codeChallenge)) {
             logger.infof("PKCE supporting Client with invalid code challenge specified in PKCE, codeChallenge = %s", codeChallenge);
             event.error(Errors.INVALID_REQUEST);
             return redirectErrorToClient(parsedResponseMode, OAuthErrorException.INVALID_REQUEST, "Invalid parameter: code_challenge");
         }
-        
+
         return null;
     }
 

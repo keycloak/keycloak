@@ -21,6 +21,7 @@ import java.util.function.Function;
 
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
+import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.console.page.fragment.MultipleStringSelect2;
 import org.keycloak.testsuite.console.page.fragment.SingleStringSelect2;
 import org.keycloak.testsuite.page.Form;
@@ -45,8 +46,8 @@ public class ScopePermissionForm extends Form {
     @FindBy(xpath = "//i[contains(@class,'pficon-delete')]")
     private WebElement deleteButton;
 
-    @FindBy(xpath = ACTIVE_DIV_XPATH + "/button[text()='Delete']")
-    private WebElement confirmDelete;
+    @FindBy(xpath = "//div[@class='modal-dialog']")
+    protected ModalDialog modalDialog;
 
     @FindBy(id = "s2id_policies")
     private MultipleStringSelect2 policySelect;
@@ -81,7 +82,7 @@ public class ScopePermissionForm extends Form {
 
     public void delete() {
         deleteButton.click();
-        confirmDelete.click();
+        modalDialog.confirmDeletion();
     }
 
     public ScopePermissionRepresentation toRepresentation() {

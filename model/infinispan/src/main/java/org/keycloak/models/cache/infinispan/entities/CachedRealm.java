@@ -117,6 +117,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected AuthenticationFlowModel directGrantFlow;
     protected AuthenticationFlowModel resetCredentialsFlow;
     protected AuthenticationFlowModel clientAuthenticationFlow;
+    protected AuthenticationFlowModel dockerAuthenticationFlow;
 
     protected boolean eventsEnabled;
     protected long eventsExpiration;
@@ -252,6 +253,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         directGrantFlow = model.getDirectGrantFlow();
         resetCredentialsFlow = model.getResetCredentialsFlow();
         clientAuthenticationFlow = model.getClientAuthenticationFlow();
+        dockerAuthenticationFlow = model.getDockerAuthenticationFlow();
 
         for (ComponentModel component : model.getComponents()) {
             componentsByParentAndType.add(component.getParentId() + component.getProviderType(), component);
@@ -545,6 +547,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public AuthenticationFlowModel getClientAuthenticationFlow() {
         return clientAuthenticationFlow;
+    }
+
+    public AuthenticationFlowModel getDockerAuthenticationFlow() {
+        return dockerAuthenticationFlow;
     }
 
     public List<String> getDefaultGroups() {

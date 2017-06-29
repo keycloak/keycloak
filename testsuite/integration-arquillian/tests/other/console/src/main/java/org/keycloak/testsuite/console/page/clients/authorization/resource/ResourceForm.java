@@ -23,6 +23,7 @@ import java.util.Set;
 import org.jboss.arquillian.graphene.fragment.Root;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.page.Form;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
@@ -54,8 +55,8 @@ public class ResourceForm extends Form {
     @FindBy(xpath = "//i[contains(@class,'pficon-delete')]")
     private WebElement deleteButton;
 
-    @FindBy(xpath = ACTIVE_DIV_XPATH + "/button[text()='Delete']")
-    private WebElement confirmDelete;
+    @FindBy(xpath = "//div[@class='modal-dialog']")
+    protected ModalDialog modalDialog;
 
     @FindBy(id = "s2id_scopes")
     private ScopesInput scopesInput;
@@ -94,7 +95,7 @@ public class ResourceForm extends Form {
 
     public void delete() {
         deleteButton.click();
-        confirmDelete.click();
+        modalDialog.confirmDeletion();
     }
 
     public ResourceRepresentation toRepresentation() {

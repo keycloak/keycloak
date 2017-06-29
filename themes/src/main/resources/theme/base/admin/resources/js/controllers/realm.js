@@ -1449,7 +1449,7 @@ module.controller('RoleDetailCtrl', function($scope, realm, role, roles, clients
         $http, $location, Notifications, Dialog);
 });
 
-module.controller('RealmSMTPSettingsCtrl', function($scope, Current, Realm, realm, $http, $location, Dialog, Notifications) {
+module.controller('RealmSMTPSettingsCtrl', function($scope, Current, Realm, realm, $http, $location, Dialog, Notifications, RealmSMTPConnectionTester) {
     console.log('RealmSMTPSettingsCtrl');
 
     var booleanSmtpAtts = ["auth","ssl","starttls"];
@@ -1482,6 +1482,25 @@ module.controller('RealmSMTPSettingsCtrl', function($scope, Current, Realm, real
     $scope.reset = function() {
         $scope.realm = angular.copy(oldCopy);
         $scope.changed = false;
+    };
+
+    var initSMTPTest = function() {
+        return {
+            realm: $scope.realm.realm,
+            config: JSON.stringify(realm.smtpServer)
+        };
+    };
+
+    $scope.testConnection = function() {
+        RealmSMTPConnectionTester.send(initSMTPTest(), function() {
+            Notifications.success("SMTP connection successful. E-mail was sent!");
+        }, function(errorResponse) {
+            if (error.data.errorMessage) {
+                Notifications.error(error.data.errorMessage);
+            } else {
+                Notifications.error('Unexpected error during SMTP validation');
+            }
+        });
     };
 
     /* Convert string attributes containing a boolean to actual boolean type + convert an integer string (port) to integer. */
@@ -1916,6 +1935,8 @@ module.controller('RealmFlowBindingCtrl', function($scope, flows, Current, Realm
         }
     }
 
+    $scope.profileInfo = serverInfo.profileInfo;
+
     genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications, "/realms/" + realm.realm + "/authentication/flow-bindings");
 });
 
@@ -2109,6 +2130,9 @@ module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flo
 
         } else if (realm.clientAuthenticationFlow == $scope.flow.alias) {
             Notifications.error("Cannot remove flow, it is currently being used as the client authentication flow.");
+
+        } else if (realm.dockerAuthenticationFlow == $scope.flow.alias) {
+            Notifications.error("Cannot remove flow, it is currently being used as the docker authentication flow.");
 
         } else {
             AuthenticationFlows.remove({realm: realm.realm, flow: $scope.flow.id}, function () {

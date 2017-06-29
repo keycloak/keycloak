@@ -23,6 +23,7 @@ package org.keycloak.testsuite.console.clients;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -92,7 +93,6 @@ public class ClientMappersOIDCTest extends AbstractClientTest {
         assertEquals("oidc-hardcoded-role-mapper", found.getProtocolMapper());
         Map<String, String> config = found.getConfig();
         
-        assertEquals(1, config.size());
         assertEquals("offline_access", config.get("role"));
         
         //edit
@@ -164,8 +164,6 @@ public class ClientMappersOIDCTest extends AbstractClientTest {
         assertEquals("oidc-usersessionmodel-note-mapper", found.getProtocolMapper());
         
         Map<String, String> config = found.getConfig();
-        assertNull(config.get("id.token.claim"));
-        assertNull(config.get("access.token.claim"));
         assertEquals("claim name", config.get("claim.name"));
         assertEquals("session note", config.get("user.session.note"));
         assertEquals("int", config.get("jsonType.label"));
