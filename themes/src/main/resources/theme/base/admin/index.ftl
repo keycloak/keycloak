@@ -22,25 +22,41 @@
         var masterRealm = '${masterRealm}';
     </script>
 
-    <script src="${resourceUrl}/lib/jquery/jquery-1.10.2.js" type="text/javascript"></script>
-    <script src="${resourceUrl}/lib/select2-3.4.1/select2.min.js" type="text/javascript"></script>
+    <!-- Minimized versions (for those that have one) -->
+    <script src="${resourceUrl}/node_modules/jquery/dist/jquery.min.js" type="text/javascript"></script>
+    <script src="${resourceUrl}/node_modules/select2/select2.js" type="text/javascript"></script>
+    <script src="${resourceUrl}/node_modules/angular/angular.min.js"></script>
+    <script src="${resourceUrl}/node_modules/angular-resource/angular-resource.min.js"></script>
+    <script src="${resourceUrl}/node_modules/angular-route/angular-route.min.js"></script>
+    <script src="${resourceUrl}/node_modules/angular-cookies/angular-cookies.min.js"></script>
+    <script src="${resourceUrl}/node_modules/angular-sanitize/angular-sanitize.min.js"></script>
+    <script src="${resourceUrl}/node_modules/angular-translate/dist/angular-translate.min.js"></script>
+    <script src="${resourceUrl}/node_modules/angular-translate-loader-url/angular-translate-loader-url.min.js"></script>
+    <script src="${resourceUrl}/node_modules/angular-ui-select2/src/select2.js" type="text/javascript"></script>
+    <script src="${resourceUrl}/node_modules/autofill-event/autofill-event.js"></script>
+    
+    
+    <!-- Unminimized versions
+    <script src="${resourceUrl}/node_modules/jquery/dist/jquery.js" type="text/javascript"></script>
+    <script src="${resourceUrl}/node_modules/select2/select2.js" type="text/javascript"></script>
+    <script src="${resourceUrl}/node_modules/angular/angular.js"></script>
+    <script src="${resourceUrl}/node_modules/angular-resource/angular-resource.js"></script>
+    <script src="${resourceUrl}/node_modules/angular-route/angular-route.js"></script>
+    <script src="${resourceUrl}/node_modules/angular-cookies/angular-cookies.js"></script>
+    <script src="${resourceUrl}/node_modules/angular-sanitize/angular-sanitize.js"></script>
+    <script src="${resourceUrl}/node_modules/angular-translate/dist/angular-translate.js"></script>
+    <script src="${resourceUrl}/node_modules/angular-translate-loader-url/angular-translate-loader-url.js"></script>
+    <script src="${resourceUrl}/node_modules/angular-ui-select2/src/select2.js" type="text/javascript"></script>
+    <script src="${resourceUrl}/node_modules/autofill-event/autofill-event.js"></script>
+    -->
 
-    <script src="${resourceUrl}/lib/angular/angular.js"></script>
-    <script src="${resourceUrl}/lib/angular/angular-resource.js"></script>
-    <script src="${resourceUrl}/lib/angular/angular-route.js"></script>
-    <script src="${resourceUrl}/lib/angular/angular-cookies.js"></script>
-    <script src="${resourceUrl}/lib/angular/angular-sanitize.js"></script>
-    <script src="${resourceUrl}/lib/angular/angular-translate.js"></script>
-    <script src="${resourceUrl}/lib/angular/angular-translate-loader-url.js"></script>
-    <script src="${resourceUrl}/lib/angular/treeview/angular.treeview.js"></script>
+    <!-- Libraries not managed by yarn -->
     <script src="${resourceUrl}/lib/angular/ui-bootstrap-tpls-0.11.0.js"></script>
-
-    <script src="${resourceUrl}/lib/angular/select2.js" type="text/javascript"></script>
+    <script src="${resourceUrl}/lib/angular/treeview/angular.treeview.js"></script>
     <script src="${resourceUrl}/lib/fileupload/angular-file-upload.min.js"></script>
     <script src="${resourceUrl}/lib/filesaver/FileSaver.js"></script>
     <script src="${resourceUrl}/lib/ui-ace/min/ace.js"></script>
     <script src="${resourceUrl}/lib/ui-ace/ui-ace.min.js"></script>
-    <script src="${resourceUrl}/lib/autofill-event/autofill-event-1.0.0.js"></script>
 
     <script src="${authUrl}/js/${resourceVersion}/keycloak.js" type="text/javascript"></script>
 
