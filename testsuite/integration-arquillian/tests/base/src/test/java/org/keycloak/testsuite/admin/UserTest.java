@@ -17,11 +17,12 @@
 
 package org.keycloak.testsuite.admin;
 
-import org.apache.commons.collections.map.SingletonMap;
 import org.hamcrest.Matchers;
+import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -31,7 +32,6 @@ import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.common.util.Base64;
-import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -50,10 +50,12 @@ import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.page.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GreenMailRule;
@@ -63,8 +65,6 @@ import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.WebDriver;
-
-import com.google.common.collect.ImmutableMap;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
@@ -77,8 +77,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-
 import java.util.concurrent.atomic.AtomicInteger;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -101,7 +101,6 @@ public class UserTest extends AbstractAdminTest {
     @Page
     protected LoginPasswordUpdatePage passwordUpdatePage;
 
-
     @ArquillianResource
     protected OAuthClient oAuthClient;
 
@@ -114,6 +113,14 @@ public class UserTest extends AbstractAdminTest {
     @Page
     protected LoginPage loginPage;
 
+    @Deployment
+    public static WebArchive deploy() {
+        return RunOnServerDeployment.create(
+                AbstractAdminTest.class, 
+                AbstractTestRealmKeycloakTest.class, 
+                UserResource.class);
+    }
+    
     public String createUser() {
         return createUser("user1", "user1@localhost");
     }
