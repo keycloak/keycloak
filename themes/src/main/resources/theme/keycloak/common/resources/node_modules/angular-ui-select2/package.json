@@ -1,0 +1,30 @@
+{
+  "author": "https://github.com/angular-ui/ui-select2/graphs/contributors",
+  "name": "angular-ui-select2",
+  "keywords": [
+    "angular",
+    "angularui",
+    "select2"
+  ],
+  "description": "AngularUI - The companion suite for AngularJS",
+  "version": "0.0.5",
+  "homepage": "http://angular-ui.github.com",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/angular-ui/ui-select2.git"
+  },
+  "engines": {
+    "node": ">= 0.8.4"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "async": "0.1.x",
+    "grunt": "~0.4.1",
+    "grunt-contrib-jshint": "~0.6.4",
+    "grunt-contrib-watch": "~0.5.3",
+    "grunt-karma": "~0.6.2",
+    "karma": "~0.10.2",
+    "grunt-conventional-changelog": "~1.0.0",
+    "load-grunt-tasks": "~0.2.0"
+  }
+}
