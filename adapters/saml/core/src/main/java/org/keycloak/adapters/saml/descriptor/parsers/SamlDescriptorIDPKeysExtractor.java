@@ -34,6 +34,7 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.core.util.NamespaceContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -65,9 +66,7 @@ public class SamlDescriptorIDPKeysExtractor {
         MultivaluedHashMap<String, KeyInfo> res = new MultivaluedHashMap<>();
 
         try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            factory.setNamespaceAware(true);
-            DocumentBuilder builder = factory.newDocumentBuilder();
+            DocumentBuilder builder = DocumentUtil.getDocumentBuilder();
             Document doc = builder.parse(stream);
 
             XPathExpression expr = xpath.compile("/m:EntitiesDescriptor/m:EntityDescriptor/m:IDPSSODescriptor/m:KeyDescriptor");

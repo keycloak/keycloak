@@ -511,7 +511,7 @@ public class DocumentUtil {
 
     };
 
-    private static DocumentBuilder getDocumentBuilder() throws ParserConfigurationException {
+    public static DocumentBuilder getDocumentBuilder() throws ParserConfigurationException {
         DocumentBuilder res = XML_DOCUMENT_BUILDER.get();
         res.reset();
         return res;
