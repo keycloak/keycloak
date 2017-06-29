@@ -157,32 +157,32 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
         ResourceServer server = root.realmResourceServer();
         if (server == null) return;
         Policy policy = managePermission();
-        if (policy == null) {
+        if (policy != null) {
             authz.getStoreFactory().getPolicyStore().delete(policy.getId());
 
         }
         policy = viewPermission();
-        if (policy == null) {
+        if (policy != null) {
             authz.getStoreFactory().getPolicyStore().delete(policy.getId());
 
         }
         policy = mapRolesPermission();
-        if (policy == null) {
+        if (policy != null) {
             authz.getStoreFactory().getPolicyStore().delete(policy.getId());
 
         }
         policy = manageGroupMembershipPermission();
-        if (policy == null) {
+        if (policy != null) {
             authz.getStoreFactory().getPolicyStore().delete(policy.getId());
 
         }
         policy = adminImpersonatingPermission();
-        if (policy == null) {
+        if (policy != null) {
             authz.getStoreFactory().getPolicyStore().delete(policy.getId());
 
         }
         policy = userImpersonatedPermission();
-        if (policy == null) {
+        if (policy != null) {
             authz.getStoreFactory().getPolicyStore().delete(policy.getId());
 
         }

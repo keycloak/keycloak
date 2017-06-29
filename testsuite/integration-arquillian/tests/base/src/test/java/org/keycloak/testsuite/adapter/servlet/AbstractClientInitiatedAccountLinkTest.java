@@ -168,6 +168,10 @@ public abstract class AbstractClientInitiatedAccountLinkTest extends AbstractSer
         user.setUsername("child");
         user.setEnabled(true);
         childUserId = createUserAndResetPasswordWithAdminClient(realm, user, "password");
+        UserRepresentation user2 = new UserRepresentation();
+        user2.setUsername("child2");
+        user2.setEnabled(true);
+        String user2Id = createUserAndResetPasswordWithAdminClient(realm, user2, "password");
 
         // have to add a role as undertow default auth manager doesn't like "*". todo we can remove this eventually as undertow fixes this in later versions
         realm.roles().create(new RoleRepresentation("user", null, false));
@@ -175,11 +179,13 @@ public abstract class AbstractClientInitiatedAccountLinkTest extends AbstractSer
         List<RoleRepresentation> roles = new LinkedList<>();
         roles.add(role);
         realm.users().get(childUserId).roles().realmLevel().add(roles);
+        realm.users().get(user2Id).roles().realmLevel().add(roles);
         ClientRepresentation brokerService = realm.clients().findByClientId(Constants.BROKER_SERVICE_CLIENT_ID).get(0);
         role = realm.clients().get(brokerService.getId()).roles().get(Constants.READ_TOKEN_ROLE).toRepresentation();
         roles.clear();
         roles.add(role);
         realm.users().get(childUserId).roles().clientLevel(brokerService.getId()).add(roles);
+        realm.users().get(user2Id).roles().clientLevel(brokerService.getId()).add(roles);
 
     }
 
@@ -192,11 +198,6 @@ public abstract class AbstractClientInitiatedAccountLinkTest extends AbstractSer
         BrokerTestTools.createKcOidcBroker(adminClient, CHILD_IDP, PARENT_IDP, suiteContext);
     }
 
-//    @Test
-    public void testUi() throws Exception {
-        Thread.sleep(1000000000);
-
-    }
 
     @Test
     public void testErrorConditions() throws Exception {
@@ -388,6 +389,7 @@ public abstract class AbstractClientInitiatedAccountLinkTest extends AbstractSer
         String linkUrl = linkBuilder.clone()
                 .queryParam("realm", CHILD_IDP)
                 .queryParam("provider", PARENT_IDP).build().toString();
+        System.out.println("linkUrl: " + linkUrl);
         navigateTo(linkUrl);
         Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
         Assert.assertTrue(driver.getPageSource().contains(PARENT_IDP));
