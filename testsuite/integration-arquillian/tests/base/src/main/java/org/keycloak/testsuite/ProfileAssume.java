@@ -25,6 +25,10 @@ import org.keycloak.common.Profile;
  */
 public class ProfileAssume {
 
+    public static void assumeFeatureEnabled(Profile.Feature feature) {
+        Assume.assumeTrue("Ignoring test as " + feature.name() + " is not enabled", Profile.isFeatureEnabled(feature));
+    }
+
     public static void assumePreview() {
         Assume.assumeTrue("Ignoring test as community/preview profile is not enabled", !Profile.getName().equals("product"));
     }
