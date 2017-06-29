@@ -220,6 +220,8 @@ public class RealmEntity {
     @Column(name="CLIENT_AUTH_FLOW")
     protected String clientAuthenticationFlow;
 
+    @Column(name="DOCKER_AUTH_FLOW")
+    protected String dockerAuthenticationFlow;
 
 
     @Column(name="INTERNATIONALIZATION_ENABLED")
@@ -731,6 +733,15 @@ public class RealmEntity {
 
     public void setClientAuthenticationFlow(String clientAuthenticationFlow) {
         this.clientAuthenticationFlow = clientAuthenticationFlow;
+    }
+
+    public String getDockerAuthenticationFlow() {
+        return dockerAuthenticationFlow;
+    }
+
+    public RealmEntity setDockerAuthenticationFlow(String dockerAuthenticationFlow) {
+        this.dockerAuthenticationFlow = dockerAuthenticationFlow;
+        return this;
     }
 
     public Collection<ClientTemplateEntity> getClientTemplates() {

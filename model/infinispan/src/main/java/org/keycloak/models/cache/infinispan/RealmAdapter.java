@@ -1039,6 +1039,18 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public AuthenticationFlowModel getDockerAuthenticationFlow() {
+        if (isUpdated()) return updated.getDockerAuthenticationFlow();
+        return cached.getDockerAuthenticationFlow();
+    }
+
+    @Override
+    public void setDockerAuthenticationFlow(final AuthenticationFlowModel flow) {
+        getDelegateForUpdate();
+        updated.setDockerAuthenticationFlow(flow);
+    }
+
+    @Override
     public List<AuthenticationFlowModel> getAuthenticationFlows() {
         if (isUpdated()) return updated.getAuthenticationFlows();
         return cached.getAuthenticationFlowList();

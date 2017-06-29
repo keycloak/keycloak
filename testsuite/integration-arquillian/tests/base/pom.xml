@@ -88,6 +88,28 @@
             <artifactId>greenmail</artifactId>
             <scope>compile</scope>
         </dependency>
+        <!--<dependency>-->
+            <!--<groupId>com.spotify</groupId>-->
+            <!--<artifactId>docker-client</artifactId>-->
+            <!--<version>8.3.2</version>-->
+            <!--<scope>test</scope>-->
+            <!--<exclusions>-->
+                <!--<exclusion>-->
+                    <!--<groupId>javax.ws.rs</groupId>-->
+                    <!--<artifactId>javax.ws.rs-api</artifactId>-->
+                <!--</exclusion>-->
+                <!--<exclusion>-->
+                    <!--<groupId>com.github.jnr</groupId>-->
+                    <!--<artifactId>jnr-unixsocket</artifactId>-->
+                <!--</exclusion>-->
+            <!--</exclusions>-->
+        <!--</dependency>-->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <version>1.2.1</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     
     <build>

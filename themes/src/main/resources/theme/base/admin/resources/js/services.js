@@ -335,8 +335,38 @@ module.service('ServerInfo', function($resource, $q, $http) {
     var info = {};
     var delay = $q.defer();
 
-    $http.get(authUrl + '/admin/serverinfo').success(function(data) {
+    function copyInfo(data, info) {
         angular.copy(data, info);
+
+        info.listProviderIds = function(spi) {
+            var providers = info.providers[spi].providers;
+            var ids = Object.keys(providers);
+            ids.sort(function(a, b) {
+                var s1;
+                var s2;
+
+                if (providers[a].order != providers[b].order) {
+                    s1 = providers[b].order;
+                    s2 = providers[a].order;
+                } else {
+                    s1 = a;
+                    s2 = b;
+                }
+
+                if (s1 < s2) {
+                    return -1;
+                } else if (s1 > s2) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            });
+            return ids;
+        }
+    }
+
+    $http.get(authUrl + '/admin/serverinfo').success(function(data) {
+        copyInfo(data, info);
         delay.resolve(info);
     });
 
@@ -346,7 +376,7 @@ module.service('ServerInfo', function($resource, $q, $http) {
         },
         reload: function() {
             $http.get(authUrl + '/admin/serverinfo').success(function(data) {
-                angular.copy(data, info);
+                copyInfo(data, info);
             });
         },
         promise: delay.promise

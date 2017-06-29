@@ -59,6 +59,7 @@ import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.OAuthClient;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT_LINKS;
@@ -216,6 +217,20 @@ public class MigrationTest extends AbstractKeycloakTest {
     private void testMigrationTo3_2_0() {
         assertNull(masterRealm.toRepresentation().getPasswordPolicy());
         assertNull(migrationRealm.toRepresentation().getPasswordPolicy());
+
+        testDockerAuthenticationFlow(masterRealm, migrationRealm);
+    }
+
+    private void testDockerAuthenticationFlow(RealmResource... realms) {
+        for (RealmResource realm : realms) {
+            AuthenticationFlowRepresentation flow = null;
+            for (AuthenticationFlowRepresentation f : realm.flows().getFlows()) {
+                if (DefaultAuthenticationFlows.DOCKER_AUTH.equals(f.getAlias())) {
+                    flow = f;
+                }
+            }
+            assertNotNull(flow);
+        }
     }
 
     private void testRoleManageAccountLinks(RealmResource... realms) {
