@@ -25,7 +25,6 @@ import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.common.VerificationException;
-import org.keycloak.common.util.Encode;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.constants.AdapterConstants;
@@ -41,7 +40,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 
@@ -175,7 +173,7 @@ public class OAuthRequestAuthenticator {
         KeycloakUriBuilder redirectUriBuilder = deployment.getAuthUrl().clone()
                 .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE)
                 .queryParam(OAuth2Constants.CLIENT_ID, deployment.getResourceName())
-                .queryParam(OAuth2Constants.REDIRECT_URI, Encode.encodeQueryParamAsIs(rewrittenRedirectUri(url))) // Need to encode uri ourselves as queryParam() will not encode % characters.
+                .queryParam(OAuth2Constants.REDIRECT_URI, rewrittenRedirectUri(url))
                 .queryParam(OAuth2Constants.STATE, state)
                 .queryParam("login", "true");
         if(loginHint != null && loginHint.length() > 0){
@@ -383,21 +381,21 @@ public class OAuthRequestAuthenticator {
     }
     
     private String rewrittenRedirectUri(String originalUri) {
-        String rewrittenRedirectUri = originalUri;
-        try {
-            URL url = new URL(originalUri);
-            Map<String, String> rewriteRules = deployment.getRedirectRewriteRules();
+        Map<String, String> rewriteRules = deployment.getRedirectRewriteRules();
             if(rewriteRules != null && !rewriteRules.isEmpty()) {
+            try {
+                URL url = new URL(originalUri);
                 Map.Entry<String, String> rule =  rewriteRules.entrySet().iterator().next();
                 StringBuilder redirectUriBuilder = new StringBuilder(url.getProtocol());
                 redirectUriBuilder.append("://"+ url.getAuthority());
                 redirectUriBuilder.append(url.getPath().replaceFirst(rule.getKey(), rule.getValue()));
                 return redirectUriBuilder.toString();
+            } catch (MalformedURLException ex) {
+                log.error("Not a valid request url");
+                throw new RuntimeException(ex);
             }
-        } catch (MalformedURLException ex) {
-            log.error("Not a valid request url");
-        }
-        return rewrittenRedirectUri;
+            }
+        return originalUri;
     }
 
 }
