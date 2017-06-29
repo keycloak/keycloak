@@ -236,7 +236,7 @@ module.controller('GroupRoleMappingCtrl', function($scope, $http, realm, group, 
         var roles = $scope.selectedRealmRoles;
         $scope.selectedRealmRoles = [];
         $http.post(authUrl + '/admin/realms/' + realm.realm + '/groups/' + group.id + '/role-mappings/realm',
-            roles).success(function() {
+            roles).then(function() {
                 $scope.realmMappings = GroupRealmRoleMapping.query({realm : realm.realm, groupId : group.id});
                 $scope.realmRoles = GroupAvailableRealmRoleMapping.query({realm : realm.realm, groupId : group.id});
                 $scope.realmComposite = GroupCompositeRealmRoleMapping.query({realm : realm.realm, groupId : group.id});
@@ -257,7 +257,7 @@ module.controller('GroupRoleMappingCtrl', function($scope, $http, realm, group, 
 
     $scope.deleteRealmRole = function() {
         $http.delete(authUrl + '/admin/realms/' + realm.realm + '/groups/' + group.id + '/role-mappings/realm',
-            {data : $scope.selectedRealmMappings, headers : {"content-type" : "application/json"}}).success(function() {
+            {data : $scope.selectedRealmMappings, headers : {"content-type" : "application/json"}}).then(function() {
                 $scope.realmMappings = GroupRealmRoleMapping.query({realm : realm.realm, groupId : group.id});
                 $scope.realmRoles = GroupAvailableRealmRoleMapping.query({realm : realm.realm, groupId : group.id});
                 $scope.realmComposite = GroupCompositeRealmRoleMapping.query({realm : realm.realm, groupId : group.id});
@@ -277,7 +277,7 @@ module.controller('GroupRoleMappingCtrl', function($scope, $http, realm, group, 
 
     $scope.addClientRole = function() {
         $http.post(authUrl + '/admin/realms/' + realm.realm + '/groups/' + group.id + '/role-mappings/clients/' + $scope.targetClient.id,
-            $scope.selectedClientRoles).success(function() {
+            $scope.selectedClientRoles).then(function() {
                 $scope.clientMappings = GroupClientRoleMapping.query({realm : realm.realm, groupId : group.id, client : $scope.targetClient.id});
                 $scope.clientRoles = GroupAvailableClientRoleMapping.query({realm : realm.realm, groupId : group.id, client : $scope.targetClient.id});
                 $scope.clientComposite = GroupCompositeClientRoleMapping.query({realm : realm.realm, groupId : group.id, client : $scope.targetClient.id});
@@ -291,7 +291,7 @@ module.controller('GroupRoleMappingCtrl', function($scope, $http, realm, group, 
 
     $scope.deleteClientRole = function() {
         $http.delete(authUrl + '/admin/realms/' + realm.realm + '/groups/' + group.id + '/role-mappings/clients/' + $scope.targetClient.id,
-            {data : $scope.selectedClientMappings, headers : {"content-type" : "application/json"}}).success(function() {
+            {data : $scope.selectedClientMappings, headers : {"content-type" : "application/json"}}).then(function() {
                 $scope.clientMappings = GroupClientRoleMapping.query({realm : realm.realm, groupId : group.id, client : $scope.targetClient.id});
                 $scope.clientRoles = GroupAvailableClientRoleMapping.query({realm : realm.realm, groupId : group.id, client : $scope.targetClient.id});
                 $scope.clientComposite = GroupCompositeClientRoleMapping.query({realm : realm.realm, groupId : group.id, client : $scope.targetClient.id});
