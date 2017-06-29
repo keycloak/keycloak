@@ -62,7 +62,8 @@ public class BaseAdapterConfig extends BaseRealmConfig {
     protected boolean publicClient;
     @JsonProperty("credentials")
     protected Map<String, Object> credentials = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-
+     @JsonProperty("redirect-rewrite-rules")
+    protected Map<String, String> redirectRewriteRules;
 
     public boolean isUseResourceRoleMappings() {
         return useResourceRoleMappings;
@@ -167,4 +168,14 @@ public class BaseAdapterConfig extends BaseRealmConfig {
     public void setPublicClient(boolean publicClient) {
         this.publicClient = publicClient;
     }
+
+    public Map<String, String> getRedirectRewriteRules() {
+        return redirectRewriteRules;
+    }
+
+    public void setRedirectRewriteRules(Map<String, String> redirectRewriteRules) {
+        this.redirectRewriteRules = redirectRewriteRules;
+    }
+    
+    
 }

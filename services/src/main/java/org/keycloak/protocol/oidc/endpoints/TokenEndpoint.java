@@ -258,6 +258,7 @@ public class TokenEndpoint {
         }
 
         event.user(userSession.getUser());
+
         event.session(userSession.getId());
 
         String redirectUri = clientSession.getNote(OIDCLoginProtocol.REDIRECT_URI_PARAM);
