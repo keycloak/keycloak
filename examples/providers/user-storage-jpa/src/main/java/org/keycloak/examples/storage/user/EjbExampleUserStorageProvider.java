@@ -22,6 +22,7 @@ import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialInputUpdater;
 import org.keycloak.credential.CredentialInputValidator;
 import org.keycloak.credential.CredentialModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -289,6 +290,11 @@ public class EjbExampleUserStorageProvider implements UserStorageProvider,
         return Collections.EMPTY_LIST;
     }
 
+    @Override
+	public List<UserModel> getUsersInRole(RealmModel realm, ClientModel client, String roleId) {
+    	return Collections.EMPTY_LIST;
+	}
+    
     @Override
     public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
         return Collections.EMPTY_LIST;

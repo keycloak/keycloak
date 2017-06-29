@@ -621,4 +621,31 @@ public class ClientResource {
             }
         }
     }
+    
+    /**
+     * Search for users with role assigned.
+     * 
+     * @param realm
+     * @param client
+     * @param roleId
+     * @return
+     */
+    @Path("users-in-role/{role-id}")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<UserRepresentation> usersInrole(final @PathParam("role-id") String roleId){
+    	logger.debugv("Getting the user in role {0}", roleId);
+    	
+    	auth.requireView();
+    	
+    	List<UserRepresentation> results = new ArrayList<UserRepresentation>();
+    	List<UserModel> userModels = session.users().getUsersInRole(realm, client, roleId);
+    	
+    	for (UserModel user : userModels) {
+            results.add(ModelToRepresentation.toRepresentation(session, realm, user));
+        }
+    	
+    	return results;
+    }
 }
