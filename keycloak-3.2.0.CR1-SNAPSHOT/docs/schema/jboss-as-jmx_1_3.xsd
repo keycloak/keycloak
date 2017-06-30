@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2011, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+            targetNamespace="urn:jboss:domain:jmx:1.3"
+            xmlns="urn:jboss:domain:jmx:1.3"
+            elementFormDefault="qualified"
+            attributeFormDefault="unqualified"
+            version="1.1">
+
+    <!-- The jmx subsystem root element -->
+    <xs:element name="subsystem" type="subsystem"/>
+
+    <xs:complexType name="subsystem">
+      <xs:sequence>
+         <xs:element name="expose-resolved-model" type="resolvedModelType" minOccurs="0" maxOccurs="1"/>
+         <xs:element name="expose-expression-model" type="expressionModelType" minOccurs="0" maxOccurs="1"/>
+         <xs:element name="remoting-connector" type="remotingConnectorRefType" minOccurs="0"/>
+         <xs:element name="audit-log" type="audit-logType" minOccurs="0"/>
+         <xs:element name="sensitivity" type="sensitivityType" minOccurs="0"/>
+      </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="resolvedModelType">
+      <xs:attribute name="domain-name" type="xs:string" default="jboss.as"/>
+      <xs:attribute name="proper-property-format" type="xs:boolean" default="true"/>
+    </xs:complexType>
+
+    <xs:complexType name="expressionModelType">
+      <xs:attribute name="domain-name" type="xs:string" default="jboss.as.expr"/>
+    </xs:complexType>
+
+    <xs:complexType name="remotingConnectorRefType">
+        <xs:attribute name="use-management-endpoint" type="xs:boolean" default="true" use="optional" >
+            <xs:annotation>
+                <xs:documentation>
+                    If true then this connector will use the management endpoint, otherwise it will use the
+                    remoting subsystem endpoint.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="audit-logType">
+        <xs:annotation>
+            <xs:documentation>
+                Declaration of management operation audit logging configuration.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="handlers" type="audit-log-handlers-refType"/>
+        </xs:choice>        
+        <xs:attribute name="log-boot" type="xs:boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    Whether operations should be logged on boot.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="log-read-only" type="xs:boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    Whether operations that do not modify the configuration or any runtime services should be logged.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="enabled" type="xs:boolean" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    Whether audit logging is enabled.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+    
+    <xs:complexType name="audit-log-handlers-refType">
+        <xs:annotation>
+            <xs:documentation>
+                References to audit-log-handlers defined in the audit-log-handlers section
+            </xs:documentation>
+        </xs:annotation>
+        <xs:choice minOccurs="0">
+            <xs:element name="handler" type="audit-log-handler-refType" minOccurs="0"/>
+        </xs:choice>
+    </xs:complexType>
+
+    <xs:complexType name="audit-log-handler-refType">
+        <xs:annotation>
+            <xs:documentation>
+                A reference to an audit-log-handler defined in the audit-log-appenders section
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="name" type="xs:string" use="required"/>
+    </xs:complexType>
+    
+    <xs:complexType name="sensitivityType">
+        <xs:annotation>
+            <xs:documentation>
+                Configures access control sensititity for the mbeans in the jmx subsystem
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="non-core-mbeans" type="xs:boolean" use="optional" default="false"/>
+    </xs:complexType>
+    
+</xs:schema>

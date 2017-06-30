@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2011, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            targetNamespace="urn:jboss:shared-session-config:1.0"
+            xmlns="urn:jboss:shared-session-config:1.0"
+            elementFormDefault="qualified"
+            attributeFormDefault="unqualified"
+            version="1.0">
+
+    <!-- Root element -->
+    <xsd:element name="shared-session-config" type="sharedSessionType">
+        <xsd:annotation>
+            <xsd:documentation>
+                Root element for the shared session config. If this is present in the root of
+                an ear then all war's deployed in the ear will share a single session manager.
+            </xsd:documentation>
+        </xsd:annotation>
+    </xsd:element>
+
+    <xsd:complexType name="sharedSessionType">
+        <xsd:sequence>
+            <xsd:element name="max-active-sessions" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="session-config" type="session-configType" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="replication-config" type="replication-configType" minOccurs="0" maxOccurs="1"/>
+
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="session-configType">
+        <xsd:annotation>
+            <xsd:documentation>
+
+                The session-configType defines the session parameters
+                for this web application.
+
+                Used in: web-app
+
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence>
+            <xsd:element name="session-timeout"
+                         type="xsd:integer"
+                         minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>
+
+                        The session-timeout element defines the default
+                        session timeout interval for all sessions created
+                        in this web application. The specified timeout
+                        must be expressed in a whole number of minutes.
+                        If the timeout is 0 or less, the container ensures
+                        the default behaviour of sessions is never to time
+                        out. If this element is not specified, the container
+                        must set its default timeout period.
+
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="cookie-config"
+                         type="cookie-configType"
+                         minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>
+
+                        The cookie-config element defines the configuration of the
+                        session tracking cookies created by this web application.
+
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="tracking-mode"
+                         type="tracking-modeType"
+                         minOccurs="0"
+                         maxOccurs="3">
+                <xsd:annotation>
+                    <xsd:documentation>
+
+                        The tracking-mode element defines the tracking modes
+                        for sessions created by this web application
+
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+        <xsd:attribute name="id"
+                       type="xsd:ID"/>
+    </xsd:complexType>
+
+    <xsd:simpleType name="tracking-modeType">
+        <xsd:annotation>
+            <xsd:documentation>
+
+                The tracking modes for sessions created by this web
+                application
+
+                Used in: session-config
+
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="COOKIE"/>
+            <xsd:enumeration value="URL"/>
+            <xsd:enumeration value="SSL"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="cookie-configType">
+        <xsd:annotation>
+            <xsd:documentation>
+
+                The cookie-configType defines the configuration for the
+                session tracking cookies of this web application.
+
+                Used in: session-config
+
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence>
+            <xsd:element name="name"
+                         type="xsd:string"
+                         minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>
+
+                        The name that will be assigned to any session tracking
+                        cookies created by this web application.
+                        The default is JSESSIONID
+
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="domain"
+                         type="xsd:string"
+                         minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>
+
+                        The domain name that will be assigned to any session tracking
+                        cookies created by this web application.
+
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="path"
+                         type="xsd:string"
+                         minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>
+
+                        The path that will be assigned to any session tracking
+                        cookies created by this web application.
+
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="comment"
+                         type="xsd:string"
+                         minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>
+
+                        The comment that will be assigned to any session tracking
+                        cookies created by this web application.
+
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="http-only"
+                         type="xsd:boolean"
+                         minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>
+
+                        Specifies whether any session tracking cookies created
+                        by this web application will be marked as HttpOnly
+
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="secure"
+                         type="xsd:boolean"
+                         minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>
+
+                        Specifies whether any session tracking cookies created
+                        by this web application will be marked as secure
+                        even if the request that initiated the corresponding session
+                        is using plain HTTP instead of HTTPS
+
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="max-age"
+                         type="xsd:integer"
+                         minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>
+
+                        The lifetime (in seconds) that will be assigned to any
+                        session tracking cookies created by this web application.
+                        Default is -1
+
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+        <xsd:attribute name="id"
+                       type="xsd:ID"/>
+    </xsd:complexType>
+
+
+    <xsd:complexType name="replication-configType">
+        <xsd:annotation>
+            <xsd:documentation>
+                <![CDATA[
+
+            HTTP Session clustering configuration (optional tags)
+
+            ]]>
+            </xsd:documentation>
+        </xsd:annotation>
+
+        <xsd:sequence>
+            <xsd:element name="cache-name" type="xsd:string" minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        <![CDATA[
+
+                    Clustering only: Specifies the name of the Infinispan container and cache in which to store session data.
+
+                    Default value, if not explicitly set, is determined by the application server.
+
+                    To use a specific cache within a cache container, use the form "container.cache".
+                    If unqualified, the default cache of the specified container is used.
+
+                    e.g. <cache-name>web</cache-name>
+                         <cache-name>web.dist</cache-name>
+
+                    ]]>
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="replication-granularity" type="replication-granularityType" minOccurs="0"
+                         default="SESSION">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        <![CDATA[
+
+                    Clustering only: Determines the session replication granularity level.
+                    Possible values are:
+                            1 - "SESSION" (default)
+                            2 - "ATTRIBUTE"
+
+                    Using SESSION granularity, all session attributes are replicated if any were modified within
+                    the scrope of a request. This policy is required if an object reference is shared by multiple
+                    session attributes. However, this can be inefficient if session attributes are sufficiently
+                    large and/org are modified infrequently, since all attributes must be replicated reglardless
+                    of  whether they were modified or not.
+
+                    Using ATTRIBUTE granularity, only those attributes that were modified within the scope of a
+                    request are replicated. This policy is not appropriate if an object reference is shared by
+                    multiple session attributes. This can be more efficient than SESSION granularity if the
+                    session attributes are sufficiently large and/or modified infrequently.
+
+                    Examples:
+                          <replication-granularity>SESSION</replication-granularity>
+                       or
+                          <replication-granularity>ATTRIBUTE</replication-granularity>
+
+                    ]]>
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:simpleType name="replication-granularityType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="SESSION"/>
+            <xsd:enumeration value="ATTRIBUTE"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+</xsd:schema>
+

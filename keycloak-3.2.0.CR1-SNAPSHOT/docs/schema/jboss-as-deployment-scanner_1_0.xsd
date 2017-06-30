@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2011, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+<xs:schema xmlns="urn:jboss:domain:deployment-scanner:1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema" attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="urn:jboss:domain:deployment-scanner:1.0" version="1.0">
+
+    <!-- The threads subsystem root element -->
+    <xs:element name="subsystem" type="subsystem"/>
+
+    <xs:complexType name="subsystem">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                The filesystem deployment scanner subsystem configuration.
+                ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:choice maxOccurs="unbounded" minOccurs="0">
+            <xs:element maxOccurs="unbounded" minOccurs="0" name="deployment-scanner" type="standalone-deployment-scanner-type"/>
+        </xs:choice>
+    </xs:complexType>
+
+    <xs:complexType name="standalone-deployment-scanner-type">
+        <xs:annotation>
+            <xs:documentation>Allows configuration of an additional location where deployment
+                content can be stored.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute default="default" name="name" type="xs:string" use="optional"/>
+        <xs:attribute name="relative-to" type="xs:string" use="optional">
+           <xs:annotation>
+                <xs:documentation>Reference to a filesystem path defined in the "paths" section
+                of the server configuration.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="path" use="required">
+            <xs:annotation>
+                <xs:documentation>The actual filesystem path. Treated as an absolute path, unless the
+                'relative-to' attribute is specified, in which case the value
+                is treated as relative to that path.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute default="0" name="scan-interval" type="xs:int" use="optional">
+            <xs:annotation>
+                <xs:documentation>Periodic interval, in milliseconds, at which the repository
+                    should be scanned for changes. A value of less than 1 indicates the
+                    repository should only be scanned at initial startup.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute default="true" name="scan-enabled" type="xs:boolean" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Flag indicating that all scanning (including initial scanning at startup)
+                    should be disabled.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute default="true" name="auto-deploy-zipped" type="xs:boolean" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Controls whether zipped deployment content should be automatically deployed by
+                    the scanner without requiring the user to add a .dodeploy marker file.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute default="false" name="auto-deploy-exploded" type="xs:boolean" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Controls whether zipped deployment content should be automatically deployed by
+                    the scanner without requiring the user to add a .dodeploy marker file. Setting
+                    this to 'true' is not recommended for anything but basic development scenarios,
+                    as there is no way to ensure that deployment will not occur in the middle of
+                    changes to the content.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute default="60" name="deployment-timeout" type="xs:int" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                   Timeout used. in seconds, for deployment operations.  If an individual deployment operation
+                   takes longer than this timeout it will be canceled and marked as failed.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+</xs:schema>

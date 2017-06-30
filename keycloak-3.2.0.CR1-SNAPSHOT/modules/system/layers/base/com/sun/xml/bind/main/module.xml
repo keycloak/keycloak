@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2011, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+
+<module xmlns="urn:jboss:module:1.5" name="com.sun.xml.bind">
+    <properties>
+        <property name="jboss.api" value="private"/>
+    </properties>
+
+    <resources>
+        <resource-root path="jaxb-core-2.2.11.jbossorg-1.jar"/>
+        <resource-root path="jaxb-runtime-2.2.11.jbossorg-1.jar"/>
+        <resource-root path="jaxb-xjc-2.2.11.jbossorg-1.jar"/>
+        <resource-root path="jaxb-jxc-2.2.11.jbossorg-1.jar"/>
+        <resource-root path="codemodel-2.2.11.jbossorg-1.jar"/>
+        <resource-root path="rngom-2.2.11.jbossorg-1.jar"/>
+    </resources>
+
+    <dependencies>
+        <module name="com.github.relaxng" export="true" />
+        <module name="com.sun.istack" export="true" />
+        <module name="com.sun.xml.txw2" export="true" />
+        <module name="com.sun.xsom" export="true" />
+        <module name="javax.api" />
+        <module name="javax.xml.bind.api" />
+        <module name="javax.xml.stream.api" />
+    </dependencies>
+</module>

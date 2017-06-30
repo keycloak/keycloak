@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2011, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="urn:jboss:messaging-activemq-deployment:1.0"
+           targetNamespace="urn:jboss:messaging-activemq-deployment:1.0"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified"
+           version="1.0">
+
+    <xs:element name="messaging-deployment">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                The configuration of a messaging deployment
+            ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element maxOccurs="unbounded" minOccurs="0" name="server" type="serverType"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:complexType name="serverType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                The configuration of entries for a ActiveMQ server.
+            ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element maxOccurs="1" minOccurs="0" name="jms-destinations">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="jms-queue" maxOccurs="unbounded" minOccurs="0" type="jmsQueueType"/>
+                        <xs:element name="jms-topic" maxOccurs="unbounded" minOccurs="0" type="jmsTopicType"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="name" type="xs:string" use="optional" default="default">
+            <xs:annotation>
+                <xs:documentation>
+                    The name to use for this ActiveMQ Server. Must correspond to a ActiveMQ server installed in
+                    the main configuration.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="entryType">
+        <xs:attribute name="name" type="xs:string" use="required"/>
+    </xs:complexType>
+    <xs:complexType name="jmsQueueType">
+        <xs:sequence>
+            <xs:element name="entry" type="entryType" maxOccurs="unbounded" minOccurs="1"/>
+            <xs:element name="selector" maxOccurs="1" minOccurs="0">
+                <xs:complexType>
+                    <xs:attribute name="string" type="xs:string" use="required"/>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="durable" type="xs:boolean" maxOccurs="1" minOccurs="0"/>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="jmsTopicType">
+        <xs:sequence>
+            <xs:element name="entry" type="entryType" maxOccurs="unbounded" minOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="transactionType">
+        <xs:attribute name="mode" use="required" type="modeType"/>
+    </xs:complexType>
+
+    <xs:simpleType name="modeType">
+        <xs:restriction base="xs:token">
+            <xs:enumeration value="xa">
+                <xs:annotation>
+                    <xs:documentation></xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="local">
+                <xs:annotation>
+                    <xs:documentation></xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="none">
+                <xs:annotation>
+                    <xs:documentation></xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+
+</xs:schema>

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="urn:jboss:domain:jaxr:1.0"
+           xmlns="urn:jboss:domain:jaxr:1.0"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified"
+           version="1.0">
+
+    <!-- The subsystem root element -->
+    <xs:element name="subsystem" type="subsystemType"/>
+
+    <xs:complexType name="subsystemType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                The configuration of the JAXR subsystem.
+            ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="connection-factory" type="connectionFactoryType" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="juddi-server" type="juddiServerType" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:complexType name="connectionFactoryType" mixed="false">
+        <xs:attribute name="jndi-name" type="xs:token" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                <![CDATA[[
+                The JNDI name for the ConnectionFactory
+                ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="juddiServerType" mixed="false">
+        <xs:attribute name="publish-url" type="xs:anyURI" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[[
+                The jUDDI server's publish URL
+                ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="query-url" type="xs:anyURI" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[[
+                The jUDDI server's query URL
+                ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+</xs:schema>

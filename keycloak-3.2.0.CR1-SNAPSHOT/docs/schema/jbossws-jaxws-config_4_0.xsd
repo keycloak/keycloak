@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2011, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+
+<xsd:schema xmlns="http://www.w3.org/2001/XMLSchema"
+            targetNamespace="urn:jboss:jbossws-jaxws-config:4.0"
+            xmlns:tns="urn:jboss:jbossws-jaxws-config:4.0"
+            xmlns:javaee="http://java.sun.com/xml/ns/javaee"
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            elementFormDefault="qualified"
+            attributeFormDefault="unqualified"
+            version="4.0">
+
+   <xsd:annotation>
+      <xsd:documentation>
+         <![CDATA[
+            This is the schema definition for JBossWS JAXWS configurations.
+            It relies on the handler definitions that are part of the standard JavaEE 6 deployment descriptors.
+         ]]>
+      </xsd:documentation>
+   </xsd:annotation>
+
+   <xsd:import namespace="http://java.sun.com/xml/ns/javaee" schemaLocation="http://java.sun.com/xml/ns/javaee/javaee_6.xsd"/>
+
+   <xsd:element name="jaxws-config" type="tns:jaxwsConfigType"/>
+   <xsd:complexType name="jaxwsConfigType">
+      <xsd:sequence>
+         <xsd:element name="endpoint-config" type="tns:endpointConfigType" minOccurs="0" maxOccurs="unbounded"/>
+         <xsd:element name="client-config" type="tns:clientConfigType" minOccurs="0" maxOccurs="unbounded"/>
+      </xsd:sequence>
+   </xsd:complexType>
+
+   <xsd:complexType name="endpointConfigType">
+      <xsd:complexContent>
+         <xsd:extension base="tns:commonConfigType"/>
+      </xsd:complexContent>
+   </xsd:complexType>
+
+   <xsd:complexType name="clientConfigType">
+      <xsd:complexContent>
+         <xsd:extension base="tns:commonConfigType"/>
+      </xsd:complexContent>
+   </xsd:complexType>
+
+   <xsd:complexType name="commonConfigType">
+      <xsd:sequence>
+         <xsd:element name="config-name" type="xsd:string"/>
+         <xsd:element name="pre-handler-chains" type="javaee:handler-chainsType" minOccurs="0"/>
+         <xsd:element name="post-handler-chains" type="javaee:handler-chainsType" minOccurs="0"/>
+         <xsd:element name="feature" type="tns:featureType" minOccurs="0" maxOccurs="unbounded"/>
+         <xsd:element name="property" type="tns:propertyType" minOccurs="0" maxOccurs="unbounded"/>
+      </xsd:sequence>
+   </xsd:complexType>
+
+   <xsd:complexType name="featureType">
+      <xsd:sequence>
+         <xsd:element name="feature-name" type="xsd:string"/>
+      </xsd:sequence>
+   </xsd:complexType>
+
+   <xsd:complexType name="propertyType">
+      <xsd:sequence>
+         <xsd:element name="property-name" type="xsd:string"/>
+         <xsd:element name="property-value" type="xsd:string"/>
+      </xsd:sequence>
+   </xsd:complexType>
+
+</xsd:schema>

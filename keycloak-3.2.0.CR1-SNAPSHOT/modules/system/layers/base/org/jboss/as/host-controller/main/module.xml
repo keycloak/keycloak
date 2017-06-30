@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2010, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+
+<module xmlns="urn:jboss:module:1.5" name="org.jboss.as.host-controller">
+    <properties>
+        <property name="jboss.api" value="private"/>
+        <property name="jboss.require-java-version" value="1.8"/>
+    </properties>
+
+    <main-class name="org.jboss.as.host.controller.Main"/>
+
+    <resources>
+        <resource-root path="wildfly-host-controller-3.0.0.Beta11.jar"/>
+    </resources>
+
+    <dependencies>
+        <module name="javax.api"/>
+        <!--
+        Xalan is optional dependancy and would need to be present in cases where runtime code needs xslt transformation otherwise
+        xslt parser will fallback to JDK provided xalan, which can cause issues.
+         -->
+        <module name="org.apache.xalan" services="import" optional="true"/>
+        <module name="org.apache.xerces" services="import"/>
+        <module name="org.codehaus.woodstox" services="import"/>
+        <module name="org.jboss.staxmapper"/>
+        <module name="org.jboss.vfs" services="import"/>
+        <module name="org.jboss.as.controller"/>
+        <module name="org.jboss.as.core-security"/>
+        <module name="org.jboss.as.deployment-repository"/>
+        <module name="org.jboss.as.domain-management"/>
+        <module name="org.jboss.as.domain-http-interface"/>
+        <module name="org.jboss.as.jmx" services="import"/>
+        <module name="org.jboss.as.management-client-content"/>
+        <module name="org.jboss.as.network"/>
+        <module name="org.jboss.as.patching" optional="true" services="import"/>
+        <module name="org.jboss.as.platform-mbean"/>
+        <module name="org.jboss.as.process-controller"/>
+        <module name="org.jboss.as.protocol">
+            <imports>
+                <include path="**" />
+            </imports> 
+        </module>
+        <module name="org.jboss.as.remoting"/>
+        <module name="org.wildfly.common"/>
+        <module name="org.wildfly.security.elytron-private" services="import"/>
+        <module name="org.jboss.as.server" services="import"/>
+        <module name="org.jboss.as.version"/>
+        <module name="org.jboss.logging"/>
+        <module name="org.jboss.logmanager" services="import"/>
+        <module name="org.jboss.marshalling"/>
+        <module name="org.jboss.modules"/>
+        <module name="org.jboss.msc"/>
+        <module name="org.jboss.remoting"/>
+        <module name="org.jboss.remoting-jmx"/>
+        <module name="org.jboss.stdio"/>
+        <module name="org.jboss.threads"/>
+        <module name="org.jboss.xnio"/>
+        <module name="org.wildfly.extension.core-management-client" />
+        <module name="io.undertow.core" />
+    </dependencies>
+</module>

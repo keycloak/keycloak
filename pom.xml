@@ -856,6 +856,11 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-spring-boot-2-adapter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-tomcat-adapter-spi</artifactId>
                 <version>${project.version}</version>
             </dependency>

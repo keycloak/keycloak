@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2010, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+<module xmlns="urn:jboss:module:1.5" name="javax.api">
+    <dependencies>
+        <module name="javax.sql.api" export="true"/>
+        <system export="true">
+            <paths>
+                <path name="javax/accessibility"/>
+                <path name="javax/annotation/processing"/>
+                <path name="javax/activity"/>
+                <path name="javax/crypto"/>
+                <path name="javax/crypto/interfaces"/>
+                <path name="javax/crypto/spec"/>
+                <path name="javax/imageio"/>
+                <path name="javax/imageio/event"/>
+                <path name="javax/imageio/metadata"/>
+                <path name="javax/imageio/plugins/bmp"/>
+                <path name="javax/imageio/plugins/jpeg"/>
+                <path name="javax/imageio/spi"/>
+                <path name="javax/imageio/stream"/>
+                <path name="javax/lang/model"/>
+                <path name="javax/lang/model/element"/>
+                <path name="javax/lang/model/type"/>
+                <path name="javax/lang/model/util"/>
+                <path name="javax/management"/>
+                <path name="javax/management/loading"/>
+                <path name="javax/management/modelmbean"/>
+                <path name="javax/management/monitor"/>
+                <path name="javax/management/openmbean"/>
+                <path name="javax/management/relation"/>
+                <path name="javax/management/remote"/>
+                <path name="javax/management/remote/rmi"/>
+                <path name="javax/management/timer"/>
+                <path name="javax/naming"/>
+                <path name="javax/naming/directory"/>
+                <path name="javax/naming/event"/>
+                <path name="javax/naming/ldap"/>
+                <path name="javax/naming/spi"/>
+                <path name="javax/net"/>
+                <path name="javax/net/ssl"/>
+                <path name="javax/print"/>
+                <path name="javax/print/attribute"/>
+                <path name="javax/print/attribute/standard"/>
+                <path name="javax/print/event"/>
+                <path name="javax/rmi/ssl"/>
+                <path name="javax/script"/>
+                <path name="javax/security/auth"/>
+                <path name="javax/security/auth/callback"/>
+                <path name="javax/security/auth/kerberos"/>
+                <path name="javax/security/auth/login"/>
+                <path name="javax/security/auth/spi"/>
+                <path name="javax/security/auth/x500"/>
+                <path name="javax/security/cert"/>
+                <path name="javax/security/sasl"/>
+                <path name="javax/sound/midi"/>
+                <path name="javax/sound/midi/spi"/>
+                <path name="javax/sound/sampled"/>
+                <path name="javax/sound/sampled/spi"/>
+                <path name="javax/swing"/>
+                <path name="javax/swing/border"/>
+                <path name="javax/swing/colorchooser"/>
+                <path name="javax/swing/event"/>
+                <path name="javax/swing/filechooser"/>
+                <path name="javax/swing/plaf"/>
+                <path name="javax/swing/plaf/basic"/>
+                <path name="javax/swing/plaf/metal"/>
+                <path name="javax/swing/plaf/multi"/>
+                <path name="javax/swing/plaf/nimbus"/>
+                <path name="javax/swing/plaf/synth"/>
+                <path name="javax/swing/table"/>
+                <path name="javax/swing/text"/>
+                <path name="javax/swing/text/html"/>
+                <path name="javax/swing/text/html/parser"/>
+                <path name="javax/swing/text/rtf"/>
+                <path name="javax/swing/tree"/>
+                <path name="javax/swing/undo"/>
+                <path name="javax/tools"/>
+                <path name="javax/xml"/>
+                <path name="javax/xml/crypto"/>
+                <path name="javax/xml/crypto/dom"/>
+                <path name="javax/xml/crypto/dsig"/>
+                <path name="javax/xml/crypto/dsig/dom"/>
+                <path name="javax/xml/crypto/dsig/keyinfo"/>
+                <path name="javax/xml/crypto/dsig/spec"/>
+                <path name="javax/xml/datatype"/>
+                <path name="javax/xml/namespace"/>
+                <path name="javax/xml/parsers"/>
+                <path name="javax/xml/stream"/>
+                <path name="javax/xml/stream/events"/>
+                <path name="javax/xml/stream/util"/>
+                <path name="javax/xml/transform"/>
+                <path name="javax/xml/transform/dom"/>
+                <path name="javax/xml/transform/sax"/>
+                <path name="javax/xml/transform/stax"/>
+                <path name="javax/xml/transform/stream"/>
+                <path name="javax/xml/validation"/>
+                <path name="javax/xml/xpath"/>
+                <path name="org/ietf/jgss"/>
+                <path name="org/w3c/dom"/>
+                <path name="org/w3c/dom/bootstrap"/>
+                <path name="org/w3c/dom/css"/>
+                <path name="org/w3c/dom/events"/>
+                <path name="org/w3c/dom/html"/>
+                <path name="org/w3c/dom/ranges"/>
+                <path name="org/w3c/dom/stylesheets"/>
+                <path name="org/w3c/dom/traversal"/>
+                <path name="org/w3c/dom/ls"/>
+                <path name="org/w3c/dom/views"/>
+                <path name="org/w3c/dom/xpath"/>
+                <path name="org/xml/sax"/>
+                <path name="org/xml/sax/ext"/>
+                <path name="org/xml/sax/helpers"/>
+            </paths>
+        </system>
+    </dependencies>
+</module>

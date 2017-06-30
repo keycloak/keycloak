@@ -1,0 +1,66 @@
+<fieldset>
+    <form class="form-horizontal" name="clientForm" novalidate>
+        <span data-ng-show="evaluationResult.results.length == 0"><strong>{{:: 'authz-evaluation-no-result' | translate}}</strong></span>
+        <fieldset class="border-top" data-ng-repeat="result in evaluationResult.results">
+            <legend collapsed><span class="text">{{result.resource.name}}</span>
+            </legend>
+            <div class="form-group">
+                <label class="col-md-2 control-label">{{:: 'authz-result' | translate}}</label>
+
+                <div class="col-sm-2">
+                    <div>
+                        <span style="color: green"
+                              data-ng-show="result.status == 'PERMIT'"><strong>{{result.status}}</strong></span>
+                        <span style="color: red"
+                              data-ng-hide="result.status == 'PERMIT'"><strong>{{result.status}}</strong></span>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'authz-evaluation-result.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label">{{:: 'authz-scopes' | translate}}</label>
+
+                <div class="col-sm-2">
+                    <span data-ng-show="result.allowedScopes.length == 0">{{:: 'authz-no-scopes-available' | translate}}</span>
+
+                    <div>
+                        <ul>
+                            <li data-ng-repeat="scope in result.allowedScopes">
+                                {{scope.name}}
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'authz-evaluation-scopes.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="!evaluationResult.entitlements">
+                <label class="col-md-2 control-label">{{:: 'authz-policies' | translate}}</label>
+
+                <div class="col-sm-6">
+                    <span data-ng-show="result.policies.length == 0">{{:: 'authz-evaluation-no-policies-resource' | translate}}</span>
+                    <div>
+                        <div>
+                            <li data-ng-repeat="policyResult in result.policies">
+                                <strong><a
+                                        href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/permission/{{policyResult.policy.type}}/{{policyResult.policy.id}}">{{policyResult.policy.name}}</a></strong>
+                                decision was <span style="color: green" data-ng-show="policyResult.status == 'PERMIT'"><strong>{{policyResult.status}}</strong></span>
+                                <span style="color: red" data-ng-hide="policyResult.status == 'PERMIT'"><strong>{{policyResult.status}}</strong></span>
+                                by <strong>{{policyResult.policy.decisionStrategy}}</strong> decision. {{policyResult.policy.scopes.length > 0 ? (policyResult.status == 'DENY' ? 'Denied Scopes:' : 'Granted Scopes:') : ''}} <span data-ng-repeat="scope in policyResult.policy.scopes"><strong style="color: {{(policyResult.status == 'DENY' ? 'red' : 'green')}}">{{scope}}{{$last ? '' : ', '}}</strong></span>{{policyResult.policy.scopes.length > 0 ? '.' : ''}}
+                                <ul>
+                                    <li data-ng-repeat="subPolicy in policyResult.associatedPolicies">
+                                        <strong><a
+                                                href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/policy/{{subPolicy.policy.type}}/{{subPolicy.policy.id}}">{{subPolicy.policy.name}}</a></strong>
+                                        voted to <span style="color: green"
+                                                       data-ng-show="subPolicy.status == 'PERMIT'"><strong>{{subPolicy.status}}</strong></span>
+                                        <span style="color: red" data-ng-hide="subPolicy.status == 'PERMIT'"><strong>{{subPolicy.status}}</strong></span>.</a>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'authz-evaluation-policies.tooltip' | translate}}</kc-tooltip>
+            </div>
+        </fieldset>
+    </form>
+</fieldset>

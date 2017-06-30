@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2012, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+
+<module xmlns="urn:jboss:module:1.5" name="org.opensaml">
+
+    <properties>
+        <property name="jboss.api" value="private"/>
+    </properties>
+
+    <resources>
+        <resource-root path="opensaml-core-3.1.1.jar"/>
+        <resource-root path="opensaml-profile-api-3.1.1.jar"/>
+        <resource-root path="opensaml-saml-api-3.1.1.jar"/>
+        <resource-root path="opensaml-saml-impl-3.1.1.jar"/>
+        <resource-root path="opensaml-security-api-3.1.1.jar"/>
+        <resource-root path="opensaml-security-impl-3.1.1.jar"/>
+        <resource-root path="opensaml-soap-api-3.1.1.jar"/>
+        <resource-root path="opensaml-xacml-api-3.1.1.jar"/>
+        <resource-root path="opensaml-xacml-impl-3.1.1.jar"/>
+        <resource-root path="opensaml-xacml-saml-api-3.1.1.jar"/>
+        <resource-root path="opensaml-xacml-saml-impl-3.1.1.jar"/>
+        <resource-root path="opensaml-xmlsec-api-3.1.1.jar"/>
+        <resource-root path="opensaml-xmlsec-impl-3.1.1.jar"/>
+        <resource-root path="cryptacular-1.2.0.jar"/>
+        <resource-root path="java-support-7.1.1.jar"/>
+    </resources>
+
+    <dependencies>
+      <module name="javax.api"/>
+      <module name="org.slf4j"/>
+      <module name="org.apache.santuario.xmlsec"/>
+      <module name="org.apache.ws.security" />
+      <module name="org.joda.time"/>
+      <module name="com.google.guava"/>
+      <module name="org.bouncycastle"/>
+      <module name="org.apache.commons.codec"/>
+    </dependencies>
+</module>

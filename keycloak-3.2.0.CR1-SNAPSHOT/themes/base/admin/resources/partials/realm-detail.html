@@ -1,0 +1,56 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <kc-tabs-realm></kc-tabs-realm>
+
+    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="name"><span class="required">*</span> {{:: 'name' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" data-ng-disabled="disableRename" type="text" id="name" name="name" data-ng-model="realmName" autofocus required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="name">{{:: 'displayName' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" type="text" id="displayName" name="displayName" data-ng-model="realm.displayName">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="name">{{:: 'displayNameHtml' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" type="text" id="displayNameHtml" name="displayNameHtml" data-ng-model="realm.displayNameHtml">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="enabled">{{:: 'enabled' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="realm.enabled" name="enabled" id="enabled" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'realm-detail.enabled.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group">
+                <label class="col-md-2 control-label">{{:: 'endpoints' | translate}}</label>
+                <div class="col-md-6">
+                    <a class="form-control" ng-href="{{authUrl}}/realms/{{realm.realm}}/.well-known/openid-configuration" target="_blank">OpenID Endpoint Configuration</a>
+                </div>
+                <kc-tooltip>{{:: 'realm-detail.oidc-endpoints.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group">
+                <div class="col-md-10 col-md-offset-2" data-ng-show="createRealm && access.manageRealm">
+                    <button kc-save data-ng-show="changed">{{:: 'save' | translate}}</button>
+                    <button kc-cancel data-ng-click="cancel()">{{:: 'cancel' | translate}}</button>
+                </div>
+
+                <div class="col-md-10 col-md-offset-2" data-ng-show="!createRealm && access.manageRealm">
+                    <button kc-save  data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
+                    <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
+                </div>
+            </div>
+    </form>
+</div>
+
+<kc-menu></kc-menu>

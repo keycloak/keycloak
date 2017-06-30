@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2015, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="urn:jboss:cli:3.0" targetNamespace="urn:jboss:cli:3.0"
+    elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <xs:element name="jboss-cli">
+        <xs:annotation>
+            <xs:documentation>
+                Root element for the WildFly Command Line Interface configuration.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="default-protocol" minOccurs="0" default="http-remoting">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The default protocol to use when controller addresses are supplied without one.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:simpleContent>
+                            <xs:extension base="xs:string">
+                                <xs:attribute name="use-legacy-override" type="xs:boolean" default="true">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            The default protocol is used where a connection address is specified and no
+                                            protocol is specified, in previous versions the port 9999 would have been used with the remoting
+                                            protocol - this attribute set to true causes the protocol to default to remoting if the port
+                                            number is 9999.
+
+                                            If this attribute is set to false then the specified default is used regardless
+                                            of the port number for addresses with no protocol.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                            </xs:extension>
+                        </xs:simpleContent>
+                    </xs:complexType>
+                </xs:element>
+
+                <xs:element name="default-controller" type="controllerAddress" minOccurs="0">
+                    <xs:annotation>
+                        <xs:documentation>
+                            If no default controller is specifed then the default will be assumed to be using host 'localhost'
+                            along with the default-protocol (Which will be http-remoting if not defined) and the port will be whatever
+                            default corresponds to the selected protocol.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
+                <xs:element name="controllers" type="controllersType" minOccurs="0">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The names controller alias mappings.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
+                <xs:element name="validate-operation-requests" type="xs:boolean" default="true" minOccurs="0">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Indicates whether the parameter list of the operation reuqests should be validated before the
+                            requests are sent to the controller for the execution.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
+                <xs:element name="history" type="historyType" minOccurs="0" />
+
+                <xs:element name="resolve-parameter-values" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Whether to resolve system properties specified as command argument (or operation parameter) values
+                            before sending the operation request to the controller or let the resolution happen on the server side.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
+                <xs:element name="connection-timeout" type="xs:int" default="5000" minOccurs="0">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The time allowed to establish a connection with the controller.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
+                <xs:element name="ssl" type="sslType" minOccurs="0" />
+
+                <xs:element name="silent" type="xs:boolean" default="false" minOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Whether to write info and error messages to the terminal output.
+                            
+                            Even if the value is false, the messages will still be logged using 
+                            the logger if its configuration allows and/or if the output target was
+                            specified as part of the command line using '>'.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
+                <xs:element name="access-control" type="xs:boolean" default="true" minOccurs="0">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Whether the management-related commands and attributes should be filtered for the current user
+                            based on the permissions the user has been granted. In other words, if access-control is true, the
+                            tab-completion will hide commands and attributes the user is not allowed to access. In case the user attempts to
+                            execute a command or an operation without having sufficient permissions to do so, regardless of the value this
+                            element has, the attempt will fail with an access control error.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:complexType name="controllerAddress">
+        <xs:annotation>
+            <xs:documentation>
+                The address of a controller.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="protocol" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        If no protocol is specified then the value for 'default-protocol' will be used.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="host" type="xs:string" minOccurs="0" default="localhost" />
+            <xs:element name="port" type="xs:int" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        If a port is not specified then the default port will be identified based on the protocol selected.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="namedController">
+        <xs:complexContent>
+            <xs:extension base="controllerAddress">
+                <xs:attribute name="name" use="required">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The name of this controller alias.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="controllersType">
+        <xs:sequence>
+            <xs:element name="controller" type="namedController" maxOccurs="unbounded" />
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="historyType">
+        <xs:annotation>
+            <xs:documentation>
+                This element contains the configuration for the commands and operations history log.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="enabled" type="xs:boolean" minOccurs="0" default="true" />
+            <xs:element name="file-name" type="xs:string" minOccurs="0" default=".jboss-cli-history" />
+            <xs:element name="file-dir" type="xs:string" minOccurs="0" default="${user.home}" />
+            <xs:element name="max-size" type="xs:int" minOccurs="0" default="500" />
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="sslType">
+        <xs:annotation>
+            <xs:documentation>
+                This element contains the configuration for the Key and Trust stores
+                used for SSL.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="vault" type="vaultType" minOccurs="0" />
+            <xs:element name="key-store" type="xs:string" minOccurs="0" />
+            <xs:element name="key-store-password" type="xs:string" minOccurs="0" />
+            <xs:element name="alias" type="xs:string" minOccurs="0" />
+            <xs:element name="key-password" type="xs:string" minOccurs="0" />
+            <xs:element name="trust-store" type="xs:string" minOccurs="0" />
+            <xs:element name="trust-store-password" type="xs:string" minOccurs="0" />
+            <xs:element name="modify-trust-store" type="xs:boolean" default="true" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Setting to true will cause the CLI to prompt when unrecognised certificates are received and allow
+                        them to be stored in the truststore.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="vaultType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                    Vault Configuration. If no 'code' and 'module' are supplied the default implementation will be used.
+                    If 'code' is specified but no 'module', it will look for the class named by 'specified' in the picketbox module.
+                    If 'module' is specified, it will look for the class specified by 'code' in the module specified by 'module'.
+                ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="vault-option" type="propertyType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="code" type="xs:string" use="optional"/>
+        <xs:attribute name="module" type="xs:string" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="propertyType">
+        <xs:attribute name="name" use="required"/>
+        <xs:attribute name="value" use="optional"/>
+    </xs:complexType>
+
+</xs:schema>

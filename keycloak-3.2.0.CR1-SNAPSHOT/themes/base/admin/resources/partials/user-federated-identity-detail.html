@@ -1,0 +1,53 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/users">{{:: 'users' | translate}}</a></li>
+        <li>{{user.username}}</li>
+    </ol>
+
+    <h1 data-ng-show="create">{{:: 'add-identity-provider-link' | translate}}</h1>
+
+    <kc-tabs-user></kc-tabs-user>
+
+    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
+        <fieldset>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="identityProvider">{{:: 'identity-provider' | translate}} <span class="required">*</span></label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="identityProvider"
+                                ng-model="federatedIdentity.identityProvider"
+                                ng-options="providerAlias for providerAlias in availableProvidersToCreate"
+                                required>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="userId">{{:: 'identity-provider-user-id' | translate}} <span class="required">*</span></label>
+                <div class="col-md-6">
+                    <input class="form-control" id="userId" type="text" ng-model="federatedIdentity.userId" required>
+                </div>
+                <kc-tooltip>{{:: 'identity-provider-user-id.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="userName">{{:: 'identity-provider-username' | translate}} <span class="required">*</span></label>
+                <div class="col-md-6">
+                    <input class="form-control" id="userName" type="text" ng-model="federatedIdentity.userName" required>
+                </div>
+                <kc-tooltip>{{:: 'identity-provider-username.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+        </fieldset>
+
+
+        <div class="form-group" data-ng-show="access.manageRealm">
+            <div class="col-md-10 col-md-offset-2">
+                <button kc-save>{{:: 'save' | translate}}</button>
+                <button kc-cancel data-ng-click="cancel()">{{:: 'cancel' | translate}}</button>
+            </div>
+        </div>
+
+    </form>
+</div>
+
+<kc-menu></kc-menu>

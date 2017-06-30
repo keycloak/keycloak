@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2016 Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="urn:wildfly-discovery:1.0"
+           xmlns="urn:wildfly-discovery:1.0"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified"
+           version="1.0">
+
+    <!-- The root element -->
+
+    <xs:element name="discovery" type="discoveryType"/>
+
+    <xs:complexType name="discoveryType">
+        <xs:all>
+            <xs:element name="discovery-provider" type="discoveryProviderType"/>
+            <xs:element name="registry-provider" type="registryProviderType"/>
+        </xs:all>
+    </xs:complexType>
+
+    <!-- Discovery elements -->
+
+    <xs:complexType name="discoveryProviderType">
+        <xs:choice>
+            <xs:element name="local-registry" type="emptyType"/>
+            <xs:element name="static" type="staticDiscoveryProviderType"/>
+            <xs:element name="aggregate" type="aggregateDiscoveryProviderType"/>
+            <xs:element name="custom" type="customType"/>
+        </xs:choice>
+    </xs:complexType>
+
+    <xs:complexType name="staticDiscoveryProviderType">
+        <xs:sequence>
+            <xs:element name="service" type="serviceType" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="serviceType">
+        <xs:sequence>
+            <xs:element name="attribute" type="attributeType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="uri" type="xs:anyURI" use="required"/>
+        <xs:attribute name="uri-scheme-authority" type="xs:string" use="optional"/>
+        <xs:attribute name="abstract-type" type="xs:string" use="optional"/>
+        <xs:attribute name="abstract-type-authority" type="xs:string" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="attributeType">
+        <xs:attribute name="name" type="xs:string" use="required"/>
+        <xs:attribute name="value" type="xs:string" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="aggregateDiscoveryProviderType">
+        <xs:sequence>
+            <xs:element name="discovery-provider" type="discoveryProviderType" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <!-- Registry elements -->
+
+    <xs:complexType name="registryProviderType">
+        <xs:choice>
+            <xs:element name="local-registry" type="emptyType"/>
+            <xs:element name="aggregate" type="aggregateRegistryProviderType"/>
+            <xs:element name="custom" type="customType"/>
+        </xs:choice>
+    </xs:complexType>
+
+    <xs:complexType name="aggregateRegistryProviderType">
+        <xs:sequence>
+            <xs:element name="registry-provider" type="registryProviderType" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <!-- Common types -->
+
+    <xs:complexType name="emptyType"/>
+
+    <xs:complexType name="customType">
+        <xs:attribute name="module" type="xs:string" use="optional"/>
+        <xs:attribute name="class" type="xs:string" use="optional"/>
+    </xs:complexType>
+
+</xs:schema>

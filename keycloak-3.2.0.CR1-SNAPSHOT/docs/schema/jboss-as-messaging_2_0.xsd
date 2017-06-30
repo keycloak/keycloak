@@ -1,0 +1,2685 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2011, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="urn:jboss:domain:messaging:2.0"
+           targetNamespace="urn:jboss:domain:messaging:2.0"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified"
+           version="2.0">
+
+    <!-- The messaging subsystem root element -->
+    <xs:element name="subsystem">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                The configuration of the messaging subsystem.
+            ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element maxOccurs="unbounded" minOccurs="0" name="hornetq-server" type="hornetq-serverType" />
+                <xs:element maxOccurs="unbounded" minOccurs="0" name="jms-bridge" type="jms-bridgeType" />
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:complexType name="hornetq-serverType">
+      <xs:annotation>
+          <xs:documentation>
+            <![CDATA[
+                The configuration of an individual HornetQ Server.
+            ]]>
+          </xs:documentation>
+      </xs:annotation>
+      <xs:all>
+          <xs:element maxOccurs="1" minOccurs="0" name="clustered" type="xs:boolean">
+              <xs:annotation>
+                  <xs:documentation>
+                      Deprecated. A HornetQ server is clustered if it has at least one cluster-connection.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <!-- no file system deployment in AS
+          <xs:element maxOccurs="1" minOccurs="0" type="file-deployment-enabled"/>
+           -->
+          <xs:element maxOccurs="1" minOccurs="0" name="persistence-enabled" type="xs:boolean">
+              <xs:annotation>
+                  <xs:documentation>
+                      Whether the server will use the file based journal for persistence.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <!--  TODO use thread subsystem?  -->
+          <xs:element maxOccurs="1" minOccurs="0" name="scheduled-thread-pool-max-size" type="xs:int">
+              <xs:annotation>
+                  <xs:documentation>
+                     Maximum number of threads to use for the scheduled thread pool
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="thread-pool-max-size" type="xs:int">
+              <xs:annotation>
+                  <xs:documentation>
+                      Maximum number of threads to use for the thread pool
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="security-domain" type="xs:string">
+              <xs:annotation>
+                  <xs:documentation>
+                      The security domain to use to verify user and role information
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="security-enabled" type="xs:boolean">
+              <xs:annotation>
+                  <xs:documentation>
+                      Whether security is enabled
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="security-invalidation-interval" type="xs:long">
+              <xs:annotation>
+                  <xs:documentation>
+                      How long (in ms) to wait before invalidating the security cache.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="wild-card-routing-enabled" type="xs:boolean">
+               <xs:annotation>
+                   <xs:documentation>
+                       Whether the server supports wild card routing.
+                   </xs:documentation>
+               </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="management-address" type="xs:string">
+               <xs:annotation>
+                   <xs:documentation>
+                       Address to send management messages to.
+                   </xs:documentation>
+               </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="management-notification-address" type="xs:string">
+               <xs:annotation>
+                   <xs:documentation>
+                       The name of the address that consumers bind to  to receive management notifications.
+                   </xs:documentation>
+               </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="cluster-user" type="xs:string">
+              <xs:annotation>
+                  <xs:documentation>
+                      The user used by cluster connections to communicate between the clustered nodes.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="cluster-password" type="xs:string">
+              <xs:annotation>
+                  <xs:documentation>
+                      The password used by cluster connections to communicate between the clustered nodes.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <!-- no logging configuration for AS needed
+          <xs:element maxOccurs="1" minOccurs="0" name="log-delegate-factory-class-name" type="xs:string" />
+           -->
+          <xs:element maxOccurs="1" minOccurs="0" name="jmx-management-enabled" type="xs:boolean">
+              <xs:annotation>
+                  <xs:documentation>
+                      Whether HornetQ should expose its internal management API via JMX. This is not recommended, as accessing these MBeans can lead to inconsistent configuration.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="jmx-domain" type="xs:string">
+              <xs:annotation>
+                  <xs:documentation>
+                      The JMX domain used to register internal HornetQ MBeans in the MBeanServer.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="statistics-enabled" type="xs:boolean">
+              <xs:annotation>
+                  <xs:documentation>
+                      Whether gathering of statistics such as message counters are enabled.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="message-counter-enabled" type="xs:boolean">
+              <xs:annotation>
+                  <xs:documentation>
+                      Deprecated. Use statistics-enabled.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="message-counter-sample-period" type="xs:long">
+              <xs:annotation>
+                  <xs:documentation>
+                      The sample period (in ms) to use for message counters.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="message-counter-max-day-history" type="xs:int">
+              <xs:annotation>
+                  <xs:documentation>
+                      How many days to keep message counter history.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="connection-ttl-override" type="xs:long">
+              <xs:annotation>
+                  <xs:documentation>
+                      If set, this will override how long (in ms) to keep a connection alive without receiving a ping.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="async-connection-execution-enabled" type="xs:boolean">
+              <xs:annotation>
+                  <xs:documentation>
+                      Whether incoming packets on the server should be handed off to a thread from the thread pool for processing. False if they should be handled on the remoting thread.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="transaction-timeout" type="xs:long">
+              <xs:annotation>
+                  <xs:documentation>
+                      How long (in ms) before a transaction can be removed from the resource manager after create time.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="transaction-timeout-scan-period" type="xs:long">
+              <xs:annotation>
+                  <xs:documentation>
+                      How often (in ms) to scan for timeout transactions.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="message-expiry-scan-period" type="xs:long">
+              <xs:annotation>
+                  <xs:documentation>
+                      How often (in ms) to scan for expired messages.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="message-expiry-thread-priority" type="xs:int">
+              <xs:annotation>
+                  <xs:documentation>
+                      The priority of the thread expiring messages.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="id-cache-size" type="xs:int">
+              <xs:annotation>
+                  <xs:documentation>
+                      The size of the cache for pre-creating message IDs.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="persist-id-cache" type="xs:boolean">
+              <xs:annotation>
+                  <xs:documentation>
+                      Whether IDs are persisted to the journal.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="remoting-interceptors" type="remoting-interceptorsType">
+              <xs:annotation>
+                  <xs:documentation>
+                      Deprecated. Use remoting-incoming-interceptors instead
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="remoting-incoming-interceptors" type="remoting-interceptorsType">
+              <xs:annotation>
+                  <xs:documentation>
+                      The list of incoming interceptor classes used by this server.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="remoting-outgoing-interceptors" type="remoting-interceptorsType">
+              <xs:annotation>
+                  <xs:documentation>
+                      The list of outgoing interceptor classes used by this server.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="backup" type="xs:boolean">
+              <xs:annotation>
+                  <xs:documentation>
+                      Whether this server is a backup server.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="allow-failback" type="xs:boolean">
+              <xs:annotation>
+                  <xs:documentation>
+                      Whether this server will automatically shutdown if the original live server comes back up.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="failback-delay" type="xs:long">
+              <xs:annotation>
+                  <xs:documentation>
+                      How long to wait before failback occurs on live server restart.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="failover-on-shutdown" type="xs:boolean">
+              <xs:annotation>
+                  <xs:documentation>
+                      Whether this backup server (if it is a backup server) should come live on a normal server shutdown.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="shared-store" type="xs:boolean">
+              <xs:annotation>
+                  <xs:documentation>
+                      Whether this server is using a shared store for failover.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="persist-delivery-count-before-delivery" type="xs:boolean">
+              <xs:annotation>
+                  <xs:documentation>
+                      Whether the delivery count is persisted before delivery. False means that this only happens after a message has been cancelled.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="live-connector-ref" type="live-connectorType">
+              <xs:annotation>
+                  <xs:documentation>
+                      Deprecated.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="page-max-concurrent-io" type="xs:int">
+              <xs:annotation>
+                  <xs:documentation>
+                      The maximum number of concurrent reads allowed on paging
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="create-bindings-dir" type="xs:boolean">
+              <xs:annotation>
+                  <xs:documentation>
+                      Whether the server should create the bindings directory on start up.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="create-journal-dir" type="xs:boolean">
+              <xs:annotation>
+                  <xs:documentation>
+                      Whether the server should create the journal directory on start up.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="journal-type" type="journalType">
+              <xs:annotation>
+                  <xs:documentation>
+                      The type of journal to use.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="journal-buffer-timeout" type="xs:long">
+              <xs:annotation>
+                  <xs:documentation>
+                      The timeout (in nanoseconds) used to flush internal buffers on the journal.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="journal-buffer-size" type="xs:long">
+              <xs:annotation>
+                  <xs:documentation>
+                      The size of the internal buffer on the journal.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="journal-sync-transactional" type="xs:boolean">
+              <xs:annotation>
+                  <xs:documentation>
+                      Whether to wait for transaction data to be synchronized to the journal before returning a response to the client.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="journal-sync-non-transactional" type="xs:boolean">
+              <xs:annotation>
+                  <xs:documentation>
+                      Whether to wait for non transaction data to be synced to the journal before returning a response to the client.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="log-journal-write-rate" type="xs:boolean">
+              <xs:annotation>
+                  <xs:documentation>
+                      Whether to periodically log the journal's write rate and flush rate.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="journal-file-size" type="xs:long">
+              <xs:annotation>
+                  <xs:documentation>
+                      The size (in bytes) of each journal file.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="journal-min-files" type="xs:int">
+              <xs:annotation>
+                  <xs:documentation>
+                      How many journal files to pre-create.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="journal-compact-percentage" type="xs:int">
+              <xs:annotation>
+                  <xs:documentation>
+                      The percentage of live data on which we consider compacting the journal.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="journal-compact-min-files" type="xs:int">
+              <xs:annotation>
+                  <xs:documentation>
+                      The minimal number of journal data files before we can start compacting.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="journal-max-io" type="xs:int">
+              <xs:annotation>
+                  <xs:documentation>
+                      The maximum number of write requests that can be in the AIO queue at any one time.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="max-saved-replicated-journal-size" type="xs:int">
+              <xs:annotation>
+                  <xs:documentation>
+                      The maximum number of backup journals to keep after failback occurs.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="perf-blast-pages" type="xs:int" />
+          <xs:element maxOccurs="1" minOccurs="0" name="run-sync-speed-test" type="xs:boolean">
+              <xs:annotation>
+                  <xs:documentation>
+                      Whether on startup to perform a diagnostic test on how fast your disk can sync. Useful when determining performance issues.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="server-dump-interval" type="xs:long">
+              <xs:annotation>
+                  <xs:documentation>
+                      How often to dump basic runtime information to the server log. A value less than 1 disables this feature.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="memory-warning-threshold" type="xs:int">
+              <xs:annotation>
+                  <xs:documentation>
+                      Percentage of available memory which if exceeded results in a warning log
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="memory-measure-interval" type="xs:long">
+              <xs:annotation>
+                  <xs:documentation>
+                      Frequency to sample JVM memory in ms (or -1 to disable memory sampling)
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="check-for-live-server" type="xs:boolean">
+              <xs:annotation>
+                  <xs:documentation>
+                      If a replicated live server should check the current cluster to see if there is already a live server with the same node id
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="backup-group-name" type="xs:string">
+              <xs:annotation>
+                  <xs:documentation>
+                      The name of a set of live/backups that should replicate with each other
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="replication-clustername" type="xs:string">
+              <xs:annotation>
+                  <xs:documentation>
+                      The name of the cluster connection to replicate from if more than one cluster connection is configured
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+
+          <xs:element maxOccurs="1" minOccurs="0" name="paging-directory" type="directoryType" />
+          <xs:element maxOccurs="1" minOccurs="0" name="bindings-directory" type="directoryType" />
+          <xs:element maxOccurs="1" minOccurs="0" name="journal-directory" type="directoryType" />
+          <xs:element maxOccurs="1" minOccurs="0" name="large-messages-directory" type="directoryType" />
+
+          <xs:element maxOccurs="1" minOccurs="0" name="connectors">
+              <xs:complexType>
+                  <xs:sequence>
+                      <xs:element maxOccurs="unbounded" minOccurs="0" name="http-connector" type="http-connectorType" />
+                      <xs:element maxOccurs="unbounded" minOccurs="0" name="netty-connector" type="netty-connectorType" />
+                      <xs:element maxOccurs="unbounded" minOccurs="0" name="in-vm-connector" type="inVM-connectorType" />
+                      <xs:element maxOccurs="unbounded" minOccurs="0" name="connector" type="connectorType" />
+                  </xs:sequence>
+              </xs:complexType>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="acceptors">
+              <xs:complexType>
+                  <xs:sequence>
+                      <xs:element maxOccurs="unbounded" minOccurs="0" name="http-acceptor" type="http-acceptorType" />
+                      <xs:element maxOccurs="unbounded" minOccurs="0" name="netty-acceptor" type="netty-acceptorType" />
+                      <xs:element maxOccurs="unbounded" minOccurs="0" name="in-vm-acceptor" type="inVM-acceptorType" />
+                      <xs:element maxOccurs="unbounded" minOccurs="0" name="acceptor" type="acceptorType" />
+                  </xs:sequence>
+              </xs:complexType>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="broadcast-groups">
+              <xs:complexType>
+                  <xs:sequence>
+                      <xs:element maxOccurs="unbounded" minOccurs="0" name="broadcast-group" type="broadcast-groupType" />
+                  </xs:sequence>
+              </xs:complexType>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="discovery-groups">
+              <xs:complexType>
+                  <xs:sequence>
+                      <xs:element maxOccurs="unbounded" minOccurs="0" name="discovery-group" type="discovery-groupType" />
+                  </xs:sequence>
+              </xs:complexType>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="diverts">
+              <xs:complexType>
+                  <xs:sequence>
+                      <xs:element maxOccurs="unbounded" minOccurs="0" name="divert" type="divertType" />
+                  </xs:sequence>
+              </xs:complexType>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="core-queues" type="queuesType" />
+          <xs:element maxOccurs="1" minOccurs="0" name="bridges">
+              <xs:complexType>
+                  <xs:sequence>
+                      <xs:element maxOccurs="unbounded" minOccurs="0" name="bridge" type="bridgeType" />
+                  </xs:sequence>
+              </xs:complexType>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="cluster-connections">
+              <xs:complexType>
+                  <xs:sequence>
+                      <xs:element maxOccurs="unbounded" minOccurs="0" name="cluster-connection" type="clusterConnectionType" />
+                  </xs:sequence>
+              </xs:complexType>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="grouping-handler" type="groupingHandlerType" />
+          <xs:element maxOccurs="1" minOccurs="0" name="security-settings" type="security-settingsType" />
+          <xs:element maxOccurs="1" minOccurs="0" name="address-settings" type="address-settingsType" />
+          <xs:element maxOccurs="1" minOccurs="0" name="connector-services">
+              <xs:complexType>
+                  <xs:sequence>
+                      <xs:element maxOccurs="unbounded" minOccurs="0" name="connector-service" type="connectorServiceType"/>
+                  </xs:sequence>
+              </xs:complexType>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="jms-connection-factories">
+              <xs:complexType>
+                  <xs:sequence>
+                  <xs:element name="connection-factory" maxOccurs="unbounded" minOccurs="0" type="connection-factoryType" />
+                  <xs:element name="pooled-connection-factory" maxOccurs="unbounded" minOccurs="0" type="pooled-connection-factoryType" />
+                </xs:sequence>
+             </xs:complexType>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="jms-destinations">
+              <xs:complexType>
+                <xs:sequence>
+                    <xs:element name="jms-queue" maxOccurs="unbounded" minOccurs="0" type="jmsQueueType" />
+                    <xs:element name="jms-topic" maxOccurs="unbounded" minOccurs="0" type="jmsTopicType" />
+                </xs:sequence>
+              </xs:complexType>
+          </xs:element>
+
+      </xs:all>
+      <xs:attribute name="name" type="xs:string" use="optional" default="default">
+        <xs:annotation>
+            <xs:documentation>
+                The name to use for this HornetQ Server. Must be unique across all "hornetq-server" elements
+                in the subsystem. So, this attribute is optional with a default value, but if more than
+                one "hornetq-server" element exists, only one can leave this attribute unspecified.
+            </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    </xs:complexType>
+
+    <xs:element name="local-bind-address" type="xs:string">
+        <xs:annotation>
+            <xs:documentation>
+                Deprecated.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="local-bind-port" type="xs:int">
+        <xs:annotation>
+            <xs:documentation>
+                Deprecated.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="group-address" type="xs:string">
+        <xs:annotation>
+            <xs:documentation>
+                Deprecated.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="group-port" type="xs:int">
+        <xs:annotation>
+            <xs:documentation>
+                Deprecated.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="broadcast-period" type="xs:long">
+        <xs:annotation>
+            <xs:documentation>
+                The period in milliseconds between consecutive broadcasts.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="initial-wait-timeout" type="xs:int">
+        <xs:annotation>
+            <xs:documentation>
+                Period, in ms, to wait for an initial broadcast to give us at least one node in the cluster.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+
+    <xs:complexType name="broadcast-groupType">
+       <xs:sequence>
+           <xs:choice>
+               <xs:sequence>
+                  <xs:element maxOccurs="1" minOccurs="1" name="jgroups-stack" type="xs:string">
+                      <xs:annotation>
+                          <xs:documentation>
+                              The name of a stack defined in the org.jboss.as.clustering.jgroups subsystem.
+                          </xs:documentation>
+                      </xs:annotation>
+                  </xs:element>
+                  <xs:element maxOccurs="1" minOccurs="1" name="jgroups-channel" type="xs:string">
+                      <xs:annotation>
+                          <xs:documentation>
+                              The name used by a JGroups channel to join a cluster.
+                          </xs:documentation>
+                      </xs:annotation>
+                  </xs:element>
+               </xs:sequence>
+               <xs:sequence>
+                  <xs:element maxOccurs="1" minOccurs="1" name="socket-binding" type="xs:string">
+                      <xs:annotation>
+                          <xs:documentation>
+                              The broadcast group socket binding.
+                          </xs:documentation>
+                      </xs:annotation>
+                  </xs:element>
+               </xs:sequence>
+               <xs:sequence>
+                  <xs:element maxOccurs="1" minOccurs="0" ref="local-bind-address">
+                      <xs:annotation>
+                          <xs:documentation>
+                              Deprecated. use socket-binding attribute instead to specify the local bind address.
+                          </xs:documentation>
+                      </xs:annotation>
+                  </xs:element>
+                  <xs:element maxOccurs="1" minOccurs="0" ref="local-bind-port">
+                      <xs:annotation>
+                          <xs:documentation>
+                              Deprecated. use socket-binding attribute instead to specify the local bind port.
+                          </xs:documentation>
+                      </xs:annotation>
+                  </xs:element>
+                  <xs:element maxOccurs="1" minOccurs="1" ref="group-address">
+                      <xs:annotation>
+                          <xs:documentation>
+                              Deprecated. use socket-binding attribute instead to specify the group address.
+                          </xs:documentation>
+                      </xs:annotation>
+                  </xs:element>
+                  <xs:element maxOccurs="1" minOccurs="1" ref="group-port">
+                      <xs:annotation>
+                          <xs:documentation>
+                              Deprecated. use socket-binding attribute instead to specify the group port.
+                          </xs:documentation>
+                      </xs:annotation>
+                  </xs:element>
+               </xs:sequence>
+           </xs:choice>
+           <xs:element maxOccurs="1" minOccurs="0" ref="broadcast-period" />
+           <xs:element maxOccurs="unbounded" minOccurs="0" name="connector-ref" type="xs:string">
+               <xs:annotation>
+                   <xs:documentation>
+                       Specifies the names of connectors that will be broadcast.
+                   </xs:documentation>
+               </xs:annotation>
+           </xs:element>
+       </xs:sequence>
+       <xs:attribute name="name" type="xs:string" use="required">
+           <xs:annotation>
+               <xs:documentation>
+                   The name of the broadcast group
+               </xs:documentation>
+           </xs:annotation>
+       </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="discovery-groupType">
+        <xs:sequence>
+            <xs:choice>
+               <xs:sequence>
+                  <xs:element maxOccurs="1" minOccurs="1" name="jgroups-stack" type="xs:string">
+                      <xs:annotation>
+                          <xs:documentation>
+                              The name of a stack defined in the org.jboss.as.clustering.jgroups subsystem.
+                          </xs:documentation>
+                      </xs:annotation>
+                  </xs:element>
+                  <xs:element maxOccurs="1" minOccurs="1" name="jgroups-channel" type="xs:string">
+                      <xs:annotation>
+                          <xs:documentation>
+                              The name used by a JGroups channel to join a cluster.
+                          </xs:documentation>
+                      </xs:annotation>
+                  </xs:element>
+               </xs:sequence>
+               <xs:sequence>
+                  <xs:element maxOccurs="1" minOccurs="1" name="socket-binding" type="xs:string">
+                      <xs:annotation>
+                          <xs:documentation>
+                              The discovery group socket binding.
+                          </xs:documentation>
+                      </xs:annotation>
+                  </xs:element>
+               </xs:sequence>
+               <xs:sequence>
+                  <xs:element maxOccurs="1" minOccurs="0" ref="local-bind-address">
+                      <xs:annotation>
+                          <xs:documentation>
+                              Deprecated. use socket-binding attribute instead to specify the local bind address.
+                          </xs:documentation>
+                      </xs:annotation>
+                  </xs:element>
+                  <xs:element maxOccurs="1" minOccurs="1" ref="group-address">
+                      <xs:annotation>
+                          <xs:documentation>
+                              Deprecated. use socket-binding attribute instead to specify the group address.
+                          </xs:documentation>
+                      </xs:annotation>
+                  </xs:element>
+                  <xs:element maxOccurs="1" minOccurs="1" ref="group-port">
+                      <xs:annotation>
+                          <xs:documentation>
+                              Deprecated. use socket-binding attribute instead to specify the group port.
+                          </xs:documentation>
+                      </xs:annotation>
+                  </xs:element>
+               </xs:sequence>
+            </xs:choice>
+            <xs:element maxOccurs="1" minOccurs="0" name="refresh-timeout" type="xs:int">
+                <xs:annotation>
+                    <xs:documentation>
+                        Period the discovery group waits after receiving the last broadcast from a particular server before removing that server's connector pair entry from its list.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element maxOccurs="1" minOccurs="0" ref="initial-wait-timeout">
+                <xs:annotation>
+                    <xs:documentation>
+                        Period, in ms, to wait for an initial broadcast to give us at least one node in the cluster.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The name of the discovery group
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="remoting-interceptorsType">
+       <xs:annotation>
+          <xs:documentation>
+            <![CDATA[
+              Deprecated. Use remoting-incoming-interceptors instead.
+            ]]>
+            </xs:documentation>
+       </xs:annotation>
+       <xs:sequence>
+          <xs:element maxOccurs="unbounded" minOccurs="1" name="class-name" type="xs:string" />
+       </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="remoting-incoming-interceptorsType">
+       <xs:annotation>
+          <xs:documentation>
+            <![CDATA[
+              Remoting incoming interceptors must be placed into a JBoss module and added as a dependency to org.jboss.as.messaging:main module.
+            ]]>
+            </xs:documentation>
+       </xs:annotation>
+       <xs:sequence>
+          <xs:element maxOccurs="unbounded" minOccurs="1" name="class-name" type="xs:string">
+              <xs:annotation>
+                  <xs:documentation>
+                    The class name of the remoting incoming interceptor.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+       </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="remoting-outgoing-interceptorsType">
+       <xs:annotation>
+          <xs:documentation>
+            <![CDATA[
+              Remoting outgoing interceptors must be placed into a JBoss module and added as a dependency to org.jboss.as.messaging:main module.
+            ]]>
+            </xs:documentation>
+       </xs:annotation>
+       <xs:sequence>
+          <xs:element maxOccurs="unbounded" minOccurs="1" name="class-name" type="xs:string">
+              <xs:annotation>
+                  <xs:documentation>
+                      The class name of the remoting outgoing interceptor.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+       </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="paramType">
+       <xs:attribute name="key" type="xs:string" use="required">
+           <xs:annotation>
+               <xs:documentation>
+                   The key of the parameter
+               </xs:documentation>
+           </xs:annotation>
+       </xs:attribute>
+       <xs:attribute name="value" type="xs:string" use="required">
+           <xs:annotation>
+               <xs:documentation>
+                   The value of the parameter
+               </xs:documentation>
+           </xs:annotation>
+       </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="http-connectorType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+              The HTTP connector type. Messaging clients that uses this connector initiates a HTTP request that is upgraded to HornetQ protocol.
+            ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="base-connectorType">
+                <xs:attribute name="socket-binding" type="xs:string" use="required">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[
+                                This attribute references the socket-binding used by the web server. Its host and port will be used to configure the connector.
+                            ]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="netty-connectorType">
+       <xs:annotation>
+          <xs:documentation>
+            <![CDATA[
+              The netty connector type.
+            ]]>
+            </xs:documentation>
+       </xs:annotation>
+       <xs:complexContent>
+          <xs:extension base="base-connectorType">
+             <xs:attribute name="socket-binding" type="xs:string" use="required">
+                 <xs:annotation>
+                     <xs:documentation>
+                         The socket binding reference.
+                     </xs:documentation>
+                 </xs:annotation>
+             </xs:attribute>
+          </xs:extension>
+       </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="inVM-connectorType">
+       <xs:annotation>
+          <xs:documentation>
+            <![CDATA[
+              The inVM connector type.
+            ]]>
+            </xs:documentation>
+       </xs:annotation>
+       <xs:complexContent>
+          <xs:extension base="base-connectorType">
+             <xs:attribute name="server-id" type="xs:int" use="optional">
+                 <xs:annotation>
+                     <xs:documentation>
+                         The connector server ID.
+                     </xs:documentation>
+                 </xs:annotation>
+             </xs:attribute>
+          </xs:extension>
+       </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="connectorType">
+       <xs:annotation>
+          <xs:documentation>
+            <![CDATA[
+              Generic connector type, with optional socket-binding depending on whether
+              the implementation requires a Host/Port parameter.
+            ]]>
+            </xs:documentation>
+       </xs:annotation>
+       <xs:complexContent>
+          <xs:extension base="base-connectorType">
+             <xs:sequence>
+                <xs:element maxOccurs="1" minOccurs="1" name="factory-class" type="xs:string">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Class name of the factory class that can instantiate the connector.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+             </xs:sequence>
+             <xs:attribute name="socket-binding" type="xs:string" use="optional">
+                 <xs:annotation>
+                     <xs:documentation>
+                         The socket binding reference.
+                     </xs:documentation>
+                 </xs:annotation>
+             </xs:attribute>
+          </xs:extension>
+       </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="base-connectorType">
+       <xs:sequence>
+          <xs:element maxOccurs="unbounded" minOccurs="0" name="param" type="paramType" />
+       </xs:sequence>
+       <xs:attribute name="name" type="xs:string" use="required">
+           <xs:annotation>
+               <xs:documentation>
+                   The name of the connector
+               </xs:documentation>
+           </xs:annotation>
+       </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="http-acceptorType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+              The HTTP acceptor type. HornetQ server will accepts HTTP connections on this acceptor to upgrade to HornetQ protocol.
+            ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="base-connectorType">
+                <xs:attribute name="http-listener" type="xs:string" use="required">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[
+                                This attribute references the undertow's http-listener that will handle the initial HTTP request.
+                            ]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="netty-acceptorType">
+       <xs:annotation>
+          <xs:documentation>
+            <![CDATA[
+              The netty acceptor type.
+            ]]>
+            </xs:documentation>
+       </xs:annotation>
+       <xs:complexContent>
+          <xs:extension base="base-acceptorType">
+             <xs:attribute name="socket-binding" type="xs:string" use="required">
+                 <xs:annotation>
+                     <xs:documentation>
+                         The socket binding reference.
+                     </xs:documentation>
+                 </xs:annotation>
+             </xs:attribute>
+          </xs:extension>
+       </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="inVM-acceptorType">
+       <xs:annotation>
+          <xs:documentation>
+            <![CDATA[
+              The inVM connector type.
+            ]]>
+            </xs:documentation>
+       </xs:annotation>
+       <xs:complexContent>
+          <xs:extension base="base-acceptorType">
+             <xs:attribute name="server-id" type="xs:int" use="optional">
+                 <xs:annotation>
+                     <xs:documentation>
+                         The server id.
+                     </xs:documentation>
+                 </xs:annotation>
+             </xs:attribute>
+          </xs:extension>
+       </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="acceptorType">
+       <xs:annotation>
+          <xs:documentation>
+            <![CDATA[
+              Generic acceptor type, with optional socket-binding depending on whether
+              the implementation requires a Host/Port parameter.
+            ]]>
+            </xs:documentation>
+       </xs:annotation>
+       <xs:complexContent>
+          <xs:extension base="base-acceptorType">
+             <xs:sequence>
+                <xs:element maxOccurs="1" minOccurs="1" name="factory-class" type="xs:string">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Class name of the factory class that can instantiate the acceptor.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+             </xs:sequence>
+             <xs:attribute name="socket-binding" type="xs:string" use="optional">
+                 <xs:annotation>
+                     <xs:documentation>
+                         The socket binding that the acceptor will use to accept connections.
+                     </xs:documentation>
+                 </xs:annotation>
+             </xs:attribute>
+          </xs:extension>
+       </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="base-acceptorType">
+       <xs:sequence>
+          <xs:element maxOccurs="unbounded" minOccurs="0" name="param" type="paramType" />
+       </xs:sequence>
+       <xs:attribute name="name" type="xs:string" use="optional">
+           <xs:annotation>
+               <xs:documentation>
+                   The name of the acceptor
+               </xs:documentation>
+           </xs:annotation>
+       </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="bridgeType">
+       <xs:sequence>
+          <xs:element maxOccurs="1" minOccurs="1" name="queue-name" type="xs:string">
+              <xs:annotation>
+                  <xs:documentation>
+                      The unique name of the local queue that the bridge consumes from.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="forwarding-address" type="xs:string">
+              <xs:annotation>
+                  <xs:documentation>
+                      The address on the target server that the message will be forwarded to. If a forwarding address is not specified then the original destination of the message will be retained.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="ha" type="xs:boolean">
+              <xs:annotation>
+                  <xs:documentation>
+                      Whether or not this bridge should support high availability. True means it will connect to any available server in a cluster and support failover.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="filter">
+             <xs:complexType>
+                <xs:attribute name="string" type="xs:string" use="required">
+                    <xs:annotation>
+                        <xs:documentation>
+
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+             </xs:complexType>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="transformer-class-name" type="xs:string">
+              <xs:annotation>
+                  <xs:documentation>
+                      An optional filter string. If specified then only messages which match the filter expression specified will be forwarded. The filter string follows the HornetQ filter expression syntax described in the HornetQ documentation.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="min-large-message-size" type="xs:int">
+              <xs:annotation>
+                  <xs:documentation>
+                      The minimum size (in bytes) for a message before it is considered as a large message.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="check-period" type="xs:long">
+              <xs:annotation>
+                  <xs:documentation>
+                      The period (in milliseconds) between client failure check.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="connection-ttl" type="xs:long">
+              <xs:annotation>
+                  <xs:documentation>
+                      The maximum time (in milliseconds) for which the connections used by the bridges are considered alive (in the absence of heartbeat).
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="retry-interval" type="xs:long">
+              <xs:annotation>
+                  <xs:documentation>
+                      The period in milliseconds between subsequent reconnection attempts, if the connection to the target server has failed.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="retry-interval-multiplier" type="xs:double">
+              <xs:annotation>
+                  <xs:documentation>
+                      A multiplier to apply to the time since the last retry to compute the time to the next retry. This allows you to implement an exponential backoff between retry attempts.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="max-retry-interval" type="xs:long">
+              <xs:annotation>
+                  <xs:documentation>
+                      The maximum interval of time used to retry connections
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="initial-connect-attempts" type="xs:int">
+              <xs:annotation>
+                  <xs:documentation>
+                      The number of attempts to connect initially with this bridge.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="reconnect-attempts" type="xs:int">
+              <xs:annotation>
+                  <xs:documentation>
+                      The total number of reconnect attempts the bridge will make before giving up and shutting down. A value of -1 signifies an unlimited number of attempts.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="reconnect-attempts-on-same-node" type="xs:int">
+              <xs:annotation>
+                  <xs:documentation>
+                      The total number of reconnect attempts on the same node the bridge will make before giving up and shutting down. A value of -1 signifies an unlimited number of attempts.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="failover-on-server-shutdown" type="xs:boolean">
+             <xs:annotation>
+                <xs:documentation>
+                   Deprecated. the failover-on-server-shutdown attribute is no longer taken into account when configuring a connector-ref.
+                </xs:documentation>
+             </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="use-duplicate-detection" type="xs:boolean">
+              <xs:annotation>
+                  <xs:documentation>
+                      Whether the bridge will automatically insert a duplicate id property into each message that it forwards.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="confirmation-window-size" type="xs:int">
+              <xs:annotation>
+                  <xs:documentation>
+                      The confirmation-window-size to use for the connection used to forward messages to the target node.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="user" type="xs:string">
+              <xs:annotation>
+                  <xs:documentation>
+                      The user name to use when creating the bridge connection to the remote server. If it is not specified the default cluster user specified by the cluster-user attribute in the root messaging subsystem resource will be used.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="password" type="xs:string">
+              <xs:annotation>
+                  <xs:documentation>
+                      The password to use when creating the bridge connection to the remote server. If it is not specified the default cluster password specified by the cluster-password attribute in the root messaging subsystem resource will be used.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:choice>
+             <xs:element maxOccurs="1" minOccurs="1" name="static-connectors">
+                <xs:complexType>
+                    <xs:annotation>
+                        <xs:documentation>
+                            A list of names of statically defined connectors used by this bridge. Must be undefined (null) if 'discovery-group-name' is defined.
+                        </xs:documentation>
+                    </xs:annotation>
+                   <xs:sequence>
+                      <xs:element maxOccurs="unbounded" minOccurs="1" name="connector-ref" type="xs:string"/>
+                   </xs:sequence>
+                </xs:complexType>
+             </xs:element>
+             <xs:element maxOccurs="1" minOccurs="1" name="discovery-group-ref" type="discovery-group-refType" />
+          </xs:choice>
+       </xs:sequence>
+       <xs:attribute name="name" type="xs:string" use="required">
+           <xs:annotation>
+               <xs:documentation>
+                   The name of the bridge
+               </xs:documentation>
+           </xs:annotation>
+       </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="clusterConnectionType">
+       <xs:sequence>
+          <xs:element maxOccurs="1" minOccurs="1" name="address" type="xs:string">
+              <xs:annotation>
+                  <xs:documentation>
+                      Each cluster connection only applies to messages sent to an address that starts with this value.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="1" name="connector-ref" type="xs:string">
+              <xs:annotation>
+                  <xs:documentation>
+                      The name of connector to use for live connection
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="check-period" type="xs:long">
+              <xs:annotation>
+                  <xs:documentation>
+                      The period (in milliseconds) between client failure check.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="connection-ttl" type="xs:long">
+              <xs:annotation>
+                  <xs:documentation>
+                      The maximum time (in milliseconds) for which the connections used by the cluster connections are considered alive (in the absence of heartbeat).
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="min-large-message-size" type="xs:int">
+              <xs:annotation>
+                  <xs:documentation>
+                      The minimum size (in bytes) for a message before it is considered as a large message.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="call-timeout" type="xs:long">
+              <xs:annotation>
+                  <xs:documentation>
+                      The timeout (in ms) for remote calls made by the cluster connection.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="call-failover-timeout" type="xs:long">
+              <xs:annotation>
+                  <xs:documentation>
+                      The timeout to use when fail over is in process (in ms) for remote calls made by the cluster connection.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="retry-interval" type="xs:long">
+              <xs:annotation>
+                  <xs:documentation>
+                      The period in milliseconds between subsequent attempts to reconnect to a target server, if the connection to the target server has failed.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="retry-interval-multiplier" type="xs:double">
+              <xs:annotation>
+                  <xs:documentation>
+                      A multiplier to apply to the time since the last retry to compute the time to the next retry. This allows you to implement an exponential backoff between retry attempts.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="max-retry-interval" type="xs:long">
+              <xs:annotation>
+                  <xs:documentation>
+                      The maximum interval of time used to retry connections
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="initial-connect-attempts" type="xs:int">
+              <xs:annotation>
+                  <xs:documentation>
+                      The number of attempts to connect initially with this cluster connection.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="reconnect-attempts" type="xs:long">
+              <xs:annotation>
+                  <xs:documentation>
+                      The total number of reconnect attempts the bridge will make before giving up and shutting down. A value of -1 signifies an unlimited number of attempts.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="use-duplicate-detection" type="xs:boolean">
+              <xs:annotation>
+                  <xs:documentation>
+                      Whether the bridge will automatically insert a duplicate id property into each message that it forwards.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="forward-when-no-consumers" type="xs:boolean">
+              <xs:annotation>
+                  <xs:documentation>
+                      Whether messages will be distributed round robin between other nodes of the cluster irrespective of whether there are matching or indeed any consumers on other nodes. If this is set to false (the default) then HornetQ will only forward messages to other nodes of the cluster if the address to which they are being forwarded has queues which have consumers, and if those consumers have message filters (selectors) at least one of those selectors must match the message.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="max-hops" type="xs:int">
+              <xs:annotation>
+                  <xs:documentation>
+                      The maximum number of times a message can be forwarded. HornetQ can be configured to also load balance messages to nodes which might be connected to it only indirectly with other HornetQ servers as intermediates in a chain.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="confirmation-window-size" type="xs:int">
+              <xs:annotation>
+                  <xs:documentation>
+                      The confirmation-window-size to use for the connection used to forward messages to a target node.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="notification-interval" type="xs:long">
+              <xs:annotation>
+                  <xs:documentation>
+                      How often the cluster connection will broadcast itself
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="notification-attempts" type="xs:int">
+              <xs:annotation>
+                  <xs:documentation>
+                      How many times the cluster connection will broadcast itself
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:choice>
+             <xs:element maxOccurs="1" minOccurs="0" name="static-connectors">
+                <xs:complexType>
+                   <xs:sequence>
+                      <xs:element maxOccurs="unbounded" minOccurs="0" name="connector-ref" type="xs:string"/>
+                   </xs:sequence>
+                   <xs:attribute name="allow-direct-connections-only" type="xs:boolean" use="optional">
+                       <xs:annotation>
+                           <xs:documentation>
+                               Whether, if a node learns of the existence of a node that is more than 1 hop away, we do not create a bridge for direct cluster connection. Only relevant if 'static-connectors' is defined.
+                           </xs:documentation>
+                       </xs:annotation>
+                   </xs:attribute>
+                </xs:complexType>
+             </xs:element>
+             <xs:element maxOccurs="1" minOccurs="0" name="discovery-group-ref" type="discovery-group-refType" />
+          </xs:choice>
+       </xs:sequence>
+       <xs:attribute name="name" type="xs:string" use="required">
+           <xs:annotation>
+               <xs:documentation>
+                   The name of the discovery group
+               </xs:documentation>
+           </xs:annotation>
+       </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="divertType">
+       <xs:sequence>
+          <xs:element maxOccurs="1" minOccurs="0" name="routing-name" type="xs:string">
+              <xs:annotation>
+                  <xs:documentation>
+                      Routing name of the divert
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="1" name="address" type="xs:string">
+              <xs:annotation>
+                  <xs:documentation>
+                      Address to divert from
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="1" name="forwarding-address" type="xs:string">
+              <xs:annotation>
+                  <xs:documentation>
+                      Address to divert to
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="filter">
+             <xs:complexType>
+                <xs:attribute name="string" type="xs:string" use="required">
+                    <xs:annotation>
+                        <xs:documentation>
+                            An optional filter string. If specified then only messages which match the filter expression specified will be diverted. The filter string follows the HornetQ filter expression syntax described in the HornetQ documentation.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+             </xs:complexType>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="transformer-class-name" type="xs:string">
+              <xs:annotation>
+                  <xs:documentation>
+                      The name of a class used to transform the message's body or properties before it is diverted.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="exclusive" type="xs:boolean">
+              <xs:annotation>
+                  <xs:documentation>
+
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+       </xs:sequence>
+       <xs:attribute name="name" type="xs:string" use="required">
+           <xs:annotation>
+               <xs:documentation>
+                   Whether the divert is exclusive, meaning that the message is diverted to the new address, and does not go to the old address at all.
+               </xs:documentation>
+           </xs:annotation>
+       </xs:attribute>
+    </xs:complexType>
+
+    <xs:simpleType name="journalType">
+       <xs:restriction base="xs:token">
+          <xs:enumeration value="ASYNCIO"/>
+          <xs:enumeration value="NIO"/>
+       </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="groupingHandlerType">
+       <xs:sequence>
+          <xs:element maxOccurs="1" minOccurs="1" name="type" type="groupingHandlerTypeType"/>
+          <xs:element maxOccurs="1" minOccurs="1" name="address" type="xs:string">
+              <xs:annotation>
+                  <xs:documentation>
+                      A reference to a cluster connection and the address it uses.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="timeout" type="xs:int">
+              <xs:annotation>
+                  <xs:documentation>
+                      How long to wait for a handling decision to be made; an exception will be thrown during the send if this timeout is reached, ensuring that strict ordering is kept.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="group-timeout" type="xs:long" >
+               <xs:annotation>
+                   <xs:documentation>
+                       How long a group binding will be used, -1 means for ever. Bindings are removed after this wait elapses (only valid for LOCAL handlers).
+                   </xs:documentation>
+               </xs:annotation>
+           </xs:element>
+           <xs:element maxOccurs="1" minOccurs="0" name="reaper-period" type="xs:long" >
+               <xs:annotation>
+                   <xs:documentation>
+                       How often the reaper will be run to check for timed out group bindings (only valid for LOCAL handlers).
+                   </xs:documentation>
+               </xs:annotation>
+           </xs:element>
+       </xs:sequence>
+       <xs:attribute name="name" type="xs:string" use="required">
+           <xs:annotation>
+               <xs:documentation>
+                   The name of the grouping handler.
+               </xs:documentation>
+           </xs:annotation>
+       </xs:attribute>
+    </xs:complexType>
+
+    <xs:simpleType name="groupingHandlerTypeType">
+       <xs:annotation>
+           <xs:documentation>
+               Whether the handler is the single "Local" handler for the cluster, which makes handling decisions, or a "Remote" handler which converses with the local handler.
+           </xs:documentation>
+       </xs:annotation>
+       <xs:restriction base="xs:token">
+          <xs:enumeration value="LOCAL"/>
+          <xs:enumeration value="REMOTE"/>
+       </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="security-settingsType">
+       <xs:sequence>
+          <xs:element maxOccurs="unbounded" minOccurs="0" name="security-setting" type="security-settingType"/>
+       </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="security-settingType">
+       <xs:sequence>
+          <xs:element maxOccurs="unbounded" minOccurs="0" name="permission">
+             <xs:complexType>
+                <xs:attribute name="type" type="security-permissionType" use="required"/>
+                <xs:attribute name="roles" type="xs:string" use="required">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[
+                                List of roles that are granted the permission for the given type. The roles must be separated by spaces or commas.
+                            ]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+             </xs:complexType>
+          </xs:element>
+       </xs:sequence>
+       <xs:attribute name="match" type="xs:string" use="required">
+           <xs:annotation>
+               <xs:documentation>
+                   Expression matched against a queue address.
+               </xs:documentation>
+           </xs:annotation>
+       </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="address-settingsType">
+       <xs:sequence>
+          <xs:element maxOccurs="unbounded" minOccurs="0" name="address-setting" type="address-settingType"/>
+       </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="address-settingType">
+       <xs:all>
+          <xs:element maxOccurs="1" minOccurs="0" name="dead-letter-address" type="xs:string">
+              <xs:annotation>
+                  <xs:documentation>
+                      The dead letter address
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="expiry-address" type="xs:string">
+              <xs:annotation>
+                  <xs:documentation>
+                      Defines where to send a message that has expired.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="expiry-delay" type="xs:long">
+              <xs:annotation>
+                  <xs:documentation>
+                      Defines the expiration time that will be used for messages using the default expiration time
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="redelivery-delay" type="xs:long">
+              <xs:annotation>
+                  <xs:documentation>
+                      Defines how long to wait before attempting redelivery of a cancelled message
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="max-delivery-attempts" type="xs:int">
+              <xs:annotation>
+                  <xs:documentation>
+                      Defines how many time a cancelled message can be redelivered before sending to the dead-letter-address
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="max-size-bytes" type="xs:long">
+              <xs:annotation>
+                  <xs:documentation>
+                      The max bytes size.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="page-size-bytes" type="xs:long">
+              <xs:annotation>
+                  <xs:documentation>
+                      The paging size.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="page-max-cache-size" type="xs:int">
+              <xs:annotation>
+                  <xs:documentation>
+                      The number of page files to keep in memory to optimize IO during paging navigation.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="address-full-policy" type="addressFullMessagePolicyType">
+              <xs:annotation>
+                  <xs:documentation>
+                      Determines what happens when an address where max-size-bytes is specified becomes full. (PAGE, DROP or BLOCK)
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="message-counter-history-day-limit" type="xs:int">
+              <xs:annotation>
+                  <xs:documentation>
+                      Day limit for the message counter history.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="last-value-queue" type="xs:boolean">
+              <xs:annotation>
+                  <xs:documentation>
+                      Defines whether a queue only uses last values or not
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="redistribution-delay" type="xs:long">
+              <xs:annotation>
+                  <xs:documentation>
+                      Defines how long to wait when the last consumer is closed on a queue before redistributing any messages
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="send-to-dla-on-no-route" type="xs:boolean">
+              <xs:annotation>
+                  <xs:documentation>
+                      If this parameter is set to true for that address, if the message is not routed to any queues it will instead be sent to the dead letter address (DLA) for that address, if it exists.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+       </xs:all>
+       <xs:attribute name="match" type="xs:string" use="required">
+           <xs:annotation>
+               <xs:documentation>
+                   The name of the address setting.
+               </xs:documentation>
+           </xs:annotation>
+       </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="queuesType">
+       <xs:sequence>
+          <xs:element maxOccurs="unbounded" minOccurs="0" name="queue" type="queueType"/>
+       </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="queueType">
+       <xs:all>
+          <xs:element maxOccurs="1" minOccurs="1" name="address" type="xs:string">
+              <xs:annotation>
+                  <xs:documentation>
+                      The queue address defines what address is used for routing messages.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="filter">
+             <xs:complexType>
+                <xs:attribute name="string" type="xs:string" use="required">
+                    <xs:annotation>
+                        <xs:documentation>
+                            A queue message filter definition. An undefined or empty filter will match all messages.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+             </xs:complexType>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="durable" type="xs:boolean">
+              <xs:annotation>
+                  <xs:documentation>
+                      Defines whether the queue is durable.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+        </xs:all>
+        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The name of the queue.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="live-connectorType">
+       <xs:attribute name="connector-name" type="xs:string" use="required" />
+    </xs:complexType>
+
+    <xs:simpleType name="addressFullMessagePolicyType">
+       <xs:restriction base="xs:token">
+          <xs:enumeration value="DROP"/>
+          <xs:enumeration value="PAGE"/>
+          <xs:enumeration value="BLOCK"/>
+       </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="connectorServiceType">
+       <xs:sequence>
+          <xs:element maxOccurs="1" minOccurs="1" name="factory-class" type="xs:string">
+              <xs:annotation>
+                  <xs:documentation>
+                      Class name of the factory class that can instantiate the connector service.
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="unbounded" minOccurs="0" name="param" type="paramType" />
+       </xs:sequence>
+       <xs:attribute name="name" type="xs:string" use="optional">
+           <xs:annotation>
+               <xs:documentation>
+                   The name of the connector service.
+               </xs:documentation>
+           </xs:annotation>
+       </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="directoryType">
+        <xs:annotation>
+            <xs:documentation>
+            <![CDATA[
+                A directory location configuration.
+
+                The "path" attribute denotes a relative or absolute filesystem pathname where the directory should be
+                located.
+
+                The "relative-to" attribute references a global path configuration in the domain model, defaulting
+                to the JBoss Application Server data directory (jboss.server.data.dir). If the value of the "path" attribute
+                does not specify an absolute pathname, it will treated as relative to this path.
+            ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="relative-to" type="xs:string" default="jboss.server.data.dir" />
+        <xs:attribute name="path" type="xs:string" />
+    </xs:complexType>
+
+
+   <!-- using a xs:all does not allow to factorize connection-factoryType and pooled-connection-factoryType
+        in a common base type definition.
+        The elements/attributes common to both are copied/pasted...
+    -->
+   <xs:complexType name="connection-factoryType">
+      <xs:all>
+         <!-- start of JMS connection-factoryType specific elements          -->
+         <!-- ============================================================== -->
+         <xs:element name="factory-type" type="connectionFactoryType" minOccurs="0" maxOccurs="1"/>
+         <!-- ============================================================== -->
+         <!-- end of JMS connection-factoryType specific elements            -->
+
+         <!-- start of common elements                                       -->
+         <!--  ============================================================= -->
+         <xs:element name="discovery-group-ref" type="discovery-group-refType" maxOccurs="1" minOccurs="0" />
+         <xs:element name="connectors" maxOccurs="1" minOccurs="0">
+            <xs:complexType>
+               <xs:sequence>
+                  <xs:element name="connector-ref" type="connector-refType" maxOccurs="unbounded" minOccurs="1"></xs:element>
+               </xs:sequence>
+            </xs:complexType>
+         </xs:element>
+         <xs:element name="entries" maxOccurs="1" minOccurs="0">
+            <xs:complexType>
+               <xs:sequence>
+                  <xs:element name="entry" type="entryType" maxOccurs="unbounded" minOccurs="1">
+                  </xs:element>
+               </xs:sequence>
+            </xs:complexType>
+         </xs:element>
+         <xs:element name="ha" type="xs:boolean" minOccurs="0" maxOccurs="1">
+             <xs:annotation>
+                 <xs:documentation>
+                     Whether the connection factory supports High Availability.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="client-failure-check-period" type="xs:long" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The client failure check period.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="connection-ttl" type="xs:long" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The connection ttl.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="call-timeout" type="xs:long" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The call time out.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="call-failover-timeout" type="xs:long" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The timeout to use when fail over is in process (in ms).
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="consumer-window-size" type="xs:int" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The consumer window size.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="consumer-max-rate" type="xs:int" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The consumer max rate.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="confirmation-window-size" type="xs:int" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The confirmation window size.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="producer-window-size" type="xs:int" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The producer window size.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="producer-max-rate" type="xs:int" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The producer max rate.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="compress-large-messages" type="xs:boolean" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     Whether large messages should be compressed.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="cache-large-message-client" type="xs:boolean" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     True to cache large messages.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="min-large-message-size" type="xs:long" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The min large message size.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="client-id" type="xs:string" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The client id.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="dups-ok-batch-size" type="xs:int" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The dups ok batch size.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="transaction-batch-size" type="xs:int" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The transaction batch size.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="block-on-acknowledge" type="xs:boolean" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     True to set block on acknowledge.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="block-on-non-durable-send" type="xs:boolean" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     True to set block on non durable send.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="block-on-durable-send" type="xs:boolean" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     True to set block on durable send.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="auto-group" type="xs:boolean" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     Whether or not message grouping is automatically used
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="pre-acknowledge" type="xs:boolean" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     True to pre-acknowledge.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="retry-interval" type="xs:long" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The retry interval.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="retry-interval-multiplier" type="xs:float" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The retry interval multiplier.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="max-retry-interval" type="xs:long" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The max retry interval.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="reconnect-attempts" type="xs:int" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The reconnect attempts.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="failover-on-initial-connection" type="xs:boolean" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     True to fail over on initial connection.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="failover-on-server-shutdown" type="xs:boolean" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                <xs:documentation>
+                   Deprecated. the failover-on-server-shutdown attribute is no longer taken into account when configuring a connector-ref.
+                </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="connection-load-balancing-policy-class-name" type="xs:string" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     Name of a class implementing a client-side load balancing policy that a client can use to load balance sessions across different nodes in a cluster.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="use-global-pools" type="xs:boolean" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     True to use global pools.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="scheduled-thread-pool-max-size" type="xs:int" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The scheduled thread pool max size.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="thread-pool-max-size" type="xs:int" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The thread pool max size.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="group-id" type="xs:string" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The group id.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <!-- ============================================================= -->
+         <!-- end of common elements                                        -->
+      </xs:all>
+      <xs:attribute name="name" type="xs:string">
+          <xs:annotation>
+              <xs:documentation>
+                  The name of the connection factory.
+              </xs:documentation>
+          </xs:annotation>
+      </xs:attribute>
+   </xs:complexType>
+
+   <xs:simpleType name="connectionFactoryType">
+      <xs:restriction base="xs:token">
+         <xs:enumeration value="GENERIC"/>
+         <xs:enumeration value="QUEUE"/>
+         <xs:enumeration value="TOPIC"/>
+         <xs:enumeration value="XA_GENERIC"/>
+         <xs:enumeration value="XA_QUEUE"/>
+         <xs:enumeration value="XA_TOPIC"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <xs:complexType name="pooled-connection-factoryType">
+      <xs:all>
+         <!-- start of JMS pooled-connection-factoryType specific elements   -->
+         <!-- ============================================================== -->
+         <xs:element name="inbound-config" maxOccurs="1" minOccurs="0">
+            <xs:complexType>
+               <xs:sequence>
+                    <xs:element name="use-jndi" type="xs:boolean" minOccurs="0" maxOccurs="1">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Use JNDI to locate the destination for incoming connections
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="jndi-params" type="xs:string" minOccurs="0" maxOccurs="1">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The JNDI params to use for locating the destination for incoming connections.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="use-local-tx" type="xs:boolean" minOccurs="0" maxOccurs="1">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Use a local transaction for incoming sessions
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="setup-attempts" type="xs:integer" minOccurs="0" maxOccurs="1">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The number of times to set up an MDB endpoint
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="setup-interval" type="xs:long" minOccurs="0" maxOccurs="1">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The interval between attempts at setting up an MDB endpoint.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+               </xs:sequence>
+            </xs:complexType>
+         </xs:element>
+         <xs:element name="transaction" type="transactionType" minOccurs="0" maxOccurs="1">
+             <xs:annotation>
+                 <xs:documentation>
+                     The type of transaction.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="user" type="xs:string" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The default username to use with this connection factory. This is only needed when pointing the connection factory to a remote host.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="password" type="xs:string" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The default password to use with this connection factory. This is only needed when pointing the connection factory to a remote host.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="min-pool-size" type="xs:int" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The minimum size for the pool
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="max-pool-size" type="xs:int" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The maximum size for the pool
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="use-auto-recovery" type="xs:boolean" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     True to use auto recovery.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="initial-message-packet-size" type="xs:int" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The initial size of messages created through this factory.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="initial-connect-attempts" type="xs:int" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The number of attempts to connect initially with this factory.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <!-- ============================================================== -->
+         <!-- end of JMS pooled-connection-factoryType specific elements     -->
+
+         <!-- start of common elements                                       -->
+         <!--  ============================================================= -->
+         <xs:element name="discovery-group-ref" type="discovery-group-refType" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The discovery group name.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="connectors" maxOccurs="1" minOccurs="0">
+            <xs:complexType>
+               <xs:sequence>
+                  <xs:element name="connector-ref" type="connector-refType" maxOccurs="unbounded" minOccurs="1"></xs:element>
+               </xs:sequence>
+            </xs:complexType>
+         </xs:element>
+         <xs:element name="entries" maxOccurs="1" minOccurs="0">
+            <xs:complexType>
+               <xs:sequence>
+                  <xs:element name="entry" type="entryType" maxOccurs="unbounded" minOccurs="1">
+                  </xs:element>
+               </xs:sequence>
+            </xs:complexType>
+         </xs:element>
+         <xs:element name="ha" type="xs:boolean" minOccurs="0" maxOccurs="1">
+             <xs:annotation>
+                 <xs:documentation>
+                     Whether the connection factory supports High Availability.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="client-failure-check-period" type="xs:long" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The client failure check period.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="connection-ttl" type="xs:long" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The connection ttl.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="call-timeout" type="xs:long" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The call time out.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="call-failover-timeout" type="xs:long" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The timeout to use when fail over is in process (in ms).
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="compress-large-messages" type="xs:boolean" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     Whether large messages should be compressed.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="consumer-window-size" type="xs:int" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The consumer window size.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="consumer-max-rate" type="xs:int" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The consumer max rate.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="confirmation-window-size" type="xs:int" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The confirmation window size.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="producer-window-size" type="xs:int" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The producer window size.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="producer-max-rate" type="xs:int" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The producer max rate.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="cache-large-message-client" type="xs:boolean" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     True to cache large messages.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="min-large-message-size" type="xs:long" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The min large message size.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="client-id" type="xs:string" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The client id.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="dups-ok-batch-size" type="xs:int" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The dups ok batch size.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="transaction-batch-size" type="xs:int" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The transaction batch size.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="block-on-acknowledge" type="xs:boolean" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     True to set block on acknowledge.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="block-on-non-durable-send" type="xs:boolean" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     True to set block on non durable send.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="block-on-durable-send" type="xs:boolean" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     True to set block on durable send.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="auto-group" type="xs:boolean" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The autogroup.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="pre-acknowledge" type="xs:boolean" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     True to pre-acknowledge.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="retry-interval" type="xs:long" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The retry interval.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="retry-interval-multiplier" type="xs:float" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The retry interval multiplier.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="max-retry-interval" type="xs:long" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The max retry interval.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="reconnect-attempts" type="xs:int" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The reconnect attempts. By default, a pooled connection factory will try to reconnect infinitely to the messaging server(s).
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="failover-on-initial-connection" type="xs:boolean" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     True to fail over on initial connection.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="failover-on-server-shutdown" type="xs:boolean" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                <xs:documentation>
+                   Deprecated. the failover-on-server-shutdown attribute is no longer taken into account when configuring a connector-ref.
+                </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="connection-load-balancing-policy-class-name" type="xs:string" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     Name of a class implementing a client-side load balancing policy that a client can use to load balance sessions across different nodes in a cluster.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="use-global-pools" type="xs:boolean" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     True to use global pools.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="scheduled-thread-pool-max-size" type="xs:int" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The scheduled thread pool max size.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="thread-pool-max-size" type="xs:int" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The thread pool max size.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element name="group-id" type="xs:string" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     The group id.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <!-- ============================================================= -->
+         <!-- end of common elements                                        -->
+      </xs:all>
+      <xs:attribute name="name" type="xs:string">
+          <xs:annotation>
+              <xs:documentation>
+                  The name of the pooled connection factory.
+              </xs:documentation>
+          </xs:annotation>
+      </xs:attribute>
+   </xs:complexType>
+
+
+   <xs:complexType name="connector-refType">
+      <xs:attribute name="connector-name" type="xs:string" use="required">
+          <xs:annotation>
+              <xs:documentation>
+                  The name of the connector.
+              </xs:documentation>
+          </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="backup-connector-name" type="xs:string" use="optional">
+          <xs:annotation>
+              <xs:documentation>
+                  Deprecated. the backup-connector-name attribute is no longer taken into account when configuring a connector-ref.
+              </xs:documentation>
+          </xs:annotation>
+      </xs:attribute>
+   </xs:complexType>
+
+   <xs:complexType name="entryType">
+      <xs:attribute name="name" type="xs:string" use="required">
+          <xs:annotation>
+              <xs:documentation>
+                  The name of the JNDI entry.
+              </xs:documentation>
+          </xs:annotation>
+      </xs:attribute>
+   </xs:complexType>
+
+   <xs:complexType name="discovery-group-refType">
+      <xs:attribute name="discovery-group-name" type="xs:string" use="required">
+          <xs:annotation>
+              <xs:documentation>
+                  The name of the discovery group.
+              </xs:documentation>
+          </xs:annotation>
+      </xs:attribute>
+   </xs:complexType>
+
+   <xs:complexType name="jmsQueueType">
+      <xs:sequence>
+         <xs:element name="entry" type="entryType" maxOccurs="unbounded" minOccurs="1" />
+         <xs:element name="selector" maxOccurs="1" minOccurs="0">
+            <xs:complexType>
+               <xs:attribute name="string" type="xs:string" use="required">
+                   <xs:annotation>
+                       <xs:documentation>
+                           The queue selector.
+                       </xs:documentation>
+                   </xs:annotation>
+               </xs:attribute>
+            </xs:complexType>
+         </xs:element>
+         <xs:element name="durable" type="xs:boolean" maxOccurs="1" minOccurs="0">
+             <xs:annotation>
+                 <xs:documentation>
+                     Whether the queue is durable or not.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+      </xs:sequence>
+      <xs:attribute name="name" type="xs:string" use="required">
+          <xs:annotation>
+              <xs:documentation>
+                  The name of the JMS queue.
+              </xs:documentation>
+          </xs:annotation>
+      </xs:attribute>
+   </xs:complexType>
+
+   <xs:complexType name="jmsTopicType">
+      <xs:sequence>
+         <xs:element name="entry" type="entryType" maxOccurs="unbounded" minOccurs="1" />
+      </xs:sequence>
+      <xs:attribute name="name" type="xs:string" use="required">
+          <xs:annotation>
+              <xs:documentation>
+                  The name of the JMS Topic.
+              </xs:documentation>
+          </xs:annotation>
+      </xs:attribute>
+   </xs:complexType>
+
+    <xs:complexType name="transactionType">
+        <xs:attribute name="mode" use="required" type="modeType"/>
+    </xs:complexType>
+
+    <xs:simpleType name="modeType">
+        <xs:restriction base="xs:token">
+            <xs:enumeration value="xa">
+                <xs:annotation>
+                    <xs:documentation>
+                        Use XA transaction.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="local">
+                <xs:annotation>
+                    <xs:documentation>
+                        Use local transaction.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="none">
+                <xs:annotation>
+                    <xs:documentation>
+                        Do not use transaction.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+
+   <xs:complexType name="jms-bridgeType">
+      <xs:annotation>
+         <xs:documentation>
+            <![CDATA[
+               The configuration of a JMS bridge.
+            ]]>
+         </xs:documentation>
+      </xs:annotation>
+      <xs:all>
+         <xs:element maxOccurs="1" minOccurs="1" name="source" type="jms-bridgeResourceType">
+             <xs:annotation>
+                 <xs:documentation>
+                     The source of the JMS bridge.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element maxOccurs="1" minOccurs="1" name="destination" type="jms-bridgeResourceType">
+             <xs:annotation>
+                 <xs:documentation>
+                     The destination of the JMS bridge.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element maxOccurs="1" minOccurs="1" name="quality-of-service" type="quality-of-serviceType">
+             <xs:annotation>
+                 <xs:documentation>
+                     The desired quality of service mode (AT_MOST_ONCE, DUPLICATES_OK or ONCE_AND_ONLY_ONCE).
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element maxOccurs="1" minOccurs="1" name="failure-retry-interval" type="xs:long">
+             <xs:annotation>
+                 <xs:documentation>
+                     The amount of time in milliseconds to wait between trying to recreate connections to the source or target servers when the bridge has detected they have failed.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element maxOccurs="1" minOccurs="1" name="max-retries" type="xs:int">
+             <xs:annotation>
+                 <xs:documentation>
+                     The number of times to attempt to recreate connections to the source or target servers when the bridge has detected they have failed. The bridge will give up after trying this number of times. -1 represents 'try forever'.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element maxOccurs="1" minOccurs="1" name="max-batch-size" type="xs:int">
+             <xs:annotation>
+                 <xs:documentation>
+                     The maximum number of messages to consume from the source destination before sending them in a batch to the target destination. Its value must >= 1.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element maxOccurs="1" minOccurs="1" name="max-batch-time" type="xs:long">
+             <xs:annotation>
+                 <xs:documentation>
+                     The maximum number of milliseconds to wait before sending a batch to target, even if the number of messages consumed has not reached max-batch-size. Its value must be -1 to represent 'wait forever', or >= 1 to specify an actual time.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element maxOccurs="1" minOccurs="0" name="selector" type="selectorType" />
+         <xs:element maxOccurs="1" minOccurs="0" name="subscription-name" type="xs:string">
+             <xs:annotation>
+                 <xs:documentation>
+                     The name of the subscription if it is durable and the source destination is a topic.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element maxOccurs="1" minOccurs="0" name="client-id" type="xs:string">
+             <xs:annotation>
+                 <xs:documentation>
+                     The JMS client ID to use when creating/looking up the subscription if it is durable and the source destination is a topic.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+         <xs:element maxOccurs="1" minOccurs="0" name="add-messageID-in-header" type="xs:boolean">
+             <xs:annotation>
+                 <xs:documentation>
+                     If true, then the original message's message ID will be appended in the message sent to the destination in the header HORNETQ_BRIDGE_MSG_ID_LIST. If the message is bridged more than once, each message ID will be appended.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:element>
+      </xs:all>
+      <xs:attribute name="name" type="xs:string" use="optional" default="default">
+         <xs:annotation>
+            <xs:documentation>
+               The name to use for this JMS bridge. Must be unique across all "jms-bridge" elements
+               in the subsystem. So, this attribute is optional with a default value, but if more than
+               one "jms-bridge" element exists, only one can leave this attribute unspecified.
+            </xs:documentation>
+         </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="module" type="xs:string" use="optional">
+         <xs:annotation>
+            <xs:documentation>
+               The name of the module that contains resources required to lookup source or target JMS resources from another messaging broker than AS7.
+               This does not need to be specified if the bridge uses AS7 instances for both source and target.
+            </xs:documentation>
+         </xs:annotation>
+      </xs:attribute>
+   </xs:complexType>
+
+   <xs:complexType name="jms-bridgeResourceType">
+      <xs:annotation>
+         <xs:documentation>
+            <![CDATA[
+               The configuration of a JMS bridge resource which serves either of the source (from which the messages are consumed)
+               or the destination (to which messages are produced).
+            ]]>
+         </xs:documentation>
+      </xs:annotation>
+      <xs:all>
+         <xs:element maxOccurs="1" minOccurs="1" name="connection-factory">
+            <xs:complexType>
+               <xs:attribute name="name" type="xs:string" use="required">
+                  <xs:annotation>
+                      <xs:documentation>
+                         The JNDI name to lookup the connection factory.
+                      </xs:documentation>
+                  </xs:annotation>
+               </xs:attribute>
+            </xs:complexType>
+         </xs:element>
+         <xs:element maxOccurs="1" minOccurs="1" name="destination">
+            <xs:complexType>
+               <xs:attribute name="name" type="xs:string" use="required">
+                  <xs:annotation>
+                      <xs:documentation>
+                         The JNDI name to lookup the destination.
+                      </xs:documentation>
+                  </xs:annotation>
+               </xs:attribute>
+            </xs:complexType>
+         </xs:element>
+         <xs:element maxOccurs="1" minOccurs="0" name="user" type="xs:string">
+            <xs:annotation>
+               <xs:documentation>
+                  The name of the user for creating the connection.
+               </xs:documentation>
+            </xs:annotation>
+         </xs:element>
+         <xs:element maxOccurs="1" minOccurs="0" name="password" type="xs:string">
+            <xs:annotation>
+               <xs:documentation>
+                  The password of the user for creating the connection.
+               </xs:documentation>
+            </xs:annotation>
+         </xs:element>
+         <xs:element maxOccurs="1" minOccurs="0" name="context" type="contextType" />
+      </xs:all>
+   </xs:complexType>
+
+   <xs:complexType name="selectorType">
+      <xs:attribute name="string" type="xs:string" use="required">
+          <xs:annotation>
+              <xs:documentation>
+                  A message selector.
+              </xs:documentation>
+          </xs:annotation>
+      </xs:attribute>
+   </xs:complexType>
+
+   <xs:simpleType name="quality-of-serviceType">
+      <xs:restriction base="xs:token">
+         <xs:enumeration value="AT_MOST_ONCE"/>
+         <xs:enumeration value="DUPLICATES_OK"/>
+         <xs:enumeration value="ONCE_AND_ONLY_ONCE"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <xs:simpleType name="security-permissionType">
+      <xs:restriction base="xs:token">
+         <xs:enumeration value="send"/>
+         <xs:enumeration value="consume"/>
+         <xs:enumeration value="createDurableQueue"/>
+         <xs:enumeration value="deleteDurableQueue"/>
+         <xs:enumeration value="createNonDurableQueue"/>
+         <xs:enumeration value="deleteNonDurableQueue"/>
+         <xs:enumeration value="manage"/>
+         <xs:enumeration value="createTempQueue">
+             <xs:annotation>
+                 <xs:documentation>
+                     Deprecated. use createNonDurableQueue instead.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:enumeration>
+         <xs:enumeration value="deleteTempQueue">
+             <xs:annotation>
+                 <xs:documentation>
+                     Deprecated. use deleteNonDurableQueue instead.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:enumeration>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <xs:complexType name="contextType">
+      <xs:annotation>
+         <xs:documentation>
+             The properties set on the JNDI Context used to lookup the JMS bridge resources.
+             In the absence of a context element, the JMS bridge will lookup resources locally on its own AS7 instance.
+         </xs:documentation>
+      </xs:annotation>
+      <xs:sequence>
+         <xs:element maxOccurs="unbounded" minOccurs="0" name="property" type="paramType" />
+      </xs:sequence>
+   </xs:complexType>
+</xs:schema>

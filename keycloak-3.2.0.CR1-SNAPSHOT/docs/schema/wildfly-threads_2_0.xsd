@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source
+  ~ Copyright 2015, Red Hat, Inc., and individual contributors as indicated
+  ~ by the @authors tag.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="urn:jboss:domain:threads:2.0"
+           xmlns="urn:jboss:domain:threads:2.0"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified"
+           version="1.0">
+
+    <!-- The threads subsystem root element -->
+    <xs:element name="subsystem" type="subsystem"/>
+
+    <xs:complexType name="subsystem">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                    The threading subsystem, used to declare manageable thread pools and resources.
+                ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="thread-factory" type="thread-factory"/>
+            <xs:element name="unbounded-queue-thread-pool" type="unbounded-queue-thread-pool"/>
+            <xs:element name="bounded-queue-thread-pool" type="bounded-queue-thread-pool"/>
+            <xs:element name="blocking-bounded-queue-thread-pool" type="blocking-bounded-queue-thread-pool"/>
+            <xs:element name="queueless-thread-pool" type="queueless-thread-pool"/>
+            <xs:element name="blocking-queueless-thread-pool" type="blocking-queueless-thread-pool"/>
+            <xs:element name="scheduled-thread-pool" type="scheduled-thread-pool"/>
+        </xs:choice>
+    </xs:complexType>
+
+    <xs:complexType name="thread-factory">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                A thread factory (implementing java.util.concurrent.ThreadFactory).  The "name" attribute is
+                the bean name of the created thread factory.  The optional "priority" attribute may be used to specify
+                the thread priority of created threads.  The optional "group-name" attribute specifies the name of a the
+                thread group to create for this thread factory.
+
+                The "thread-name-pattern" is the template used to create names for threads.  The following patterns
+                may be used:
+
+                 %% - emit a percent sign
+                 %t - emit the per-factory thread sequence number
+                 %g - emit the global thread sequence number
+                 %f - emit the factory sequence number
+                 %i - emit the thread ID
+                 %G - emit the thread group name
+            ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="name" type="xs:string" use="required"/>
+        <xs:attribute name="group-name" type="xs:string" use="optional"/>
+        <xs:attribute name="thread-name-pattern" type="xs:string" use="optional"/>
+        <xs:attribute name="priority" type="priority" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="unbounded-queue-thread-pool">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                A thread pool executor with an unbounded queue.  Such a thread pool has a core size and a queue with no
+                upper bound.  When a task is submitted, if the number of running threads is less than the core size,
+                a new thread is created.  Otherwise, the task is placed in queue.  If too many tasks are allowed to be
+                submitted to this type of executor, an out of memory condition may occur.
+
+                The "name" attribute is the bean name of the created executor.
+
+                The "max-threads" attribute must be used to specify the thread pool size.  The nested
+                "keepalive-time" element may used to specify the amount of time that pool threads should
+                be kept running when idle; if not specified, threads will run until the executor is shut down.
+                The "thread-factory" element specifies the bean name of a specific thread factory to use to create worker
+                threads.
+            ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="keepalive-time" type="time" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+        <xs:attribute name="name" use="required" type="xs:string"/>
+        <xs:attribute name="max-threads" type="xs:int"/>
+        <xs:attribute name="thread-factory" type="xs:string"/>
+    </xs:complexType>
+
+    <xs:complexType name="bounded-queue-thread-pool">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                A thread pool executor with a bounded queue, where threads attempting to submit tasks will not block.
+                Such a thread pool has a core and maximum size and a specified queue length.  When a task is submitted,
+                if the number of running threads is less than the core size, a new thread is created.  Otherwise, if
+                there is room in the queue, the task is enqueued. Otherwise, if the number of running threads is less
+                than the maximum size, a new thread is created. Otherwise, the task is handed off to the designated
+                handoff executor, if one is specified.  Otherwise, the task is discarded.
+
+                The "name" attribute is the bean name of the created executor.  The "allow-core-timeout" attribute
+                specifies whether core threads may time out; if false, only threads above the core size will time out.
+
+                The optional "core-threads" element may be used to specify the core thread pool size which is smaller
+                than the maximum pool size.  The required "max-threads" element specifies the maximum thread pool size.
+                The required "queue-length" element specifies the queue length.  The optional "keepalive-time" element may
+                used to specify the amount of time that threads beyond the core pool size should be kept running when idle.
+                The optional "thread-factory" element specifies the bean name of a specific thread factory to use to
+                create worker threads.  The optional "handoff-executor" element specifies an executor to delegate tasks
+                to in the event that a task cannot be accepted.
+            ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="keepalive-time" type="time" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+
+        <xs:attribute name="name" use="required" type="xs:string"/>
+        <xs:attribute name="allow-core-timeout" use="optional" type="xs:boolean" default="false"/>
+        <xs:attribute name="blocking" use="optional" type="xs:boolean" default="false"/>
+        <xs:attribute name="max-threads" type="xs:int"/>
+        <xs:attribute name="core-threads" type="xs:int"/>
+        <xs:attribute name="queue-length" type="xs:int"/>
+        <xs:attribute name="thread-factory" type="xs:string"/>
+        <xs:attribute name="handoff-executor" type="xs:string"/>
+    </xs:complexType>
+
+    <xs:complexType name="blocking-bounded-queue-thread-pool">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                A thread pool executor with a bounded queue, where threads attempting to submit tasks may block.
+                Such a thread pool has a core and maximum size and a specified queue length.  When a task is submitted,
+                if the number of running threads is less than the core size, a new thread is created.  Otherwise, if
+                there is room in the queue, the task is enqueued. Otherwise, if the number of running threads is less
+                than the maximum size, a new thread is created.Otherwise, the caller blocks until room becomes available
+                in the queue.
+
+                The "name" attribute is the bean name of the created executor.  The "allow-core-timeout" attribute
+                specifies whether core threads may time out; if false, only threads above the core size will time out.
+
+                The optional "core-threads" element may be used to specify the core thread pool size which is smaller
+                than the maximum pool size.  The required "max-threads" element specifies the maximum thread pool size.
+                The required "queue-length" element specifies the queue length.  The optional "keepalive-time" element may
+                used to specify the amount of time that threads beyond the core pool size should be kept running when idle.
+                The optional "thread-factory" element specifies the bean name of a specific thread factory to use to
+                create worker threads.
+            ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="keepalive-time" type="time" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+
+        <xs:attribute name="name" use="required" type="xs:string"/>
+        <xs:attribute name="allow-core-timeout" use="optional" type="xs:boolean" default="false"/>
+        <xs:attribute name="core-threads" type="xs:int"/>
+        <xs:attribute name="queue-length" type="xs:int"/>
+        <xs:attribute name="max-threads" type="xs:int"/>
+        <xs:attribute name="thread-factory" type="xs:string"/>
+    </xs:complexType>
+
+    <xs:complexType name="queueless-thread-pool">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                A thread pool executor with no queue, where threads attempting to submit tasks will not block.
+                When a task is submitted, if the number of running threads is less than the maximum size, a new thread
+                is created. Otherwise, the task is handed off to the designated handoff executor, if one is specified.
+                Otherwise, the task is discarded.
+
+                The "name" attribute is the bean name of the created executor.
+
+                The "max-threads" attribute specifies the number of threads to use for this executor before
+                tasks cannot be accepted anymore.  The optional "keepalive-time" is used to specify the amount of time
+                that threads should be kept running when idle; by default threads run indefinitely.  The optional
+                "thread-factory" element specifies the bean name of a specific thread factory to use to create worker
+                threads.  The optional "handoff-executor" element specifies an executor to delegate tasks to in the
+                event that a task cannot be accepted.
+            ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="keepalive-time" type="time" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+        <xs:attribute name="name" use="required" type="xs:string"/>
+        <xs:attribute name="max-threads" type="xs:int"/>
+        <xs:attribute name="thread-factory" type="xs:string"/>
+        <xs:attribute name="handoff-executor" type="xs:string"/>
+    </xs:complexType>
+
+    <xs:complexType name="blocking-queueless-thread-pool">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                A thread pool executor with no queue, where threads attempting to submit tasks may block.
+                When a task is submitted, if the number of running threads is less than the maximum size, a new thread
+                is created.  Otherwise, the caller blocks until another thread completes its task and accepts the new one.
+
+                The "name" attribute is the bean name of the created executor.
+
+                The "max-threads" attribute specifies the number of threads to use for this executor before
+                tasks cannot be accepted anymore.  The optional "keepalive-time" is used to specify the amount of time
+                that threads should be kept running when idle; by default threads run indefinitely.  The optional
+                "thread-factory" element specifies the bean name of a specific thread factory to use to create worker
+                threads.
+            ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="keepalive-time" type="time" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+        <xs:attribute name="name" use="required" type="xs:string"/>
+        <xs:attribute name="max-threads" type="xs:int"/>
+        <xs:attribute name="thread-factory" type="xs:string"/>
+    </xs:complexType>
+
+    <xs:complexType name="scheduled-thread-pool">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                A scheduled thread pool executor.  The "name" attribute is the bean name of the created executor.  The
+                "thread-factory" attribute specifies the bean name of the thread factory to use to create worker
+                threads.  The nested "max-threads" attribute may be used to specify the thread pool size.  The nested
+                "keepalive-time" element is used to specify the amount of time that threads should be kept running when idle.
+            ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="keepalive-time" type="time" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+        <xs:attribute name="name" use="required" type="xs:string"/>
+        <xs:attribute name="max-threads" type="xs:int"/>
+        <xs:attribute name="thread-factory" type="xs:string"/>
+    </xs:complexType>
+
+    <xs:simpleType name="priority">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                A priority which can range from 1 to 10 (inclusive).  See http://java.sun.com/javase/6/docs/api/java/lang/Thread.html#setPriority(int) for more information.
+            ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:integer">
+            <xs:minInclusive value="1"/>
+            <xs:maxInclusive value="10"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="time">
+        <xs:annotation>
+            <xs:documentation>
+                An amount of time. Comprised of a time value and a unit value.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="time" type="xs:long" use="required"/>
+        <xs:attribute name="unit" type="time-unit-name" use="required"/>
+    </xs:complexType>
+
+    <xs:simpleType name="time-unit-name">
+        <xs:annotation>
+            <xs:documentation>
+                The name of a unit of time.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:token">
+            <xs:enumeration value="seconds"/>
+            <xs:enumeration value="minutes"/>
+            <xs:enumeration value="milliseconds"/>
+            <xs:enumeration value="nanoseconds"/>
+            <xs:enumeration value="hours"/>
+            <xs:enumeration value="days"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+</xs:schema>

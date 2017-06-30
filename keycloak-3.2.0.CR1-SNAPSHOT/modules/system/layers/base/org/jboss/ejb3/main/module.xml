@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright (c) 2011, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+<module xmlns="urn:jboss:module:1.5" name="org.jboss.ejb3">
+
+    <resources>
+        <resource-root path="jboss-ejb3-ext-api-2.2.0.Final.jar"/>
+    </resources>
+
+    <dependencies>
+        <module name="javax.ejb.api"/>
+        <module name="javax.persistence.api"/>
+        <module name="javax.interceptor.api"/>
+        <!-- EJBUtilities class needs it -->
+        <module name="org.jboss.common-beans"/>
+        <!-- org.jboss.util.deadlock.ApplicationDeadlockException -->
+        <module name="org.jboss.jboss-transaction-spi"/>
+        <module name="org.jboss.logging"/>
+        <module name="org.jboss.marshalling"/>
+        <module name="org.jboss.marshalling.river"/>
+        <module name="org.jboss.metadata.ejb"/>
+
+        <!-- TODO WFLY-5966 validate the need for these and remove if not needed.
+             Prior to WFLY-5922 they were exported by javax.ejb.api. -->
+        <module name="javax.api"/>
+        <module name="javax.transaction.api"/>
+        <module name="javax.xml.rpc.api"/>
+        <module name="javax.rmi.api"/>
+        <module name="org.omg.api"/>
+    </dependencies>
+</module>

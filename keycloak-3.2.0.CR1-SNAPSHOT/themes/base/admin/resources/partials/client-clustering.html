@@ -1,0 +1,76 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/clients">{{:: 'clients' | translate}}</a></li>
+        <li>{{client.clientId}}</li>
+    </ol>
+
+    <kc-tabs-client></kc-tabs-client>
+
+    <form class="form-horizontal" name="clusteringForm" novalidate kc-read-only="!client.access.configure">
+        <legend><span class="text">{{:: 'basic-configuration' | translate}}</span></legend>
+        <fieldset >
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="nodeReRegistrationTimeout">{{:: 'node-reregistration-timeout' | translate}}</label>
+                <div class="col-sm-5">
+                    <div class="row">
+                        <div class="col-md-6 form-inline">
+                            <input class="form-control" type="number" required
+                                   max="31536000" data-ng-model="client.nodeReRegistrationTimeout"
+                                   id="nodeReRegistrationTimeout" name="nodeReRegistrationTimeout"/>
+                            <select class="form-control" name="nodeReRegistrationTimeoutUnit" data-ng-model="client.nodeReRegistrationTimeoutUnit" >
+                                <option data-ng-selected="!client.nodeReRegistrationTimeoutUnit" value="Seconds">{{:: 'seconds' | translate}}</option>
+                                <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                                <option value="Hours">{{:: 'hours' | translate}}</option>
+                                <option value="Days">{{:: 'days' | translate}}</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'node-reregistration-timeout.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group">
+                <div class="col-md-10 col-md-offset-2" data-ng-show="client.access.configure">
+                    <button data-kc-save data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
+                    <button data-kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
+                </div>
+            </div>
+        </fieldset>
+
+        <fieldset>
+            <legend><span class="text">{{:: 'registered-cluster-nodes' | translate}}</span></legend>
+            <table class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th class="kc-table-actions" colspan="5" data-ng-show="client.access.configure">
+                            <div class="pull-right">
+                                <a class="btn btn-default" tooltip="Manually register cluster node. This is usually not needed as cluster node should be registered automatically by adapter"
+                                   tooltip-trigger="mouseover mouseout" tooltip-placement="bottom" href="#/register-node/realms/{{realm.realm}}/clients/{{client.id}}/clustering">{{:: 'register-node-manually' | translate}}</a>
+                                <a class="btn btn-default" data-ng-click="testNodesAvailable()" data-ng-show="nodeRegistrations && nodeRegistrations.length > 0">{{:: 'test-cluster-availability' | translate}}</a>
+                            </div>
+                        </th>
+                    </tr>
+                    <tr data-ng-hide="!nodeRegistrations || nodeRegistrations.length == 0">
+                        <th>{{:: 'node-host' | translate}}</th>
+                        <th>{{:: 'last-registration' | translate}}</th>
+                        <th colspan="2">{{:: 'actions' | translate}}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="node in nodeRegistrations">
+                        <td><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/clustering/{{node.host}}">{{node.host}}</a></td>
+                        <td>{{node.lastRegistration}}</td>
+                        <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/clients/{{client.id}}/clustering/{{node.host}}">{{:: 'edit' | translate}}</td>
+                        <td class="kc-action-cell" data-ng-click="removeNode(node)">{{:: 'delete' | translate}}</td>
+                    </tr>
+                    <tr data-ng-show="!nodeRegistrations || nodeRegistrations.length == 0">
+                        <td class="text-muted">{{:: 'no-registered-cluster-nodes' | translate}}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </fieldset>
+    </form>
+</div>
+
+<kc-menu></kc-menu>

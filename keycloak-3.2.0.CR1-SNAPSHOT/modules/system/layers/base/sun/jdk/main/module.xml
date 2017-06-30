@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2010, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+<module xmlns="urn:jboss:module:1.5" name="sun.jdk">
+    <resources>
+        <!-- currently jboss modules has not way of importing services from
+        classes.jar so we duplicate them here -->
+        <resource-root path="service-loader-resources"/>
+    </resources>
+    <dependencies>
+        <module name="sun.scripting" export="true"/>
+        <system export="true">
+            <paths>
+                <path name="com/sun/image/codec/jpeg"/>
+                <path name="com/sun/imageio/plugins/bmp"/>
+                <path name="com/sun/imageio/plugins/common"/>
+                <path name="com/sun/imageio/plugins/gif"/>
+                <path name="com/sun/imageio/plugins/jpeg"/>
+                <path name="com/sun/imageio/plugins/png"/>
+                <path name="com/sun/imageio/plugins/wbmp"/>
+                <path name="com/sun/imageio/spi"/>
+                <path name="com/sun/imageio/stream"/>
+                <path name="com/sun/jndi/dns"/>
+                <path name="com/sun/jndi/ldap"/>
+                <path name="com/sun/jndi/ldap/ext"/>
+                <path name="com/sun/jndi/url"/>
+                <path name="com/sun/jndi/url/corbaname"/>
+                <path name="com/sun/jndi/url/dns"/>
+                <path name="com/sun/jndi/url/iiop"/>
+                <path name="com/sun/jndi/url/iiopname"/>
+                <path name="com/sun/jndi/url/ldap"/>
+                <path name="com/sun/jndi/url/ldaps"/>
+                <path name="com/sun/jndi/url/rmi"/>
+                <path name="com/sun/media/sound"/>
+                <path name="com/sun/crypto/provider"/>
+                <path name="com/sun/org/apache/bcel/internal/classfile"/>
+                <path name="com/sun/org/apache/xml/internal/security/transforms/implementations"/>
+                <path name="com/sun/rowset"/>
+                <path name="com/sun/rowset/providers"/>
+                <path name="com/sun/security/auth"/>
+                <path name="com/sun/security/auth/login"/>
+                <path name="com/sun/security/auth/module"/>
+                <path name="com/sun/tools/internal/xjc"/>
+                <path name="com/sun/security/jgss"/>
+                <path name="sun/awt"/>
+                <path name="sun/awt/color"/>
+                <path name="sun/awt/datatransfer"/>
+                <path name="sun/awt/dnd"/>
+                <path name="sun/awt/event"/>
+                <path name="sun/awt/geom"/>
+                <path name="sun/awt/im"/>
+                <path name="sun/awt/image"/>
+                <path name="sun/awt/image/codec"/>
+                <path name="sun/awt/motif"/>
+                <path name="sun/awt/resources"/>
+                <path name="sun/awt/shell"/>
+                <path name="sun/awt/util"/>
+                <path name="sun/awt/windows"/>
+                <path name="sun/awt/X11"/>
+                <path name="sun/dc"/>
+                <path name="sun/print"/>
+                <path name="sun/print/resources"/>
+                <path name="sun/security/action"/>
+                <path name="sun/security/pkcs"/>
+                <path name="sun/security/x509"/>
+                <path name="sun/jdbc/odbc"/>
+                <path name="sun/jdbc/odbc/ee"/>
+                <path name="sun/invoke"/>
+                <path name="sun/font"/>
+                <path name="sun/misc"/>
+                <path name="sun/io"/>
+                <path name="sun/net/spi/nameservice"/>
+                <path name="sun/net/spi/nameservice/dns"/>
+                <path name="sun/nio"/>
+                <path name="sun/nio/ch"/>
+                <path name="sun/nio/cs"/>
+                <path name="sun/nio/cs/ext"/>
+                <path name="sun/rmi/log"/>
+                <path name="sun/rmi/registry"/>
+                <path name="sun/rmi/runtime"/>
+                <path name="sun/rmi/server"/>
+                <path name="sun/rmi/transport"/>
+                <path name="sun/rmi/transport/proxy"/>
+                <path name="sun/rmi/transport/tcp"/>
+                <path name="sun/security"/>
+                <path name="sun/security/util"/>
+                <path name="sun/security/krb5"/>
+                <path name="sun/security/krb5/internal"/>
+                <path name="sun/util"/>
+                <path name="sun/util/calendar"/>
+                <path name="sun/util/locale"/>
+                <path name="sun/util/resources"/>
+                <path name="sun/security/pkcs11"/>
+                <path name="sun/security/provider"/>
+                <path name="sun/text"/>
+                <path name="META-INF/services"/>
+            </paths>
+            <exports>
+                <include-set>
+                    <path name="META-INF/services"/>
+                </include-set>
+            </exports>
+        </system>
+    </dependencies>
+</module>

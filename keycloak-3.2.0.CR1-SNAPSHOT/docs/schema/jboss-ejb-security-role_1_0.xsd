@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright (c) 2011, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="urn:security-role"
+           xmlns="urn:security-role"
+           xmlns:javaee="http://java.sun.com/xml/ns/javaee"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified"
+           version="1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://www.jboss.org/j2ee/schema/jboss-ejb3-spec-2_0.xsd">
+   <xs:import namespace="http://java.sun.com/xml/ns/javaee" schemaLocation="http://www.jboss.org/j2ee/schema/jboss-ejb3-spec-2_0.xsd"/>
+
+   <xs:element name="security-role" type="security-roleType" substitutionGroup="javaee:assembly-descriptor-entry"/>
+
+   <xs:complexType name="security-roleType">
+      <xs:annotation>
+         <xs:documentation> The security-role element contains the definition of a security role.
+            The definition consists of the security role name and principal name element(s). </xs:documentation>
+      </xs:annotation>
+      <xs:sequence>
+         <xs:element name="description"
+            type="javaee:descriptionType"
+            minOccurs="0"
+            maxOccurs="unbounded"/>
+         <xs:element name="role-name"
+            type="javaee:role-nameType"/>
+         <xs:element name="principal-name" type="principal-nameType" maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attribute name="id" type="xs:ID"/>
+   </xs:complexType>
+   
+   <xs:complexType name="principal-nameType">
+      <xs:annotation>
+         <xs:documentation> The principal-name element is the name of the principal that is mapped
+            to the assembly role-name. </xs:documentation>
+      </xs:annotation>
+      <xs:simpleContent>
+         <xs:restriction base="javaee:string"/>
+      </xs:simpleContent>
+   </xs:complexType>
+</xs:schema>

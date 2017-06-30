@@ -1,0 +1,566 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2014, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 2110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="urn:jboss:domain:undertow:3.1"
+           targetNamespace="urn:jboss:domain:undertow:3.1"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified"
+           version="1.0">
+    <!-- The undertow subsystem root element -->
+    <xs:element name="subsystem" type="undertow-subsystemType"/>
+
+    <xs:complexType name="undertow-subsystemType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                The configuration of the undertow subsystem.
+            ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="buffer-cache" type="buffer-cacheType" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="server" type="serverType" minOccurs="1" maxOccurs="unbounded"/>
+            <xs:element name="servlet-container" type="servletContainerType" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="handlers" type="handlerType" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="filters" type="filterType" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="default-server" type="xs:string" default="default-server"/>
+        <xs:attribute name="default-virtual-host" type="xs:string" default="default-host"/>
+        <xs:attribute name="default-servlet-container" type="xs:string" default="default"/>
+        <xs:attribute name="instance-id" type="xs:string" use="optional"/>
+        <xs:attribute name="default-security-domain" type="xs:string" use="optional" default="other"/>
+        <xs:attribute name="statistics-enabled" type="xs:boolean" default="false">
+          <xs:annotation>
+            <xs:documentation>Whether statistics are to be gathered for undertow subsystem.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="serverType">
+        <xs:sequence>
+            <xs:element name="ajp-listener" type="ajp-listener-type" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="http-listener" type="http-listener-type" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="https-listener" type="https-listener-type" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="host" type="hostType" minOccurs="1" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="name" use="required" type="xs:string"/>
+        <xs:attribute name="default-host" use="optional" type="xs:string" default="default-host"/>
+        <xs:attribute name="servlet-container" use="optional" type="xs:string" default="default"/>
+    </xs:complexType>
+
+    <xs:complexType name="socket-options-type">
+        <xs:attribute name="receive-buffer" type="xs:int"/>
+        <xs:attribute name="send-buffer" type="xs:int"/>
+        <xs:attribute name="tcp-backlog" type="xs:int" default="10000"/>
+        <xs:attribute name="tcp-keep-alive" type="xs:boolean"/>
+        <xs:attribute name="read-timeout" type="xs:long"/>
+        <xs:attribute name="write-timeout" type="xs:long"/>
+        <xs:attribute name="max-connections" type="xs:int"/>
+    </xs:complexType>
+
+    <xs:complexType name="listener-type">
+        <xs:complexContent>
+            <xs:extension base="socket-options-type">
+                <xs:attribute name="name" use="required" type="xs:string"/>
+                <xs:attribute name="socket-binding" use="required" type="xs:string"/>
+                <xs:attribute name="worker" type="xs:string" default="default"/>
+                <xs:attribute name="buffer-pool" type="xs:string" default="default"/>
+                <xs:attribute name="enabled" type="xs:boolean" default="true"/>
+                <xs:attribute name="resolve-peer-address" type="xs:boolean" default="false"/>
+                <xs:attribute name="max-post-size" type="xs:long" default="10485760"/>
+                <xs:attribute name="buffer-pipelined-data" type="xs:boolean" default="false"/>
+                <xs:attribute name="max-header-size" type="xs:long" default="1048576"/>
+                <xs:attribute name="max-parameters" type="xs:long" default="1000"/>
+                <xs:attribute name="max-headers" type="xs:long" default="200"/>
+                <xs:attribute name="max-cookies" type="xs:long" default="200"/>
+                <xs:attribute name="allow-encoded-slash" type="xs:boolean" default="false"/>
+                <xs:attribute name="decode-url" type="xs:boolean" default="true"/>
+                <xs:attribute name="url-charset" type="xs:string" default="UTF-8"/>
+                <xs:attribute name="always-set-keep-alive" type="xs:boolean" default="true"/>
+                <xs:attribute name="max-buffered-request-size" type="xs:long" default="16384"/>
+                <xs:attribute name="record-request-start-time" type="xs:boolean" default="false"/>
+                <xs:attribute name="allow-equals-in-cookie-value" type="xs:boolean" default="false"/>
+                <xs:attribute name="no-request-timeout" type="xs:int" default="60000"/>
+                <xs:attribute name="request-parse-timeout" type="xs:int"/>
+                <xs:attribute name="disallowed-methods" type="stringList" default="TRACE"/>
+                <xs:attribute name="secure" type="xs:boolean" default="false"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="http-listener-type">
+        <xs:complexContent>
+            <xs:extension base="listener-type">
+                <xs:attribute name="certificate-forwarding" use="optional" type="xs:string">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[
+                                If certificate forwarding should be enabled. If this is enabled then the listener will take the certificate from the SSL_CLIENT_CERT
+                                attribute. This should only be enabled if behind a proxy, and the proxy is configured to always set these headers.
+                               ]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="redirect-socket" use="optional" type="xs:string">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[
+                                If this listener is supporting non-SSL requests, and a request is received for which a matching <security-constraint> requires SSL transport,
+                                undertow will automatically redirect the request to the socket binding port specified here.
+                               ]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="proxy-address-forwarding" use="optional" type="xs:string">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[
+                              enables x-forwarded-host and similar headers and set a remote ip address and hostname
+                               ]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="enable-http2" use="optional" type="xs:string">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[
+                              Enables HTTP2 upgrade and prior knowledge connections
+                               ]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="http2-enable-push" type="xs:boolean" use="optional" />
+                <xs:attribute name="http2-header-table-size" type="xs:int" use="optional" />
+                <xs:attribute name="http2-initial-window-size" type="xs:int" use="optional" />
+                <xs:attribute name="http2-max-concurrent-streams" type="xs:int" use="optional" />
+                <xs:attribute name="http2-max-frame-size" type="xs:int" use="optional" />
+                <xs:attribute name="http2-max-header-list-size" type="xs:int" use="optional" />
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="https-listener-type">
+        <xs:complexContent>
+            <xs:extension base="listener-type">
+                <xs:attribute name="security-realm" use="required" type="xs:string"/>
+                <xs:attribute name="verify-client" use="optional" type="xs:string"/>
+                <xs:attribute name="enabled-cipher-suites" use="optional" type="xs:string"/>
+                <xs:attribute name="enabled-protocols" use="optional" type="xs:string"/>
+                <xs:attribute name="enable-http2" use="optional" type="xs:string"/>
+                <xs:attribute name="enable-spdy" use="optional" type="xs:string"/>
+                <xs:attribute name="ssl-session-cache-size" use="optional" type="xs:string"/>
+                <xs:attribute name="ssl-session-timeout" use="optional" type="xs:string"/>
+                <xs:attribute name="http2-enable-push" type="xs:boolean" use="optional" />
+                <xs:attribute name="http2-header-table-size" type="xs:int" use="optional" />
+                <xs:attribute name="http2-initial-window-size" type="xs:int" use="optional" />
+                <xs:attribute name="http2-max-concurrent-streams" type="xs:int" use="optional" />
+                <xs:attribute name="http2-max-frame-size" type="xs:int" use="optional" />
+                <xs:attribute name="http2-max-header-list-size" type="xs:int" use="optional" />
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="ajp-listener-type">
+        <xs:complexContent>
+            <xs:extension base="listener-type">
+                <xs:attribute name="scheme" type="xs:string"/>
+                <xs:attribute name="redirect-socket" use="optional" type="xs:string">
+                    <xs:annotation>
+                        <xs:documentation>
+                            <![CDATA[
+                                                If this listener is supporting non-SSL requests, and a request is received for which a matching <security-constraint> requires SSL transport,
+                                                undertow will automatically redirect the request to the socket binding port specified here.
+                                               ]]>
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="max-ajp-packet-size" type="xs:int"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="servletContainerType">
+        <xs:sequence>
+            <xs:element name="jsp-config" type="jsp-configurationType" maxOccurs="1" minOccurs="0"/>
+            <xs:element name="session-cookie" type="session-cookieType" maxOccurs="1" minOccurs="0"/>
+            <xs:element name="persistent-sessions" type="persistent-sessionsType" maxOccurs="1" minOccurs="0"/>
+            <xs:element name="websockets" type="websocketsType" maxOccurs="1" minOccurs="0" />
+            <xs:element name="mime-mappings" type="mime-mappingsType" maxOccurs="1" minOccurs="0" />
+            <xs:element name="welcome-files" type="welcome-filesType" maxOccurs="1" minOccurs="0" />
+            <xs:element name="crawler-session-management" type="crawler-session-managementType" maxOccurs="1" minOccurs="0" />
+        </xs:sequence>
+        <xs:attribute name="name" use="required" type="xs:string"/>
+        <xs:attribute name="allow-non-standard-wrappers" use="optional" type="xs:boolean" default="false"/>
+        <xs:attribute name="default-buffer-cache" use="optional" type="xs:string"/>
+        <xs:attribute name="stack-trace-on-error" use="optional" default="local-only"/>
+        <xs:attribute name="default-encoding" type="xs:string" use="optional"/>
+        <xs:attribute name="use-listener-encoding" type="xs:boolean" use="optional" default="false"/>
+        <xs:attribute name="ignore-flush" type="xs:boolean" use="optional" default="false"/>
+        <xs:attribute name="eager-filter-initialization" type="xs:boolean" use="optional" default="false"/>
+        <xs:attribute name="default-session-timeout" type="xs:integer" use="optional" default="30"/>
+        <xs:attribute name="disable-caching-for-secured-pages" type="xs:boolean" use="optional" default="true"/>
+        <xs:attribute name="directory-listing" type="xs:boolean" use="optional" />
+        <xs:attribute name="proactive-authentication" type="xs:string" use="optional" default="false" />
+        <xs:attribute name="session-id-length" type="xs:int" use="optional" default="30" />
+        <xs:attribute name="max-sessions" type="xs:int" use="optional" />
+    </xs:complexType>
+
+    <xs:complexType name="mime-mappingsType">
+        <xs:sequence>
+            <xs:element name="mime-mapping" type="mime-mappingType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="mime-mappingType">
+        <xs:attribute name="name" use="required" type="xs:string"/>
+        <xs:attribute name="value" use="required" type="xs:string"/>
+    </xs:complexType>
+
+    <xs:complexType name="welcome-filesType">
+        <xs:sequence>
+            <xs:element name="welcome-file" type="welcome-fileType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="welcome-fileType">
+        <xs:attribute name="name" use="required" type="xs:string"/>
+    </xs:complexType>
+
+    <xs:complexType name="hostType">
+        <xs:sequence>
+            <xs:element name="location" type="locationType" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="access-log" type="accessLogType" maxOccurs="1" minOccurs="0"/>
+            <xs:element name="filter-ref" type="filter-refType" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="single-sign-on" minOccurs="0" maxOccurs="1" type="singleSignOnType"/>
+        </xs:sequence>
+        <xs:attribute name="name" use="required" type="xs:string"/>
+        <xs:attribute name="alias" use="optional" type="xs:string"/>
+        <xs:attribute name="default-web-module" use="optional" type="xs:string" default="ROOT.war"/>
+        <xs:attribute name="default-response-code" use="optional" type="xs:int" default="404">
+            <xs:annotation>
+                <xs:documentation>Default response code should be set in case server should respond with nonstandard code( other than 404 ) for unavailable resource.
+                    For instance, server behind load balancer might want to respond with 5xx code to avoid being dropped by it.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="disable-console-redirect" use="optional" type="xs:boolean" default="false"/>
+    </xs:complexType>
+
+    <xs:complexType name="websocketsType">
+        <xs:attribute name="worker" use="optional" type="xs:string" default="default"/>
+        <xs:attribute name="buffer-pool" use="optional" type="xs:string" default="default"/>
+        <xs:attribute name="dispatch-to-worker" use="optional" type="xs:boolean" default="true"/>
+    </xs:complexType>
+
+    <xs:complexType name="crawler-session-managementType">
+        <xs:attribute name="user-agents" use="optional" type="xs:string"/>
+        <xs:attribute name="session-timeout" use="optional" type="xs:integer"/>
+    </xs:complexType>
+
+    <xs:complexType name="jsp-configurationType">
+        <xs:attribute name="disabled" default="false" type="xs:boolean"/>
+        <xs:attribute name="development" default="false" type="xs:boolean"/>
+        <xs:attribute name="keep-generated" default="true" type="xs:boolean"/>
+        <xs:attribute name="trim-spaces" default="false" type="xs:boolean"/>
+        <xs:attribute name="tag-pooling" default="true" type="xs:boolean"/>
+        <xs:attribute name="mapped-file" default="true" type="xs:boolean"/>
+        <xs:attribute name="check-interval" default="0" type="xs:int"/>
+        <xs:attribute name="modification-test-interval" default="4" type="xs:int"/>
+        <xs:attribute name="recompile-on-fail" default="false" type="xs:boolean"/>
+        <xs:attribute name="smap" default="true" type="xs:boolean"/>
+        <xs:attribute name="dump-smap" default="false" type="xs:boolean"/>
+        <xs:attribute name="generate-strings-as-char-arrays" default="false" type="xs:boolean"/>
+        <xs:attribute name="error-on-use-bean-invalid-class-attribute" default="false" type="xs:boolean"/>
+        <xs:attribute name="scratch-dir" type="xs:string"/>
+        <xs:attribute name="source-vm" default="1.8" type="xs:string"/>
+        <xs:attribute name="target-vm" default="1.8" type="xs:string"/>
+        <xs:attribute name="java-encoding" default="UTF8" type="xs:string"/>
+        <xs:attribute name="x-powered-by" default="true" type="xs:boolean"/>
+        <xs:attribute name="display-source-fragment" default="true" type="xs:boolean"/>
+        <xs:attribute name="optimize-scriptlets" default="false" type="xs:string" />
+    </xs:complexType>
+
+    <xs:complexType name="session-cookieType">
+        <xs:attribute name="name" type="xs:string"/>
+        <xs:attribute name="domain" type="xs:string"/>
+        <xs:attribute name="comment" type="xs:string"/>
+        <xs:attribute name="http-only" type="xs:boolean"/>
+        <xs:attribute name="secure" type="xs:boolean"/>
+        <xs:attribute name="max-age" type="xs:int"/>
+    </xs:complexType>
+
+    <xs:complexType name="persistent-sessionsType">
+        <xs:attribute name="path" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                  The path to store the session data. If not specified the data will just be stored in memory only.
+                ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="relative-to" type="xs:string" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="handlerType">
+        <xs:sequence>
+            <xs:element name="file" type="file-handlerType" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="reverse-proxy" type="reverse-proxy-handlerType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+
+    <xs:complexType name="filterType">
+        <xs:sequence>
+            <xs:element name="request-limit" type="request-limitType" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="response-header" type="response-headerType" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="gzip" type="gzipType" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="error-page" type="errorPageType" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="mod-cluster" type="modClusterType" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="filter" type="customFilterType" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="expression-filter" type="expressionFilterType" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="rewrite" type="rewriteFilterType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="locationType">
+        <xs:sequence>
+            <xs:element name="filter-ref" type="filter-refType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="name" use="required" type="xs:string"/>
+        <xs:attribute name="handler" use="required" type="xs:string"/>
+    </xs:complexType>
+    <xs:complexType name="accessLogType">
+        <xs:attribute name="pattern" use="optional" type="xs:string" default="common"/>
+        <xs:attribute name="worker" use="optional" type="xs:string" default="default"/>
+        <xs:attribute name="directory" use="optional" type="xs:string" default="${jboss.server.log.dir}"/>
+        <xs:attribute name="relative-to" use="optional" type="xs:string" />
+        <xs:attribute name="prefix" use="optional" type="xs:string" default="access_log."/>
+        <xs:attribute name="suffix" use="optional" type="xs:string" default="log"/>
+        <xs:attribute name="rotate" use="optional" type="xs:string" default="true"/>
+        <xs:attribute name="use-server-log" use="optional" type="xs:string" default="false"/>
+        <xs:attribute name="extended" use="optional" type="xs:string" default="false" />
+        <xs:attribute name="predicate" use="optional" type="xs:string" />
+    </xs:complexType>
+    <xs:complexType name="errorPageType">
+        <xs:attribute name="name" use="required" type="xs:string"/>
+        <xs:attribute name="code" use="required" type="xs:string"/>
+        <xs:attribute name="path" use="required" type="xs:string"/>
+    </xs:complexType>
+
+    <xs:complexType name="paramType">
+        <xs:attribute name="name" use="required" type="xs:string"/>
+        <xs:attribute name="value" use="required" type="xs:string"/>
+    </xs:complexType>
+
+
+
+    <xs:complexType name="customFilterType">
+        <xs:sequence>
+            <xs:element name="param" type="paramType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="name" use="required" type="xs:string"/>
+        <xs:attribute name="class-name" use="required" type="xs:string"/>
+        <xs:attribute name="module" use="required" type="xs:string"/>
+    </xs:complexType>
+    <xs:complexType name="expressionFilterType">
+        <xs:attribute name="name" use="required" type="xs:string"/>
+        <xs:attribute name="expression" use="required" type="xs:string"/>
+        <xs:attribute name="module" use="optional" type="xs:string"/>
+    </xs:complexType>
+    <xs:complexType name="rewriteFilterType">
+        <xs:attribute name="name" use="required" type="xs:string"/>
+        <xs:attribute name="target" use="required" type="xs:string"/>
+        <xs:attribute name="redirect" use="optional" type="xs:string"/>
+    </xs:complexType>
+    <xs:complexType name="file-handlerType">
+        <xs:attribute name="name" use="required" type="xs:string"/>
+        <xs:attribute name="path" use="required" type="xs:string"/>
+        <xs:attribute name="cache-buffer-size" use="optional" type="xs:int" default="1024"/>
+        <xs:attribute name="cache-buffers" use="optional" type="xs:int" default="1024"/>
+        <xs:attribute name="directory-listing" use="optional" type="xs:boolean" default="false"/>
+        <xs:attribute name="follow-symlink" use="optional" type="xs:boolean" default="false"/>
+        <xs:attribute name="safe-symlink-paths" use="optional" type="stringList"/>
+        <xs:attribute name="case-sensitive" use="optional" type="xs:boolean" default="true"/>
+    </xs:complexType>
+
+    <xs:simpleType name="stringList">
+        <xs:list itemType="xs:string"/>
+    </xs:simpleType>
+
+    <xs:complexType name="reverse-proxy-handlerType">
+        <xs:sequence>
+            <xs:element name="host" type="reverse-proxy-hostType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="name" use="required" type="xs:string"/>
+        <xs:attribute name="connections-per-thread" use="optional" type="xs:integer"/>
+        <xs:attribute name="session-cookie-names" use="optional" type="xs:string"/>
+        <xs:attribute name="problem-server-retry" use="optional" type="xs:integer"/>
+        <xs:attribute name="max-request-time" use="optional" type="xs:integer"/>
+        <xs:attribute name="request-queue-size" use="optional" type="xs:integer"/>
+        <xs:attribute name="cached-connections-per-thread" use="optional" type="xs:integer"/>
+        <xs:attribute name="connection-idle-timeout" use="optional" type="xs:integer"/>
+    </xs:complexType>
+
+    <xs:complexType name="reverse-proxy-hostType">
+        <xs:attribute name="name" use="required" type="xs:string"/>
+        <xs:attribute name="outbound-socket-binding" use="required" type="xs:string"/>
+        <xs:attribute name="scheme" use="optional" type="xs:string" default="http"/>
+        <xs:attribute name="path" use="optional" type="xs:string" default=""/>
+        <xs:attribute name="instance-id" use="optional" type="xs:string"/>
+        <xs:attribute name="security-realm" type="xs:string" use="optional" />
+    </xs:complexType>
+
+    <xs:complexType name="filter-refType">
+        <xs:attribute name="name" use="required" type="xs:string"/>
+        <xs:attribute name="predicate" use="optional" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                          Predicates provide a simple way of making a true/false decision  based on an exchange. Many handlers have a requirement that they be applied conditionally, and predicates provide a general way to specify a condition. Predicates can be created programatically (they are just java classes that implement the Predicate interface), however there is also a simple language for specifying a predicate. Some examples below:
+                          regex['/resources/*.\.css'] - regular expression match of the relative URL
+                          regex[pattern='text/.*', value='%{i,Content-Type}, full-match=true] - Matches requests with a text/.* content type
+                          equals[{'%{i,Content-Type}', 'text/xml'}] - Matches if the content type header is text/xml
+                          contains[search='MSIE', value='%{i,User-Agent}'] and path-suffix['.js'] - User agent contains MSIE and request URL ends with .js
+                          regex['/resources/(*.)\.css'] and equals[{'$1', 'myCssFile'}] - regex match, with a reference to match group 1 later in the expression
+                        ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="priority" use="optional" type="xs:string" />
+    </xs:complexType>
+
+    <xs:complexType name="singleSignOnType">
+        <xs:attribute name="domain" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                              Cookie domain to use.
+                              ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="path" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                              Cookie path to use.
+                              ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="http-only" type="xs:boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                              Cookie httpOnly attribute
+                              ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="secure" type="xs:boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                              Cookie secure attribute
+                              ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="cookie-name" type="xs:string" default="JSESSIONIDSSO">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                              Cooke name
+                              ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+
+    <xs:complexType name="buffer-cacheType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                  A buffer cache. I cache consists of 1 or more regions, that are split up into smaller buffers.
+                  The total cache size is the buffer size * the buffers per region * the number of regions.
+                ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="name" use="required" type="xs:string"/>
+        <xs:attribute name="buffer-size" use="optional" type="xs:string"/>
+        <xs:attribute name="buffers-per-region" use="optional" type="xs:string"/>
+        <xs:attribute name="max-regions" use="optional" type="xs:string"/>
+    </xs:complexType>
+
+    <xs:complexType name="basic-authType">
+        <xs:attribute name="name" use="required" type="xs:string"/>
+        <xs:attribute name="security-domain" use="required" type="xs:string"/>
+
+    </xs:complexType>
+    <xs:complexType name="request-limitType">
+        <xs:attribute name="name" use="required" type="xs:string"/>
+        <xs:attribute name="max-concurrent-requests" use="required" type="xs:integer"/>
+        <xs:attribute name="queue-size" use="optional" type="xs:integer"/>
+    </xs:complexType>
+    <xs:complexType name="response-headerType">
+        <xs:attribute name="name" use="required" type="xs:string"/>
+        <xs:attribute name="header-name" use="required" type="xs:string"/>
+        <xs:attribute name="header-value" use="required" type="xs:string"/>
+    </xs:complexType>
+
+    <xs:complexType name="gzipType">
+        <xs:attribute name="name" use="required" type="xs:string"/>
+    </xs:complexType>
+
+    <xs:complexType name="modClusterType">
+        <xs:attribute name="name" use="required" type="xs:string"/>
+        <xs:attribute name="management-socket-binding" type="xs:string" use="required"/>
+        <xs:attribute name="advertise-socket-binding" type="xs:string" use="required"/>
+        <xs:attribute name="security-key" type="xs:string" use="optional"/>
+        <xs:attribute name="advertise-protocol" type="xs:string" use="optional"/>
+        <xs:attribute name="advertise-path" type="xs:string" use="optional"/>
+        <xs:attribute name="advertise-frequency" type="xs:int" use="optional"/>
+        <xs:attribute name="health-check-interval" type="xs:int" use="optional"/>
+        <xs:attribute name="broken-node-timeout" type="xs:int" use="optional"/>
+        <xs:attribute name="worker" type="xs:string" use="optional" />
+        <xs:attribute name="max-request-time" type="xs:int" use="optional"/>
+        <xs:attribute name="management-access-predicate" type="xs:string" use="optional"/>
+        <xs:attribute name="connections-per-thread" type="xs:int" use="optional" />
+        <xs:attribute name="cached-connections-per-thread" type="xs:int" use="optional" />
+        <xs:attribute name="connection-idle-timeout" type="xs:int" use="optional" />
+        <xs:attribute name="request-queue-size" type="xs:int" use="optional" />
+        <xs:attribute name="security-realm" type="xs:string" use="optional" />
+        <xs:attribute name="use-alias" type="xs:string" use="optional" default="false" />
+        <xs:attribute name="enable-http2" type="xs:string" use="optional" default="false" />
+        <xs:attribute name="max-ajp-packet-size" type="xs:int" use="optional" />
+        <xs:attribute name="http2-enable-push" type="xs:boolean" use="optional" />
+        <xs:attribute name="http2-header-table-size" type="xs:int" use="optional" />
+        <xs:attribute name="http2-initial-window-size" type="xs:int" use="optional" />
+        <xs:attribute name="http2-max-concurrent-streams" type="xs:int" use="optional" />
+        <xs:attribute name="http2-max-frame-size" type="xs:int" use="optional" />
+        <xs:attribute name="http2-max-header-list-size" type="xs:int" use="optional" />
+    </xs:complexType>
+</xs:schema>

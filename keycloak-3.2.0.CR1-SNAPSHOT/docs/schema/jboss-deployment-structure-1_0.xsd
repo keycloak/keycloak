@@ -1,0 +1,581 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2011, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            targetNamespace="urn:jboss:deployment-structure:1.0"
+            xmlns="urn:jboss:deployment-structure:1.0"
+            elementFormDefault="qualified"
+            attributeFormDefault="unqualified"
+            version="1.0">
+
+    <!-- Root element -->
+    <xsd:element name="jboss-deployment-structure" type="jbossStructureType">
+        <xsd:annotation>
+            <xsd:documentation>
+                Root element for a jboss-structure file.
+            </xsd:documentation>
+        </xsd:annotation>
+    </xsd:element>
+
+    <xsd:complexType name="jbossStructureType">
+        <xsd:annotation>
+            <xsd:documentation>
+                The jboss structure declaration type; contains deployments and additional modules.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence>
+            <xsd:element name="ear-subdeployments-isolated" type="xsd:boolean" minOccurs="0" maxOccurs="1" >
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                    Flag indicating whether each of the subdeployments within a .ear can access classes belonging to
+                    another subdeployment within the same .ear. Setting this to false, allows the subdeployments to
+                    see classes belonging to other subdeployments within the .ear.
+                    For example:
+                    myapp.ear
+                     |
+                     |--- web.war
+                     |
+                     |--- ejb1.jar
+                     |
+                     |--- ejb2.jar
+
+                    If the ear-subdeployments-isolated is set to false, then the classes in web.war can access classes
+                    belonging to ejb1.jar and ejb2.jar. Similarly, classes from ejb1.jar can access classes from ejb2.jar
+                    (and vice-versa).
+
+                    *Note that this flag, has no effect on the isolated classloader of the .war file(s). i.e. irrespective
+                    of whether this flag is set to true or false, the .war within a .ear will have a isolated classloader
+                    and other subdeployments within that .ear will not be able to access classes from that .war. This is
+                    as per spec*
+                    </documentation>
+                </annotation>
+            </xsd:element>
+            <xsd:element name="deployment" type="deploymentType" minOccurs="0" maxOccurs="1" >
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        Element that corresponds to a deployment. This is used to customise
+                        class loading for a deployment or a sub deployment.
+                    </documentation>
+                </annotation>
+            </xsd:element>
+            <xsd:element name="sub-deployment" type="subDeploymentType" minOccurs="0" maxOccurs="unbounded" >
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        Element that corresponds to a deployment. This is used to customise
+                        class loading for a deployment or a sub deployment.
+                    </documentation>
+                </annotation>
+            </xsd:element>
+            <xsd:element name="module" type="moduleType" minOccurs="0" maxOccurs="unbounded" >
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        Additional module declaration. This can be used to create additional modules
+                        from resource roots inside or outside the deployment.
+                    </documentation>
+                </annotation>
+            </xsd:element>
+        </xsd:sequence>
+
+    </xsd:complexType>
+
+    <xsd:complexType name="deploymentType">
+        <xsd:annotation>
+            <xsd:documentation>
+                The declaration type; contains additional dependencies and resources.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:all>
+            <xsd:element name="exports" type="filterType" minOccurs="0">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        Lists filter expressions to apply to the export filter of the local resources of this module
+                        (optional). By default, everything is exported. If filter expressions are provided, the default
+                        action is to accept all paths if no filters match.
+                    </documentation>
+                </annotation>
+            </xsd:element>
+            <xsd:element name="dependencies" type="dependenciesType" minOccurs="0">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        Lists the dependencies of this module (optional).
+                    </documentation>
+                </annotation>
+            </xsd:element>
+            <xsd:element name="exclusions" type="exclusionsType" minOccurs="0">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        Lists the excluded module dependencies.
+                    </documentation>
+                </annotation>
+            </xsd:element>
+            <xsd:element name="resources" type="resourcesType" minOccurs="0">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        Lists the resource roots of this module (optional).
+                    </documentation>
+                </annotation>
+            </xsd:element>
+            <xsd:element name="transformers" type="transformerSetType" minOccurs="0">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        Lists the class file transformers that should be applied for classes loaded by this module.
+                    </documentation>
+                </annotation>
+            </xsd:element>
+        </xsd:all>
+    </xsd:complexType>
+
+    <xsd:complexType name="subDeploymentType">
+        <xsd:complexContent>
+            <xsd:extension base="deploymentType">
+                <xsd:attribute name="name" type="xsd:string" use="required">
+                   <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                      <documentation>
+                            The deployment name.
+                        </documentation>
+                    </annotation>
+                </xsd:attribute>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+
+    <xsd:complexType name="moduleType">
+        <xsd:annotation>
+            <xsd:documentation>
+                The module declaration type; contains dependencies and resources.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:all>
+            <xsd:element name="exports" type="filterType" minOccurs="0">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        Lists filter expressions to apply to the export filter of the local resources of this module
+                        (optional). By default, everything is exported. If filter expressions are provided, the default
+                        action is to accept all paths if no filters match.
+                    </documentation>
+                </annotation>
+            </xsd:element>
+            <xsd:element name="dependencies" type="dependenciesType" minOccurs="0">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        Lists the dependencies of this module (optional).
+                    </documentation>
+                </annotation>
+            </xsd:element>
+            <xsd:element name="resources" type="resourcesType" minOccurs="0">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        Lists the resource roots of this module (optional).
+                    </documentation>
+                </annotation>
+            </xsd:element>
+        </xsd:all>
+        <xsd:attribute name="name" type="moduleNameType" use="required">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The name of this module (required).
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+        <xsd:attribute name="slot" type="moduleSlotType" use="optional">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The version slot of this module (optional).
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:simpleType name="moduleNameType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                A module name, which consists of one or more dot (.)-separated segments. Each segment must begin and end
+                with an alphanumeric or underscore (_), and may otherwise contain alphanumerics, underscores, and hyphens
+                (-).
+            </documentation>
+        </annotation>
+        <xsd:restriction base="xsd:string">
+            <xsd:pattern value="[a-zA-Z0-9_]([-a-zA-Z0-9_]*[a-zA-Z0-9_])?(\.[a-zA-Z0-9_]([-a-zA-Z0-9_]*[a-zA-Z0-9_])?)*"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="moduleSlotType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                A module version slot. A slot may consist of one or more alphanumerics, hyphens (-), underscores (_),
+                plus signs (+), asterisks (*), or dots (.).
+            </documentation>
+        </annotation>
+        <xsd:restriction base="xsd:string">
+            <xsd:pattern value="[-a-zA-Z0-9_+*.]+"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="dependenciesType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                A list of zero or more module dependencies.
+            </documentation>
+        </annotation>
+        <xsd:choice minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="module" type="moduleDependencyType">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        A specified module dependency.
+                    </documentation>
+                </annotation>
+            </xsd:element>
+        </xsd:choice>
+    </xsd:complexType>
+
+    <xsd:complexType name="moduleDependencyType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                A single module dependency expression.
+            </documentation>
+        </annotation>
+        <xsd:choice minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="exports" type="filterType">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        A filter used to restrict what packages or directories from this dependency are re-exported by
+                        this module. See also the "export" and "services" attributes. The default action of this filter
+                        list is controlled by the value of the "export" attribute. Regardless of the setting of these
+                        attributes, this filter always behaves as if it has a final entry which rejects META-INF and
+                        all of its subdirectories.
+                    </documentation>
+                </annotation>
+            </xsd:element>
+            <xsd:element name="imports" type="filterType">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        A filter used to restrict what packages or directories from this dependency are visible to this
+                        module. See also the "services" attribute. The default action of this filter list is to reject
+                        a path if not matched.
+                    </documentation>
+                </annotation>
+            </xsd:element>
+        </xsd:choice>
+        <xsd:attribute name="name" type="moduleNameType" use="required">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The dependency module name (required).
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+        <xsd:attribute name="slot" type="moduleSlotType" use="optional">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The dependency module version slot (optional).
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+        <xsd:attribute name="export" type="xsd:boolean" use="optional" default="false">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    Specifies whether this module dependency is re-exported by default (default is "false"). Setting
+                    this attribute to true sets the default action for the export filter list to "accept"; leaving it
+                    as false sets the default action to "reject".  Thus you can still export dependency resources even
+                    if this attribute is false by listing explicit paths for the export list.
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+        <xsd:attribute name="services" type="serviceDispositionType" use="optional" default="none">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    Specifies whether and how services found in this dependency are used (default is "none"). Specifying
+                    a value of "import" for this attribute is equivalent to adding a filter at the end of the import
+                    filter list which includes the META-INF/services path from the dependency module.  Setting a value
+                    of "export" for this attribute is equivalent to the same action on the export filter list.
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+        <xsd:attribute name="optional" type="xsd:boolean" use="optional" default="false">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    Specifies whether this dependency is optional (defaults to false). An optional dependency will not
+                    cause the module to fail to load if not found; however if the module is added later, it will not be
+                    retroactively linked into this module's dependency list.
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="exclusionsType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                A list of zero or more excluded module dependencies.
+            </documentation>
+        </annotation>
+        <xsd:choice minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="module" type="moduleExclusionType">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        A specified module exclusion.
+                    </documentation>
+                </annotation>
+            </xsd:element>
+        </xsd:choice>
+    </xsd:complexType>
+
+    <xsd:complexType name="moduleExclusionType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                A single module dependency exclusion.
+            </documentation>
+        </annotation>
+        <xsd:attribute name="name" type="moduleNameType" use="required">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The excluded module name (required).
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+        <xsd:attribute name="slot" type="moduleSlotType" use="optional">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The excluded module version slot (optional).
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:simpleType name="serviceDispositionType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                The requested behavior for service handling on a dependency.
+            </documentation>
+        </annotation>
+        <xsd:restriction base="xsd:token">
+            <xsd:enumeration value="none">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        Do not import or export services from this dependency.
+                    </documentation>
+                </annotation>
+            </xsd:enumeration>
+            <xsd:enumeration value="import">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        Import, but do not re-export, services from this dependency.
+                    </documentation>
+                </annotation>
+            </xsd:enumeration>
+            <xsd:enumeration value="export">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        Import and re-export services found in this dependency.
+                    </documentation>
+                </annotation>
+            </xsd:enumeration>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="classNameType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                A class name.
+            </documentation>
+        </annotation>
+        <xsd:attribute name="name" type="xsd:string" use="required">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The class name.
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="pathType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                A filesystem path name.
+            </documentation>
+        </annotation>
+        <xsd:attribute name="name" type="xsd:string" use="required">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The path name.
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="resourcesType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                A list of zero or more resource roots for this deployment.
+            </documentation>
+        </annotation>
+        <xsd:choice minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="resource-root" type="resourceType">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        A resource root within this deployment.
+                    </documentation>
+                </annotation>
+            </xsd:element>
+        </xsd:choice>
+    </xsd:complexType>
+
+    <xsd:complexType name="resourceType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                A resource root within a deployment.
+            </documentation>
+        </annotation>
+        <xsd:all>
+            <xsd:element name="filter" type="filterType" minOccurs="0">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        A path filter specification for this resource root (optional). By default all paths are accepted.
+                    </documentation>
+                </annotation>
+            </xsd:element>
+        </xsd:all>
+        <xsd:attribute name="name" type="xsd:string" use="optional">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The name of this resource root (optional). If not specified, defaults to the value of the path
+                    attribute.
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+        <xsd:attribute name="path" type="xsd:string" use="required">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The path of this resource root, relative to the path in which the module.xml file is found.
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="filterType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                A filter specification, consisting of zero or more filter items.
+            </documentation>
+        </annotation>
+        <xsd:choice minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="include" type="pathSpecType" minOccurs="0">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        A path to include. The path value can be a path name or a "glob" which may include the special
+                        wildcards "*", "**", and "?".
+                    </documentation>
+                </annotation>
+            </xsd:element>
+            <xsd:element name="exclude" type="pathSpecType" minOccurs="0">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        A path to exclude. The path value can be a path name or a "glob" which may include the special
+                        wildcards "*", "**", and "?".
+                    </documentation>
+                </annotation>
+            </xsd:element>
+            <xsd:element name="include-set" type="pathSetType" minOccurs="0">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        A set of literal path names to include. Wildcards are not supported.
+                    </documentation>
+                </annotation>
+            </xsd:element>
+            <xsd:element name="exclude-set" type="pathSetType" minOccurs="0">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        A set of literal path names to exclude. Wildcards are not supported.
+                    </documentation>
+                </annotation>
+            </xsd:element>
+        </xsd:choice>
+    </xsd:complexType>
+
+    <xsd:complexType name="pathSpecType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                A path specification type, which may include wildcards.
+            </documentation>
+        </annotation>
+        <xsd:attribute name="path" type="xsd:string" use="required">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The path name, which can be a literal path name or it may include the special wildcards "*", "**",
+                    and "?".
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="pathSetType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                A set of literal path names which can be used for efficient matching against multiple possible values.
+            </documentation>
+        </annotation>
+        <xsd:choice minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="path" type="pathType" minOccurs="0">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        The path name to include in the set.
+                    </documentation>
+                </annotation>
+            </xsd:element>
+        </xsd:choice>
+    </xsd:complexType>
+
+    <xsd:complexType name="transformerSetType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                A list of java.lang.instrument.ClassFileTransformer implementations that will be applied at classloading
+            </documentation>
+        </annotation>
+        <xsd:choice minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="transformer" type="transformerType">
+                 <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        The transformer class to include in the set.
+                    </documentation>
+                </annotation>
+            </xsd:element>
+        </xsd:choice>
+    </xsd:complexType>
+
+    <xsd:complexType name="transformerType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                A java.lang.instrument.ClassFileTransformer that will be applied at classloading
+            </documentation>
+        </annotation>
+        <xsd:attribute name="class" type="xsd:string" use="required">
+           <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The class name of the transformer
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+</xsd:schema>
+

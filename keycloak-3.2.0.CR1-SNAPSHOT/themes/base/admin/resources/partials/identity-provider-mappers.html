@@ -1,0 +1,49 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/identity-provider-settings">{{:: 'identity-providers' | translate}}</a></li>
+        <li data-ng-show="identityProvider.displayName"><a href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}">{{identityProvider.displayName}}</a></li>
+        <li data-ng-show="!identityProvider.displayName"><a href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}">{{identityProvider.alias}}</a></li>
+        <li>{{:: 'mappers' | translate}}</li>
+    </ol>
+
+    <kc-tabs-identity-provider></kc-tabs-identity-provider>
+
+    <table class="table table-striped table-bordered">
+        <thead>
+        <tr>
+            <th class="kc-table-actions" colspan="4">
+                <div class="form-inline">
+                    <div class="form-group">
+                        <div class="input-group">
+                            <input type="text" placeholder="{{:: 'search.placeholder' | translate}}" data-ng-model="search.name" class="form-control search" onkeyup="if(event.keyCode == 13){$(this).next('I').click();}">
+                            <div class="input-group-addon">
+                                <i class="fa fa-search" type="submit"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="pull-right" data-ng-show="access.manageIdentityProviders">
+                        <a class="btn btn-primary" href="#/create/identity-provider-mappers/{{realm.realm}}/{{identityProvider.alias}}">{{:: 'create' | translate}}</a>
+                    </div>
+                </div>
+            </th>
+        </tr>
+        <tr data-ng-hide="mappers.length == 0">
+            <th>{{:: 'name' | translate}}</th>
+            <th>{{:: 'category' | translate}}</th>
+            <th>{{:: 'type' | translate}}</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr ng-repeat="mapper in mappers | filter:search">
+            <td><a href="#/realms/{{realm.realm}}/identity-provider-mappers/{{identityProvider.alias}}/mappers/{{mapper.id}}">{{mapper.name}}</a></td>
+            <td>{{mapperTypes[mapper.identityProviderMapper].category}}</td>
+            <td>{{mapperTypes[mapper.identityProviderMapper].name}}</td>
+        </tr>
+        <tr data-ng-show="mappers.length == 0">
+            <td>{{:: 'no-mappers-available' | translate}}</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<kc-menu></kc-menu>

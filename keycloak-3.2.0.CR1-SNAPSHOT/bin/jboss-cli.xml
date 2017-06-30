@@ -1,0 +1,54 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<!--
+   WildFly Command-line Interface configuration.
+-->
+<jboss-cli xmlns="urn:jboss:cli:3.1">
+
+    <default-protocol use-legacy-override="true">remote+http</default-protocol>
+
+    <!-- The default controller to connect to when 'connect' command is executed w/o arguments -->
+    <default-controller>
+        <protocol>remote+http</protocol>
+        <host>localhost</host>
+        <port>9990</port>
+    </default-controller>
+    
+    <!-- Example controller alias named 'Test'  
+    <controllers>
+        <controller name="Test">
+            <protocol>remote+http</protocol>
+            <host>localhost</host>
+            <port>9990</port>
+        </controller>
+    </controllers>
+    -->    
+
+    <validate-operation-requests>true</validate-operation-requests>
+
+    <!-- Command and operation history log configuration -->
+    <history>
+        <enabled>true</enabled>
+        <file-name>.jboss-cli-history</file-name>
+        <file-dir>${user.home}</file-dir>
+        <max-size>500</max-size>
+    </history>
+
+    <!-- whether to resolve system properties specified as command argument or operation parameter values
+                  in the CLI VM before sending the operation requests to the controller -->
+    <resolve-parameter-values>false</resolve-parameter-values>
+
+
+    <!-- Whether to write info and error messages to the terminal output -->
+    <silent>false</silent>
+
+    <!-- Whether to filter out commands and attributes based on user's permissions -->
+    <access-control>false</access-control>
+
+    <!-- Include the prompt with the command into the output for each command executed in non-interactive mode -->
+    <echo-command>false</echo-command>
+    
+    <!-- Uncomment to set the command timeout. Element value is in seconds -->
+    <!-- <command-timeout>30</command-timeout> -->
+    
+</jboss-cli>

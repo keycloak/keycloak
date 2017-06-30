@@ -1,0 +1,435 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2011, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="urn:jboss:domain:security:1.1"
+           xmlns="urn:jboss:domain:security:1.1"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified"
+           version="1.1">
+
+   <!-- The security subsystem root element -->
+   <xs:element name="subsystem" type="security-containerType" />
+
+   <!-- The security container configuration -->
+   <xs:complexType name="security-containerType">
+      <xs:annotation>
+         <xs:documentation>
+                <![CDATA[
+                    The security subsystem, used to configure authentication and authorization.
+                ]]>
+         </xs:documentation>
+      </xs:annotation>
+      <xs:all>
+         <xs:element name="security-management" type="securityManagementType" minOccurs="0" maxOccurs="1"/>
+         <xs:element name="security-domains" type="securityDomainsType" minOccurs="0" maxOccurs="1"/>
+         <xs:element name="vault" type="vaultType" minOccurs="0" maxOccurs="1"/>
+      </xs:all>
+   </xs:complexType>
+
+   <!-- The security management element -->
+   <xs:complexType name="securityManagementType">
+      <xs:annotation>
+         <xs:documentation>
+                <![CDATA[
+                    The optional "deep-copy-subject-mode" attribute sets the copy mode of subjects done by the security
+                    managers to be deep copies that makes copies of the subject principals and credentials if they are
+                    cloneable. It should be set to true if subject include mutable content that can be corrupted when
+                    multiple threads have the same identity and cache flushes/logout clearing the subject in one thread
+                    results in subject references affecting other threads. Default value is "false".
+                ]]>
+         </xs:documentation>
+      </xs:annotation>
+      <xs:attribute name="deep-copy-subject-mode" type="xs:boolean" use="optional"/>
+   </xs:complexType>
+
+   <!-- Configuration for security domains -->
+   <xs:complexType name="securityDomainsType">
+      <xs:annotation>
+         <xs:documentation>
+               <![CDATA[
+                    Configures security domains for applications.
+                ]]>
+         </xs:documentation>
+      </xs:annotation>
+      <xs:sequence>
+         <xs:element name="security-domain" type="securityDomainType" minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <xs:complexType name="securityDomainType">
+      <xs:annotation>
+         <xs:documentation>
+               <![CDATA[
+                    Definition of a security domain.
+                ]]>
+         </xs:documentation>
+      </xs:annotation>
+      <xs:sequence>
+         <xs:choice>
+            <xs:element name="authentication" type="authenticationType" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="authentication-jaspi" type="authenticationJaspiType" minOccurs="0" maxOccurs="1"/>
+         </xs:choice>
+         <xs:element name="authorization" type="authorizationType" minOccurs="0" maxOccurs="1"/>
+         <xs:element name="acl" type="aclType" minOccurs="0" maxOccurs="1"/>
+         <xs:element name="mapping" type="mappingType" minOccurs="0" maxOccurs="1"/>
+         <xs:element name="audit" type="auditType" minOccurs="0" maxOccurs="1"/>
+         <xs:element name="identity-trust" type="identityTrustType" minOccurs="0" maxOccurs="1"/>
+         <xs:element name="jsse" type="jsseType" minOccurs="0" maxOccurs="1"/>
+      </xs:sequence>
+      <xs:attribute name="name" type="xs:string" use="required"/>
+      <xs:attribute name="cache-type" type="cacheTypeType" use="optional"/>
+   </xs:complexType>
+
+   <xs:complexType name="authenticationType">
+      <xs:annotation>
+         <xs:documentation>
+               <![CDATA[
+                    Authentication configuration.
+                ]]>
+         </xs:documentation>
+      </xs:annotation>
+      <xs:sequence>
+         <xs:element name="login-module" type="loginModuleType" minOccurs="1" maxOccurs="unbounded"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <xs:complexType name="authenticationJaspiType">
+      <xs:annotation>
+         <xs:documentation>
+               <![CDATA[
+                    JASPI authentication configuration.
+                ]]>
+         </xs:documentation>
+      </xs:annotation>
+      <xs:sequence>
+         <xs:element name="login-module-stack" type="loginModuleStackType" maxOccurs="unbounded"/>
+         <xs:element name="auth-module" type="authModuleType" maxOccurs="unbounded"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <xs:complexType name="authorizationType">
+      <xs:annotation>
+         <xs:documentation>
+               <![CDATA[
+                    Authorization configuration.
+                ]]>
+         </xs:documentation>
+      </xs:annotation>
+      <xs:sequence>
+         <xs:element name="policy-module" type="policyModuleType" maxOccurs="unbounded"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <xs:complexType name="aclType">
+      <xs:annotation>
+         <xs:documentation>
+               <![CDATA[
+                    ACL configuration.
+                ]]>
+         </xs:documentation>
+      </xs:annotation>
+      <xs:sequence>
+         <xs:element name="acl-module" type="aclModuleType" maxOccurs="unbounded"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <xs:complexType name="mappingType">
+      <xs:annotation>
+         <xs:documentation>
+               <![CDATA[
+                    Mapping configuration.
+                ]]>
+         </xs:documentation>
+      </xs:annotation>
+      <xs:sequence>
+         <xs:element name="mapping-module" type="mappingModuleType" maxOccurs="unbounded"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <xs:complexType name="auditType">
+      <xs:annotation>
+         <xs:documentation>
+               <![CDATA[
+                    Audit configuration.
+                ]]>
+         </xs:documentation>
+      </xs:annotation>
+      <xs:sequence>
+         <xs:element name="provider-module" type="providerModuleType" maxOccurs="unbounded"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <xs:complexType name="identityTrustType">
+      <xs:annotation>
+         <xs:documentation>
+               <![CDATA[
+                    Identity trust configuration.
+                ]]>
+         </xs:documentation>
+      </xs:annotation>
+      <xs:sequence>
+         <xs:element name="trust-module" type="trustModuleType" maxOccurs="unbounded"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <xs:simpleType name="module-option-flag">
+      <xs:annotation>
+         <xs:documentation>
+               <![CDATA[
+                    The flag attribute controls how a login module
+                    participates in the overall procedure.
+                    Required - The LoginModule is required to succeed. If it
+                    succeeds or fails, authentication still continues to proceed
+                    down the LoginModule list.
+
+                    Requisite - The LoginModule is required to succeed. If it succeeds,
+                    authentication continues down the LoginModule list. If it fails,
+                    control immediately returns to the application (authentication does not proceed
+                    down the LoginModule list).
+
+                    Sufficient - The LoginModule is  not required to succeed. If it does
+                    succeed, control immediately returns to the application (authentication
+                    does not proceed down the LoginModule list). If it fails,
+                    authentication continues down the LoginModule list.
+
+                    Optional - The LoginModule is not required to succeed. If it succeeds or
+                    fails, authentication still continues to proceed down the
+                    LoginModule list.
+
+                    The overall authentication succeeds only if
+                    all required and requisite LoginModules succeed. If a
+                    sufficient LoginModule is configured and succeeds, then only
+                    the required and requisite LoginModules prior to that
+                    sufficient LoginModule need to have succeeded for the overall
+                    authentication to succeed. If no required or requisite
+                    LoginModules are configured for an application, then at least
+                    one sufficient or optional LoginModule must succeed.
+                ]]>
+         </xs:documentation>
+      </xs:annotation>
+      <xs:restriction base="xs:token">
+         <xs:enumeration value="required"/>
+         <xs:enumeration value="requisite"/>
+         <xs:enumeration value="sufficient"/>
+         <xs:enumeration value="optional"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <xs:complexType name="loginModuleType">
+      <xs:annotation>
+         <xs:documentation>
+               <![CDATA[
+                    Login module configuration.
+                ]]>
+         </xs:documentation>
+      </xs:annotation>
+      <xs:sequence>
+         <xs:element name="module-option" type="propertyType" minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attribute name="code" type="xs:string" use="required"/>
+      <xs:attribute name="flag" type="module-option-flag" use="required"/>
+      <xs:attribute name="module" type="xs:string" use="optional"/>
+   </xs:complexType>
+
+   <xs:complexType name="propertyType">
+      <xs:attribute name="name" type="xs:string" use="required"/>
+      <xs:attribute name="value" type="xs:string" use="required"/>
+   </xs:complexType>
+
+   <xs:complexType name="loginModuleStackType">
+      <xs:annotation>
+         <xs:documentation>
+               <![CDATA[
+                    Login module configuration for JASPI.
+                ]]>
+         </xs:documentation>
+      </xs:annotation>
+      <xs:sequence>
+          <xs:element name="login-module" type="loginModuleType" minOccurs="1" maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attribute name="name" type="xs:string" use="required"/>
+   </xs:complexType>
+
+   <xs:complexType name="authModuleType">
+      <xs:annotation>
+         <xs:documentation>
+               <![CDATA[
+                    Authentication module configuration for JASPI.
+                ]]>
+         </xs:documentation>
+      </xs:annotation>
+      <xs:sequence>
+         <xs:element name="module-option" type="propertyType" minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attribute name="code" type="xs:string" use="required"/>
+      <xs:attribute name="login-module-stack-ref" type="xs:string" use="optional"/>
+      <xs:attribute name="module" type="xs:string" use="optional"/>
+   </xs:complexType>
+
+   <xs:complexType name="policyModuleType">
+      <xs:annotation>
+         <xs:documentation>
+               <![CDATA[
+                    Authorization module configuration.
+                ]]>
+         </xs:documentation>
+      </xs:annotation>
+      <xs:sequence>
+         <xs:element name="module-option" type="propertyType" minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attribute name="code" type="xs:string" use="required"/>
+      <xs:attribute name="flag" type="module-option-flag" use="required"/>
+      <xs:attribute name="module" type="xs:string" use="optional"/>
+   </xs:complexType>
+
+   <xs:complexType name="aclModuleType">
+      <xs:annotation>
+         <xs:documentation>
+               <![CDATA[
+                    ACL module configuration.
+                ]]>
+         </xs:documentation>
+      </xs:annotation>
+      <xs:sequence>
+         <xs:element name="module-option" type="propertyType" minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attribute name="code" type="xs:string" use="required"/>
+      <xs:attribute name="flag" type="module-option-flag" use="required"/>
+      <xs:attribute name="module" type="xs:string" use="optional"/>
+   </xs:complexType>
+
+   <xs:complexType name="mappingModuleType">
+      <xs:annotation>
+         <xs:documentation>
+               <![CDATA[
+                    Mapping module configuration.
+                ]]>
+         </xs:documentation>
+      </xs:annotation>
+      <xs:sequence>
+          <xs:element name="module-option" type="propertyType" minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attribute name="type" type="xs:string" use="optional"/>
+      <xs:attribute name="code" type="xs:string" use="required"/>
+      <xs:attribute name="module" type="xs:string" use="optional"/>
+   </xs:complexType>
+
+   <xs:complexType name="providerModuleType">
+      <xs:annotation>
+         <xs:documentation>
+               <![CDATA[
+                    Audit module configuration.
+                ]]>
+         </xs:documentation>
+      </xs:annotation>
+      <xs:sequence>
+          <xs:element name="module-option" type="propertyType" minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attribute name="code" type="xs:string" use="required"/>
+      <xs:attribute name="module" type="xs:string" use="optional"/>
+   </xs:complexType>
+
+   <xs:complexType name="trustModuleType">
+      <xs:annotation>
+         <xs:documentation>
+               <![CDATA[
+                    Identity trust module configuration.
+                ]]>
+         </xs:documentation>
+      </xs:annotation>
+      <xs:sequence>
+          <xs:element name="module-option" type="propertyType" minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attribute name="code" type="xs:string" use="required"/>
+      <xs:attribute name="flag" type="module-option-flag" use="required"/>
+      <xs:attribute name="module" type="xs:string" use="optional"/>
+   </xs:complexType>
+
+   <xs:complexType name="jsseType">
+      <xs:annotation>
+         <xs:documentation>
+               <![CDATA[
+                    JSSE configuration.
+                ]]>
+         </xs:documentation>
+      </xs:annotation>
+      <xs:sequence>
+        <xs:element name="additional-properties" type="properties" minOccurs="0" maxOccurs="1"/>
+      </xs:sequence>
+      <xs:attribute name="keystore-password" type="xs:string" use="optional"/>
+      <xs:attribute name="keystore-type" type="xs:string" use="optional"/>
+      <xs:attribute name="keystore-url" type="xs:string" use="optional"/>
+      <xs:attribute name="keystore-provider" type="xs:string" use="optional"/>
+      <xs:attribute name="keystore-provider-argument" type="xs:string" use="optional"/>
+      <xs:attribute name="key-manager-factory-algorithm" type="xs:string" use="optional"/>
+      <xs:attribute name="key-manager-factory-provider" type="xs:string" use="optional"/>
+      <xs:attribute name="truststore-password" type="xs:string" use="optional"/>
+      <xs:attribute name="truststore-type" type="xs:string" use="optional"/>
+      <xs:attribute name="truststore-url" type="xs:string" use="optional"/>
+      <xs:attribute name="truststore-provider" type="xs:string" use="optional"/>
+      <xs:attribute name="truststore-provider-argument" type="xs:string" use="optional"/>
+      <xs:attribute name="trust-manager-factory-algorithm" type="xs:string" use="optional"/>
+      <xs:attribute name="trust-manager-factory-provider" type="xs:string" use="optional"/>
+      <xs:attribute name="client-alias" type="xs:string" use="optional"/>
+      <xs:attribute name="server-alias" type="xs:string" use="optional"/>
+      <xs:attribute name="service-auth-token" type="xs:string" use="optional"/>
+      <xs:attribute name="client-auth" type="xs:boolean" use="optional"/>
+      <xs:attribute name="cipher-suites" type="xs:string" use="optional"/>
+      <xs:attribute name="protocols" type="xs:string" use="optional"/>
+   </xs:complexType>
+
+   <xs:complexType name="properties">
+      <xs:sequence>
+         <xs:element name="property" type="propertyType" maxOccurs="unbounded"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <xs:complexType name="vaultType">
+      <xs:annotation>
+         <xs:documentation>
+               <![CDATA[
+                    Vault Configuration.
+                ]]>
+         </xs:documentation>
+      </xs:annotation>
+      <xs:sequence>
+          <xs:element name="vault-option" type="propertyType" minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attribute name="code" type="xs:string" use="optional"/>
+   </xs:complexType>
+
+   <xs:simpleType name="cacheTypeType">
+      <xs:annotation>
+         <xs:documentation>
+               <![CDATA[
+                    Cache type configuration. Default value is "default".
+                ]]>
+         </xs:documentation>
+      </xs:annotation>
+      <xs:restriction base="xs:token">
+         <xs:enumeration value="default"/>
+         <xs:enumeration value="infinispan"/>
+      </xs:restriction>
+   </xs:simpleType>
+</xs:schema>

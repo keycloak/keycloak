@@ -1,0 +1,150 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/users">{{:: 'users' | translate}}</a></li>
+        <li data-ng-hide="create">{{user.username}}</li>
+        <li data-ng-show="create">{{:: 'add-user' | translate}}</li>
+    </ol>
+
+    <kc-tabs-user></kc-tabs-user>
+
+    <form class="form-horizontal" name="userForm" novalidate kc-read-only="!create && !user.access.manage">
+
+        <fieldset class="border-top">
+            <div class="form-group">
+                <label class="col-md-2 control-label"for="id">{{:: 'id' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" type="text" id="id" name="id" data-ng-model="user.id" autofocus data-ng-readonly="true">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="col-md-2 control-label"for="id">{{:: 'created-at' | translate}}</label>
+                <div class="col-md-6">
+                    {{user.createdTimestamp|date:'shortDate'}}&nbsp;{{user.createdTimestamp|date:'mediumTime'}}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="col-md-2 control-label"for="username">{{:: 'username' | translate}} <span class="required" data-ng-show="create">*</span></label>
+                <div class="col-md-6">
+                    <!-- Characters >,<,/,\ are forbidden in username -->
+                    <input class="form-control" type="text" id="username" name="username" data-ng-model="user.username" autofocus
+                           required ng-pattern="/^[^\<\>\\\/]*$/" data-ng-readonly="!editUsername">
+                </div>
+            </div>
+
+
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="email">{{:: 'email' | translate}}</label>
+
+                <div class="col-md-6">
+                    <input class="form-control" type="email" name="email" id="email"
+                           data-ng-model="user.email">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="firstName">{{:: 'first-name' | translate}}</label>
+
+                <div class="col-md-6">
+                    <input class="form-control" type="text" name="firstName" id="firstName"
+                           data-ng-model="user.firstName">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="lastName">{{:: 'last-name' | translate}}</label>
+
+                <div class="col-md-6">
+                    <input class="form-control" type="text" name="lastName" id="lastName"
+                           data-ng-model="user.lastName">
+                </div>
+            </div>
+
+            <div class="form-group clearfix block">
+                <label class="col-md-2 control-label" for="userEnabled">{{:: 'user-enabled' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="user.enabled" name="userEnabled" id="userEnabled" ng-disabled="!create && !user.access.manage" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'user-enabled.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block" data-ng-show="realm.bruteForceProtected && !create">
+                <label class="col-md-2 control-label" for="temporarilyDisabled">{{:: 'user-temporarily-locked' | translate}}</label>
+                <div class="col-md-1">
+                    <input ng-model="temporarilyDisabled" name="temporarilyDisabled" id="temporarilyDisabled" data-ng-readonly="true" data-ng-disabled="true" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'user-temporarily-locked.tooltip' | translate}}</kc-tooltip>
+                <div class="col-sm-2">
+                    <button type="submit" data-ng-click="unlockUser()" data-ng-show="temporarilyDisabled" class="btn btn-default">{{:: 'unlock-user' | translate}}</button>
+                </div>
+            </div>
+            <div class="form-group clearfix block" data-ng-show="!create && user.federationLink">
+                <label class="col-md-2 control-label">{{:: 'federation-link' | translate}}</label>
+                <div class="col-md-6">
+                    <a href="{{federationLink}}">{{federationLinkName}}</a>
+                </div>
+                <kc-tooltip>{{:: 'user-link.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block" data-ng-show="!create && user.origin">
+                <label class="col-md-2 control-label">{{:: 'user-origin-link' | translate}}</label>
+                <div class="col-md-6">
+                    <a href="{{originLink}}">{{originName}}</a>
+                </div>
+                <kc-tooltip>{{:: 'user-origin.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block">
+                <label class="col-md-2 control-label" for="emailVerified">{{:: 'email-verified' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="user.emailVerified" name="emailVerified" id="emailVerified" ng-disabled="!create && !user.access.manage" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'email-verified.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="reqActions">{{:: 'required-user-actions' | translate}}</label>
+
+                <div class="col-md-6">
+                    <select ui-select2 id="reqActions" ng-model="user.requiredActions" data-placeholder="{{:: 'select-an-action.placeholder' | translate}}" multiple>
+                        <option ng-repeat="action in userReqActionList" value="{{action.alias}}">{{action.name}}</option>
+                    </select>
+                </div>
+                <kc-tooltip>{{:: 'required-user-actions.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group clearfix" data-ng-if="realm.internationalizationEnabled">
+                <label class="col-md-2 control-label" for="locale">{{:: 'locale' | translate}}</label>
+                <div class="col-md-6">
+                    <div>
+                        <select class="form-control" id="locale"
+                                ng-model="user.attributes.locale"
+                                ng-options="o as o for o in realm.supportedLocales">
+                            <option value="" disabled selected>{{:: 'select-one.placeholder' | translate}}</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group clearfix" data-ng-hide="create || !access.impersonation">
+                <label class="col-md-2 control-label" for="impersonate">{{:: 'impersonate-user' | translate}}</label>
+
+                <div class="col-md-6">
+                    <button id="impersonate" data-ng-show="access.impersonation" kc-read-only-ignore class="btn btn-default" data-ng-click="impersonate()">{{:: 'impersonate' | translate}}</button>
+                </div>
+                <kc-tooltip>{{:: 'impersonate-user.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+        </fieldset>
+
+        <div class="form-group">
+            <div class="col-md-10 col-md-offset-2" data-ng-show="create && access.manageUsers">
+                <button kc-save data-ng-show="changed">{{:: 'save' | translate}}</button>
+                <button kc-cancel data-ng-click="cancel()">{{:: 'cancel' | translate}}</button>
+            </div>
+
+            <div class="col-md-10 col-md-offset-2" data-ng-show="!create && user.access.manage">
+                <button kc-save  data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
+                <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
+            </div>
+        </div>
+
+    </form>
+</div>
+
+<kc-menu></kc-menu>

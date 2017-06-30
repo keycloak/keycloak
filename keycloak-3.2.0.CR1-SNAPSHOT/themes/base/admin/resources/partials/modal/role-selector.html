@@ -1,0 +1,40 @@
+<div class="modal-header">
+    <button type="button" class="close" ng-click="cancel()">
+        <span class="pficon pficon-close"></span>
+    </button>
+    <h4 class="modal-title">{{:: 'role-selector' | translate}}</h4>
+</div>
+<div style="padding: 0 15px 15px 15px;">
+    <form>
+        <div data-ng-show="realmRoles.length > 0" style="margin-bottom: 30px;">
+            <label class="control-label" for="available">{{:: 'realm-roles' | translate}}</label>
+            <kc-tooltip>{{:: 'realm-roles.tooltip' | translate}}</kc-tooltip>
+            <select id="available" class="form-control" size="5"
+                    ng-dblclick="selectRealmRole()"
+                    ng-model="selectedRealmRole.role"
+                    ng-options="r.name for r in realmRoles | orderBy:'toString()'">
+                <option style="display:none" value="">{{:: 'select-a-role' | translate}}</option>
+            </select>
+            <button class="btn btn-default" type="submit" data-ng-disabled="!selectedRealmRole.role" ng-click="selectRealmRole()" tooltip-trigger="mouseover mouseout" tooltip="Select realm role" tooltip-placement="right">
+                {{:: 'select-realm-role' | translate}}</i>
+            </button>
+        </div>
+        <div data-ng-show="clients.length > 0">
+            <label class="control-label">
+                <span>{{:: 'client-roles' | translate}}</span>
+                <kc-tooltip>{{:: 'client-roles.tooltip' | translate}}</kc-tooltip>
+                <select class="form-control" id="clients" name="clients" ng-change="changeClient()" ng-model="client.selected" ng-options="a.clientId for a in clients" ng-disabled="false">
+                </select>
+            </label>
+            <select id="available-client" class="form-control" size="5"
+                    ng-dblclick="selectClientRole()"
+                    ng-model="selectedClientRole.role"
+                    ng-options="r.name for r in clientRoles | orderBy:'toString()'">
+                <option style="display:none" value="">{{:: 'select-a-role' | translate}}</option>
+            </select>
+            <button class="btn btn-default" type="submit" data-ng-disabled="!selectedClientRole.role" ng-click="selectClientRole()" tooltip-trigger="mouseover mouseout" tooltip="Select client role" tooltip-placement="right">
+                {{:: 'select-client-role' | translate}}
+            </button>
+        </div>
+    </form>
+</div>

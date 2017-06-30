@@ -1,0 +1,63 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/client-registration/client-initial-access">{{:: 'initial-access-tokens' | translate}}</a></li>
+        <li>{{:: 'add-initial-access-tokens' | translate}}</li>
+    </ol>
+
+    <h1 data-ng-show="create">{{:: 'add-client' | translate}}</h1>
+
+    <form class="form-horizontal" name="createForm" novalidate kc-read-only="!access.manageRealm" data-ng-hide="token">
+
+        <div class="form-group">
+            <label class="col-md-2 control-label" for="expiration">{{:: 'expiration' | translate}}</label>
+
+            <div class="col-md-6 time-selector">
+                <input class="form-control" type="number" required min="0" max="31536000" data-ng-model="expiration" id="expiration"
+                       name="expiration"/>
+                <select class="form-control" name="expirationUnit" data-ng-model="expirationUnit">
+                    <option data-ng-selected="!expirationUnit" value="Seconds">{{:: 'seconds' | translate}}</option>
+                    <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                    <option value="Hours">{{:: 'hours' | translate}}</option>
+                    <option value="Days">{{:: 'days' | translate}}</option>
+                </select>
+            </div>
+            <kc-tooltip>{{:: 'expiration.tooltip' | translate}}</kc-tooltip>
+        </div>
+
+        <div class="form-group">
+            <label class="col-md-2 control-label" for="count">{{:: 'count' | translate}} </label>
+            <div class="col-sm-6">
+                <input class="form-control" type="text" id="count" name="count" required min="1" max="100" data-ng-model="count">
+            </div>
+            <kc-tooltip>{{:: 'count.tooltip' | translate}}</kc-tooltip>
+        </div>
+
+        <div class="form-group">
+            <div class="col-md-10 col-md-offset-2" data-ng-show="access.manageRealm">
+                <button kc-save>{{:: 'save' | translate}}</button>
+                <button kc-cancel data-ng-click="cancel()">{{:: 'cancel' | translate}}</button>
+            </div>
+        </div>
+    </form>
+
+    <form name="displayForm" data-ng-show="token">
+        <div class="form-group">
+            <label for="initialAccessToken">{{:: 'initial-access-token' | translate}}</label>
+
+            <div>
+                <textarea type="text" id="initialAccessToken" name="initialAccessToken" class="form-control" rows="6" kc-select-action="click">{{token}}</textarea>
+            </div>
+
+            <kc-tooltip>{{:: 'initial-access.copyPaste.tooltip' | translate}}</kc-tooltip>
+        </div>
+
+        <div class="form-group">
+            <div>
+                <button class="btn btn-default" data-ng-click="done()">{{:: 'back' | translate}}</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<kc-menu></kc-menu>

@@ -1,0 +1,11 @@
+<div data-ng-controller="UserStorageTabCtrl">
+    <h1 data-ng-hide="create">
+        {{instance.name|capitalize}}
+        <i class="pficon pficon-delete clickable" data-ng-show="!create && access.manageUsers" data-ng-click="removeUserStorage()"></i>
+    </h1>
+    <h1 data-ng-show="create">{{:: 'add-user-storage-provider' | translate}}</h1>
+
+    <ul class="nav nav-tabs" data-ng-hide="create">
+        <li ng-class="{active: !path[6]}"><a href="#/realms/{{realm.realm}}/user-storage/providers/{{instance.providerName}}/{{instance.id}}">{{:: 'settings' | translate}}</a></li>
+    </ul>
+</div>

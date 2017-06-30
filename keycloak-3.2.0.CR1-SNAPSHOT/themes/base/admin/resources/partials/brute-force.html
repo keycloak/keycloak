@@ -1,0 +1,114 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <kc-tabs-realm></kc-tabs-realm>
+
+    <ul class="nav nav-tabs nav-tabs-pf">
+        <li><a href="#/realms/{{realm.realm}}/defense/headers">{{:: 'headers' | translate}}</a></li>
+        <li class="active"><a href="#/realms/{{realm.realm}}/defense/brute-force">{{:: 'brute-force-detection' | translate}}</a></li>
+    </ul>
+
+    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
+        <fieldset class="border-top">
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="bruteForceProtected">{{:: 'enabled' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="realm.bruteForceProtected" name="bruteForceProtected" id="bruteForceProtected" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+            </div>
+            <div class="form-group" data-ng-show="realm.bruteForceProtected">
+                <label class="col-md-2 control-label" for="permanentLockout">{{:: 'permanent-lockout' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="realm.permanentLockout" name="permanentLockout" id="permanentLockout" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'permanent-lockout.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group" data-ng-show="realm.bruteForceProtected">
+                <label class="col-md-2 control-label" for="failureFactor">{{:: 'max-login-failures' | translate}}</label>
+
+                <div class="col-md-6">
+                    <input class="form-control" type="number" min="1" max="31536000" id="failureFactor" name="failureFactor" data-ng-model="realm.failureFactor" autofocus
+                           required>
+                </div>
+                <kc-tooltip>{{:: 'max-login-failures.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="realm.bruteForceProtected && !realm.permanentLockout">
+                <label class="col-md-2 control-label" for="waitIncrement">{{:: 'wait-increment' | translate}}</label>
+                <div class="col-md-6 time-selector">
+                    <input class="form-control" type="number" required min="1"
+                           max="31536000" data-ng-model="realm.waitIncrement"
+                           id="waitIncrement" name="waitIncrement"/>
+                    <select class="form-control" name="waitIncrementUnit" data-ng-model="realm.waitIncrementUnit" >
+                        <option data-ng-selected="!realm.waitIncrementUnit" value="Seconds">{{:: 'seconds' | translate}}</option>
+                        <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                        <option value="Hours">{{:: 'hours' | translate}}</option>
+                        <option value="Days">{{:: 'days' | translate}}</option>
+                    </select>
+                </div>
+                <kc-tooltip>{{:: 'wait-increment.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="realm.bruteForceProtected">
+                <label class="col-md-2 control-label" for="quickLoginCheckMilliSeconds">{{:: 'quick-login-check-millis' | translate}}</label>
+
+                <div class="col-md-6">
+                    <input class="form-control" type="number" min="1" max="31536000" id="quickLoginCheckMilliSeconds" name="quickLoginCheckMilliSeconds" data-ng-model="realm.quickLoginCheckMilliSeconds" autofocus
+                           required>
+                </div>
+                <kc-tooltip>{{:: 'quick-login-check-millis.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="realm.bruteForceProtected">
+                <label class="col-md-2 control-label" for="minimumQuickLoginWait">{{:: 'min-quick-login-wait' | translate}}</label>
+                <div class="col-md-6 time-selector">
+                    <input class="form-control" type="number" required min="1"
+                           max="31536000" data-ng-model="realm.minimumQuickLoginWait"
+                           id="minimumQuickLoginWait" name="minimumQuickLoginWait"/>
+                    <select class="form-control" name="minimumQuickLoginWaitUnit" data-ng-model="realm.minimumQuickLoginWaitUnit" >
+                        <option data-ng-selected="!realm.minimumQuickLoginWaitUnit" value="Seconds">{{:: 'seconds' | translate}}</option>
+                        <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                        <option value="Hours">{{:: 'hours' | translate}}</option>
+                        <option value="Days">{{:: 'days' | translate}}</option>
+                    </select>
+                </div>
+                <kc-tooltip>{{:: 'min-quick-login-wait.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="realm.bruteForceProtected && !realm.permanentLockout">
+                <label class="col-md-2 control-label" for="maxFailureWait">{{:: 'max-wait' | translate}}</label>
+                <div class="col-md-6 time-selector">
+                    <input class="form-control" type="number" required min="1"
+                                   max="31536000" data-ng-model="realm.maxFailureWait"
+                                   id="maxFailureWait" name="maxFailureWait"/>
+                    <select class="form-control" name="maxFailureWaitUnit" data-ng-model="realm.maxFailureWaitUnit" >
+                        <option data-ng-selected="!realm.maxFailureWaitUnit" value="Seconds">{{:: 'seconds' | translate}}</option>
+                        <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                        <option value="Hours">{{:: 'hours' | translate}}</option>
+                        <option value="Days">{{:: 'days' | translate}}</option>
+                    </select>
+                </div>
+                <kc-tooltip>{{:: 'max-wait.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="realm.bruteForceProtected && !realm.permanentLockout">
+                <label class="col-md-2 control-label" for="maxDeltaTime">{{:: 'failure-reset-time' | translate}}</label>
+                <div class="col-md-6 time-selector">
+                    <input class="form-control" type="number" required min="1"
+                           max="31536000" data-ng-model="realm.maxDeltaTime"
+                           id="maxDeltaTime" name="maxDeltaTime"/>
+                    <select class="form-control" name="maxDeltaTimeUnit" data-ng-model="realm.maxDeltaTimeUnit" >
+                        <option data-ng-selected="!realm.maxDeltaTimeUnit" value="Seconds">{{:: 'seconds' | translate}}</option>
+                        <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                        <option value="Hours">{{:: 'hours' | translate}}</option>
+                        <option value="Days">{{:: 'days' | translate}}</option>
+                    </select>
+                </div>
+                <kc-tooltip>{{:: 'failure-reset-time.tooltip' | translate}}</kc-tooltip>
+            </div>
+        </fieldset>
+
+        <div class="form-group" data-ng-show="access.manageRealm">
+            <div class="col-md-10 col-md-offset-2">
+                <button kc-save data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
+                <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<kc-menu></kc-menu>

@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2011, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="urn:jboss:domain:modcluster:1.0"
+           xmlns="urn:jboss:domain:modcluster:1.0"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified"
+           version="1.0">
+
+    <xs:element name="subsystem" type="subsystemType"/>
+
+    <xs:complexType name="subsystemType">
+        <xs:all>
+            <xs:element name="mod-cluster-config" type="mod-cluster-configType" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:complexType name="mod-cluster-configType">
+        <xs:sequence>
+            <!-- Simple load-provider or a dynamic one -->
+            <xs:choice minOccurs="0">
+                <xs:element name="simple-load-provider" type="simple-load-providerType"/>
+                <xs:element name="dynamic-load-provider" type="dynamic-load-providerType"/>
+            </xs:choice>
+            <xs:element name="ssl" type="sslType" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+
+        <!-- Get the actual advertiseGroupAddress / advertisePort from advertiseSocket -->
+        <xs:attribute name="advertise-socket" type="xs:string" use="optional"/>
+        <xs:attribute name="proxy-list" type="xs:string" use="optional"/>
+        <xs:attribute name="proxy-url" type="xs:string" use="optional" default="/">
+            <xs:annotation>
+                <xs:documentation>Value which will be prepended to the URL of MCMP commands.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="balancer" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>The balancer name. All nodes of a cluster have to use the same value.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="advertise" type="xs:boolean" use="optional" default="true"/>
+        <xs:attribute name="advertise-security-key" type="xs:string" use="optional"/>
+        <xs:attribute name="sticky-session-force" type="xs:boolean" use="optional" default="true"/>
+        <xs:attribute name="sticky-session-remove" type="xs:boolean" use="optional" default="false"/>
+        <xs:attribute name="sticky-session" type="xs:boolean" use="optional" default="true"/>
+
+        <!-- mod_cluster parameters that describe node behaviour -->
+        <xs:attribute name="excluded-contexts" type="xs:string" use="optional"/>
+        <xs:attribute name="auto-enable-contexts" type="xs:boolean" use="optional" default="true"/>
+        <xs:attribute name="stop-context-timeout" type="xs:int" use="optional" default="10">
+            <xs:annotation>
+                <xs:documentation>The amount of time in seconds for which to wait for clean shutdown of a context.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="socket-timeout" type="xs:int" use="optional" default="20">
+            <xs:annotation>
+                <xs:documentation>Number of seconds to wait for a response from an httpd proxy to MCMP commands before timing out, and flagging the proxy as in error.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="node-timeout" type="xs:int" use="optional" default="-1">
+            <xs:annotation>
+                <xs:documentation>Timeout (in seconds) for proxy connections to a node. That is the time mod_cluster will wait for the back-end response before returning error.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="max-attempts" type="xs:int" use="optional" default="1">
+            <xs:annotation>
+                <xs:documentation>Number of times an httpd proxy will attempt to send a given request to a worker before giving up.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="flush-packets" type="xs:boolean" use="optional" default="false">
+            <xs:annotation>
+                <xs:documentation>Enables/disables packet flushing.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="flush-wait" type="xs:int" use="optional" default="-1">
+            <xs:annotation>
+                <xs:documentation>Time to wait before flushing packets in milliseconds.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="ping" type="xs:int" use="optional" default="10">
+            <xs:annotation>
+                <xs:documentation>Time (in seconds) in which to wait for a pong answer to a ping.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="smax" type="xs:int" use="optional" default="-1">
+            <xs:annotation>
+                <xs:documentation>Soft maximum idle connection count.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="ttl" type="xs:int" use="optional" default="-1">
+            <xs:annotation>
+                <xs:documentation>Time to live (in seconds) for idle connections above smax.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="domain" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>Load balancing group</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="worker-timeout" type="xs:int" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Number of seconds to wait for a worker to become available to handle a request. When no workers of a
+                    balancer are usable, mod_cluster will retry after a while (workerTimeout/100). That is timeout in the
+                    balancer mod_proxy documentation. A value of -1 indicates that the HTTPd will not wait
+                    for a worker to be available and will return an error if none is available.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <!-- general SSL definitions -->
+    <xs:complexType name="sslType">
+        <xs:annotation>
+            <xs:documentation>
+                Configuration information for one SSL configuration.
+                sslCertificateEncodingAlgorithm (default value only)
+                sslKeyStoreType/sslTrustStoreType (JKS: default value only)
+                sslKeyStoreProvider/sslTrustStoreProvider (only default value).
+                sslTrustAlgorithm (only default value).
+                sslTrustMaxCertLength (5: default value only)
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="key-alias" type="xs:string" use="optional" default="jboss">
+            <xs:annotation>
+                <xs:documentation>sslKeyAlias The alias of the key holding the client certificates in the key store.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="password" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    sslKeyStorePassword/sslTrustStorePassword Password granting access to the key store and trust store.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="certificate-key-file" type="xs:string" use="optional" default="${user.home}/.keystore">
+            <xs:annotation>
+                <xs:documentation>
+                    sslKeyStore: That is the keystore name here.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="cipher-suite" type="xs:string" use="optional" default="ALL">
+            <xs:annotation>
+                <xs:documentation>
+                    sslCiphers: comma separated list of encryption ciphers the configuration is allowed to use, that MUST NOT be
+                    the JVM default in of JSSE as contains weak ciphers.
+                    that is SSLCipherSuite when using OpenSSL (APR).
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="protocol" default="TLS" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    sslProtocol: Overrides the default SSL socket protocol.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="ca-certificate-file" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    sslTrustStore location of the file containing the trust store.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="ca-revocation-url" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    sslCrlFile A file or URL to get the revocation list.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <!-- <simple-load-provider load="1"/> -->
+    <xs:complexType name="simple-load-providerType">
+        <xs:attribute name="factor" type="xs:int" use="optional" default="1"/>
+    </xs:complexType>
+
+    <!-- Something like.
+         <dynamic-load-provider history="10" decay="2">
+             <load-metric type="cpu" weight="2" capacity="1"/>
+             <load-metric type="sessions" weight="1" capacity="512"/>
+              ...
+         </dynamic-load-provider>
+      -->
+    <xs:complexType name="dynamic-load-providerType">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="load-metric" type="load-metricType"/>
+            <xs:element name="custom-load-metric" type="custom-load-metricType"/>
+        </xs:choice>
+        <xs:attribute name="history" type="xs:int" use="optional" default="9"/>
+        <xs:attribute name="decay" type="xs:int" use="optional" default="2"/>
+    </xs:complexType>
+
+    <xs:complexType name="common-load-metricType" abstract="true">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="property" type="propertyType"/>
+        </xs:choice>
+        <xs:attribute name="weight" type="xs:int" use="optional" default="1"/>
+        <xs:attribute name="capacity" type="xs:double" use="optional" default="1.0"/>
+    </xs:complexType>
+
+    <xs:complexType name="load-metricType">
+        <xs:complexContent>
+            <xs:extension base="common-load-metricType">
+                <xs:attribute name="type" type="loadMetricEnum" use="required"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="custom-load-metricType">
+        <xs:complexContent>
+            <xs:extension base="common-load-metricType">
+                <xs:attribute name="class" type="xs:string" use="required"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:simpleType name="loadMetricEnum">
+        <xs:restriction base="xs:token">
+            <xs:enumeration value="cpu"/>
+            <xs:enumeration value="mem"/>
+            <xs:enumeration value="heap"/>
+            <xs:enumeration value="sessions"/>
+            <xs:enumeration value="requests"/>
+            <xs:enumeration value="send-traffic"/>
+            <xs:enumeration value="receive-traffic"/>
+            <xs:enumeration value="busyness"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="propertyType">
+        <xs:attribute name="name" type="xs:string" use="required"/>
+        <xs:attribute name="value" type="xs:string" use="required"/>
+    </xs:complexType>
+
+</xs:schema>

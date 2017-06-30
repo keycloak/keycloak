@@ -1,0 +1,70 @@
+<div>
+    <div data-ng-repeat="option in properties" class="form-group" data-ng-controller="ProviderConfigCtrl">
+        <label class="col-md-2 control-label">{{:: option.label | translate}}</label>
+
+        <div class="col-md-6" data-ng-if="option.type == 'String'">
+            <input class="form-control" type="text" data-ng-model="config[ option.name ][0]" >
+        </div>
+        <div class="col-md-6" data-ng-if="option.type == 'Password'">
+            <input class="form-control" type="password" data-ng-model="config[ option.name ][0]" >
+        </div>
+        <div class="col-md-6" data-ng-if="option.type == 'boolean'">
+            <input ng-model="config[ option.name ][0]" value="'true'" id="option.name" name="option.name" onoffswitchstring on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+        </div>
+        <div class="col-md-6" data-ng-if="option.type == 'List'">
+            <select ng-model="config[ option.name ][0]" ng-options="data for data in option.options">
+                <option value="" selected> {{:: 'selectOne' | translate}} </option>
+            </select>
+        </div>
+        <div class="col-md-6" data-ng-if="option.type == 'MultivaluedList'">
+            <select ui-select2 data-ng-model="config[ option.name ]" data-placeholder="{{:: 'selectMultiple' | translate}}..." multiple>
+                <option ng-repeat="val in option.options" value="{{val}}" ng-selected="true">{{val}}</option>
+            </select>
+        </div>
+        <div class="col-md-6" data-ng-if="option.type == 'Role'">
+            <div class="row">
+                <div class="col-md-8">
+                    <input class="form-control" type="text" data-ng-model="config[ option.name ][0]" >
+                </div>
+                <div class="col-md-2">
+                    <button type="button" data-ng-click="openRoleSelector(option.name, config)" class="btn btn-default" tooltip-placement="top" tooltip-trigger="mouseover mouseout" tooltip="{{:: 'selectRole.tooltip' | translate}}">{{:: 'selectRole.label' | translate}}</button>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4" data-ng-if="option.type == 'ClientList'">
+            <select ng-model="config[ option.name ][0]" ng-options="client.clientId as client.clientId for client in clients">
+                <option value="" selected> {{:: 'selectOne' | translate}} </option>
+            </select>
+        </div>
+
+        <div class="col-md-6" data-ng-if="option.type == 'File'">
+            <div class="controls kc-button-input-file">
+                <input class="form-control" type="text" data-ng-model="config[option.name][0]" >
+                <label for="{{option.name}}" class="btn btn-default">{{:: 'select-file' | translate}} <i class="pficon pficon-import"></i></label>
+                <input id="{{option.name}}" type="file" class="hidden" ng-file-select="uploadFile($files, option.name, config)">
+            </div>
+        </div>
+
+        <div class="col-md-6" data-ng-if="option.type == 'Script'">
+            <div ng-model="config[option.name]" placeholder="Enter your script..." ui-ace="{ onLoad : initEditor, useWrapMode: true, showGutter: true, theme:'github', mode: 'javascript'}">
+                {{config[option.name]}}
+            </div>
+        </div>
+
+        <div class="col-sm-6" data-ng-if="option.type == 'MultivaluedString'">
+            <div class="input-group" ng-repeat="(i, currentOption) in config[option.name] track by $index">
+                <input class="form-control" ng-model="config[option.name][i]">
+                <div class="input-group-btn" data-ng-if="$index < config[option.name].length - 1">
+                    <button class="btn btn-default" type="button" data-ng-click="deleteValueFromMultivalued(option.name, $index)"><span class="fa fa-minus"></span></button>
+                </div>
+
+                <div class="input-group-btn" data-ng-if="$index === config[option.name].length - 1">
+                    <button class="btn btn-default" type="button" data-ng-click="addValueToMultivalued(option.name)"><span class="fa fa-plus"></span></button>
+                </div>
+            </div>
+
+        </div>
+
+        <kc-tooltip>{{:: option.helpText | translate}}</kc-tooltip>
+    </div>
+</div>

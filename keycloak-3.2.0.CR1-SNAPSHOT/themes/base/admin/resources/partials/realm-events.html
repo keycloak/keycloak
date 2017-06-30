@@ -1,0 +1,125 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <h1>
+        <span>{{:: 'events' | translate}}</span>
+        <kc-tooltip>{{:: 'events.tooltip' | translate}}</kc-tooltip>
+    </h1>
+
+    <ul class="nav nav-tabs">
+        <li data-ng-class="(path[2] == 'events') && 'active'"><a href="#/realms/{{realm.realm}}/events">{{:: 'login-events' | translate}}</a></li>
+        <li data-ng-class="(path[2] == 'admin-events') && 'active'"><a href="#/realms/{{realm.realm}}/admin-events">{{:: 'admin-events' | translate}}</a></li>
+        <li data-ng-class="(path[2] == 'events-settings') && 'active'"><a href="#/realms/{{realm.realm}}/events-settings">{{:: 'config' | translate}}</a></li>
+    </ul>
+
+    <table class="table table-striped table-bordered">
+        <thead>
+        <tr>
+            <th class="kc-table-actions" colspan="4">
+                <div class="pull-right">
+                    <select data-ng-model="query.max" data-ng-click="update()" class="btn btn-default">
+                        <option>5</option>
+                        <option>10</option>
+                        <option>50</option>
+                        <option>100</option>
+                    </select>
+                    <button class="btn btn-default" data-ng-click="filter = !filter">
+                        <span class="glyphicon glyphicon-plus" data-ng-show="!filter"></span>
+                        <span class="glyphicon glyphicon-minus" data-ng-show="filter"></span>
+                        {{:: 'filter' | translate}}
+                    </button>
+                    <button class="btn btn-default btn-default" data-ng-click="update()">{{:: 'update' | translate}}</button>
+                    <button class="btn btn-default btn-default" data-ng-click="reset()">{{:: 'reset' | translate}}</button>
+                </div>
+                <form class="form-horizontal">
+                    <div class="form-group" data-ng-show="filter">
+                <label class="col-md-2 control-label" for="eventTypes">{{:: 'event-type' | translate}}</label>
+                        <div class="col-sm-5">
+                            <input ui-select2="eventSelectOptions" id="eventTypes" ng-model="query.type" data-placeholder="{{:: 'select-event-types.placeholder' | translate}}"/>
+            </div>
+        </div>
+                    <div class="form-group" data-ng-show="filter">
+                        <label class="col-md-2 control-label" for="client">{{:: 'client' | translate}}</label>
+                        <div class="col-md-6">
+                            <input class="form-control" type="text" id="client" name="client" data-ng-model="query.client">
+                        </div>
+                    </div>
+                    <div class="form-group" data-ng-show="filter">
+                        <label class="col-md-2 control-label" for="user">{{:: 'user' | translate}}</label>
+                        <div class="col-md-6">
+                            <input class="form-control" type="text" id="user" name="user" data-ng-model="query.user">
+                        </div>
+                    </div>
+
+                    <div class="form-group" data-ng-show="filter">
+                        <label class="col-md-2 control-label" for="dateFrom">{{:: 'date-(from)' | translate}}</label>
+                        <div class="col-md-6">
+                            <input class="form-control" type="text" id="dateFrom" name="dateFrom" data-ng-model="query.dateFrom" placeholder="yyyy-MM-dd">
+                        </div>
+                    </div>
+                    <div class="form-group" data-ng-show="filter">
+                        <label class="col-md-2 control-label" for="dateTo">{{:: 'date-(to)' | translate}}</label>
+                        <div class="col-md-6">
+                            <input class="form-control" type="text" id="dateTo" name="dateTo" data-ng-model="query.dateTo" placeholder="yyyy-MM-dd">
+                        </div>
+                    </div>
+
+                </form>
+            </th>
+        </tr>
+        <tr>
+            <th width="100px">{{:: 'time' | translate}}</th>
+            <th width="180px">{{:: 'event-type' | translate}}</th>
+            <th>{{:: 'details' | translate}}</th>
+        </tr>
+        </thead>
+        <tfoot>
+        <tr>
+            <td colspan="7">
+                <button data-ng-click="firstPage()" class="first" ng-disabled="query.first == 0"><i data-ng-class="query.first == 0 && 'text-muted'" class="fa fa-angle-double-left"></i></button>
+                <button data-ng-click="previousPage()" class="prev" ng-disabled="query.first == 0"><i data-ng-class="query.first == 0 && 'text-muted'" class="fa fa-angle-left"></i></button>
+                <button data-ng-click="nextPage()" class="next" ng-disabled="events.length < query.max"><i data-ng-class="events.length < query.max && 'text-muted'" class="fa fa-angle-right"></i></button>
+            </td>
+        </tr>
+        </tfoot>
+        <tbody>
+            <tr ng-repeat="event in events">
+                <td>{{event.time|date:'shortDate'}}<br>{{event.time|date:'mediumTime'}}</td>
+                <td>{{event.type}}</td>
+                <td>
+                    <table class="table table-striped table-bordered">
+                        <tr><td width="100px">{{:: 'client' | translate}}</td><td>{{event.clientId}}</td></tr>
+                        <tr><td>{{:: 'user' | translate}}</td><td>{{event.userId}}</td></tr>
+                        <tr><td>{{:: 'ip-address' | translate}}</td><td>{{event.ipAddress}}</td></tr>
+                        <tr data-ng-show="event.error"><td>{{:: 'error' | translate}}</td><td>{{event.error}}</td></tr>
+                        <tr>
+                            <td>{{:: 'details' | translate}}</td>
+                            <td>
+                                <button type="button" class="btn btn-default btn-xs" ng-click="event.collapse = !event.collapse">
+                                    <span class="glyphicon glyphicon-plus" data-ng-show="!event.collapse"></span>
+                                    <span class="glyphicon glyphicon-minus" data-ng-show="event.collapse"></span>
+                                </button>
+                                <table data-ng-show="event.collapse" class="table table-striped table-bordered">
+                                    <tr ng-repeat="(key, value) in event.details">
+                                        <td>{{key}}</td>
+                                        <td>{{value}}</td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                        <tr data-ng-show="event.representation">
+                            <td>{{:: 'representation' | translate}}</td>
+                            <td>
+                                <button type="button" class="btn btn-default btn-xs" ng-click="collapseRep = !collapseRep">
+                                    <span class="glyphicon glyphicon-plus" data-ng-show="!collapseRep"></span>
+                                    <span class="glyphicon glyphicon-minus" data-ng-show="collapseRep"></span>
+                                </button>
+                                <pre data-ng-show="collapseRep">{{event.representation}}</pre>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<kc-menu></kc-menu>

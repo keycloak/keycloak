@@ -1,0 +1,11 @@
+<div data-ng-controller="GroupTabCtrl">
+    <h1>
+        <span>{{:: 'user-groups' | translate}}</span>
+    </h1>
+
+    <ul class="nav nav-tabs">
+        <li ng-class="{active: path[2] == 'groups'}"><a href="#/realms/{{realm.realm}}/groups">{{:: 'groups' | translate}}</a></li>
+        <li data-ng-show="access.viewRealm" ng-class="{active: path[2] == 'default-groups'}"><a href="#/realms/{{realm.realm}}/default-groups">{{:: 'default-groups' | translate}}</a><kc-tooltip>{{:: 'groups.default-groups.tooltip' | translate}}</kc-tooltip>
+        </li>
+    </ul>
+</div>

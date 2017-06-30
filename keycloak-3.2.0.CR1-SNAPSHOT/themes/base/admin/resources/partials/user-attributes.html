@@ -1,0 +1,41 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/users">{{:: 'users' | translate}}</a></li>
+        <li>{{user.username}}</li>
+    </ol>
+
+    <kc-tabs-user></kc-tabs-user>
+
+    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!user.access.manage">
+        <table class="table table-striped table-bordered">
+            <thead>
+            <tr>
+                <th>{{:: 'key' | translate}}</th>
+                <th>{{:: 'value' | translate}}</th>
+                <th>{{:: 'actions' | translate}}</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr ng-repeat="(key, value) in user.attributes | toOrderedMapSortedByKey">
+                <td>{{key}}</td>
+                <td><input ng-model="user.attributes[key]" class="form-control" type="text" name="{{key}}" id="attribute-{{key}}" /></td>
+                <td class="kc-action-cell" data-ng-click="removeAttribute(key)">{{:: 'delete' | translate}}</td>
+            </tr>
+            <tr>
+                <td><input ng-model="newAttribute.key" class="form-control" type="text" id="newAttributeKey" /></td>
+                <td><input ng-model="newAttribute.value" class="form-control" type="text" id="newAttributeValue" /></td>
+                <td class="kc-action-cell" data-ng-click="addAttribute()" data-ng-disabled="!newAttribute.key.length || !newAttribute.value.length">{{:: 'add' | translate}}</td>
+            </tr>
+            </tbody>
+        </table>
+
+        <div class="form-group" data-ng-show="user.access.manage">
+            <div class="col-md-12">
+                <button kc-save  data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
+                <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<kc-menu></kc-menu>

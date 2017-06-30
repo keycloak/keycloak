@@ -1,0 +1,32 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <h1>{{:: 'sessions' | translate}}</h1>
+
+    <ul class="nav nav-tabs">
+        <li class="active"><a href="#/realms/{{realm.realm}}/sessions/realm">{{:: 'realm-sessions' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/sessions/revocation">{{:: 'revocation' | translate}}</a></li>
+    </ul>
+
+    <table class="table table-striped table-bordered">
+        <thead>
+        <tr>
+            <th class="kc-table-actions" colspan="3">
+                <div class="pull-right">
+                    <a id="logoutAllSessions" class="btn btn-default" ng-click="logoutAll()">{{:: 'logout-all' | translate}}</a>
+                </div>
+            </th>
+        </tr>
+        <tr>
+            <th>{{:: 'client' | translate}}</th>
+            <th>{{:: 'active-sessions' | translate}}</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr data-ng-repeat="data in stats">
+            <td><a href="#/realms/{{realm.realm}}/clients/{{data.id}}/sessions">{{data.clientId}}</a></td>
+            <td>{{data.active}}</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<kc-menu></kc-menu>

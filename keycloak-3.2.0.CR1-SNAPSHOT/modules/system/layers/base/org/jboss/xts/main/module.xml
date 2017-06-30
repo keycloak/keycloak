@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2011, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+
+<module xmlns="urn:jboss:module:1.5" name="org.jboss.xts">
+
+    <resources>
+        <resource-root path="jbossxts-5.5.5.Final.jar"/>
+        <resource-root path="jbosstxbridge-5.5.5.Final.jar"/>
+    </resources>
+
+    <dependencies>
+        <module name="javax.transaction.api"/>
+        <module name="javax.resource.api"/>
+        <module name="org.jboss.jts"/>
+        <module name="org.jboss.ws.api" services="export"/>
+        <module name="org.jboss.ws.jaxws-client" services="export"/>
+        <module name="org.jboss.ws.cxf.jbossws-cxf-client" services="export"/>
+        <module name="org.jboss.logging"/>
+        <module name="javax.xml.soap.api"/>
+        <module name="javax.xml.ws.api"/>
+        <module name="javax.xml.stream.api"/>
+        <!-- this is needed to get javax.xml.namespace.QName but it would be better if it were exposed on its own -->
+        <module name="javax.api"/>
+        <!-- this is needed because our endpoints are not in a normal deployment and we need to be able
+            to resolve the javax.jws.WebService annotation attached to them. presumably an endpoint
+            found in a deployment gets this package auto-added to its module loader
+            -->
+        <module name="javax.jws.api"/>
+        <!-- this is needed to ensure @Resource annotations on the JaxWS endpoint classes are in the
+             classloader scope-->
+        <module name="javax.annotation.api"/>
+        <!-- this is needed to ensure the JaxWS endpoint classes canb refer to HttpServletRequest etc -->
+        <module name="javax.servlet.api"/>
+        <module name="javax.ejb.api" />
+        <module name="org.jboss.jts" />
+        <module name="javax.xml.ws.api" />
+        <module name="org.jboss.weld.api" />
+        <module name="org.jboss.weld.core" />
+        <module name="javax.enterprise.api"/>
+        <module name="javax.transaction.api" />
+        <module name="org.jboss.logging" />
+        <module name="org.jboss.narayana.compensations" export="true" />
+        <module name="org.jboss.narayana.txframework" export="true" />
+        <module name="javax.annotation.api"  export="true" />
+        <module name="javax.interceptor.api"  export="true" />
+        <module name="org.jboss.weld.spi" />
+
+        <!-- TODO WFLY-5966 validate the need for these and remove if not needed.
+             Prior to WFLY-5922 they were exported by javax.ejb.api. -->
+        <module name="javax.xml.rpc.api"/>
+        <module name="javax.rmi.api"/>
+        <module name="org.omg.api"/>
+    </dependencies>
+</module>

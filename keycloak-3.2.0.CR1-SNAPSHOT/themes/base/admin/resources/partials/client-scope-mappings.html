@@ -1,0 +1,137 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/clients">{{:: 'clients' | translate}}</a></li>
+        <li>{{client.clientId}}</li>
+    </ol>
+
+    <kc-tabs-client></kc-tabs-client>
+
+        <h2><span>{{client.clientId}}</span> {{:: 'scope-mappings' | translate}} </h2>
+        <p class="subtitle"></p>
+        <form class="form-horizontal" name="allowScope" novalidate kc-read-only="!client.access.manage">
+            <fieldset class="border-top">
+                <div class="form-group" ng-show="client.clientTemplate">
+                    <label class="col-md-2 control-label" for="useTemplateScope">Inherit Template Scope</label>
+                    <kc-tooltip>Inherit scope from client template</kc-tooltip>
+                    <div class="col-md-1">
+                        <input ng-model="client.useTemplateScope" ng-click="changeFlag()" name="useTemplateScope" id="useTemplateScope" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                    </div>
+                    <div class="col-md-2">
+                        <a href="#/realms/{{realm.realm}}/client-templates/{{template.id}}/scope-mappings">view template scope</a>
+                    </div>
+                </div>
+                <div class="form-group" ng-hide="client.useTemplateScope && template && template.fullScopeAllowed">
+                    <label class="col-md-2 control-label" for="fullScopeAllowed">{{:: 'full-scope-allowed' | translate}}</label>
+                    <kc-tooltip>{{:: 'full-scope-allowed.tooltip' | translate}}</kc-tooltip>
+                    <div class="col-md-6">
+                        <input kc-read-only="!client.access.manage" ng-model="client.fullScopeAllowed" ng-click="changeFlag()" name="fullScopeAllowed" id="fullScopeAllowed" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                    </div>
+                </div>
+                <div class="form-group" ng-show="client.useTemplateScope && template && template.fullScopeAllowed">
+                    <label class="col-md-2 control-label" for="fullScopeAllowed">{{:: 'full-scope-allowed' | translate}}</label>
+                    <kc-tooltip>Client template has full scope allowed, which means this client will have the full scope of all roles.</kc-tooltip>
+                    <div class="col-md-1">
+                        <input kc-read-only="!client.access.manage" ng-model="template.fullScopeAllowed" name="fullScopeAllowed" id="fullScopeAllowed" ng-disabled="true" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                    </div>
+                    <div class="col-md-1">
+                        <i>inherited</i>
+                    </div>
+                </div>
+            </fieldset>
+        </form>
+
+        <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!client.access.manage" data-ng-hide="hideRoleSelector()">
+            <div class="form-group">
+                <label class="col-md-2 control-label" class="control-label">{{:: 'realm-roles' | translate}}</label>
+                <div class="col-md-10">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label class="control-label" for="available">{{:: 'available-roles' | translate}}</label>
+                            <kc-tooltip>{{:: 'scope.available-roles.tooltip' | translate}}</kc-tooltip>
+
+                            <select id="available" class="form-control" multiple size="5"
+                                    ng-multiple="true"
+                                    ng-model="selectedRealmRoles"
+                                    ng-options="r.name for r in realmRoles | orderBy:'name'">
+                            </select>
+                            <button ng-disabled="selectedRealmRoles.length == 0" class="btn btn-default" type="submit" ng-click="addRealmRole()">
+                                {{:: 'add-selected' | translate}} <i class="fa fa-angle-double-right"></i>
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="control-label" for="assigned">{{:: 'assigned-roles' | translate}}</label>
+                            <kc-tooltip>{{:: 'assigned-roles.tooltip' | translate}}</kc-tooltip>
+                            <select id="assigned" class="form-control" multiple size=5
+                                    ng-multiple="true"
+                                    ng-model="selectedRealmMappings"
+                                    ng-options="r.name for r in realmMappings | orderBy:'name'">
+                            </select>
+                            <button ng-disabled="selectedRealmMappings.length == 0" class="btn btn-default" type="submit" ng-click="deleteRealmRole()">
+                                <i class="fa fa-angle-double-left"></i> {{:: 'remove-selected' | translate}}
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="control-label" for="realm-composite">{{:: 'effective-roles' | translate}}  </label>
+                            <kc-tooltip>{{:: 'realm.effective-roles.tooltip' | translate}}</kc-tooltip>
+                            <select id="realm-composite" class="form-control" multiple size=5
+                                    disabled="true"
+                                    ng-model="dummymodel"
+                                    ng-options="r.name for r in realmComposite | orderBy:'name'">
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="col-md-2 control-label" class="control-label">
+                    <span>{{:: 'client-roles' | translate}}</span>
+                    <select class="form-control" id="clients" name="clients" ng-change="changeClient()" ng-model="targetClient" ng-options="a.clientId for a in clients | orderBy:'clientId'" ng-disabled="false"></select>
+                </label>
+
+                <div class="col-md-10">
+                    <div class="row" data-ng-hide="targetClient">
+                        <div class="col-md-4"><span class="text-muted">{{:: 'select-client-roles.tooltip' | translate}}</span></div>
+                    </div>
+                    <div class="row" data-ng-show="targetClient">
+                        <div class="col-md-3">
+                            <label class="control-label" for="available-client">{{:: 'available-roles' | translate}}</label>
+                            <kc-tooltip>{{:: 'assign.available-roles.tooltip' | translate}}</kc-tooltip>
+                            <select id="available-client" class="form-control" multiple size="5"
+                                    ng-multiple="true"
+                                    ng-model="selectedClientRoles"
+                                    ng-options="r.name for r in clientRoles | orderBy:'name'">
+                            </select>
+                            <button ng-disabled="selectedClientRoles.length == 0" class="btn btn-default" type="submit" ng-click="addClientRole()">
+                                {{:: 'add-selected' | translate}} <i class="fa fa-angle-double-right"></i>
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="control-label" for="assigned-client">{{:: 'assigned-roles' | translate}}</label>
+                            <kc-tooltip>{{:: 'client.assigned-roles.tooltip' | translate}}</kc-tooltip>
+                            <select id="assigned-client" class="form-control" multiple size=5
+                                    ng-multiple="true"
+                                    ng-model="selectedClientMappings"
+                                    ng-options="r.name for r in clientMappings | orderBy:'name'">
+                            </select>
+                            <button ng-disabled="selectedClientMappings.length == 0" class="btn btn-default" type="submit" ng-click="deleteClientRole()">
+                                <i class="fa fa-angle-double-left"></i> {{:: 'remove-selected' | translate}}
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="control-label" for="client-composite">{{:: 'effective-roles' | translate}}</label>
+                            <kc-tooltip>{{:: 'client.effective-roles.tooltip' | translate}}</kc-tooltip>
+                            <select id="client-composite" class="form-control" multiple size=5
+                                    disabled="true"
+                                    ng-model="dummymodel"
+                                    ng-options="r.name for r in clientComposite | orderBy:'name'">
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+        </div>
+
+<kc-menu></kc-menu>

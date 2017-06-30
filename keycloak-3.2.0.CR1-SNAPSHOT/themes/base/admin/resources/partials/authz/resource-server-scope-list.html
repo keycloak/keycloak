@@ -1,0 +1,111 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/clients">{{:: 'clients' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server">{{:: 'authz-authorization' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/scope">{{:: 'authz-scopes' | translate}}</a></li>
+    </ol>
+
+    <kc-tabs-resource-server></kc-tabs-resource-server>
+
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr>
+                <th class="kc-table-actions" colspan="5">
+                    <div class="form-inline">
+                        <div class="form-group">
+                            <div class="input-group">
+                                <input type="text" placeholder="{{:: 'name' | translate}}" data-ng-model="query.name" class="form-control search" onkeydown="if (event.keyCode == 13) document.getElementById('scopeSearch').click()">
+                                <div class="input-group-addon">
+                                    <i class="fa fa-search" id="scopeSearch" type="submit" data-ng-click="firstPage()"></i>
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <select class="form-control search" data-ng-model="detailsFilter" data-ng-change="showDetails();">
+                                    <option value="" selected>Hide Details</option>
+                                    <option value="true">Show Details</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="pull-right">
+                            <a id="createScope" class="btn btn-default" href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/scope/create">{{:: 'create' | translate}}</a>
+                        </div>
+                    </div>
+                </th>
+            </tr>
+            <tr data-ng-hide="scopes.length == 0">
+                <th>{{:: 'name' | translate}}</th>
+                <th colspan="3">{{:: 'actions' | translate}}</th>
+            </tr>
+        </thead>
+        <tfoot data-ng-show="scopes && (scopes.length >= query.max || query.first > 0)">
+        <tr>
+            <td colspan="8">
+                <div class="table-nav">
+                    <button data-ng-click="firstPage()" class="first" ng-disabled="query.first == 0">{{:: 'first-page' | translate}}</button>
+                    <button data-ng-click="previousPage()" class="prev" ng-disabled="query.first == 0">{{:: 'previous-page' | translate}}</button>
+                    <button data-ng-click="nextPage()" class="next" ng-disabled="scopes.length < query.max">{{:: 'next-page' | translate}}</button>
+                </div>
+            </td>
+        </tr>
+        </tfoot>
+        <tbody>
+            <tr ng-repeat-start="scope in scopes | filter:search | orderBy:'name'">
+                <td width="70%"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/scope/{{scope.id}}">{{scope.name}}</a></td>
+                <td ng-if="!scope.details.loaded" class="kc-action-cell" data-ng-click="showDetails(scope);">
+                    {{:: 'authz-show-details' | translate}}
+                </td>
+                <td ng-if="scope.details.loaded" class="kc-action-cell" data-ng-click="showDetails(scope);">
+                    {{:: 'authz-hide-details' | translate}}
+                </td>
+                <td class="kc-action-cell" ng-click="createPolicy(scope);">
+                    {{:: 'authz-create-permission' | translate}}
+                </td>
+                <td class="kc-action-cell" ng-click="delete(scope);">
+                    {{:: 'delete' | translate}}
+                </td>
+            </tr>
+            <tr ng-if="scope.details && scope.details.loaded" ng-repeat-end="">
+                <td colspan="4">
+                    <div id="details">
+                        <table class="table kc-authz-table-expanded table-striped">
+                            <thead>
+                            <tr>
+                                <th>Resources</th>
+                                <th>Associated Permissions</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td>
+                                    <span data-ng-show="scope.resources && !scope.resources.length">{{:: 'authz-no-resources-assigned' | translate}}</span>
+                                    <ul ng-repeat="resource in scope.resources" data-ng-show="scope.resources.length > 0">
+                                        <li>
+                                            <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/resource/{{resource._id}}">{{resource.name}}</a>
+                                        </li>
+                                    </ul>
+                                </td>
+                                <td>
+                                    <span data-ng-show="scope.policies && !scope.policies.length">{{:: 'authz-no-permission-assigned' | translate}}</span>
+                                    <ul ng-repeat="policy in scope.policies" data-ng-show="scope.policies.length > 0">
+                                        <li>
+                                            <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/permission/{{policy.type}}/{{policy.id}}">{{policy.name}}</a>
+                                        </li>
+                                    </ul>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </td>
+            </tr>
+            <tr data-ng-show="(scopes | filter:search).length == 0">
+                <td class="text-muted" colspan="3" data-ng-show="search.name">{{:: 'no-results' | translate}}</td>
+                <td class="text-muted" colspan="3" data-ng-hide="search.name">{{:: 'authz-no-scopes-available' | translate}}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<kc-menu></kc-menu>
