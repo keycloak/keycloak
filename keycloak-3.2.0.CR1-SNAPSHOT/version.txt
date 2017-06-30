@@ -1,1 +1,0 @@
-Keycloak - Version 3.2.0.CR1-SNAPSHOT
