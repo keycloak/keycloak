@@ -26,13 +26,13 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>keycloak-spring-boot-adapter</artifactId>
-  <name>Keycloak Spring Boot Integration</name>
+  <artifactId>keycloak-spring-boot-2-adapter</artifactId>
+  <name>Keycloak Spring Boot 2 Integration</name>
   <description/>
 
   <properties>
-    <spring-boot.version>1.4.0.RELEASE</spring-boot.version>
-    <spring.version>4.1.6.RELEASE</spring.version>
+    <spring-boot.version>2.0.0.RELEASE</spring-boot.version>
+    <spring.version>5.0.2.RELEASE</spring.version>
     <mockito.version>1.9.5</mockito.version>
   </properties>
 
@@ -63,14 +63,29 @@
       <artifactId>keycloak-spring-security-adapter</artifactId>
       <version>${project.version}</version>
       <scope>compile</scope>
-
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>2.9.4</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-annotations</artifactId>
+      <version>2.9.4</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-core</artifactId>
+      <version>5.0.2.RELEASE</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
       <version>${spring-boot.version}</version>
-      <scope>compile</scope>
-      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>io.undertow</groupId>
@@ -119,21 +134,17 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-configuration-processor</artifactId>
-        <optional>true</optional>
-        <version>${spring-boot.version}</version>
-     </dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-configuration-processor</artifactId>
+      <optional>true</optional>
+      <version>${spring-boot.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <source>1.7</source>
-          <target>1.7</target>
-        </configuration>
       </plugin>
     </plugins>
   </build>

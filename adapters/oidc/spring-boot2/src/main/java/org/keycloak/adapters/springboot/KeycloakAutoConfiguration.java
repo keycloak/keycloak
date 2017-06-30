@@ -18,67 +18,58 @@
 package org.keycloak.adapters.springboot;
 
 import org.keycloak.adapters.tomcat.KeycloakAuthenticatorValve;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
-import org.springframework.boot.context.embedded.ConfigurableEmbeddedServletContainer;
-import org.springframework.boot.context.embedded.EmbeddedServletContainerCustomizer;
-import org.springframework.boot.context.embedded.jetty.JettyEmbeddedServletContainerFactory;
-import org.springframework.boot.context.embedded.jetty.JettyServerCustomizer;
-import org.springframework.boot.context.embedded.tomcat.TomcatContextCustomizer;
-import org.springframework.boot.context.embedded.tomcat.TomcatEmbeddedServletContainerFactory;
-import org.springframework.boot.context.embedded.undertow.UndertowDeploymentInfoCustomizer;
-import org.springframework.boot.context.embedded.undertow.UndertowEmbeddedServletContainerFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.web.server.WebServerFactoryCustomizer;
+import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
+import org.springframework.boot.web.embedded.tomcat.TomcatContextCustomizer;
+import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
+import org.springframework.boot.web.embedded.jetty.JettyServerCustomizer;
+import org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory;
+import org.springframework.boot.web.embedded.undertow.UndertowDeploymentInfoCustomizer;
+import org.springframework.boot.web.embedded.undertow.UndertowServletWebServerFactory;
+
+
 
 
 /**
- * Keycloak authentication integration for Spring Boot
+ * Keycloak authentication integration for Spring Boot 2
  *
- * @author <a href="mailto:jimmidyson@gmail.com">Jimmi Dyson</a>
- * @version $Revision: 1 $
  */
 @Configuration
 @ConditionalOnWebApplication
 @EnableConfigurationProperties(KeycloakSpringBootProperties.class)
 @ConditionalOnProperty(value = "keycloak.enabled", matchIfMissing = true)
-public class KeycloakAutoConfiguration extends KeycloakBaseSpringBootConfiguration  {
-
-    private KeycloakSpringBootProperties keycloakProperties;
-
-    @Autowired
-    public void setKeycloakSpringBootProperties(KeycloakSpringBootProperties keycloakProperties) {
-        this.keycloakProperties = keycloakProperties;
-        KeycloakSpringBootConfigResolver.setAdapterConfig(keycloakProperties);
-    }
+public class KeycloakAutoConfiguration extends KeycloakBaseSpringBootConfiguration {
 
 
     @Bean
-    public EmbeddedServletContainerCustomizer getKeycloakContainerCustomizer() {
-        return new EmbeddedServletContainerCustomizer() {
+    public WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> getKeycloakContainerCustomizer() {
+        return new WebServerFactoryCustomizer<ConfigurableServletWebServerFactory>() {
             @Override
-            public void customize(ConfigurableEmbeddedServletContainer configurableEmbeddedServletContainer) {
+            public void customize(ConfigurableServletWebServerFactory configurableServletWebServerFactory) {
+                if(configurableServletWebServerFactory instanceof TomcatServletWebServerFactory){
 
-                if (configurableEmbeddedServletContainer instanceof TomcatEmbeddedServletContainerFactory) {
-
-                    TomcatEmbeddedServletContainerFactory container = (TomcatEmbeddedServletContainerFactory) configurableEmbeddedServletContainer;
+                    TomcatServletWebServerFactory container = (TomcatServletWebServerFactory)configurableServletWebServerFactory;
                     container.addContextValves(new KeycloakAuthenticatorValve());
                     container.addContextCustomizers(tomcatKeycloakContextCustomizer());
 
-                } else if (configurableEmbeddedServletContainer instanceof UndertowEmbeddedServletContainerFactory) {
+                } else if (configurableServletWebServerFactory instanceof UndertowServletWebServerFactory){
 
-                    UndertowEmbeddedServletContainerFactory container = (UndertowEmbeddedServletContainerFactory) configurableEmbeddedServletContainer;
+                    UndertowServletWebServerFactory container = (UndertowServletWebServerFactory)configurableServletWebServerFactory;
                     container.addDeploymentInfoCustomizers(undertowKeycloakContextCustomizer());
 
-                } else if (configurableEmbeddedServletContainer instanceof JettyEmbeddedServletContainerFactory) {
+                } else if (configurableServletWebServerFactory instanceof JettyServletWebServerFactory){
 
-                    JettyEmbeddedServletContainerFactory container = (JettyEmbeddedServletContainerFactory) configurableEmbeddedServletContainer;
+                    JettyServletWebServerFactory container = (JettyServletWebServerFactory)configurableServletWebServerFactory;
                     container.addServerCustomizers(jettyKeycloakServerCustomizer());
                 }
             }
+
         };
     }
 
@@ -100,15 +91,8 @@ public class KeycloakAutoConfiguration extends KeycloakBaseSpringBootConfigurati
         return new KeycloakUndertowDeploymentInfoCustomizer(keycloakProperties);
     }
 
-    static class KeycloakUndertowDeploymentInfoCustomizer extends KeycloakBaseUndertowDeploymentInfoCustomizer implements UndertowDeploymentInfoCustomizer {
-
-        public KeycloakUndertowDeploymentInfoCustomizer(KeycloakSpringBootProperties keycloakProperties) {
-            super(keycloakProperties);
-        }
-
-    }
-
     static class KeycloakJettyServerCustomizer extends KeycloakBaseJettyServerCustomizer implements JettyServerCustomizer {
+
 
         public KeycloakJettyServerCustomizer(KeycloakSpringBootProperties keycloakProperties) {
             super(keycloakProperties);
@@ -121,6 +105,12 @@ public class KeycloakAutoConfiguration extends KeycloakBaseSpringBootConfigurati
         public KeycloakTomcatContextCustomizer(KeycloakSpringBootProperties keycloakProperties) {
             super(keycloakProperties);
         }
+    }
 
+    static class KeycloakUndertowDeploymentInfoCustomizer extends KeycloakBaseUndertowDeploymentInfoCustomizer implements UndertowDeploymentInfoCustomizer {
+
+        public KeycloakUndertowDeploymentInfoCustomizer(KeycloakSpringBootProperties keycloakProperties){
+            super(keycloakProperties);
+        }
     }
 }
