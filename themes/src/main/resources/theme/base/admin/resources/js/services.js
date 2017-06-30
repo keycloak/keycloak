@@ -363,6 +363,10 @@ module.service('ServerInfo', function($resource, $q, $http) {
             });
             return ids;
         }
+
+        info.featureEnabled = function(provider) {
+            return info.profileInfo.disabledFeatures.indexOf(provider) == -1;
+        }
     }
 
     $http.get(authUrl + '/admin/serverinfo').then(function(response) {
