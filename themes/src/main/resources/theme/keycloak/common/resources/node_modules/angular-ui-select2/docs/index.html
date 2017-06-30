@@ -1,0 +1,47 @@
+<section id="directives-select2">
+	<div class="page-header">
+		<h1>Select2</h1>
+		<small><a href="http://ivaynberg.github.com/select2/">Select2</a> is inspired by <a href="http://harvesthq.github.com/chosen">Chosen</a></small>
+	</div>
+	<div class="row">
+		<div class="span6">
+			<h3>Demo</h3>
+			<div class="well">
+				<p>Value is: {{select2}} <a ng-click="select2='two'">(choose second)</a></p>
+				<select ui-select2 ng-model="select2" data-placeholder="Pick a number">
+					<option value=""></option>
+					<option value="one">First</option>
+					<option value="two">Second</option>
+					<option value="three">Third</option>
+				</select>
+			</div>
+
+			<div class="well">
+				<p>Value is: {{select2multiple}} <a ng-click="select2multiple=['two']">(choose second)</a></p>
+				<select ui-select2 ng-model="select2multiple" data-placeholder="Pick a number" multiple>
+					<option value="one">First</option>
+					<option value="two">Second</option>
+					<option value="three">Third</option>
+				</select>
+			</div>
+		</div>
+		<div class="span6">
+			<h3>Options</h3>
+			<p>You can pass an object to Select2 as the expression: <code>ui-select2="{allowClear:true}"</code> that will be passed directly to <code>$.fn.select2()</code>. You can read more about the supported list of options and what they do on the <a href="http://ivaynberg.github.com/select2/">Select2 Documentation Page</a>. AngularUI will leverage properties passed to Select2 for any complex behavior, there are no parameters necessary for that are specific to AngularUI.</p>
+		</div>
+	</div>
+	<p class="alert alert-info"><i class="icon-info-sign"></i> <code>ui-select2</code> is incompatible with <code>&lt;select ng-options&gt;</code>. For the best results use <code>&lt;option ng-repeat&gt;</code> instead</p>
+	<p class="alert alert-info"><i class="icon-info-sign"></i> In order to properly support the Select2 placeholder, create an empty <code>&lt;option&gt;</code> tag at the top of the <code>&lt;select&gt;</code> and either set a <code>data-placeholder</code> on the select element or pass a <code>placeholder</code> option to Select2.</p>
+
+	<h3>How?</h3>
+<pre class="prettyprint linenums" ng-non-bindable>
+&lt;p&gt;Value is: {{select2}} &lt;a ng-click=&quot;select2=&#x27;two&#x27;&quot;&gt;(choose second)&lt;/a&gt;&lt;/p&gt;
+&lt;select ui-select2 ng-model=&quot;select2&quot;&gt;
+&lt;option value=&quot;&quot;&gt;Pick a number&lt;/option&gt;
+&lt;option value=&quot;one&quot;&gt;First&lt;/option&gt;
+&lt;option value=&quot;two&quot;&gt;Second&lt;/option&gt;
+&lt;option value=&quot;three&quot;&gt;Third&lt;/option&gt;
+&lt;/select&gt;
+</pre>
+<p>Or try playing around with this <a href="http://plnkr.co/edit/gist:4279651?p=preview">sandbox demo</a> to see how AJAX works</p>
+</section>
