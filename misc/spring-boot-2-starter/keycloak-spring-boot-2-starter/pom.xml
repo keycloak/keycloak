@@ -3,8 +3,8 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.keycloak</groupId>
-        <artifactId>keycloak-spring-boot-starter-parent</artifactId>
-        <version>3.2.0.CR1-SNAPSHOT</version>
+        <artifactId>keycloak-spring-boot-2-starter-parent</artifactId>
+        <version>3.3.0.CR1-SNAPSHOT</version>
     </parent>
     <artifactId>keycloak-spring-boot-2-starter</artifactId>
     <name>Keycloak :: Spring :: Boot :: 2 :: Default ::  Starter</name>

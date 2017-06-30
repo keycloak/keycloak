@@ -112,7 +112,7 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-spring-boot-2-adapter</artifactId>
-                <version>3.2.0.CR1-SNAPSHOT</version>
+                <version>3.3.0.CR1-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
@@ -132,7 +132,7 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-spring-boot-2-starter</artifactId>
-                <version>3.2.0.CR1-SNAPSHOT</version>
+                <version>3.3.0.CR1-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
