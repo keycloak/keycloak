@@ -1,0 +1,128 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/clients">{{:: 'clients' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server">{{:: 'authz-authorization' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/policy">{{:: 'authz-policies' | translate}}</a></li>
+    </ol>
+
+    <kc-tabs-resource-server></kc-tabs-resource-server>
+
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr>
+                <th class="kc-table-actions" colspan="5">
+                    <div class="form-inline">
+                        <div class="form-group">
+                            {{:: 'filter' | translate}}:&nbsp;&nbsp;
+                            <div class="input-group">
+                                <input type="text" placeholder="{{:: 'name' | translate}}" data-ng-model="query.name" class="form-control search" onkeydown="if (event.keyCode == 13) document.getElementById('policySearch').click()">
+                                <div class="input-group-addon">
+                                    <i class="fa fa-search" id="policySearch" type="submit" data-ng-click="firstPage()"></i>
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <input type="text" placeholder="{{:: 'authz-resource' | translate}}" data-ng-model="query.resource" class="form-control search" onkeydown="if (event.keyCode == 13) document.getElementById('policySearch').click()">
+                                <div class="input-group-addon">
+                                    <i class="fa fa-search" type="submit" data-ng-click="firstPage()"></i>
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <input type="text" placeholder="{{:: 'authz-scope' | translate}}" data-ng-model="query.scope" class="form-control search" onkeydown="if (event.keyCode == 13) document.getElementById('policySearch').click()">
+                                <div class="input-group-addon">
+                                    <i class="fa fa-search" type="submit" data-ng-click="firstPage()"></i>
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <select class="form-control search" data-ng-model="query.type"
+                                        ng-options="p.type as p.name for p in policyProviders track by p.type" data-ng-change="firstPage()">
+                                    <option value="" selected ng-click="query.type = ''">{{:: 'authz-all-types' | translate}}</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <select class="form-control search" data-ng-model="detailsFilter" data-ng-change="searchQuery();">
+                                    <option value="" selected>Hide Details</option>
+                                    <option value="true">Show Details</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="pull-right">
+                            <a id="hideDetails" data-ng-show="showDetailsFlag" class="btn btn-default" data-ng-click="showDetailsFlag = !showDetailsFlag;showDetails();" href="">{{:: 'authz-hide-details' | translate}}</a>
+                            <a id="showDetails" data-ng-hide="showDetailsFlag" class="btn btn-default" data-ng-click="showDetailsFlag = !showDetailsFlag;showDetails();" href="">{{:: 'authz-show-details' | translate}}</a>
+                            <select id="create-policy" class="form-control" ng-model="policyType"
+                                    ng-options="p.name for p in policyProviders track by p.type"
+                                    data-ng-change="addPolicy(policyType);">
+                                <option value="" disabled selected>{{:: 'authz-create-policy' | translate}}...</option>
+                            </select>
+                        </div>
+                    </div>
+                </th>
+            </tr>
+            <tr data-ng-hide="policies.length == 0">
+                <th>{{:: 'name' | translate}}</th>
+                <th>{{:: 'description' | translate}}</th>
+                <th>{{:: 'type' | translate}}</th>
+                <th colspan="3">{{:: 'actions' | translate}}</th>
+            </tr>
+        </thead>
+        <tfoot data-ng-show="policies && (policies.length >= query.max || query.first > 0)">
+        <tr>
+            <td colspan="8">
+                <div class="table-nav">
+                    <button data-ng-click="firstPage()" class="first" ng-disabled="query.first == 0">{{:: 'first-page' | translate}}</button>
+                    <button data-ng-click="previousPage()" class="prev" ng-disabled="query.first == 0">{{:: 'previous-page' | translate}}</button>
+                    <button data-ng-click="nextPage()" class="next" ng-disabled="policies.length < query.max">{{:: 'next-page' | translate}}</button>
+                </div>
+            </td>
+        </tr>
+        </tfoot>
+        <tbody>
+            <tr ng-repeat-start="policy in policies | filter: {name: search.name, type: search.type} | orderBy:'name'">
+                <td><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/policy/{{policy.type}}/{{policy.id}}">{{policy.name}}</a></td>
+                <td>{{policy.description}}</td>
+                <td>{{policy.type}}</td>
+                <td ng-if="!policy.details.loaded" class="kc-action-cell" data-ng-click="showDetails(policy);">
+                    {{:: 'authz-show-details' | translate}}
+                </td>
+                <td ng-if="policy.details.loaded" class="kc-action-cell" data-ng-click="showDetails(policy);">
+                    {{:: 'authz-hide-details' | translate}}
+                </td>
+                <td class="kc-action-cell" ng-click="delete(policy);">
+                    {{:: 'delete' | translate}}
+                </td>
+            </tr>
+            <tr ng-if="policy.details && policy.details.loaded" ng-repeat-end="">
+                <td colspan="5">
+                    <div id="details">
+                        <table class="table kc-authz-table-expanded table-striped">
+                            <thead>
+                            <tr>
+                                <th>Dependent Permissions and Policies</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td>
+                                    <span data-ng-show="policy.dependentPolicies && !policy.dependentPolicies.length">{{:: 'authz-no-permission-assigned' | translate}}</span>
+                                    <ul ng-repeat="dep in policy.dependentPolicies" data-ng-show="policy.dependentPolicies.length > 0">
+                                        <li>
+                                            <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/{{dep.type == 'scope' || dep.type == 'resource' ? 'permission' : 'policy'}}/{{dep.type}}/{{dep.id}}">{{dep.name}}</a>
+                                        </li>
+                                    </ul>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </td>
+            </tr>
+            <tr data-ng-show="(policies | filter:search).length == 0">
+                <td class="text-muted" colspan="3" data-ng-show="search.name">{{:: 'no-results' | translate}}</td>
+                <td class="text-muted" colspan="3" data-ng-hide="search.name">{{:: 'authz-no-policies-available' | translate}}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<kc-menu></kc-menu>

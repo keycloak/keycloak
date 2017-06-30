@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2011, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="urn:jboss:domain:naming:1.2"
+           xmlns="urn:jboss:domain:naming:1.2"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified"
+           version="1.2">
+
+    <!-- The naming subsystem root element -->
+    <xs:element name="subsystem" type="subsystemType"/>
+
+    <xs:complexType name="subsystemType">
+        <xs:annotation>
+            <xs:documentation>
+                Naming subsystem configurations
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="bindings" type="bindingsType" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="remote-naming" type="remote-namingType" minOccurs="0" maxOccurs="1" />
+        </xs:all>
+    </xs:complexType>
+
+    <xs:complexType name="remote-namingType">
+        <xs:annotation>
+            <xs:documentation>
+                This element activates the remote naming server, that allows access to items bound in the java:jboss/exported
+                JNDI context.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:complexType>
+
+    <xs:complexType name="bindingsType">
+        <xs:sequence>
+            <xs:element name="simple" type="simpleType" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="object-factory" type="objectFactoryType" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="lookup" type="lookupType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="simpleType">
+        <xs:attribute name="name" type="xs:token" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The JNDI name to bind to
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="value" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The value to bind
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="type" type="xs:token" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    The type of entry to bind. If not specified defaults to java.lang.String.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="objectFactoryType">
+        <xs:attribute name="name" type="xs:token" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The JNDI name to bind to
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="module" type="xs:token" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The module to load the JNDI entry from
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="class" type="xs:token" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The javax.naming.spi.ObjectFactory that provides the value.
+                    Note that when getObjectInstance is invoked the first Object parameter
+                    will be equal to the JNDI name of this binding. All other parameters will
+                    be null.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="lookupType">
+        <xs:attribute name="name" type="xs:token" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The JNDI name to bind to
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="lookup" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The JNDI location to lookup
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+</xs:schema>

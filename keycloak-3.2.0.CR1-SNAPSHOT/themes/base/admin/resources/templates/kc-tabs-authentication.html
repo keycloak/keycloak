@@ -1,0 +1,7 @@
+<ul class="nav nav-tabs">
+    <li ng-class="{active: path[3] == 'flows'}" data-ng-show="access.viewRealm"><a href="#/realms/{{realm.realm}}/authentication/flows">{{:: 'flows' | translate}}</a></li>
+    <li ng-class="{active: path[3] == 'flow-bindings'}" data-ng-show="access.viewRealm"><a href="#/realms/{{realm.realm}}/authentication/flow-bindings">{{:: 'bindings' | translate}}</a></li>
+    <li ng-class="{active: path[3] == 'required-actions'}" data-ng-show="access.viewRealm"><a href="#/realms/{{realm.realm}}/authentication/required-actions">{{:: 'required-actions' | translate}}</a></li>
+    <li ng-class="{active: path[3] == 'password-policy'}" data-ng-show="access.viewRealm"><a href="#/realms/{{realm.realm}}/authentication/password-policy">{{:: 'password-policy' | translate}}</a></li>
+    <li ng-class="{active: path[3] == 'otp-policy'}" data-ng-show="access.viewRealm"><a href="#/realms/{{realm.realm}}/authentication/otp-policy">{{:: 'otp-policy' | translate}}</a></li>
+</ul>

@@ -1,0 +1,30 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/clients">{{:: 'clients' | translate}}</a></li>
+        <li>{{client.clientId}}</li>
+    </ol>
+
+    <kc-tabs-client></kc-tabs-client>
+
+    <form class="form-horizontal" name="credentialForm" novalidate kc-read-only="!client.access.configure">
+        <fieldset class="border-top">
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="notBefore">{{:: 'not-before' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-disabled="true" class="form-control" type="text" id="notBefore" name="notBefore" data-ng-model="notBefore" autofocus>
+                </div>
+                <kc-tooltip>{{:: 'client-revoke.not-before.tooltip' | translate}}</kc-tooltip>
+            </div>
+        </fieldset>
+        <div class="form-group">
+            <div class="col-md-10 col-md-offset-2" data-ng-show="client.access.configure">
+                <button type="submit" data-ng-click="clear()" class="btn btn-default">{{:: 'clear' | translate}}</button>
+                <button type="submit" data-ng-click="setNotBeforeNow()" class="btn btn-default">{{:: 'set-to-now' | translate}}</button>
+                <button type="submit" data-ng-click="pushRevocation()" class="btn btn-primary" tooltip-trigger="mouseover mouseout" tooltip="{{:: 'client-revoke.push.tooltip' | translate}}" tooltip-placement="bottom">{{:: 'push' | translate}}</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<kc-menu></kc-menu>

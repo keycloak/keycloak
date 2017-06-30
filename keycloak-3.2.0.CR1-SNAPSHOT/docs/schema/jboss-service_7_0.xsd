@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2010, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+            targetNamespace="urn:jboss:service:7.0"
+            xmlns="urn:jboss:service:7.0"
+            elementFormDefault="qualified"
+            attributeFormDefault="unqualified"
+            version="1.0">
+
+    <xs:complexType name="server">
+        <xs:sequence>
+            <xs:element name="mbean" type="mbean" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="mode" type="mode" default="active" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="mbean">
+        <xs:sequence>
+            <xs:element name="constructor" type="constructor" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="attribute" type="attribute" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="depends" type="depends" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="depends-list" type="depends-list" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="alias" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="annotation" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" use="required"/>
+        <xs:attribute name="code" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="constructor">
+        <xs:sequence>
+            <xs:element name="arg" type="arg" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="arg">
+        <xs:attribute name="type" type="xs:string" default="java.lang.String" use="optional"/>
+        <xs:attribute name="value" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <xs:simpleType name="mode">
+        <xs:restriction base="xs:token">
+            <xs:enumeration value="active"/>
+            <xs:enumeration value="passive"/>
+            <xs:enumeration value="on demand"/>
+            <xs:enumeration value="never"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="attribute" mixed="true">
+        <xs:choice minOccurs="0" maxOccurs="1">
+            <xs:element name="inject" type="inject"/>
+            <xs:element name="value-factory" type="value-factory"/>
+        </xs:choice>
+        <xs:attribute name="name" type="xs:string" use="required"/>
+        <xs:attribute name="replace" type="xs:boolean" use="optional"/>
+        <xs:attribute name="trim" type="xs:boolean" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="depends">
+        <xs:sequence>
+            <xs:element name="mbean" type="mbean" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="optional-attribute-name" type="xs:string" use="optional"/>
+        <xs:attribute name="proxy-type" type="xs:boolean" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="depends-list">
+        <xs:sequence>
+            <xs:element name="depends-list-element" type="depends-list-element" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="optional-attribute-name" type="xs:string" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="depends-list-element">
+        <xs:sequence>
+            <xs:element name="mbean" type="mbean" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="inject">
+        <xs:attribute name="bean" type="xs:string" use="required"/>
+        <xs:attribute name="property" type="xs:string" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="value-factory">
+        <xs:sequence>
+            <xs:element name="parameter" type="parameter" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="bean" type="xs:string" use="required"/>
+        <xs:attribute name="method" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="parameter">
+        <xs:attribute name="class" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <!-- Root elements -->
+
+    <xs:element name="server" type="server"/>
+</xs:schema>

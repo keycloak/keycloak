@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="urn:jboss:domain:jaxr:1.1"
+           xmlns="urn:jboss:domain:jaxr:1.1"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified"
+           version="1.1">
+
+    <!-- The subsystem root element -->
+    <xs:element name="subsystem" type="subsystemType"/>
+
+    <xs:complexType name="subsystemType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                The configuration of the JAXR subsystem.
+            ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="connection-factory" type="connectionFactoryType" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="properties" type="propertiesType" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="connectionFactoryType" mixed="false">
+        <xs:attribute name="jndi-name" type="xs:token" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                <![CDATA[[
+                The JNDI name for the ConnectionFactory
+                ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="class" type="xs:token" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                <![CDATA[[
+                The fully qualified class name of the ConnectionFactory implementation.
+                ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="propertiesType">
+        <xs:sequence>
+            <xs:element name="property" type="propertyType" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="propertyType">
+        <xs:attribute name="name" use="required"/>
+        <xs:attribute name="value" use="optional"/>
+    </xs:complexType>
+
+</xs:schema>

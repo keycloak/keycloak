@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2010, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+<module xmlns="urn:jboss:module:1.5" name="org.omg.api">
+    <dependencies>
+        <module name="javax.orb.api" export="false">
+            <exports>
+                <include-set>
+                    <path name="org/omg/ATLAS"/>
+                    <path name="org/omg/BiDirPolicy"/>
+                    <path name="org/omg/CONV_FRAME"/>
+                    <path name="org/omg/CORBA"/>
+                    <path name="org/omg/CORBA/ContainedPackage"/>
+                    <path name="org/omg/CORBA/ContainerPackage"/>
+                    <path name="org/omg/CORBA/InterfaceDefPackage"/>
+                    <path name="org/omg/CORBA/ORBPackage"/>
+                    <path name="org/omg/CORBA/TypeCodePackage"/>
+                    <path name="org/omg/CORBA/ValueDefPackage"/>
+                    <path name="org/omg/CORBA/portable"/>
+                    <path name="org/omg/CORBA_2_3"/>
+                    <path name="org/omg/CORBA_2_3/portable"/>
+                    <path name="org/omg/CORBA_2_5"/>
+                    <path name="org/omg/CSI"/>
+                    <path name="org/omg/CSIIOP"/>
+                    <path name="org/omg/CosCollection"/>
+                    <path name="org/omg/CosConcurrencyControl"/>
+                    <path name="org/omg/CosEventChannelAdmin"/>
+                    <path name="org/omg/CosEventComm"/>
+                    <path name="org/omg/CosNaming"/>
+                    <path name="org/omg/CosNaming/NamingContextExtPackage"/>
+                    <path name="org/omg/CosNaming/NamingContextPackage"/>
+                    <path name="org/omg/CosNotification"/>
+                    <path name="org/omg/CosNotifyChannelAdmin"/>
+                    <path name="org/omg/CosNotifyChannelAdminAck"/>
+                    <path name="org/omg/CosNotifyComm"/>
+                    <path name="org/omg/CosNotifyCommAck"/>
+                    <path name="org/omg/CosNotifyFilter"/>
+                    <path name="org/omg/CosPropertyService"/>
+                    <path name="org/omg/CosTime"/>
+                    <path name="org/omg/CosTypedEventChannelAdmin"/>
+                    <path name="org/omg/CosTypedEventComm"/>
+                    <path name="org/omg/CosTypedNotifyChannelAdmin"/>
+                    <path name="org/omg/CosTypedNotifyComm"/>
+                    <path name="org/omg/Dynamic"/>
+                    <path name="org/omg/DynamicAny"/>
+                    <path name="org/omg/DynamicAny/DynAnyFactoryPackage"/>
+                    <path name="org/omg/DynamicAny/DynAnyPackage"/>
+                    <path name="org/omg/ETF"/>
+                    <path name="org/omg/GIOP"/>
+                    <path name="org/omg/GSSUP"/>
+                    <path name="org/omg/IIOP"/>
+                    <path name="org/omg/IOP"/>
+                    <path name="org/omg/IOP/CodecFactoryPackage"/>
+                    <path name="org/omg/IOP/CodecPackage"/>
+                    <path name="org/omg/Messaging"/>
+                    <path name="org/omg/PortableInterceptor"/>
+                    <path name="org/omg/PortableInterceptor/ORBInitInfoPackage"/>
+                    <path name="org/omg/PortableServer"/>
+                    <path name="org/omg/PortableServer/CurrentPackage"/>
+                    <path name="org/omg/PortableServer/POAManagerPackage"/>
+                    <path name="org/omg/PortableServer/POAPackage"/>
+                    <path name="org/omg/PortableServer/ServantLocatorPackage"/>
+                    <path name="org/omg/PortableServer/portable"/>
+                    <path name="org/omg/RTCORBA"/>
+                    <path name="org/omg/SSLIOP"/>
+                    <path name="org/omg/Security"/>
+                    <path name="org/omg/SecurityAdmin"/>
+                    <path name="org/omg/SecurityLevel1"/>
+                    <path name="org/omg/SecurityLevel2"/>
+                    <path name="org/omg/SecurityReplaceable"/>
+                    <path name="org/omg/SendingContext"/>
+                    <path name="org/omg/TimeBase"/>
+                    <path name="org/omg/dds"/>
+                </include-set>
+            </exports>
+        </module>
+        <module name="org.jboss.jts" export="false">
+            <exports>
+                <include-set>
+                    <path name="org/omg/CosTransactions"/>
+                    <path name="org/omg/XA"/>
+                </include-set>
+            </exports>
+        </module>
+    </dependencies>
+</module>

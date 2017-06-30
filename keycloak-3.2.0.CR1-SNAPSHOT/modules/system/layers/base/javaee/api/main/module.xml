@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2010, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+
+<module xmlns="urn:jboss:module:1.5" name="javaee.api">
+    <resources>
+    </resources>
+
+    <dependencies>
+        <module name="javax.activation.api" export="true"/>
+        <module name="javax.annotation.api" export="true"/>
+        <module name="javax.batch.api" export="true"/>
+        <module name="javax.ejb.api" export="true"/>
+        <module name="javax.enterprise.api" export="true"/>
+        <module name="javax.enterprise.concurrent.api" export="true"/>
+        <module name="javax.inject.api" export="true"/>
+        <module name="javax.interceptor.api" export="true"/>
+        <module name="javax.json.api" export="true"/>
+        <module name="javax.jms.api" export="true"/>
+        <module name="javax.jws.api" export="true"/>
+        <module name="javax.mail.api" export="true"/>
+        <module name="javax.management.j2ee.api" export="true"/>
+        <module name="javax.persistence.api" export="true"/>
+        <module name="javax.resource.api" export="true"/>
+        <module name="javax.rmi.api" export="true"/>
+        <module name="javax.security.auth.message.api" export="true"/>
+        <module name="javax.security.jacc.api" export="true"/>
+        <module name="javax.servlet.api" export="true"/>
+        <module name="javax.servlet.jsp.api" export="true"/>
+        <module name="javax.transaction.api" export="true"/>
+        <module name="javax.validation.api" export="true"/>
+        <module name="javax.ws.rs.api" export="true"  services="export"/>
+        <module name="javax.websocket.api" export="true" />
+        <module name="javax.xml.bind.api" export="true"/>
+        <module name="javax.xml.soap.api" export="true"/>
+        <module name="javax.xml.ws.api" export="true"/>
+        <module name="org.glassfish.javax.el" export="true"/>
+
+        <!-- TODO WFLY-5966 validate the need for these and remove if not needed.
+             Prior to WFLY-5922 they were exported by javax.ejb.api. -->
+        <module name="javax.xml.rpc.api" export="true"/>
+        <module name="org.omg.api" export="true"/>
+
+        <!-- This one always goes last. -->
+        <module name="javax.api" export="true"/>
+    </dependencies>
+</module>

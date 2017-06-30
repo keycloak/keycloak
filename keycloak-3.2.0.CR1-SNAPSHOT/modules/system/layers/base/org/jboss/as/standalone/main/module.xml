@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2010, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+
+<module xmlns="urn:jboss:module:1.5" name="org.jboss.as.standalone">
+    <properties>
+        <property name="jboss.api" value="private"/>
+        <property name="jboss.require-java-version" value="1.8"/>
+    </properties>
+
+    <main-class name="org.jboss.as.server.Main"/>
+
+    <resources>
+    </resources>
+
+    <dependencies>
+        <module name="javax.api"/>
+        <!-- JAXP default dependencies. DO NOT REMOVE!!!
+             These are loaded by the JAXP redirect facility in jboss-modules when this module is used
+             as a boot module. The purpose is to provide a common default JAXP implementation on all
+             JDKs. This is necessary since we have to override the JAXP APIs to fix incompatibilities
+             with modular class-loading. In the future we may be able to replace this construct if
+             JAXP APIs are fixed on all known JVMs *and* we implement a subsystem to provide a similar
+             default/fallback common parser behavior. Please discuss any design changes in this area
+             on the WildFly development mailing list before enacting.
+
+             Xalan is optional for deritives of wildfly-core that do not desire TransformerFactory
+             support, or wish to require that deployments bundle an xslt implementaiton to use it,
+             as it will break otherwise.
+        -->
+        <module name="org.apache.xalan" services="import" optional="true"/>
+        <module name="org.apache.xerces" services="import"/>
+        <module name="org.codehaus.woodstox" services="import"/>
+        <!-- END JAXP default dependencies -->
+
+        <module name="org.jboss.logmanager" services="import"/>
+        <module name="org.jboss.as.jmx" services="import"/>
+        <module name="org.jboss.as.server" export="true"/>
+        <module name="org.jboss.vfs" services="import"/>
+        <module name="org.wildfly.security.elytron-private" services="import"/>
+    </dependencies>
+</module>

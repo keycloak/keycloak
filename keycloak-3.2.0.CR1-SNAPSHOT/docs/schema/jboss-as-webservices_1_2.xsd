@@ -1,0 +1,318 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2012, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+
+<xs:schema
+  targetNamespace="urn:jboss:domain:webservices:1.2"
+  xmlns="urn:jboss:domain:webservices:1.2"
+  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  elementFormDefault="qualified"
+  attributeFormDefault="unqualified"
+  version="1.2">
+
+  <xs:element name="subsystem" type="webservicesSubsystemType" />
+
+  <xs:complexType name="webservicesSubsystemType">
+    <xs:annotation>
+      <xs:documentation><![CDATA[
+
+        The WSDL, a required deployment artifact for an endpoint, has a <soap:address>
+        element which points to the location of the endpoint. JBossWS supports the rewriting
+        of that SOAP address using the attribute values of wsdl-host and wsdl-port or
+        wsdl-secure-port.
+
+        The webservices subsystem supports the pre-definition of endpoint configurations can
+        be used for JAX-WS client and JAX-WS endpoint implementations, elements client-config and
+        endpoint-config respectively.  These configurations can include JAX-WS handlers and key/value
+        properties declarations that control JBossWS and Apache CXF internals.
+
+      ]]></xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="modify-wsdl-address" type="xs:boolean" minOccurs="0" maxOccurs="1">
+          <xs:annotation>
+              <xs:documentation><![CDATA[
+
+                When modify-wsdl-address is set to true and the content of <soap:address> is a valid URL,
+                JBossWS will rewrite the URL using the values of wsdl-host and wsdl-port or wsdl-secure-port.
+
+                When modify-wsdl-address is set to false and the content of <soap:address> is a valid URL,
+                JBossWS will not rewrite the URL.  The <soap:address> URL will be used.
+
+                When the content of <soap:address> is not a valid URL, JBossWS will rewrite it no matter
+                what the setting of modify-wsdl-address.
+
+                If modify-wsdl-address is set to true and wsdl-host is not defined or explicitly set to 'jbossws.undefined.host'
+                the content of <soap:address> URL is use.  JBossWS uses the requester's host when rewriting the <soap:address>
+
+                When modify-wsdl-address is not defined JBossWS uses a default value of true.
+
+              ]]></xs:documentation>
+          </xs:annotation>
+      </xs:element>
+      <xs:element name="wsdl-host" type="xs:string" minOccurs="0" maxOccurs="1">
+          <xs:annotation>
+              <xs:documentation><![CDATA[
+
+                This property explicitly defines the host name or the host's IP address
+                that will be used in the <soap:address> URL rewrite.
+
+                When wsdl-host is not defined JBossWS uses a value of 'jbossws.undefined.host'.
+
+                If wsdl-host is not defined or explicitly set to 'jbossws.undefined.host' and
+                modify-wsdl-address is set to true, the content of <soap:address> URL is use.
+                JBossWS uses requester's host when rewriting the <soap:address>
+
+              ]]></xs:documentation>
+          </xs:annotation>
+      </xs:element>
+      <xs:element name="wsdl-port" type="xs:int" minOccurs="0" maxOccurs="1">
+        <xs:annotation>
+          <xs:documentation>
+
+            Set this property to explicitly define the HTTP port that will be used for rewriting the SOAP address.
+            Otherwise the HTTP port will be identified by querying the list of installed HTTP connectors.
+
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="wsdl-secure-port" type="xs:int" minOccurs="0" maxOccurs="1">
+        <xs:annotation>
+          <xs:documentation>
+
+            Set this property to explicitly define the HTTPS port that will be used for rewriting the SOAP address.
+            Otherwise the HTTPS port will be identified by querying the list of installed HTTPS connectors.
+
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="endpoint-config" type="endpointConfigType" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="client-config" type="clientConfigType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="endpointConfigType">
+    <xs:annotation>
+      <xs:documentation>
+
+        Endpoint config can define unique properties that are visible only to endpoints using this config.
+        It can also define PRE and POST handler chains associated with it.
+
+      </xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="pre-handler-chain" minOccurs="0" maxOccurs="unbounded" type="handlerChainType"/>
+      <xs:element name="post-handler-chain" minOccurs="0" maxOccurs="unbounded" type="handlerChainType"/>
+      <xs:element name="property" minOccurs="0" maxOccurs="unbounded" type="propertyType"/>
+    </xs:sequence>
+    <xs:attribute name="name" type="xs:NMTOKEN" use="required">
+      <xs:annotation>
+        <xs:documentation>
+
+          Endpoint config name. Must be unique inside subsystem element.
+
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <xs:complexType name="clientConfigType">
+    <xs:annotation>
+      <xs:documentation>
+
+        Client config can define unique properties that are visible only to clients using this config.
+        It can also define PRE and POST handler chains associated with it.
+
+      </xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="pre-handler-chain" minOccurs="0" maxOccurs="unbounded" type="handlerChainType"/>
+      <xs:element name="post-handler-chain" minOccurs="0" maxOccurs="unbounded" type="handlerChainType"/>
+      <xs:element name="property" minOccurs="0" maxOccurs="unbounded" type="propertyType"/>
+    </xs:sequence>
+    <xs:attribute name="name" type="xs:NMTOKEN" use="required">
+      <xs:annotation>
+        <xs:documentation>
+
+          Client config name. Must be unique inside subsystem element.
+
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <xs:complexType name="propertyType">
+    <xs:annotation>
+      <xs:documentation>
+
+        Property that is private for endpoint config.
+
+      </xs:documentation>
+    </xs:annotation>
+    <xs:attribute name="name" type="xs:NMTOKEN" use="required">
+      <xs:annotation>
+        <xs:documentation>
+
+          Property name. Must be unique inside endpoint config.
+
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="value" type="xs:string" use="optional">
+      <xs:annotation>
+        <xs:documentation>
+
+          Property value. May be omitted.
+
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <xs:complexType name="handlerChainType">
+    <xs:annotation>
+      <xs:documentation>
+
+        Handlerchain can be defined such that the handlers in the
+        handlerchain operate on all endpoints or only for specified
+        protocol-bindings.
+
+      </xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="handler" type="handlerType" minOccurs="1" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="name" type="xs:NMTOKEN" use="required">
+      <xs:annotation>
+        <xs:documentation>
+
+          Handler chain name. Must be unique for every endpoint/client config.
+
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="protocol-bindings" type="protocolBindingListType" use="optional">
+      <xs:annotation>
+        <xs:documentation>
+
+          If protocol-bindings attribute on the handler chain element is omitted
+          then the handlers specified in the handler chain will be applied on 
+          every endpoint/client.
+
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <xs:complexType name="handlerType">
+    <xs:annotation>
+      <xs:documentation>
+
+        Declares the handler for an endpoint or client.
+
+      </xs:documentation>
+    </xs:annotation>
+    <xs:attribute name="name" type="xs:NMTOKEN" use="required">
+      <xs:annotation>
+        <xs:documentation>
+
+          Defines the name of the JAX-WS handler. The name must be unique within the handler chain.
+
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="class" type="xs:token" use="required">
+      <xs:annotation>
+        <xs:documentation>
+
+          Defines a fully qualified class name for the JAX-WS handler implementation.
+
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+
+  <xs:simpleType name="protocolBindingListType">
+    <xs:annotation>
+      <xs:documentation>
+
+        Defines the type used for specifying a list of
+        protocol-bindingType(s). For e.g.
+
+        ##SOAP11_HTTP ##SOAP12_HTTP ##XML_HTTP
+
+      </xs:documentation>
+    </xs:annotation>
+    <xs:list itemType="protocolBindingType"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="protocolBindingType">
+    <xs:annotation>
+      <xs:documentation>
+
+        Defines the type used for specifying the URI for the
+        protocol binding used by the endpoint.  For
+        portability one could use one of the following tokens that
+        alias the standard binding types: 
+
+        ##SOAP11_HTTP
+        ##SOAP11_HTTP_MTOM
+        ##SOAP12_HTTP
+        ##SOAP12_HTTP_MTOM
+        ##XML_HTTP
+
+        Other specifications could define tokens that start with ##
+        to alias new standard binding URIs that are introduced.
+
+      </xs:documentation>
+    </xs:annotation>
+    <xs:union memberTypes="xs:anyURI protocolAliasType"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="protocolAliasType">
+    <xs:annotation>
+      <xs:documentation>
+
+        Defines the type that is used for specifying tokens that
+        start with ## which are used to alias existing standard
+        protocol bindings and support aliases for new standard
+        binding URIs that are introduced in future specifications.
+
+        The following tokens alias the standard protocol binding
+        URIs:
+
+        ##SOAP11_HTTP = "http://schemas.xmlsoap.org/wsdl/soap/http"
+        ##SOAP11_HTTP_MTOM = 
+        "http://schemas.xmlsoap.org/wsdl/soap/http?mtom=true"
+        ##SOAP12_HTTP = "http://www.w3.org/2003/05/soap/bindings/HTTP/"
+        ##SOAP12_HTTP_MTOM = 
+        "http://www.w3.org/2003/05/soap/bindings/HTTP/?mtom=true"
+        ##XML_HTTP = "http://www.w3.org/2004/08/wsdl/http"
+
+      </xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:token">
+      <xs:pattern value="##.+"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+</xs:schema>

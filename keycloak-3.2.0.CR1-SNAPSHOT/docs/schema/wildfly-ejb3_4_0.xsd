@@ -1,0 +1,472 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2015, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="urn:jboss:domain:ejb3:4.0"
+           xmlns="urn:jboss:domain:ejb3:4.0"
+           xmlns:threads="urn:jboss:domain:threads:1.1"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified"
+           version="4.0">
+
+    <xs:import namespace="urn:jboss:domain:threads:1.1" schemaLocation="jboss-as-threads_1_1.xsd"/>
+
+    <!-- The ejb3 subsystem root element -->
+    <xs:element name="subsystem" type="ejb3-subsystemType"/>
+
+    <xs:complexType name="ejb3-subsystemType">
+        <xs:annotation>
+            <xs:documentation>
+                EJB3 subsystem configurations
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="session-bean" type="session-beanType" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="mdb" type="mdbType" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="entity-bean" type="entityType" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="pools" type="poolsType" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="caches" type="cachesType" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="passivation-stores" type="passivation-storesType" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="async" type="asyncType" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="timer-service" type="timerServiceType" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="remote" type="remoteType" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="thread-pools" type="threadPoolsType" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="iiop" type="iiopType" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="in-vm-remote-interface-invocation" type="in-vm-remote-interface-invocationType"
+                        minOccurs="0" maxOccurs="1"/>
+            <xs:element name="default-distinct-name" type="default-distinct-nameType" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="default-security-domain" type="default-security-domainType" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="default-missing-method-permissions-deny-access" type="default-missing-method-permissions-deny-accessType" minOccurs="0" maxOccurs="1" />
+            <xs:element name="disable-default-ejb-permissions" type="disable-default-ejb-permissionsType" minOccurs="0" maxOccurs="1" />
+            <xs:element name="statistics" type="statisticsType" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="log-system-exceptions" type="log-system-exceptionsType" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:complexType name="mdbType">
+        <xs:all>
+            <xs:element name="resource-adapter-ref" type="resource-adapter-refType" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="bean-instance-pool-ref" type="bean-instance-pool-refType" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="delivery-groups" type="delivery-groupsType" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:complexType name="entityType">
+        <xs:all>
+            <xs:element name="bean-instance-pool-ref" type="bean-instance-pool-refType" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="optimistic-locking" type="optimistic-lockingType" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:complexType name="optimistic-lockingType">
+        <xs:attribute name="enabled" type="xs:boolean" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="remoteType">
+        <xs:all>
+            <xs:element name="channel-creation-options" type="channel-creation-optionsType" minOccurs="0"
+                        maxOccurs="1"/>
+            <xs:element name="profiles" type="profilesType" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+        <xs:attribute name="connector-ref" type="xs:string" use="required"/>
+        <xs:attribute name="thread-pool-name" type="xs:token" use="required"/>
+        <xs:attribute name="cluster" type="xs:string" use="optional"/>
+        <xs:attribute name="execute-in-worker" type="xs:boolean" use="optional" default="true"/>
+    </xs:complexType>
+
+    <xs:complexType name="profilesType">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="profile" type="profileType"/>
+        </xs:choice>
+    </xs:complexType>
+
+    <xs:complexType name="profileType">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="remoting-ejb-receiver" type="remoting-ejb-receiverType"/>
+        </xs:choice>
+        <xs:attribute name="name" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="remoting-ejb-receiverType">
+        <xs:all>
+            <xs:element name="channel-creation-options" type="channel-creation-optionsType" minOccurs="0"
+                        maxOccurs="1"/>
+        </xs:all>
+        <xs:attribute name="name" type="xs:string" use="required"/>
+        <xs:attribute name="outbound-connection-ref" type="xs:string" use="required"/>
+        <xs:attribute name="connect-timeout" type="xs:long" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="asyncType">
+        <xs:attribute name="thread-pool-name" type="xs:token" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="session-beanType">
+        <xs:all>
+            <xs:element name="stateless" type="stateless-beanType" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="stateful" type="stateful-beanType" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="singleton" type="singleton-beanType" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:complexType name="stateless-beanType">
+        <xs:all>
+            <xs:element name="bean-instance-pool-ref" type="bean-instance-pool-refType" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:complexType name="stateful-beanType">
+        <xs:attribute name="default-access-timeout" type="xs:positiveInteger" default="5000" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    The default access timeout, for stateful session beans, in milliseconds
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="cache-ref" type="xs:string"/>
+        <xs:attribute name="clustered-cache-ref" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Deprecated. Not supported on current version servers; only allowed in managed domain profiles for use
+                    on servers running earlier versions.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="passivation-disabled-cache-ref" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    EJB 3.2 spec allows individual stateful EJBs to declare whether they want to disable passivation for those beans.
+                    The EJB3 subsystem as a result is expected to have a passivation disabled cache factory, which it can use as a default
+                    for such EJBs.
+                    This passivation-disabled-cache-ref attribute points to such a cache configuration in the EJB3 subsystem
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="singleton-beanType">
+        <xs:attribute name="default-access-timeout" type="xs:positiveInteger" default="5000" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    The default access timeout, for singleton beans, in milliseconds
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="resource-adapter-refType">
+        <xs:attribute name="resource-adapter-name" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="bean-instance-pool-refType">
+        <xs:attribute name="pool-name" use="required" type="xs:string"/>
+    </xs:complexType>
+
+    <xs:complexType name="delivery-groupsType">
+        <xs:choice minOccurs="1" maxOccurs="unbounded">
+            <xs:element name="delivery-group" type="delivery-groupType"/>
+        </xs:choice>
+    </xs:complexType>
+
+    <xs:complexType name="delivery-groupType">
+        <xs:attribute name="name" use="required" type="xs:string"/>
+        <xs:attribute name="active" use="optional" type="xs:boolean" default="true"/>
+    </xs:complexType>
+
+    <xs:complexType name="poolsType">
+        <xs:all>
+            <xs:element name="bean-instance-pools" type="bean-instance-poolsType" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:complexType name="bean-instance-poolsType">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="strict-max-pool" type="strict-max-poolType"/>
+        </xs:choice>
+    </xs:complexType>
+
+    <xs:complexType name="strict-max-poolType">
+        <xs:attribute name="name" type="xs:string" use="required"/>
+        <xs:attribute name="max-pool-size" type="xs:positiveInteger" default="20" use="optional"/>
+        <xs:attribute name="derive-size" type="xs:string" use="optional"/>
+        <xs:attribute name="instance-acquisition-timeout" type="xs:positiveInteger" default="5" use="optional"/>
+        <xs:attribute name="instance-acquisition-timeout-unit" type="timeout-unitType"
+                      default="MINUTES" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="cachesType">
+        <xs:sequence>
+            <xs:element name="cache" type="cacheType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="cacheType">
+        <xs:attribute name="name" type="xs:string" use="required"/>
+        <xs:attribute name="passivation-store-ref" type="xs:string"/>
+        <xs:attribute name="aliases" type="aliases"/>
+    </xs:complexType>
+
+    <xs:complexType name="passivation-storesType">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="passivation-store" type="passivation-storeType"/>
+            <xs:element name="file-passivation-store" type="file-passivation-storeType">
+                <xs:annotation>
+                    <xs:documentation>Deprecated. Use passivation-store instead.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="cluster-passivation-store" type="cluster-passivation-storeType">
+                <xs:annotation>
+                    <xs:documentation>Deprecated. Use passivation-store instead.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:choice>
+    </xs:complexType>
+
+    <xs:complexType name="passivation-storeType">
+        <xs:attribute name="name" type="xs:string" use="required"/>
+        <xs:attribute name="cache-container" type="xs:string" default="ejb"/>
+        <xs:attribute name="bean-cache" type="xs:string"/>
+        <xs:attribute name="max-size" type="xs:positiveInteger" default="10000"/>
+    </xs:complexType>
+
+    <xs:attributeGroup name="legacy-passivation">
+        <xs:attribute name="name" type="xs:string" use="required"/>
+        <xs:attribute name="idle-timeout" type="xs:positiveInteger" default="300"/>
+        <xs:attribute name="idle-timeout-unit" type="timeout-unitType" default="SECONDS"/>
+    </xs:attributeGroup>
+
+    <xs:complexType name="file-passivation-storeType">
+        <xs:attributeGroup ref="legacy-passivation"/>
+        <xs:attribute name="max-size" type="xs:positiveInteger" default="100000"/>
+        <xs:attribute name="relative-to" type="xs:string" default="jboss.server.data.dir"/>
+        <xs:attribute name="sessions-path" type="xs:string" default="ejb3/sessions"/>
+        <xs:attribute name="groups-path" type="xs:string" default="ejb3/groups"/>
+        <xs:attribute name="subdirectory-count" type="xs:positiveInteger" default="100"/>
+    </xs:complexType>
+
+    <xs:complexType name="cluster-passivation-storeType">
+        <xs:attributeGroup ref="legacy-passivation"/>
+        <xs:attribute name="max-size" type="xs:positiveInteger" default="10000"/>
+        <xs:attribute name="passivate-events-on-replicate" type="xs:boolean" default="true"/>
+        <xs:attribute name="cache-container" type="xs:string" default="ejb"/>
+        <xs:attribute name="bean-cache" type="xs:string"/>
+        <xs:attribute name="client-mappings-cache" type="xs:string" default="remote-connector-client-mappings"/>
+    </xs:complexType>
+
+    <xs:simpleType name="aliases">
+        <xs:annotation>
+            <xs:documentation>A list of aliases.</xs:documentation>
+        </xs:annotation>
+        <xs:list itemType="xs:string"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="timeout-unitType">
+        <xs:annotation>
+            <xs:documentation>
+                TimeUnit that are allowed for instance-acquisition-timeout on a pool
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:token">
+            <xs:enumeration value="DAYS"/>
+            <xs:enumeration value="HOURS"/>
+            <xs:enumeration value="MINUTES"/>
+            <xs:enumeration value="SECONDS"/>
+            <xs:enumeration value="MILLISECONDS"/>
+            <xs:enumeration value="MICROSECONDS"/>
+            <xs:enumeration value="NANOSECONDS"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="timerServiceType">
+        <xs:sequence>
+            <xs:element name="data-stores" type="dataStoresType" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="thread-pool-name" type="xs:token" use="required"/>
+        <xs:attribute name="default-data-store" type="xs:token" use="required" />
+    </xs:complexType>
+
+    <xs:complexType name="dataStoresType">
+        <xs:sequence>
+            <xs:element name="file-data-store" type="fileDataStoreType" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="database-data-store" type="databaseDataStoreType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="threadPoolsType">
+        <xs:sequence>
+            <xs:element name="thread-pool" type="threadPoolType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="threadPoolType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                A thread pool executor with an unbounded queue.  Such a thread pool has a core size and a queue with no
+                upper bound.  When a task is submitted, if the number of running threads is less than the core size,
+                a new thread is created.  Otherwise, the task is placed in queue.  If too many tasks are allowed to be
+                submitted to this type of executor, an out of memory condition may occur.
+
+                The "name" attribute is the name of the created executor.
+
+                The "max-threads" attribute must be used to specify the thread pool size.  The nested
+                "keepalive-time" element may used to specify the amount of time that pool threads should
+                be kept running when idle; if not specified, threads will run until the executor is shut down.
+                The "thread-factory" element specifies the bean name of a specific threads subsystem thread factory to
+                use to create worker threads. Usually it will not be set for an EJB3 thread pool and an appropriate
+                default thread factory will be used.
+            ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="max-threads" type="threads:countType"/>
+            <xs:element name="keepalive-time" type="threads:time" minOccurs="0"/>
+            <xs:element name="thread-factory" type="threads:ref" minOccurs="0"/>
+        </xs:all>
+        <xs:attribute name="name" use="required" type="xs:string"/>
+    </xs:complexType>
+
+    <xs:complexType name="fileDataStoreType">
+        <xs:attribute name="name" type="xs:token"/>
+        <xs:attribute name="path" type="xs:string"/>
+        <xs:attribute name="relative-to" type="xs:string"/>
+    </xs:complexType>
+
+    <xs:complexType name="databaseDataStoreType">
+        <xs:attribute name="name" type="xs:token"/>
+        <xs:attribute name="datasource-jndi-name" type="xs:token"/>
+        <xs:attribute name="database" type="xs:token" use="optional"/>
+        <xs:attribute name="partition" type="xs:token" use="optional" default="default"/>
+        <xs:attribute name="refresh-interval" type="xs:integer" use="optional"/>
+        <xs:attribute name="allow-execution" type="xs:boolean" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="iiopType">
+        <xs:attribute name="enable-by-default" type="xs:boolean" use="required"/>
+        <xs:attribute name="use-qualified-name" type="xs:boolean" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="in-vm-remote-interface-invocationType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                The EJB3 spec mandates that the invocations on remote interfaces of an EJB, use pass-by-value
+                semantics for parameters (i.e. parameter values are serialized/deserialized) during invocation.
+                The pass-by-value attribute of this element can be used to switch that behaviour to pass the parameters
+                by reference (and skip the serialization/deserialization step). Setting the pass-by-value to false will
+                return in pass-by-reference semantics.
+            ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="pass-by-value" type="xs:boolean" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="default-distinct-nameType">
+        <xs:attribute name="value" type="xs:string"/>
+    </xs:complexType>
+
+    <xs:complexType name="default-security-domainType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                The default security domain name that will be used for EJBs in the absence of any explicitly configured
+                security domain name for the bean
+            ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="value" type="xs:string"/>
+    </xs:complexType>
+
+    <xs:complexType name="statisticsType">
+        <xs:attribute name="enabled" type="xs:string"/>
+    </xs:complexType>
+
+    <xs:complexType name="channel-creation-optionsType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                The options that will be used while creating the channel for EJB remote invocation communication
+            ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="option" type="optionType"/>
+        </xs:choice>
+    </xs:complexType>
+
+    <xs:complexType name="optionType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                The "name" attribute specifies the name of the option being configured.
+
+                The "value" attribute is the value that's going to be set for the option.
+
+                The "type" attribute value can either be "xnio" or "remoting". If it's "xnio", then the option
+                being configured will be looked up against the org.xnio.Options class. If it's "remoting" then
+                the option will be looked up against the org.xnio.Option.RemotingOptions class.
+            ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="name" type="xs:string" use="required"/>
+        <xs:attribute name="value" type="xs:string"/>
+        <xs:attribute name="type" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="default-missing-method-permissions-deny-accessType">
+        <xs:annotation>
+                   <xs:documentation>
+                       <![CDATA[
+                       If this is enabled then lack of any security metadata for an EJB method is an
+                       implicit deny.
+                   ]]>
+                   </xs:documentation>
+               </xs:annotation>
+        <xs:attribute name="value" type="xs:boolean"/>
+    </xs:complexType>
+
+    <xs:complexType name="log-system-exceptionsType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                       If this is enabled then system exceptions will be logged by the EJB subsystem.
+                   ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="value" type="xs:string"/>
+    </xs:complexType>
+
+
+    <xs:complexType name="disable-default-ejb-permissionsType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                       If this is enabled then the default security manager permissions required by spec will not
+                       be added to EJB deployments.
+                   ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="value" type="xs:boolean"/>
+    </xs:complexType>
+</xs:schema>

@@ -1,0 +1,623 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2014 Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            targetNamespace="urn:jboss:module:1.3"
+            xmlns="urn:jboss:module:1.3"
+            elementFormDefault="qualified"
+            attributeFormDefault="unqualified"
+            version="1.0">
+
+    <!-- Root element -->
+    <xsd:element name="module" type="moduleType">
+        <xsd:annotation>
+            <xsd:documentation>
+                Root element for a module declaration.
+            </xsd:documentation>
+        </xsd:annotation>
+    </xsd:element>
+
+    <!-- Root element -->
+    <xsd:element name="module-alias" type="moduleAliasType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                Root element for a module alias declaration.
+            </documentation>
+        </annotation>
+    </xsd:element>
+
+    <!-- Root element -->
+    <xsd:element name="module-absent" type="moduleAbsentType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                Root element for an absent module.
+            </documentation>
+        </annotation>
+    </xsd:element>
+
+    <xsd:complexType name="moduleType">
+        <xsd:annotation>
+            <xsd:documentation>
+                The module declaration type; contains dependencies, resources, and the main class
+                specification.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:all>
+            <xsd:element name="exports" type="filterType" minOccurs="0">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        Lists filter expressions to apply to the export filter of the local resources of this module
+                        (optional). By default, everything is exported. If filter expressions are provided, the default
+                        action is to accept all paths if no filters match.
+                    </documentation>
+                </annotation>
+            </xsd:element>
+            <xsd:element name="dependencies" type="dependenciesType" minOccurs="0">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        Lists the dependencies of this module (optional).
+                    </documentation>
+                </annotation>
+            </xsd:element>
+            <xsd:element name="resources" type="resourcesType" minOccurs="0">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        Lists the resource roots of this module (optional).
+                    </documentation>
+                </annotation>
+            </xsd:element>
+            <xsd:element name="main-class" type="classNameType" minOccurs="0">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        Specifies the main class of this module; used to run the module from the command-line
+                        (optional).
+                    </documentation>
+                </annotation>
+            </xsd:element>
+            <xsd:element name="properties" type="propertyListType" minOccurs="0">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        Lists the user-defined properties to be associated with this module (optional).
+                    </documentation>
+                </annotation>
+            </xsd:element>
+            <xsd:element name="permissions" type="permissionsType" minOccurs="0">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        Lists the requested permission set for this module. If the requested permissions cannot
+                        be assigned, the module cannot be loaded.
+                    </documentation>
+                </annotation>
+            </xsd:element>
+        </xsd:all>
+        <xsd:attribute name="name" type="moduleNameType" use="required">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The name of this module (required).
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+        <xsd:attribute name="slot" type="moduleSlotType" use="optional">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The version slot of this module (optional).
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:simpleType name="moduleNameType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                A module name, which consists of one or more dot (.)-separated segments. Each segment must begin and end
+                with an alphanumeric or underscore (_), and may otherwise contain alphanumerics, underscores, and hyphens
+                (-).
+            </documentation>
+        </annotation>
+        <xsd:restriction base="xsd:string">
+            <xsd:pattern value="[a-zA-Z0-9_]([-a-zA-Z0-9_]*[a-zA-Z0-9_])?(\.[a-zA-Z0-9_]([-a-zA-Z0-9_]*[a-zA-Z0-9_])?)*"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="moduleSlotType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                A module version slot. A slot may consist of one or more alphanumerics, hyphens (-), underscores (_),
+                plus signs (+), asterisks (*), or dots (.).
+            </documentation>
+        </annotation>
+        <xsd:restriction base="xsd:string">
+            <xsd:pattern value="[-a-zA-Z0-9_+*.]+"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="dependenciesType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                A list of zero or more module dependencies.
+            </documentation>
+        </annotation>
+        <xsd:choice minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="module" type="moduleDependencyType">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        A specified module dependency.
+                    </documentation>
+                </annotation>
+            </xsd:element>
+            <xsd:element name="system" type="systemDependencyType">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        A dependency on the system (or embedding) class loader.
+                    </documentation>
+                </annotation>
+            </xsd:element>
+        </xsd:choice>
+    </xsd:complexType>
+
+    <xsd:complexType name="moduleDependencyType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                A single module dependency expression.
+            </documentation>
+        </annotation>
+        <xsd:all minOccurs="0">
+            <xsd:element name="exports" type="filterType" minOccurs="0">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        A filter used to restrict what packages or directories from this dependency are re-exported by
+                        this module. See also the "export" and "services" attributes. The default action of this filter
+                        list is controlled by the value of the "export" attribute. Regardless of the setting of these
+                        attributes, this filter always behaves as if it has a final entry which rejects META-INF and
+                        all of its subdirectories.
+                    </documentation>
+                </annotation>
+            </xsd:element>
+            <xsd:element name="imports" type="filterType" minOccurs="0">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        A filter used to restrict what packages or directories from this dependency are visible to this
+                        module. See also the "services" attribute. The default action of this filter list is to reject
+                        a path if not matched.
+                    </documentation>
+                </annotation>
+            </xsd:element>
+        </xsd:all>
+        <xsd:attribute name="name" type="moduleNameType" use="required">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The dependency module name (required).
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+        <xsd:attribute name="slot" type="moduleSlotType" use="optional">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The dependency module version slot (optional).
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+        <xsd:attribute name="export" type="xsd:boolean" use="optional" default="false">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    Specifies whether this module dependency is re-exported by default (default is "false"). Setting
+                    this attribute to true sets the default action for the export filter list to "accept"; leaving it
+                    as false sets the default action to "reject".  Thus you can still export dependency resources even
+                    if this attribute is false by listing explicit paths for the export list.
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+        <xsd:attribute name="services" type="serviceDispositionType" use="optional" default="none">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    Specifies whether and how services found in this dependency are used (default is "none"). Specifying
+                    a value of "import" for this attribute is equivalent to adding a filter at the end of the import
+                    filter list which includes the META-INF/services path from the dependency module.  Setting a value
+                    of "export" for this attribute is equivalent to the same action on the export filter list.
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+        <xsd:attribute name="optional" type="xsd:boolean" use="optional" default="false">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    Specifies whether this dependency is optional (defaults to false). An optional dependency will not
+                    cause the module to fail to load if not found; however if the module is added later, it will not be
+                    retroactively linked into this module's dependency list.
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="systemDependencyType">
+        <xsd:all>
+            <xsd:element name="paths" type="pathSetType">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        The list of paths which are applicable for this system dependency.
+                    </documentation>
+                </annotation>
+            </xsd:element>
+            <xsd:element name="exports" type="filterType" minOccurs="0">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        A filter used to restrict what packages or directories from this dependency are re-exported by
+                        this module. See also the "export" and "services" attributes. The default action of this filter
+                        list is controlled by the value of the "export" attribute. Regardless of the setting of these
+                        attributes, this filter always behaves as if it has a final entry which rejects META-INF and
+                        all of its subdirectories.
+                    </documentation>
+                </annotation>
+            </xsd:element>
+        </xsd:all>
+        <xsd:attribute name="export" type="xsd:boolean" use="optional" default="false">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    Specifies whether this module dependency is re-exported by default (default is "false"). Setting
+                    this attribute to true sets the default action for the export filter list to "accept"; leaving it
+                    as false sets the default action to "reject".  Thus you can still export dependency resources even
+                    if this attribute is false by listing explicit paths for the export list.
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:simpleType name="serviceDispositionType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                The requested behavior for service handling on a dependency.
+            </documentation>
+        </annotation>
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="none">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        Do not import or export services from this dependency.
+                    </documentation>
+                </annotation>
+            </xsd:enumeration>
+            <xsd:enumeration value="import">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        Import, but do not re-export, services from this dependency.
+                    </documentation>
+                </annotation>
+            </xsd:enumeration>
+            <xsd:enumeration value="export">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        Import and re-export services found in this dependency.
+                    </documentation>
+                </annotation>
+            </xsd:enumeration>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="classNameType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                A class name.
+            </documentation>
+        </annotation>
+        <xsd:attribute name="name" type="xsd:string" use="required">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The class name.
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="pathType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                A filesystem path name.
+            </documentation>
+        </annotation>
+        <xsd:attribute name="name" type="xsd:string" use="required">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The path name.
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="resourcesType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                A list of zero or more resource roots for this deployment.
+            </documentation>
+        </annotation>
+        <xsd:choice minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="resource-root" type="resourceType">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        A resource root within this deployment.
+                    </documentation>
+                </annotation>
+            </xsd:element>
+            <xsd:element name="artifact" type="artifactType">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        A maven artifact within this deployment.
+                    </documentation>
+                </annotation>
+            </xsd:element>
+            <xsd:element name="native-artifact" type="artifactType">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        A maven native artifact within this deployment.  This is a jar that contains a lib/ directory
+                        with corresponding platform directories and binaries.  This element will cause the jar to
+                        be unzipped within the artifact's local repository directory.
+                    </documentation>
+                </annotation>
+            </xsd:element>
+        </xsd:choice>
+    </xsd:complexType>
+
+    <xsd:complexType name="artifactType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                A maven artifact within a deployment.
+            </documentation>
+        </annotation>
+        <xsd:attribute name="name" type="xsd:string" use="required">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    URI that points to the maven artifact "group:artifact:version[:classifier]"
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+
+    <xsd:complexType name="resourceType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                A resource root within a deployment.
+            </documentation>
+        </annotation>
+        <xsd:all>
+            <xsd:element name="filter" type="filterType" minOccurs="0">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        A path filter specification for this resource root (optional). By default all paths are accepted.
+                    </documentation>
+                </annotation>
+            </xsd:element>
+        </xsd:all>
+        <xsd:attribute name="name" type="xsd:string" use="optional">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The name of this resource root (optional). If not specified, defaults to the value of the path
+                    attribute.
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+        <xsd:attribute name="path" type="xsd:string" use="required">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The path of this resource root, relative to the path in which the module.xml file is found.
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="filterType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                A filter specification, consisting of zero or more filter items.
+            </documentation>
+        </annotation>
+        <xsd:choice minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="include" type="pathSpecType" minOccurs="0">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        A path to include. The path value can be a path name or a "glob" which may include the special
+                        wildcards "*", "**", and "?".
+                    </documentation>
+                </annotation>
+            </xsd:element>
+            <xsd:element name="exclude" type="pathSpecType" minOccurs="0">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        A path to exclude. The path value can be a path name or a "glob" which may include the special
+                        wildcards "*", "**", and "?".
+                    </documentation>
+                </annotation>
+            </xsd:element>
+            <xsd:element name="include-set" type="pathSetType" minOccurs="0">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        A set of literal path names to include. Wildcards are not supported.
+                    </documentation>
+                </annotation>
+            </xsd:element>
+            <xsd:element name="exclude-set" type="pathSetType" minOccurs="0">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        A set of literal path names to exclude. Wildcards are not supported.
+                    </documentation>
+                </annotation>
+            </xsd:element>
+        </xsd:choice>
+    </xsd:complexType>
+
+    <xsd:complexType name="pathSpecType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                A path specification type, which may include wildcards.
+            </documentation>
+        </annotation>
+        <xsd:attribute name="path" type="xsd:string" use="required">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The path name, which can be a literal path name or it may include the special wildcards "*", "**",
+                    and "?".
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="pathSetType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                A set of literal path names which can be used for efficient matching against multiple possible values.
+            </documentation>
+        </annotation>
+        <xsd:choice minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="path" type="pathType" minOccurs="0">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        The path name to include in the set.
+                    </documentation>
+                </annotation>
+            </xsd:element>
+        </xsd:choice>
+    </xsd:complexType>
+
+    <xsd:complexType name="moduleAliasType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                A module alias type, which defines the target for a module alias.
+            </documentation>
+        </annotation>
+        <xsd:attribute name="name" type="moduleNameType" use="required">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The name of this module alias (required).
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+        <xsd:attribute name="slot" type="moduleSlotType" use="optional">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The version slot of this module alias (optional).
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+        <xsd:attribute name="target-name" type="moduleNameType" use="required">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The name of the module to which this alias refers (required).
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+        <xsd:attribute name="target-slot" type="moduleSlotType" use="optional">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The version slot of the module to which this alias refers (optional).
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="moduleAbsentType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                An explicitly absent module.
+            </documentation>
+        </annotation>
+        <xsd:attribute name="name" type="moduleNameType" use="required">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The name of the absent module (required).
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+        <xsd:attribute name="slot" type="moduleSlotType" use="optional">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The version slot of the absent module (optional).
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="propertyListType">
+        <xsd:choice minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="property" type="propertyType">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        A property in this property list.
+                    </documentation>
+                </annotation>
+            </xsd:element>
+        </xsd:choice>
+    </xsd:complexType>
+
+    <xsd:complexType name="propertyType">
+        <xsd:attribute name="name" type="xsd:string" use="required">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The property name as a string (required).
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+        <xsd:attribute name="value" type="xsd:string" use="optional" default="true">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The property value (optional, defaults to "true").
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="permissionsType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                A list of permissions that this module requires.
+            </documentation>
+        </annotation>
+        <xsd:choice minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="grant" type="permissionType">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        The permission to grant.
+                    </documentation>
+                </annotation>
+            </xsd:element>
+        </xsd:choice>
+    </xsd:complexType>
+    
+    <xsd:complexType name="permissionType">
+        <xsd:attribute name="permission" type="xsd:string" use="required">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The qualified class name of the permission to grant.
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+        <xsd:attribute name="name" type="xsd:string" use="optional">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The permission name to provide to the permission class constructor.
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+        <xsd:attribute name="actions" type="xsd:string" use="optional">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The (optional) list of actions, required by some permission types.
+                </documentation>
+            </annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+</xsd:schema>

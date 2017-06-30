@@ -1,0 +1,82 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <h1>{{:: 'roles' | translate}}</h1>
+
+    <ul class="nav nav-tabs">
+        <li><a href="#/realms/{{realm.realm}}/roles">{{:: 'realm-roles' | translate}}</a></li>
+        <li class="active"><a href="#/realms/{{realm.realm}}/default-roles">{{:: 'default-roles' | translate}}</a></li>
+    </ul>
+    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
+        <div class="form-group">
+            <label class="col-md-2 control-label" class="control-label">{{:: 'realm-roles' | translate}}</label>
+
+            <div class="col-md-10">
+                <div class="row">
+                    <div class="col-md-4">
+                        <label class="control-label" for="available">{{:: 'available-roles' | translate}}</label>
+                        <kc-tooltip>{{:: 'default.available-roles.tooltip' | translate}}</kc-tooltip>
+                        <select id="available" class="form-control" multiple size="5"
+                                ng-multiple="true"
+                                ng-model="selectedRealmRoles"
+                                ng-options="r for r in availableRealmRoles | orderBy:'toString()'">
+                        </select>
+                        <button ng-disabled="selectedRealmRoles.length == 0" class="btn btn-default" type="submit" ng-click="addRealmDefaultRole()">
+                            {{:: 'add-selected' | translate}} <i class="fa fa-angle-double-right"></i>
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="control-label" for="assigned">{{:: 'realm-default-roles' | translate}}</label>
+                        <kc-tooltip>{{:: 'realm-default-roles.tooltip' | translate}}</kc-tooltip>
+                        <select id="assigned" class="form-control" multiple size=5
+                                ng-multiple="true"
+                                ng-model="selectedRealmDefRoles"
+                                ng-options="r for r in realm.defaultRoles | orderBy:'toString()'">
+                        </select>
+                        <button ng-disabled="selectedRealmDefRoles.length == 0" class="btn btn-default" type="submit" ng-click="deleteRealmDefaultRole()">
+                            <i class="fa fa-angle-double-left"></i> {{:: 'remove-selected' | translate}}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="col-md-2 control-label" class="control-label">
+                <span>{{:: 'client-roles' | translate}}</span>
+                <select class="form-control" id="clients" name="clients" ng-change="changeClient()" ng-model="client" ng-options="a.clientId for a in clients | orderBy:'clientId'" ng-disabled="false"></select>
+            </label>
+            <div class="col-md-10" data-ng-show="client">
+                <div class="row" data-ng-hide="client">
+                    <div class="col-md-4"><span class="text-muted">{{:: 'select-client-to-view-roles' | translate}}</span></div>
+                </div>
+                <div class="row" data-ng-show="client">
+                    <div class="col-md-4">
+                        <label class="control-label" for="available-client">{{:: 'available-roles' | translate}}</label>
+                        <kc-tooltip>{{:: 'default.available-roles-client.tooltip' | translate}}</kc-tooltip>
+                        <select id="available-client" class="form-control" multiple size="5"
+                                ng-multiple="true"
+                                ng-model="selectedClientRoles"
+                                ng-options="r for r in availableClientRoles | orderBy:'toString()'">
+                        </select>
+                        <button ng-disabled="selectedClientRoles.length == 0" class="btn btn-default" type="submit" ng-click="addClientDefaultRole()">
+                            {{:: 'add-selected' | translate}} <i class="fa fa-angle-double-right"></i>
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="control-label" for="assigned-client">{{:: 'client-default-roles' | translate}}</label>
+                        <kc-tooltip>{{:: 'client-default-roles.tooltip' | translate}}</kc-tooltip>
+                        <select id="assigned-client" class="form-control" multiple size=5
+                                ng-multiple="true"
+                                ng-model="selectedClientDefRoles"
+                                ng-options="r for r in client.defaultRoles | orderBy:'toString()'">
+                        </select>
+                        <button ng-disabled="selectedClientDefRoles.length == 0" class="btn btn-default" type="submit" ng-click="rmClientDefaultRole()">
+                            <i class="fa fa-angle-double-left"></i> {{:: 'remove-selected' | translate}}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<kc-menu></kc-menu>

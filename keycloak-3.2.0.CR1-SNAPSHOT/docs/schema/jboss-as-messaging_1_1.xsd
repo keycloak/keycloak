@@ -1,0 +1,798 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2011, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="urn:jboss:domain:messaging:1.1"
+           targetNamespace="urn:jboss:domain:messaging:1.1"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified"
+           version="1.1">
+
+    <!-- The messaging subsystem root element -->
+    <xs:element name="subsystem">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                The configuration of the messaging subsystem.
+            ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element maxOccurs="unbounded" minOccurs="0" name="hornetq-server" type="hornetq-serverType" />
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:complexType name="hornetq-serverType">
+      <xs:annotation>
+          <xs:documentation>
+            <![CDATA[
+                The configuration of an individual HornetQ Server.
+            ]]>
+          </xs:documentation>
+      </xs:annotation>
+      <xs:all>
+          <xs:element maxOccurs="1" minOccurs="0" name="clustered" type="xs:boolean" />
+          <!-- no file system deployment in AS
+          <xs:element maxOccurs="1" minOccurs="0" type="file-deployment-enabled"/>
+           -->
+          <xs:element maxOccurs="1" minOccurs="0" name="persistence-enabled" type="xs:boolean" />
+          <!--  TODO use thread subsystem?  -->
+          <xs:element maxOccurs="1" minOccurs="0" name="scheduled-thread-pool-max-size" type="xs:int">
+              <xs:annotation>
+                  <xs:documentation>
+                     Maximum number of threads to use for the scheduled thread pool
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="thread-pool-max-size" type="xs:int">
+              <xs:annotation>
+                  <xs:documentation>
+                      Maximum number of threads to use for the thread pool
+                  </xs:documentation>
+              </xs:annotation>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="security-domain" type="xs:string" />
+          <xs:element maxOccurs="1" minOccurs="0" name="security-enabled" type="xs:boolean" />
+          <xs:element maxOccurs="1" minOccurs="0" name="security-invalidation-interval" type="xs:long" />
+          <xs:element maxOccurs="1" minOccurs="0" name="wild-card-routing-enabled" type="xs:boolean" />
+          <xs:element maxOccurs="1" minOccurs="0" name="management-address" type="xs:string" />
+          <xs:element maxOccurs="1" minOccurs="0" name="management-notification-address" type="xs:string" />
+          <xs:element maxOccurs="1" minOccurs="0" name="cluster-user" type="xs:string" />
+          <xs:element maxOccurs="1" minOccurs="0" name="cluster-password" type="xs:string" />
+          <!-- no logging configuration for AS needed
+          <xs:element maxOccurs="1" minOccurs="0" name="log-delegate-factory-class-name" type="xs:string" />
+           -->
+          <xs:element maxOccurs="1" minOccurs="0" name="jmx-management-enabled" type="xs:boolean" />
+          <xs:element maxOccurs="1" minOccurs="0" name="jmx-domain" type="xs:string" />
+          <xs:element maxOccurs="1" minOccurs="0" name="message-counter-enabled" type="xs:boolean" />
+          <xs:element maxOccurs="1" minOccurs="0" name="message-counter-sample-period" type="xs:long" />
+          <xs:element maxOccurs="1" minOccurs="0" name="message-counter-max-day-history" type="xs:int" />
+          <xs:element maxOccurs="1" minOccurs="0" name="connection-ttl-override" type="xs:long" />
+          <xs:element maxOccurs="1" minOccurs="0" name="async-connection-execution-enabled" type="xs:boolean" />
+          <xs:element maxOccurs="1" minOccurs="0" name="transaction-timeout" type="xs:long" />
+          <xs:element maxOccurs="1" minOccurs="0" name="transaction-timeout-scan-period" type="xs:long" />
+          <xs:element maxOccurs="1" minOccurs="0" name="message-expiry-scan-period" type="xs:long" />
+          <xs:element maxOccurs="1" minOccurs="0" name="message-expiry-thread-priority" type="xs:int" />
+          <xs:element maxOccurs="1" minOccurs="0" name="id-cache-size" type="xs:int" />
+          <xs:element maxOccurs="1" minOccurs="0" name="persist-id-cache" type="xs:boolean" />
+          <xs:element maxOccurs="1" minOccurs="0" name="remoting-interceptors" type="remoting-interceptorsType" />
+          <xs:element maxOccurs="1" minOccurs="0" name="backup" type="xs:boolean" />
+          <xs:element maxOccurs="1" minOccurs="0" name="allow-failback" type="xs:boolean" />
+          <xs:element maxOccurs="1" minOccurs="0" name="failback-delay" type="xs:long" />
+          <xs:element maxOccurs="1" minOccurs="0" name="failover-on-shutdown" type="xs:boolean" />
+          <xs:element maxOccurs="1" minOccurs="0" name="shared-store" type="xs:boolean" />
+          <xs:element maxOccurs="1" minOccurs="0" name="persist-delivery-count-before-delivery" type="xs:boolean" />
+          <xs:element maxOccurs="1" minOccurs="0" name="live-connector-ref" type="live-connectorType" />
+          <xs:element maxOccurs="1" minOccurs="0" name="create-bindings-dir" type="xs:boolean" />
+          <xs:element maxOccurs="1" minOccurs="0" name="create-journal-dir" type="xs:boolean" />
+          <xs:element maxOccurs="1" minOccurs="0" name="journal-type" type="journalType" />
+          <xs:element maxOccurs="1" minOccurs="0" name="journal-buffer-timeout" type="xs:long" />
+          <xs:element maxOccurs="1" minOccurs="0" name="journal-buffer-size" type="xs:long" />
+          <xs:element maxOccurs="1" minOccurs="0" name="journal-sync-transactional" type="xs:boolean" />
+          <xs:element maxOccurs="1" minOccurs="0" name="journal-sync-non-transactional" type="xs:boolean" />
+          <xs:element maxOccurs="1" minOccurs="0" name="log-journal-write-rate" type="xs:boolean" />
+          <xs:element maxOccurs="1" minOccurs="0" name="journal-file-size" type="xs:long" />
+          <xs:element maxOccurs="1" minOccurs="0" name="journal-min-files" type="xs:int" />
+          <xs:element maxOccurs="1" minOccurs="0" name="journal-compact-percentage" type="xs:int" />
+          <xs:element maxOccurs="1" minOccurs="0" name="journal-compact-min-files" type="xs:int" />
+          <xs:element maxOccurs="1" minOccurs="0" name="journal-max-io" type="xs:int" />
+          <xs:element maxOccurs="1" minOccurs="0" name="perf-blast-pages" type="xs:int" />
+          <xs:element maxOccurs="1" minOccurs="0" name="run-sync-speed-test" type="xs:boolean" />
+          <xs:element maxOccurs="1" minOccurs="0" name="server-dump-interval" type="xs:long" />
+          <xs:element maxOccurs="1" minOccurs="0" name="memory-warning-threshold" type="xs:int" />
+          <xs:element maxOccurs="1" minOccurs="0" name="memory-measure-interval" type="xs:long" />
+
+          <xs:element maxOccurs="1" minOccurs="0" name="paging-directory" type="directoryType" />
+          <xs:element maxOccurs="1" minOccurs="0" name="bindings-directory" type="directoryType" />
+          <xs:element maxOccurs="1" minOccurs="0" name="journal-directory" type="directoryType" />
+          <xs:element maxOccurs="1" minOccurs="0" name="large-messages-directory" type="directoryType" />
+
+          <xs:element maxOccurs="1" minOccurs="0" name="connectors">
+              <xs:complexType>
+                  <xs:sequence>
+                      <xs:element maxOccurs="unbounded" minOccurs="0" name="netty-connector" type="netty-connectorType" />
+                      <xs:element maxOccurs="unbounded" minOccurs="0" name="in-vm-connector" type="inVM-connectorType" />
+                      <xs:element maxOccurs="unbounded" minOccurs="0" name="connector" type="connectorType" />
+                  </xs:sequence>
+              </xs:complexType>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="acceptors">
+              <xs:complexType>
+                  <xs:sequence>
+                      <xs:element maxOccurs="unbounded" minOccurs="0" name="netty-acceptor" type="netty-acceptorType" />
+                      <xs:element maxOccurs="unbounded" minOccurs="0" name="in-vm-acceptor" type="inVM-acceptorType" />
+                      <xs:element maxOccurs="unbounded" minOccurs="0" name="acceptor" type="acceptorType" />
+                  </xs:sequence>
+              </xs:complexType>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="broadcast-groups">
+              <xs:complexType>
+                  <xs:sequence>
+                      <xs:element maxOccurs="unbounded" minOccurs="0" name="broadcast-group" type="broadcast-groupType" />
+                  </xs:sequence>
+              </xs:complexType>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="discovery-groups">
+              <xs:complexType>
+                  <xs:sequence>
+                      <xs:element maxOccurs="unbounded" minOccurs="0" name="discovery-group" type="discovery-groupType" />
+                  </xs:sequence>
+              </xs:complexType>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="diverts">
+              <xs:complexType>
+                  <xs:sequence>
+                      <xs:element maxOccurs="unbounded" minOccurs="0" name="divert" type="divertType" />
+                  </xs:sequence>
+              </xs:complexType>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="core-queues" type="queuesType" />
+          <xs:element maxOccurs="1" minOccurs="0" name="bridges">
+              <xs:complexType>
+                  <xs:sequence>
+                      <xs:element maxOccurs="unbounded" minOccurs="0" name="bridge" type="bridgeType" />
+                  </xs:sequence>
+              </xs:complexType>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="cluster-connections">
+              <xs:complexType>
+                  <xs:sequence>
+                      <xs:element maxOccurs="unbounded" minOccurs="0" name="cluster-connection" type="clusterConnectionType" />
+                  </xs:sequence>
+              </xs:complexType>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="grouping-handler" type="groupingHandlerType" />
+          <xs:element maxOccurs="1" minOccurs="0" name="security-settings" type="security-settingsType" />
+          <xs:element maxOccurs="1" minOccurs="0" name="address-settings" type="address-settingsType" />
+          <xs:element maxOccurs="1" minOccurs="0" name="connector-services">
+              <xs:complexType>
+                  <xs:sequence>
+                      <xs:element maxOccurs="unbounded" minOccurs="0" name="connector-service" type="connectorServiceType"/>
+                  </xs:sequence>
+              </xs:complexType>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="jms-connection-factories">
+              <xs:complexType>
+                  <xs:sequence>
+                  <xs:element name="connection-factory" maxOccurs="unbounded" minOccurs="0" type="connection-factoryType" />
+                  <xs:element name="pooled-connection-factory" maxOccurs="unbounded" minOccurs="0" type="pooled-connection-factoryType" />
+                </xs:sequence>
+             </xs:complexType>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="jms-destinations">
+              <xs:complexType>
+                <xs:sequence>
+                    <xs:element name="jms-queue" maxOccurs="unbounded" minOccurs="0" type="jmsQueueType" />
+                    <xs:element name="jms-topic" maxOccurs="unbounded" minOccurs="0" type="jmsTopicType" />
+                </xs:sequence>
+              </xs:complexType>
+          </xs:element>
+
+      </xs:all>
+      <xs:attribute name="name" type="xs:string" use="optional" default="default">
+        <xs:annotation>
+            <xs:documentation>
+                The name to use for this HornetQ Server. Must be unique across all "hornetq-server" elements
+                in the subsystem. So, this attribute is optional with a default value, but if more than
+                one "hornetq-server" element exists, only one can leave this attribute unspecified.
+            </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    </xs:complexType>
+
+    <xs:element name="local-bind-address" type="xs:string"/>
+    <xs:element name="local-bind-port" type="xs:int"/>
+    <xs:element name="group-address" type="xs:string"/>
+    <xs:element name="group-port" type="xs:int"/>
+    <xs:element name="broadcast-period" type="xs:long"/>
+    <xs:element name="initial-wait-timeout" type="xs:int"/>
+
+    <xs:complexType name="broadcast-groupType">
+       <xs:sequence>
+           <xs:choice>
+               <xs:sequence>
+                  <xs:element maxOccurs="1" minOccurs="1" name="socket-binding" type="xs:string" />
+               </xs:sequence>
+               <xs:sequence>
+                  <xs:element maxOccurs="1" minOccurs="0" ref="local-bind-address" />
+                  <xs:element maxOccurs="1" minOccurs="0" ref="local-bind-port" />
+                  <xs:element maxOccurs="1" minOccurs="1" ref="group-address" />
+                  <xs:element maxOccurs="1" minOccurs="1" ref="group-port" />
+               </xs:sequence>
+           </xs:choice>
+           <xs:element maxOccurs="1" minOccurs="0" ref="broadcast-period" />
+           <xs:element maxOccurs="unbounded" minOccurs="0" name="connector-ref" type="xs:string" />
+       </xs:sequence>
+       <xs:attribute name="name" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="discovery-groupType">
+        <xs:sequence>
+            <xs:choice>
+               <xs:sequence>
+                  <xs:element maxOccurs="1" minOccurs="1" name="socket-binding" type="xs:string" />
+               </xs:sequence>
+               <xs:sequence>
+                  <xs:element maxOccurs="1" minOccurs="0" ref="local-bind-address" />
+                  <xs:element maxOccurs="1" minOccurs="1" ref="group-address" />
+                  <xs:element maxOccurs="1" minOccurs="1" ref="group-port" />
+               </xs:sequence>
+            </xs:choice>
+            <xs:element maxOccurs="1" minOccurs="0" name="refresh-timeout" type="xs:int" />
+            <xs:element maxOccurs="1" minOccurs="0" ref="initial-wait-timeout" />
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <xs:element name="discovery-group-ref">
+       <xs:complexType>
+          <xs:attribute name="discovery-group-name" type="xs:string" />
+       </xs:complexType>
+    </xs:element>
+
+    <xs:complexType name="remoting-interceptorsType">
+       <xs:sequence>
+          <xs:element maxOccurs="unbounded" minOccurs="1" name="class-name" type="xs:string" />
+       </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="paramType">
+       <xs:attribute name="key" type="xs:string" use="required"/>
+       <xs:attribute name="value" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="netty-connectorType">
+       <xs:annotation>
+          <xs:documentation>
+            <![CDATA[
+              The netty connector type.
+            ]]>
+            </xs:documentation>
+       </xs:annotation>
+       <xs:complexContent>
+          <xs:extension base="base-connectorType">
+             <xs:attribute name="socket-binding" type="xs:string" use="required" />
+          </xs:extension>
+       </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="inVM-connectorType">
+       <xs:annotation>
+          <xs:documentation>
+            <![CDATA[
+              The inVM connector type.
+            ]]>
+            </xs:documentation>
+       </xs:annotation>
+       <xs:complexContent>
+          <xs:extension base="base-connectorType">
+             <xs:attribute name="server-id" type="xs:int" use="optional" />
+          </xs:extension>
+       </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="connectorType">
+       <xs:annotation>
+          <xs:documentation>
+            <![CDATA[
+              Generic connector type, with optional socket-binding depending on whether
+              the implementation requires a Host/Port parameter.
+            ]]>
+            </xs:documentation>
+       </xs:annotation>
+       <xs:complexContent>
+          <xs:extension base="base-connectorType">
+             <xs:sequence>
+                <xs:element maxOccurs="1" minOccurs="1" name="factory-class" type="xs:string" />
+             </xs:sequence>
+             <xs:attribute name="socket-binding" type="xs:string" use="optional" />
+          </xs:extension>
+       </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="base-connectorType">
+       <xs:sequence>
+          <xs:element maxOccurs="unbounded" minOccurs="0" name="param" type="paramType" />
+       </xs:sequence>
+       <xs:attribute name="name" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="netty-acceptorType">
+       <xs:annotation>
+          <xs:documentation>
+            <![CDATA[
+              The netty acceptor type.
+            ]]>
+            </xs:documentation>
+       </xs:annotation>
+       <xs:complexContent>
+          <xs:extension base="base-acceptorType">
+             <xs:attribute name="socket-binding" type="xs:string" use="required" />
+          </xs:extension>
+       </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="inVM-acceptorType">
+       <xs:annotation>
+          <xs:documentation>
+            <![CDATA[
+              The inVM connector type.
+            ]]>
+            </xs:documentation>
+       </xs:annotation>
+       <xs:complexContent>
+          <xs:extension base="base-acceptorType">
+             <xs:attribute name="server-id" type="xs:int" use="optional" />
+          </xs:extension>
+       </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="acceptorType">
+       <xs:annotation>
+          <xs:documentation>
+            <![CDATA[
+              Generic acceptor type, with optional socket-binding depending on whether
+              the implementation requires a Host/Port parameter.
+            ]]>
+            </xs:documentation>
+       </xs:annotation>
+       <xs:complexContent>
+          <xs:extension base="base-acceptorType">
+             <xs:sequence>
+                <xs:element maxOccurs="1" minOccurs="1" name="factory-class" type="xs:string" />
+             </xs:sequence>
+             <xs:attribute name="socket-binding" type="xs:string" use="optional" />
+          </xs:extension>
+       </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="base-acceptorType">
+       <xs:sequence>
+          <xs:element maxOccurs="unbounded" minOccurs="0" name="param" type="paramType" />
+       </xs:sequence>
+       <xs:attribute name="name" type="xs:string" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="bridgeType">
+       <xs:sequence>
+          <xs:element maxOccurs="1" minOccurs="1" name="queue-name" type="xs:string" />
+          <xs:element maxOccurs="1" minOccurs="0" name="forwarding-address" type="xs:string" />
+          <xs:element maxOccurs="1" minOccurs="0" name="ha" type="xs:boolean" />
+          <xs:element maxOccurs="1" minOccurs="0" name="filter">
+             <xs:complexType>
+                <xs:attribute name="string" type="xs:string" use="required"/>
+             </xs:complexType>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="transformer-class-name" type="xs:string" />
+          <xs:element maxOccurs="1" minOccurs="0" name="retry-interval" type="xs:long" />
+          <xs:element maxOccurs="1" minOccurs="0" name="retry-interval-multiplier" type="xs:double" />
+          <xs:element maxOccurs="1" minOccurs="0" name="reconnect-attempts" type="xs:int" />
+          <xs:element maxOccurs="1" minOccurs="0" name="failover-on-server-shutdown" type="xs:boolean" />
+          <xs:element maxOccurs="1" minOccurs="0" name="use-duplicate-detection" type="xs:boolean" />
+          <xs:element maxOccurs="1" minOccurs="0" name="confirmation-window-size" type="xs:int" />
+          <xs:element maxOccurs="1" minOccurs="0" name="user" type="xs:string" />
+          <xs:element maxOccurs="1" minOccurs="0" name="password" type="xs:string" />
+          <xs:choice>
+             <xs:element maxOccurs="1" minOccurs="1" name="static-connectors">
+                <xs:complexType>
+                   <xs:sequence>
+                      <xs:element maxOccurs="unbounded" minOccurs="1" name="connector-ref" type="xs:string"/>
+                   </xs:sequence>
+                </xs:complexType>
+             </xs:element>
+             <xs:element maxOccurs="1" minOccurs="1" name="discovery-group-ref">
+                <xs:complexType>
+                   <xs:attribute name="discovery-group-name" type="xs:string" use="required" />
+                </xs:complexType>
+             </xs:element>
+          </xs:choice>
+       </xs:sequence>
+       <xs:attribute name="name" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="clusterConnectionType">
+       <xs:sequence>
+          <xs:element maxOccurs="1" minOccurs="1" name="address" type="xs:string" />
+          <xs:element maxOccurs="1" minOccurs="1" name="connector-ref" type="xs:string" />
+          <xs:element maxOccurs="1" minOccurs="0" name="retry-interval" type="xs:long" />
+          <xs:element maxOccurs="1" minOccurs="0" name="use-duplicate-detection" type="xs:boolean" />
+          <xs:element maxOccurs="1" minOccurs="0" name="forward-when-no-consumers" type="xs:boolean" />
+          <xs:element maxOccurs="1" minOccurs="0" name="max-hops" type="xs:int" />
+          <xs:element maxOccurs="1" minOccurs="0" name="confirmation-window-size" type="xs:int" />
+          <xs:choice>
+             <xs:element maxOccurs="1" minOccurs="0" name="static-connectors">
+                <xs:complexType>
+                   <xs:sequence>
+                      <xs:element maxOccurs="unbounded" minOccurs="0" name="connector-ref" type="xs:string"/>
+                   </xs:sequence>
+                   <xs:attribute name="allow-direct-connections-only" type="xs:boolean" use="optional"/>
+                </xs:complexType>
+             </xs:element>
+             <xs:element maxOccurs="1" minOccurs="0" name="discovery-group-ref">
+                <xs:complexType>
+                   <xs:attribute name="discovery-group-name" type="xs:string" use="required" />
+                </xs:complexType>
+             </xs:element>
+          </xs:choice>
+       </xs:sequence>
+       <xs:attribute name="name" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="divertType">
+       <xs:sequence>
+          <xs:element maxOccurs="1" minOccurs="0" name="routing-name" type="xs:string" />
+          <xs:element maxOccurs="1" minOccurs="1" name="address" type="xs:string" />
+          <xs:element maxOccurs="1" minOccurs="1" name="forwarding-address" type="xs:string" />
+          <xs:element maxOccurs="1" minOccurs="0" name="filter">
+             <xs:complexType>
+                <xs:attribute name="string" type="xs:string" use="required"/>
+             </xs:complexType>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="transformer-class-name" type="xs:string" />
+          <xs:element maxOccurs="1" minOccurs="0" name="exclusive" type="xs:boolean" />
+       </xs:sequence>
+       <xs:attribute name="name" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <xs:simpleType name="journalType">
+       <xs:restriction base="xs:token">
+          <xs:enumeration value="ASYNCIO"/>
+          <xs:enumeration value="NIO"/>
+       </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="groupingHandlerType">
+       <xs:sequence>
+          <xs:element maxOccurs="1" minOccurs="1" name="type" type="groupingHandlerTypeType"/>
+          <xs:element maxOccurs="1" minOccurs="1" name="address" type="xs:string"/>
+          <xs:element maxOccurs="1" minOccurs="0" name="timeout" type="xs:int"/>
+       </xs:sequence>
+       <xs:attribute name="name" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <xs:simpleType name="groupingHandlerTypeType">
+       <xs:restriction base="xs:token">
+          <xs:enumeration value="LOCAL"/>
+          <xs:enumeration value="REMOTE"/>
+       </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="security-settingsType">
+       <xs:sequence>
+          <xs:element maxOccurs="unbounded" minOccurs="0" name="security-setting" type="security-settingType"/>
+       </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="security-settingType">
+       <xs:sequence>
+          <xs:element maxOccurs="unbounded" minOccurs="0" name="permission">
+             <xs:complexType>
+                <xs:attribute name="type" type="xs:string" use="required"/>
+                <xs:attribute name="roles" type="xs:string" use="required"/>
+             </xs:complexType>
+          </xs:element>
+       </xs:sequence>
+       <xs:attribute name="match" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="address-settingsType">
+       <xs:sequence>
+          <xs:element maxOccurs="unbounded" minOccurs="0" name="address-setting" type="address-settingType"/>
+       </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="address-settingType">
+       <xs:all>
+          <xs:element maxOccurs="1" minOccurs="0" name="dead-letter-address" type="xs:string" />
+          <xs:element maxOccurs="1" minOccurs="0" name="expiry-address" type="xs:string" />
+          <xs:element maxOccurs="1" minOccurs="0" name="redelivery-delay" type="xs:long" />
+          <xs:element maxOccurs="1" minOccurs="0" name="max-delivery-attempts" type="xs:int" />
+          <xs:element maxOccurs="1" minOccurs="0" name="max-size-bytes" type="xs:long" />
+          <xs:element maxOccurs="1" minOccurs="0" name="page-size-bytes" type="xs:long" />
+          <xs:element maxOccurs="1" minOccurs="0" name="page-max-cache-size" type="xs:int" />
+          <xs:element maxOccurs="1" minOccurs="0" name="address-full-policy" type="addressFullMessagePolicyType" />
+          <xs:element maxOccurs="1" minOccurs="0" name="message-counter-history-day-limit" type="xs:int" />
+          <xs:element maxOccurs="1" minOccurs="0" name="last-value-queue" type="xs:boolean" />
+          <xs:element maxOccurs="1" minOccurs="0" name="redistribution-delay" type="xs:long" />
+          <xs:element maxOccurs="1" minOccurs="0" name="send-to-dla-on-no-route" type="xs:boolean" />
+       </xs:all>
+       <xs:attribute name="match" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="queuesType">
+       <xs:sequence>
+          <xs:element maxOccurs="unbounded" minOccurs="0" name="queue" type="queueType"/>
+       </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="queueType">
+       <xs:all>
+          <xs:element maxOccurs="1" minOccurs="1" name="address" type="xs:string" />
+          <xs:element maxOccurs="1" minOccurs="0" name="filter">
+             <xs:complexType>
+                <xs:attribute name="string" type="xs:string" use="required"/>
+             </xs:complexType>
+          </xs:element>
+          <xs:element maxOccurs="1" minOccurs="0" name="durable" type="xs:boolean" />
+        </xs:all>
+        <xs:attribute name="name" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="live-connectorType">
+       <xs:attribute name="connector-name" type="xs:string" use="required" />
+    </xs:complexType>
+
+    <xs:simpleType name="addressFullMessagePolicyType">
+       <xs:restriction base="xs:token">
+          <xs:enumeration value="DROP"/>
+          <xs:enumeration value="PAGE"/>
+          <xs:enumeration value="BLOCK"/>
+       </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="connectorServiceType">
+       <xs:sequence>
+          <xs:element maxOccurs="1" minOccurs="1" name="factory-class" type="xs:string" />
+          <xs:element maxOccurs="unbounded" minOccurs="0" name="param" type="paramType" />
+       </xs:sequence>
+       <xs:attribute name="name" type="xs:string" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="directoryType">
+        <xs:annotation>
+            <xs:documentation>
+            <![CDATA[
+                A directory location configuration.
+
+                The "path" attribute denotes a relative or absolute filesystem pathname where the directory should be
+                located.
+
+                The "relative-to" attribute references a global path configuration in the domain model, defaulting
+                to the JBoss Application Server data directory (jboss.server.data.dir). If the value of the "path" attribute
+                does not specify an absolute pathname, it will treated as relative to this path.
+            ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="relative-to" type="xs:string" default="jboss.server.data.dir" />
+        <xs:attribute name="path" type="xs:string" />
+    </xs:complexType>
+
+
+   <xs:complexType name="connection-factoryType">
+      <xs:all>
+         <xs:element name="discovery-group-ref" type="discovery-group-refType" maxOccurs="1" minOccurs="0" />
+         <xs:element name="discovery-initial-wait-timeout" type="xs:long" maxOccurs="1" minOccurs="0" />
+
+         <xs:element name="connectors" maxOccurs="1" minOccurs="0">
+            <xs:complexType>
+               <xs:sequence>
+                  <xs:element name="connector-ref" type="connector-refType" maxOccurs="unbounded" minOccurs="1"></xs:element>
+               </xs:sequence>
+            </xs:complexType>
+         </xs:element>
+         <xs:element name="entries" maxOccurs="1" minOccurs="0">
+            <xs:complexType>
+               <xs:sequence>
+                  <xs:element name="entry" type="entryType" maxOccurs="unbounded" minOccurs="1">
+                  </xs:element>
+               </xs:sequence>
+            </xs:complexType>
+         </xs:element>
+         <xs:element name="factory-type" type="connectionFactoryType" minOccurs="0" maxOccurs="1"/>
+         <xs:element name="ha" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
+         <xs:element name="client-failure-check-period" type="xs:long" maxOccurs="1" minOccurs="0" />
+         <xs:element name="connection-ttl" type="xs:long" maxOccurs="1" minOccurs="0" />
+         <xs:element name="call-timeout" type="xs:long" maxOccurs="1" minOccurs="0" />
+         <xs:element name="consumer-window-size" type="xs:int" maxOccurs="1" minOccurs="0" />
+         <xs:element name="consumer-max-rate" type="xs:int" maxOccurs="1" minOccurs="0" />
+         <xs:element name="confirmation-window-size" type="xs:int" maxOccurs="1" minOccurs="0" />
+         <xs:element name="producer-window-size" type="xs:int" maxOccurs="1" minOccurs="0" />
+         <xs:element name="producer-max-rate" type="xs:int" maxOccurs="1" minOccurs="0" />
+         <xs:element name="cache-large-message-client" type="xs:boolean" maxOccurs="1" minOccurs="0" />
+         <xs:element name="min-large-message-size" type="xs:long" maxOccurs="1" minOccurs="0" />
+         <xs:element name="client-id" type="xs:string" maxOccurs="1" minOccurs="0" />
+         <xs:element name="dups-ok-batch-size" type="xs:int" maxOccurs="1" minOccurs="0" />
+         <xs:element name="transaction-batch-size" type="xs:int" maxOccurs="1" minOccurs="0" />
+         <xs:element name="block-on-acknowledge" type="xs:boolean" maxOccurs="1" minOccurs="0" />
+         <xs:element name="block-on-non-durable-send" type="xs:boolean" maxOccurs="1" minOccurs="0" />
+         <xs:element name="block-on-durable-send" type="xs:boolean" maxOccurs="1" minOccurs="0" />
+         <xs:element name="auto-group" type="xs:boolean" maxOccurs="1" minOccurs="0" />
+         <xs:element name="pre-acknowledge" type="xs:boolean" maxOccurs="1" minOccurs="0" />
+         <xs:element name="retry-interval" type="xs:long" maxOccurs="1" minOccurs="0" />
+         <xs:element name="retry-interval-multiplier" type="xs:float" maxOccurs="1" minOccurs="0" />
+         <xs:element name="max-retry-interval" type="xs:long" maxOccurs="1" minOccurs="0" />
+         <xs:element name="reconnect-attempts" type="xs:int" maxOccurs="1" minOccurs="0" />
+         <xs:element name="failover-on-initial-connection" type="xs:boolean" maxOccurs="1" minOccurs="0" />
+         <xs:element name="failover-on-server-shutdown" type="xs:boolean" maxOccurs="1" minOccurs="0" />
+         <xs:element name="connection-load-balancing-policy-class-name" type="xs:string" maxOccurs="1" minOccurs="0" />
+         <xs:element name="use-global-pools" type="xs:boolean" maxOccurs="1" minOccurs="0" />
+         <xs:element name="scheduled-thread-pool-max-size" type="xs:int" maxOccurs="1" minOccurs="0" />
+         <xs:element name="thread-pool-max-size" type="xs:int" maxOccurs="1" minOccurs="0" />
+         <xs:element name="group-id" type="xs:string" maxOccurs="1" minOccurs="0" />
+      </xs:all>
+      <xs:attribute name="name" type="xs:string" />
+   </xs:complexType>
+
+   <xs:simpleType name="connectionFactoryType">
+      <xs:restriction base="xs:token">
+         <xs:enumeration value="GENERIC"/>
+         <xs:enumeration value="QUEUE"/>
+         <xs:enumeration value="TOPIC"/>
+         <xs:enumeration value="XA_GENERIC"/>
+         <xs:enumeration value="XA_QUEUE"/>
+         <xs:enumeration value="XA_TOPIC"/>
+      </xs:restriction>
+   </xs:simpleType>
+
+   <xs:complexType name="pooled-connection-factoryType">
+      <xs:all>
+         <xs:element name="inbound-config" maxOccurs="1" minOccurs="0">
+            <xs:complexType>
+               <xs:sequence>
+                    <xs:element name="use-jndi" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
+                    <xs:element name="jndi-params" type="xs:string" minOccurs="0" maxOccurs="1"/>
+                    <xs:element name="use-local-tx" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
+                    <xs:element name="setup-attempts" type="xs:integer" minOccurs="0" maxOccurs="1"/>
+                    <xs:element name="setup-interval" type="xs:long" minOccurs="0" maxOccurs="1"/>
+               </xs:sequence>
+            </xs:complexType>
+         </xs:element>
+
+         <xs:element name="transaction" type="transactionType" minOccurs="0" maxOccurs="1"/>
+
+         <xs:element name="discovery-group-ref" type="discovery-group-refType" maxOccurs="1" minOccurs="0" />
+         <xs:element name="discovery-initial-wait-timeout" type="xs:long" maxOccurs="1" minOccurs="0" />
+
+         <xs:element name="connectors" maxOccurs="1" minOccurs="0">
+            <xs:complexType>
+               <xs:sequence>
+                  <xs:element name="connector-ref" type="connector-refType" maxOccurs="unbounded" minOccurs="1"></xs:element>
+               </xs:sequence>
+            </xs:complexType>
+         </xs:element>
+         <xs:element name="entries" maxOccurs="1" minOccurs="0">
+            <xs:complexType>
+               <xs:sequence>
+                  <xs:element name="entry" type="entryType" maxOccurs="unbounded" minOccurs="1">
+                  </xs:element>
+               </xs:sequence>
+            </xs:complexType>
+         </xs:element>
+         <xs:element name="ha" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
+         <xs:element name="client-failure-check-period" type="xs:long" maxOccurs="1" minOccurs="0" />
+         <xs:element name="connection-ttl" type="xs:long" maxOccurs="1" minOccurs="0" />
+         <xs:element name="call-timeout" type="xs:long" maxOccurs="1" minOccurs="0" />
+         <xs:element name="consumer-window-size" type="xs:int" maxOccurs="1" minOccurs="0" />
+         <xs:element name="consumer-max-rate" type="xs:int" maxOccurs="1" minOccurs="0" />
+         <xs:element name="confirmation-window-size" type="xs:int" maxOccurs="1" minOccurs="0" />
+         <xs:element name="producer-window-size" type="xs:int" maxOccurs="1" minOccurs="0" />
+         <xs:element name="producer-max-rate" type="xs:int" maxOccurs="1" minOccurs="0" />
+         <xs:element name="cache-large-message-client" type="xs:boolean" maxOccurs="1" minOccurs="0" />
+         <xs:element name="min-large-message-size" type="xs:long" maxOccurs="1" minOccurs="0" />
+         <xs:element name="client-id" type="xs:string" maxOccurs="1" minOccurs="0" />
+         <xs:element name="dups-ok-batch-size" type="xs:int" maxOccurs="1" minOccurs="0" />
+         <xs:element name="transaction-batch-size" type="xs:int" maxOccurs="1" minOccurs="0" />
+         <xs:element name="block-on-acknowledge" type="xs:boolean" maxOccurs="1" minOccurs="0" />
+         <xs:element name="block-on-non-durable-send" type="xs:boolean" maxOccurs="1" minOccurs="0" />
+         <xs:element name="block-on-durable-send" type="xs:boolean" maxOccurs="1" minOccurs="0" />
+         <xs:element name="auto-group" type="xs:boolean" maxOccurs="1" minOccurs="0" />
+         <xs:element name="pre-acknowledge" type="xs:boolean" maxOccurs="1" minOccurs="0" />
+         <xs:element name="retry-interval" type="xs:long" maxOccurs="1" minOccurs="0" />
+         <xs:element name="retry-interval-multiplier" type="xs:float" maxOccurs="1" minOccurs="0" />
+         <xs:element name="max-retry-interval" type="xs:long" maxOccurs="1" minOccurs="0" />
+         <xs:element name="reconnect-attempts" type="xs:int" maxOccurs="1" minOccurs="0" />
+         <xs:element name="failover-on-initial-connection" type="xs:boolean" maxOccurs="1" minOccurs="0" />
+         <xs:element name="failover-on-server-shutdown" type="xs:boolean" maxOccurs="1" minOccurs="0" />
+         <xs:element name="connection-load-balancing-policy-class-name" type="xs:string" maxOccurs="1" minOccurs="0" />
+         <xs:element name="use-global-pools" type="xs:boolean" maxOccurs="1" minOccurs="0" />
+         <xs:element name="scheduled-thread-pool-max-size" type="xs:int" maxOccurs="1" minOccurs="0" />
+         <xs:element name="thread-pool-max-size" type="xs:int" maxOccurs="1" minOccurs="0" />
+         <xs:element name="group-id" type="xs:string" maxOccurs="1" minOccurs="0" />
+         <xs:element name="user" type="xs:string" maxOccurs="1" minOccurs="0" />
+         <xs:element name="password" type="xs:string" maxOccurs="1" minOccurs="0" />
+      </xs:all>
+      <xs:attribute name="name" type="xs:string" />
+   </xs:complexType>
+
+
+   <xs:complexType name="connector-refType">
+      <xs:attribute name="connector-name" type="xs:string" use="required" />
+      <xs:attribute name="backup-connector-name" type="xs:string" use="optional" />
+   </xs:complexType>
+
+   <xs:complexType name="entryType">
+      <xs:attribute name="name" type="xs:string" use="required" />
+   </xs:complexType>
+
+   <xs:complexType name="discovery-group-refType">
+      <xs:attribute name="discovery-group-name" type="xs:string" use="required" />
+   </xs:complexType>
+
+   <xs:complexType name="jmsQueueType">
+      <xs:sequence>
+         <xs:element name="entry" type="entryType" maxOccurs="unbounded" minOccurs="1" />
+         <xs:element name="selector" maxOccurs="1" minOccurs="0">
+            <xs:complexType>
+               <xs:attribute name="string" type="xs:string" use="required" />
+            </xs:complexType>
+         </xs:element>
+         <xs:element name="durable" type="xs:boolean" maxOccurs="1" minOccurs="0" />
+      </xs:sequence>
+      <xs:attribute name="name" type="xs:string" use="required" />
+   </xs:complexType>
+
+   <xs:complexType name="jmsTopicType">
+      <xs:sequence>
+         <xs:element name="entry" type="entryType" maxOccurs="unbounded" minOccurs="1" />
+      </xs:sequence>
+      <xs:attribute name="name" type="xs:string" use="required" />
+   </xs:complexType>
+
+    <xs:complexType name="transactionType">
+        <xs:attribute name="mode" use="required" type="modeType"/>
+    </xs:complexType>
+
+    <xs:simpleType name="modeType">
+        <xs:restriction base="xs:token">
+            <xs:enumeration value="xa">
+                <xs:annotation>
+                    <xs:documentation></xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="local">
+                <xs:annotation>
+                    <xs:documentation></xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="none">
+                <xs:annotation>
+                    <xs:documentation></xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+
+</xs:schema>

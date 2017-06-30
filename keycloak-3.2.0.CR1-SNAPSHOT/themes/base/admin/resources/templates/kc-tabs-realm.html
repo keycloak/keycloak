@@ -1,0 +1,19 @@
+<div data-ng-controller="RealmTabCtrl">
+    <h1 data-ng-hide="createRealm">
+        {{realm.realm|capitalize}}
+        <i id="removeRealm" class="pficon pficon-delete clickable" data-ng-show="access.manageRealm" data-ng-click="removeRealm()"></i>
+    </h1>
+    <h1 data-ng-show="createRealm">{{:: 'add-realm' | translate}}</h1>
+
+    <ul class="nav nav-tabs">
+        <li ng-class="{active: !path[2]}"><a href="#/realms/{{realm.realm}}">{{:: 'realm-tab-general' | translate}}</a></li>
+        <li ng-class="{active: path[2] == 'login-settings'}" data-ng-show="access.viewRealm"><a href="#/realms/{{realm.realm}}/login-settings">{{:: 'realm-tab-login' | translate}}</a></li>
+        <li ng-class="{active: path[2] == 'keys'}" data-ng-show="access.viewRealm"><a href="#/realms/{{realm.realm}}/keys">{{:: 'realm-tab-keys' | translate}}</a></li>
+        <li ng-class="{active: path[2] == 'smtp-settings'}" data-ng-show="access.viewRealm"><a href="#/realms/{{realm.realm}}/smtp-settings">{{:: 'realm-tab-email' | translate}}</a></li>
+        <li ng-class="{active: path[2] == 'theme-settings'}" data-ng-show="access.viewRealm"><a href="#/realms/{{realm.realm}}/theme-settings">{{:: 'realm-tab-themes' | translate}}</a></li>
+        <li ng-class="{active: path[2] == 'cache-settings'}" data-ng-show="access.viewRealm"><a href="#/realms/{{realm.realm}}/cache-settings">{{:: 'realm-tab-cache' | translate}}</a></li>
+        <li ng-class="{active: path[2] == 'token-settings'}" data-ng-show="access.viewRealm"><a href="#/realms/{{realm.realm}}/token-settings">{{:: 'realm-tab-tokens' | translate}}</a></li>
+        <li ng-class="{active: path[2] == 'client-registration'}" data-ng-show="access.viewClients"><a href="#/realms/{{realm.realm}}/client-registration/client-initial-access">{{:: 'realm-tab-client-registration' | translate}}</a></li>
+        <li ng-class="{active: path[2] == 'defense'}" data-ng-show="access.viewRealm"><a href="#/realms/{{realm.realm}}/defense/headers">{{:: 'realm-tab-security-defenses' | translate}}</a></li>
+    </ul>
+</div>

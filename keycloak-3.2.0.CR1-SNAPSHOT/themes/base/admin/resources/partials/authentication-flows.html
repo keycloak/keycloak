@@ -1,0 +1,69 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <h1>{{:: 'authentication' | translate}}</h1>
+
+    <kc-tabs-authentication></kc-tabs-authentication>
+
+    <table class="table table-striped table-bordered">
+        <thead>
+        <tr>
+            <th colspan="{{levelmax + 1 + choicesmax + 4}}" class="kc-table-actions">
+                <div class="dropdown pull-left">
+                    <select class="form-control" ng-model="flow"
+                            ng-options="(flow.alias|capitalize) for flow in flows"
+                            data-ng-change="selectFlow(flow)">
+                    </select>
+                </div>
+                &nbsp;&nbsp;<i class="fa fa-question-circle text-muted" tooltip-trigger="mouseover mouseout" tooltip="{{flow.description}}" tooltip-placement="right"> </i>
+                <div class="pull-right" data-ng-show="access.manageRealm">
+                    <button class="btn btn-default" data-ng-click="createFlow()">{{:: 'new' | translate}}</button>
+                    <button class="btn btn-default" data-ng-click="copyFlow()">{{:: 'copy' | translate}}</button>
+                    <button class="btn btn-default" data-ng-hide="flow.builtIn" data-ng-click="deleteFlow()">{{:: 'delete' | translate}}</button>
+                    <button class="btn btn-default" data-ng-hide="flow.builtIn" data-ng-click="addExecution()">{{:: 'add-execution' | translate}}</button>
+                    <button class="btn btn-default" data-ng-hide="flow.builtIn || flow.providerId === 'client-flow'" data-ng-click="addFlow()">{{:: 'add-flow' | translate}}</button>
+                </div>
+            </th>
+         </tr>
+        <tr data-ng-hide="executions.length == 0">
+            <th colspan="{{levelmax + 1}}">{{:: 'auth-type' | translate}}</th>
+            <th colspan="{{choicesmax}}">{{:: 'requirement' | translate}}</th>
+            <th>&nbsp;</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr ng-repeat="execution in executions" data-ng-show="executions.length > 0">
+            <td ng-repeat="lev in execution.preLevels"></td>
+            <td class="kc-sorter">
+                    <button data-ng-hide="flow.builtIn" data-ng-disabled="$first" class="btn btn-default btn-sm" data-ng-click="raisePriority(execution)"><i class="fa fa-angle-up"></i></button>
+                    <button data-ng-hide="flow.builtIn" data-ng-disabled="$last" class="btn btn-default btn-sm" data-ng-click="lowerPriority(execution)"><i class="fa fa-angle-down"></i></button>
+                    <span>{{execution.displayName|capitalize}}<span ng-if="execution.alias">({{execution.alias}})</span></span>
+            </td>
+            <td ng-repeat="lev in execution.postLevels"></td>
+            <td ng-repeat="choice in execution.requirementChoices">
+            <label>
+                <input type="radio" ng-model="execution.requirement" ng-value="choice" ng-change="updateExecution(execution)">
+                {{choice}}
+            </label>
+
+            </td>
+            <td ng-repeat="emptee in execution.empties"></td>
+            <td>
+                <div class="dropdown" data-ng-hide="flow.builtIn && !execution.configurable">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">{{:: 'actions' | translate}} <b class="caret"></b></a>
+                    <ul class="dropdown-menu"  >
+                        <li data-ng-hide="flow.builtIn"><a href="" ng-click="removeExecution(execution)">{{:: 'delete' | translate}}</a></li>
+                        <li data-ng-hide="flow.builtIn || !execution.authenticationFlow"><a href="" ng-click="addSubFlowExecution(execution)">{{:: 'add-execution' | translate}}</a></li>
+                        <li data-ng-hide="flow.builtIn || !execution.authenticationFlow"><a href="" ng-click="addSubFlow(execution)">{{:: 'add-flow' | translate}}</a></li>
+                        <li data-ng-show="execution.configurable && execution.authenticationConfig == null"><a href="#/create/authentication/{{realm.realm}}/flows/{{flow.id}}/execution/{{execution.id}}/provider/{{execution.providerId}}">{{:: 'config' | translate}}</a></li>
+                        <li data-ng-show="execution.configurable && execution.authenticationConfig != null"><a href="#/realms/{{realm.realm}}/authentication/flows/{{flow.id}}/config/{{execution.providerId}}/{{execution.authenticationConfig}}">{{:: 'config' | translate}}</a></li>
+                    </ul>
+                </div>
+            </td>
+         </tr>
+        <tr data-ng-show="executions.length == 0">
+            <td>{{:: 'no-executions-available' | translate}}</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<kc-menu></kc-menu>

@@ -1,0 +1,13 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{model.realm.realm}}/clients">{{:: 'clients' | translate}}</a></li>
+        <li><a href="#/realms/{{model.realm.realm}}/clients/{{model.client.id}}">{{model.client.clientId}}</a></li>
+        <li><a href="#/realms/{{model.realm.realm}}/clients/{{model.client.id}}/mappers">{{:: 'mappers' | translate}}</a></li>
+        <li class="active" data-ng-show="model.create">{{:: 'create-protocol-mappers' | translate}}</li>
+        <li class="active" data-ng-hide="model.create">{{model.mapper.name}}</li>
+    </ol>
+    <div ng-include="resourceUrl + '/partials/protocol-mapper-detail.html'"/>
+</div>
+
+<kc-menu></kc-menu>

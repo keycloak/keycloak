@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2010, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+
+<module xmlns="urn:jboss:module:1.5" name="org.wildfly.extension.undertow">
+    <properties>
+        <property name="jboss.api" value="private"/>
+    </properties>
+
+    <exports>
+        <exclude path="org/wildfly/extension/undertow/logging"/>
+    </exports>
+
+    <resources>
+        <resource-root path="wildfly-undertow-11.0.0.Alpha1.jar"/>
+    </resources>
+
+    <dependencies>
+        <module name="io.undertow.core" services="import"/>
+        <module name="io.undertow.servlet" services="import"/>
+        <module name="io.undertow.jsp"/>
+        <module name="io.undertow.websocket"/>
+        <module name="sun.jdk"/>
+        <module name="javax.annotation.api"/>
+        <module name="javax.api"/>
+        <module name="javax.security.auth.message.api"/>
+        <module name="javax.servlet.api"/>
+        <module name="javax.servlet.jsp.api"/>
+        <module name="javax.websocket.api"/>
+        <module name="org.jboss.jandex"/>
+        <module name="org.jboss.staxmapper"/>
+        <module name="org.jboss.as.clustering.common"/>
+        <module name="org.wildfly.clustering.service"/>
+        <module name="org.wildfly.clustering.web.api" optional="true"/>
+        <module name="org.wildfly.clustering.web.undertow" services="import" optional="true"/>
+        <module name="org.wildfly.extension.request-controller" />
+        <module name="org.jboss.as.controller"/>
+        <module name="org.jboss.as.domain-management"/>
+        <module name="org.jboss.as.ee"/>
+        <module name="org.jboss.as.core-security"/>
+        <module name="org.wildfly.extension.io"/>
+        <module name="org.jboss.as.naming"/>
+        <module name="org.jboss.as.network"/>
+        <module name="org.jboss.as.security"/>
+        <module name="org.wildfly.security.elytron-private"/>
+        <module name="org.wildfly.security.elytron-web.undertow-server"/>
+        <module name="org.jboss.as.server"/>
+        <module name="org.jboss.as.threads"/>
+        <module name="org.jboss.common-beans" services="import"/>
+        <module name="org.jboss.marshalling"/>
+        <module name="org.jboss.marshalling.river" services="import"/>
+        <module name="org.jboss.as.web-common"/>
+        <module name="org.jboss.invocation"/>
+        <module name="org.jboss.metadata.common"/>
+        <module name="org.jboss.metadata.web"/>
+        <module name="org.jboss.metadata.ear"/>
+        <module name="org.jboss.modules"/>
+        <module name="org.jboss.msc"/>
+        <module name="org.jboss.security.negotiation"/>
+        <module name="org.jboss.threads"/>
+        <module name="org.jboss.vfs"/>
+        <module name="org.jboss.as.version"/>
+        <module name="org.jboss.logging"/>
+        <module name="org.picketbox"/>
+        <module name="javax.security.jacc.api"/>
+        <module name="org.jboss.xnio"/>
+        <module name="org.jboss.xnio.nio" services="import"/>
+        <module name="org.wildfly.http-client.common"/>
+    </dependencies>
+</module>

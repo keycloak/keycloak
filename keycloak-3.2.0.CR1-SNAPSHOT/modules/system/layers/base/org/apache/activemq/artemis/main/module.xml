@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2010, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+
+<module xmlns="urn:jboss:module:1.5" name="org.apache.activemq.artemis">
+    <resources>
+        <resource-root path="artemis-core-client-1.5.3.jbossorg-003.jar"/>
+        <resource-root path="artemis-selector-1.5.3.jbossorg-003.jar"/>
+        <resource-root path="artemis-server-1.5.3.jbossorg-003.jar"/>
+        <resource-root path="artemis-cli-1.5.3.jbossorg-003.jar"/>
+        <resource-root path="artemis-dto-1.5.3.jbossorg-003.jar"/>
+        <resource-root path="artemis-hqclient-protocol-1.5.3.jbossorg-003.jar"/>
+        <resource-root path="artemis-jdbc-store-1.5.3.jbossorg-003.jar"/>
+        <resource-root path="artemis-jms-client-1.5.3.jbossorg-003.jar"/>
+        <resource-root path="artemis-jms-server-1.5.3.jbossorg-003.jar"/>
+        <resource-root path="artemis-service-extensions-1.5.3.jbossorg-003.jar"/>
+    </resources>
+
+    <dependencies>
+        <module name="javax.api"/>
+        <module name="javax.jms.api" />
+        <module name="javax.json.api"/>
+        <module name="org.apache.commons.beanutils" />
+        <module name="org.apache.activemq.artemis.journal" export="true"/>
+        <module name="org.jboss.jts"/>
+        <module name="org.jboss.logging"/>
+        <module name="io.netty"/>
+        <module name="org.jgroups"/>
+        <module name="javax.resource.api"/>
+        <!-- WFLY-5213 Optional dependency to use the org.apache.activemq.artemis as a naming's external-context module -->
+        <module name="org.jboss.invocation" optional="true"/>
+        <module name="org.jboss.jboss-transaction-spi"/>
+        <!--this reverse dependency is here so integration classes in the AS code base can be instantiated by Artemis-->
+        <module name="org.wildfly.extension.messaging-activemq" services="import"/>
+        <module name="org.jboss.as.security"/>
+        <module name="org.picketbox"/>
+        <!-- this optional dependency is required to be able to use this module from a jms-bridge to connect to a remote
+             WildFly server [AS7-6549] -->
+        <module name="org.wildfly.naming-client" optional="true"  services="import"/>
+        <!-- https://issues.jboss.org/browse/AS7-4936  this is to avoid an issue on IBM JDK -->
+        <module name="sun.jdk"/>
+        <!-- supported protocols (in addition to the CORE protocol) -->
+        <module name="org.apache.activemq.artemis.protocol.amqp" services="import" optional="true"/>
+        <module name="org.apache.activemq.artemis.protocol.hornetq" services="import" optional="true"/>
+        <module name="org.apache.activemq.artemis.protocol.stomp" services="import" optional="true"/>
+
+        <!--
+          WFLY-6301 This module can be used to load user-created classes that are
+          used by Artemis resources (e.g. connector-service, transformers, etc.)
+        -->
+        <module name="org.apache.activemq.artemis.addons" slot="main" optional="true"/>
+
+    </dependencies>
+</module>

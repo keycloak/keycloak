@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2011, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+
+<module xmlns="urn:jboss:module:1.5" name="org.jboss.ws.cxf.jbossws-cxf-client">
+
+    <resources>
+    </resources>
+
+    <dependencies>
+        <!-- JAXB API + REF IMPL -->
+        <module name="javax.xml.bind.api" export="true"/>
+        <module name="com.sun.xml.bind" export="true" services="export"/>
+        <module name="javax.xml.ws.api" export="true"/>
+        <module name="javax.jws.api" export="true"/>
+        <!-- WSDL4J API -->
+        <module name="javax.wsdl4j.api" export="true"/>
+        <!-- JBossWS API -->
+        <module name="org.jboss.ws.api" export="true" />
+        <!--  JBossWS JAXWS client -->
+        <module name="org.jboss.ws.jaxws-client" export="true" services="export" />
+        <!--  JBossWS configuration of Apache CXF -->
+        <module name="org.jboss.ws.cxf.jbossws-cxf-factories" services="export" />
+        <!-- Apache CXF APIs only -->
+        <module name="org.apache.cxf" export="true" />
+        <module name="org.jboss.ws.cxf.jbossws-cxf-transports-undertow" export="true" services="export" />
+        <module name="org.jboss.ws.cxf.jbossws-cxf-transports-udp" export="true" services="export" />
+        <module name="org.jboss.jaxbintros" export="true"/>
+        <module name="javax.security.auth.message.api" export="true"/>
+        <module name="org.picketbox" export="true"/>
+        <module name="org.apache.ws.security" export="true"/>
+    </dependencies>
+</module>

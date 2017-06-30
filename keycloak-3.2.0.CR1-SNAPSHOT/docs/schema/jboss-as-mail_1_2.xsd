@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="urn:jboss:domain:mail:1.2"
+           targetNamespace="urn:jboss:domain:mail:1.2"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified"
+           version="1.0">
+    <!-- The mail subsystem root element -->
+    <xs:element name="subsystem" type="mail-subsystemType"/>
+    <xs:complexType name="mail-subsystemType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                The configuration of the mail subsystem.
+            ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:choice minOccurs="1" maxOccurs="unbounded">
+            <xs:element name="mail-session" type="mail-sessionType"/>
+        </xs:choice>
+    </xs:complexType>
+    <xs:complexType name="mail-sessionType">
+        <xs:sequence>
+            <xs:element name="smtp-server" type="server-type" maxOccurs="1" minOccurs="0"/>
+            <xs:element name="pop3-server" type="server-type" maxOccurs="1" minOccurs="0"/>
+            <xs:element name="imap-server" type="server-type" maxOccurs="1" minOccurs="0"/>
+            <xs:element name="custom-server" type="custom-server-type" maxOccurs="unbounded" minOccurs="0"/>
+        </xs:sequence>
+        <xs:attribute name="name" use="required" type="xs:string" />
+        <xs:attribute name="jndi-name" use="required" type="xs:string" />
+        <xs:attribute name="debug" use="optional" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                       enables debuging of mail session
+                    ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="from" use="optional" type="xs:string" >
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                            sets mail.from attribute
+                        ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="login-type" mixed="true">
+        <xs:attribute name="name" type="xs:string"/>
+        <xs:attribute name="password" type="xs:string"/>
+    </xs:complexType>
+
+    <xs:complexType name="server-type" mixed="true">
+        <xs:sequence>
+            <xs:element name="login" type="login-type" maxOccurs="1" minOccurs="0"/>
+        </xs:sequence>
+        <xs:attribute name="outbound-socket-binding-ref" use="required" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                    Reference to the outbound-socket-binding element in the socket-binding-group that should
+                    be used for configuring the client socket used to communicate with the mail server.
+                ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="ssl" use="optional" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                    enables use of ssl for this server configuration
+                ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="tls" use="optional" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                    enables use of tls for this server configuration
+                ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+
+    </xs:complexType>
+
+    <xs:complexType name="property-type" >
+            <xs:attribute name="name" type="xs:string"/>
+            <xs:attribute name="value" type="xs:string"/>
+        </xs:complexType>
+
+
+    <xs:complexType name="custom-server-type" mixed="true">
+        <xs:sequence>
+            <xs:element name="login" type="login-type" maxOccurs="1" minOccurs="0"/>
+            <xs:element name="property" type="property-type" maxOccurs="unbounded" minOccurs="0"/>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string"/>
+        <xs:attribute name="outbound-socket-binding-ref" use="optional" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                    Reference to the outbound-socket-binding element in the socket-binding-group that should
+                    be used for configuring the client socket used to communicate with the mail server.
+                ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="ssl" use="optional" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                    enables use of ssl for this server configuration
+                ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="tls" use="optional" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                    enables use of tls for this server configuration
+                ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+
+    </xs:complexType>
+
+</xs:schema>

@@ -1,0 +1,433 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2011, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="urn:jboss:domain:jacorb:2.0"
+           xmlns="urn:jboss:domain:jacorb:2.0"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified"
+           version="2.0">
+
+    <!-- The jacorb subsystem root element -->
+    <xs:element name="subsystem" type="jacorbSubsystemType"/>
+
+    <xs:complexType name="jacorbSubsystemType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                The jacorbSubsystemType specifies the elements that can be used to configure the various aspects of the
+                jacorb subsystem.
+
+                - orb: holds the attributes used to configure the Object Request Broker (ORB).
+                - poa: holds the attributes used to configure the Portable Object Adapters (POA).
+                - naming: holds the attributes used to configure the CORBA Naming Service.
+                - interop: holds the attributes that control the ORB interoperability features.
+                - security: holds the attributes that control the ORB security features.
+                - properties: allows for the specification of generic name/value properties.
+                        ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="orb" minOccurs="0" maxOccurs="1" type="orbConfigType"/>
+            <xs:element name="poa" minOccurs="0" maxOccurs="1" type="poaConfigType"/>
+            <xs:element name="naming" minOccurs="0" maxOccurs="1" type="namingConfigType"/>
+            <xs:element name="interop" minOccurs="0" maxOccurs="1" type="interopConfigType"/>
+            <xs:element name="security" minOccurs="0" maxOccurs="1" type="securityConfigType"/>
+            <xs:element name="properties" minOccurs="0" maxOccurs="1" type="genericPropertiesType"/>
+            <xs:element name="ior-settings" minOccurs="0" maxOccurs="1" type="iorSettingsType"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="orbConfigType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                the orbConfigType specifies the elements and attributes that can be used to configure the behavior of the
+                Object Request Broker (ORB).
+
+                - connection: this element allows for the configuration of the connection properties.
+                - naming: this element allows for the configuration of the naming initial reference.
+
+                * name: the name of the running ORB.
+                * print-version: indicates whether the version number should be printed during ORB startup (on) or not (off).
+                * use-imr: indicates whether the implementation repository should be used (on) or not (off).
+                * use-bom: indicates whether GIOP 1.2 byte order markers should be used (on) or not (off).
+                * cache-typecodes: indicates whether typecodes should be cached (on) or not (off).
+                * cache-poa-names: indicates whether POA names should be cached (on) or not (off).
+                * giop-minor-version: the GIOP minor version to be used.
+                        ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="connection" minOccurs="0" maxOccurs="1" type="orbConnectionConfigType"/>
+            <xs:element name="initializers" minOccurs="0" maxOccurs="1" type="orbInitializersConfigType"/>
+        </xs:sequence>
+        <xs:attribute name="persistent-server-id"  type="xs:string" use="optional" default="1"/>
+        <xs:attribute name="name" type="xs:string" use="optional" default="JBoss"/>
+        <xs:attribute name="print-version" type="onOffType" use="optional" default="off"/>
+        <xs:attribute name="use-imr" type="onOffType" use="optional" default="off"/>
+        <xs:attribute name="use-bom" type="onOffType" use="optional" default="off"/>
+        <xs:attribute name="cache-typecodes" type="onOffType" use="optional" default="off"/>
+        <xs:attribute name="cache-poa-names" type="onOffType" use="optional" default="off"/>
+        <xs:attribute name="giop-minor-version" type="xs:integer" use="optional" default="2"/>
+        <xs:attribute name="socket-binding" type="xs:string" use="optional" default="jacorb"/>
+        <xs:attribute name="ssl-socket-binding" type="xs:string" use="optional" default="jacorb-ssl"/>
+    </xs:complexType>
+
+    <xs:complexType name="orbConnectionConfigType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                The orbConnectionConfigType specifies the attributes used to configure the ORB connections.
+
+                * retries: the number of retries if connections cannot be promptly established.
+                * retry-interval: the interval in milliseconds between retries.
+                * client-timeout: the client-side connection timeout value in milliseconds. A value of zero indicates that
+                                  the connection never times out.
+                * server-timeout: the server-side connection timeout value in milliseconds. A value of zero indicates that
+                                  the connection never times out.
+                * max-server-connections: the maximum number of connections accepted by the server.
+                * max-managed-buf-size: the log2 of maximum size managed by the internal buffer manager.
+                * outbuf-size: the size of the network buffers for outgoing messages.
+                * outbuf-cache-timeout: the buffer cache timeout in milliseconds.
+                        ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="retries" type="xs:integer" use="optional" default="5"/>
+        <xs:attribute name="retry-interval" type="xs:integer" use="optional" default="500"/>
+        <xs:attribute name="client-timeout" type="xs:integer" use="optional" default="0"/>
+        <xs:attribute name="server-timeout" type="xs:integer" use="optional" default="0"/>
+        <xs:attribute name="max-server-connections" type="xs:integer" use="optional"/>
+        <xs:attribute name="max-managed-buf-size" type="xs:integer" use="optional" default="24"/>
+        <xs:attribute name="outbuf-size" type="xs:integer" use="optional" default="2048"/>
+        <xs:attribute name="outbuf-cache-timeout" type="xs:integer" use="optional" default="-1"/>
+    </xs:complexType>
+
+    <xs:complexType name="orbInitializersConfigType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                The orbInitializersConfigType specifies the attributes used to configure the ORB initializers.
+
+                * security: indicates whether the security (SAS and CSIv2) initializers should be installed. There are three possibilities:
+                    client   - The client interceptor will be installed. Remote calls from this server will propagate
+                               by sending the current username and password
+                    identity - The server will just send the current username. The recieving server must trust this
+                               server.
+                    off      - Security interceptors are not installed
+                * transactions: indicates which transaction initializers should be installed. There are three possibilities:
+                    on   - This requires JTS to be enabled in the transactions subsystem config, and will enable full transaction
+                           interaoprability with other JBoss AS instances.
+                    spec - This does not require JTS to be enabled, but will install the minimum set of transaction interceptors
+                           required for EJB spec compliance. These interceptors detect an incoming transaction and throw an
+                           exception if the invocation should be run in the incoming transaction context.
+                    off  - No transaction initalizers will be installed.
+                        ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="security" type="securityEnabledType" use="optional" default="off"/>
+        <xs:attribute name="transactions" type="transactionEnabledType" use="optional" default="off"/>
+    </xs:complexType>
+
+    <xs:complexType name="poaConfigType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                The poaConfigType specifies the elements and attributes used to configure the Portable Object Adapterss (POA).
+
+                - request-processors: element that allows for the configuration of the POA request processors.
+
+                * monitoring: indicates whether the monitoring GUI should be displayed (on) or not (off).
+                * queue-wait: indicates whether requests that exceed the maximum queue size should wait (on) or not (off).
+                              When disabled, a TRANSIENT exception is thrown if the queue is full.
+                * queue-min: the size of the queue for notifying waiting requests. In other words, blocked requests are
+                             only notified when the queue has no more than queue-min requests.
+                * queue-max: the maximum number of requests that can be queued. If new requests arrive and queue-wait is
+                             on, the exceeding requests will be blocked until the queue reaches its minimum value.
+                        ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="request-processors" minOccurs="0" maxOccurs="1" type="poaRequestProcessorsConfigType"/>
+        </xs:sequence>
+        <xs:attribute name="monitoring" type="onOffType" use="optional" default="off"/>
+        <xs:attribute name="queue-wait" type="onOffType" use="optional" default="off"/>
+        <xs:attribute name="queue-min" type="xs:integer" use="optional" default="10"/>
+        <xs:attribute name="queue-max" type="xs:integer" use="optional" default="100"/>
+    </xs:complexType>
+
+    <xs:complexType name="poaRequestProcessorsConfigType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                The poaRequestProcessorsConfigType specifies the attributes used to configure the POA request processors.
+
+                * pool-size: the size of the request processors thread-pool. Threads that finish processing a request are
+                             placed back in the pool if the pool is not full and discarded otherwise.
+                * max-threads: the maximum number of active request processor threads. Threads are first obtained from
+                               the pool and once the pool is exhausted new threads are created until the number of threads
+                               reaches this limit. New requests will wait until an active thread finishes its job.
+                        ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="pool-size" type="xs:integer" use="optional" default="5"/>
+        <xs:attribute name="max-threads" type="xs:integer" use="optional" default="32"/>
+    </xs:complexType>
+
+    <xs:complexType name="namingConfigType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                The namingConfigType specifies the attributes used to configure the naming service.
+
+                * root-context: the naming service root context.
+                * export-corbaloc: indicates whether the root context should be exported as corbaloc::address:port/NameService
+                                   (on) or not (off).
+                        ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="root-context" type="xs:string" use="optional" default="JBoss/Naming/root"/>
+        <xs:attribute name="export-corbaloc" type="onOffType" use="optional" default="on"/>
+    </xs:complexType>
+
+    <xs:complexType name="interopConfigType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                The interopConfigType specifies the attributes used to configure the ORB interoperability features.
+
+                * sun: indicates whether interoperability with Sun's ORB is enabled (on) or not (off).
+                * comet: indicates whether interoperability with Comet's ORB is enabled (on) or not (off).
+                * iona: indicates whether interoperability with IONA's ASP is enabled (on) or not (off).
+                * chunk-custom-rmi-valuetypes: indicates whether custom RMI valuetypes should be encoded as chunks (on)
+                                               or not (off).
+                * lax-boolean-encoding: indicates whether any non-zero CDR encoded boolean value should be interpreted as
+                                        true (on) or not (off).
+                * indirection-encoding-disabled: indicates whether indirection encoding for repeated typecodes should be
+                                                 disabled (on) or not (off).
+                * strict-check-on-tc-creation: indicates whether the method create_abstract_interface_tc should perform
+                                               a validation check on the name parameter (on) or not (off).
+                        ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="sun" type="onOffType" use="optional" default="on"/>
+        <xs:attribute name="comet" type="onOffType" use="optional" default="off"/>
+        <xs:attribute name="iona" type="onOffType" use="optional" default="off"/>
+        <xs:attribute name="chunk-custom-rmi-valuetypes" type="onOffType" use="optional" default="on"/>
+        <xs:attribute name="lax-boolean-encoding" type="onOffType" use="optional" default="off"/>
+        <xs:attribute name="indirection-encoding-disable" type="onOffType" use="optional" default="off"/>
+        <xs:attribute name="strict-check-on-tc-creation" type="onOffType" use="optional" default="off"/>
+    </xs:complexType>
+
+    <xs:complexType name="securityConfigType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                The securityConfigType specifies the attributes used to configure the ORB security features.
+
+                * support-ssl: indicates whether SSL is to be supported (on) or not (off).
+                * security-domain: the name of the security domain that holds the key and trust stores that will be used
+                                   to establish SSL connections.
+                * add-component-via-interceptor: indicates whether SSL components should be added by an IOR interceptor
+                                                 (on) or not (off).
+                * client-supports: value that indicates the client SSL supported parameters (None, ServerAuth, ClientAuth.
+                                   MutualAuth)
+                * client-requires: value that indicates the client SSL required parameters (None, ServerAuth, ClientAuth.
+                                   MutualAuth)
+                * server-supports: value that indicates the server SSL supported parameters (None, ServerAuth, ClientAuth.
+                                   MutualAuth)
+                * server-requires: value that indicates the server SSL required parameters (None, ServerAuth, ClientAuth.
+                                   MutualAuth)
+                        ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="support-ssl" type="onOffType" use="optional" default="off"/>
+        <xs:attribute name="security-domain" type="xs:string" use="optional"/>
+        <xs:attribute name="add-component-via-interceptor" type="onOffType" use="optional" default="on"/>
+        <xs:attribute name="client-supports" type="sslConfigType" use="optional" default="MutualAuth"/>
+        <xs:attribute name="client-requires" type="sslConfigType" use="optional" default="None"/>
+        <xs:attribute name="server-supports" type="sslConfigType" use="optional" default="MutualAuth"/>
+        <xs:attribute name="server-requires" type="sslConfigType" use="optional" default="None"/>
+    </xs:complexType>
+
+    <xs:complexType name="iorSettingsType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                The iorSettingsType specifies the elements that can be used to configure settings that are to be applied
+                to all generated IORs.
+
+                - transport-config: holds the attributes used to configure the IOR transport settings.
+                - as-context: holds the attributes used to configure the IOR Authentication Service (AS) settings.
+                - sas-context: holds the attributes used to configure the IOR Secure Attribute Service (SAS) settings.
+                        ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="transport-config" minOccurs="0" maxOccurs="1" type="iorTransportConfigType"/>
+            <xs:element name="as-context" minOccurs="0" maxOccurs="1" type="iorASContextType"/>
+            <xs:element name="sas-context" minOccurs="0" maxOccurs="1" type="iorSASContextType"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="iorTransportConfigType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                The iorTransportconfigType specifies the attributes used to setup the IOR transport settings.
+
+                * integrity: indicates whether the transport must require integrity protection or not. Valid values are
+                             "none", "supported" and "required".
+                * confidentiality: indicates whether the transport must require confidentiality protection or not. Valid
+                             values are "none", "supported" and "required".
+                * trust-in-target: indicates if the transport must require trust in target to be established. Valid values
+                             are "none" and "supported".
+                * trust-in-client: indicates if the transport must require trust in client to be established. Valid values
+                             are "none", "supported" and "required".
+                * detect-replay: indicates whether the transport must require replay detection or not. Valid values are
+                             "none", "supported" and "required".
+                * detect-misordering: indicates whether the transport must require misordering detection or not. Valid
+                             values are "none", "supported" and "required".
+             ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="integrity" type="xs:string" use="optional"/>
+        <xs:attribute name="confidentiality" type="xs:string" use="optional"/>
+        <xs:attribute name="trust-in-target" type="xs:string" use="optional"/>
+        <xs:attribute name="trust-in-client" type="xs:string" use="optional"/>
+        <xs:attribute name="detect-replay" type="xs:string" use="optional"/>
+        <xs:attribute name="detect-misordering" type="xs:string" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="iorASContextType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                The iorASContextType specifies the attributes used to setup the IOR Authentication Service settings.
+
+                * auth-method: the authentication method. Valid values are "none" and "username_password".
+                * realm: the Authentication Service realm name. If not provided it will be set to "Default".
+                * requires: indicates if authentication is required (true) or not (false).
+             ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="auth-method" type="xs:string" use="optional"/>
+        <xs:attribute name="realm" type="xs:string" use="optional"/>
+        <xs:attribute name="required" type="xs:boolean" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="iorSASContextType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                The iorSASContextType specifies the attributes used to setup the IOR Secure Attribute Service settings.
+
+                * caller-propagation: indicates whether the caller should be propagated in the SAS context or not. Valid
+                                      values are "none" and "supported".
+             ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="caller-propagation" type="xs:string" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="genericPropertiesType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+               Enclosing element for a list of generic properties.
+             ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="property" minOccurs="0" maxOccurs="unbounded" type="genericPropertyType"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="genericPropertyType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+               The property element allows for the specification of generic name/value properties. It is useful to specify
+               configuration attributes that have not been covered in this schema.
+             ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="name" type="xs:string" use="required"/>
+        <xs:attribute name="value" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <xs:simpleType name="onOffType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                    Enumeration of allowed values for the standard JacORB attributes.
+                ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:token">
+            <xs:enumeration value="on"/>
+            <xs:enumeration value="off"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="transactionEnabledType">
+        <xs:annotation>
+            <xs:documentation>
+                Enumeration of allowed values for the transaction interceptor config.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:token">
+            <xs:enumeration value="on"/>
+            <xs:enumeration value="off"/>
+            <xs:enumeration value="spec"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="securityEnabledType">
+        <xs:annotation>
+            <xs:documentation>
+                Enumeration of allowed values for the security interceptor config.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:token">
+            <xs:enumeration value="identity"/>
+            <xs:enumeration value="client"/>
+            <xs:enumeration value="off"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="sslConfigType">
+        <xs:annotation>
+            <xs:documentation>
+                Enumeration of allowed values for the SSL config.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:token">
+            <xs:enumeration value="None"/>
+            <xs:enumeration value="ServerAuth"/>
+            <xs:enumeration value="ClientAuth"/>
+            <xs:enumeration value="MutualAuth"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+</xs:schema>

@@ -1,0 +1,30 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <h1>{{:: 'sessions' | translate}}</h1>
+
+    <ul class="nav nav-tabs">
+        <li><a href="#/realms/{{realm.realm}}/sessions/realm">{{:: 'realm-sessions' | translate}}</a></li>
+        <li class="active"><a href="#/realms/{{realm.realm}}/sessions/revocation">{{:: 'revocation' | translate}}</a></li>
+    </ul>
+
+    <form class="form-horizontal" name="credentialForm" novalidate kc-read-only="!access.manageRealm">
+        <fieldset class="border-top">
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="notBefore">{{:: 'not-before' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-disabled="true" class="form-control" type="text" id="notBefore" name="notBefore" data-ng-model="notBefore" autofocus>
+                </div>
+                <kc-tooltip>{{:: 'not-before.tooltip' | translate}}</kc-tooltip>
+            </div>
+        </fieldset>
+
+        <div class="form-group">
+            <div class="col-md-10 col-md-offset-2" data-ng-show="access.manageClients">
+                <button type="submit" data-ng-click="setNotBeforeNow()" class="btn btn-default">{{:: 'set-to-now' | translate}}</button>
+                <button type="submit" data-ng-click="clear()" class="btn btn-default">{{:: 'clear' | translate}}</button>
+                <button type="submit" data-ng-click="pushRevocation()" class="btn btn-primary" tooltip-trigger="mouseover mouseout" tooltip="{{:: 'push.tooltip' | translate}}" tooltip-placement="bottom">{{:: 'push' | translate}}</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<kc-menu></kc-menu>

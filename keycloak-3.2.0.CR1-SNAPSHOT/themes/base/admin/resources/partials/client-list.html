@@ -1,0 +1,56 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <h1>
+        <span>{{:: 'clients' | translate}}</span>
+        <kc-tooltip>{{:: 'clients.tooltip' | translate}}</kc-tooltip>
+    </h1>
+
+    <table class="datatable table table-striped table-bordered dataTable no-footer">
+        <thead>
+            <tr>
+                <th class="kc-table-actions" colspan="6">
+                    <div class="form-inline">
+                        <div class="form-group">
+                            <div class="input-group">
+                            <input type="text" placeholder="{{:: 'search.placeholder' | translate}}" data-ng-model="search.clientId" class="form-control search" onkeyup="if(event.keyCode === 13){$(this).next('I').click();}">
+                                <div class="input-group-addon">
+                                    <i class="fa fa-search" type="submit"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pull-right" data-ng-show="access.manageClients">
+                            <a id="createClient" class="btn btn-default" href="#/create/client/{{realm.realm}}">{{:: 'create' | translate}}</a>
+                            <a id="importClient" class="btn btn-default" href="#/import/client/{{realm.realm}}" data-ng-show="importButton">{{:: 'import' | translate}}</a>
+                        </div>
+                    </div>
+                </th>
+            </tr>
+            <tr data-ng-hide="clients.length == 0">
+                <th>{{:: 'client-id' | translate}}</th>
+                <th>{{:: 'enabled' | translate}}</th>
+                <th>{{:: 'base-url' | translate}}</th>
+                <th colspan="3">{{:: 'actions' | translate}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr ng-repeat="client in clients| filter:search | orderBy:'clientId' | startFrom:(currentPage - 1) * pageSize | limitTo:pageSize">
+                <td><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></td>
+                <td translate="{{client.enabled}}"></td>
+                <td ng-class="{'text-muted': !client.baseUrl}">
+                    <a href="{{client.rootUrl}}{{client.baseUrl}}" target="_blank" data-ng-show="client.baseUrl">{{client.rootUrl}}{{client.baseUrl}}</a>
+                    <span data-ng-hide="client.baseUrl">{{:: 'not-defined' | translate}}</span>
+                </td>
+                <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/clients/{{client.id}}">{{:: 'edit' | translate}}</td>
+                <td class="kc-action-cell" data-ng-click="exportClient(client)">{{:: 'export' | translate}}</td>
+                <td class="kc-action-cell" data-ng-show="client.access.manage" data-ng-click="removeClient(client)">{{:: 'delete' | translate}}</td>
+            </tr>
+            <tr data-ng-show="(clients | filter:search).length == 0">
+                <td class="text-muted" colspan="4" data-ng-show="search.clientId">{{:: 'no-results' | translate}}</td>
+                <td class="text-muted" colspan="4" data-ng-hide="search.clientId">{{:: 'no-clients-available' | translate}}</td>
+            </tr>
+        </tbody>
+    </table>
+    <kc-paging current-page='currentPage' number-of-pages='numberOfPages' current-page-input='currentPageInput'></kc-paging>
+</div>
+
+<kc-menu></kc-menu>

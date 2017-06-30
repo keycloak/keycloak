@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2016, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="urn:jboss:domain:discovery:1.0"
+           xmlns="urn:jboss:domain:discovery:1.0"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified"
+           version="1.0">
+
+    <xs:element name="subsystem" type="subsystemType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                The discovery subsystem root element.
+            </documentation>
+        </annotation>
+    </xs:element>
+
+    <xs:complexType name="subsystemType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                The discovery subsystem root type.
+            </documentation>
+        </annotation>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="aggregate-provider" type="aggregateType">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        An aggregating discovery provider element.
+                    </documentation>
+                </annotation>
+            </xs:element>
+            <xs:element name="static-provider" type="staticType">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        A static discovery provider definition element.
+                    </documentation>
+                </annotation>
+            </xs:element>
+        </xs:choice>
+    </xs:complexType>
+
+    <xs:complexType name="aggregateType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                A provider which aggregates multiple other providers into one.
+            </documentation>
+        </annotation>
+        <xs:attribute name="name" type="xs:string" use="required">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The name of this provider.
+                </documentation>
+            </annotation>
+        </xs:attribute>
+        <xs:attribute name="providers" type="providersType" use="optional">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The list of providers which make up this provider.
+                </documentation>
+            </annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="staticType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                A provider which contains a list of static services.
+            </documentation>
+        </annotation>
+        <xs:choice>
+            <xs:element name="service" type="serviceType" minOccurs="0" maxOccurs="unbounded">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        A single service definition within the service list.
+                    </documentation>
+                </annotation>
+            </xs:element>
+        </xs:choice>
+        <xs:attribute name="name" type="xs:string" use="required">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The name of this provider.
+                </documentation>
+            </annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="serviceType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                A definition of a single static service.
+            </documentation>
+        </annotation>
+        <xs:sequence>
+            <xs:element name="attribute" type="attributeType" minOccurs="0" maxOccurs="unbounded">
+                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                    <documentation>
+                        A single attribute in this attribute list.
+                    </documentation>
+                </annotation>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="abstract-type" type="xs:string" use="optional">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The abstract type of the service being advertised.
+                </documentation>
+            </annotation>
+        </xs:attribute>
+        <xs:attribute name="abstract-type-authority" type="xs:string" use="optional">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The name of the authority which defined the abstract service type.
+                </documentation>
+            </annotation>
+        </xs:attribute>
+        <xs:attribute name="uri" type="xs:anyURI" use="required">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The concrete URI of the service being advertised.
+                </documentation>
+            </annotation>
+        </xs:attribute>
+        <xs:attribute name="uri-scheme-authority" type="xs:string" use="optional">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The name of the authority which defined the concrete URI scheme.
+                </documentation>
+            </annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="attributeType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                A service's attribute definition.
+            </documentation>
+        </annotation>
+        <xs:attribute name="name" type="xs:string" use="required">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The attribute name.
+                </documentation>
+            </annotation>
+        </xs:attribute>
+        <xs:attribute name="value" type="xs:string" use="optional">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The attribute value.
+                </documentation>
+            </annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:simpleType name="providersType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                A list of providers.
+            </documentation>
+        </annotation>
+        <xs:list itemType="xs:string"/>
+    </xs:simpleType>
+</xs:schema>
