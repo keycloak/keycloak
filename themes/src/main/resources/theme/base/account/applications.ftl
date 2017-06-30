@@ -27,9 +27,9 @@
               <#list applications.applications as application>
                 <tr>
                     <td>
-                        <#if application.client.baseUrl??><a href="${application.client.baseUrl}"></#if>
+                        <#if application.effectiveUrl?has_content><a href="${application.effectiveUrl}"></#if>
                             <#if application.client.name??>${advancedMsg(application.client.name)}<#else>${application.client.clientId}</#if>
-                        <#if application.client.baseUrl??></a></#if>
+                        <#if application.effectiveUrl?has_content></a></#if>
                     </td>
 
                     <td>

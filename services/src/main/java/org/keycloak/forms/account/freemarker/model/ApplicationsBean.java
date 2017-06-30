@@ -140,7 +140,45 @@ public class ApplicationsBean {
         public MultivaluedHashMap<String, ClientRoleEntry> getResourceRolesGranted() {
             return resourceRolesGranted;
         }
-
+        
+        public String getEffectiveUrl() {
+            String rootUrl = getClient().getRootUrl();
+            String baseUrl = getClient().getBaseUrl();
+            
+            if (rootUrl.equals("") && baseUrl.equals("")) {
+                return "";
+            }
+            
+            if (rootUrl.equals("") && !baseUrl.equals("")) {
+                return baseUrl;
+            }
+            
+            if (!rootUrl.equals("") && baseUrl.equals("")) {
+                return rootUrl;
+            }
+            
+            if (isBaseUrlRelative() && !rootUrl.equals("")) {
+                return concatUrls(rootUrl, baseUrl);
+            }
+            
+            return baseUrl;
+        }
+        
+        private String concatUrls(String u1, String u2) {
+            if (u1.endsWith("/")) u1 = u1.substring(0, u1.length() - 1);
+            if (u2.startsWith("/")) u2 = u2.substring(1);
+            return u1 + "/" + u2;
+        }
+        
+        private boolean isBaseUrlRelative() {
+            String baseUrl = getClient().getBaseUrl();
+            if (baseUrl.equals("")) return false;
+            if (baseUrl.startsWith("/")) return true;
+            if (baseUrl.startsWith("./")) return true;
+            if (baseUrl.startsWith("../")) return true;
+            return false;
+        }
+        
         public ClientModel getClient() {
             return client;
         }
