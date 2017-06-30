@@ -53,7 +53,7 @@ public class Users extends AdminConsoleRealm {
     public static final String IMPERSONATE = "Impersonate";
     public static final String DELETE = "Delete";
 
-    @FindBy(xpath = "//div[./h1[text()='Users']]/table")
+    @FindBy(id = "user-table")
     private UsersTable table;
 
     public UsersTable table() {
