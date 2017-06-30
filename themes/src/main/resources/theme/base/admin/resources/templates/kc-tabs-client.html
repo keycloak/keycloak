@@ -23,7 +23,7 @@
             <kc-tooltip>{{:: 'scope.tooltip' | translate}}</kc-tooltip>
         </li>
         <li ng-class="{active: path[4] == 'authz'}"
-            data-ng-show="serverInfo.profileInfo.previewEnabled && !disableAuthorizationTab && client.authorizationServicesEnabled">
+            data-ng-show="serverInfo.featureEnabled('AUTHORIZATION') && !disableAuthorizationTab && client.authorizationServicesEnabled">
             <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server">{{:: 'authz-authorization' |
                 translate}}</a></li>
         <li ng-class="{active: path[4] == 'revocation'}" data-ng-show="client.protocol != 'docker-v2'"><a
