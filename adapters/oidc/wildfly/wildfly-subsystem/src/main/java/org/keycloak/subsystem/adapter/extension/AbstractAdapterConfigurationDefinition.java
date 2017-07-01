@@ -101,6 +101,12 @@ abstract class AbstractAdapterConfigurationDefinition extends SimpleResourceDefi
                     .setAllowExpression(true)
                     .setValidator(new IntRangeValidator(-1, true))
                     .build();
+    protected static final SimpleAttributeDefinition COOKIE_PATH =
+            new SimpleAttributeDefinitionBuilder("token-cookie-path", ModelType.STRING, true)
+                    .setXmlName("token-cookie-path")
+                    .setAllowExpression(true)
+                    .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
+                    .build();
 
     static final List<SimpleAttributeDefinition> DEPLOYMENT_ONLY_ATTRIBUTES = new ArrayList<SimpleAttributeDefinition>();
 
@@ -115,6 +121,7 @@ abstract class AbstractAdapterConfigurationDefinition extends SimpleResourceDefi
         DEPLOYMENT_ONLY_ATTRIBUTES.add(TOKEN_MINIMUM_TIME_TO_LIVE);
         DEPLOYMENT_ONLY_ATTRIBUTES.add(MIN_TIME_BETWEEN_JWKS_REQUESTS);
         DEPLOYMENT_ONLY_ATTRIBUTES.add(PUBLIC_KEY_CACHE_TTL);
+        DEPLOYMENT_ONLY_ATTRIBUTES.add(COOKIE_PATH);
     }
 
     static final List<SimpleAttributeDefinition> ALL_ATTRIBUTES = new ArrayList();

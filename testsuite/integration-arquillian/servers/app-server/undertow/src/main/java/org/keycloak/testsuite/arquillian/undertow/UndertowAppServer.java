@@ -120,6 +120,10 @@ public class UndertowAppServer implements DeployableContainer<UndertowAppServerC
             throw new IllegalArgumentException("UndertowContainer only supports UndertowWebArchive or WebArchive.");
         }
 
+        if ("ROOT.war".equals(archive.getName())) {
+            di.setContextPath("/");
+        }
+
         ClassLoader parentCl = Thread.currentThread().getContextClassLoader();
         UndertowWarClassLoader classLoader = new UndertowWarClassLoader(parentCl, archive);
         Thread.currentThread().setContextClassLoader(classLoader);
