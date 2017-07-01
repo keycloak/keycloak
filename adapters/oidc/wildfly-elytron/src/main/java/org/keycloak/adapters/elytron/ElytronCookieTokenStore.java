@@ -18,12 +18,9 @@
 
 package org.keycloak.adapters.elytron;
 
-import java.security.Principal;
-
 import org.jboss.logging.Logger;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
-import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.CookieTokenStore;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OidcKeycloakAccount;
@@ -98,7 +95,7 @@ public class ElytronCookieTokenStore implements ElytronTokeStore {
             return true;
         } else {
             log.debug("Account was not active, removing cookie and returning false");
-            CookieTokenStore.removeCookie(httpFacade);
+            CookieTokenStore.removeCookie(deployment, httpFacade);
             return false;
         }
     }
@@ -145,7 +142,7 @@ public class ElytronCookieTokenStore implements ElytronTokeStore {
             return;
         }
 
-        CookieTokenStore.removeCookie(this.httpFacade);
+        CookieTokenStore.removeCookie(this.httpFacade.getDeployment(), this.httpFacade);
 
         if (glo) {
             KeycloakSecurityContext ksc = (KeycloakSecurityContext) principal.getKeycloakSecurityContext();
