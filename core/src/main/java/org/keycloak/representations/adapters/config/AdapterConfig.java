@@ -37,7 +37,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
         "allow-any-hostname", "disable-trust-manager", "truststore", "truststore-password",
         "client-keystore", "client-keystore-password", "client-key-password",
         "always-refresh-token",
-        "register-node-at-startup", "register-node-period", "token-store", "principal-attribute",
+        "register-node-at-startup", "register-node-period", "token-store", "token-cookie-path", "principal-attribute",
         "proxy-url", "turn-off-change-session-id-on-login", "token-minimum-time-to-live",
         "min-time-between-jwks-requests", "public-key-cache-ttl",
         "policy-enforcer", "ignore-oauth-query-parameter", "verify-token-audience"
@@ -68,6 +68,8 @@ public class AdapterConfig extends BaseAdapterConfig implements AdapterHttpClien
     protected int registerNodePeriod = -1;
     @JsonProperty("token-store")
     protected String tokenStore;
+    @JsonProperty("token-cookie-path")
+    protected String tokenCookiePath;
     @JsonProperty("principal-attribute")
     protected String principalAttribute;
     @JsonProperty("turn-off-change-session-id-on-login")
@@ -195,6 +197,14 @@ public class AdapterConfig extends BaseAdapterConfig implements AdapterHttpClien
 
     public void setTokenStore(String tokenStore) {
         this.tokenStore = tokenStore;
+    }
+
+    public String getTokenCookiePath() {
+        return tokenCookiePath;
+    }
+
+    public void setTokenCookiePath(String tokenCookiePath) {
+        this.tokenCookiePath = tokenCookiePath;
     }
 
     public String getPrincipalAttribute() {

@@ -69,6 +69,7 @@
         <realm>master</realm>
         <resource>http-endpoint</resource>
         <use-resource-role-mappings>true</use-resource-role-mappings>
+        <token-cookie-path>/</token-cookie-path>
         <realm-public-key>
             MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC4siLKUew0WYxdtq6/rwk4Uj/4amGFFnE/yzIxQVU0PUqz3QBRVkUWpDj0K6ZnS5nzJV/y6DHLEy7hjZTdRDphyF1sq09aDOYnVpzu8o2sIlMM8q5RnUyEfIyUZqwo8pSZDJ90fS0s+IDUJNCSIrAKO3w1lqZDHL6E/YFHXyzkvQIDAQAB
         </realm-public-key>
@@ -90,6 +91,7 @@
         <realm>jboss-infra</realm>
         <resource>wildfly-console</resource>
         <public-client>true</public-client>
+        <token-cookie-path>/</token-cookie-path>
         <ssl-required>EXTERNAL</ssl-required>
         <confidential-port>443</confidential-port>
         <proxy-url>http://localhost:9000</proxy-url>

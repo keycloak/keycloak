@@ -122,6 +122,7 @@
             <xs:element name="ignore-oauth-query-parameter" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
             <xs:element name="proxy-url" type="xs:string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="verify-token-audience" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="token-cookie-path" type="xs:string" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="name" type="xs:string" use="required">
             <xs:annotation>

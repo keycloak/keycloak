@@ -171,6 +171,15 @@
             "secret": "password"
         },
         {
+            "clientId": "customer-cookie-portal-root",
+            "enabled": true,
+            "baseUrl": "/",
+            "redirectUris": [
+                "http://localhost:8280/*"
+            ],
+            "secret": "password"
+        },
+        {
             "clientId": "customer-portal-js",
             "enabled": true,
             "publicClient": true,
