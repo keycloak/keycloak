@@ -19,8 +19,11 @@ package org.keycloak.adapters.springsecurity.token;
 
 import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.KeycloakDeployment;
+import org.keycloak.enums.TokenStore;
+import org.springframework.util.Assert;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * {@link AdapterTokenStoreFactory} that returns a new {@link SpringSecurityTokenStore} for each request.
@@ -30,7 +33,11 @@ import javax.servlet.http.HttpServletRequest;
 public class SpringSecurityAdapterTokenStoreFactory implements AdapterTokenStoreFactory {
 
     @Override
-    public AdapterTokenStore createAdapterTokenStore(KeycloakDeployment deployment, HttpServletRequest request) {
+    public AdapterTokenStore createAdapterTokenStore(KeycloakDeployment deployment, HttpServletRequest request, HttpServletResponse response) {
+        Assert.notNull(deployment, "KeycloakDeployment is required");
+        if (deployment.getTokenStore() == TokenStore.COOKIE) {
+            return new SpringSecurityCookieTokenStore(deployment, request, response);
+        }
         return new SpringSecurityTokenStore(deployment, request);
     }
 }
