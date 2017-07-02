@@ -38,6 +38,9 @@ public class KeycloakAuthenticationFailureHandler implements AuthenticationFailu
 		// Check that the response was not committed yet (this may happen when another
 		// part of the Keycloak adapter sends a challenge or a redirect).
 		if (!response.isCommitted()) {
+			if (KeycloakCookieBasedRedirect.getRedirectUrlFromCookie(request) != null) {
+				response.addCookie(KeycloakCookieBasedRedirect.createCookieFromRedirectUrl(null));
+			}
 			response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unable to authenticate using the Authorization header");
 		} else {
 			if (200 <= response.getStatus() && response.getStatus() < 300) {

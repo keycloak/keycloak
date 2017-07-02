@@ -73,7 +73,8 @@ public class KeycloakSecurityContextRequestFilter extends GenericFilterBean impl
             // just in case session got serialized
             if (refreshableSecurityContext.getDeployment()==null) {
                 log.trace("Recreating missing deployment and related fields in deserialized context");
-                AdapterTokenStore adapterTokenStore = adapterTokenStoreFactory.createAdapterTokenStore(deployment, (HttpServletRequest) request);
+                AdapterTokenStore adapterTokenStore = adapterTokenStoreFactory.createAdapterTokenStore(deployment, (HttpServletRequest) request,
+                        (HttpServletResponse) response);
                 refreshableSecurityContext.setCurrentRequestInfo(deployment, adapterTokenStore);
             }
 

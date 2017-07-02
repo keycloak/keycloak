@@ -94,7 +94,17 @@ public class KeycloakAuthenticationEntryPoint implements AuthenticationEntryPoin
         }
     }
 
+    /**
+     * Redirects to the login page. If HTTP sessions are disabled, the redirect URL is saved in a
+     * cookie now, to be retrieved by the {@link KeycloakAuthenticationSuccessHandler} or the
+     * {@link KeycloakAuthenticationFailureHandler} when the login sequence completes.
+     */
     protected void commenceLoginRedirect(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        if (request.getSession(false) == null && KeycloakCookieBasedRedirect.getRedirectUrlFromCookie(request) == null) {
+            // If no session exists yet at this point, then apparently the redirect URL is not
+            // stored in a session. We'll store it in a cookie instead.
+            response.addCookie(KeycloakCookieBasedRedirect.createCookieFromRedirectUrl(request.getRequestURI()));
+        }
         String contextAwareLoginUri = request.getContextPath() + loginUri;
         log.debug("Redirecting to login URI {}", contextAwareLoginUri);
         response.sendRedirect(contextAwareLoginUri);
