@@ -148,6 +148,17 @@
       "secret": "password"
     },
     {
+      "clientId": "root-url-client",
+      "enabled": true,
+      "rootUrl": "http://localhost:8180/foo/bar",
+      "adminUrl": "http://localhost:8180/foo/bar",
+      "baseUrl": "/baz",
+      "redirectUris": [
+        "http://localhost:8180/foo/bar/*"
+      ],
+      "secret": "password"
+    },
+    {
       "clientId" : "test-app-scope",
       "enabled": true,
 

@@ -145,6 +145,9 @@ public class ApplicationsBean {
             String rootUrl = getClient().getRootUrl();
             String baseUrl = getClient().getBaseUrl();
             
+            if (rootUrl == null) rootUrl = "";
+            if (baseUrl == null) baseUrl = "";
+            
             if (rootUrl.equals("") && baseUrl.equals("")) {
                 return "";
             }
