@@ -27,6 +27,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.plugins.server.servlet.HttpServlet30Dispatcher;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.spi.ResteasyDeployment;
+import org.keycloak.common.Version;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -45,6 +46,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -106,6 +109,10 @@ public class KeycloakServer {
     }
 
     public static void main(String[] args) throws Throwable {
+        if (!System.getenv().containsKey("MAVEN_CMD_LINE_ARGS")) {
+            Version.BUILD_TIME = new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date());
+        }
+
         bootstrapKeycloakServer(args);
     }
 
