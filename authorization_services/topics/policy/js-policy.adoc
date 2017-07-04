@@ -45,7 +45,8 @@ if (contextAttributes.containsValue('kc.client.network.ip_address', '127.0.0.1')
 You can also use role-based access control (RBAC):
 
 ```javascript
-var identity = $evaluation.getIdentity();
+var context = $evaluation.getContext();
+var identity = context.getIdentity();
 
 if (identity.hasRole('keycloak_user')) {
     $evaluation.grant();
