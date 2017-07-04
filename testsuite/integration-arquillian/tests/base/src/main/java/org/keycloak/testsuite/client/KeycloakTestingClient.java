@@ -101,7 +101,7 @@ public class KeycloakTestingClient {
             String encoded = SerializationUtil.encode(function);
 
             String result = testing(realm != null ? realm : "master").runOnServer(encoded);
-            if (result != null && !result.isEmpty() && !result.trim().startsWith("{")) {
+            if (result != null && !result.isEmpty() && result.trim().startsWith("EXCEPTION:")) {
                 Throwable t = SerializationUtil.decodeException(result);
                 if (t instanceof AssertionError) {
                     throw (AssertionError) t;
@@ -117,7 +117,7 @@ public class KeycloakTestingClient {
             String encoded = SerializationUtil.encode(function);
 
             String result = testing(realm != null ? realm : "master").runOnServer(encoded);
-            if (result != null && !result.isEmpty() && !result.trim().startsWith("{")) {
+            if (result != null && !result.isEmpty() && result.trim().startsWith("EXCEPTION:")) {
                 Throwable t = SerializationUtil.decodeException(result);
                 if (t instanceof AssertionError) {
                     throw (AssertionError) t;
