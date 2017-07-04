@@ -8,7 +8,7 @@ Here are an explanation of some of the built-in required action types:
 Update Password::
    When set, a user must change their password.
 Configure OTP::
-   When set, a user must configure a one-time password generator on their mobile device using either the Free OTP or Google Authenticator appliation.
+   When set, a user must configure a one-time password generator on their mobile device using either the Free OTP or Google Authenticator application.
 Verify Email::
    When set, a user must verify that they have a valid email account.  An email will be sent to the user with a link they have to click.  Once this workflow
    is successfully completed, they will be allowed to log in.

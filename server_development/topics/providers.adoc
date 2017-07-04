@@ -3,13 +3,13 @@
 == Service Provider Interfaces (SPI)
 
 Keycloak is designed to cover most use-cases without requiring custom code, but we also want it to be customizable.
-To achive this Keycloak has a number of Service Provider Interfaces (SPI) which you can implement your own providers for.
+To achieve this Keycloak has a number of Service Provider Interfaces (SPI) for which you can implement your own providers.
 
 === Implementing a SPI
 
-To implement an SPI you need to implement it's ProviderFactory and Provider interfaces. You also need to create a service configuration file.
+To implement an SPI you need to implement its ProviderFactory and Provider interfaces. You also need to create a service configuration file.
 
-For example to implement the Event Listener SPI you need to implement EventListenerProviderFactory and EventListenerProvider and also provide the file
+For example, to implement the Event Listener SPI you need to implement EventListenerProviderFactory and EventListenerProvider and also provide the file
 `META-INF/services/org.keycloak.events.EventListenerProviderFactory`.
 
 Example EventListenerProviderFactory:

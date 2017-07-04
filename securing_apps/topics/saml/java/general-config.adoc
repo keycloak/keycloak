@@ -16,7 +16,8 @@ This is what one might look like:
         logoutPage="/logout.jsp"
         forceAuthentication="false"
         isPassive="false"
-        turnOffChangeSessionIdOnLogin="false">
+        turnOffChangeSessionIdOnLogin="false"
+        autodetectBearerOnly="false">
         <Keys>
             <Key signing="true" >
                 <KeyStore resource="/WEB-INF/keystore.jks" password="store123">

@@ -1,4 +1,4 @@
-[[_app_server_cli]]
+[[_profiles]]
 
 == Profiles
 
@@ -32,6 +32,7 @@ profile=preview
 The features that can be enabled and disabled are:
 
 * Authorization - authorization services
+* Docker - authentication protocol for Docker Registry
 * Impersonation - ability for admins to impersonate users
 * Script - write custom authenticators using JavaScript
 
