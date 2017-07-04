@@ -20,6 +20,7 @@
         var consoleBaseUrl = '${consoleBaseUrl}';
         var resourceUrl = '${resourceUrl}';
         var masterRealm = '${masterRealm}';
+        var resourceVersion = '${resourceVersion}';
     </script>
 
     <!-- Minimized versions (for those that have one) -->
@@ -58,7 +59,7 @@
     <script src="${resourceUrl}/lib/ui-ace/min/ace.js"></script>
     <script src="${resourceUrl}/lib/ui-ace/ui-ace.min.js"></script>
 
-    <script src="${authUrl}/js/${resourceVersion}/keycloak.js" type="text/javascript"></script>
+    <script src="${authUrl}/js/keycloak.js?version=${resourceVersion}" type="text/javascript"></script>
 
     <script src="${resourceUrl}/js/app.js" type="text/javascript"></script>
     <script src="${resourceUrl}/js/controllers/realm.js" type="text/javascript"></script>

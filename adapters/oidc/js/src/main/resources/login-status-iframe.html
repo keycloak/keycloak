@@ -28,7 +28,7 @@
         } else  if (!init) {
             var req = new XMLHttpRequest();
 
-            var url = location.href + "/init";
+            var url = location.href.split("?")[0] + "/init";
             url += "?client_id=" + encodeURIComponent(clientId);
             url += "&origin=" + encodeURIComponent(origin);
 
