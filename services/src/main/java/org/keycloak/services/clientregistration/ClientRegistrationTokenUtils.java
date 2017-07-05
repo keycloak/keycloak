@@ -44,6 +44,27 @@ public class ClientRegistrationTokenUtils {
     public static final String TYPE_INITIAL_ACCESS_TOKEN = "InitialAccessToken";
     public static final String TYPE_REGISTRATION_ACCESS_TOKEN = "RegistrationAccessToken";
 
+    public static String updateTokenSignature(KeycloakSession session, ClientRegistrationAuth auth) {
+        KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(session.getContext().getRealm());
+
+        if (keys.getKid().equals(auth.getKid())) {
+            return auth.getToken();
+        } else {
+            RegistrationAccessToken regToken = new RegistrationAccessToken();
+            regToken.setRegistrationAuth(auth.getRegistrationAuth().toString().toLowerCase());
+
+            regToken.type(auth.getJwt().getType());
+            regToken.id(auth.getJwt().getId());
+            regToken.issuedAt(Time.currentTime());
+            regToken.expiration(0);
+            regToken.issuer(auth.getJwt().getIssuer());
+            regToken.audience(auth.getJwt().getIssuer());
+
+            String token = new JWSBuilder().kid(keys.getKid()).jsonContent(regToken).rsa256(keys.getPrivateKey());
+            return token;
+        }
+    }
+
     public static String updateRegistrationAccessToken(KeycloakSession session, ClientModel client, RegistrationAuth registrationAuth) {
         return updateRegistrationAccessToken(session, session.getContext().getRealm(), session.getContext().getUri(), client, registrationAuth);
     }
@@ -75,7 +96,8 @@ public class ClientRegistrationTokenUtils {
             return TokenVerification.error(new RuntimeException("Invalid token", e));
         }
 
-        PublicKey publicKey = session.keys().getRsaPublicKey(realm, input.getHeader().getKeyId());
+        String kid = input.getHeader().getKeyId();
+        PublicKey publicKey = session.keys().getRsaPublicKey(realm, kid);
 
         if (!RSAProvider.verify(input, publicKey)) {
             return TokenVerification.error(new RuntimeException("Failed verify token"));
@@ -102,7 +124,7 @@ public class ClientRegistrationTokenUtils {
             return TokenVerification.error(new RuntimeException("Invalid type of token"));
         }
 
-        return TokenVerification.success(jwt);
+        return TokenVerification.success(kid, jwt);
     }
 
     private static String setupToken(JsonWebToken jwt, KeycloakSession session, RealmModel realm, UriInfo uri, String id, String type, int expiration) {
@@ -127,20 +149,26 @@ public class ClientRegistrationTokenUtils {
 
     protected static class TokenVerification {
 
+        private final String kid;
         private final JsonWebToken jwt;
         private final RuntimeException error;
 
-        public static TokenVerification success(JsonWebToken jwt) {
-            return new TokenVerification(jwt, null);
+        public static TokenVerification success(String kid, JsonWebToken jwt) {
+            return new TokenVerification(kid, jwt, null);
         }
 
         public static TokenVerification error(RuntimeException error) {
-            return new TokenVerification(null, error);
+            return new TokenVerification(null,null, error);
         }
 
-        private TokenVerification(JsonWebToken jwt, RuntimeException error) {
+        private TokenVerification(String kid, JsonWebToken jwt, RuntimeException error) {
+            this.kid = kid;
             this.jwt = jwt;
             this.error = error;
+        }
+
+        public String getKid() {
+            return kid;
         }
 
         public JsonWebToken getJwt() {

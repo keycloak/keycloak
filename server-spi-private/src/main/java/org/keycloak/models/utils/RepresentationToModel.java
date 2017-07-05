@@ -76,6 +76,7 @@ import org.keycloak.models.ScopeContainerModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
@@ -614,6 +615,18 @@ public class RepresentationToModel {
             }
         }
 
+        // Added in 3.2
+        if (rep.getDockerAuthenticationFlow() == null) {
+            AuthenticationFlowModel dockerAuthenticationFlow = newRealm.getFlowByAlias(DefaultAuthenticationFlows.DOCKER_AUTH);
+            if (dockerAuthenticationFlow == null) {
+                DefaultAuthenticationFlows.dockerAuthenticationFlow(newRealm);
+            } else {
+                newRealm.setDockerAuthenticationFlow(dockerAuthenticationFlow);
+            }
+        } else {
+            newRealm.setDockerAuthenticationFlow(newRealm.getFlowByAlias(rep.getDockerAuthenticationFlow()));
+        }
+
         DefaultAuthenticationFlows.addIdentityProviderAuthenticator(newRealm, defaultProvider);
     }
 
@@ -897,6 +910,9 @@ public class RepresentationToModel {
         }
         if (rep.getClientAuthenticationFlow() != null) {
             realm.setClientAuthenticationFlow(realm.getFlowByAlias(rep.getClientAuthenticationFlow()));
+        }
+        if (rep.getDockerAuthenticationFlow() != null) {
+            realm.setDockerAuthenticationFlow(realm.getFlowByAlias(rep.getDockerAuthenticationFlow()));
         }
     }
 
@@ -1201,6 +1217,7 @@ public class RepresentationToModel {
         if (rep.isUseTemplateScope() != null) resource.setUseTemplateScope(rep.isUseTemplateScope());
         if (rep.isUseTemplateMappers() != null) resource.setUseTemplateMappers(rep.isUseTemplateMappers());
 
+        if (rep.getSecret() != null) resource.setSecret(rep.getSecret());
 
         if (rep.getClientTemplate() != null) {
             if (rep.getClientTemplate().equals(ClientTemplateRepresentation.NONE)) {
@@ -2229,10 +2246,10 @@ public class RepresentationToModel {
             existing.setType(resource.getType());
             existing.setUri(resource.getUri());
             existing.setIconUri(resource.getIconUri());
-
             existing.updateScopes(resource.getScopes().stream()
                     .map((ScopeRepresentation scope) -> toModel(scope, resourceServer, authorization))
                     .collect(Collectors.toSet()));
+
             return existing;
         }
 
@@ -2243,11 +2260,30 @@ public class RepresentationToModel {
             owner.setId(resourceServer.getClientId());
         }
 
-        if (owner.getId() == null) {
+        String ownerId = owner.getId();
+
+        if (ownerId == null) {
             throw new RuntimeException("No owner specified for resource [" + resource.getName() + "].");
         }
 
-        Resource model = resourceStore.create(resource.getName(), resourceServer, owner.getId());
+        if (!resourceServer.getClientId().equals(ownerId)) {
+            RealmModel realm = authorization.getRealm();
+            KeycloakSession keycloakSession = authorization.getKeycloakSession();
+            UserProvider users = keycloakSession.users();
+            UserModel ownerModel = users.getUserById(ownerId, realm);
+
+            if (ownerModel == null) {
+                ownerModel = users.getUserByUsername(ownerId, realm);
+            }
+
+            if (ownerModel == null) {
+                throw new RuntimeException("Owner must be a valid username or user identifier. If the resource server, the client id or null.");
+            }
+
+            owner.setId(ownerModel.getId());
+        }
+
+        Resource model = resourceStore.create(resource.getName(), resourceServer, ownerId);
 
         model.setType(resource.getType());
         model.setUri(resource.getUri());

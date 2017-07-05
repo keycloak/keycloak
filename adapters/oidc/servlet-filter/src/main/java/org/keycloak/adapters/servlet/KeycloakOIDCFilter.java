@@ -54,72 +54,96 @@ import java.util.regex.Pattern;
  */
 public class KeycloakOIDCFilter implements Filter {
 
+    private final static Logger log = Logger.getLogger("" + KeycloakOIDCFilter.class);
+
     public static final String SKIP_PATTERN_PARAM = "keycloak.config.skipPattern";
 
+    public static final String CONFIG_RESOLVER_PARAM = "keycloak.config.resolver";
+
+    public static final String CONFIG_FILE_PARAM = "keycloak.config.file";
+
+    public static final String CONFIG_PATH_PARAM = "keycloak.config.path";
+
     protected AdapterDeploymentContext deploymentContext;
+
     protected SessionIdMapper idMapper = new InMemorySessionIdMapper();
+
     protected NodesRegistrationManagement nodesRegistrationManagement;
+
     protected Pattern skipPattern;
 
-    private final static Logger log = Logger.getLogger(""+KeycloakOIDCFilter.class);
+    private final KeycloakConfigResolver definedconfigResolver;
+
+    /**
+     * Constructor that can be used to define a {@code KeycloakConfigResolver} that will be used at initialization to
+     * provide the {@code KeycloakDeployment}.
+     * @param definedconfigResolver the resolver
+     */
+    public KeycloakOIDCFilter(KeycloakConfigResolver definedconfigResolver) {
+        this.definedconfigResolver = definedconfigResolver;
+    }
+
+    public KeycloakOIDCFilter() {
+        this(null);
+    }
 
     @Override
     public void init(final FilterConfig filterConfig) throws ServletException {
-
         String skipPatternDefinition = filterConfig.getInitParameter(SKIP_PATTERN_PARAM);
         if (skipPatternDefinition != null) {
             skipPattern = Pattern.compile(skipPatternDefinition, Pattern.DOTALL);
         }
 
-        String configResolverClass = filterConfig.getInitParameter("keycloak.config.resolver");
-        if (configResolverClass != null) {
-            try {
-                KeycloakConfigResolver configResolver = (KeycloakConfigResolver) getClass().getClassLoader().loadClass(configResolverClass).newInstance();
-                deploymentContext = new AdapterDeploymentContext(configResolver);
-                log.log(Level.INFO, "Using {0} to resolve Keycloak configuration on a per-request basis.", configResolverClass);
-            } catch (Exception ex) {
-                log.log(Level.FINE, "The specified resolver {0} could NOT be loaded. Keycloak is unconfigured and will deny all requests. Reason: {1}", new Object[]{configResolverClass, ex.getMessage()});
-                deploymentContext = new AdapterDeploymentContext(new KeycloakDeployment());
-            }
+        if (definedconfigResolver != null) {
+            deploymentContext = new AdapterDeploymentContext(definedconfigResolver);
+            log.log(Level.INFO, "Using {0} to resolve Keycloak configuration on a per-request basis.", definedconfigResolver.getClass());
         } else {
-            String fp = filterConfig.getInitParameter("keycloak.config.file");
-            InputStream is = null;
-            if (fp != null) {
+            String configResolverClass = filterConfig.getInitParameter(CONFIG_RESOLVER_PARAM);
+            if (configResolverClass != null) {
                 try {
-                    is = new FileInputStream(fp);
-                } catch (FileNotFoundException e) {
-                    throw new RuntimeException(e);
+                    KeycloakConfigResolver configResolver = (KeycloakConfigResolver) getClass().getClassLoader().loadClass(configResolverClass).newInstance();
+                    deploymentContext = new AdapterDeploymentContext(configResolver);
+                    log.log(Level.INFO, "Using {0} to resolve Keycloak configuration on a per-request basis.", configResolverClass);
+                } catch (Exception ex) {
+                    log.log(Level.FINE, "The specified resolver {0} could NOT be loaded. Keycloak is unconfigured and will deny all requests. Reason: {1}", new Object[]{configResolverClass, ex.getMessage()});
+                    deploymentContext = new AdapterDeploymentContext(new KeycloakDeployment());
                 }
             } else {
-                String path = "/WEB-INF/keycloak.json";
-                String pathParam = filterConfig.getInitParameter("keycloak.config.path");
-                if (pathParam != null) path = pathParam;
-                is = filterConfig.getServletContext().getResourceAsStream(path);
+                String fp = filterConfig.getInitParameter(CONFIG_FILE_PARAM);
+                InputStream is = null;
+                if (fp != null) {
+                    try {
+                        is = new FileInputStream(fp);
+                    } catch (FileNotFoundException e) {
+                        throw new RuntimeException(e);
+                    }
+                } else {
+                    String path = "/WEB-INF/keycloak.json";
+                    String pathParam = filterConfig.getInitParameter(CONFIG_PATH_PARAM);
+                    if (pathParam != null) path = pathParam;
+                    is = filterConfig.getServletContext().getResourceAsStream(path);
+                }
+                KeycloakDeployment kd = createKeycloakDeploymentFrom(is);
+                deploymentContext = new AdapterDeploymentContext(kd);
+                log.fine("Keycloak is using a per-deployment configuration.");
             }
-            KeycloakDeployment kd = createKeycloakDeploymentFrom(is);
-            deploymentContext = new AdapterDeploymentContext(kd);
-            log.fine("Keycloak is using a per-deployment configuration.");
         }
         filterConfig.getServletContext().setAttribute(AdapterDeploymentContext.class.getName(), deploymentContext);
         nodesRegistrationManagement = new NodesRegistrationManagement();
     }
 
     private KeycloakDeployment createKeycloakDeploymentFrom(InputStream is) {
-
         if (is == null) {
             log.fine("No adapter configuration. Keycloak is unconfigured and will deny all requests.");
             return new KeycloakDeployment();
         }
-
         return KeycloakDeploymentBuilder.build(is);
     }
 
 
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
-
         log.fine("Keycloak OIDC Filter");
-        //System.err.println("Keycloak OIDC Filter: " + ((HttpServletRequest)req).getRequestURL().toString());
         HttpServletRequest request = (HttpServletRequest) req;
         HttpServletResponse response = (HttpServletResponse) res;
 
@@ -201,7 +225,7 @@ public class KeycloakOIDCFilter implements Filter {
      *
      * @param request the request to check
      * @return {@code true} if the request should not be handled,
-     *         {@code false} otherwise.
+     * {@code false} otherwise.
      */
     private boolean shouldSkip(HttpServletRequest request) {
 

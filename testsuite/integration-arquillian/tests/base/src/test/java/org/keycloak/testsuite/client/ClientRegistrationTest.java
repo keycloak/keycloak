@@ -187,6 +187,23 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
+    public void updateClientSecret() throws ClientRegistrationException {
+        authManageClients();
+
+        registerClient();
+
+        ClientRepresentation client = reg.get(CLIENT_ID);
+        assertNotNull(client.getSecret());
+        client.setSecret("mysecret");
+
+        reg.update(client);
+
+        ClientRepresentation updatedClient = reg.get(CLIENT_ID);
+
+        assertEquals("mysecret", updatedClient.getSecret());
+    }
+
+    @Test
     public void updateClientAsAdminWithCreateOnly() throws ClientRegistrationException {
         authCreateClients();
         try {

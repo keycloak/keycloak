@@ -56,7 +56,22 @@ public class CredentialModel implements Serializable {
     private int period;
     private MultivaluedHashMap<String, String> config;
 
-
+    public CredentialModel shallowClone() {
+        CredentialModel res = new CredentialModel();
+        res.id = id;
+        res.type = type;
+        res.value = value;
+        res.device = device;
+        res.salt = salt;
+        res.hashIterations = hashIterations;
+        res.createdDate = createdDate;
+        res.counter = counter;
+        res.algorithm = algorithm;
+        res.digits = digits;
+        res.period = period;
+        res.config = config;
+        return res;
+    }
 
     public String getId() {
         return id;

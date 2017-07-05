@@ -21,7 +21,7 @@
         <tr ng-repeat="requiredAction in requiredActions | orderBy : 'name'" data-ng-show="requiredActions.length > 0">
             <td>{{requiredAction.name}}</td>
             <td><input type="checkbox" ng-model="requiredAction.enabled" ng-change="updateRequiredAction(requiredAction)" id="{{requiredAction.alias}}.enabled"></td>
-            <td><input type="checkbox" ng-model="requiredAction.defaultAction" ng-change="updateRequiredAction(requiredAction)" id="{{requiredAction.alias}}.defaultAction"></td>
+            <td><input type="checkbox" ng-model="requiredAction.defaultAction" ng-change="updateRequiredAction(requiredAction)" ng-disabled="!requiredAction.enabled" ng-checked="requiredAction.enabled && requiredAction.defaultAction" id="{{requiredAction.alias}}.defaultAction"></td>
         </tr>
         <tr data-ng-show="requiredActions.length == 0">
             <td>{{:: 'no-required-actions-configured' | translate}}</td>

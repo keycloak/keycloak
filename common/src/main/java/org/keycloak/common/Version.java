@@ -45,6 +45,10 @@ public class Version {
             Version.VERSION = props.getProperty("version");
             Version.BUILD_TIME = props.getProperty("build-time");
             Version.RESOURCES_VERSION = Version.VERSION.toLowerCase();
+
+            if (Version.RESOURCES_VERSION.endsWith("-snapshot")) {
+                Version.RESOURCES_VERSION = Version.RESOURCES_VERSION.replace("-snapshot", "-" + Version.BUILD_TIME.replace(" ", "").replace(":", "").replace("-", ""));
+            }
         } catch (IOException e) {
             Version.VERSION = Version.UNKNOWN;
             Version.BUILD_TIME = Version.UNKNOWN;

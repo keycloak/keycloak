@@ -107,6 +107,10 @@ public interface Attributes {
             return values.length;
         }
 
+        public boolean isEmpty() {
+            return values.length == 0;
+        }
+
         public String asString(int idx) {
             if (idx >= values.length) {
                 throw new IllegalArgumentException("Invalid index [" + idx + "]. Values are [" + values + "].");

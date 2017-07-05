@@ -50,7 +50,7 @@ public class SerializationUtil {
             oos.writeObject(t);
             oos.close();
 
-            return Base64.encodeBytes(os.toByteArray());
+            return "EXCEPTION:" + Base64.encodeBytes(os.toByteArray());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -58,6 +58,7 @@ public class SerializationUtil {
 
     public static Throwable decodeException(String result) {
         try {
+            result = result.substring("EXCEPTION:".length());
             byte[] bytes = Base64.decode(result);
             ByteArrayInputStream is = new ByteArrayInputStream(bytes);
             ObjectInputStream ois = new ObjectInputStream(is);

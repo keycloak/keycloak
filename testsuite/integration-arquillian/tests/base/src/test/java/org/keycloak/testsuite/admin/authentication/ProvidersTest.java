@@ -151,6 +151,9 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Validates the password supplied as a 'password' form parameter in direct grant request");
         addProviderInfo(result, "direct-grant-validate-username", "Username Validation",
                 "Validates the username supplied as a 'username' form parameter in direct grant request");
+        addProviderInfo(result, "docker-http-basic-authenticator", "Docker Authenticator", "Uses HTTP Basic authentication to validate docker users, returning a docker error token on auth failure");
+        addProviderInfo(result, "expected-param-authenticator", "TEST: Expected Parameter",
+                "You will be approved if you send query string parameter 'foo' with expected value.");
         addProviderInfo(result, "http-basic-authenticator", "HTTP Basic Authentication", "Validates username and password from Authorization HTTP header");
         addProviderInfo(result, "identity-provider-redirector", "Identity Provider Redirector", "Redirects to default Identity Provider or Identity Provider specified with kc_idp_hint query parameter");
         addProviderInfo(result, "idp-confirm-link", "Confirm link existing account", "Show the form where user confirms if he wants " +
@@ -163,6 +166,8 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "User reviews and updates profile data retrieved from Identity Provider in the displayed form");
         addProviderInfo(result, "idp-username-password-form", "Username Password Form for identity provider reauthentication",
                 "Validates a password from login form. Username is already known from identity provider authentication");
+        addProviderInfo(result, "push-button-authenticator", "TEST: Button Login",
+                "Just press the button to login.");
         addProviderInfo(result, "reset-credential-email", "Send Reset Email", "Send email to user and wait for response.");
         addProviderInfo(result, "reset-credentials-choose-user", "Choose User", "Choose a user to reset credentials for");
         addProviderInfo(result, "reset-otp", "Reset OTP", "Sets the Configure OTP required action if execution is REQUIRED.  " +

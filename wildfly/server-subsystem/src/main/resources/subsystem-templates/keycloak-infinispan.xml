@@ -113,10 +113,10 @@
                     <eviction max-entries="1000" strategy="LRU"/>
                     <expiration max-idle="3600000" />
                 </local-cache>
-                <local-cache name="actionTokens">
+                <distributed-cache name="actionTokens" mode="SYNC" owners="2">
                     <eviction max-entries="-1" strategy="NONE"/>
                     <expiration max-idle="-1" interval="300000"/>
-                </local-cache>
+                </distributed-cache>
             </cache-container>
             <cache-container name="server" aliases="singleton cluster" default-cache="default" module="org.wildfly.clustering.server">
                 <transport lock-timeout="60000"/>

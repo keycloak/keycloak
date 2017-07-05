@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.testsuite.console.page.fragment.AbstractMultipleSelect2;
+import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.page.Form;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
@@ -60,8 +61,8 @@ public class RolePolicyForm extends Form {
     @FindBy(id = "s2id_clientRoles")
     private ClientRoleSelect clientRoleSelect;
 
-    @FindBy(xpath = ACTIVE_DIV_XPATH + "/button[text()='Delete']")
-    private WebElement confirmDelete;
+    @FindBy(xpath = "//div[@class='modal-dialog']")
+    protected ModalDialog modalDialog;
 
     public void populate(RolePolicyRepresentation expected) {
         setInputValue(name, expected.getName());
@@ -115,7 +116,7 @@ public class RolePolicyForm extends Form {
 
     public void delete() {
         deleteButton.click();
-        confirmDelete.click();
+        modalDialog.confirmDeletion();
     }
 
     public RolePolicyRepresentation toRepresentation() {

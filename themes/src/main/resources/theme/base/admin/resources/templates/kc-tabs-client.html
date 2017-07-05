@@ -3,12 +3,15 @@
     <h1 data-ng-show="create">{{:: 'add-client' | translate}}</h1>
     <h1 data-ng-hide="create">
         {{client.clientId|capitalize}}
-        <i id="removeClient" class="pficon pficon-delete clickable" data-ng-show="access.manageClients" data-ng-click="removeClient()"></i>
+        <i id="removeClient" class="pficon pficon-delete clickable" data-ng-show="client.access.manage" data-ng-click="removeClient()"></i>
     </h1>
 
     <ul class="nav nav-tabs"  data-ng-hide="create && !path[4]">
         <li ng-class="{active: !path[4]}"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{:: 'settings' | translate}}</a></li>
-        <li ng-class="{active: path[4] == 'credentials'}" data-ng-show="!disableCredentialsTab && !client.publicClient && client.protocol != 'saml'"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/credentials">{{:: 'credentials' | translate}}</a></li>
+        <li ng-class="{active: path[4] == 'credentials'}"
+            data-ng-show="!client.publicClient && client.protocol == 'openid-connect'">
+            <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/credentials">{{:: 'credentials' | translate}}</a>
+        </li>
         <li ng-class="{active: path[4] == 'saml'}" data-ng-show="client.protocol == 'saml' && (client.attributes['saml.client.signature'] == 'true' || client.attributes['saml.encrypt'] == 'true')"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/saml/keys">{{:: 'saml-keys' | translate}}</a></li>
         <li ng-class="{active: path[4] == 'roles'}"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/roles">{{:: 'roles' | translate}}</a></li>
         <li ng-class="{active: path[4] == 'mappers'}" data-ng-show="!client.bearerOnly">
@@ -19,8 +22,13 @@
             <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/scope-mappings">{{:: 'scope' | translate}}</a>
             <kc-tooltip>{{:: 'scope.tooltip' | translate}}</kc-tooltip>
         </li>
-        <li ng-class="{active: path[4] == 'authz'}" data-ng-show="serverInfo.profileInfo.disabledFeatures.indexOf('AUTHORIZATION') == -1 && !disableAuthorizationTab && client.authorizationServicesEnabled"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server">{{:: 'authz-authorization' | translate}}</a></li>
-        <li ng-class="{active: path[4] == 'revocation'}"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/revocation">{{:: 'revocation' | translate}}</a></li>
+        <li ng-class="{active: path[4] == 'authz'}"
+            data-ng-show="serverInfo.featureEnabled('AUTHORIZATION') && !disableAuthorizationTab && client.authorizationServicesEnabled">
+            <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server">{{:: 'authz-authorization' |
+                translate}}</a></li>
+        <li ng-class="{active: path[4] == 'revocation'}" data-ng-show="client.protocol != 'docker-v2'"><a
+                href="#/realms/{{realm.realm}}/clients/{{client.id}}/revocation">{{:: 'revocation' | translate}}</a>
+        </li>
     <!--    <li ng-class="{active: path[4] == 'identity-provider'}" data-ng-show="realm.identityFederationEnabled"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/identity-provider">Identity Provider</a></li> -->
         <li ng-class="{active: path[4] == 'sessions'}" data-ng-show="!client.bearerOnly">
             <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/sessions">{{:: 'sessions' | translate}}</a>
@@ -39,9 +47,13 @@
             <kc-tooltip>{{:: 'installation.tooltip' | translate}}</kc-tooltip>
         </li>
 
-        <li ng-class="{active: path[4] == 'service-account-roles'}" data-ng-show="!disableServiceAccountRolesTab && client.serviceAccountsEnabled && !(client.bearerOnly || client.publicClient)">
+        <li ng-class="{active: path[4] == 'service-account-roles'}" data-ng-show="client.serviceAccountsEnabled && !(client.bearerOnly || client.publicClient)">
             <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/service-account-roles">{{:: 'service-account-roles' | translate}}</a>
             <kc-tooltip>{{:: 'service-account-roles.tooltip' | translate}}</kc-tooltip>
+        </li>
+        <li ng-class="{active: path[4] == 'permissions'}" data-ng-show="client.access.manage && access.manageAuthorization">
+            <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/permissions">{{:: 'authz-permissions' | translate}}</a>
+            <kc-tooltip>{{:: 'manage-permissions-client.tooltip' | translate}}</kc-tooltip>
         </li>
     </ul>
 </div>

@@ -47,7 +47,7 @@
         </div>
 
         <div class="form-group">
-            <label for="resetCredentials" class="col-md-2 control-label">{{:: 'client-authentication' | translate}}</label>
+            <label for="clientAuthentication" class="col-md-2 control-label">{{:: 'client-authentication' | translate}}</label>
             <div class="col-md-2">
                 <div>
                     <select id="clientAuthentication" ng-model="realm.clientAuthenticationFlow" class="form-control" ng-options="flow.alias as flow.alias for flow in clientFlows">
@@ -55,6 +55,18 @@
                 </div>
             </div>
             <kc-tooltip>{{:: 'client-authentication.tooltip' | translate}}</kc-tooltip>
+        </div>
+
+
+        <div class="form-group" data-ng-show="serverInfo.featureEnabled('DOCKER')">
+            <label for="dockerAuth" class="col-md-2 control-label">{{:: 'docker-auth' | translate}}</label>
+            <div class="col-md-2">
+                <div>
+                    <select id="dockerAuth" ng-model="realm.dockerAuthenticationFlow" class="form-control" ng-options="flow.alias as flow.alias for flow in flows">
+                    </select>
+                </div>
+            </div>
+            <kc-tooltip>{{:: 'docker-auth.tooltip' | translate}}</kc-tooltip>
         </div>
 
         <div class="form-group" data-ng-show="access.manageRealm">

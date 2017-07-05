@@ -55,7 +55,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class RealmAdapter implements CachedRealmModel {
     protected CachedRealm cached;
     protected RealmCacheSession cacheSession;
-    protected RealmModel updated;
+    protected volatile RealmModel updated;
     protected RealmCache cache;
     protected KeycloakSession session;
 
@@ -75,7 +75,7 @@ public class RealmAdapter implements CachedRealmModel {
         return updated;
     }
 
-    protected boolean invalidated;
+    protected volatile boolean invalidated;
 
     protected void invalidateFlag() {
         invalidated = true;
@@ -1036,6 +1036,18 @@ public class RealmAdapter implements CachedRealmModel {
     public void setClientAuthenticationFlow(AuthenticationFlowModel flow) {
         getDelegateForUpdate();
         updated.setClientAuthenticationFlow(flow);
+    }
+
+    @Override
+    public AuthenticationFlowModel getDockerAuthenticationFlow() {
+        if (isUpdated()) return updated.getDockerAuthenticationFlow();
+        return cached.getDockerAuthenticationFlow();
+    }
+
+    @Override
+    public void setDockerAuthenticationFlow(final AuthenticationFlowModel flow) {
+        getDelegateForUpdate();
+        updated.setDockerAuthenticationFlow(flow);
     }
 
     @Override

@@ -26,6 +26,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
@@ -34,14 +35,18 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.validation.ClientValidator;
 import org.keycloak.services.validation.PairwiseClientValidator;
 import org.keycloak.services.validation.ValidationMessages;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -65,18 +70,17 @@ import java.util.Properties;
 public class ClientsResource {
     protected static final Logger logger = Logger.getLogger(ClientsResource.class);
     protected RealmModel realm;
-    private RealmAuth auth;
+    private AdminPermissionEvaluator auth;
     private AdminEventBuilder adminEvent;
 
     @Context
     protected KeycloakSession session;
 
-    public ClientsResource(RealmModel realm, RealmAuth auth, AdminEventBuilder adminEvent) {
+    public ClientsResource(RealmModel realm, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.realm = realm;
         this.auth = auth;
         this.adminEvent = adminEvent.resource(ResourceType.CLIENT);
 
-        auth.init(RealmAuth.Resource.CLIENT);
     }
 
     /**
@@ -85,21 +89,20 @@ public class ClientsResource {
      * Returns a list of clients belonging to the realm
      *
      * @param clientId filter by clientId
+     * @param viewableOnly filter clients that cannot be viewed in full by admin
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<ClientRepresentation> getClients(@QueryParam("clientId") String clientId) {
-        auth.requireAny();
-
+    public List<ClientRepresentation> getClients(@QueryParam("clientId") String clientId, @QueryParam("viewableOnly") @DefaultValue("false") boolean viewableOnly) {
         List<ClientRepresentation> rep = new ArrayList<>();
 
         if (clientId == null) {
             List<ClientModel> clientModels = realm.getClients();
-
-            boolean view = auth.hasView();
+            auth.clients().requireList();
+            boolean view = auth.clients().canView();
             for (ClientModel clientModel : clientModels) {
-                if (view) {
+                if (view || auth.clients().canView(clientModel)) {
                     ClientRepresentation representation = ModelToRepresentation.toRepresentation(clientModel);
 
                     if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
@@ -111,7 +114,8 @@ public class ClientsResource {
                     }
 
                     rep.add(representation);
-                } else {
+                    representation.setAccess(auth.clients().getAccess(clientModel));
+                } else if (!viewableOnly) {
                     ClientRepresentation client = new ClientRepresentation();
                     client.setId(clientModel.getId());
                     client.setClientId(clientModel.getClientId());
@@ -120,9 +124,22 @@ public class ClientsResource {
                 }
             }
         } else {
-            ClientModel client = realm.getClientByClientId(clientId);
-            if (client != null) {
-                rep.add(ModelToRepresentation.toRepresentation(client));
+            ClientModel clientModel = realm.getClientByClientId(clientId);
+            if (clientModel != null) {
+                if (auth.clients().canView(clientModel)) {
+                    ClientRepresentation representation = ModelToRepresentation.toRepresentation(clientModel);
+                    representation.setAccess(auth.clients().getAccess(clientModel));
+                    rep.add(representation);
+                } else if (!viewableOnly && auth.clients().canList()){
+                    ClientRepresentation client = new ClientRepresentation();
+                    client.setId(clientModel.getId());
+                    client.setClientId(clientModel.getClientId());
+                    client.setDescription(clientModel.getDescription());
+                    rep.add(client);
+
+                } else {
+                    throw new ForbiddenException();
+                }
             }
         }
         return rep;
@@ -144,11 +161,11 @@ public class ClientsResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createClient(final @Context UriInfo uriInfo, final ClientRepresentation rep) {
-        auth.requireManage();
+        auth.clients().requireManage();
 
         ValidationMessages validationMessages = new ValidationMessages();
         if (!ClientValidator.validate(rep, validationMessages) || !PairwiseClientValidator.validate(session, rep, validationMessages)) {
-            Properties messages = AdminRoot.getMessages(session, realm, auth.getAuth().getToken().getLocale());
+            Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
             throw new ErrorResponseException(
                     validationMessages.getStringMessages(),
                     validationMessages.getStringMessages(messages),
@@ -189,7 +206,13 @@ public class ClientsResource {
      */
     @Path("{id}")
     public ClientResource getClient(final @PathParam("id") String id) {
+
         ClientModel clientModel = realm.getClientById(id);
+        if (clientModel == null) {
+            // we do this to make sure somebody can't phish ids
+            if (auth.clients().canList()) throw new NotFoundException("Could not find client");
+            else throw new ForbiddenException();
+        }
 
         session.getContext().setClient(clientModel);
 

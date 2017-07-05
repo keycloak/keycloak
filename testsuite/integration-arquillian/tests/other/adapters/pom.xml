@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests-other</artifactId>
-        <version>3.2.0.CR1-SNAPSHOT</version>
+        <version>3.3.0.CR1-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-adapters</artifactId>
@@ -52,6 +52,11 @@
         <app.server.startup.timeout>60</app.server.startup.timeout>
         <app.server.memory.settings>-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m</app.server.memory.settings>
 
+        <!--debug properties-->
+        <app.server.debug.port>5006</app.server.debug.port>
+        <app.server.debug.suspend>n</app.server.debug.suspend>
+        <app.server.jboss.jvm.debug.args>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${app.server.debug.suspend},address=${app.server.host}:${app.server.debug.port}</app.server.jboss.jvm.debug.args>
+        
         <app.server.ssl.required>false</app.server.ssl.required>
 
         <app.server.reverse-proxy.port.offset>500</app.server.reverse-proxy.port.offset>
@@ -205,7 +210,8 @@
 
                                 <app.server.startup.timeout>${app.server.startup.timeout}</app.server.startup.timeout>
                                 <app.server.memory.settings>${app.server.memory.settings}</app.server.memory.settings>
-
+                                <app.server.jboss.jvm.debug.args>${app.server.jboss.jvm.debug.args}</app.server.jboss.jvm.debug.args>
+                                
                                 <app.server.reverse-proxy.port.offset>${app.server.reverse-proxy.port.offset}</app.server.reverse-proxy.port.offset>
 
                                 <app.server.1.port.offset>${app.server.1.port.offset}</app.server.1.port.offset>

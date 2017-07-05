@@ -6,7 +6,7 @@
 
     <kc-tabs-group></kc-tabs-group>
 
-    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageUsers">
+    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!group.access.manage">
         <table class="table table-striped table-bordered">
             <thead>
             <tr>
@@ -29,7 +29,7 @@
             </tbody>
         </table>
 
-        <div class="form-group" data-ng-show="access.manageUsers">
+        <div class="form-group" data-ng-show="group.access.manage">
             <div class="col-md-12">
                 <button kc-save  data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
                 <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>

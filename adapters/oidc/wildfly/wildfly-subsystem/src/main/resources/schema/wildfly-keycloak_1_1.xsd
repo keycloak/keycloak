@@ -101,6 +101,7 @@
             <xs:element name="ssl-required" type="xs:string" minOccurs="0" maxOccurs="1" />
             <xs:element name="realm-public-key" type="xs:string" minOccurs="1" maxOccurs="1"/>
             <xs:element name="credential" type="credential-type" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="redirect-rewrite-rule" type="redirect-rewrite-rule-type" minOccurs="1" maxOccurs="1"/>
             <xs:element name="auth-server-url-for-backend-requests" type="xs:string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="always-refresh-token" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
             <xs:element name="register-node-at-startup" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
@@ -122,6 +123,12 @@
     </xs:complexType>
     
     <xs:complexType name="credential-type" mixed="true">
+        <xs:sequence maxOccurs="unbounded" minOccurs="0">
+            <xs:any processContents="lax"></xs:any>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" use="required" />
+    </xs:complexType>
+     <xs:complexType name="redirect-rewrite-rule-type" mixed="true">
         <xs:sequence maxOccurs="unbounded" minOccurs="0">
             <xs:any processContents="lax"></xs:any>
         </xs:sequence>

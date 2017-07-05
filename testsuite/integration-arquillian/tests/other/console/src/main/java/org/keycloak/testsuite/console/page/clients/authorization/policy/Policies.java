@@ -22,6 +22,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.AggregatePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
@@ -29,6 +30,7 @@ import org.keycloak.representations.idm.authorization.RulePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -66,6 +68,9 @@ public class Policies extends Form {
     @Page
     private ClientPolicy clientPolicy;
 
+    @Page
+    private GroupPolicy groupPolicy;
+
     public PoliciesTable policies() {
         return table;
     }
@@ -77,32 +82,29 @@ public class Policies extends Form {
 
         if ("role".equals(type)) {
             rolePolicy.form().populate((RolePolicyRepresentation) expected);
-            rolePolicy.form().save();
             return (P) rolePolicy;
         } else if ("user".equals(type)) {
             userPolicy.form().populate((UserPolicyRepresentation) expected);
-            userPolicy.form().save();
             return (P) userPolicy;
         } else if ("aggregate".equals(type)) {
             aggregatePolicy.form().populate((AggregatePolicyRepresentation) expected);
-            aggregatePolicy.form().save();
             return (P) aggregatePolicy;
         } else if ("js".equals(type)) {
             jsPolicy.form().populate((JSPolicyRepresentation) expected);
-            jsPolicy.form().save();
             return (P) jsPolicy;
         } else if ("time".equals(type)) {
             timePolicy.form().populate((TimePolicyRepresentation) expected);
-            timePolicy.form().save();
             return (P) timePolicy;
         } else if ("rules".equals(type)) {
             rulePolicy.form().populate((RulePolicyRepresentation) expected);
-            rulePolicy.form().save();
             return (P) rulePolicy;
         } else if ("client".equals(type)) {
             clientPolicy.form().populate((ClientPolicyRepresentation) expected);
-            clientPolicy.form().save();
             return (P) clientPolicy;
+        } else if ("group".equals(type)) {
+            groupPolicy.form().populate((GroupPolicyRepresentation) expected);
+            groupPolicy.form().save();
+            return (P) groupPolicy;
         }
 
         return null;
@@ -112,7 +114,7 @@ public class Policies extends Form {
         for (WebElement row : policies().rows()) {
             PolicyRepresentation actual = policies().toRepresentation(row);
             if (actual.getName().equalsIgnoreCase(name)) {
-                row.findElements(tagName("a")).get(0).click();
+                URLUtils.navigateToUri(driver, row.findElements(tagName("a")).get(0).getAttribute("href"), true);
                 WaitUtils.waitForPageToLoad(driver);
                 String type = representation.getType();
 
@@ -130,6 +132,8 @@ public class Policies extends Form {
                     rulePolicy.form().populate((RulePolicyRepresentation) representation);
                 } else if ("client".equals(type)) {
                     clientPolicy.form().populate((ClientPolicyRepresentation) representation);
+                } else if ("group".equals(type)) {
+                    groupPolicy.form().populate((GroupPolicyRepresentation) representation);
                 }
 
                 return;
@@ -141,8 +145,7 @@ public class Policies extends Form {
         for (WebElement row : policies().rows()) {
             PolicyRepresentation actual = policies().toRepresentation(row);
             if (actual.getName().equalsIgnoreCase(name)) {
-                row.findElements(tagName("a")).get(0).click();
-                WaitUtils.waitForPageToLoad(driver);
+                URLUtils.navigateToUri(driver, row.findElements(tagName("a")).get(0).getAttribute("href"), true);
                 String type = actual.getType();
                 if ("role".equals(type)) {
                     return (P) rolePolicy;
@@ -158,6 +161,8 @@ public class Policies extends Form {
                     return (P) rulePolicy;
                 } else if ("client".equals(type)) {
                     return (P) clientPolicy;
+                } else if ("group".equals(type)) {
+                    return (P) groupPolicy;
                 }
             }
         }
@@ -168,8 +173,7 @@ public class Policies extends Form {
         for (WebElement row : policies().rows()) {
             PolicyRepresentation actual = policies().toRepresentation(row);
             if (actual.getName().equalsIgnoreCase(name)) {
-                row.findElements(tagName("a")).get(0).click();
-                WaitUtils.waitForPageToLoad(driver);
+                URLUtils.navigateToUri(driver, row.findElements(tagName("a")).get(0).getAttribute("href"), true);
 
                 String type = actual.getType();
 
@@ -187,6 +191,8 @@ public class Policies extends Form {
                     rulePolicy.form().delete();
                 } else if ("client".equals(type)) {
                     clientPolicy.form().delete();
+                } else if ("group".equals(type)) {
+                    groupPolicy.form().delete();
                 }
 
                 return;

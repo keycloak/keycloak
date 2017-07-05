@@ -489,6 +489,7 @@ public final class KeycloakModelUtils {
         if ((realmFlow = realm.getClientAuthenticationFlow()) != null && realmFlow.getId().equals(model.getId())) return true;
         if ((realmFlow = realm.getDirectGrantFlow()) != null && realmFlow.getId().equals(model.getId())) return true;
         if ((realmFlow = realm.getResetCredentialsFlow()) != null && realmFlow.getId().equals(model.getId())) return true;
+        if ((realmFlow = realm.getDockerAuthenticationFlow()) != null && realmFlow.getId().equals(model.getId())) return true;
 
         for (IdentityProviderModel idp : realm.getIdentityProviders()) {
             if (model.getId().equals(idp.getFirstBrokerLoginFlowId())) return true;

@@ -37,10 +37,12 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.KeyStoreConfig;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.util.CertificateInfoHelper;
 import org.keycloak.util.JWKSUtils;
 import org.keycloak.util.JsonSerialization;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -73,13 +75,13 @@ public class ClientAttributeCertificateResource {
     public static final String JSON_WEB_KEY_SET = "JSON Web Key Set";
 
     protected RealmModel realm;
-    private RealmAuth auth;
+    private AdminPermissionEvaluator auth;
     protected ClientModel client;
     protected KeycloakSession session;
     protected AdminEventBuilder adminEvent;
     protected String attributePrefix;
 
-    public ClientAttributeCertificateResource(RealmModel realm, RealmAuth auth, ClientModel client, KeycloakSession session, String attributePrefix, AdminEventBuilder adminEvent) {
+    public ClientAttributeCertificateResource(RealmModel realm, AdminPermissionEvaluator auth, ClientModel client, KeycloakSession session, String attributePrefix, AdminEventBuilder adminEvent) {
         this.realm = realm;
         this.auth = auth;
         this.client = client;
@@ -97,11 +99,7 @@ public class ClientAttributeCertificateResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public CertificateRepresentation getKeyInfo() {
-        auth.requireView();
-
-        if (client == null) {
-            throw new NotFoundException("Could not find client");
-        }
+        auth.clients().requireView(client);
 
         CertificateRepresentation info = CertificateInfoHelper.getCertificateFromClient(client, attributePrefix);
         return info;
@@ -117,11 +115,7 @@ public class ClientAttributeCertificateResource {
     @Path("generate")
     @Produces(MediaType.APPLICATION_JSON)
     public CertificateRepresentation generate() {
-        auth.requireManage();
-
-        if (client == null) {
-            throw new NotFoundException("Could not find client");
-        }
+        auth.clients().requireConfigure(client);
 
         CertificateRepresentation info = KeycloakModelUtils.generateKeyPairCertificate(client.getClientId());
 
@@ -145,11 +139,7 @@ public class ClientAttributeCertificateResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
     public CertificateRepresentation uploadJks(@Context final UriInfo uriInfo, MultipartFormDataInput input) throws IOException {
-        auth.requireManage();
-
-        if (client == null) {
-            throw new NotFoundException("Could not find client");
-        }
+        auth.clients().requireConfigure(client);
 
         try {
             CertificateRepresentation info = getCertFromRequest(input);
@@ -175,11 +165,7 @@ public class ClientAttributeCertificateResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
     public CertificateRepresentation uploadJksCertificate(@Context final UriInfo uriInfo, MultipartFormDataInput input) throws IOException {
-        auth.requireManage();
-
-        if (client == null) {
-            throw new NotFoundException("Could not find client");
-        }
+        auth.clients().requireConfigure(client);
 
         try {
             CertificateRepresentation info = getCertFromRequest(input);
@@ -194,10 +180,12 @@ public class ClientAttributeCertificateResource {
     }
 
     private CertificateRepresentation getCertFromRequest(MultipartFormDataInput input) throws IOException {
-        auth.requireManage();
+        auth.clients().requireManage(client);
         CertificateRepresentation info = new CertificateRepresentation();
         Map<String, List<InputPart>> uploadForm = input.getFormDataMap();
-        String keystoreFormat = uploadForm.get("keystoreFormat").get(0).getBodyAsString();
+        List<InputPart> keystoreFormatPart = uploadForm.get("keystoreFormat");
+        if (keystoreFormatPart == null) throw new BadRequestException();
+        String keystoreFormat = keystoreFormatPart.get(0).getBodyAsString();
         List<InputPart> inputParts = uploadForm.get("file");
         if (keystoreFormat.equals(CERTIFICATE_PEM)) {
             String pem = StreamUtil.readString(inputParts.get(0).getBody(InputStream.class, null));
@@ -279,11 +267,7 @@ public class ClientAttributeCertificateResource {
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
     @Consumes(MediaType.APPLICATION_JSON)
     public byte[] getKeystore(final KeyStoreConfig config) {
-        auth.requireView();
-
-        if (client == null) {
-            throw new NotFoundException("Could not find client");
-        }
+        auth.clients().requireView(client);
 
         if (config.getFormat() != null && !config.getFormat().equals("JKS") && !config.getFormat().equals("PKCS12")) {
             throw new NotAcceptableException("Only support jks or pkcs12 format.");
@@ -322,11 +306,7 @@ public class ClientAttributeCertificateResource {
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
     @Consumes(MediaType.APPLICATION_JSON)
     public byte[] generateAndGetKeystore(final KeyStoreConfig config) {
-        auth.requireManage();
-
-        if (client == null) {
-            throw new NotFoundException("Could not find client");
-        }
+        auth.clients().requireConfigure(client);
 
         if (config.getFormat() != null && !config.getFormat().equals("JKS") && !config.getFormat().equals("PKCS12")) {
             throw new NotAcceptableException("Only support jks or pkcs12 format.");

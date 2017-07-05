@@ -37,6 +37,7 @@ import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.ComponentTypeRepresentation;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyFactory;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
 /**
  * @resource Client Registration Policy
@@ -44,7 +45,7 @@ import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyF
  */
 public class ClientRegistrationPolicyResource {
 
-    private final RealmAuth auth;
+    private final AdminPermissionEvaluator auth;
     private final RealmModel realm;
     private final AdminEventBuilder adminEvent;
 
@@ -54,12 +55,11 @@ public class ClientRegistrationPolicyResource {
     @Context
     protected UriInfo uriInfo;
 
-    public ClientRegistrationPolicyResource(RealmModel realm, RealmAuth auth, AdminEventBuilder adminEvent) {
+    public ClientRegistrationPolicyResource(RealmModel realm, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.auth = auth;
         this.realm = realm;
         this.adminEvent = adminEvent.resource(ResourceType.CLIENT_INITIAL_ACCESS_MODEL);
 
-        auth.init(RealmAuth.Resource.CLIENT);
     }
 
 

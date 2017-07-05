@@ -19,6 +19,10 @@ package org.keycloak.services.resources.admin;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
+import org.keycloak.services.resources.admin.permissions.AdminPermissions;
+import org.keycloak.services.resources.admin.permissions.RolePermissionManagement;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
@@ -26,6 +30,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.RoleRepresentation;
 
 import javax.ws.rs.Consumes;
@@ -39,7 +44,9 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -52,7 +59,7 @@ import java.util.Set;
 public class RoleByIdResource extends RoleResource {
     protected static final Logger logger = Logger.getLogger(RoleByIdResource.class);
     private final RealmModel realm;
-    private final RealmAuth auth;
+    private AdminPermissionEvaluator auth;
     private AdminEventBuilder adminEvent;
 
     @Context
@@ -61,7 +68,7 @@ public class RoleByIdResource extends RoleResource {
     @Context
     private UriInfo uriInfo;
 
-    public RoleByIdResource(RealmModel realm, RealmAuth auth, AdminEventBuilder adminEvent) {
+    public RoleByIdResource(RealmModel realm, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         super(realm);
 
         this.realm = realm;
@@ -80,9 +87,9 @@ public class RoleByIdResource extends RoleResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public RoleRepresentation getRole(final @PathParam("role-id") String id) {
-        auth.requireAny();
 
         RoleModel roleModel = getRoleModel(id);
+        auth.roles().requireView(roleModel);
         return getRole(roleModel);
     }
 
@@ -91,17 +98,7 @@ public class RoleByIdResource extends RoleResource {
         if (roleModel == null) {
             throw new NotFoundException("Could not find role with id");
         }
-
-        RealmAuth.Resource r = null;
-        if (roleModel.getContainer() instanceof RealmModel) {
-            r = RealmAuth.Resource.REALM;
-        } else if (roleModel.getContainer() instanceof ClientModel) {
-            r = RealmAuth.Resource.CLIENT;
-        } else if (roleModel.getContainer() instanceof UserModel) {
-            r = RealmAuth.Resource.USER;
-        }
-        auth.init(r);
-        return roleModel;
+       return roleModel;
     }
 
     /**
@@ -113,9 +110,8 @@ public class RoleByIdResource extends RoleResource {
     @DELETE
     @NoCache
     public void deleteRole(final @PathParam("role-id") String id) {
-        auth.requireManage();
-
         RoleModel role = getRoleModel(id);
+        auth.roles().requireManage(role);
         deleteRole(role);
 
         if (role.isClientRole()) {
@@ -137,9 +133,8 @@ public class RoleByIdResource extends RoleResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     public void updateRole(final @PathParam("role-id") String id, final RoleRepresentation rep) {
-        auth.requireManage();
-
         RoleModel role = getRoleModel(id);
+        auth.roles().requireManage(role);
         updateRole(rep, role);
 
         if (role.isClientRole()) {
@@ -161,10 +156,9 @@ public class RoleByIdResource extends RoleResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public void addComposites(final @PathParam("role-id") String id, List<RoleRepresentation> roles) {
-        auth.requireManage();
-
         RoleModel role = getRoleModel(id);
-        addComposites(adminEvent, uriInfo, roles, role);
+        auth.roles().requireManage(role);
+        addComposites(auth, adminEvent, uriInfo, roles, role);
     }
 
     /**
@@ -180,11 +174,10 @@ public class RoleByIdResource extends RoleResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Set<RoleRepresentation> getRoleComposites(final @PathParam("role-id") String id) {
-        auth.requireAny();
 
         if (logger.isDebugEnabled()) logger.debug("*** getRoleComposites: '" + id + "'");
         RoleModel role = getRoleModel(id);
-        auth.requireView();
+        auth.roles().requireView(role);
         return getRoleComposites(role);
     }
 
@@ -199,9 +192,9 @@ public class RoleByIdResource extends RoleResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Set<RoleRepresentation> getRealmRoleComposites(final @PathParam("role-id") String id) {
-        auth.requireAny();
-
         RoleModel role = getRoleModel(id);
+        auth.roles().requireView(role);
+        auth.roles().requireView(role);
         return getRealmRoleComposites(role);
     }
 
@@ -218,9 +211,9 @@ public class RoleByIdResource extends RoleResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Set<RoleRepresentation> getClientRoleComposites(final @PathParam("role-id") String id,
                                                                 final @PathParam("client") String client) {
-        auth.requireAny();
 
         RoleModel role = getRoleModel(id);
+        auth.roles().requireView(role);
         ClientModel clientModel = realm.getClientById(client);
         if (clientModel == null) {
             throw new NotFoundException("Could not find client");
@@ -238,10 +231,64 @@ public class RoleByIdResource extends RoleResource {
     @DELETE
     @Consumes(MediaType.APPLICATION_JSON)
     public void deleteComposites(final @PathParam("role-id") String id, List<RoleRepresentation> roles) {
-        auth.requireManage();
-
         RoleModel role = getRoleModel(id);
+        auth.roles().requireManage(role);
         deleteComposites(adminEvent, uriInfo, roles, role);
+    }
+
+    /**
+     * Return object stating whether role Authoirzation permissions have been initialized or not and a reference
+     *
+     *
+     * @param id
+     * @return
+     */
+    @Path("{role-id}/management/permissions")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    public ManagementPermissionReference getManagementPermissions(final @PathParam("role-id") String id) {
+        RoleModel role = getRoleModel(id);
+        auth.roles().requireView(role);
+
+        AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
+        if (!permissions.roles().isPermissionsEnabled(role)) {
+            return new ManagementPermissionReference();
+        }
+        return toMgmtRef(role, permissions);
+    }
+
+    public static ManagementPermissionReference toMgmtRef(RoleModel role, AdminPermissionManagement permissions) {
+        ManagementPermissionReference ref = new ManagementPermissionReference();
+        ref.setEnabled(true);
+        ref.setResource(permissions.roles().resource(role).getId());
+        ref.setScopePermissions(permissions.roles().getPermissions(role));
+        return ref;
+    }
+
+    /**
+     * Return object stating whether role Authoirzation permissions have been initialized or not and a reference
+     *
+     *
+     * @param id
+     * @return initialized manage permissions reference
+     */
+    @Path("{role-id}/management/permissions")
+    @PUT
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @NoCache
+    public ManagementPermissionReference setManagementPermissionsEnabled(final @PathParam("role-id") String id, ManagementPermissionReference ref) {
+        RoleModel role = getRoleModel(id);
+        auth.roles().requireManage(role);
+
+        AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
+        permissions.roles().setPermissionsEnabled(role, ref.isEnabled());
+        if (ref.isEnabled()) {
+            return toMgmtRef(role, permissions);
+        } else {
+            return new ManagementPermissionReference();
+        }
     }
 
 }

@@ -129,6 +129,7 @@ public class ServerInfoAdminResource {
                 for (String name : providerIds) {
                     ProviderRepresentation provider = new ProviderRepresentation();
                     ProviderFactory<?> pi = session.getKeycloakSessionFactory().getProviderFactory(spi.getProviderClass(), name);
+                    provider.setOrder(pi.order());
                     if (ServerInfoAwareProviderFactory.class.isAssignableFrom(pi.getClass())) {
                         provider.setOperationalInfo(((ServerInfoAwareProviderFactory) pi).getOperationalInfo());
                     }

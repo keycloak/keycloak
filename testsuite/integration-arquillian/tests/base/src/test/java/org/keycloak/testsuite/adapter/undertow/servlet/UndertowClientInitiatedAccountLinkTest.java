@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.adapter.undertow.servlet;
 
+import org.junit.Test;
 import org.keycloak.testsuite.adapter.servlet.AbstractClientInitiatedAccountLinkTest;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 
@@ -26,4 +27,15 @@ import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 @AppServerContainer("auth-server-undertow")
 public class UndertowClientInitiatedAccountLinkTest extends AbstractClientInitiatedAccountLinkTest {
 
+    //@Test
+    public void testUi() throws Exception {
+        Thread.sleep(1000000000);
+
+    }
+
+    @Override
+    @Test
+    public void testAccountLink() throws Exception {
+        super.testAccountLink();
+    }
 }

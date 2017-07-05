@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
+import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.console.page.fragment.MultipleStringSelect2;
 import org.keycloak.testsuite.page.Form;
 import org.openqa.selenium.By;
@@ -52,8 +53,8 @@ public class ClientPolicyForm extends Form {
     @FindBy(id = "s2id_clients")
     private ClientSelect clientsInput;
 
-    @FindBy(xpath = ACTIVE_DIV_XPATH + "/button[text()='Delete']")
-    private WebElement confirmDelete;
+    @FindBy(xpath = "//div[@class='modal-dialog']")
+    protected ModalDialog modalDialog;
 
     public void populate(ClientPolicyRepresentation expected) {
         setInputValue(name, expected.getName());
@@ -67,7 +68,7 @@ public class ClientPolicyForm extends Form {
 
     public void delete() {
         deleteButton.click();
-        confirmDelete.click();
+        modalDialog.confirmDeletion();
     }
 
     public ClientPolicyRepresentation toRepresentation() {

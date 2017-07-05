@@ -7,7 +7,7 @@
 
     <kc-tabs-user></kc-tabs-user>
 
-    <form class="form-horizontal" name="userForm" novalidate kc-read-only="!access.manageUsers">
+    <form class="form-horizontal" name="userForm" novalidate kc-read-only="!create && !user.access.manage">
 
         <fieldset class="border-top">
             <div class="form-group">
@@ -62,7 +62,7 @@
             <div class="form-group clearfix block">
                 <label class="col-md-2 control-label" for="userEnabled">{{:: 'user-enabled' | translate}}</label>
                 <div class="col-md-6">
-                    <input ng-model="user.enabled" name="userEnabled" id="userEnabled" ng-disabled="!access.manageUsers" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                    <input ng-model="user.enabled" name="userEnabled" id="userEnabled" ng-disabled="!create && !user.access.manage" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                 </div>
                 <kc-tooltip>{{:: 'user-enabled.tooltip' | translate}}</kc-tooltip>
             </div>
@@ -93,7 +93,7 @@
             <div class="form-group clearfix block">
                 <label class="col-md-2 control-label" for="emailVerified">{{:: 'email-verified' | translate}}</label>
                 <div class="col-md-6">
-                    <input ng-model="user.emailVerified" name="emailVerified" id="emailVerified" ng-disabled="!access.manageUsers" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                    <input ng-model="user.emailVerified" name="emailVerified" id="emailVerified" ng-disabled="!create && !user.access.manage" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                 </div>
                 <kc-tooltip>{{:: 'email-verified.tooltip' | translate}}</kc-tooltip>
             </div>
@@ -138,7 +138,7 @@
                 <button kc-cancel data-ng-click="cancel()">{{:: 'cancel' | translate}}</button>
             </div>
 
-            <div class="col-md-10 col-md-offset-2" data-ng-show="!create && access.manageUsers">
+            <div class="col-md-10 col-md-offset-2" data-ng-show="!create && user.access.manage">
                 <button kc-save  data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
                 <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
             </div>

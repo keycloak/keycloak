@@ -45,6 +45,12 @@ public class RunOnServerTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void runOnServerString() throws IOException {
+        String string = testingClient.server().fetch(session -> "Hello world!", String.class);
+        assertEquals("Hello world!", string);
+    }
+
+    @Test
     public void runOnServerRep() throws IOException {
         final String realmName = "master";
 

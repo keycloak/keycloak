@@ -23,6 +23,7 @@ import org.keycloak.models.ClientInitialAccessModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -65,7 +66,8 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         }
 
         try {
-            ClientModel clientModel = RepresentationToModel.createClient(session, session.getContext().getRealm(), client, true);
+            RealmModel realm = session.getContext().getRealm();
+            ClientModel clientModel = RepresentationToModel.createClient(session, realm, client, true);
 
             ClientRegistrationPolicyManager.triggerAfterRegister(context, registrationAuth, clientModel);
 
@@ -78,7 +80,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
 
             if (auth.isInitialAccessToken()) {
                 ClientInitialAccessModel initialAccessModel = auth.getInitialAccessModel();
-                initialAccessModel.decreaseRemainingCount();
+                session.realms().decreaseRemainingCount(realm, initialAccessModel);
             }
 
             event.client(client.getClientId()).success();
@@ -95,9 +97,12 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         auth.requireView(client);
 
         ClientRepresentation rep = ModelToRepresentation.toRepresentation(client);
+        if (client.getSecret() != null) {
+            rep.setSecret(client.getSecret());
+        }
 
         if (auth.isRegistrationAccessToken()) {
-            String registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, client, auth.getRegistrationAuth());
+            String registrationAccessToken = ClientRegistrationTokenUtils.updateTokenSignature(session, auth);
             rep.setRegistrationAccessToken(registrationAccessToken);
         }
 

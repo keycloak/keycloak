@@ -79,72 +79,7 @@ module.controller('ResourceServerDetailCtrl', function($scope, $http, $route, $l
     });
 });
 
-var Resources = {
-    delete: function(ResourceServerResource, realm, client, $scope, AuthzDialog, $location, Notifications, $route) {
-        ResourceServerResource.permissions({
-            realm : realm,
-            client : client.id,
-            rsrid : $scope.resource._id
-        }, function (permissions) {
-            var msg = "";
-
-            if (permissions.length > 0 && !$scope.deleteConsent) {
-                msg = "<p>This resource is referenced in some permissions:</p>";
-                msg += "<ul>";
-                for (i = 0; i < permissions.length; i++) {
-                    msg+= "<li><strong>" + permissions[i].name + "</strong></li>";
-                }
-                msg += "</ul>";
-                msg += "<p>If you remove this resource, the permissions above will be affected and will not be associated with this resource anymore.</p>";
-            }
-
-            AuthzDialog.confirmDeleteWithMsg($scope.resource.name, "Resource", msg, function() {
-                ResourceServerResource.delete({realm : realm, client : $scope.client.id, rsrid : $scope.resource._id}, null, function() {
-                    $location.url("/realms/" + realm + "/clients/" + $scope.client.id + "/authz/resource-server/resource");
-                    $route.reload();
-                    Notifications.success("The resource has been deleted.");
-                });
-            });
-        });
-    }
-}
-
-var Policies = {
-    delete: function(service, realm, client, $scope, AuthzDialog, $location, Notifications, $route, isPermission) {
-        var msg = "";
-
-        service.dependentPolicies({
-            realm : realm,
-            client : client.id,
-            id : $scope.policy.id
-        }, function (dependentPolicies) {
-            if (dependentPolicies.length > 0 && !$scope.deleteConsent) {
-                msg = "<p>This policy is being used by other policies:</p>";
-                msg += "<ul>";
-                for (i = 0; i < dependentPolicies.length; i++) {
-                    msg+= "<li><strong>" + dependentPolicies[i].name + "</strong></li>";
-                }
-                msg += "</ul>";
-                msg += "<p>If you remove this policy, the policies above will be affected and will not be associated with this policy anymore.</p>";
-            }
-
-            AuthzDialog.confirmDeleteWithMsg($scope.policy.name, isPermission ? "Permission" : "Policy", msg, function() {
-                service.delete({realm : realm, client : $scope.client.id, id : $scope.policy.id}, null, function() {
-                    if (isPermission) {
-                        $location.url("/realms/" + realm + "/clients/" + $scope.client.id + "/authz/resource-server/permission");
-                        Notifications.success("The permission has been deleted.");
-                    } else {
-                        $location.url("/realms/" + realm + "/clients/" + $scope.client.id + "/authz/resource-server/policy");
-                        Notifications.success("The policy has been deleted.");
-                    }
-                    $route.reload();
-                });
-            });
-        });
-    }
-}
-
-module.controller('ResourceServerResourceCtrl', function($scope, $http, $route, $location, realm, ResourceServer, ResourceServerResource, client, AuthzDialog, Notifications) {
+module.controller('ResourceServerResourceCtrl', function($scope, $http, $route, $location, realm, ResourceServer, ResourceServerResource, client) {
     $scope.realm = realm;
     $scope.client = client;
 
@@ -235,11 +170,6 @@ module.controller('ResourceServerResourceCtrl', function($scope, $http, $route, 
                 $scope.loadDetails($scope.resources[i]);
             }
         }
-    };
-
-    $scope.delete = function(resource) {
-        $scope.resource = resource;
-        Resources.delete(ResourceServerResource, $route.current.params.realm, client, $scope, AuthzDialog, $location, Notifications, $route);
     };
 });
 
@@ -352,7 +282,30 @@ module.controller('ResourceServerResourceDetailCtrl', function($scope, $http, $r
                 }
 
                 $scope.remove = function() {
-                    Resources.delete(ResourceServerResource, $route.current.params.realm, client, $scope, AuthzDialog, $location, Notifications, $route);
+                    ResourceServerResource.permissions({
+                        realm : $route.current.params.realm,
+                        client : client.id,
+                        rsrid : $scope.resource._id
+                    }, function (permissions) {
+                        var msg = "";
+
+                        if (permissions.length > 0 && !$scope.deleteConsent) {
+                            msg = "<p>This resource is referenced in some policies:</p>";
+                            msg += "<ul>";
+                            for (i = 0; i < permissions.length; i++) {
+                                msg+= "<li><strong>" + permissions[i].name + "</strong></li>";
+                            }
+                            msg += "</ul>";
+                            msg += "<p>If you remove this resource, the policies above will be affected and will not be associated with this resource anymore.</p>";
+                        }
+
+                        AuthzDialog.confirmDeleteWithMsg($scope.resource.name, "Resource", msg, function() {
+                            ResourceServerResource.delete({realm : realm.realm, client : $scope.client.id, rsrid : $scope.resource._id}, null, function() {
+                                $location.url("/realms/" + realm.realm + "/clients/" + $scope.client.id + "/authz/resource-server/resource");
+                                Notifications.success("The resource has been deleted.");
+                            });
+                        });
+                    });
                 }
 
                 $scope.reset = function() {
@@ -367,6 +320,9 @@ module.controller('ResourceServerResourceDetailCtrl', function($scope, $http, $r
     }
 
     this.checkNameAvailability = function (onSuccess) {
+        if (!$scope.resource.name || $scope.resource.name.trim().length == 0) {
+            return;
+        }
         ResourceServerResource.search({
             realm : $route.current.params.realm,
             client : client.id,
@@ -382,37 +338,7 @@ module.controller('ResourceServerResourceDetailCtrl', function($scope, $http, $r
     }
 });
 
-var Scopes = {
-    delete: function(ResourceServerScope, realm, client, $scope, AuthzDialog, $location, Notifications, $route) {
-        ResourceServerScope.permissions({
-            realm : realm,
-            client : client.id,
-            id : $scope.scope.id
-        }, function (permissions) {
-            var msg = "";
-
-            if (permissions.length > 0 && !$scope.deleteConsent) {
-                msg = "<p>This scope is referenced in some permissions:</p>";
-                msg += "<ul>";
-                for (i = 0; i < permissions.length; i++) {
-                    msg+= "<li><strong>" + permissions[i].name + "</strong></li>";
-                }
-                msg += "</ul>";
-                msg += "<p>If you remove this scope, the permissions above will be affected and will not be associated with this scope anymore.</p>";
-            }
-
-            AuthzDialog.confirmDeleteWithMsg($scope.scope.name, "Scope", msg, function() {
-                ResourceServerScope.delete({realm : realm, client : $scope.client.id, id : $scope.scope.id}, null, function() {
-                    $location.url("/realms/" + realm + "/clients/" + $scope.client.id + "/authz/resource-server/scope");
-                    $route.reload();
-                    Notifications.success("The scope has been deleted.");
-                });
-            });
-        });
-    }
-}
-
-module.controller('ResourceServerScopeCtrl', function($scope, $http, $route, $location, realm, ResourceServer, ResourceServerScope,client, AuthzDialog, Notifications) {
+module.controller('ResourceServerScopeCtrl', function($scope, $http, $route, $location, realm, ResourceServer, ResourceServerScope, client) {
     $scope.realm = realm;
     $scope.client = client;
 
@@ -504,11 +430,6 @@ module.controller('ResourceServerScopeCtrl', function($scope, $http, $route, $lo
             }
         }
     };
-
-    $scope.delete = function(scope) {
-        $scope.scope = scope;
-        Scopes.delete(ResourceServerScope, $route.current.params.realm, client, $scope, AuthzDialog, $location, Notifications, $route);
-    };
 });
 
 module.controller('ResourceServerScopeDetailCtrl', function($scope, $http, $route, $location, realm, ResourceServer, client, ResourceServerScope, AuthzDialog, Notifications) {
@@ -578,7 +499,30 @@ module.controller('ResourceServerScopeDetailCtrl', function($scope, $http, $rout
                 }
 
                 $scope.remove = function() {
-                    Scopes.delete(ResourceServerScope, $route.current.params.realm, client, $scope, AuthzDialog, $location, Notifications, $route);
+                    ResourceServerScope.permissions({
+                        realm : $route.current.params.realm,
+                        client : client.id,
+                        id : $scope.scope.id
+                    }, function (permissions) {
+                        var msg = "";
+
+                        if (permissions.length > 0 && !$scope.deleteConsent) {
+                            msg = "<p>This scope is referenced in some policies:</p>";
+                            msg += "<ul>";
+                            for (i = 0; i < permissions.length; i++) {
+                                msg+= "<li><strong>" + permissions[i].name + "</strong></li>";
+                            }
+                            msg += "</ul>";
+                            msg += "<p>If you remove this scope, the policies above will be affected and will not be associated with this scope anymore.</p>";
+                        }
+
+                        AuthzDialog.confirmDeleteWithMsg($scope.scope.name, "Scope", msg, function() {
+                            ResourceServerScope.delete({realm : realm.realm, client : $scope.client.id, id : $scope.scope.id}, null, function() {
+                                $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/authz/resource-server/scope");
+                                Notifications.success("The scope has been deleted.");
+                            });
+                        });
+                    });
                 }
 
                 $scope.reset = function() {
@@ -593,6 +537,9 @@ module.controller('ResourceServerScopeDetailCtrl', function($scope, $http, $rout
     }
 
     this.checkNameAvailability = function (onSuccess) {
+        if (!$scope.scope.name || $scope.scope.name.trim().length == 0) {
+            return;
+        }
         ResourceServerScope.search({
             realm : $route.current.params.realm,
             client : client.id,
@@ -607,7 +554,7 @@ module.controller('ResourceServerScopeDetailCtrl', function($scope, $http, $rout
     }
 });
 
-module.controller('ResourceServerPolicyCtrl', function($scope, $http, $route, $location, realm, ResourceServer, ResourceServerPolicy, PolicyProvider, client, AuthzDialog, Notifications) {
+module.controller('ResourceServerPolicyCtrl', function($scope, $http, $route, $location, realm, ResourceServer, ResourceServerPolicy, PolicyProvider, client) {
     $scope.realm = realm;
     $scope.client = client;
     $scope.policyProviders = [];
@@ -703,14 +650,9 @@ module.controller('ResourceServerPolicyCtrl', function($scope, $http, $route, $l
             }
         }
     };
-
-    $scope.delete = function(policy) {
-        $scope.policy = policy;
-        Policies.delete(ResourceServerPolicy, $route.current.params.realm, client, $scope, AuthzDialog, $location, Notifications, $route, false);
-    };
 });
 
-module.controller('ResourceServerPermissionCtrl', function($scope, $http, $route, $location, realm, ResourceServer, ResourceServerPermission, PolicyProvider, client, AuthzDialog, Notifications) {
+module.controller('ResourceServerPermissionCtrl', function($scope, $http, $route, $location, realm, ResourceServer, ResourceServerPermission, PolicyProvider, client) {
     $scope.realm = realm;
     $scope.client = client;
     $scope.policyProviders = [];
@@ -805,11 +747,6 @@ module.controller('ResourceServerPermissionCtrl', function($scope, $http, $route
             }
         }
     };
-
-    $scope.delete = function(policy) {
-        $scope.policy = policy;
-        Policies.delete(ResourceServerPermission, $route.current.params.realm, client, $scope, AuthzDialog, $location, Notifications, $route, true);
-    };
 });
 
 module.controller('ResourceServerPolicyDroolsDetailCtrl', function($scope, $http, $route, realm, client, PolicyController) {
@@ -829,8 +766,8 @@ module.controller('ResourceServerPolicyDroolsDetailCtrl', function($scope, $http
                 delete policy.config;
 
                 $http.post(authUrl + '/admin/realms/'+ $route.current.params.realm + '/clients/' + client.id + '/authz/resource-server/policy/rules/provider/resolveModules'
-                        , policy).success(function(data) {
-                            $scope.drools.moduleNames = data;
+                        , policy).then(function(response) {
+                            $scope.drools.moduleNames = response.data;
                             $scope.resolveSessions();
                         });
             }
@@ -839,8 +776,8 @@ module.controller('ResourceServerPolicyDroolsDetailCtrl', function($scope, $http
                 delete $scope.policy.config;
 
                 $http.post(authUrl + '/admin/realms/'+ $route.current.params.realm + '/clients/' + client.id + '/authz/resource-server/policy/rules/provider/resolveSessions'
-                        , $scope.policy).success(function(data) {
-                            $scope.drools.moduleSessions = data;
+                        , $scope.policy).then(function(response) {
+                            $scope.drools.moduleSessions = response.data;
                         });
             }
         },
@@ -1254,19 +1191,17 @@ module.controller('ResourceServerPolicyScopeDetailCtrl', function($scope, $route
                 client : client.id,
                 id : policy.id
             }, function(policies) {
-                if (policies.length > 0) {
-                    $scope.selectedPolicies = [];
-                    for (i = 0; i < policies.length; i++) {
-                        policies[i].text = policies[i].name;
-                        $scope.selectedPolicies.push(policies[i]);
-                    }
-                    var copy = angular.copy($scope.selectedPolicies);
-                    $scope.$watch('selectedPolicies', function() {
-                        if (!angular.equals($scope.selectedPolicies, copy)) {
-                            $scope.changed = true;
-                        }
-                    }, true);
+                $scope.selectedPolicies = [];
+                for (i = 0; i < policies.length; i++) {
+                    policies[i].text = policies[i].name;
+                    $scope.selectedPolicies.push(policies[i]);
                 }
+                var copy = angular.copy($scope.selectedPolicies);
+                $scope.$watch('selectedPolicies', function() {
+                    if (!angular.equals($scope.selectedPolicies, copy)) {
+                        $scope.changed = true;
+                    }
+                }, true);
             });
         },
 
@@ -1728,6 +1663,119 @@ module.controller('ResourceServerPolicyRoleDetailCtrl', function($scope, $route,
     }
 });
 
+module.controller('ResourceServerPolicyGroupDetailCtrl', function($scope, $route, realm, client, Client, Groups, Group, PolicyController) {
+    PolicyController.onInit({
+        getPolicyType : function() {
+            return "group";
+        },
+
+        onInit : function() {
+            $scope.tree = [];
+
+            Groups.query({realm: $route.current.params.realm}, function(groups) {
+                $scope.groups = groups;
+                $scope.groupList = [
+                    {"id" : "realm", "name": "Groups",
+                                "subGroups" : groups}
+                ];
+            });
+
+            var isLeaf = function(node) {
+                return node.id != "realm" && (!node.subGroups || node.subGroups.length == 0);
+            }
+
+            $scope.getGroupClass = function(node) {
+                if (node.id == "realm") {
+                    return 'pficon pficon-users';
+                }
+                if (isLeaf(node)) {
+                    return 'normal';
+                }
+                if (node.subGroups.length && node.collapsed) return 'collapsed';
+                if (node.subGroups.length && !node.collapsed) return 'expanded';
+                return 'collapsed';
+
+            }
+
+            $scope.getSelectedClass = function(node) {
+                if (node.selected) {
+                    return 'selected';
+                } else if ($scope.cutNode && $scope.cutNode.id == node.id) {
+                    return 'cut';
+                }
+                return undefined;
+            }
+
+            $scope.selectGroup = function(group) {
+                for (i = 0; i < $scope.selectedGroups.length; i++) {
+                    if ($scope.selectedGroups[i].id == group.id) {
+                        return
+                    }
+                }
+                $scope.selectedGroups.push({id: group.id, path: group.path});
+                $scope.changed = true;
+            }
+
+            $scope.extendChildren = function(group) {
+                $scope.changed = true;
+            }
+
+            $scope.removeFromList = function(group) {
+                var index = $scope.selectedGroups.indexOf(group);
+                if (index != -1) {
+                    $scope.selectedGroups.splice(index, 1);
+                    $scope.changed = true;
+                }
+            }
+        },
+
+        onInitCreate : function(policy) {
+            var selectedGroups = [];
+
+            $scope.selectedGroups = angular.copy(selectedGroups);
+
+            $scope.$watch('selectedGroups', function() {
+                if (!angular.equals($scope.selectedGroups, selectedGroups)) {
+                    $scope.changed = true;
+                } else {
+                    $scope.changed = false;
+                }
+            }, true);
+        },
+
+        onInitUpdate : function(policy) {
+            $scope.selectedGroups = policy.groups;
+
+            angular.forEach($scope.selectedGroups, function(group, index){
+               Group.get({realm: $route.current.params.realm, groupId: group.id}, function (existing) {
+                   group.path = existing.path;
+               });
+            });
+
+            $scope.$watch('selectedGroups', function() {
+                if (!$scope.changed) {
+                    return;
+                }
+                if (!angular.equals($scope.selectedGroups, selectedGroups)) {
+                    $scope.changed = true;
+                } else {
+                    $scope.changed = false;
+                }
+            }, true);
+        },
+
+        onUpdate : function() {
+            $scope.policy.groups = $scope.selectedGroups;
+            delete $scope.policy.config;
+        },
+
+        onCreate : function() {
+            $scope.policy.groups = $scope.selectedGroups;
+            delete $scope.policy.config;
+        }
+    }, realm, client, $scope);
+});
+
 module.controller('ResourceServerPolicyJSDetailCtrl', function($scope, $route, $location, realm, PolicyController, client) {
     PolicyController.onInit({
         getPolicyType : function() {
@@ -2050,7 +2098,35 @@ module.service("PolicyController", function($http, $route, $location, ResourceSe
                 });
 
                 $scope.remove = function() {
-                    Policies.delete(ResourceServerPolicy, $route.current.params.realm, client, $scope, AuthzDialog, $location, Notifications, $route, delegate.isPermission());
+                    var msg = "";
+
+                    service.dependentPolicies({
+                        realm : $route.current.params.realm,
+                        client : client.id,
+                        id : $scope.policy.id
+                    }, function (dependentPolicies) {
+                        if (dependentPolicies.length > 0 && !$scope.deleteConsent) {
+                            msg = "<p>This policy is being used by other policies:</p>";
+                            msg += "<ul>";
+                            for (i = 0; i < dependentPolicies.length; i++) {
+                                msg+= "<li><strong>" + dependentPolicies[i].name + "</strong></li>";
+                            }
+                            msg += "</ul>";
+                            msg += "<p>If you remove this policy, the policies above will be affected and will not be associated with this policy anymore.</p>";
+                        }
+
+                        AuthzDialog.confirmDeleteWithMsg($scope.policy.name, "Policy", msg, function() {
+                            service.delete({realm : $scope.realm.realm, client : $scope.client.id, id : $scope.policy.id}, null, function() {
+                                if (delegate.isPermission()) {
+                                    $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/authz/resource-server/permission");
+                                    Notifications.success("The permission has been deleted.");
+                                } else {
+                                    $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/authz/resource-server/policy");
+                                    Notifications.success("The policy has been deleted.");
+                                }
+                            });
+                        });
+                    });
                 }
             }
         });
@@ -2060,6 +2136,9 @@ module.service("PolicyController", function($http, $route, $location, ResourceSe
         }
 
         this.checkNameAvailability = function (onSuccess) {
+            if (!$scope.policy.name || $scope.policy.name.trim().length == 0) {
+                return;
+            }
             ResourceServerPolicy.search({
                 realm: $route.current.params.realm,
                 client: client.id,
@@ -2082,20 +2161,12 @@ module.controller('PolicyEvaluateCtrl', function($scope, $http, $route, $locatio
     $scope.client = client;
     $scope.clients = clients;
     $scope.roles = roles;
-    authzRequest = {};
-    authzRequest.resources = [];
-    authzRequest.context = {};
-    authzRequest.context.attributes = {};
-    authzRequest.roleIds = [];
+    $scope.authzRequest = {};
+    $scope.authzRequest.resources = [];
+    $scope.authzRequest.context = {};
+    $scope.authzRequest.context.attributes = {};
+    $scope.authzRequest.roleIds = [];
     $scope.resultUrl = resourceUrl + '/partials/authz/policy/resource-server-policy-evaluate-result.html';
-
-    $scope.authzRequest = angular.copy(authzRequest);
-
-    $scope.$watch('authzRequest', function() {
-        if (!angular.equals($scope.authzRequest, authzRequest)) {
-            $scope.changed = true;
-        }
-    }, true);
 
     $scope.addContextAttribute = function() {
         if (!$scope.newContextAttribute.value || $scope.newContextAttribute.value == '') {
@@ -2283,8 +2354,8 @@ module.controller('PolicyEvaluateCtrl', function($scope, $http, $route, $locatio
         }
 
         $http.post(authUrl + '/admin/realms/'+ $route.current.params.realm + '/clients/' + client.id + '/authz/resource-server/policy/evaluate'
-                , $scope.authzRequest).success(function(data) {
-                    $scope.evaluationResult = data;
+                , $scope.authzRequest).then(function(response) {
+                    $scope.evaluationResult = response.data;
                     $scope.showResultTab();
                 });
     }
@@ -2292,8 +2363,8 @@ module.controller('PolicyEvaluateCtrl', function($scope, $http, $route, $locatio
     $scope.entitlements = function() {
         $scope.authzRequest.entitlements = true;
         $http.post(authUrl + '/admin/realms/'+ $route.current.params.realm + '/clients/' + client.id + '/authz/resource-server/policy/evaluate'
-            , $scope.authzRequest).success(function(data) {
-            $scope.evaluationResult = data;
+            , $scope.authzRequest).then(function(response) {
+            $scope.evaluationResult = response.data;
             $scope.showResultTab();
         });
     }
@@ -2410,3 +2481,102 @@ module.controller('PolicyEvaluateCtrl', function($scope, $http, $route, $locatio
         $scope.changed = false;
     }
 });
+
+getManageClientId = function(realm) {
+    if (realm.realm == masterRealm) {
+        return 'master-realm';
+    } else {
+        return 'realm-management';
+    }
+}
+
+module.controller('RealmRolePermissionsCtrl', function($scope, $http, $route, $location, realm, role, RoleManagementPermissions, Client, Notifications) {
+    console.log('RealmRolePermissionsCtrl');
+    $scope.role = role;
+    $scope.realm = realm;
+    RoleManagementPermissions.get({realm: realm.realm, role: role.id}, function(data) {
+        $scope.permissions = data;
+    });
+    Client.query({realm: realm.realm, clientId: getManageClientId(realm)}, function(data) {
+        $scope.realmManagementClientId = data[0].id;
+    });
+    $scope.setEnabled = function() {
+        var param = { enabled: $scope.permissions.enabled};
+        $scope.permissions= RoleManagementPermissions.update({realm: realm.realm, role:role.id}, param);
+    };
+
+
+});
+module.controller('ClientRolePermissionsCtrl', function($scope, $http, $route, $location, realm, client, role, Client, RoleManagementPermissions, Client, Notifications) {
+    console.log('RealmRolePermissionsCtrl');
+    $scope.client = client;
+    $scope.role = role;
+    $scope.realm = realm;
+    RoleManagementPermissions.get({realm: realm.realm, role: role.id}, function(data) {
+        $scope.permissions = data;
+    });
+    Client.query({realm: realm.realm, clientId: getManageClientId(realm)}, function(data) {
+        $scope.realmManagementClientId = data[0].id;
+    });
+    $scope.setEnabled = function() {
+        console.log('perssions enabled: ' + $scope.permissions.enabled);
+        var param = { enabled: $scope.permissions.enabled};
+        $scope.permissions = RoleManagementPermissions.update({realm: realm.realm, role:role.id}, param);
+    };
+
+
+});
+
+module.controller('UsersPermissionsCtrl', function($scope, $http, $route, $location, realm, UsersManagementPermissions, Client, Notifications) {
+    console.log('UsersPermissionsCtrl');
+    $scope.realm = realm;
+    UsersManagementPermissions.get({realm: realm.realm}, function(data) {
+        $scope.permissions = data;
+    });
+    Client.query({realm: realm.realm, clientId: getManageClientId(realm)}, function(data) {
+        $scope.realmManagementClientId = data[0].id;
+    });
+    $scope.changeIt = function() {
+        console.log('before permissions.enabled=' + $scope.permissions.enabled);
+        var param = { enabled: $scope.permissions.enabled};
+        $scope.permissions = UsersManagementPermissions.update({realm: realm.realm}, param);
+    };
+
+
+});
+
+module.controller('ClientPermissionsCtrl', function($scope, $http, $route, $location, realm, client, Client, ClientManagementPermissions, Notifications) {
+    $scope.client = client;
+    $scope.realm = realm;
+    ClientManagementPermissions.get({realm: realm.realm, client: client.id}, function(data) {
+        $scope.permissions = data;
+    });
+    Client.query({realm: realm.realm, clientId: getManageClientId(realm)}, function(data) {
+        $scope.realmManagementClientId = data[0].id;
+    });
+    $scope.setEnabled = function() {
+        var param = { enabled: $scope.permissions.enabled};
+        $scope.permissions = ClientManagementPermissions.update({realm: realm.realm, client: client.id}, param);
+    };
+
+
+});
+
+module.controller('GroupPermissionsCtrl', function($scope, $http, $route, $location, realm, group, GroupManagementPermissions, Client, Notifications) {
+    $scope.group = group;
+    $scope.realm = realm;
+    Client.query({realm: realm.realm, clientId: getManageClientId(realm)}, function(data) {
+        $scope.realmManagementClientId = data[0].id;
+    });
+    GroupManagementPermissions.get({realm: realm.realm, group: group.id}, function(data) {
+        $scope.permissions = data;
+    });
+    $scope.setEnabled = function() {
+        var param = { enabled: $scope.permissions.enabled};
+        $scope.permissions = GroupManagementPermissions.update({realm: realm.realm, group: group.id}, param);
+    };
+
+
+});
+
+

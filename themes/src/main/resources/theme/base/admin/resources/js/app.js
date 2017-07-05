@@ -125,6 +125,12 @@ module.config(['$translateProvider', function($translateProvider) {
     $translateProvider.translations(locale, resourceBundle);
 }]);
 
+// Change for upgrade to AngularJS 1.6
+// See https://github.com/angular/angular.js/commit/aa077e81129c740041438688dff2e8d20c3d7b52
+module.config(['$locationProvider', function($locationProvider) {
+  $locationProvider.hashPrefix('');
+}]);
+
 module.config([ '$routeProvider', function($routeProvider) {
     $routeProvider
         .when('/create/realm', {
@@ -1398,9 +1404,6 @@ module.config([ '$routeProvider', function($routeProvider) {
                 realm : function(RealmLoader) {
                     return RealmLoader();
                 },
-                clients : function(ClientListLoader) {
-                    return ClientListLoader();
-                },
                 serverInfo : function(ServerInfoLoader) {
                     return ServerInfoLoader();
                 }
@@ -1712,8 +1715,8 @@ module.config([ '$routeProvider', function($routeProvider) {
                 flows : function(AuthenticationFlowsLoader) {
                     return AuthenticationFlowsLoader();
                 },
-                serverInfo : function(ServerInfo) {
-                    return ServerInfo.delay;
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
                 }
             },
             controller : 'RealmFlowBindingCtrl'
@@ -2358,12 +2361,39 @@ module.directive('kcTabsAuthentication', function () {
     }
 });
 
+module.directive('kcTabsRole', function () {
+    return {
+        scope: true,
+        restrict: 'E',
+        replace: true,
+        templateUrl: resourceUrl + '/templates/kc-tabs-role.html'
+    }
+});
+
+module.directive('kcTabsClientRole', function () {
+    return {
+        scope: true,
+        restrict: 'E',
+        replace: true,
+        templateUrl: resourceUrl + '/templates/kc-tabs-client-role.html'
+    }
+});
+
 module.directive('kcTabsUser', function () {
     return {
         scope: true,
         restrict: 'E',
         replace: true,
         templateUrl: resourceUrl + '/templates/kc-tabs-user.html'
+    }
+});
+
+module.directive('kcTabsUsers', function () {
+    return {
+        scope: true,
+        restrict: 'E',
+        replace: true,
+        templateUrl: resourceUrl + '/templates/kc-tabs-users.html'
     }
 });
 

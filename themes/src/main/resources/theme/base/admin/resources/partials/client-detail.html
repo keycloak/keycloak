@@ -7,7 +7,7 @@
 
     <kc-tabs-client></kc-tabs-client>
 
-    <form class="form-horizontal" name="clientForm" novalidate kc-read-only="!access.manageClients">
+    <form class="form-horizontal" name="clientForm" novalidate kc-read-only="!client.access.configure">
         <fieldset class="border-top">
             <div class="form-group">
                 <label class="col-md-2 control-label" for="clientId">{{:: 'client-id' | translate}}</label>
@@ -37,7 +37,7 @@
                 </div>
                 <kc-tooltip>{{:: 'client.enabled.tooltip' | translate}}</kc-tooltip>
             </div>
-            <div class="form-group clearfix block">
+            <div class="form-group clearfix block" data-ng-show="protocol != 'docker-v2'">
                 <label class="col-md-2 control-label" for="consentRequired">{{:: 'consent-required' | translate}}</label>
                 <div class="col-sm-6">
                     <input ng-model="clientEdit.consentRequired" name="consentRequired" id="consentRequired" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
@@ -57,7 +57,7 @@
                 </div>
                 <kc-tooltip>{{:: 'client-protocol.tooltip' | translate}}</kc-tooltip>
             </div>
-            <div class="form-group">
+            <div class="form-group"  kc-read-only="!client.access.manage">
                 <label class="col-md-2 control-label" for="protocol">{{:: 'client-template' | translate}}</label>
                 <div class="col-sm-6">
                     <div>
@@ -110,7 +110,7 @@
                     <input ng-model="clientEdit.serviceAccountsEnabled" name="serviceAccountsEnabled" id="serviceAccountsEnabled" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                 </div>
             </div>
-            <div class="form-group" data-ng-show="serverInfo.profileInfo.disabledFeatures.indexOf('AUTHORIZATION') == -1 && protocol == 'openid-connect'">
+            <div class="form-group" data-ng-show="serverInfo.featureEnabled('AUTHORIZATION') && protocol == 'openid-connect'">
                 <label class="col-md-2 control-label" for="authorizationServicesEnabled">{{:: 'authz-authorization-services-enabled' | translate}}</label>
                 <kc-tooltip>{{:: 'authz-authorization-services-enabled.tooltip' | translate}}</kc-tooltip>
                 <div class="col-md-6">
@@ -239,7 +239,7 @@
                 <kc-tooltip>{{:: 'name-id-format.tooltip' | translate}}</kc-tooltip>
             </div>
 
-            <div class="form-group" data-ng-show="!clientEdit.bearerOnly">
+            <div class="form-group" data-ng-show="!clientEdit.bearerOnly && protocol != 'docker-v2'">
                 <label class="col-md-2 control-label" for="rootUrl">{{:: 'root-url' | translate}}</label>
                 <div class="col-sm-6">
                     <input class="form-control" type="text" name="rootUrl" id="rootUrl" data-ng-model="clientEdit.rootUrl">
@@ -247,7 +247,7 @@
                 <kc-tooltip>{{:: 'root-url.tooltip' | translate}}</kc-tooltip>
             </div>
 
-            <div class="form-group clearfix block" data-ng-hide="clientEdit.bearerOnly || (!clientEdit.standardFlowEnabled && !clientEdit.implicitFlowEnabled)">
+            <div class="form-group clearfix block" data-ng-hide="clientEdit.bearerOnly || (!clientEdit.standardFlowEnabled && !clientEdit.implicitFlowEnabled) || protocol == 'docker-v2'">
                 <label class="col-md-2 control-label" for="newRedirectUri"><span class="required" data-ng-show="protocol != 'saml'">*</span> {{:: 'valid-redirect-uris' | translate}}</label>
 
                 <div class="col-sm-6">
@@ -269,14 +269,14 @@
                 <kc-tooltip>{{:: 'valid-redirect-uris.tooltip' | translate}}</kc-tooltip>
             </div>
 
-            <div class="form-group" data-ng-show="!clientEdit.bearerOnly">
+            <div class="form-group" data-ng-show="!clientEdit.bearerOnly && protocol != 'docker-v2'">
                 <label class="col-md-2 control-label" for="baseUrl">{{:: 'base-url' | translate}}</label>
                 <div class="col-sm-6">
                     <input class="form-control" type="text" name="baseUrl" id="baseUrl" data-ng-model="clientEdit.baseUrl">
                 </div>
                 <kc-tooltip>{{:: 'base-url.tooltip' | translate}}</kc-tooltip>
             </div>
-            <div class="form-group" data-ng-hide="protocol == 'saml'">
+            <div class="form-group" data-ng-hide="protocol == 'saml' || protocol == 'docker-v2'">
                 <label class="col-md-2 control-label" for="adminUrl">{{:: 'admin-url' | translate}}</label>
                 <div class="col-sm-6">
                     <input class="form-control" type="text" name="adminUrl" id="adminUrl"
@@ -391,7 +391,7 @@
         </fieldset>
 
         <div class="form-group">
-            <div class="col-md-10 col-md-offset-2" data-ng-show="access.manageClients">
+            <div class="col-md-10 col-md-offset-2" data-ng-show="client.access.configure">
                 <button kc-save  data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
                 <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
             </div>

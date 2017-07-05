@@ -89,4 +89,7 @@ public interface PoliciesResource {
 
     @Path("client")
     ClientPoliciesResource client();
+
+    @Path("group")
+    GroupPoliciesResource group();
 }

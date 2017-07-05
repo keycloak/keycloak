@@ -39,8 +39,8 @@ import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentatio
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
-import org.keycloak.services.resources.admin.RealmAuth;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -74,11 +74,11 @@ import static org.keycloak.models.utils.RepresentationToModel.toModel;
 public class ResourceSetService {
 
     private final AuthorizationProvider authorization;
-    private final RealmAuth auth;
+    private final AdminPermissionEvaluator auth;
     private final AdminEventBuilder adminEvent;
     private ResourceServer resourceServer;
 
-    public ResourceSetService(ResourceServer resourceServer, AuthorizationProvider authorization, RealmAuth auth, AdminEventBuilder adminEvent) {
+    public ResourceSetService(ResourceServer resourceServer, AuthorizationProvider authorization, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.resourceServer = resourceServer;
         this.authorization = authorization;
         this.auth = auth;
@@ -86,6 +86,7 @@ public class ResourceSetService {
     }
 
     @POST
+    @NoCache
     @Consumes("application/json")
     @Produces("application/json")
     public Response create(@Context UriInfo uriInfo, ResourceRepresentation resource) {
@@ -100,39 +101,24 @@ public class ResourceSetService {
         Resource existingResource = storeFactory.getResourceStore().findByName(resource.getName(), this.resourceServer.getId());
         ResourceOwnerRepresentation owner = resource.getOwner();
 
-        if (existingResource != null && existingResource.getResourceServer().getId().equals(this.resourceServer.getId())
-                && existingResource.getOwner().equals(owner)) {
+        if (owner == null) {
+            owner = new ResourceOwnerRepresentation();
+            owner.setId(resourceServer.getClientId());
+        }
+
+        String ownerId = owner.getId();
+
+        if (ownerId == null) {
+            return ErrorResponse.error("You must specify the resource owner.", Status.BAD_REQUEST);
+        }
+
+        if (existingResource != null && existingResource.getOwner().equals(ownerId)) {
             return ErrorResponse.exists("Resource with name [" + resource.getName() + "] already exists.");
         }
 
-        if (owner != null) {
-            String ownerId = owner.getId();
-
-            if (ownerId != null) {
-                if (!resourceServer.getClientId().equals(ownerId)) {
-                    RealmModel realm = authorization.getRealm();
-                    KeycloakSession keycloakSession = authorization.getKeycloakSession();
-                    UserProvider users = keycloakSession.users();
-                    UserModel ownerModel = users.getUserById(ownerId, realm);
-
-                    if (ownerModel == null) {
-                        ownerModel = users.getUserByUsername(ownerId, realm);
-                    }
-
-                    if (ownerModel == null) {
-                        return ErrorResponse.error("Owner must be a valid username or user identifier. If the resource server, the client id or null.", Status.BAD_REQUEST);
-                    }
-
-                    owner.setId(ownerModel.getId());
-                }
-            }
-        }
-
-        Resource model = toModel(resource, this.resourceServer, authorization);
-
         ResourceRepresentation representation = new ResourceRepresentation();
 
-        representation.setId(model.getId());
+        representation.setId(toModel(resource, this.resourceServer, authorization).getId());
 
         return Response.status(Status.CREATED).entity(representation).build();
     }
@@ -288,10 +274,10 @@ public class ResourceSetService {
 
     @Path("/search")
     @GET
-    @Produces("application/json")
     @NoCache
+    @Produces("application/json")
     public Response find(@QueryParam("name") String name) {
-        this.auth.requireView();
+        this.auth.realm().requireViewAuthorization();
         StoreFactory storeFactory = authorization.getStoreFactory();
 
         if (name == null) {
@@ -386,13 +372,13 @@ public class ResourceSetService {
 
     private void requireView() {
         if (this.auth != null) {
-            this.auth.requireView();
+            this.auth.realm().requireViewAuthorization();
         }
     }
 
     private void requireManage() {
         if (this.auth != null) {
-            this.auth.requireManage();
+            this.auth.realm().requireManageAuthorization();
         }
     }
 

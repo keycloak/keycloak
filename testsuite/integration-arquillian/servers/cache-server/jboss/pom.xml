@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-cache-server</artifactId>
-        <version>3.2.0.CR1-SNAPSHOT</version>
+        <version>3.3.0.CR1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -100,7 +100,7 @@
                         <artifactId>xml-maven-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>configure-adapter-debug-log</id>
+                                <id>configure-keycloak-caches</id>
                                 <phase>process-test-resources</phase>
                                 <goals>
                                     <goal>transform</goal>
@@ -111,8 +111,9 @@
                                             <dir>${cache.server.jboss.home}/standalone/configuration</dir>
                                             <includes>
                                                 <include>standalone.xml</include>
+                                                <include>clustered.xml</include>
                                             </includes>
-                                            <stylesheet>${common.resources}/add-keycloak-remote-store.xsl</stylesheet>
+                                            <stylesheet>${common.resources}/add-keycloak-caches.xsl</stylesheet>
                                             <outputDir>${cache.server.jboss.home}/standalone/configuration</outputDir>
                                         </transformationSet>
                                     </transformationSets>
@@ -173,6 +174,23 @@
                                     <overwrite>true</overwrite>
                                 </configuration>
                             </execution>
+                            <execution>
+                                <id>copy-cache-server-configuration-for-dc-2</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${cache.server.jboss.home}/standalone-dc-2/deployments</outputDirectory>
+                                    <includeEmptyDirs>true</includeEmptyDirs>
+                                    <resources>
+                                        <resource>
+                                            <directory>${cache.server.jboss.home}/standalone/deployments</directory>
+                                        </resource>
+                                    </resources>
+                                    <overwrite>true</overwrite>
+                                </configuration>
+                            </execution>
                         </executions>
                     </plugin>
 
@@ -203,6 +221,12 @@
             <id>cache-server-infinispan</id>
             <modules>
                 <module>infinispan</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>cache-server-jdg</id>
+            <modules>
+                <module>jdg</module>
             </modules>
         </profile>
     </profiles>

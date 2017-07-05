@@ -1,81 +1,95 @@
+function getAccess(Auth, Current, role) {
+    if (!Current.realm)return false;
+    var realmAccess = Auth.user && Auth.user['realm_access'];
+    if (realmAccess) {
+        realmAccess = realmAccess[Current.realm.realm];
+        if (realmAccess) {
+            return realmAccess.indexOf(role) >= 0;
+        }
+    }
+    return false;
+}
+
+function getAccessObject(Auth, Current) {
+    return {
+        get createRealm() {
+            return Auth.user && Auth.user.createRealm;
+        },
+
+        get queryUsers() {
+            return getAccess(Auth, Current, 'query-users') || this.viewUsers;
+        },
+
+        get queryGroups() {
+            return getAccess(Auth, Current, 'query-groups') || this.viewUsers;
+        },
+
+        get queryClients() {
+            return getAccess(Auth, Current, 'query-clients') || this.viewClients;
+        },
+
+        get viewRealm() {
+            return getAccess(Auth, Current, 'view-realm') || getAccess(Auth, Current, 'manage-realm') || this.manageRealm;
+        },
+
+        get viewClients() {
+            return getAccess(Auth, Current, 'view-clients') || getAccess(Auth, Current, 'manage-clients') || this.manageClients;
+        },
+
+        get viewUsers() {
+            return getAccess(Auth, Current, 'view-users') || getAccess(Auth, Current, 'manage-users') || this.manageClients;
+        },
+
+        get viewEvents() {
+            return getAccess(Auth, Current, 'view-events') || getAccess(Auth, Current, 'manage-events') || this.manageClients;
+        },
+
+        get viewIdentityProviders() {
+            return getAccess(Auth, Current, 'view-identity-providers') || getAccess(Auth, Current, 'manage-identity-providers') || this.manageIdentityProviders;
+        },
+
+        get viewAuthorization() {
+            return getAccess(Auth, Current, 'view-authorization') || this.manageAuthorization;
+        },
+
+        get manageRealm() {
+            return getAccess(Auth, Current, 'manage-realm');
+        },
+
+        get manageClients() {
+            return getAccess(Auth, Current, 'manage-clients');
+        },
+
+        get manageUsers() {
+            return getAccess(Auth, Current, 'manage-users');
+        },
+
+        get manageEvents() {
+            return getAccess(Auth, Current, 'manage-events');
+        },
+
+        get manageIdentityProviders() {
+            return getAccess(Auth, Current, 'manage-identity-providers');
+        },
+
+        get manageAuthorization() {
+            return getAccess(Auth, Current, 'manage-authorization');
+        },
+
+        get impersonation() {
+            return getAccess(Auth, Current, 'impersonation');
+        }
+    };
+}
+
+
 module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location, Notifications, ServerInfo) {
     $scope.authUrl = authUrl;
     $scope.resourceUrl = resourceUrl;
     $scope.auth = Auth;
     $scope.serverInfo = ServerInfo.get();
 
-    function getAccess(role) {
-        if (!Current.realm) {
-            return false;
-        }
-
-        var realmAccess = Auth.user && Auth.user['realm_access'];
-        if (realmAccess) {
-            realmAccess = realmAccess[Current.realm.realm];
-            if (realmAccess) {
-                return realmAccess.indexOf(role) >= 0;
-            }
-        }
-        return false;
-    }
-
-    $scope.access = {
-        get createRealm() {
-            return Auth.user && Auth.user.createRealm;
-        },
-
-        get viewRealm() {
-            return getAccess('view-realm') || getAccess('manage-realm') || this.manageRealm;
-        },
-
-        get viewClients() {
-            return getAccess('view-clients') || getAccess('manage-clients') || this.manageClients;
-        },
-
-        get viewUsers() {
-            return getAccess('view-users') || getAccess('manage-users') || this.manageClients;
-        },
-
-        get viewEvents() {
-            return getAccess('view-events') || getAccess('manage-events') || this.manageClients;
-        },
-
-        get viewIdentityProviders() {
-            return getAccess('view-identity-providers') || getAccess('manage-identity-providers') || this.manageIdentityProviders;
-        },
-
-        get viewAuthorization() {
-            return getAccess('view-authorization') || this.manageAuthorization;
-        },
-
-        get manageRealm() {
-            return getAccess('manage-realm');
-        },
-
-        get manageClients() {
-            return getAccess('manage-clients');
-        },
-
-        get manageUsers() {
-            return getAccess('manage-users');
-        },
-
-        get manageEvents() {
-            return getAccess('manage-events');
-        },
-
-        get manageIdentityProviders() {
-            return getAccess('manage-identity-providers');
-        },
-
-        get manageAuthorization() {
-            return getAccess('manage-authorization');
-        },
-
-        get impersonation() {
-            return getAccess('impersonation');
-        }
-    };
+    $scope.access = getAccessObject(Auth, Current);
 
     $scope.$watch(function() {
         return $location.path();
@@ -85,20 +99,36 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location
     });
 });
 
-module.controller('HomeCtrl', function(Realm, Auth, $location) {
+module.controller('HomeCtrl', function(Realm, Auth, Current, $location) {
+
     Realm.query(null, function(realms) {
         var realm;
         if (realms.length == 1) {
-            realm = realms[0].realm;
+            realm = realms[0];
         } else if (realms.length == 2) {
             if (realms[0].realm == Auth.user.realm) {
-                realm = realms[1].realm;
+                realm = realms[1];
             } else if (realms[1].realm == Auth.user.realm) {
-                realm = realms[0].realm;
+                realm = realms[0];
             }
         }
         if (realm) {
-            $location.url('/realms/' + realm);
+            Current.realms = realms;
+            Current.realm = realm;
+            var access = getAccessObject(Auth, Current);
+            if (access.viewRealm || access.manageRealm) {
+                $location.url('/realms/' + realm.realm );
+            } else if (access.queryClients) {
+                $location.url('/realms/' + realm.realm + "/clients");
+            } else if (access.viewIdentityProviders) {
+                $location.url('/realms/' + realm.realm + "/identity-provider-settings");
+            } else if (access.queryUsers) {
+                $location.url('/realms/' + realm.realm + "/users");
+            } else if (access.queryGroups) {
+                $location.url('/realms/' + realm.realm + "/groups");
+            } else if (access.viewEvents) {
+                $location.url('/realms/' + realm.realm + "/events");
+            }
         } else {
             $location.url('/realms');
         }
@@ -380,12 +410,14 @@ module.controller('RealmThemeCtrl', function($scope, Current, Realm, realm, serv
     };
 
     function localeForTheme(type, name) {
+        console.log(JSON.stringify(serverInfo));
         name = name || 'base';
         for (var i = 0; i < serverInfo.themes[type].length; i++) {
             if (serverInfo.themes[type][i].name == name) {
-                return serverInfo.themes[type][i].locales;
+                return serverInfo.themes[type][i].locales || [];
             }
         }
+        return [];
     }
 
     function updateSupported() {
@@ -893,11 +925,11 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
                 //formDataAppender: function(formData, key, val){}
             }).progress(function(evt) {
                 console.log('percent: ' + parseInt(100.0 * evt.loaded / evt.total));
-            }).success(function(data, status, headers) {
-                setConfig(data);
+            }).then(function(response) {
+                setConfig(response.data);
                 $scope.clearFileSelect();
                 Notifications.success("The IDP metadata has been loaded from file.");
-            }).error(function() {
+            }).catch(function() {
                 Notifications.error("The file can not be uploaded. Please verify the file.");
             });
         }
@@ -913,12 +945,12 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
             providerId: providerFactory.id
         }
         $http.post(authUrl + '/admin/realms/' + realm.realm + '/identity-provider/import-config', input)
-            .success(function(data, status, headers) {
-                setConfig(data);
+            .then(function(response) {
+                setConfig(response.data);
                 $scope.fromUrl.data = '';
                 $scope.importUrl = false;
                 Notifications.success("Imported config information from url.");
-            }).error(function() {
+            }).catch(function() {
                 Notifications.error("Config can not be imported. Please verify the url.");
             });
     };
@@ -1017,9 +1049,9 @@ module.controller('RealmIdentityProviderExportCtrl', function(realm, identityPro
     $scope.exportedType = "";
 
     var url = IdentityProviderExport.url({realm: realm.realm, alias: identityProvider.alias}) ;
-    $http.get(url).success(function(data, status, headers, config) {
-        $scope.exportedType = headers('Content-Type');
-        $scope.exported = data;
+    $http.get(url).then(function(response) {
+        $scope.exportedType = response.headers('Content-Type');
+        $scope.exported = response.data;
     });
 
     $scope.download = function() {
@@ -1322,6 +1354,21 @@ module.controller('RealmRevocationCtrl', function($scope, Realm, RealmPushRevoca
 });
 
 
+module.controller('RoleTabCtrl', function(Dialog, $scope, Current, Notifications, $location) {
+    $scope.removeRole = function() {
+        Dialog.confirmDelete($scope.role.name, 'role', function() {
+            RoleById.remove({
+                realm: realm.realm,
+                role: $scope.role.id
+            }, function () {
+                $route.reload();
+                Notifications.success("The role has been deleted.");
+            });
+        });
+    };
+});
+
+
 module.controller('RoleListCtrl', function($scope, $route, Dialog, Notifications, realm, roles, RoleById, filterFilter) {
     $scope.realm = realm;
     $scope.roles = roles;
@@ -1404,7 +1451,7 @@ module.controller('RoleDetailCtrl', function($scope, realm, role, roles, clients
         $http, $location, Notifications, Dialog);
 });
 
-module.controller('RealmSMTPSettingsCtrl', function($scope, Current, Realm, realm, $http, $location, Dialog, Notifications) {
+module.controller('RealmSMTPSettingsCtrl', function($scope, Current, Realm, realm, $http, $location, Dialog, Notifications, RealmSMTPConnectionTester) {
     console.log('RealmSMTPSettingsCtrl');
 
     var booleanSmtpAtts = ["auth","ssl","starttls"];
@@ -1437,6 +1484,25 @@ module.controller('RealmSMTPSettingsCtrl', function($scope, Current, Realm, real
     $scope.reset = function() {
         $scope.realm = angular.copy(oldCopy);
         $scope.changed = false;
+    };
+
+    var initSMTPTest = function() {
+        return {
+            realm: $scope.realm.realm,
+            config: JSON.stringify(realm.smtpServer)
+        };
+    };
+
+    $scope.testConnection = function() {
+        RealmSMTPConnectionTester.send(initSMTPTest(), function() {
+            Notifications.success("SMTP connection successful. E-mail was sent!");
+        }, function(errorResponse) {
+            if (error.data.errorMessage) {
+                Notifications.error(error.data.errorMessage);
+            } else {
+                Notifications.error('Unexpected error during SMTP validation');
+            }
+        });
     };
 
     /* Convert string attributes containing a boolean to actual boolean type + convert an integer string (port) to integer. */
@@ -1481,9 +1547,15 @@ module.controller('RealmEventsConfigCtrl', function($scope, eventsConfig, RealmE
 
     $scope.eventsConfig.expirationUnit = TimeUnit.autoUnit(eventsConfig.eventsExpiration);
     $scope.eventsConfig.eventsExpiration = TimeUnit.toUnit(eventsConfig.eventsExpiration, $scope.eventsConfig.expirationUnit);
-
+    
     $scope.eventListeners = Object.keys(serverInfo.providers.eventsListener.providers);
-
+    
+    $scope.eventsConfigSelectOptions = {
+        'multiple': true,
+        'simple_tags': true,
+        'tags': $scope.eventListeners
+    };
+    
     $scope.eventSelectOptions = {
         'multiple': true,
         'simple_tags': true,
@@ -1871,6 +1943,8 @@ module.controller('RealmFlowBindingCtrl', function($scope, flows, Current, Realm
         }
     }
 
+    $scope.profileInfo = serverInfo.profileInfo;
+
     genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications, "/realms/" + realm.realm + "/authentication/flow-bindings");
 });
 
@@ -2064,6 +2138,9 @@ module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flo
 
         } else if (realm.clientAuthenticationFlow == $scope.flow.alias) {
             Notifications.error("Cannot remove flow, it is currently being used as the client authentication flow.");
+
+        } else if (realm.dockerAuthenticationFlow == $scope.flow.alias) {
+            Notifications.error("Cannot remove flow, it is currently being used as the docker authentication flow.");
 
         } else {
             AuthenticationFlows.remove({realm: realm.realm, flow: $scope.flow.id}, function () {
@@ -2725,11 +2802,11 @@ module.controller('RealmExportCtrl', function($scope, realm, $http,
             exportUrl += '?' + $httpParamSerializer(params);
         }
         $http.post(exportUrl)
-            .success(function(data, status, headers) {
-                var download = angular.fromJson(data);
+            .then(function(response) {
+                var download = angular.fromJson(response.data);
                 download = angular.toJson(download, true);
                 saveAs(new Blob([download], { type: 'application/json' }), 'realm-export.json');
-            }).error(function() {
+            }).catch(function() {
                 Notifications.error("Sorry, something went wrong.");
             });
     }
