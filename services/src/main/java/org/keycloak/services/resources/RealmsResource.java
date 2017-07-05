@@ -260,8 +260,7 @@ public class RealmsResource {
         WellKnownProvider wellKnown = session.getProvider(WellKnownProvider.class, providerName);
 
         if (wellKnown != null) {
-            ResponseBuilder responseBuilder = Response.ok(wellKnown.getConfig())
-                                                      .cacheControl(CacheControlUtil.getDefaultCacheControl());
+            ResponseBuilder responseBuilder = Response.ok(wellKnown.getConfig()).cacheControl(CacheControlUtil.noCache());
             return Cors.add(request, responseBuilder).allowedOrigins("*").auth().build();
         }
 
