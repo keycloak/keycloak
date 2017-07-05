@@ -1,13 +1,36 @@
 [[_service_entitlement_api_aapi]]
 ==== Requesting Entitlements
 
-Client applications can use a specific endpoint to obtain a special security token called a requesting party token (RPT).
+Client applications can use a specific endpoint to obtain a special security token called a <<fake/../../rpt/overview.adoc#_service_rpt_overview, Requesting Party Token (RPT)>>.
 This token consists of all the entitlements (or permissions) for a user as a result of the evaluation of the permissions and authorization policies associated with the resources being requested.
 With an RPT, client applications can gain access to protected resources at the resource server.
 
+.Entitlement API Endpoint
 ```bash
-http://${host}:${port}/auth/realms/${realm_name}/authz/entitlement
+http://${host}:${port}/auth/realms/${realm_name}/authz/entitlement/{client_id}
 ```
+
+The **client_id** parameter above must be provided in order to identify the client application acting as a <<fake/../../../overview/terminology.adoc#_overview_terminology_resource_server, resource server>>
+in {{book.project.name}}. You must provide the client identifier in order to restrict the scope of the evaluation to the resources, scopes and permissions
+managed by a specific resource server.
+
+The Entitlement API comes in two flavors:
+
+* Using HTTP **GET** in order to obtain all entitlements based on the resources owned by a specific user or/and general resources
+owned and managed by the resource server itself.
+
+* Using HTTP **POST** in order to obtain entitlements based on a a set of one or more resources and scopes sent along with an entitlement request.
+
+[NOTE]
+Using one or another depends on your use case and how much resources you have registered in {{book.project.name}}. Although the **GET** variant
+provides an easy way to obtain entitlements from the server, it might not be appropriate in case you have too much resources associated
+with an user. In this case, the **POST** method is recommended.
+
+Regardless of the HTTP method you decide to use, the Entitlement API endpoint expects an access token in the request representing a user's identity
+and his consent to access authorization data on his behalf. The access token must be sent as a bearer token using a HTTP ```Authorization``` header.
+
+After successfully invoking the Entitlement API endpoint, you will get a <<fake/../../rpt/overview.adoc#_service_rpt_overview, RPT>> with all permissions
+granted by the server.
 
 ===== Obtaining Entitlements
 
@@ -16,13 +39,8 @@ The easiest way to obtain entitlements for a specific user is using an HTTP GET 
 ```bash
 curl -X GET \
     -H "Authorization: Bearer ${access_token}" \
-    "http://localhost:8080/auth/realms/hello-world-authz/authz/entitlement/${resource_server_id}"
+    "http://${host}:${port}/auth/realms/${realm_name}/authz/entitlement/{client_id}"
 ```
-
-[NOTE]
-When requesting entitlements using this endpoint, you must provide the access_token (as a bearer token) representing a user's identity and his consent to access authorization data on his behalf.
-
-In the curl example, *${resource_server_id}* is the *client_id* registered with the client application acting as a resource server.
 
 As a result, the server response is:
 
@@ -33,7 +51,17 @@ As a result, the server response is:
 ```
 
 Using this method to obtain entitlements, the server responds to the requesting client with *all* entitlements for a user, based on the evaluation of the permissions and
-authorization policies associated with the resources managed by the resource server.
+authorization policies associated with the resources owned by the user or the resource server itself. For instance, suppose you have permissions defined in {{book.project.name}} for the following resources:
+
+* Main Page
+* Alice Bank Account
+* Bob Bank Account
+
+*Main Page* is a common resource in your application and owned by the resource server itself, it represents a landing or main page in your application. On the
+other hand, *Alice Bank Account* is a resource where user *alice* is the owner. The same goes for *Bob Bank Account* which is owned by a different user, *bob*.
+
+When obtaining entitlements for user *alice*, the server is going to evaluate all permissions associated with resources *Main Page* and *Alice Bank Account*. Giving you
+back a RPT (if permissions were actually granted) with a set of permissions representing these resources.
 
 ===== Obtaining Entitlements for a Specific Set of Resources
 
@@ -43,10 +71,10 @@ You can also use the entitlements endpoint to obtain a user's entitlements for a
 curl -X POST -H "Authorization: Bearer ${access_token}" -d '{
     "permissions" : [
         {
-            "resource_set_name" : "Hello World Resource"
+            "resource_set_name" : "Alice Bank Account"
         }
     ]
-}' "http://localhost:8080/auth/realms/hello-world-authz/authz/entitlement/hello-world-authz-service"
+}' "http://${host}:${port}/auth/realms/${realm_name}/authz/entitlement/{client_id}"
 ```
 
 As a result, the server response is:
@@ -60,45 +88,21 @@ As a result, the server response is:
 Unlike the GET version, the server responds with an RPT holding the permissions granted during the evaluation of the permissions and authorization policies
 associated with the resources being requested.
 
-When requesting entitlements, you can also specify the scopes you want to access. For example, using curl:
+You can also specify the scopes you want to access. For example, using curl:
 
 ```bash
 curl -X POST -H "Authorization: Bearer ${access_token}" -d '{
     "permissions" : [
         {
-            "resource_set_name" : "Hello World Resource",
+            "resource_set_name" : "Alice Bank Account",
             "scopes" : [
-                "urn:my-app.com:scopes:view"
+                "withdraw"
             ]
         }
     ]
-}' "http://localhost:8080/auth/realms/hello-world-authz/authz/entitlement/hello-world-authz-service"
+}' "http://${host}:${port}/auth/realms/${realm_name}/authz/entitlement/{client_id}"
 ```
 
-===== Requesting Party Token
 
-A requesting party token (RPT) is a https://tools.ietf.org/html/rfc7519[JSON web token (JWT)] digitally signed using https://www.rfc-editor.org/rfc/rfc7515.txt[JSON web signature (JWS)]. The token is built based on the access_token sent by the client during the authorization process.
 
-When you decode an RPT, you see a payload similar to the following:
 
-```json
-{
-  "authorization": {
-      "permissions": [
-        {
-          "resource_set_id": "d2fe9843-6462-4bfc-baba-b5787bb6e0e7",
-          "resource_set_name": "Hello World Resource"
-        }
-      ]
-  },
-  "jti": "d6109a09-78fd-4998-bf89-95730dfd0892-1464906679405",
-  "exp": 1464906971,
-  "nbf": 0,
-  "iat": 1464906671,
-  "sub": "f1888f4d-5172-4359-be0c-af338505d86c",
-  "typ": "kc_ett",
-  "azp": "hello-world-authz-service"
-}
-```
-
-From this token you can obtain all permissions granted by the server from the *permissions* claim.

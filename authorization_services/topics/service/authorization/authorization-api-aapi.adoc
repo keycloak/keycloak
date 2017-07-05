@@ -1,18 +1,22 @@
 [[_service_authorization_api_aapi]]
 ==== Requesting Authorization Data and Token
 
-Client applications using the UMA protocol can use a specific endpoint to obtain a special security token called a requesting party token (RPT).
+Client applications using the UMA protocol can use a specific endpoint to obtain a special security token called a <<fake/../../rpt/overview.adoc#_service_rpt_overview, Requesting Party Token (RPT)>>.
 This token consists of all the permissions granted to a user as a result of the evaluation of the permissions and authorization policies associated with the resources being requested.
 With an RPT, client applications can gain access to protected resources at the resource server.
 
+.UMA compliant Authorization API Endpoint
 ```bash
 http://${host}:${port}/auth/realms/${realm_name}/authz/authorize
 ```
 
 When requesting an RPT, you need to provide two things:
 
-* A <<fake/../../protection/permission-api-papi.adoc#_service_protection_permission_api_papi, permission ticket>> with the resources you want to access
-* The <<fake/../whatis-obtain-aat.adoc#_service_authorization_aat, authorization API token (AAT)>> (as a bearer token) representing a user's identity and his consent to access authorization data on his behalf.
+* A <<fake/../../protection/permission-api-papi.adoc#_service_protection_permission_api_papi, permission ticket>> representing the resources you want to access
+* The <<fake/../whatis-obtain-aat.adoc#_service_authorization_aat, Authorization API token (AAT)>> (as a bearer token) representing a user's identity and his consent to access authorization data on his behalf.
+
+The permission ticket is added to a HTTP request as a parameter whether the AAT is included in a ```Authorization``` header in order to authenticate de request
+using the AAT as a bearer token.
 
 ```bash
 curl -X POST
@@ -26,33 +30,3 @@ As a result, the server response is:
 ```json
 {"rpt":"${RPT}"}
 ```
-
-===== Requesting Party Token 
-
-A Requesting Party Token (RPT) is a https://tools.ietf.org/html/rfc7519[JSON web token (JWT)] digitally signed using https://www.rfc-editor.org/rfc/rfc7515.txt[JSON Web Signature (JWS)].
-The token is built based on the AAT sent by the client during the authorization process.
-
-When you decode an RPT you will see something like:
-
-```json
-{
-  "authorization": {
-      "permissions": [
-        {
-          "resource_set_id": "d2fe9843-6462-4bfc-baba-b5787bb6e0e7",
-          "resource_set_name": "Hello World Resource"
-        }
-      ]
-  },
-  "jti": "d6109a09-78fd-4998-bf89-95730dfd0892-1464906679405",
-  "exp": 1464906971,
-  "nbf": 0,
-  "iat": 1464906671,
-  "sub": "f1888f4d-5172-4359-be0c-af338505d86c",
-  "typ": "kc_ett",
-  "azp": "hello-world-authz-service"
-}
-```
-
-From this token you can obtain all permissions granted by the server from the *permissions* claim.
-
