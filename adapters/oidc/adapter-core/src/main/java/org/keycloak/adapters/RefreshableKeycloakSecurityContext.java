@@ -159,7 +159,6 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
         if (tokenStore != null) {
             tokenStore.refreshCallback(this);
         }
-        return true;
     }
 
     public void setAuthorizationContext(AuthorizationContext authorizationContext) {
