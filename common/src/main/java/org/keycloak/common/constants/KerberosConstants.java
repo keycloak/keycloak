@@ -74,7 +74,10 @@ public class KerberosConstants {
     public static final String ALLOW_PASSWORD_AUTHENTICATION = "allowPasswordAuthentication";
     public static final String UPDATE_PROFILE_FIRST_LOGIN = "updateProfileFirstLogin";
     public static final String USE_KERBEROS_FOR_PASSWORD_AUTHENTICATION = "useKerberosForPasswordAuthentication";
-
+    public static final String USE_KERBEROS_FOR_PASSWORD_CHANGE = "useKerberosForPasswordChange";
+    public static final String KERBEROS_KDC_HOSTNAME ="kerberosKDCHostname";
+    public static final String KERBEROS_PASSWD_ADMIN_PASSWD ="kerberosPasswdAdminPasswd";
+    public static final String KERBEROS_PASSWD_ADMIN_USER ="kerberosPasswdAdminUser";
 
     /**
      * Internal attribute used in "state" map . Contains token to be passed in HTTP Response back to browser to continue handshake

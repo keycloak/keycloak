@@ -41,4 +41,20 @@ public class LDAPProviderKerberosConfig extends CommonKerberosConfig {
     public boolean isUseKerberosForPasswordAuthentication() {
         return Boolean.valueOf(getConfig().getFirst(KerberosConstants.USE_KERBEROS_FOR_PASSWORD_AUTHENTICATION));
     }
+
+    public boolean isUseKerberosForPasswordChange() {
+        return Boolean.valueOf(getConfig().getFirst(KerberosConstants.USE_KERBEROS_FOR_PASSWORD_CHANGE));
+    }
+
+    public String getKerberosKDCHostname() {
+        return String.valueOf(getConfig().getFirst(KerberosConstants.KERBEROS_KDC_HOSTNAME));
+    }
+
+    public String getKerberosPasswdAdminUser() {
+        return String.valueOf(getConfig().getFirst(KerberosConstants.KERBEROS_PASSWD_ADMIN_USER));
+    }
+
+    public String getKerberosPasswdAdminPasswd() {
+        return String.valueOf(getConfig().getFirst(KerberosConstants.KERBEROS_PASSWD_ADMIN_PASSWD));
+    }
 }

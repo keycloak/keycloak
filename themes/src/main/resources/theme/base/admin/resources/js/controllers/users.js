@@ -704,6 +704,7 @@ module.controller('GenericUserStorageCtrl', function($scope, $location, Notifica
             instance.config['evictionHour'] = [''];
             instance.config['evictionMinute'] = [''];
             instance.config['maxLifespan'] = [''];
+            instance.config['useKerberosForPasswordChange'] = [false];
             if (providerFactory.properties) {
 
                 for (var i = 0; i < providerFactory.properties.length; i++) {
@@ -756,7 +757,9 @@ module.controller('GenericUserStorageCtrl', function($scope, $location, Notifica
             if (!instance.config['priority']) {
                 instance.config['priority'] = ['0'];
             }
-
+            if (!instance.config['useKerberosForPasswordChange']) {
+                instance.config['useKerberosForPasswordChange'] = ['false'];
+            }
         }
         if (providerFactory.metadata.synchronizable) {
             if (instance.config && instance.config['importEnabled']) {

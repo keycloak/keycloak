@@ -18,6 +18,7 @@
 package org.keycloak.storage.ldap;
 
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.storage.UserStorageProvider;
 
@@ -137,7 +138,7 @@ public class LDAPConfig {
 
         return uuidAttrName;
     }
-    
+
     public boolean isObjectGUID() {
         return getUuidLDAPAttributeName().equalsIgnoreCase(LDAPConstants.OBJECT_GUID);
     }
@@ -225,6 +226,7 @@ public class LDAPConfig {
     public String toString() {
         MultivaluedHashMap<String, String> copy = new MultivaluedHashMap<String, String>(config);
         copy.remove(LDAPConstants.BIND_CREDENTIAL);
+        copy.remove(KerberosConstants.KERBEROS_PASSWD_ADMIN_USER);
         return new StringBuilder(copy.toString())
                 .append(", binaryAttributes: ").append(binaryAttributeNames)
                 .toString();
