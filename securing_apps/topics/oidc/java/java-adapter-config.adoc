@@ -35,7 +35,10 @@ This is what one might look like:
    "client-key-password" : "geheim",
    "token-minimum-time-to-live" : 10,
    "min-time-between-jwks-requests" : 10,
-   "public-key-cache-ttl": 86400
+   "public-key-cache-ttl": 86400,
+   "redirect-rewrite-rules" : {
+   "^/wsmaster/api/(.*)$" : "/api/$1"
+   }
 }
 ----
 
@@ -116,7 +119,7 @@ bearer-only::
   The default value is _false_.
 
 autodetect-bearer-only::
-  This should be set to __true__ if your application serves both a web application and web services (e.g. SOAP or REST).  
+  This should be set to __true__ if your application serves both a web application and web services (e.g. SOAP or REST).
   It allows you to redirect unauthenticated users of the web application to the Keycloak login page,
   but send an HTTP `401` status code to unauthenticated SOAP or REST clients instead as they would not understand a redirect to the login page.
   Keycloak auto-detects SOAP or REST clients based on typical headers like `X-Requested-With`, `SOAPAction` or `Accept`.
@@ -237,3 +240,7 @@ ignore-oauth-query-parameter::
   Defaults to `false`, if set to `true` will turn off processing of the `access_token`
   query parameter for bearer token processing.  Users will not be able to authenticate
   if they only pass in an `access_token`
+
+redirect-rewrite-rules::
+  If needed, specify the Redirect URI rewrite rule. This is an object notation where the key is the regular expression to which the Redirect URI is to be matched and the value is the replacement String.
+  `$` character can be used for backreferences in the replacement String.
