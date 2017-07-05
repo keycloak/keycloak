@@ -68,7 +68,7 @@ public class JPAResourceStore implements ResourceStore {
 
     @Override
     public void delete(String id) {
-        ResourceEntity resource = entityManager.find(ResourceEntity.class, id);
+        ResourceEntity resource = entityManager.getReference(ResourceEntity.class, id);
         if (resource == null) return;
 
         resource.getScopes().clear();
@@ -95,9 +95,12 @@ public class JPAResourceStore implements ResourceStore {
 
         List<String> result = query.getResultList();
         List<Resource> list = new LinkedList<>();
+        ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
+
         for (String id : result) {
-            list.add(provider.getStoreFactory().getResourceStore().findById(id, resourceServerId));
+            list.add(resourceStore.findById(id, resourceServerId));
         }
+
         return list;
     }
 
@@ -110,9 +113,12 @@ public class JPAResourceStore implements ResourceStore {
 
         List<String> result = query.getResultList();
         List<Resource> list = new LinkedList<>();
+        ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
+
         for (String id : result) {
-            list.add(provider.getStoreFactory().getResourceStore().findById(id, resourceServerId));
+            list.add(resourceStore.findById(id, resourceServerId));
         }
+
         return list;
     }
 
@@ -124,9 +130,12 @@ public class JPAResourceStore implements ResourceStore {
 
         List<String> result = query.getResultList();
         List<Resource> list = new LinkedList<>();
+        ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
+
         for (String id : result) {
-            list.add(provider.getStoreFactory().getResourceStore().findById(id, resourceServerId));
+            list.add(resourceStore.findById(id, resourceServerId));
         }
+
         return list;
     }
 
@@ -163,9 +172,12 @@ public class JPAResourceStore implements ResourceStore {
 
         List<String> result = query.getResultList();
         List<Resource> list = new LinkedList<>();
+        ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
+
         for (String id : result) {
-            list.add(provider.getStoreFactory().getResourceStore().findById(id, resourceServerId));
+            list.add(resourceStore.findById(id, resourceServerId));
         }
+
         return list;
     }
 
@@ -178,9 +190,12 @@ public class JPAResourceStore implements ResourceStore {
 
         List<String> result = query.getResultList();
         List<Resource> list = new LinkedList<>();
+        ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
+
         for (String id : result) {
-            list.add(provider.getStoreFactory().getResourceStore().findById(id, resourceServerId));
+            list.add(resourceStore.findById(id, resourceServerId));
         }
+
         return list;
     }
 
@@ -207,9 +222,12 @@ public class JPAResourceStore implements ResourceStore {
 
         List<String> result = query.getResultList();
         List<Resource> list = new LinkedList<>();
+        ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
+
         for (String id : result) {
-            list.add(provider.getStoreFactory().getResourceStore().findById(id, resourceServerId));
+            list.add(resourceStore.findById(id, resourceServerId));
         }
+
         return list;
     }
 }

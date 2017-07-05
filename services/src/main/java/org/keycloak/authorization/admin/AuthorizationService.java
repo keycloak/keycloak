@@ -35,13 +35,11 @@ public class AuthorizationService {
 
     private final AdminPermissionEvaluator auth;
     private final ClientModel client;
-    private final KeycloakSession session;
-    private final ResourceServer resourceServer;
+    private ResourceServer resourceServer;
     private final AuthorizationProvider authorization;
     private final AdminEventBuilder adminEvent;
 
     public AuthorizationService(KeycloakSession session, ClientModel client, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
-        this.session = session;
         this.client = client;
         this.authorization = session.getProvider(AuthorizationProvider.class);
         this.adminEvent = adminEvent;
@@ -60,7 +58,7 @@ public class AuthorizationService {
 
     public void enable(boolean newClient) {
         if (!isEnabled()) {
-            resourceServer().create(newClient);
+            this.resourceServer = resourceServer().create(newClient);
         }
     }
 
