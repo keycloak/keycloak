@@ -143,6 +143,14 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testFileUri() throws IOException {
+        oauth.redirectUri("file://test");
+        oauth.openLoginForm();
+        Assert.assertTrue(errorPage.isCurrent());
+        Assert.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+    }
+
+    @Test
     public void testNoParamMultipleValidUris() throws IOException {
         ClientManager.realm(adminClient.realm("test")).clientId("test-app").addRedirectUris("http://localhost:8180/app2");
         try {
