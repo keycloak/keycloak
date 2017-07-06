@@ -6,9 +6,6 @@
         ${msg("registerWithTitleHtml",(realm.displayNameHtml!''))?no_esc}
     <#elseif section = "form">
         <form id="kc-register-form" class="${properties.kcFormClass!}" action="${url.registrationAction}" method="post">
-          <input type="text" readonly value="this is not a login form" style="display: none;">
-          <input type="password" readonly value="this is not a login form" style="display: none;">
-
           <#if !realm.registrationEmailAsUsername>
             <div class="${properties.kcFormGroupClass!} ${messagesPerField.printIfExists('username',properties.kcFormGroupErrorClass!)}">
                 <div class="${properties.kcLabelWrapperClass!}">
@@ -52,7 +49,7 @@
                     <label for="password" class="${properties.kcLabelClass!}">${msg("password")}</label>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
-                    <input type="password" id="password" class="${properties.kcInputClass!}" name="password" />
+                    <input type="password" id="password" class="${properties.kcInputClass!}" name="password" autocomplete="new-password" />
                 </div>
             </div>
 
@@ -61,7 +58,7 @@
                     <label for="password-confirm" class="${properties.kcLabelClass!}">${msg("passwordConfirm")}</label>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
-                    <input type="password" id="password-confirm" class="${properties.kcInputClass!}" name="password-confirm" />
+                    <input type="password" id="password-confirm" class="${properties.kcInputClass!}" name="password-confirm" autocomplete="new-password" />
                 </div>
             </div>
             </#if>
