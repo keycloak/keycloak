@@ -33,6 +33,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ForbiddenException;
@@ -188,7 +189,15 @@ public class ClientsResource {
 
             if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
                 if (TRUE.equals(rep.getAuthorizationServicesEnabled())) {
-                    getAuthorizationService(clientModel).enable(true);
+                    AuthorizationService authorizationService = getAuthorizationService(clientModel);
+
+                    authorizationService.enable(true);
+
+                    ResourceServerRepresentation authorizationSettings = rep.getAuthorizationSettings();
+
+                    if (authorizationSettings != null) {
+                        authorizationService.resourceServer().importSettings(uriInfo, authorizationSettings);
+                    }
                 }
             }
 
