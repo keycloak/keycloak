@@ -71,6 +71,18 @@ public class RulePolicyManagementTest extends AbstractAuthorizationSettingsTest 
         assertNull(authorizationPage.authorizationTabs().policies().policies().findByName(expected.getName()));
     }
 
+    @Test
+    public void testDeleteFromList() throws InterruptedException {
+        authorizationPage.navigateTo();
+        RulePolicyRepresentation expected =createDefaultRepresentation("Delete Rule Policy");
+
+        expected = createPolicy(expected);
+        authorizationPage.navigateTo();
+        authorizationPage.authorizationTabs().policies().deleteFromList(expected.getName());
+        authorizationPage.navigateTo();
+        assertNull(authorizationPage.authorizationTabs().policies().policies().findByName(expected.getName()));
+    }
+
     private RulePolicyRepresentation createDefaultRepresentation(String name) {
         RulePolicyRepresentation expected = new RulePolicyRepresentation();
 

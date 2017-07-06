@@ -122,6 +122,22 @@ public class AggregatePolicyManagementTest extends AbstractAuthorizationSettings
         assertNull(authorizationPage.authorizationTabs().policies().policies().findByName(expected.getName()));
     }
 
+    @Test
+    public void testDeleteFromList() throws InterruptedException {
+        authorizationPage.navigateTo();
+        AggregatePolicyRepresentation expected = new AggregatePolicyRepresentation();
+
+        expected.setName("Test Delete Aggregate Policy");
+        expected.setDescription("description");
+        expected.addPolicy("Policy C");
+
+        expected = createPolicy(expected);
+        authorizationPage.navigateTo();
+        authorizationPage.authorizationTabs().policies().deleteFromList(expected.getName());
+        authorizationPage.navigateTo();
+        assertNull(authorizationPage.authorizationTabs().policies().policies().findByName(expected.getName()));
+    }
+
     private AggregatePolicyRepresentation createPolicy(AggregatePolicyRepresentation expected) {
         AggregatePolicy policy = authorizationPage.authorizationTabs().policies().create(expected);
         assertAlertSuccess();
