@@ -23,6 +23,7 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.testsuite.page.Form;
 import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.util.WaitUtils;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -68,6 +69,17 @@ public class Resources extends Form {
                 URLUtils.navigateToUri(driver, row.findElements(tagName("a")).get(0).getAttribute("href"), true);
                 WaitUtils.waitForPageToLoad(driver);
                 resource.form().delete();
+                return;
+            }
+        }
+    }
+
+    public void deleteFromList(String name) {
+        for (WebElement row : resources().rows()) {
+            ResourceRepresentation actual = resources().toRepresentation(row);
+            if (actual.getName().equalsIgnoreCase(name)) {
+                row.findElements(tagName("td")).get(6).click();
+                driver.findElement(By.xpath(".//button[text()='Delete']")).click();
                 return;
             }
         }
