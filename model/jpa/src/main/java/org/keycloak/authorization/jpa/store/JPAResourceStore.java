@@ -19,13 +19,13 @@ package org.keycloak.authorization.jpa.store;
 
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.jpa.entities.ResourceEntity;
-import org.keycloak.authorization.jpa.entities.ResourceServerEntity;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
+import javax.persistence.FlushModeType;
 import javax.persistence.NoResultException;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
@@ -34,7 +34,6 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -62,6 +61,7 @@ public class JPAResourceStore implements ResourceStore {
         entity.setOwner(owner);
 
         this.entityManager.persist(entity);
+        this.entityManager.flush();
 
         return new ResourceAdapter(entity, entityManager, provider.getStoreFactory());
     }
@@ -90,6 +90,7 @@ public class JPAResourceStore implements ResourceStore {
     public List<Resource> findByOwner(String ownerId, String resourceServerId) {
         TypedQuery<String> query = entityManager.createNamedQuery("findResourceIdByOwner", String.class);
 
+        query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("owner", ownerId);
         query.setParameter("serverId", resourceServerId);
 
@@ -108,6 +109,7 @@ public class JPAResourceStore implements ResourceStore {
     public List<Resource> findByUri(String uri, String resourceServerId) {
         TypedQuery<String> query = entityManager.createNamedQuery("findResourceIdByUri", String.class);
 
+        query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("uri", uri);
         query.setParameter("serverId", resourceServerId);
 
@@ -185,6 +187,7 @@ public class JPAResourceStore implements ResourceStore {
     public List<Resource> findByScope(List<String> scopes, String resourceServerId) {
         TypedQuery<String> query = entityManager.createNamedQuery("findResourceIdByScope", String.class);
 
+        query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("scopeIds", scopes);
         query.setParameter("serverId", resourceServerId);
 
@@ -203,8 +206,10 @@ public class JPAResourceStore implements ResourceStore {
     public Resource findByName(String name, String resourceServerId) {
         TypedQuery<String> query = entityManager.createNamedQuery("findResourceIdByName", String.class);
 
+        query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("serverId", resourceServerId);
         query.setParameter("name", name);
+
         try {
             String id = query.getSingleResult();
             return provider.getStoreFactory().getResourceStore().findById(id, resourceServerId);
@@ -217,6 +222,7 @@ public class JPAResourceStore implements ResourceStore {
     public List<Resource> findByType(String type, String resourceServerId) {
         TypedQuery<String> query = entityManager.createNamedQuery("findResourceIdByType", String.class);
 
+        query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("type", type);
         query.setParameter("serverId", resourceServerId);
 
