@@ -406,7 +406,8 @@ module.controller('RealmThemeCtrl', function($scope, Current, Realm, realm, serv
 
     $scope.supportedLocalesOptions = {
         'multiple' : true,
-        'simple_tags' : true
+        'simple_tags' : true,
+        'tags' : []
     };
     
     updateSupported();
