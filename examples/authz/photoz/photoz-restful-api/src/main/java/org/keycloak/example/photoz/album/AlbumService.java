@@ -83,14 +83,14 @@ public class AlbumService {
     @GET
     @Produces("application/json")
     public Response findAll() {
-        return Response.ok(this.entityManager.createQuery("from Album where userId = '" + request.getUserPrincipal().getName() + "'").getResultList()).build();
+        return Response.ok(this.entityManager.createQuery("from Album where userId = :id").setParameter("id", request.getUserPrincipal().getName()).getResultList()).build();
     }
 
     @GET
     @Path("{id}")
     @Produces("application/json")
     public Response findById(@PathParam("id") String id) {
-        List result = this.entityManager.createQuery("from Album where id = " + id).getResultList();
+        List result = this.entityManager.createQuery("from Album where id = :id").setParameter("id", id).getResultList();
 
         if (result.isEmpty()) {
             return Response.status(Status.NOT_FOUND).build();
