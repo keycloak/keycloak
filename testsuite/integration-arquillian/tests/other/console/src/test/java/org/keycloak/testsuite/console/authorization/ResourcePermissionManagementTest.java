@@ -165,6 +165,23 @@ public class ResourcePermissionManagementTest extends AbstractAuthorizationSetti
         assertNull(authorizationPage.authorizationTabs().permissions().permissions().findByName(expected.getName()));
     }
 
+    @Test
+    public void testDeleteFromList() throws InterruptedException {
+        authorizationPage.navigateTo();
+        ResourcePermissionRepresentation expected = new ResourcePermissionRepresentation();
+
+        expected.setName("Test Delete Resource Permission");
+        expected.setDescription("description");
+        expected.addResource("Resource B");
+        expected.addPolicy("Policy C");
+
+        expected = createPermission(expected);
+        authorizationPage.navigateTo();
+        authorizationPage.authorizationTabs().permissions().deleteFromList(expected.getName());
+        authorizationPage.navigateTo();
+        assertNull(authorizationPage.authorizationTabs().permissions().permissions().findByName(expected.getName()));
+    }
+
     private ResourcePermissionRepresentation createPermission(ResourcePermissionRepresentation expected) {
         ResourcePermission policy = authorizationPage.authorizationTabs().permissions().create(expected);
         assertAlertSuccess();

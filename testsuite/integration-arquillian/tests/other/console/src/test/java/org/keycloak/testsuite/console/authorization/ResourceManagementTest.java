@@ -72,10 +72,19 @@ public class ResourceManagementTest extends AbstractAuthorizationSettingsTest {
     }
 
     @Test
-    public void testDelete() {
+    public void testDeleteFromDetails() {
         ResourceRepresentation expected = createResource();
         authorizationPage.navigateTo();
         authorizationPage.authorizationTabs().resources().delete(expected.getName());
+        authorizationPage.navigateTo();
+        assertNull(authorizationPage.authorizationTabs().resources().resources().findByName(expected.getName()));
+    }
+
+    @Test
+    public void testDeleteFromList() {
+        ResourceRepresentation expected = createResource();
+        authorizationPage.navigateTo();
+        authorizationPage.authorizationTabs().resources().deleteFromList(expected.getName());
         authorizationPage.navigateTo();
         assertNull(authorizationPage.authorizationTabs().resources().resources().findByName(expected.getName()));
     }

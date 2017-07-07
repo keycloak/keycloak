@@ -49,6 +49,15 @@ public class ScopeManagementTest extends AbstractAuthorizationSettingsTest {
         assertNull(authorizationPage.authorizationTabs().scopes().scopes().findByName(expected.getName()));
     }
 
+    @Test
+    public void testDeleteFromList() {
+        ScopeRepresentation expected = createScope();
+        authorizationPage.navigateTo();
+        authorizationPage.authorizationTabs().scopes().deleteFromList(expected.getName());
+        authorizationPage.navigateTo();
+        assertNull(authorizationPage.authorizationTabs().scopes().scopes().findByName(expected.getName()));
+    }
+
     private ScopeRepresentation createScope() {
         ScopeRepresentation expected = new ScopeRepresentation();
 

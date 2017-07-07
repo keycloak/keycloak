@@ -208,6 +208,24 @@ public class RolePolicyManagementTest extends AbstractAuthorizationSettingsTest 
         assertNull(authorizationPage.authorizationTabs().policies().policies().findByName(expected.getName()));
     }
 
+    @Test
+    public void testDeleteFromList() throws InterruptedException {
+        authorizationPage.navigateTo();
+        RolePolicyRepresentation expected = new RolePolicyRepresentation();
+
+        expected.setName("Test Delete Role Policy");
+        expected.setDescription("description");
+        expected.addRole("Realm Role A");
+        expected.addRole("Realm Role B");
+        expected.addRole("Realm Role C");
+
+        expected = createPolicy(expected);
+        authorizationPage.navigateTo();
+        authorizationPage.authorizationTabs().policies().deleteFromList(expected.getName());
+        authorizationPage.navigateTo();
+        assertNull(authorizationPage.authorizationTabs().policies().policies().findByName(expected.getName()));
+    }
+
     private RolePolicyRepresentation createPolicy(RolePolicyRepresentation expected) {
         RolePolicy policy = authorizationPage.authorizationTabs().policies().create(expected);
         assertAlertSuccess();

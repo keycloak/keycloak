@@ -135,6 +135,25 @@ public class GroupPolicyManagementTest extends AbstractAuthorizationSettingsTest
         assertNull(authorizationPage.authorizationTabs().policies().policies().findByName(expected.getName()));
     }
 
+    @Test
+    public void testDeleteFromList() throws InterruptedException {
+        authorizationPage.navigateTo();
+        GroupPolicyRepresentation expected = new GroupPolicyRepresentation();
+
+        expected.setName("Test Delete Group Policy");
+        expected.setDescription("description");
+        expected.setGroupsClaim("groups");
+        expected.addGroupPath("/Group A", true);
+        expected.addGroupPath("/Group A/Group B/Group D");
+        expected.addGroupPath("Group F");
+
+        expected = createPolicy(expected);
+        authorizationPage.navigateTo();
+        authorizationPage.authorizationTabs().policies().deleteFromList(expected.getName());
+        authorizationPage.navigateTo();
+        assertNull(authorizationPage.authorizationTabs().policies().policies().findByName(expected.getName()));
+    }
+
     private GroupPolicyRepresentation createPolicy(GroupPolicyRepresentation expected) {
         GroupPolicy policy = authorizationPage.authorizationTabs().policies().create(expected);
         assertAlertSuccess();

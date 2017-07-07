@@ -1930,24 +1930,21 @@ public class RepresentationToModel {
         resourceServer.setPolicyEnforcementMode(rep.getPolicyEnforcementMode());
         resourceServer.setAllowRemoteResourceManagement(rep.isAllowRemoteResourceManagement());
 
-        rep.getScopes().forEach(scope -> {
+        for (ScopeRepresentation scope : rep.getScopes()) {
             toModel(scope, resourceServer, authorization);
-        });
+        }
 
         KeycloakSession session = authorization.getKeycloakSession();
         RealmModel realm = authorization.getRealm();
 
-        rep.getResources().forEach(resourceRepresentation -> {
-            ResourceOwnerRepresentation owner = resourceRepresentation.getOwner();
+        for (ResourceRepresentation resource : rep.getResources()) {
+            ResourceOwnerRepresentation owner = resource.getOwner();
 
             if (owner == null) {
                 owner = new ResourceOwnerRepresentation();
-                resourceRepresentation.setOwner(owner);
-            }
-
-            owner.setId(resourceServer.getClientId());
-
-            if (owner.getName() != null) {
+                owner.setId(resourceServer.getClientId());
+                resource.setOwner(owner);
+            } else if (owner.getName() != null) {
                 UserModel user = session.users().getUserByUsername(owner.getName(), realm);
 
                 if (user != null) {
@@ -1955,8 +1952,8 @@ public class RepresentationToModel {
                 }
             }
 
-            toModel(resourceRepresentation, resourceServer, authorization);
-        });
+            toModel(resource, resourceServer, authorization);
+        }
 
         importPolicies(authorization, resourceServer, rep.getPolicies(), null);
     }
@@ -1975,7 +1972,9 @@ public class RepresentationToModel {
                 PolicyStore policyStore = storeFactory.getPolicyStore();
                 try {
                     List<String> policies = (List<String>) JsonSerialization.readValue(applyPolicies, List.class);
-                    config.put("applyPolicies", JsonSerialization.writeValueAsString(policies.stream().map(policyName -> {
+                    Set<String> policyIds = new HashSet<>();
+
+                    for (String policyName : policies) {
                         Policy policy = policyStore.findByName(policyName, resourceServer.getId());
 
                         if (policy == null) {
@@ -1989,8 +1988,10 @@ public class RepresentationToModel {
                             }
                         }
 
-                        return policy.getId();
-                    }).collect(Collectors.toList())));
+                        policyIds.add(policy.getId());
+                    }
+
+                    config.put("applyPolicies", JsonSerialization.writeValueAsString(policyIds));
                 } catch (Exception e) {
                     throw new RuntimeException("Error while importing policy [" + policyRepresentation.getName() + "].", e);
                 }
@@ -2029,33 +2030,40 @@ public class RepresentationToModel {
 
         if (representation instanceof PolicyRepresentation) {
             PolicyRepresentation policy = PolicyRepresentation.class.cast(representation);
-            String resourcesConfig = policy.getConfig().get("resources");
 
-            if (resourcesConfig != null) {
-                try {
-                    resources = JsonSerialization.readValue(resourcesConfig, Set.class);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+            if (resources == null) {
+                String resourcesConfig = policy.getConfig().get("resources");
+
+                if (resourcesConfig != null) {
+                    try {
+                        resources = JsonSerialization.readValue(resourcesConfig, Set.class);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             }
 
-            String scopesConfig = policy.getConfig().get("scopes");
+            if (scopes == null) {
+                String scopesConfig = policy.getConfig().get("scopes");
 
-            if (scopesConfig != null) {
-                try {
-                    scopes = JsonSerialization.readValue(scopesConfig, Set.class);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+                if (scopesConfig != null) {
+                    try {
+                        scopes = JsonSerialization.readValue(scopesConfig, Set.class);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             }
 
-            String policiesConfig = policy.getConfig().get("applyPolicies");
+            if (policies == null) {
+                String policiesConfig = policy.getConfig().get("applyPolicies");
 
-            if (policiesConfig != null) {
-                try {
-                    policies = JsonSerialization.readValue(policiesConfig, Set.class);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+                if (policiesConfig != null) {
+                    try {
+                        policies = JsonSerialization.readValue(policiesConfig, Set.class);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             }
 
