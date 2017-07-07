@@ -408,6 +408,8 @@ module.controller('RealmThemeCtrl', function($scope, Current, Realm, realm, serv
         'multiple' : true,
         'simple_tags' : true
     };
+    
+    updateSupported();
 
     function localeForTheme(type, name) {
         console.log(JSON.stringify(serverInfo));
