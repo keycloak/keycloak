@@ -47,7 +47,8 @@
                                      validateAssertionSignature="true"
                                      requestBinding="POST"
                                      responseBinding="POST"
-                                     bindingUrl="http://localhost:8080/auth/realms/saml-demo/protocol/saml"/>
+                                     bindingUrl="http://localhost:8080/auth/realms/saml-demo/protocol/saml"
+                                     assertionConsumerServiceUrl="acsUrl"/>
                 <SingleLogoutService
                         validateRequestSignature="true"
                         validateResponseSignature="true"
