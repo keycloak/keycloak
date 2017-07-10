@@ -540,7 +540,7 @@
 
         <!--
             profile that enables/disables specified feature, for more details see 
-            https://keycloak.gitbooks.io/server-installation-and-configuration/content/topics/profiles.html 
+            https://keycloak.gitbooks.io/documentation/content/server_installation/topics/profiles.html 
         -->
         <profile>
             <id>auth-server-enable-disable-feature</id>

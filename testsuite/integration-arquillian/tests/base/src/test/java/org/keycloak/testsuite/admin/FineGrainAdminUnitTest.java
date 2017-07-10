@@ -21,14 +21,10 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.AuthorizationProviderFactory;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClientTemplateRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
@@ -58,6 +54,7 @@ import javax.ws.rs.ClientErrorException;
 import java.util.LinkedList;
 import java.util.List;
 
+import static org.keycloak.testsuite.admin.ImpersonationDisabledTest.IMPERSONATION_DISABLED;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 /**
@@ -375,10 +372,11 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
     }
 
-
+    @Override
     protected boolean isImportAfterEachMethod() {
         return true;
     }
+    
     //@Test
     public void testDemo() throws Exception {
         testingClient.server().run(FineGrainAdminUnitTest::setupDemo);
@@ -424,7 +422,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
                 realmClient.realm(TEST).clients().get(client.getId()).update(client);
                 Assert.fail("should fail with forbidden exception");
             } catch (ClientErrorException e) {
-                Assert.assertEquals(e.getResponse().getStatus(), 403);
+                Assert.assertEquals(403, e.getResponse().getStatus());
 
             }
             client.setFullScopeAllowed(false);
@@ -435,7 +433,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
                 realmClient.realm(TEST).clients().get(client.getId()).update(client);
                 Assert.fail("should fail with forbidden exception");
             } catch (ClientErrorException e) {
-                Assert.assertEquals(e.getResponse().getStatus(), 403);
+                Assert.assertEquals(403, e.getResponse().getStatus());
 
             }
             client.setClientTemplate(null);
@@ -445,13 +443,13 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
                 realmClient.realm(TEST).clients().get(client.getId()).getScopeMappings().realmLevel().add(realmRoleSet);
                 Assert.fail("should fail with forbidden exception");
             } catch (ClientErrorException e) {
-                Assert.assertEquals(e.getResponse().getStatus(), 403);
+                Assert.assertEquals(403, e.getResponse().getStatus());
 
             }
         }
 
         // test illegal impersonation
-        {
+        if (!IMPERSONATION_DISABLED) {
             Keycloak realmClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
                     TEST, "nomap-admin", "password", Constants.ADMIN_CLI_CLIENT_ID, null);
             realmClient.realm(TEST).users().get(user1.getId()).impersonate();
@@ -462,7 +460,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
                 realmClient.realm(TEST).users().get(anotherAdmin.getId()).impersonate();
                 Assert.fail("should fail with forbidden exception");
             } catch (ClientErrorException e) {
-                Assert.assertEquals(e.getResponse().getStatus(), 403);
+                Assert.assertEquals(403, e.getResponse().getStatus());
 
             }
 
@@ -528,7 +526,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
                 realmClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().add(realmRoleSet);
                 Assert.fail("should fail with forbidden exception");
             } catch (ClientErrorException e) {
-                Assert.assertEquals(e.getResponse().getStatus(), 403);
+                Assert.assertEquals(403, e.getResponse().getStatus());
 
             }
         }
@@ -539,7 +537,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
                 realmClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().add(realmRoleSet);
                 Assert.fail("should fail with forbidden exception");
             } catch (ClientErrorException e) {
-                Assert.assertEquals(e.getResponse().getStatus(), 403);
+                Assert.assertEquals(403, e.getResponse().getStatus());
 
             }
         }
@@ -556,21 +554,21 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             realmClient.realm(TEST).users().get(groupMember.getId()).roles().clientLevel(client.getId()).remove(clientRoleSet);
 
             roles = realmClient.realm(TEST).users().get(groupMember.getId()).roles().realmLevel().listAvailable();
-            Assert.assertEquals(roles.size(), 1);
+            Assert.assertEquals(1, roles.size());
             realmClient.realm(TEST).users().get(groupMember.getId()).roles().realmLevel().add(realmRoleSet);
             realmClient.realm(TEST).users().get(groupMember.getId()).roles().realmLevel().remove(realmRoleSet);
             try {
                 realmClient.realm(TEST).users().get(groupMember.getId()).roles().realmLevel().add(realmRole2Set);
                 Assert.fail("should fail with forbidden exception");
             } catch (ClientErrorException e) {
-                Assert.assertEquals(e.getResponse().getStatus(), 403);
+                Assert.assertEquals(403, e.getResponse().getStatus());
 
             }
             try {
                 realmClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().add(realmRoleSet);
                 Assert.fail("should fail with forbidden exception");
             } catch (ClientErrorException e) {
-                Assert.assertEquals(e.getResponse().getStatus(), 403);
+                Assert.assertEquals(403, e.getResponse().getStatus());
 
             }
 
@@ -595,7 +593,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
                 realmClient.realm(TEST).users().get(user1.getId()).roles().realmLevel().add(realmRoleSet);
                 Assert.fail("should fail with forbidden exception");
             } catch (ClientErrorException e) {
-                Assert.assertEquals(e.getResponse().getStatus(), 403);
+                Assert.assertEquals(403, e.getResponse().getStatus());
 
             }
         }
