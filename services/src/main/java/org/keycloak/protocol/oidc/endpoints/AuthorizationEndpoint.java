@@ -433,7 +433,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         String flowId = flow.getId();
 
         AuthenticationProcessor processor = createProcessor(authenticationSession, flowId, LoginActionsService.RESET_CREDENTIALS_PATH);
-        authenticationSession.setClientNote(APP_INITIATED_FLOW, LoginActionsService.REGISTRATION_PATH);
+        authenticationSession.setClientNote(APP_INITIATED_FLOW, LoginActionsService.RESET_CREDENTIALS_PATH);
 
         return processor.authenticate();
     }

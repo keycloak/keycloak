@@ -371,7 +371,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
             loginPage.assertCurrent();
 
-            assertEquals("Action expired. Please login again.", loginPage.getError());
+            assertEquals("Action expired. Please start again.", loginPage.getError());
 
             events.expectRequiredAction(EventType.EXECUTE_ACTION_TOKEN_ERROR).error("expired_code").client((String) null).user(userId).session((String) null).clearDetails().detail(Details.ACTION, ResetCredentialsActionToken.TOKEN_TYPE).assertEvent();
         } finally {
@@ -407,7 +407,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
             loginPage.assertCurrent();
 
-            assertEquals("Action expired. Please login again.", loginPage.getError());
+            assertEquals("Action expired. Please start again.", loginPage.getError());
 
             events.expectRequiredAction(EventType.EXECUTE_ACTION_TOKEN_ERROR).error("expired_code").client((String) null).user(userId).session((String) null).clearDetails().detail(Details.ACTION, ResetCredentialsActionToken.TOKEN_TYPE).assertEvent();
         } finally {
@@ -453,6 +453,57 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             Assert.assertEquals("Action expired.", errorPage.getError());
             String backToAppLink = errorPage.getBackToApplicationLink();
             Assert.assertTrue(backToAppLink.endsWith("/app/auth"));
+
+            events.expectRequiredAction(EventType.EXECUTE_ACTION_TOKEN_ERROR).error("expired_code").client((String) null).user(userId).session((String) null).clearDetails().detail(Details.ACTION, ResetCredentialsActionToken.TOKEN_TYPE).assertEvent();
+        } finally {
+            setTimeOffset(0);
+
+            realmRep.setActionTokenGeneratedByUserLifespan(originalValue.get());
+            testRealm().update(realmRep);
+        }
+    }
+
+
+    // KEYCLOAK-5061
+    @Test
+    public void resetPasswordExpiredCodeForgotPasswordFlow() throws IOException, MessagingException, InterruptedException {
+        final AtomicInteger originalValue = new AtomicInteger();
+
+        RealmRepresentation realmRep = testRealm().toRepresentation();
+        originalValue.set(realmRep.getActionTokenGeneratedByUserLifespan());
+        realmRep.setActionTokenGeneratedByUserLifespan(60);
+        testRealm().update(realmRep);
+
+        try {
+            // Redirect directly to KC "forgot password" endpoint instead of "authenticate" endpoint
+            String loginUrl = oauth.getLoginFormUrl();
+            String forgotPasswordUrl = loginUrl.replace("/auth?", "/forgot-credentials?"); // Workaround, but works
+
+            driver.navigate().to(forgotPasswordUrl);
+            resetPasswordPage.assertCurrent();
+            resetPasswordPage.changePassword("login-test");
+
+            loginPage.assertCurrent();
+            assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
+            expectedMessagesCount++;
+
+            events.expectRequiredAction(EventType.SEND_RESET_PASSWORD)
+                    .session((String)null)
+                    .user(userId).detail(Details.USERNAME, "login-test").detail(Details.EMAIL, "login@test.com").assertEvent();
+
+            assertEquals(1, greenMail.getReceivedMessages().length);
+
+            MimeMessage message = greenMail.getReceivedMessages()[0];
+
+            String changePasswordUrl = getPasswordResetEmailLink(message);
+
+            setTimeOffset(70);
+
+            driver.navigate().to(changePasswordUrl.trim());
+
+            resetPasswordPage.assertCurrent();
+
+            assertEquals("Action expired. Please start again.", loginPage.getError());
 
             events.expectRequiredAction(EventType.EXECUTE_ACTION_TOKEN_ERROR).error("expired_code").client((String) null).user(userId).session((String) null).clearDetails().detail(Details.ACTION, ResetCredentialsActionToken.TOKEN_TYPE).assertEvent();
         } finally {

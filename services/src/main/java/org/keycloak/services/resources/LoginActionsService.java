@@ -342,7 +342,7 @@ public class LoginActionsService {
 
             }
             authSession = createAuthenticationSessionForClient();
-            return processResetCredentials(false, null, authSession);
+            return processResetCredentials(false, null, authSession, null);
         }
 
         event.event(EventType.RESET_PASSWORD);
@@ -386,7 +386,7 @@ public class LoginActionsService {
 
         }
 
-        return processResetCredentials(checks.isActionRequest(), execution, authSession);
+        return processResetCredentials(checks.isActionRequest(), execution, authSession, null);
     }
 
     /**
@@ -469,7 +469,9 @@ public class LoginActionsService {
                     flowPath = AUTHENTICATE_PATH;
                 }
                 AuthenticationProcessor.resetFlow(authSession, flowPath);
-                return processAuthentication(false, null, authSession, Messages.EXPIRED_ACTION_TOKEN_SESSION_EXISTS);
+
+                // Process correct flow
+                return processFlowFromPath(flowPath, authSession, Messages.EXPIRED_ACTION_TOKEN_SESSION_EXISTS);
             }
 
             return handleActionTokenVerificationException(null, ex, Errors.EXPIRED_CODE, Messages.EXPIRED_ACTION_TOKEN_NO_SESSION);
@@ -539,6 +541,20 @@ public class LoginActionsService {
         }
     }
 
+
+    private Response processFlowFromPath(String flowPath, AuthenticationSessionModel authSession, String errorMessage) {
+        if (AUTHENTICATE_PATH.equals(flowPath)) {
+            return processAuthentication(false, null, authSession, errorMessage);
+        } else if (REGISTRATION_PATH.equals(flowPath)) {
+            return processRegistration(false, null, authSession, errorMessage);
+        } else if (RESET_CREDENTIALS_PATH.equals(flowPath)) {
+            return processResetCredentials(false, null, authSession, errorMessage);
+        } else {
+            return ErrorPage.error(session, errorMessage == null ? Messages.INVALID_REQUEST : errorMessage);
+        }
+    }
+
+
     private <T extends DefaultActionToken> ActionTokenHandler<T> resolveActionTokenHandler(String actionId) throws VerificationException {
         if (actionId == null) {
             throw new VerificationException("Action token operation not set");
@@ -562,10 +578,10 @@ public class LoginActionsService {
         return ErrorPage.error(session, errorMessage == null ? Messages.INVALID_CODE : errorMessage);
     }
 
-    protected Response processResetCredentials(boolean actionRequest, String execution, AuthenticationSessionModel authSession) {
+    protected Response processResetCredentials(boolean actionRequest, String execution, AuthenticationSessionModel authSession, String errorMessage) {
         AuthenticationProcessor authProcessor = new ResetCredentialsActionTokenHandler.ResetCredsAuthenticationProcessor();
 
-        return processFlow(actionRequest, execution, authSession, RESET_CREDENTIALS_PATH, realm.getResetCredentialsFlow(), null, authProcessor);
+        return processFlow(actionRequest, execution, authSession, RESET_CREDENTIALS_PATH, realm.getResetCredentialsFlow(), errorMessage, authProcessor);
     }
 
 
