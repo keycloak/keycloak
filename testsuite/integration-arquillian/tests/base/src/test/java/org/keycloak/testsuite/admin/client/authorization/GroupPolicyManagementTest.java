@@ -58,16 +58,11 @@ public class GroupPolicyManagementTest extends AbstractPolicyManagementTest {
         return super.createTestRealm().group(GroupBuilder.create().name("Group A")
                 .subGroups(Arrays.asList("Group B", "Group D").stream().map(name -> {
                     if ("Group B".equals(name)) {
-                        return GroupBuilder.create().name(name).subGroups(Arrays.asList("Group C", "Group E").stream().map(new Function<String, GroupRepresentation>() {
-                            @Override
-                            public GroupRepresentation apply(String name) {
-                                return GroupBuilder.create().name(name).build();
-                            }
-                        }).collect(Collectors.toList())).build();
+                        return GroupBuilder.create().name(name).subGroups(Arrays.asList("Group C", "Group E").stream().map(name1 -> GroupBuilder.create().name(name1).build()).collect(Collectors.toList())).build();
                     }
                     return GroupBuilder.create().name(name).build();
                 }).collect(Collectors.toList()))
-                .build()).group(GroupBuilder.create().name("Group E").build());
+                .build()).group(GroupBuilder.create().name("Group F").build());
     }
 
     @Test
@@ -81,7 +76,7 @@ public class GroupPolicyManagementTest extends AbstractPolicyManagementTest {
         representation.setLogic(Logic.NEGATIVE);
         representation.setGroupsClaim("groups");
         representation.addGroupPath("/Group A/Group B/Group C", true);
-        representation.addGroupPath("Group E");
+        representation.addGroupPath("Group F");
 
         assertCreated(authorization, representation);
     }
@@ -97,7 +92,7 @@ public class GroupPolicyManagementTest extends AbstractPolicyManagementTest {
         representation.setLogic(Logic.NEGATIVE);
         representation.setGroupsClaim("groups");
         representation.addGroupPath("/Group A/Group B/Group C", true);
-        representation.addGroupPath("Group E");
+        representation.addGroupPath("Group F");
 
         assertCreated(authorization, representation);
 
@@ -114,7 +109,7 @@ public class GroupPolicyManagementTest extends AbstractPolicyManagementTest {
         assertRepresentation(representation, permission);
 
         for (GroupPolicyRepresentation.GroupDefinition roleDefinition : representation.getGroups()) {
-            if (roleDefinition.getPath().equals("Group E")) {
+            if (roleDefinition.getPath().equals("Group F")) {
                 roleDefinition.setExtendChildren(true);
             }
         }
@@ -137,7 +132,7 @@ public class GroupPolicyManagementTest extends AbstractPolicyManagementTest {
         representation.setName("Delete Group Policy");
         representation.setGroupsClaim("groups");
         representation.addGroupPath("/Group A/Group B/Group C", true);
-        representation.addGroupPath("Group E");
+        representation.addGroupPath("Group F");
 
         GroupPoliciesResource policies = authorization.policies().group();
         Response response = policies.create(representation);
