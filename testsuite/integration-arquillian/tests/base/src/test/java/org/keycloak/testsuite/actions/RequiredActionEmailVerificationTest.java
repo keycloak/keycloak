@@ -424,7 +424,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
             driver.navigate().to(verificationUrl.trim());
 
             loginPage.assertCurrent();
-            assertEquals("You took too long to login. Login process starting from beginning.", loginPage.getError());
+            assertEquals("Action expired. Please login again.", loginPage.getError());
 
             events.expectRequiredAction(EventType.EXECUTE_ACTION_TOKEN_ERROR)
                     .error(Errors.EXPIRED_CODE)
@@ -462,7 +462,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
             driver.navigate().to(verificationUrl.trim());
 
             errorPage.assertCurrent();
-            assertEquals("The link you clicked is a old stale link and is no longer valid. Maybe you have already verified your email?", errorPage.getError());
+            assertEquals("Action expired.", errorPage.getError());
 
             events.expectRequiredAction(EventType.EXECUTE_ACTION_TOKEN_ERROR)
                     .error(Errors.EXPIRED_CODE)

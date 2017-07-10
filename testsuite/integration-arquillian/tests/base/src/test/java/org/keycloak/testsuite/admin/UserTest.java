@@ -791,7 +791,7 @@ public class UserTest extends AbstractAdminTest {
             driver.navigate().to(link);
 
             errorPage.assertCurrent();
-            assertEquals("An error occurred, please login again through your application.", errorPage.getError());
+            assertEquals("Action expired.", errorPage.getError());
         } finally {
             setTimeOffset(0);
 

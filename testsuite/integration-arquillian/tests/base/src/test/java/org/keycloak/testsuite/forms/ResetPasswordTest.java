@@ -371,7 +371,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
             loginPage.assertCurrent();
 
-            assertEquals("You took too long to login. Login process starting from beginning.", loginPage.getError());
+            assertEquals("Action expired. Please login again.", loginPage.getError());
 
             events.expectRequiredAction(EventType.EXECUTE_ACTION_TOKEN_ERROR).error("expired_code").client((String) null).user(userId).session((String) null).clearDetails().detail(Details.ACTION, ResetCredentialsActionToken.TOKEN_TYPE).assertEvent();
         } finally {
@@ -407,7 +407,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
             loginPage.assertCurrent();
 
-            assertEquals("You took too long to login. Login process starting from beginning.", loginPage.getError());
+            assertEquals("Action expired. Please login again.", loginPage.getError());
 
             events.expectRequiredAction(EventType.EXECUTE_ACTION_TOKEN_ERROR).error("expired_code").client((String) null).user(userId).session((String) null).clearDetails().detail(Details.ACTION, ResetCredentialsActionToken.TOKEN_TYPE).assertEvent();
         } finally {
@@ -450,7 +450,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             driver.navigate().to(changePasswordUrl.trim());
 
             errorPage.assertCurrent();
-            Assert.assertEquals("Reset Credential not allowed", errorPage.getError());
+            Assert.assertEquals("Action expired.", errorPage.getError());
             String backToAppLink = errorPage.getBackToApplicationLink();
             Assert.assertTrue(backToAppLink.endsWith("/app/auth"));
 

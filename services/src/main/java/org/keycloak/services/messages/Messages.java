@@ -35,6 +35,10 @@ public class Messages {
 
     public static final String EXPIRED_ACTION = "expiredActionMessage";
 
+    public static final String EXPIRED_ACTION_TOKEN_NO_SESSION = "expiredActionTokenNoSessionMessage";
+
+    public static final String EXPIRED_ACTION_TOKEN_SESSION_EXISTS = "expiredActionTokenSessionExistsMessage";
+
     public static final String MISSING_FIRST_NAME = "missingFirstNameMessage";
 
     public static final String MISSING_LAST_NAME = "missingLastNameMessage";
