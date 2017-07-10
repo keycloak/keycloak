@@ -27,15 +27,18 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RealmManager;
+import org.keycloak.testsuite.util.UserManager;
 import org.keycloak.util.BasicAuthHelper;
 
 import javax.ws.rs.client.Client;
@@ -486,6 +489,61 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         client.close();
         events.clear();
 
+    }
+
+    @Test
+    public void refreshTokenUserDisabled() throws Exception {
+        oauth.doLogin("test-user@localhost", "password");
+
+        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+
+        String sessionId = loginEvent.getSessionId();
+        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        String refreshTokenString = response.getRefreshToken();
+        RefreshToken refreshToken = oauth.verifyRefreshToken(refreshTokenString);
+
+        events.expectCodeToToken(codeId, sessionId).assertEvent();
+
+        try {
+            UserManager.realm(adminClient.realm("test")).username("test-user@localhost").enabled(false);
+            response = oauth.doRefreshTokenRequest(refreshTokenString, "password");
+            assertEquals(400, response.getStatusCode());
+            assertEquals("invalid_grant", response.getError());
+
+            events.expectRefresh(refreshToken.getId(), sessionId).clearDetails().error(Errors.INVALID_TOKEN).assertEvent();
+        } finally {
+            UserManager.realm(adminClient.realm("test")).username("test-user@localhost").enabled(true);
+        }
+    }
+
+    @Test
+    public void refreshTokenUserDeleted() throws Exception {
+        String userId = createUser("test", "temp-user@localhost", "password");
+        oauth.doLogin("temp-user@localhost", "password");
+
+        EventRepresentation loginEvent = events.expectLogin().user(userId).assertEvent();
+
+        String sessionId = loginEvent.getSessionId();
+        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+        String refreshTokenString = response.getRefreshToken();
+        RefreshToken refreshToken = oauth.verifyRefreshToken(refreshTokenString);
+
+        events.expectCodeToToken(codeId, sessionId).user(userId).assertEvent();
+
+        adminClient.realm("test").users().delete(userId);
+        response = oauth.doRefreshTokenRequest(refreshTokenString, "password");
+        assertEquals(400, response.getStatusCode());
+        assertEquals("invalid_grant", response.getError());
+
+        events.expectRefresh(refreshToken.getId(), sessionId).user(userId).clearDetails().error(Errors.INVALID_TOKEN).assertEvent();
     }
 
     protected Response executeRefreshToken(WebTarget refreshTarget, String refreshToken) {

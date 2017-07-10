@@ -28,6 +28,8 @@ import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.protocol.oidc.mappers.SHA256PairwiseSubMapper;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.IDToken;
+import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.UserInfo;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
@@ -41,6 +43,7 @@ import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResou
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserInfoClientUtil;
+import org.keycloak.testsuite.util.UserManager;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.core.Response;
@@ -49,6 +52,8 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrationTest {
@@ -75,6 +80,14 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         OIDCClientRepresentation response = reg.oidc().create(client);
 
         return response;
+    }
+
+    public OIDCClientRepresentation createPairwise() throws ClientRegistrationException {
+        // Create pairwise client
+        OIDCClientRepresentation clientRep = createRep();
+        clientRep.setSubjectType("pairwise");
+        OIDCClientRepresentation pairwiseClient = reg.oidc().create(clientRep);
+        return pairwiseClient;
     }
 
 
@@ -349,6 +362,109 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         } finally {
             jaxrsClient.close();
         }
+    }
+
+    @Test
+    public void refreshPairwiseToken() throws Exception {
+        // Create pairwise client
+        OIDCClientRepresentation pairwiseClient = createPairwise();
+
+        // Login to pairwise client
+        OAuthClient.AccessTokenResponse accessTokenResponse = login(pairwiseClient, "test-user@localhost", "password");
+
+        // Verify tokens
+        oauth.verifyRefreshToken(accessTokenResponse.getAccessToken());
+        IDToken idToken = oauth.verifyIDToken(accessTokenResponse.getIdToken());
+        oauth.verifyRefreshToken(accessTokenResponse.getRefreshToken());
+
+        // Refresh token
+        OAuthClient.AccessTokenResponse refreshTokenResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken(), pairwiseClient.getClientSecret());
+
+        // Verify refreshed tokens
+        oauth.verifyToken(refreshTokenResponse.getAccessToken());
+        RefreshToken refreshedRefreshToken = oauth.verifyRefreshToken(refreshTokenResponse.getRefreshToken());
+        IDToken refreshedIdToken = oauth.verifyIDToken(refreshTokenResponse.getIdToken());
+
+        // If an ID Token is returned as a result of a token refresh request, the following requirements apply:
+        // its iss Claim Value MUST be the same as in the ID Token issued when the original authentication occurred
+        Assert.assertEquals(idToken.getIssuer(), refreshedRefreshToken.getIssuer());
+
+        // its sub Claim Value MUST be the same as in the ID Token issued when the original authentication occurred
+        Assert.assertEquals(idToken.getSubject(), refreshedRefreshToken.getSubject());
+
+        // its iat Claim MUST represent the time that the new ID Token is issued
+        Assert.assertEquals(refreshedIdToken.getIssuedAt(), refreshedRefreshToken.getIssuedAt());
+
+        // its aud Claim Value MUST be the same as in the ID Token issued when the original authentication occurred
+        Assert.assertArrayEquals(idToken.getAudience(), refreshedRefreshToken.getAudience());
+
+        // if the ID Token contains an auth_time Claim, its value MUST represent the time of the original authentication
+        // - not the time that the new ID token is issued
+        Assert.assertEquals(idToken.getAuthTime(), refreshedIdToken.getAuthTime());
+
+        // its azp Claim Value MUST be the same as in the ID Token issued when the original authentication occurred; if
+        // no azp Claim was present in the original ID Token, one MUST NOT be present in the new ID Token
+        Assert.assertEquals(idToken.getIssuedFor(), refreshedIdToken.getIssuedFor());
+    }
+
+    @Test
+    public void refreshPairwiseTokenDeletedUser() throws Exception {
+        String userId = createUser(REALM_NAME, "delete-me@localhost", "password");
+
+        // Create pairwise client
+        OIDCClientRepresentation pairwiseClient = createPairwise();
+
+        // Login to pairwise client
+        oauth.clientId(pairwiseClient.getClientId());
+        oauth.clientId(pairwiseClient.getClientId());
+        OAuthClient.AuthorizationEndpointResponse loginResponse = oauth.doLogin("delete-me@localhost", "password");
+        OAuthClient.AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(loginResponse.getCode(), pairwiseClient.getClientSecret());
+
+        assertEquals(200, accessTokenResponse.getStatusCode());
+
+        // Delete user
+        adminClient.realm(REALM_NAME).users().delete(userId);
+
+        OAuthClient.AccessTokenResponse refreshTokenResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken(), pairwiseClient.getClientSecret());
+        assertEquals(400, refreshTokenResponse.getStatusCode());
+        assertEquals("invalid_grant", refreshTokenResponse.getError());
+        assertNull(refreshTokenResponse.getAccessToken());
+        assertNull(refreshTokenResponse.getIdToken());
+        assertNull(refreshTokenResponse.getRefreshToken());
+    }
+
+    @Test
+    public void refreshPairwiseTokenDisabledUser() throws Exception {
+        createUser(REALM_NAME, "disable-me@localhost", "password");
+
+        // Create pairwise client
+        OIDCClientRepresentation pairwiseClient = createPairwise();
+
+        // Login to pairwise client
+        oauth.clientId(pairwiseClient.getClientId());
+        oauth.clientId(pairwiseClient.getClientId());
+        OAuthClient.AuthorizationEndpointResponse loginResponse = oauth.doLogin("disable-me@localhost", "password");
+        OAuthClient.AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(loginResponse.getCode(), pairwiseClient.getClientSecret());
+        assertEquals(200, accessTokenResponse.getStatusCode());
+
+        try {
+            UserManager.realm(adminClient.realm(REALM_NAME)).username("disable-me@localhost").enabled(false);
+
+            OAuthClient.AccessTokenResponse refreshTokenResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken(), pairwiseClient.getClientSecret());
+            assertEquals(400, refreshTokenResponse.getStatusCode());
+            assertEquals("invalid_grant", refreshTokenResponse.getError());
+            assertNull(refreshTokenResponse.getAccessToken());
+            assertNull(refreshTokenResponse.getIdToken());
+            assertNull(refreshTokenResponse.getRefreshToken());
+        } finally {
+            UserManager.realm(adminClient.realm(REALM_NAME)).username("disable-me@localhost").enabled(true);
+        }
+    }
+
+    private OAuthClient.AccessTokenResponse login(OIDCClientRepresentation client, String username, String password) {
+        oauth.clientId(client.getClientId());
+        OAuthClient.AuthorizationEndpointResponse loginResponse = oauth.doLogin(username, password);
+        return oauth.doAccessTokenRequest(loginResponse.getCode(), client.getClientSecret());
     }
 
     private String getPayload(String token) {
