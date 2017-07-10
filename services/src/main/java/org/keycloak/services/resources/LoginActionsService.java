@@ -469,10 +469,10 @@ public class LoginActionsService {
                     flowPath = AUTHENTICATE_PATH;
                 }
                 AuthenticationProcessor.resetFlow(authSession, flowPath);
-                return processAuthentication(false, null, authSession, Messages.LOGIN_TIMEOUT);
+                return processAuthentication(false, null, authSession, Messages.EXPIRED_ACTION_TOKEN_SESSION_EXISTS);
             }
 
-            return handleActionTokenVerificationException(null, ex, Errors.EXPIRED_CODE, defaultErrorMessage);
+            return handleActionTokenVerificationException(null, ex, Errors.EXPIRED_CODE, Messages.EXPIRED_ACTION_TOKEN_NO_SESSION);
         } catch (ExplainedTokenVerificationException ex) {
             return handleActionTokenVerificationException(null, ex, ex.getErrorEvent(), ex.getMessage());
         } catch (VerificationException ex) {
