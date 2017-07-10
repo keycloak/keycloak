@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.persistence.EntityManager;
+import javax.persistence.FlushModeType;
 import javax.persistence.NoResultException;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
@@ -32,7 +33,6 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
 import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.jpa.entities.ResourceServerEntity;
 import org.keycloak.authorization.jpa.entities.ScopeEntity;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
@@ -61,6 +61,7 @@ public class JPAScopeStore implements ScopeStore {
         entity.setResourceServer(ResourceServerAdapter.toEntity(entityManager, resourceServer));
 
         this.entityManager.persist(entity);
+        this.entityManager.flush();
 
         return new ScopeAdapter(entity, entityManager, provider.getStoreFactory());
     }
@@ -91,8 +92,10 @@ public class JPAScopeStore implements ScopeStore {
         try {
             TypedQuery<String> query = entityManager.createNamedQuery("findScopeIdByName", String.class);
 
+            query.setFlushMode(FlushModeType.COMMIT);
             query.setParameter("serverId", resourceServerId);
             query.setParameter("name", name);
+
             String id = query.getSingleResult();
             return provider.getStoreFactory().getScopeStore().findById(id, resourceServerId);
         } catch (NoResultException nre) {
@@ -104,6 +107,7 @@ public class JPAScopeStore implements ScopeStore {
     public List<Scope> findByResourceServer(final String serverId) {
         TypedQuery<String> query = entityManager.createNamedQuery("findScopeIdByResourceServer", String.class);
 
+        query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("serverId", serverId);
 
         List<String> result = query.getResultList();

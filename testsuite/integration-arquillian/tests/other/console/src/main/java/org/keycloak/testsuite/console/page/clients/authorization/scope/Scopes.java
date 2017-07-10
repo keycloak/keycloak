@@ -22,6 +22,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.testsuite.page.Form;
 import org.keycloak.testsuite.util.URLUtils;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -64,6 +65,16 @@ public class Scopes extends Form {
             if (actual.getName().equalsIgnoreCase(name)) {
                 URLUtils.navigateToUri(driver, row.findElements(tagName("a")).get(0).getAttribute("href"), true);
                 scope.form().delete();
+            }
+        }
+    }
+
+    public void deleteFromList(String name) {
+        for (WebElement row : scopes().rows()) {
+            ScopeRepresentation actual = scopes().toRepresentation(row);
+            if (actual.getName().equalsIgnoreCase(name)) {
+                row.findElements(tagName("td")).get(3).click();
+                driver.findElement(By.xpath(".//button[text()='Delete']")).click();
             }
         }
     }
