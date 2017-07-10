@@ -538,7 +538,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         events.expectCodeToToken(codeId, sessionId).user(userId).assertEvent();
 
-        UserManager.realm(adminClient.realm("test")).username("temp-user@localhost").enabled(false);
+        adminClient.realm("test").users().delete(userId);
         response = oauth.doRefreshTokenRequest(refreshTokenString, "password");
         assertEquals(400, response.getStatusCode());
         assertEquals("invalid_grant", response.getError());
