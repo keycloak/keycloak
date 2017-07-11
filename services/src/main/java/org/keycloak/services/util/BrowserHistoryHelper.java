@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 import javax.ws.rs.core.Response;
 
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.theme.BrowserSecurityHeaderSetup;
@@ -44,11 +45,25 @@ import org.keycloak.utils.MediaType;
  */
 public abstract class BrowserHistoryHelper {
 
+    // Request attribute, which specifies if flow was changed in this request (eg. click "register" from the login screen)
+    public static final String SHOULD_UPDATE_BROWSER_HISTORY = "SHOULD_UPDATE_BROWSER_HISTORY";
+
     protected static final Logger logger = Logger.getLogger(BrowserHistoryHelper.class);
 
-    public abstract Response saveResponseAndRedirect(KeycloakSession session, AuthenticationSessionModel authSession, Response response, boolean actionRequest);
+    public abstract Response saveResponseAndRedirect(KeycloakSession session, AuthenticationSessionModel authSession, Response response, boolean actionRequest, HttpRequest httpRequest);
 
     public abstract Response loadSavedResponse(KeycloakSession session, AuthenticationSessionModel authSession);
+
+
+    protected boolean shouldReplaceBrowserHistory(boolean actionRequest, HttpRequest httpRequest) {
+        if (actionRequest) {
+            return true;
+        }
+
+        Boolean flowChanged = (Boolean) httpRequest.getAttribute(SHOULD_UPDATE_BROWSER_HISTORY);
+        return (flowChanged != null && flowChanged);
+    }
+
 
 
     // Always rely on javascript for now
@@ -66,8 +81,8 @@ public abstract class BrowserHistoryHelper {
         private static final Pattern HEAD_END_PATTERN = Pattern.compile("</[hH][eE][aA][dD]>");
 
         @Override
-        public Response saveResponseAndRedirect(KeycloakSession session, AuthenticationSessionModel authSession, Response response, boolean actionRequest) {
-            if (!actionRequest) {
+        public Response saveResponseAndRedirect(KeycloakSession session, AuthenticationSessionModel authSession, Response response, boolean actionRequest, HttpRequest httpRequest) {
+            if (!shouldReplaceBrowserHistory(actionRequest, httpRequest)) {
                 return response;
             }
 
@@ -129,8 +144,8 @@ public abstract class BrowserHistoryHelper {
         private static final String CACHED_RESPONSE = "cached.response";
 
         @Override
-        public Response saveResponseAndRedirect(KeycloakSession session, AuthenticationSessionModel authSession, Response response, boolean actionRequest) {
-            if (!actionRequest) {
+        public Response saveResponseAndRedirect(KeycloakSession session, AuthenticationSessionModel authSession, Response response, boolean actionRequest, HttpRequest httpRequest) {
+            if (!shouldReplaceBrowserHistory(actionRequest, httpRequest)) {
                 return response;
             }
 
@@ -179,7 +194,7 @@ public abstract class BrowserHistoryHelper {
     private static class NoOpHelper extends BrowserHistoryHelper {
 
         @Override
-        public Response saveResponseAndRedirect(KeycloakSession session, AuthenticationSessionModel authSession, Response response, boolean actionRequest) {
+        public Response saveResponseAndRedirect(KeycloakSession session, AuthenticationSessionModel authSession, Response response, boolean actionRequest, HttpRequest httpRequest) {
             return response;
         }
 

@@ -179,7 +179,7 @@ public class LoginActionsService {
     }
 
     private SessionCodeChecks checksForCode(String code, String execution, String clientId, String flowPath) {
-        SessionCodeChecks res = new SessionCodeChecks(realm, uriInfo, clientConnection, session, event, code, execution, clientId, flowPath);
+        SessionCodeChecks res = new SessionCodeChecks(realm, uriInfo, request, clientConnection, session, event, code, execution, clientId, flowPath);
         res.initialVerify();
         return res;
     }
@@ -200,7 +200,7 @@ public class LoginActionsService {
     @GET
     public Response restartSession(@QueryParam("client_id") String clientId) {
         event.event(EventType.RESTART_AUTHENTICATION);
-        SessionCodeChecks checks = new SessionCodeChecks(realm, uriInfo, clientConnection, session, event, null, null, clientId, null);
+        SessionCodeChecks checks = new SessionCodeChecks(realm, uriInfo, request, clientConnection, session, event, null, null, clientId, null);
 
         AuthenticationSessionModel authSession = checks.initialVerifyAuthSession();
         if (authSession == null) {
@@ -286,7 +286,7 @@ public class LoginActionsService {
             authSession = processor.getAuthenticationSession(); // Could be changed (eg. Forked flow)
         }
 
-        return BrowserHistoryHelper.getInstance().saveResponseAndRedirect(session, authSession, response, action);
+        return BrowserHistoryHelper.getInstance().saveResponseAndRedirect(session, authSession, response, action, request);
     }
 
     /**
@@ -927,7 +927,7 @@ public class LoginActionsService {
             throw new RuntimeException("Unreachable");
         }
 
-        return BrowserHistoryHelper.getInstance().saveResponseAndRedirect(session, authSession, response, true);
+        return BrowserHistoryHelper.getInstance().saveResponseAndRedirect(session, authSession, response, true, request);
     }
 
 }

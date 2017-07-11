@@ -263,10 +263,11 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
         registerPage.clickBackToLogin();
         loginPage.assertCurrent();
 
-        // Click browser "back" button. Should be back on register page
+        // Click browser "back" button.
         driver.navigate().back();
         registerPage.assertCurrent();
     }
+
 
     @Test
     public void clickBackButtonFromRegisterPage() {
@@ -277,6 +278,28 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
         // Click browser "back" button. Should be back on login page
         driver.navigate().back();
         loginPage.assertCurrent();
+    }
+
+
+    // KEYCLOAK-5136
+    @Test
+    public void clickRefreshButtonOnRegisterPage() {
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+
+        // Click browser "refresh" button. Should be still on register page
+        driver.navigate().refresh();
+        registerPage.assertCurrent();
+
+        // Click 'back to login'. Should be on login page
+        registerPage.clickBackToLogin();
+        loginPage.assertCurrent();
+
+        // Click browser 'refresh'. Should be still on login page
+        driver.navigate().refresh();
+        loginPage.assertCurrent();
+
     }
 
 
