@@ -22,7 +22,7 @@ public class LogTrimmer {
                     System.out.println("-- " + l);
                 }
             } else {
-                if (l.startsWith("Tests run")) {
+                if (l.contains("Tests run:")) {
                     if (l.contains("Failures: 1") && l.contains("Errors: 0")) {
                         System.out.println(l + "Logging dropped");
                     } else {
