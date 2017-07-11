@@ -540,16 +540,12 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractIdentityProvi
         driver.navigate().back();
         Assert.assertTrue(driver.getPageSource().contains("You are already logged in."));
         driver.navigate().forward();
-        this.loginExpiredPage.assertCurrent();
-        this.loginExpiredPage.clickLoginContinueLink();
         this.idpConfirmLinkPage.assertCurrent();
 
         // Click browser 'back' on review profile page
         this.idpConfirmLinkPage.clickReviewProfile();
         this.updateProfilePage.assertCurrent();
         driver.navigate().back();
-        this.loginExpiredPage.assertCurrent();
-        this.loginExpiredPage.clickLoginContinueLink();
         this.updateProfilePage.assertCurrent();
         this.updateProfilePage.update("Pedro", "Igor", "psilva@redhat.com");
 

@@ -979,7 +979,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             return ParsedCodeContext.response(staleCodeError);
         }
 
-        SessionCodeChecks checks = new SessionCodeChecks(realmModel, uriInfo, clientConnection, session, event, code, null, clientId, LoginActionsService.AUTHENTICATE_PATH);
+        SessionCodeChecks checks = new SessionCodeChecks(realmModel, uriInfo, request, clientConnection, session, event, code, null, clientId, LoginActionsService.AUTHENTICATE_PATH);
         checks.initialVerify();
         if (!checks.verifyActiveAndValidAction(AuthenticationSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
 
@@ -993,7 +993,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                     Response errorResponse = checks.getResponse();
 
                     // Remove "code" from browser history
-                    errorResponse = BrowserHistoryHelper.getInstance().saveResponseAndRedirect(session, authSession, errorResponse, true);
+                    errorResponse = BrowserHistoryHelper.getInstance().saveResponseAndRedirect(session, authSession, errorResponse, true, request);
                     return ParsedCodeContext.response(errorResponse);
                 }
             } else {

@@ -24,6 +24,7 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.ObjectUtil;
@@ -59,6 +60,7 @@ public class SessionCodeChecks {
 
     private final RealmModel realm;
     private final UriInfo uriInfo;
+    private final HttpRequest request;
     private final ClientConnection clientConnection;
     private final KeycloakSession session;
     private final EventBuilder event;
@@ -69,9 +71,10 @@ public class SessionCodeChecks {
     private final String flowPath;
 
 
-    public SessionCodeChecks(RealmModel realm, UriInfo uriInfo, ClientConnection clientConnection, KeycloakSession session, EventBuilder event, String code, String execution, String clientId, String flowPath) {
+    public SessionCodeChecks(RealmModel realm, UriInfo uriInfo, HttpRequest request, ClientConnection clientConnection, KeycloakSession session, EventBuilder event, String code, String execution, String clientId, String flowPath) {
         this.realm = realm;
         this.uriInfo = uriInfo;
+        this.request = request;
         this.clientConnection = clientConnection;
         this.session = session;
         this.event = event;
@@ -220,10 +223,17 @@ public class SessionCodeChecks {
                 }
             }
 
-            if (ObjectUtil.isEqualOrBothNull(execution, lastExecFromSession)) {
+            if (execution == null || execution.equals(lastExecFromSession)) {
                 // Allow refresh of previous page
                 clientCode = new ClientSessionCode<>(session, realm, authSession);
                 actionRequest = false;
+
+                // Allow refresh, but rewrite browser history
+                if (execution == null && lastExecFromSession != null) {
+                    logger.debugf("Parameter 'execution' is not in the request, but flow wasn't changed. Will update browser history");
+                    request.setAttribute(BrowserHistoryHelper.SHOULD_UPDATE_BROWSER_HISTORY, true);
+                }
+
                 return true;
             } else {
                 response = showPageExpired(authSession);
