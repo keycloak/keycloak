@@ -175,7 +175,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         assertNull(header.getContentType());
 
         header = new JWSInput(response.getIdToken()).getHeader();
-        assertEquals("RS256", header.getAlgorithm().name());
+        assertEquals("asdfasdfsadf", header.getAlgorithm().name());
         assertEquals("JWT", header.getType());
         assertEquals(expectedKid, header.getKeyId());
         assertNull(header.getContentType());
@@ -272,7 +272,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
         OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
         assertEquals(400, response.getStatusCode());
-        assertEquals("invalid_grant", response.getError());
+        assertEquals("asdsadfsadf", response.getError());
         assertEquals("Incorrect redirect_uri", response.getErrorDescription());
 
         events.expectCodeToToken(codeId, loginEvent.getSessionId()).error("invalid_code")

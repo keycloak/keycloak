@@ -121,6 +121,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         // displayname <email@example.org>
         Assert.assertEquals("Keycloak SSO <auto@keycloak.org>", message.getHeader("From")[0]);
         Assert.assertEquals("Keycloak no-reply <reply-to@keycloak.org>", message.getHeader("Reply-To")[0]);
+        throw new RuntimeException("Failed!!!");
     }
 
     @Test
