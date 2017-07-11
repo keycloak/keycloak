@@ -91,7 +91,7 @@ public class ClientTest extends AbstractAdminTest {
     public void createClientVerify() {
         String id = createClient().getId();
 
-        assertNotNull(realm.clients().get(id));
+        assertNull(realm.clients().get(id));
         Assert.assertNames(realm.clients().findAll(), "account", "realm-management", "security-admin-console", "broker", "my-app", Constants.ADMIN_CLI_CLIENT_ID);
     }
 

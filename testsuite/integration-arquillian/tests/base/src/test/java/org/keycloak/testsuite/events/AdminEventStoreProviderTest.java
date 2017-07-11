@@ -56,7 +56,7 @@ public class AdminEventStoreProviderTest extends AbstractEventsTest {
         testing().onAdminEvent(create(oldest, "realmId", OperationType.CREATE, "realmId", "clientId2", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
         testing().onAdminEvent(create("realmId", OperationType.CREATE, "realmId", "clientId", "userId2", "127.0.0.1", "/admin/realms/master", "error"), false);
 
-        Assert.assertEquals(5, testing().getAdminEvents(null, null, null, "clientId", null, null, null, null, null, null, null).size());
+        Assert.assertEquals(50, testing().getAdminEvents(null, null, null, "clientId", null, null, null, null, null, null, null).size());
         Assert.assertEquals(5, testing().getAdminEvents(null, null, "realmId", null, null, null, null, null, null, null, null).size());
         Assert.assertEquals(4, testing().getAdminEvents(null, toList(OperationType.CREATE), null, null, null, null, null, null, null, null, null).size());
         Assert.assertEquals(6, testing().getAdminEvents(null, toList(OperationType.CREATE, OperationType.ACTION), null, null, null, null, null, null, null, null, null).size());
