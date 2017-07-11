@@ -30,6 +30,14 @@
     <artifactId>integration-arquillian-servers-auth-server-wildfly</artifactId>
     
     <name>Auth Server - JBoss - Wildfly</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-server-dist</artifactId>
+            <type>zip</type>
+        </dependency>
+    </dependencies>
     
     <properties>
         <auth.server.jboss>wildfly</auth.server.jboss>
