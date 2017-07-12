@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/Aconex/keycloak.svg?branch=3.2.x-gl)](https://travis-ci.org/Aconex/keycloak)
 Keycloak
 ========
 
