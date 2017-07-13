@@ -19,6 +19,7 @@ package org.keycloak.forms.account.freemarker.model;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -27,8 +28,10 @@ import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.services.managers.UserSessionManager;
+import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -51,10 +54,17 @@ public class ApplicationsBean {
                 continue;
             }
 
-            Set<RoleModel> availableRoles = TokenManager.getAccess(null, false, client, user);
-            // Don't show applications, which user doesn't have access into (any available roles)
-            if (availableRoles.isEmpty()) {
-                continue;
+            Set<RoleModel> availableRoles = new HashSet<>();
+            if (client.getClientId().equals(Constants.ADMIN_CLI_CLIENT_ID)
+                    || client.getClientId().equals(Constants.ADMIN_CONSOLE_CLIENT_ID)) {
+                if (!AdminPermissions.realms(session, realm, user).isAdmin()) continue;
+
+            } else {
+                availableRoles = TokenManager.getAccess(null, false, client, user);
+                // Don't show applications, which user doesn't have access into (any available roles)
+                if (availableRoles.isEmpty()) {
+                    continue;
+                }
             }
             List<RoleModel> realmRolesAvailable = new LinkedList<RoleModel>();
             MultivaluedHashMap<String, ClientRoleEntry> resourceRolesAvailable = new MultivaluedHashMap<String, ClientRoleEntry>();
