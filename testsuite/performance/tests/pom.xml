@@ -1,0 +1,628 @@
+<?xml version="1.0"?>
+<!--
+~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+~ and other contributors as indicated by the @author tags.
+~
+~ Licensed under the Apache License, Version 2.0 (the "License");
+~ you may not use this file except in compliance with the License.
+~ You may obtain a copy of the License at
+~
+~ http://www.apache.org/licenses/LICENSE-2.0
+~
+~ Unless required by applicable law or agreed to in writing, software
+~ distributed under the License is distributed on an "AS IS" BASIS,
+~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+~ See the License for the specific language governing permissions and
+~ limitations under the License.
+-->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <parent>
+        <groupId>org.keycloak.testsuite</groupId>
+        <artifactId>performance</artifactId>
+        <version>3.4.0.CR1-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>performance-tests</artifactId>
+    <name>Keycloak Performance TestSuite - Tests</name>
+
+    <description>
+    </description>
+
+    <properties>
+        <compose.file>docker-compose.yml</compose.file>
+        <compose.up.params/>
+        <compose.restart.params>keycloak</compose.restart.params>
+        <keycloak.server.uris>http://localhost:8080/auth</keycloak.server.uris>
+        <db.url>jdbc:mariadb://keycloak:keycloak@localhost:3306/keycloak</db.url>
+
+        <keycloak.jvm.memory>-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m</keycloak.jvm.memory>
+        <keycloak.http.max-connections>500</keycloak.http.max-connections>
+        <keycloak.ajp.max-connections>500</keycloak.ajp.max-connections>
+        <keycloak.worker.io-threads>2</keycloak.worker.io-threads>
+        <keycloak.worker.task-max-threads>16</keycloak.worker.task-max-threads>
+        <keycloak.ds.min-pool-size>10</keycloak.ds.min-pool-size>
+        <keycloak.ds.max-pool-size>100</keycloak.ds.max-pool-size>
+        <keycloak.ds.pool-prefill>true</keycloak.ds.pool-prefill>
+        <keycloak.ds.ps-cache-size>100</keycloak.ds.ps-cache-size>
+        
+        <keycloak-lb.jvm.memory>-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m</keycloak-lb.jvm.memory>
+        <keycloak-lb.http.max-connections>500</keycloak-lb.http.max-connections>
+        <keycloak-lb.worker.io-threads>2</keycloak-lb.worker.io-threads>
+        <keycloak-lb.worker.task-max-threads>16</keycloak-lb.worker.task-max-threads>
+        
+        <infinispan.jvm.memory>-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -XX:+DisableExplicitGC</infinispan.jvm.memory>
+        
+        <dataset>default</dataset>
+        <numOfWorkers>1</numOfWorkers>
+
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
+
+        <scala.version>2.11.7</scala.version>
+        <gatling.version>2.1.7</gatling.version>
+        <gatling-plugin.version>2.2.1</gatling-plugin.version>
+        <scala-maven-plugin.version>3.2.2</scala-maven-plugin.version>
+        <jboss-logging.version>3.3.0.Final</jboss-logging.version>
+
+        <gatling.simulationClass>keycloak.DefaultSimulation</gatling.simulationClass>
+        <gatling.skip.run>true</gatling.skip.run>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-adapter-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-adapter-spi</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.spec.javax.ws.rs</groupId>
+            <artifactId>jboss-jaxrs-api_2.0_spec</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-jaxrs</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-jackson2-provider</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-library</artifactId>
+            <version>${scala.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.gatling.highcharts</groupId>
+            <artifactId>gatling-charts-highcharts</artifactId>
+            <version>${gatling.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+                <filtering>true</filtering>
+            </testResource>
+        </testResources>
+        <plugins>
+            <plugin>
+                <groupId>net.alchim31.maven</groupId>
+                <artifactId>scala-maven-plugin</artifactId>
+                <version>${scala-maven-plugin.version}</version>
+
+                <executions>
+                    <execution>
+                        <id>add-source</id>
+                        <!--phase>process-resources</phase-->
+                        <goals>
+                            <goal>add-source</goal>
+                            <!--goal>compile</goal-->
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>compile</id>
+                        <!--phase>process-test-resources</phase-->
+                        <goals>
+                            <goal>compile</goal>
+                            <goal>testCompile</goal>
+                        </goals>
+                        <configuration>
+                            <args>
+                                <arg>-target:jvm-1.8</arg>
+                                <arg>-deprecation</arg>
+                                <arg>-feature</arg>
+                                <arg>-unchecked</arg>
+                                <arg>-language:implicitConversions</arg>
+                                <arg>-language:postfixOps</arg>
+                            </args>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+
+            <plugin>
+                <!--
+                Execute test directly by using:
+
+                    mvn gatling:execute -f testsuite/performance/gatling -Dgatling.simulationClass=keycloak.DemoSimulation2
+
+                For more usage info see: http://gatling.io/docs/current/extensions/maven_plugin/
+                -->
+                <groupId>io.gatling</groupId>
+                <artifactId>gatling-maven-plugin</artifactId>
+                <version>${gatling-plugin.version}</version>
+
+                <configuration>
+                    <configFolder>${project.build.testOutputDirectory}</configFolder>
+                    <skip>${gatling.skip.run}</skip>
+                    <disableCompiler>true</disableCompiler>
+                    <runMultipleSimulations>true</runMultipleSimulations>
+                    <!--includes>
+                        <include>keycloak.DemoSimulation2</include>
+                    </includes-->
+                    <jvmArgs>
+                        <param>-DnumOfRealms=${numOfRealms}</param>
+                        <param>-DusersPerRealm=${usersPerRealm}</param>
+                        <param>-DclientsPerRealm=${clientsPerRealm}</param>
+                        <param>-DrealmRoles=${realmRoles}</param>
+                        <param>-DrealmRolesPerUser=${realmRolesPerUser}</param>
+                        <param>-DclientRolesPerUser=${clientRolesPerUser}</param>
+                        <param>-DclientRolesPerClient=${clientRolesPerClient}</param>
+                        <param>-DhashIterations=${hashIterations}</param>
+                    </jvmArgs>
+                </configuration>
+
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                        </goals>
+                        <phase>integration-test</phase>
+                    </execution>
+                </executions>
+            </plugin>
+            
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>properties-maven-plugin</artifactId>
+                <version>1.0.0</version>
+                <executions>
+                    <execution>
+                        <id>read-dataset-properties</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>read-project-properties</goal>
+                        </goals>
+                        <configuration>
+                            <files>
+                                <file>${project.basedir}/datasets/${dataset}.properties</file>
+                            </files>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>                    
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>initialize-dataset-properties</id>
+            <activation>
+                <property>
+                    <name>dataset</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>properties-maven-plugin</artifactId>
+                        <version>1.0.0</version>
+                        <executions>
+                            <execution>
+                                <id>initialize-dataset-properties</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>read-project-properties</goal>
+                                </goals>
+                                <configuration>
+                                    <files>
+                                        <file>${project.basedir}/datasets/${dataset}.properties</file>
+                                    </files>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>                    
+
+                </plugins>
+            </build>
+        </profile>
+        
+        <profile>
+            <id>cluster</id>
+            <properties>
+                <compose.file>docker-compose-cluster.yml</compose.file>
+                <keycloak.scale>1</keycloak.scale>
+                <compose.up.params>--scale keycloak=${keycloak.scale}</compose.up.params>
+                <keycloak.server.uris>http://localhost:8080/auth</keycloak.server.uris>
+            </properties>
+        </profile>
+        <profile>
+            <id>crossdc</id>
+            <properties>
+                <compose.file>docker-compose-crossdc.yml</compose.file>
+                <keycloak.dc1.scale>1</keycloak.dc1.scale>
+                <keycloak.dc2.scale>1</keycloak.dc2.scale>
+                <compose.up.params>--scale keycloak_dc1=${keycloak.dc1.scale} --scale keycloak_dc2=${keycloak.dc2.scale}</compose.up.params>
+                <compose.restart.params>keycloak_dc1 keycloak_dc2</compose.restart.params>
+                <keycloak.server.uris>http://localhost:8081/auth http://localhost:8082/auth</keycloak.server.uris>
+            </properties>
+        </profile>
+        
+        
+        <profile>
+            <id>provision</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>docker-compose-up</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <workingDirectory>${project.basedir}/..</workingDirectory>
+                                    <executable>docker-compose</executable>
+                                    <commandlineArgs>-f ${compose.file} up -d --build ${compose.up.params}</commandlineArgs>
+                                    <environmentVariables>
+                                        <KEYCLOAK_VERSION>${project.version}</KEYCLOAK_VERSION>
+                                        
+                                        <KEYCLOAK_JVM_MEMORY>${keycloak.jvm.memory}</KEYCLOAK_JVM_MEMORY>
+                                        <KEYCLOAK_HTTP_MAX_CONNECTIONS>${keycloak.http.max-connections}</KEYCLOAK_HTTP_MAX_CONNECTIONS>
+                                        <KEYCLOAK_AJP_MAX_CONNECTIONS>${keycloak.ajp.max-connections}</KEYCLOAK_AJP_MAX_CONNECTIONS>
+                                        <KEYCLOAK_WORKER_IO_THREADS>${keycloak.worker.io-threads}</KEYCLOAK_WORKER_IO_THREADS>
+                                        <KEYCLOAK_WORKER_TASK_MAX_THREADS>${keycloak.worker.task-max-threads}</KEYCLOAK_WORKER_TASK_MAX_THREADS>
+                                        <KEYCLOAK_DS_MIN_POOL_SIZE>${keycloak.ds.min-pool-size}</KEYCLOAK_DS_MIN_POOL_SIZE>
+                                        <KEYCLOAK_DS_MAX_POOL_SIZE>${keycloak.ds.max-pool-size}</KEYCLOAK_DS_MAX_POOL_SIZE>
+                                        <KEYCLOAK_DS_POOL_PREFILL>${keycloak.ds.pool-prefill}</KEYCLOAK_DS_POOL_PREFILL>
+                                        <KEYCLOAK_DS_PS_CACHE_SIZE>${keycloak.ds.ps-cache-size}</KEYCLOAK_DS_PS_CACHE_SIZE>
+                                        
+                                        <KEYCLOAK_LB_JVM_MEMORY>${keycloak-lb.jvm.memory}</KEYCLOAK_LB_JVM_MEMORY>
+                                        <KEYCLOAK_LB_HTTP_MAX_CONNECTIONS>${keycloak-lb.http.max-connections}</KEYCLOAK_LB_HTTP_MAX_CONNECTIONS>
+                                        <KEYCLOAK_LB_WORKER_IO_THREADS>${keycloak-lb.worker.io-threads}</KEYCLOAK_LB_WORKER_IO_THREADS>
+                                        <KEYCLOAK_LB_WORKER_TASK_MAX_THREADS>${keycloak-lb.worker.task-max-threads}</KEYCLOAK_LB_WORKER_TASK_MAX_THREADS>
+                                        
+                                        <INFINISPAN_JVM_MEMORY>${infinispan.jvm.memory}</INFINISPAN_JVM_MEMORY>
+                                    </environmentVariables>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>healthcheck</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>./healthcheck.sh</executable>
+                                    <workingDirectory>${project.basedir}/..</workingDirectory>
+                                    <environmentVariables>
+                                        <KEYCLOAK_SERVER_URIS>${keycloak.server.uris}</KEYCLOAK_SERVER_URIS>
+                                    </environmentVariables>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>write-provisioned-system-properties</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <propertyfile file="${project.build.directory}/provisioned-system.properties">
+                                            <entry key="keycloak.server.uris" value="${keycloak.server.uris}"/>
+                                        </propertyfile>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        
+        <profile>
+            <id>import-data</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>generate-data</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>java</executable>
+                                    <workingDirectory>${project.build.directory}</workingDirectory>
+                                    <arguments>
+                                        <argument>-classpath</argument>
+                                        <classpath/>
+                                        <argument>-DnumOfRealms=${numOfRealms}</argument>
+                                        <argument>-DusersPerRealm=${usersPerRealm}</argument>
+                                        <argument>-DclientsPerRealm=${clientsPerRealm}</argument>
+                                        <argument>-DrealmRoles=${realmRoles}</argument>
+                                        <argument>-DrealmRolesPerUser=${realmRolesPerUser}</argument>
+                                        <argument>-DclientRolesPerUser=${clientRolesPerUser}</argument>
+                                        <argument>-DclientRolesPerClient=${clientRolesPerClient}</argument>
+                                        <argument>-DhashIterations=${hashIterations}</argument>
+                                        <argument>org.keycloak.performance.RealmsConfigurationBuilder</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>load-data</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>java</executable>
+                                    <workingDirectory>${project.build.directory}</workingDirectory>
+                                    <arguments>
+                                        <argument>-classpath</argument>
+                                        <classpath/>
+                                        <argument>-DnumOfWorkers=${numOfWorkers}</argument>
+                                        <argument>org.keycloak.performance.RealmsConfigurationLoader</argument>
+                                        <argument>benchmark-realms.json</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>write-imported-dataset-properties</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <propertyfile file="${project.build.directory}/imported-dataset.properties">
+                                            <entry key="numOfRealms" value="${numOfRealms}"/>
+                                            <entry key="usersPerRealm" value="${usersPerRealm}"/>
+                                            <entry key="clientsPerRealm" value="${clientsPerRealm}"/>
+                                            <entry key="realmRoles" value="${realmRoles}"/>
+                                            <entry key="realmRolesPerUser" value="${realmRolesPerUser}"/>
+                                            <entry key="clientRolesPerUser" value="${clientRolesPerUser}"/>
+                                            <entry key="clientRolesPerClient" value="${clientRolesPerClient}"/>
+                                            <entry key="hashIterations" value="${hashIterations}"/>
+                                        </propertyfile>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>import-dump</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>load-dump</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <workingDirectory>${project.basedir}/..</workingDirectory>
+                                    <executable>./load-dump.sh</executable>
+
+                                    <environmentVariables>
+                                        <DATASET>${dataset}</DATASET>
+                                    </environmentVariables>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>restart-keycloak</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <workingDirectory>${project.basedir}/..</workingDirectory>
+                                    <executable>docker-compose</executable>
+                                    <commandlineArgs>-f ${compose.file} restart ${compose.restart.params}</commandlineArgs>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>healthcheck</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>./healthcheck.sh</executable>
+                                    <workingDirectory>${project.basedir}/..</workingDirectory>
+                                    <environmentVariables>
+                                        <KEYCLOAK_SERVER_URIS>${keycloak.server.uris}</KEYCLOAK_SERVER_URIS>
+                                    </environmentVariables>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>test</id>
+            <properties>
+                <gatling.skip.run>false</gatling.skip.run>
+            </properties>
+        </profile>
+        
+        <profile>
+            <id>teardown</id>
+            <properties>
+                <volumes.arg>-v</volumes.arg>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>docker-compose-down</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <workingDirectory>${project.basedir}/..</workingDirectory>
+                                    <executable>docker-compose</executable>
+                                    <commandlineArgs>-f ${compose.file} down ${volumes.arg}</commandlineArgs>
+                                    <environmentVariables>
+                                        <KEYCLOAK_VERSION>${project.version}</KEYCLOAK_VERSION>
+                                    </environmentVariables>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>keep-data</id>
+            <properties>
+                <volumes.arg/>
+            </properties>
+        </profile>
+        
+
+        <profile>
+            <id>monitoring</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>monitoring-docker-compose-up</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <workingDirectory>${project.basedir}/..</workingDirectory>
+                                    <executable>docker-compose</executable>
+                                    <commandlineArgs>-f docker-compose-monitoring.yml up -d --build</commandlineArgs>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>monitoring-off</id>
+            <properties>
+                <monitoring.volumes.arg/>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>monitoring-docker-compose-down</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <workingDirectory>${project.basedir}/..</workingDirectory>
+                                    <executable>docker-compose</executable>
+                                    <commandlineArgs>-f docker-compose-monitoring.yml down ${monitoring.volumes.arg}</commandlineArgs>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>delete-monitoring-data</id>
+            <properties>
+                <monitoring.volumes.arg>-v</monitoring.volumes.arg>
+            </properties>
+        </profile>
+
+    </profiles>
+
+</project>
