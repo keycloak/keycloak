@@ -19,9 +19,11 @@ package org.keycloak.example.oauth;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,6 +33,10 @@ import java.util.List;
  */
 @Path("products")
 public class ProductService {
+
+    @Context
+    private HttpServletResponse response;
+
     @GET
     @Produces("application/json")
     @NoCache
@@ -39,6 +45,8 @@ public class ProductService {
         rtn.add("iphone");
         rtn.add("ipad");
         rtn.add("ipod");
+
+        response.addHeader("X-Custom1", "some-value");
         return rtn;
     }
 }

@@ -73,9 +73,9 @@ module.controller('GlobalCtrl', function($scope, $http) {
     $scope.realm = [];
     $scope.version = [];
     $scope.reloadData = function() {
-        $http.get(getAppServerUrl("localhost-db") + "/cors-database/products").success(function(data) {
+        $http.get(getAppServerUrl("localhost-db") + "/cors-database/products").success(function(data, status, headers, config) {
             $scope.products = angular.fromJson(data);
-
+            $scope.headers = headers();
         });
 
     };
