@@ -1,0 +1,1 @@
+org.keycloak,keycloak-common,2.5.5.Final-redhat-1,Apache Software License 2.0.txt

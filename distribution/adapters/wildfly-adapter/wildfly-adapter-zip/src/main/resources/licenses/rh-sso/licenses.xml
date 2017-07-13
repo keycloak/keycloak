@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<licenseSummary>
+  <dependencies>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-adapter-core</artifactId>
+      <version>2.5.5.Final-redhat-1</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/keycloak/keycloak/2.5.5.Final/License.html</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-adapter-spi</artifactId>
+      <version>2.5.5.Final-redhat-1</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/keycloak/keycloak/2.5.5.Final/License.html</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-authz-client</artifactId>
+      <version>2.5.5.Final-redhat-1</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/keycloak/keycloak/2.5.5.Final/License.html</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-common</artifactId>
+      <version>2.5.5.Final-redhat-1</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/keycloak/keycloak/2.5.5.Final/License.html</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-core</artifactId>
+      <version>2.5.5.Final-redhat-1</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/keycloak/keycloak/2.5.5.Final/License.html</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-jboss-adapter-core</artifactId>
+      <version>2.5.5.Final-redhat-1</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/keycloak/keycloak/2.5.5.Final/License.html</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-servlet-oauth-client</artifactId>
+      <version>2.5.5.Final-redhat-1</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/keycloak/keycloak/2.5.5.Final/License.html</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-undertow-adapter</artifactId>
+      <version>2.5.5.Final-redhat-1</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/keycloak/keycloak/2.5.5.Final/License.html</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-undertow-adapter-spi</artifactId>
+      <version>2.5.5.Final-redhat-1</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/keycloak/keycloak/2.5.5.Final/License.html</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-wildfly-adapter</artifactId>
+      <version>2.5.5.Final-redhat-1</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/keycloak/keycloak/2.5.5.Final/License.html</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-wildfly-subsystem</artifactId>
+      <version>2.5.5.Final-redhat-1</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/keycloak/keycloak/2.5.5.Final/License.html</url>
+        </license>
+      </licenses>
+    </dependency>
+  </dependencies>
+</licenseSummary>
