@@ -16,7 +16,6 @@
  */
 package org.keycloak.services.resources;
 
-import org.keycloak.authentication.actiontoken.DefaultActionToken;
 import org.keycloak.authentication.actiontoken.DefaultActionTokenKey;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
@@ -27,6 +26,7 @@ import org.keycloak.authentication.RequiredActionContextResult;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.TokenVerifier;
+import org.keycloak.authentication.ExplainedVerificationException;
 import org.keycloak.authentication.actiontoken.*;
 import org.keycloak.authentication.actiontoken.resetcred.ResetCredentialsActionTokenHandler;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
@@ -59,6 +59,7 @@ import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
@@ -405,7 +406,7 @@ public class LoginActionsService {
         return handleActionToken(key, execution, clientId);
     }
 
-    protected <T extends DefaultActionToken> Response handleActionToken(String tokenString, String execution, String clientId) {
+    protected <T extends DefaultActionTokenKey> Response handleActionToken(String tokenString, String execution, String clientId) {
         T token;
         ActionTokenHandler<T> handler;
         ActionTokenContext<T> tokenContext;
@@ -430,8 +431,8 @@ public class LoginActionsService {
                 throw new ExplainedTokenVerificationException(null, Errors.NOT_ALLOWED, Messages.INVALID_REQUEST);
             }
 
-            TokenVerifier<DefaultActionToken> tokenVerifier = TokenVerifier.create(tokenString, DefaultActionToken.class);
-            DefaultActionToken aToken = tokenVerifier.getToken();
+            TokenVerifier<DefaultActionTokenKey> tokenVerifier = TokenVerifier.create(tokenString, DefaultActionTokenKey.class);
+            DefaultActionTokenKey aToken = tokenVerifier.getToken();
 
             event
               .detail(Details.TOKEN_ID, aToken.getId())
@@ -477,6 +478,8 @@ public class LoginActionsService {
             return handleActionTokenVerificationException(null, ex, Errors.EXPIRED_CODE, Messages.EXPIRED_ACTION_TOKEN_NO_SESSION);
         } catch (ExplainedTokenVerificationException ex) {
             return handleActionTokenVerificationException(null, ex, ex.getErrorEvent(), ex.getMessage());
+        } catch (ExplainedVerificationException ex) {
+            return handleActionTokenVerificationException(null, ex, ex.getErrorEvent(), ex.getMessage());
         } catch (VerificationException ex) {
             return handleActionTokenVerificationException(null, ex, eventError, defaultErrorMessage);
         }
@@ -485,7 +488,7 @@ public class LoginActionsService {
         tokenContext = new ActionTokenContext(session, realm, uriInfo, clientConnection, request, event, handler, execution, this::processFlow, this::brokerLoginFlow);
 
         try {
-            String tokenAuthSessionId = handler.getAuthenticationSessionIdFromToken(token);
+            String tokenAuthSessionId = handler.getAuthenticationSessionIdFromToken(token, tokenContext);
 
             if (tokenAuthSessionId != null) {
                 // This can happen if the token contains ID but user opens the link in a new browser
@@ -541,7 +544,6 @@ public class LoginActionsService {
         }
     }
 
-
     private Response processFlowFromPath(String flowPath, AuthenticationSessionModel authSession, String errorMessage) {
         if (AUTHENTICATE_PATH.equals(flowPath)) {
             return processAuthentication(false, null, authSession, errorMessage);
@@ -555,7 +557,7 @@ public class LoginActionsService {
     }
 
 
-    private <T extends DefaultActionToken> ActionTokenHandler<T> resolveActionTokenHandler(String actionId) throws VerificationException {
+    private <T extends JsonWebToken> ActionTokenHandler<T> resolveActionTokenHandler(String actionId) throws VerificationException {
         if (actionId == null) {
             throw new VerificationException("Action token operation not set");
         }
