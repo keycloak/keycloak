@@ -64,7 +64,7 @@ public interface ActionTokenHandler<T extends JsonWebToken> extends Provider {
      * @param token Token. Can be {@code null}
      * @return authentication session ID
      */
-    String getAuthenticationSessionIdFromToken(T token);
+    String getAuthenticationSessionIdFromToken(T token, ActionTokenContext<T> tokenContext);
 
     /**
      * Returns a event type logged with {@link EventBuilder} class.

@@ -39,7 +39,7 @@ public class DefaultActionToken extends DefaultActionTokenKey implements ActionT
 
     public static final String JSON_FIELD_AUTHENTICATION_SESSION_ID = "asid";
 
-    public static final Predicate<DefaultActionToken> ACTION_TOKEN_BASIC_CHECKS = t -> {
+    public static final Predicate<DefaultActionTokenKey> ACTION_TOKEN_BASIC_CHECKS = t -> {
         if (t.getActionVerificationNonce() == null) {
             throw new VerificationException("Nonce not present.");
         }
@@ -131,7 +131,7 @@ public class DefaultActionToken extends DefaultActionTokenKey implements ActionT
      * <li>{@code issuer}: URI of the given realm</li>
      * <li>{@code audience}: URI of the given realm (same as issuer)</li>
      * </ul>
-     * 
+     *
      * @param session
      * @param realm
      * @param uri
