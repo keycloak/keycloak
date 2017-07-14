@@ -26,7 +26,7 @@ import org.junit.rules.TemporaryFolder;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.credential.hash.Pbkdf2PasswordHashProvider;
+import org.keycloak.credential.hash.Pbkdf2PasswordHashProviderFactory;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -85,7 +85,7 @@ public class AddUserTest {
 
         CredentialRepresentation credentials = user.getCredentials().get(0);
 
-        assertEquals(Pbkdf2PasswordHashProvider.ID, credentials.getAlgorithm());
+        assertEquals(Pbkdf2PasswordHashProviderFactory.ID, credentials.getAlgorithm());
         assertEquals(new Integer(100000), credentials.getHashIterations());
 
         KeycloakServer server = new KeycloakServer();

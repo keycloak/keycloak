@@ -42,6 +42,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.exportimport.Strategy;
 import static org.keycloak.testsuite.Assert.assertNames;
 import static org.keycloak.testsuite.migration.MigrationTest.MIGRATION;
+import static org.keycloak.testsuite.migration.MigrationTest.MIGRATION2;
 
 /**
  * Test importing JSON files exported from previous adminClient versions
@@ -85,6 +86,7 @@ public class LegacyImportTest extends AbstractExportImportTest {
             assertNames(imported.groups().groups(), "migration-test-group");
         } finally {
             removeRealm(MIGRATION);
+            removeRealm(MIGRATION2);
         }
     }
 

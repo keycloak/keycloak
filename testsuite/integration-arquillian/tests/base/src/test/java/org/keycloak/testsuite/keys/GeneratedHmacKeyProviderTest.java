@@ -17,16 +17,15 @@
 
 package org.keycloak.testsuite.keys;
 
+import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.common.util.PemUtils;
 import org.keycloak.jose.jws.AlgorithmType;
-import org.keycloak.jose.jws.crypto.HMACProvider;
 import org.keycloak.keys.GeneratedHmacKeyProviderFactory;
-import org.keycloak.keys.GeneratedRsaKeyProviderFactory;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
@@ -37,9 +36,10 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.runonserver.RunHelpers;
+import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 
 import javax.ws.rs.core.Response;
-import java.security.interfaces.RSAPublicKey;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -49,6 +49,11 @@ import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class GeneratedHmacKeyProviderTest extends AbstractKeycloakTest {
+
+    @Deployment
+    public static WebArchive deploy() {
+        return RunOnServerDeployment.create();
+    }
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -94,7 +99,8 @@ public class GeneratedHmacKeyProviderTest extends AbstractKeycloakTest {
         assertEquals(AlgorithmType.HMAC.name(), key.getType());
         assertEquals(priority, key.getProviderPriority());
 
-        assertEquals(32, Base64Url.decode(testingClient.testing("test").getComponentConfig(id).getFirst("secret")).length);
+        ComponentRepresentation component = testingClient.server("test").fetch(RunHelpers.internalComponent(id));
+        assertEquals(32, Base64Url.decode(component.getConfig().getFirst("secret")).length);
     }
 
     @Test
@@ -127,7 +133,8 @@ public class GeneratedHmacKeyProviderTest extends AbstractKeycloakTest {
         assertEquals(AlgorithmType.HMAC.name(), key.getType());
         assertEquals(priority, key.getProviderPriority());
 
-        assertEquals(512, Base64Url.decode(testingClient.testing("test").getComponentConfig(id).getFirst("secret")).length);
+        ComponentRepresentation component = testingClient.server("test").fetch(RunHelpers.internalComponent(id));
+        assertEquals(512, Base64Url.decode(component.getConfig().getFirst("secret")).length);
     }
 
     @Test
@@ -141,13 +148,15 @@ public class GeneratedHmacKeyProviderTest extends AbstractKeycloakTest {
         Response response = adminClient.realm("test").components().add(rep);
         String id = ApiUtil.getCreatedId(response);
 
-        assertEquals(32, Base64Url.decode(testingClient.testing("test").getComponentConfig(id).getFirst("secret")).length);
+        ComponentRepresentation component = testingClient.server("test").fetch(RunHelpers.internalComponent(id));
+        assertEquals(32, Base64Url.decode(component.getConfig().getFirst("secret")).length);
 
         ComponentRepresentation createdRep = adminClient.realm("test").components().component(id).toRepresentation();
         createdRep.getConfig().putSingle("secretSize", "512");
         adminClient.realm("test").components().component(id).update(createdRep);
 
-        assertEquals(512, Base64Url.decode(testingClient.testing("test").getComponentConfig(id).getFirst("secret")).length);
+        component = testingClient.server("test").fetch(RunHelpers.internalComponent(id));
+        assertEquals(512, Base64Url.decode(component.getConfig().getFirst("secret")).length);
     }
 
     @Test

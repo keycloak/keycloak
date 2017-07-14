@@ -52,6 +52,7 @@ import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
@@ -83,8 +84,12 @@ import java.util.List;
 import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 import java.util.*;
+import javax.xml.crypto.dsig.XMLSignature;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -478,6 +483,17 @@ public class SAMLEndpoint {
     protected class PostBinding extends Binding {
         @Override
         protected void verifySignature(String key, SAMLDocumentHolder documentHolder) throws VerificationException {
+            NodeList nl = documentHolder.getSamlDocument().getElementsByTagNameNS(XMLSignature.XMLNS, "Signature");
+            boolean anyElementSigned = (nl != null && nl.getLength() > 0);
+            if ((! anyElementSigned) && (documentHolder.getSamlObject() instanceof ResponseType)) {
+                ResponseType responseType = (ResponseType) documentHolder.getSamlObject();
+                List<ResponseType.RTChoiceType> assertions = responseType.getAssertions();
+                if (! assertions.isEmpty() ) {
+                    // Only relax verification if the response is an authnresponse and contains (encrypted/plaintext) assertion.
+                    // In that case, signature is validated on assertion element
+                    return;
+                }
+            }
             SamlProtocolUtils.verifyDocumentSignature(documentHolder.getSamlDocument(), getIDPKeyLocator());
         }
 

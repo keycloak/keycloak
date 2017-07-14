@@ -38,5 +38,6 @@
         <module name="javax.persistence.api"/>
         <module name="org.hibernate"/>
         <module name="org.javassist"/>
+        <module name="org.jboss.modules"/>
     </dependencies>
 </module>

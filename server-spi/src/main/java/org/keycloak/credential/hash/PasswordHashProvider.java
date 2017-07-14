@@ -27,8 +27,7 @@ import org.keycloak.provider.Provider;
 public interface PasswordHashProvider extends Provider {
     boolean policyCheck(PasswordPolicy policy, CredentialModel credentia);
 
-    void encode(String rawPassword, PasswordPolicy policy, CredentialModel credential);
+    void encode(String rawPassword, int iterations, CredentialModel credential);
 
     boolean verify(String rawPassword, CredentialModel credential);
-
 }

@@ -103,7 +103,7 @@ public class SamlProtocolUtils {
      * @return Public key for encryption.
      * @throws VerificationException
      */
-    public static PublicKey getEncryptionValidationKey(ClientModel client) throws VerificationException {
+    public static PublicKey getEncryptionKey(ClientModel client) throws VerificationException {
         return getPublicKey(client, SamlConfigAttributes.SAML_ENCRYPTION_CERTIFICATE_ATTRIBUTE);
     }
 
