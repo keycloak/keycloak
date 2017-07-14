@@ -108,6 +108,91 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-licenses-common</id>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <phase>process-resources</phase>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/licenses</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.basedir}/src/main/resources/licenses</directory>
+                                    <includes>
+                                        <include>licenses.xsl</include>
+                                        <include>licenses.css</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-licenses-slot</id>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <phase>process-resources</phase>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/licenses</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.basedir}/src/main/resources/licenses/rh-sso</directory>
+                                    <includes>
+                                        <include>licenses.xml</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>xml-maven-plugin</artifactId>
+                <version>1.0.1</version>
+                <executions>
+                    <execution>
+                        <id>generate-licenses-html</id>
+                        <goals>
+                            <goal>transform</goal>
+                        </goals>
+                        <phase>process-resources</phase>
+                        <configuration>
+                            <transformationSets>
+                                <transformationSet>
+                                    <dir>${project.build.directory}/licenses</dir>
+                                    <includes>
+                                        <include>licenses.xml</include>
+                                    </includes>
+                                    <stylesheet>${project.build.directory}/licenses/licenses.xsl</stylesheet>
+                                    <outputDir>${project.build.directory}/licenses</outputDir>
+                                    <fileMappers>
+                                        <fileMapper implementation="org.codehaus.plexus.components.io.filemappers.FileExtensionMapper">
+                                            <targetExtension>.html</targetExtension>
+                                        </fileMapper>
+                                    </fileMappers>
+                                    <parameters>
+                                        <parameter>
+                                            <name>productname</name>
+                                            <value>Red Hat Single Sign-On</value>
+                                        </parameter>
+                                        <parameter>
+                                            <name>version</name>
+                                            <value>${project.version}</value>
+                                        </parameter>
+                                    </parameters>
+                                </transformationSet>
+                            </transformationSets>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 

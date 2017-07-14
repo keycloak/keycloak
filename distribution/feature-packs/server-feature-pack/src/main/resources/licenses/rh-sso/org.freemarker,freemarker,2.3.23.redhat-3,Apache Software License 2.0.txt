@@ -1,0 +1,45 @@
+Copyright 2014 Attila Szegedi, Daniel Dekany, Jonathan Revusky
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+==============================================================================
+END LICENSE
+
+
+FreeMarker subcomponents with different copyright owners
+--------------------------------------------------------
+
+FreeMarker, both in its source code and binary form (freemarker.jar)
+includes a number of files that are licensed by the Apache Software
+Foundation under the Apache License, Version 2.0. This is the same
+license as the license of FreeMaker, but the copyright owner is the
+Apache Software Foundation. These files are:
+  
+    freemarker/ext/jsp/web-app_2_2.dtd
+    freemarker/ext/jsp/web-app_2_3.dtd
+    freemarker/ext/jsp/web-jsptaglibrary_1_1.dtd
+    freemarker/ext/jsp/web-jsptaglibrary_1_2.dtd
+
+
+Historical notes
+----------------
+
+FreeMarker 1.x was released under the LGPL license. Later, by
+community consensus, we have switched over to a BSD-style license. As
+of FreeMarker 2.2pre1, the original author, Benjamin Geer, has
+relinquished the copyright in behalf of Visigoth Software Society.
+
+With FreeMarker 2.3.21 the license has changed to Apache License,
+Version 2.0, and the owner has changed from Visigoth Software Society
+to three of the FreeMarker 2.x developers, Attila Szegedi, Daniel
+Dekany, and Jonathan Revusky.
