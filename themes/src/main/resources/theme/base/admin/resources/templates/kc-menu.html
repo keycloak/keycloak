@@ -50,7 +50,7 @@
         <ul class="nav nav-pills nav-stacked">
             <li data-ng-show="access.queryGroups" data-ng-class="(path[2] == 'groups'
                         || path[2] == 'default-groups') && 'active'"><a href="#/realms/{{realm.realm}}/groups"><span class="pficon pficon-users"></span> {{:: 'groups' | translate}}</a></li>
-            <li data-ng-show="access.queryUsers" data-ng-class="(path[2] == 'users') && 'active'"><a href="#/realms/{{realm.realm}}/users"><span class="pficon pficon-user"></span> {{:: 'users' | translate}}</a></li>
+            <li data-ng-show="access.queryUsers" data-ng-class="(path[2] == 'users' || path[2] == 'users-permissions') && 'active'"><a href="#/realms/{{realm.realm}}/users"><span class="pficon pficon-user"></span> {{:: 'users' | translate}}</a></li>
             <li data-ng-show="access.viewRealm" data-ng-class="(path[2] == 'sessions') && 'active'"><a href="#/realms/{{realm.realm}}/sessions/realm"><i class="fa fa-clock-o"></i> {{:: 'sessions' | translate}}</a></li>
             <li data-ng-show="access.viewEvents" data-ng-class="(path[2] == 'events' 
                         || path[2] == 'events-settings'
