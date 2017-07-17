@@ -26,8 +26,8 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>keycloak-spring-boot-adapter</artifactId>
-  <name>Keycloak Spring Boot Integration</name>
+  <artifactId>keycloak-spring-boot-adapter-core</artifactId>
+  <name>Keycloak Spring Boot Adapter Core</name>
   <description/>
 
   <properties>
@@ -35,12 +35,6 @@
   </properties>
 
   <dependencies>
-
-    <dependency>
-      <groupId>org.keycloak</groupId>
-      <artifactId>keycloak-spring-boot-adapter-core</artifactId>
-    </dependency>
-
     <dependency>
       <groupId>org.jboss.logging</groupId>
       <artifactId>jboss-logging</artifactId>
