@@ -36,6 +36,9 @@ public class DefaultActionTokenKey extends JsonWebToken implements ActionTokenKe
     @JsonProperty(value = JSON_FIELD_ACTION_VERIFICATION_NONCE, required = true)
     private UUID actionVerificationNonce;
 
+    public DefaultActionTokenKey() {
+    }
+
     public DefaultActionTokenKey(String userId, String actionId, int absoluteExpirationInSecs, UUID actionVerificationNonce) {
         this.subject = userId;
         this.type = actionId;

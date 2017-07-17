@@ -112,6 +112,7 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
     public void deploy(ProviderManager pm) {
         Map<Class<? extends Provider>, Map<String, ProviderFactory>> copy = getFactoriesCopy();
         Map<Class<? extends Provider>, Map<String, ProviderFactory>> newFactories = loadFactories(pm);
+        List<ProviderFactory> deployed = new LinkedList<>();
         List<ProviderFactory> undeployed = new LinkedList<>();
 
         for (Map.Entry<Class<? extends Provider>, Map<String, ProviderFactory>> entry : newFactories.entrySet()) {
@@ -120,6 +121,7 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
                 copy.put(entry.getKey(), entry.getValue());
             } else {
                 for (ProviderFactory f : entry.getValue().values()) {
+                    deployed.add(f);
                     ProviderFactory old = current.remove(f.getId());
                     if (old != null) undeployed.add(old);
                 }
@@ -130,6 +132,9 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
         factoriesMap = copy;
         for (ProviderFactory factory : undeployed) {
             factory.close();
+        }
+        for (ProviderFactory factory : deployed) {
+            factory.postInit(this);
         }
     }
 

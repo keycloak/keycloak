@@ -18,7 +18,7 @@ package org.keycloak.services.resources;
 
 import org.keycloak.TokenVerifier.Predicate;
 import org.keycloak.authentication.AuthenticationProcessor;
-import org.keycloak.authentication.actiontoken.DefaultActionToken;
+import org.keycloak.authentication.actiontoken.DefaultActionTokenKey;
 import org.keycloak.authentication.ExplainedVerificationException;
 import org.keycloak.authentication.actiontoken.ActionTokenContext;
 import org.keycloak.authentication.actiontoken.ExplainedTokenVerificationException;
@@ -152,7 +152,7 @@ public class LoginActionsServiceChecks {
      *  Verifies whether the user given by ID both exists in the current realm. If yes,
      *  it optionally also injects the user using the given function (e.g. into session context).
      */
-    public static <T extends DefaultActionToken> void checkIsUserValid(T token, ActionTokenContext<T> context) throws VerificationException {
+    public static <T extends DefaultActionTokenKey> void checkIsUserValid(T token, ActionTokenContext<T> context) throws VerificationException {
         try {
             checkIsUserValid(context.getSession(), context.getRealm(), token.getUserId(), context.getAuthenticationSession()::setAuthenticatedUser);
         } catch (ExplainedVerificationException ex) {
@@ -178,7 +178,7 @@ public class LoginActionsServiceChecks {
      * Verifies whether the client denoted by client ID in token's {@code iss} ({@code issuedFor})
      * field both exists and is enabled.
      */
-    public static <T extends DefaultActionToken> void checkIsClientValid(T token, ActionTokenContext<T> context) throws VerificationException {
+    public static <T extends JsonWebToken> void checkIsClientValid(T token, ActionTokenContext<T> context) throws VerificationException {
         String clientId = token.getIssuedFor();
         AuthenticationSessionModel authSession = context.getAuthenticationSession();
         ClientModel client = authSession == null ? null : authSession.getClient();
@@ -297,8 +297,9 @@ public class LoginActionsServiceChecks {
         return true;
     }
 
-    public static <T extends DefaultActionToken> void checkTokenWasNotUsedYet(T token, ActionTokenContext<T> context) throws VerificationException {
+    public static <T extends DefaultActionTokenKey> void checkTokenWasNotUsedYet(T token, ActionTokenContext<T> context) throws VerificationException {
         ActionTokenStoreProvider actionTokenStore = context.getSession().getProvider(ActionTokenStoreProvider.class);
+
         if (actionTokenStore.get(token) != null) {
             throw new ExplainedTokenVerificationException(token, Errors.EXPIRED_CODE, Messages.EXPIRED_ACTION);
         }
