@@ -35,6 +35,12 @@
   </properties>
 
   <dependencies>
+
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-spring-boot-adapter-core</artifactId>
+    </dependency>
+
     <dependency>
       <groupId>org.jboss.logging</groupId>
       <artifactId>jboss-logging</artifactId>
