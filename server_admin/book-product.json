@@ -33,6 +33,10 @@
       "name": "Securing Applications and Services Guide",
       "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1/html-single/securing-applications-and-services-guide/"
     },
+    "authorizationguide": {
+      "name": "Authorization Services Guide",
+      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1/html-single/authorization_services_guide/"
+    },
 
     "subsystem": {
       "undertow": "urn:jboss:domain:undertow:3.1"

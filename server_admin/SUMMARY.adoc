@@ -59,6 +59,7 @@
 .. link:server_admin/topics/admin-console-permissions.adoc[Admin Console Access Control and Permissions]
 ... link:server_admin/topics/admin-console-permissions/master-realm.adoc[Master Realm]
 ... link:server_admin/topics/admin-console-permissions/per-realm.adoc[Dedicated Realm Admin Consoles]
+... link:server_admin/topics/admin-console-permissions/fine-grain.adoc[Fine Grain Admin Permissions]
 .. link:server_admin/topics/realms/keys.adoc[Realm Keys]
 .. link:server_admin/topics/identity-broker.adoc[Identity Brokering]
 ... link:server_admin/topics/identity-broker/overview.adoc[Brokering Overview]
