@@ -42,4 +42,7 @@ The roles available are:
 
 Assign the roles you want to your users and they will only be able to use that specific part of the administration console.
 
+IMPORTANT: Admins with the `manage-users` role will only be able to assign admin roles to users that they themselves have.  So, if an admin has the `manage-users` role but doesn't have the `manage-realm` role, they will not be able to assign this role.
+
+
 
