@@ -88,8 +88,10 @@
    ... link:authorization_services/topics/service/entitlement/entitlement-api.adoc[Entitlement API]
 
       .... link:authorization_services/topics/service/entitlement/entitlement-api-aapi.adoc[Requesting Entitlements]
+      .... link:authorization_services/topics/service/entitlement/entitlement-request-metadata.adoc[Entitlement Request Metadata]
 
-   ... link:authorization_services/topics/service/protection/token-introspection.adoc[Introspecting a Requesting Party Token]
+   ... link:authorization_services/topics/service/rpt/overview.adoc[Requesting Party Token (RPT)]
+      .... link:authorization_services/topics/service/rpt/token-introspection.adoc[Introspecting a Requesting Party Token]
 
    ... link:authorization_services/topics/service/client-api.adoc[Authorization Client Java API]
 

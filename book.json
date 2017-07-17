@@ -37,6 +37,10 @@
     "installguide": {
       "name": "Server Installation and Configuration",
       "link": "https://keycloak.gitbooks.io/documentation/server_installation/index.html"
+      "profile": {
+        "name": "Profiles",
+        "link": "https://keycloak.gitbooks.io/documentation/server_installation/topics/profiles.html"
+      }
     },
     "adapterguide": {
       "name": "Securing Applications and Services Guide",
