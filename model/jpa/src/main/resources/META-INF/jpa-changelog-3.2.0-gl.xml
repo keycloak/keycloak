@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+    <!--    Changing FED_USER_ATTRIBUTE.VALUE column type to VARCHAR(2147483647) Liquibase understands this and will make it
+            VARCHAR(MAX) on SqlServer and 'character varying' on pgsql -->
+    <changeSet author="mevans" id="3.2.0-gl">
+        <modifyDataType tableName="FED_USER_ATTRIBUTE" columnName="VALUE" newDataType="VARCHAR(2147483647)" />
+    </changeSet>
+</databaseChangeLog>

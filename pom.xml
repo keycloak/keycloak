@@ -99,7 +99,7 @@
         <google.guava.version>20.0</google.guava.version>
 
         <jetty9.version>9.1.0.v20131115</jetty9.version>
-        <liquibase.version>3.4.1</liquibase.version>
+        <liquibase.version>3.4.2</liquibase.version>
         <mysql.version>5.1.29</mysql.version>
         <osgi.version>4.2.0</osgi.version>
         <pax.web.version>4.2.4</pax.web.version>
