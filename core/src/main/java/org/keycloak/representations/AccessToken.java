@@ -17,11 +17,14 @@
 
 package org.keycloak.representations;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.representations.idm.authorization.Permission;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -38,6 +41,7 @@ public class AccessToken extends IDToken {
         protected Set<String> roles;
         @JsonProperty("verify_caller")
         protected Boolean verifyCaller;
+        protected Map<String, Object> otherClaims = new HashMap<>();
 
         public Access() {
         }
@@ -80,6 +84,20 @@ public class AccessToken extends IDToken {
         public Access verifyCaller(Boolean required) {
             this.verifyCaller = required;
             return this;
+        }
+        /**
+         * This is a map of any other claims and data that might be in the Access.
+         *
+         * @return current other claims
+         */
+        @JsonAnyGetter
+        public Map<String, Object> getOtherClaims() {
+            return otherClaims;
+        }
+
+        @JsonAnySetter
+        public void setOtherClaims(String name, Object value) {
+            otherClaims.put(name, value);
         }
     }
 
