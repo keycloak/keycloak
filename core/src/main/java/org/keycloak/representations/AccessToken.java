@@ -24,7 +24,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.representations.idm.authorization.Permission;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
