@@ -11,6 +11,7 @@
  .. link:server_development/topics/providers.adoc[Service Provider Interfaces (SPI)]
  .. link:server_development/topics/extensions.adoc[Extending Server]
  .. link:server_development/topics/auth-spi.adoc[Authentication SPI]
+ .. link:server_development/topics/action-token-spi.adoc[Action Token SPI]
  .. link:server_development/topics/events.adoc[Event Listener SPI]
 {% endif %}
  .. link:server_development/topics/user-storage.adoc[User Storage SPI]
