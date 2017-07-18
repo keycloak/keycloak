@@ -384,7 +384,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
     }
 
 
-    @Test
+    //@Test
     public void testEvaluationLocal() throws Exception {
         testingClient.server().run(FineGrainAdminUnitTest::setupPolices);
         testingClient.server().run(FineGrainAdminUnitTest::setupUsers);
