@@ -63,10 +63,6 @@ public class DefaultActionTokenKey extends JsonWebToken implements ActionTokenKe
         return actionVerificationNonce;
     }
 
-    public String serializeKey() {
-        return String.format("%s.%d.%s.%s", getUserId(), getExpiration(), getActionVerificationNonce(), getActionId());
-    }
-
     public static DefaultActionTokenKey from(String serializedKey) {
         if (serializedKey == null) {
             return null;

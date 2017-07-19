@@ -43,4 +43,8 @@ public interface ActionTokenKeyModel {
      * @return Single-use random value used for verification whether the relevant action is allowed.
      */
     UUID getActionVerificationNonce();
+
+    default String serializeKey() {
+        return String.format("%s.%d.%s.%s", getUserId(), getExpiration(), getActionVerificationNonce(), getActionId());
+    }
 }
