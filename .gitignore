@@ -49,3 +49,7 @@ target
 # Maven shade
 #############
 *dependency-reduced-pom.xml
+
+# nodejs #
+##########
+node_modules
