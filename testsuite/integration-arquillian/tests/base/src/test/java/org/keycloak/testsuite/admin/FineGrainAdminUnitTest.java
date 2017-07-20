@@ -650,6 +650,57 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         }
 
     }
+
+    // KEYCLOAK-5152
+    @Test
+    public void testMasterRealmWithComposites() throws Exception {
+        RoleRepresentation composite = new RoleRepresentation();
+        composite.setName("composite");
+        composite.setComposite(true);
+        adminClient.realm(TEST).roles().create(composite);
+        composite = adminClient.realm(TEST).roles().get("composite").toRepresentation();
+
+        ClientRepresentation client = adminClient.realm(TEST).clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        RoleRepresentation createClient = adminClient.realm(TEST).clients().get(client.getId()).roles().get(AdminRoles.CREATE_CLIENT).toRepresentation();
+        RoleRepresentation queryRealms = adminClient.realm(TEST).clients().get(client.getId()).roles().get(AdminRoles.QUERY_REALMS).toRepresentation();
+        List<RoleRepresentation> composites = new LinkedList<>();
+        composites.add(createClient);
+        composites.add(queryRealms);
+        adminClient.realm(TEST).rolesById().addComposites(composite.getId(), composites);
+    }
+
+    public static void setup5152(KeycloakSession session) {
+        RealmModel realm = session.realms().getRealmByName(TEST);
+        ClientModel realmAdminClient = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
+        RoleModel realmAdminRole = realmAdminClient.getRole(AdminRoles.REALM_ADMIN);
+
+        UserModel realmUser = session.users().addUser(realm, "realm-admin");
+        realmUser.grantRole(realmAdminRole);
+        realmUser.setEnabled(true);
+        session.userCredentialManager().updateCredential(realm, realmUser, UserCredentialModel.password("password"));
+    }
+
+    // KEYCLOAK-5152
+    @Test
+    public void testRealmWithComposites() throws Exception {
+        testingClient.server().run(FineGrainAdminUnitTest::setup5152);
+
+        Keycloak realmClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
+                TEST, "realm-admin", "password", Constants.ADMIN_CLI_CLIENT_ID, null);
+
+        RoleRepresentation composite = new RoleRepresentation();
+        composite.setName("composite");
+        composite.setComposite(true);
+        realmClient.realm(TEST).roles().create(composite);
+        composite = adminClient.realm(TEST).roles().get("composite").toRepresentation();
+
+        ClientRepresentation client = adminClient.realm(TEST).clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        RoleRepresentation viewUsers = adminClient.realm(TEST).clients().get(client.getId()).roles().get(AdminRoles.CREATE_CLIENT).toRepresentation();
+
+        List<RoleRepresentation> composites = new LinkedList<>();
+        composites.add(viewUsers);
+        realmClient.realm(TEST).rolesById().addComposites(composite.getId(), composites);
+    }
     // testRestEvaluationMasterRealm
     // testRestEvaluationMasterAdminTestRealm
 

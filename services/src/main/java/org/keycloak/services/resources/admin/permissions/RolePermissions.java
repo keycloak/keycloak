@@ -136,10 +136,13 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
             if (root.admin().hasRole(role)) return true;
 
             ClientModel adminClient = root.getRealmManagementClient();
+            // is this an admin role in 'realm-management' client of the realm we are managing?
             if (adminClient.equals(role.getContainer())) {
                 // if this is realm admin role, then check to see if admin has similar permissions
                 // we do this so that the authz service is invoked
-                if (role.getName().equals(AdminRoles.MANAGE_CLIENTS)) {
+                if (role.getName().equals(AdminRoles.MANAGE_CLIENTS)
+                        || role.getName().equals(AdminRoles.CREATE_CLIENT)
+                        ) {
                     if (!root.clients().canManage()) {
                         return adminConflictMessage(role);
                     } else {
@@ -151,6 +154,9 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
                     } else {
                         return true;
                     }
+
+                } else if (role.getName().equals(AdminRoles.QUERY_REALMS)) {
+                    return true;
                 } else if (role.getName().equals(AdminRoles.QUERY_CLIENTS)) {
                     return true;
                 } else if (role.getName().equals(AdminRoles.QUERY_USERS)) {
