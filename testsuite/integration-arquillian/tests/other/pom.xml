@@ -39,6 +39,7 @@
     <modules>
         <module>adapters</module>
         <module>sssd</module>
+        <module>springboot-tests</module>
     </modules>
 
     <build>
