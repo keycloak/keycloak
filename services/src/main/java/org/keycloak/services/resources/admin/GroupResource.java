@@ -263,9 +263,9 @@ public class GroupResource {
     @NoCache
     public ManagementPermissionReference setManagementPermissionsEnabled(ManagementPermissionReference ref) {
         auth.groups().requireManage(group);
+        AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
+        permissions.groups().setPermissionsEnabled(group, ref.isEnabled());
         if (ref.isEnabled()) {
-            AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
-            permissions.groups().setPermissionsEnabled(group, ref.isEnabled());
             return toMgmtRef(group, permissions);
         } else {
             return new ManagementPermissionReference();
