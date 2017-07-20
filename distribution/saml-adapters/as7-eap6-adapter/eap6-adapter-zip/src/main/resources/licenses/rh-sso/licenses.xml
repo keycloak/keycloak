@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<licenseSummary>
+  <dependencies>
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcpkix-jdk15on</artifactId>
+      <version>1.52.0.redhat-3</version>
+      <licenses>
+        <license>
+          <name>MIT License</name>
+          <url>https://raw.githubusercontent.com/bcgit/bc-java/r1rv52/LICENSE.html</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcprov-jdk15on</artifactId>
+      <version>1.52.0.redhat-3</version>
+      <licenses>
+        <license>
+          <name>MIT License</name>
+          <url>https://raw.githubusercontent.com/bcgit/bc-java/r1rv52/LICENSE.html</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-adapter-spi</artifactId>
+      <version>2.5.7.Final-redhat-2</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/keycloak/keycloak/2.5.7.Final/License.html</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-as7-adapter-spi</artifactId>
+      <version>2.5.7.Final-redhat-2</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/keycloak/keycloak/2.5.7.Final/License.html</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-common</artifactId>
+      <version>2.5.7.Final-redhat-2</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/keycloak/keycloak/2.5.7.Final/License.html</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-jboss-adapter-core</artifactId>
+      <version>2.5.7.Final-redhat-2</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/keycloak/keycloak/2.5.7.Final/License.html</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-saml-adapter-api-public</artifactId>
+      <version>2.5.7.Final-redhat-2</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/keycloak/keycloak/2.5.7.Final/License.html</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-saml-adapter-core</artifactId>
+      <version>2.5.7.Final-redhat-2</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/keycloak/keycloak/2.5.7.Final/License.html</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-saml-as7-adapter</artifactId>
+      <version>2.5.7.Final-redhat-2</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/keycloak/keycloak/2.5.7.Final/License.html</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-saml-as7-subsystem</artifactId>
+      <version>2.5.7.Final-redhat-2</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/keycloak/keycloak/2.5.7.Final/License.html</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-saml-core</artifactId>
+      <version>2.5.7.Final-redhat-2</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/keycloak/keycloak/2.5.7.Final/License.html</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-saml-core-public</artifactId>
+      <version>2.5.7.Final-redhat-2</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/keycloak/keycloak/2.5.7.Final/License.html</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-saml-tomcat-adapter-core</artifactId>
+      <version>2.5.7.Final-redhat-2</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/keycloak/keycloak/2.5.7.Final/License.html</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-tomcat-adapter-spi</artifactId>
+      <version>2.5.7.Final-redhat-2</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/keycloak/keycloak/2.5.7.Final/License.html</url>
+        </license>
+      </licenses>
+    </dependency>
+  </dependencies>
+</licenseSummary>

@@ -45,6 +45,14 @@
             </excludes>
             <outputDirectory>modules/system/add-ons/keycloak</outputDirectory>
         </fileSet>
+        <fileSet>
+            <directory>src/main/resources/licenses/rh-sso</directory>
+            <outputDirectory>docs/licenses-rh-sso-adapter</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>target/licenses</directory>
+            <outputDirectory>docs/licenses-rh-sso-adapter</outputDirectory>
+        </fileSet>
     </fileSets>
     <files>
         <file>

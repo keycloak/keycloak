@@ -1,0 +1,1 @@
+org.keycloak,keycloak-tomcat-adapter-spi,2.5.7.Final-redhat-2,Apache Software License 2.0.txt

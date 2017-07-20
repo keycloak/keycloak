@@ -1,0 +1,1 @@
+../../../../../../../feature-packs/server-feature-pack/src/main/resources/licenses/download-license-files.sh
