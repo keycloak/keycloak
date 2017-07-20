@@ -28,6 +28,9 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.models.AccountRoles;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.Constants;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -78,11 +81,18 @@ public class AccountTest extends AbstractTestRealmKeycloakTest {
         //UserRepresentation user = findUserInRealmRep(testRealm, "test-user@localhost");
         //ClientRepresentation accountApp = findClientInRealmRep(testRealm, ACCOUNT_MANAGEMENT_CLIENT_ID);
         UserRepresentation user2 = UserBuilder.create()
-                                              .enabled(true)
-                                              .username("test-user-no-access@localhost")
-                                              .email("test-user-no-access@localhost")
-                                              .password("password")
-                                              .build();
+                .enabled(true)
+                .username("test-user-no-access@localhost")
+                .email("test-user-no-access@localhost")
+                .password("password")
+                .build();
+        UserRepresentation realmAdmin = UserBuilder.create()
+                .enabled(true)
+                .username("realm-admin")
+                .password("password")
+                .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN)
+                .role(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, AccountRoles.MANAGE_ACCOUNT)
+                .build();
 
         testRealm.addIdentityProvider(IdentityProviderBuilder.create()
                                               .providerId("github")
@@ -105,7 +115,8 @@ public class AccountTest extends AbstractTestRealmKeycloakTest {
                                               .build());
 
         RealmBuilder.edit(testRealm)
-                    .user(user2);
+                    .user(user2)
+                    .user(realmAdmin);
     }
 
     private static final UriBuilder BASE = UriBuilder.fromUri("http://localhost:8180/auth");
@@ -869,6 +880,19 @@ public class AccountTest extends AbstractTestRealmKeycloakTest {
             driver2.close();
         }
     }
+
+    // KEYCLOAK-5155
+    @Test
+    public void testConsoleListedInApplications() {
+        applicationsPage.open();
+        loginPage.login("realm-admin", "password");
+        Assert.assertTrue(applicationsPage.isCurrent());
+        Map<String, AccountApplicationsPage.AppEntry> apps = applicationsPage.getApplications();
+        Assert.assertThat(apps.keySet(), hasItems("Admin CLI", "Security Admin Console"));
+        events.clear();
+    }
+
+
 
     // More tests (including revoke) are in OAuthGrantTest and OfflineTokenTest
     @Test

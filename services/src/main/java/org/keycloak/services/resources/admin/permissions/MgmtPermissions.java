@@ -107,6 +107,14 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
             this.identity = new KeycloakIdentity(auth.getToken(), session);
         }
     }
+
+    MgmtPermissions(KeycloakSession session, RealmModel adminsRealm, UserModel admin) {
+        this.session = session;
+        this.admin = admin;
+        this.adminsRealm = adminsRealm;
+        this.identity = new UserModelIdentity(adminsRealm, admin);
+    }
+
     MgmtPermissions(KeycloakSession session, RealmModel realm, RealmModel adminsRealm, UserModel admin) {
         this(session, realm);
         this.admin = admin;
