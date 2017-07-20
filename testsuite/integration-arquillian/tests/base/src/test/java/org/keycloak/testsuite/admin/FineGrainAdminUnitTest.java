@@ -660,13 +660,12 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         adminClient.realm(TEST).roles().create(composite);
         composite = adminClient.realm(TEST).roles().get("composite").toRepresentation();
 
-        RoleRepresentation compositePart = new RoleRepresentation();
-        compositePart.setName("composite-part");
-        adminClient.realm(TEST).roles().create(compositePart);
-        compositePart = adminClient.realm(TEST).roles().get("composite-part").toRepresentation();
-
+        ClientRepresentation client = adminClient.realm(TEST).clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        RoleRepresentation createClient = adminClient.realm(TEST).clients().get(client.getId()).roles().get(AdminRoles.CREATE_CLIENT).toRepresentation();
+        RoleRepresentation queryRealms = adminClient.realm(TEST).clients().get(client.getId()).roles().get(AdminRoles.QUERY_REALMS).toRepresentation();
         List<RoleRepresentation> composites = new LinkedList<>();
-        composites.add(compositePart);
+        composites.add(createClient);
+        composites.add(queryRealms);
         adminClient.realm(TEST).rolesById().addComposites(composite.getId(), composites);
     }
 
@@ -695,13 +694,11 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         realmClient.realm(TEST).roles().create(composite);
         composite = adminClient.realm(TEST).roles().get("composite").toRepresentation();
 
-        RoleRepresentation compositePart = new RoleRepresentation();
-        compositePart.setName("composite-part");
-        realmClient.realm(TEST).roles().create(compositePart);
-        compositePart = adminClient.realm(TEST).roles().get("composite-part").toRepresentation();
+        ClientRepresentation client = adminClient.realm(TEST).clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        RoleRepresentation viewUsers = adminClient.realm(TEST).clients().get(client.getId()).roles().get(AdminRoles.CREATE_CLIENT).toRepresentation();
 
         List<RoleRepresentation> composites = new LinkedList<>();
-        composites.add(compositePart);
+        composites.add(viewUsers);
         realmClient.realm(TEST).rolesById().addComposites(composite.getId(), composites);
     }
     // testRestEvaluationMasterRealm
