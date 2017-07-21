@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-testsuite-pom</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.2.1.Final</version>
+        <version>3.2.2.Final-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <name>Keycloak SAML Jetty Testsuite Integration</name>
