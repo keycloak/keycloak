@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-authz-parent</artifactId>
-        <version>3.2.1.Final-SNAPSHOT</version>
+        <version>3.2.1.Final</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 

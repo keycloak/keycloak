@@ -26,7 +26,7 @@
 
     <groupId>org.keycloak.bom</groupId>
     <artifactId>keycloak-bom-parent</artifactId>
-    <version>3.2.1.Final-SNAPSHOT</version>
+    <version>3.2.1.Final</version>
 
     <packaging>pom</packaging>
 
