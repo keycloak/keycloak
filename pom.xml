@@ -80,6 +80,7 @@
         <sun.jaxb.version>2.2.11</sun.jaxb.version>
         <sun.xsom.version>20140925</sun.xsom.version>
         <undertow.version>1.4.11.Final</undertow.version>
+        <woodstox.version>5.0.3</woodstox.version>
         <xmlsec.version>2.0.5</xmlsec.version>
 
         <!-- Authorization Drools Policy Provider -->

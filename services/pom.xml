@@ -145,6 +145,12 @@
             <artifactId>jackson-annotations</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.fasterxml.woodstox</groupId>
+            <artifactId>woodstox-core</artifactId>
+            <version>${woodstox.version}</version>    <!-- this version has to match that of used in Wildfly -->
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>com.google.zxing</groupId>
             <artifactId>javase</artifactId>
         </dependency>
