@@ -90,6 +90,11 @@ class ElytronHttpFacade implements OIDCHttpFacade {
 
     void authenticationComplete() {
         if (securityIdentity != null) {
+            HttpScope requestScope = request.getScope(Scope.EXCHANGE);
+            RefreshableKeycloakSecurityContext keycloakSecurityContext = account.getKeycloakSecurityContext();
+
+            requestScope.setAttachment(KeycloakSecurityContext.class.getName(), keycloakSecurityContext);
+
             this.request.authenticationComplete(response -> {
                 if (!restored) {
                     responseConsumer.accept(response);

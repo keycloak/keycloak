@@ -47,10 +47,8 @@ import org.wildfly.security.auth.callback.AnonymousAuthorizationCallback;
 import org.wildfly.security.auth.callback.AuthenticationCompleteCallback;
 import org.wildfly.security.auth.callback.SecurityIdentityCallback;
 import org.wildfly.security.auth.server.SecurityIdentity;
-import org.wildfly.security.http.HttpAuthenticationException;
 import org.wildfly.security.http.HttpScope;
 import org.wildfly.security.http.HttpServerCookie;
-import org.wildfly.security.http.HttpServerMechanismsResponder;
 import org.wildfly.security.http.HttpServerRequest;
 import org.wildfly.security.http.HttpServerResponse;
 import org.wildfly.security.http.Scope;
@@ -87,11 +85,14 @@ class ElytronHttpFacade implements HttpFacade {
 
     void authenticationComplete() {
         this.securityIdentity = SecurityIdentityUtil.authorize(this.callbackHandler, samlSession.getPrincipal());
-        this.request.authenticationComplete(response -> {
-            if (!restored) {
-                responseConsumer.accept(response);
-            }
-        }, () -> ((ElytronTokeStore) sessionStore).logout(true));
+
+        if (this.securityIdentity != null) {
+            this.request.authenticationComplete(response -> {
+                if (!restored) {
+                    responseConsumer.accept(response);
+                }
+            }, () -> ((ElytronTokeStore) sessionStore).logout(true));
+        }
     }
 
     void authenticationCompleteAnonymous() {
