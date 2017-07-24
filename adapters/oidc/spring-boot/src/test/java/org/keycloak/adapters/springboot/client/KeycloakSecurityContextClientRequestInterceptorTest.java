@@ -37,10 +37,10 @@ import static org.mockito.Mockito.when;
 /**
  * Keycloak spring boot client request factory tests.
  */
-public class EmbeddedServletClientRequestFactoryTest {
+public class KeycloakSecurityContextClientRequestInterceptorTest {
 
     @Spy
-    private EmbeddedServletClientRequestFactory factory;
+    private KeycloakSecurityContextClientRequestInterceptor factory;
 
     private MockHttpServletRequest servletRequest;
 

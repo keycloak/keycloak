@@ -2,25 +2,26 @@ package org.keycloak.adapters.springboot.client;
 
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
-import org.keycloak.adapters.springsecurity.client.KeycloakClientRequestFactory;
-import org.springframework.http.client.ClientHttpRequest;
+import org.springframework.http.HttpRequest;
+import org.springframework.http.client.ClientHttpRequestExecution;
+import org.springframework.http.client.ClientHttpRequestInterceptor;
+import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.io.IOException;
 import java.security.Principal;
 
 /**
- * Factory for {@link ClientHttpRequest} objects created for server to server secured
+ * Interceptor for {@link ClientHttpRequestExecution} objects created for server to server secured
  * communication using OAuth2 bearer tokens issued by Keycloak.
  *
  * @author <a href="mailto:jmcshan1@gmail.com">James McShane</a>
  * @version $Revision: 1 $
  */
-public class EmbeddedServletClientRequestFactory extends KeycloakClientRequestFactory {
+public class KeycloakSecurityContextClientRequestInterceptor implements ClientHttpRequestInterceptor {
 
-    public EmbeddedServletClientRequestFactory() {
-        super();
-    }
+    private static final String AUTHORIZATION_HEADER = "Authorization";
 
     /**
      * Returns the {@link KeycloakSecurityContext} from the Spring {@link ServletRequestAttributes}'s {@link Principal}.
@@ -43,5 +44,12 @@ public class EmbeddedServletClientRequestFactory extends KeycloakClientRequestFa
                             principal.getClass()));
         }
         return ((KeycloakPrincipal) principal).getKeycloakSecurityContext();
+    }
+
+    @Override
+    public ClientHttpResponse intercept(HttpRequest httpRequest, byte[] bytes, ClientHttpRequestExecution clientHttpRequestExecution) throws IOException {
+        KeycloakSecurityContext context = this.getKeycloakSecurityContext();
+        httpRequest.getHeaders().set(AUTHORIZATION_HEADER, "Bearer " + context.getTokenString());
+        return clientHttpRequestExecution.execute(httpRequest, bytes);
     }
 }
