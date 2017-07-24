@@ -79,7 +79,6 @@
                         <goals>
                             <goal>yarn</goal>
                         </goals>
-                        <phase>process-resources</phase>
                         <configuration>
                             <arguments>install --production=false --frozen-lockfile</arguments>
                         </configuration>
