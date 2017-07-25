@@ -6,7 +6,6 @@
 package org.keycloak.testsuite.util.matchers;
 
 import org.keycloak.dom.saml.v2.SAML2Object;
-import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
 import java.net.URI;
 import org.hamcrest.*;

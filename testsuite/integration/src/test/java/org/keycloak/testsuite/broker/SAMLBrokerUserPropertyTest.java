@@ -90,9 +90,9 @@ public class SAMLBrokerUserPropertyTest extends AbstractKeycloakIdentityProvider
     @Override
     protected void doAssertTokenRetrieval(String pageSource) {
         try {
-            SAML2Request saml2Request = new SAML2Request();
-            ResponseType responseType = (ResponseType) saml2Request
-                    .getSAML2ObjectFromStream(PostBindingUtil.base64DecodeAsStream(pageSource));
+            ResponseType responseType = (ResponseType) SAML2Request
+                    .getSAML2ObjectFromStream(PostBindingUtil.base64DecodeAsStream(pageSource))
+                    .getSamlObject();
                     //.getSAML2ObjectFromStream(PostBindingUtil.base64DecodeAsStream(URLDecoder.decode(pageSource, "UTF-8")));
 
             assertNotNull(responseType);

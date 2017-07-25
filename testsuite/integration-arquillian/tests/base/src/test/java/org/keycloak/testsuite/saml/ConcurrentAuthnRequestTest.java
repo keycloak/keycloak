@@ -22,6 +22,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.testsuite.util.SamlClient;
 
+import org.keycloak.testsuite.util.saml.LoginBuilder;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Collection;
@@ -90,7 +91,7 @@ public class ConcurrentAuthnRequestTest extends AbstractSamlTest {
             String loginPageText = EntityUtils.toString(response.getEntity(), "UTF-8");
             response.close();
 
-            HttpUriRequest loginRequest = handleLoginPage(user, loginPageText);
+            HttpUriRequest loginRequest = LoginBuilder.handleLoginPage(user, loginPageText);
 
             strategy.setRedirectable(false);
             response = client.execute(loginRequest, context);
