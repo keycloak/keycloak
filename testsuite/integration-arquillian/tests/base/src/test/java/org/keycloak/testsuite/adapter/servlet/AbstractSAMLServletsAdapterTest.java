@@ -656,6 +656,50 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
     }
 
     @Test
+    public void salesPostEncRejectConsent() throws Exception {
+        ClientRepresentation salesPostEncClient = testRealmResource().clients().findByClientId(SalesPostEncServlet.CLIENT_NAME).get(0);
+        try (Closeable client = new ClientAttributeUpdater(testRealmResource().clients().get(salesPostEncClient.getId()))
+          .setConsentRequired(true)
+          .update()) {
+            new SamlClientBuilder()
+              .navigateTo(salesPostEncServletPage.toString())
+              .processSamlResponse(Binding.POST).build()
+              .login().user(bburkeUser).build()
+              .consentRequired().approveConsent(false).build()
+              .processSamlResponse(Binding.POST).build()
+
+              .execute(r -> {
+                  assertThat(r, statusCodeIsHC(Response.Status.OK));
+                  assertThat(r, bodyHC(containsString("urn:oasis:names:tc:SAML:2.0:status:RequestDenied")));  // TODO: revisit - should the HTTP status be 403 too?
+              });
+        } finally {
+            salesPostEncServletPage.logout();
+        }
+    }
+
+    @Test
+    public void salesPostRejectConsent() throws Exception {
+        ClientRepresentation salesPostClient = testRealmResource().clients().findByClientId(SalesPostServlet.CLIENT_NAME).get(0);
+        try (Closeable client = new ClientAttributeUpdater(testRealmResource().clients().get(salesPostClient.getId()))
+          .setConsentRequired(true)
+          .update()) {
+            new SamlClientBuilder()
+              .navigateTo(salesPostServletPage.toString())
+              .processSamlResponse(Binding.POST).build()
+              .login().user(bburkeUser).build()
+              .consentRequired().approveConsent(false).build()
+              .processSamlResponse(Binding.POST).build()
+
+              .execute(r -> {
+                  assertThat(r, statusCodeIsHC(Response.Status.OK));
+                  assertThat(r, bodyHC(containsString("urn:oasis:names:tc:SAML:2.0:status:RequestDenied")));  // TODO: revisit - should the HTTP status be 403 too?
+              });
+        } finally {
+            salesPostServletPage.logout();
+        }
+    }
+
+    @Test
     public void salesPostPassiveTest() {
         salesPostPassiveServletPage.navigateTo();
 

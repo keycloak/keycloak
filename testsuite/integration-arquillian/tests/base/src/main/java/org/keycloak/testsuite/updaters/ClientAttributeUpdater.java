@@ -35,6 +35,11 @@ public class ClientAttributeUpdater {
         return this;
     }
 
+    public ClientAttributeUpdater setConsentRequired(Boolean consentRequired) {
+        rep.setConsentRequired(consentRequired);
+        return this;
+    }
+
     public ClientAttributeUpdater setFrontchannelLogout(Boolean frontchannelLogout) {
         rep.setFrontchannelLogout(frontchannelLogout);
         return this;
