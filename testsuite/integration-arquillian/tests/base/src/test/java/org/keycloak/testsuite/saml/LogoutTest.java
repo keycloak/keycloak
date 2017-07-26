@@ -16,34 +16,27 @@
  */
 package org.keycloak.testsuite.saml;
 
+import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
-import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
+import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.saml.SAML2LogoutRequestBuilder;
 import org.keycloak.saml.SAML2LogoutResponseBuilder;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
-import org.keycloak.saml.common.exceptions.ConfigurationException;
-import org.keycloak.saml.common.exceptions.ParsingException;
-import org.keycloak.saml.common.exceptions.ProcessingException;
-import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
+import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.Matchers;
-import org.keycloak.testsuite.util.SamlClient;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilderException;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.client.protocol.HttpClientContext;
+import org.keycloak.testsuite.util.SamlClientBuilder;
+import java.util.concurrent.atomic.AtomicReference;
+import javax.xml.transform.dom.DOMSource;
 import org.junit.Before;
 import org.junit.Test;
-import org.w3c.dom.Document;
 import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.util.Matchers.*;
 import static org.keycloak.testsuite.util.SamlClient.Binding.*;
@@ -57,7 +50,8 @@ public class LogoutTest extends AbstractSamlTest {
     private ClientRepresentation salesRep;
     private ClientRepresentation sales2Rep;
 
-    private SamlClient samlClient;
+    private final AtomicReference<NameIDType> nameIdRef = new AtomicReference<>();
+    private final AtomicReference<String> sessionIndexRef = new AtomicReference<>();
 
     @Before
     public void setup() {
@@ -71,7 +65,8 @@ public class LogoutTest extends AbstractSamlTest {
             .attribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, "http://url")
             .build());
 
-        samlClient = new SamlClient(getAuthServerSamlEndpoint(REALM_NAME));
+        nameIdRef.set(null);
+        sessionIndexRef.set(null);
     }
 
     @Override
@@ -79,49 +74,35 @@ public class LogoutTest extends AbstractSamlTest {
         return true;
     }
 
-    private Document prepareLogoutFromSalesAfterLoggingIntoTwoApps() throws ParsingException, IllegalArgumentException, UriBuilderException, ConfigurationException, ProcessingException {
-        AuthnRequestType loginRep = createLoginRequestDocument(SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, REALM_NAME);
-        Document doc = SAML2Request.convert(loginRep);
-        SAMLDocumentHolder resp = samlClient.login(bburkeUser, doc, null, POST, POST, false, true);
-        assertThat(resp.getSamlObject(), isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
-        ResponseType loginResp1 = (ResponseType) resp.getSamlObject();
+    private SamlClientBuilder prepareLogIntoTwoApps() {
+        return new SamlClientBuilder()
+          .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, POST).build()
+          .login().user(bburkeUser).build()
+          .processSamlResponse(POST).transformObject(so -> {
+            assertThat(so, isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+            ResponseType loginResp1 = (ResponseType) so;
+            final AssertionType firstAssertion = loginResp1.getAssertions().get(0).getAssertion();
+            assertThat(firstAssertion, org.hamcrest.Matchers.notNullValue());
+            assertThat(firstAssertion.getSubject().getSubType().getBaseID(), instanceOf(NameIDType.class));
 
-        loginRep = createLoginRequestDocument(SAML_CLIENT_ID_SALES_POST2, SAML_ASSERTION_CONSUMER_URL_SALES_POST2, REALM_NAME);
-        doc = SAML2Request.convert(loginRep);
-        resp = samlClient.subsequentLoginViaSSO(doc, null, POST, POST);
-        assertThat(resp.getSamlObject(), isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
-        ResponseType loginResp2 = (ResponseType) resp.getSamlObject();
+            NameIDType nameId = (NameIDType) firstAssertion.getSubject().getSubType().getBaseID();
+            AuthnStatementType firstAssertionStatement = (AuthnStatementType) firstAssertion.getStatements().iterator().next();
 
-        AssertionType firstAssertion = loginResp1.getAssertions().get(0).getAssertion();
-        assertThat(firstAssertion.getSubject().getSubType().getBaseID(), instanceOf(NameIDType.class));
-        NameIDType nameId = (NameIDType) firstAssertion.getSubject().getSubType().getBaseID();
-        AuthnStatementType firstAssertionStatement = (AuthnStatementType) firstAssertion.getStatements().iterator().next();
+            nameIdRef.set(nameId);
+            sessionIndexRef.set(firstAssertionStatement.getSessionIndex());
+            return null;    // Do not follow the redirect to the app from the returned response
+          }).build()
 
-        return new SAML2LogoutRequestBuilder()
-          .destination(getAuthServerSamlEndpoint(REALM_NAME).toString())
-          .issuer(SAML_CLIENT_ID_SALES_POST)
-          .sessionIndex(firstAssertionStatement.getSessionIndex())
-          .userPrincipal(nameId.getValue(), nameId.getFormat().toString())
-          .buildDocument();
+          .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST2, SAML_ASSERTION_CONSUMER_URL_SALES_POST2, POST).build()
+          .login().sso(true).build()    // This is a formal step
+          .processSamlResponse(POST).transformObject(so -> {
+            assertThat(so, isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+            return null;    // Do not follow the redirect to the app from the returned response
+          }).build();
     }
 
     @Test
-    public void testLogoutInSameBrowser() throws ParsingException, ConfigurationException, ProcessingException {
-        adminClient.realm(REALM_NAME)
-          .clients().get(sales2Rep.getId())
-          .update(ClientBuilder.edit(sales2Rep)
-            .frontchannelLogout(false)
-            .attribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, "")
-            .removeAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE)
-            .build());
-
-        Document logoutDoc = prepareLogoutFromSalesAfterLoggingIntoTwoApps();
-
-        samlClient.logout(logoutDoc, null, POST, POST);
-    }
-
-    @Test
-    public void testLogoutDifferentBrowser() throws ParsingException, ConfigurationException, ProcessingException {
+    public void testLogoutDifferentBrowser() {
         // This is in fact the same as admin logging out a session from admin console.
         // This always succeeds as it is essentially the same as backend logout which
         // does not report errors to client but only to the server log
@@ -130,135 +111,155 @@ public class LogoutTest extends AbstractSamlTest {
           .update(ClientBuilder.edit(sales2Rep)
             .frontchannelLogout(false)
             .attribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, "")
-            .removeAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE)
+          .removeAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE)
             .build());
 
-        Document logoutDoc = prepareLogoutFromSalesAfterLoggingIntoTwoApps();
+        SAMLDocumentHolder samlResponse = prepareLogIntoTwoApps()
+          .clearCookies()
 
-        samlClient.execute((client, context, strategy) -> {
-            HttpUriRequest post = POST.createSamlUnsignedRequest(getAuthServerSamlEndpoint(REALM_NAME), null, logoutDoc);
-            CloseableHttpResponse response = client.execute(post, HttpClientContext.create());
-            assertThat(response, statusCodeIsHC(Response.Status.OK));
-            return response;
-        });
+          .logoutRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, POST)
+            .nameId(nameIdRef::get)
+            .sessionIndex(sessionIndexRef::get)
+            .build()
+
+          .getSamlResponse(POST);
+
+        assertThat(samlResponse.getSamlObject(), isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
     }
 
     @Test
-    public void testFrontchannelLogoutInSameBrowser() throws ParsingException, ConfigurationException, ProcessingException {
+    public void testFrontchannelLogoutInSameBrowser() {
         adminClient.realm(REALM_NAME)
           .clients().get(sales2Rep.getId())
           .update(ClientBuilder.edit(sales2Rep)
             .frontchannelLogout(true)
             .attribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, "")
-            .removeAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE)
             .build());
 
-        Document logoutDoc = prepareLogoutFromSalesAfterLoggingIntoTwoApps();
+        SAMLDocumentHolder samlResponse = prepareLogIntoTwoApps()
+          .logoutRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, POST)
+            .nameId(nameIdRef::get)
+            .sessionIndex(sessionIndexRef::get)
+            .build()
 
-        samlClient.execute((client, context, strategy) -> {
-            HttpUriRequest post = POST.createSamlUnsignedRequest(getAuthServerSamlEndpoint(REALM_NAME), null, logoutDoc);
-            CloseableHttpResponse response = client.execute(post, context);
-            assertThat(response, statusCodeIsHC(Response.Status.OK));
-            return response;
-        });
+          .getSamlResponse(POST);
+
+        assertThat(samlResponse.getSamlObject(), isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
     }
 
     @Test
-    public void testFrontchannelLogoutNoLogoutServiceUrlSetInSameBrowser() throws ParsingException, ConfigurationException, ProcessingException {
-        adminClient.realm(REALM_NAME)
-          .clients().get(sales2Rep.getId())
-          .update(ClientBuilder.edit(sales2Rep)
-            .frontchannelLogout(true)
-            .removeAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE)
-            .removeAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE)
-            .build());
-
-        Document logoutDoc = prepareLogoutFromSalesAfterLoggingIntoTwoApps();
-
-        samlClient.execute((client, context, strategy) -> {
-            HttpUriRequest post = POST.createSamlUnsignedRequest(getAuthServerSamlEndpoint(REALM_NAME), null, logoutDoc);
-            CloseableHttpResponse response = client.execute(post, context);
-            assertThat(response, statusCodeIsHC(Response.Status.OK));
-            return response;
-        });
-    }
-
-    @Test
-    public void testFrontchannelLogoutDifferentBrowser() throws ParsingException, ConfigurationException, ProcessingException {
+    public void testFrontchannelLogoutNoLogoutServiceUrlSetInSameBrowser() {
         adminClient.realm(REALM_NAME)
           .clients().get(sales2Rep.getId())
           .update(ClientBuilder.edit(sales2Rep)
             .frontchannelLogout(true)
             .attribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, "")
-            .removeAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE)
+            .attribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, "")
             .build());
 
-        Document logoutDoc = prepareLogoutFromSalesAfterLoggingIntoTwoApps();
+        SAMLDocumentHolder samlResponse = prepareLogIntoTwoApps()
+          .logoutRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, POST)
+            .nameId(nameIdRef::get)
+            .sessionIndex(sessionIndexRef::get)
+            .build()
 
-        samlClient.execute((client, context, strategy) -> {
-            HttpUriRequest post = POST.createSamlUnsignedRequest(getAuthServerSamlEndpoint(REALM_NAME), null, logoutDoc);
-            CloseableHttpResponse response = client.execute(post, HttpClientContext.create());
-            assertThat(response, statusCodeIsHC(Response.Status.OK));
-            return response;
-        });
+          .getSamlResponse(POST);
+
+        assertThat(samlResponse.getSamlObject(), isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
     }
 
     @Test
-    public void testFrontchannelLogoutWithRedirectUrlDifferentBrowser() throws ParsingException, ConfigurationException, ProcessingException {
+    public void testFrontchannelLogoutDifferentBrowser() {
         adminClient.realm(REALM_NAME)
           .clients().get(sales2Rep.getId())
           .update(ClientBuilder.edit(sales2Rep)
             .frontchannelLogout(true)
-            .removeAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE)
+            .attribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, "")
+            .build());
+
+        SAMLDocumentHolder samlResponse = prepareLogIntoTwoApps()
+          .clearCookies()
+
+          .logoutRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, POST)
+            .nameId(nameIdRef::get)
+            .sessionIndex(sessionIndexRef::get)
+            .build()
+
+          .getSamlResponse(POST);
+
+        assertThat(samlResponse.getSamlObject(), isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+    }
+
+    @Test
+    public void testFrontchannelLogoutWithRedirectUrlDifferentBrowser() {
+        adminClient.realm(REALM_NAME)
+          .clients().get(salesRep.getId())
+          .update(ClientBuilder.edit(salesRep)
+            .frontchannelLogout(true)
+            .attribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, "")
             .attribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, "http://url")
             .build());
 
-        Document logoutDoc = prepareLogoutFromSalesAfterLoggingIntoTwoApps();
+        adminClient.realm(REALM_NAME)
+          .clients().get(sales2Rep.getId())
+          .update(ClientBuilder.edit(sales2Rep)
+            .frontchannelLogout(true)
+            .attribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, "")
+            .attribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, "")
+            .build());
 
-        samlClient.execute((client, context, strategy) -> {
-            HttpUriRequest post = POST.createSamlUnsignedRequest(getAuthServerSamlEndpoint(REALM_NAME), null, logoutDoc);
-            CloseableHttpResponse response = client.execute(post, HttpClientContext.create());
-            assertThat(response, statusCodeIsHC(Response.Status.OK));
-            return response;
-        });
+        SAMLDocumentHolder samlResponse = prepareLogIntoTwoApps()
+          .clearCookies()
+
+          .logoutRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, REDIRECT)
+            .nameId(nameIdRef::get)
+            .sessionIndex(sessionIndexRef::get)
+            .build()
+
+          .getSamlResponse(REDIRECT);
+
+        assertThat(samlResponse.getSamlObject(), isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
     }
 
     @Test
-    public void testLogoutWithPostBindingUnsetRedirectBindingSet() throws ParsingException, ConfigurationException, ProcessingException {
+    public void testLogoutWithPostBindingUnsetRedirectBindingSet() {
         // https://issues.jboss.org/browse/KEYCLOAK-4779
         adminClient.realm(REALM_NAME)
           .clients().get(sales2Rep.getId())
           .update(ClientBuilder.edit(sales2Rep)
             .frontchannelLogout(true)
             .attribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, "")
-            .attribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, "http://url")
+            .attribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, "http://url-to-sales-2")
             .build());
 
-        Document logoutDoc = prepareLogoutFromSalesAfterLoggingIntoTwoApps();
+        SAMLDocumentHolder samlResponse = prepareLogIntoTwoApps()
+          .logoutRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, POST)
+            .nameId(nameIdRef::get)
+            .sessionIndex(sessionIndexRef::get)
+            .build()
 
-        SAMLDocumentHolder resp = samlClient.getSamlResponse(REDIRECT, (client, context, strategy) -> {
-            strategy.setRedirectable(false);
-            HttpUriRequest post = POST.createSamlUnsignedRequest(getAuthServerSamlEndpoint(REALM_NAME), null, logoutDoc);
-            return client.execute(post, context);
-        });
+          .processSamlResponse(REDIRECT)
+            .transformDocument(doc -> {
+              // Expect logout request for sales-post2
+              SAML2Object so = (SAML2Object) new SAMLParser().parse(new DOMSource(doc));
+              assertThat(so, isSamlLogoutRequest("http://url-to-sales-2"));
 
-        // Expect logout request for sales-post2
-        assertThat(resp.getSamlObject(), isSamlLogoutRequest("http://url"));
-        Document logoutRespDoc = new SAML2LogoutResponseBuilder()
-          .destination(getAuthServerSamlEndpoint(REALM_NAME).toString())
-          .issuer(SAML_CLIENT_ID_SALES_POST2)
-          .logoutRequestID(((LogoutRequestType) resp.getSamlObject()).getID())
-          .buildDocument();
+              // Emulate successful logout response from sales-post2 logout
+              return new SAML2LogoutResponseBuilder()
+                .destination(getAuthServerSamlEndpoint(REALM_NAME).toString())
+                .issuer(SAML_CLIENT_ID_SALES_POST2)
+                .logoutRequestID(((LogoutRequestType) so).getID())
+                .buildDocument();
+            })
+            .targetAttributeSamlResponse()
+            .targetUri(getAuthServerSamlEndpoint(REALM_NAME))
+            .build()
 
-        // Emulate successful logout response from sales-post2 logout
-        resp = samlClient.getSamlResponse(POST, (client, context, strategy) -> {
-            strategy.setRedirectable(false);
-            HttpUriRequest post = POST.createSamlUnsignedResponse(getAuthServerSamlEndpoint(REALM_NAME), null, logoutRespDoc);
-            return client.execute(post, context);
-        });
+          .getSamlResponse(POST);
 
         // Expect final successful logout response from auth server signalling final successful logout
-        assertThat(resp.getSamlObject(), isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+        assertThat(samlResponse.getSamlObject(), isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+        assertThat(((StatusResponseType) samlResponse.getSamlObject()).getDestination(), is("http://url"));
     }
 
 }

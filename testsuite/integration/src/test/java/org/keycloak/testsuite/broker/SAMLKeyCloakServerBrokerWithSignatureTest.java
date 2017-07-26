@@ -98,9 +98,9 @@ public class SAMLKeyCloakServerBrokerWithSignatureTest extends AbstractKeycloakI
     @Override
     protected void doAssertTokenRetrieval(String pageSource) {
         try {
-            SAML2Request saml2Request = new SAML2Request();
-            ResponseType responseType = (ResponseType) saml2Request
-                        .getSAML2ObjectFromStream(PostBindingUtil.base64DecodeAsStream(pageSource));
+            ResponseType responseType = (ResponseType) SAML2Request
+                        .getSAML2ObjectFromStream(PostBindingUtil.base64DecodeAsStream(pageSource))
+                        .getSamlObject();
 
             assertNotNull(responseType);
             assertFalse(responseType.getAssertions().isEmpty());

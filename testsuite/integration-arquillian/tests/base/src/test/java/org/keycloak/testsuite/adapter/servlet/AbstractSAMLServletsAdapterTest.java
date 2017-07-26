@@ -54,7 +54,6 @@ import org.keycloak.saml.BaseSAML2BindingBuilder;
 import org.keycloak.saml.SAML2ErrorResponseBuilder;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.util.XmlKeyInfoKeyNameTransformer;
-import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
@@ -66,6 +65,7 @@ import org.keycloak.testsuite.page.AbstractPage;
 import org.keycloak.testsuite.util.*;
 
 import org.keycloak.testsuite.util.SamlClient.Binding;
+import org.keycloak.testsuite.util.SamlClientBuilder;
 import org.openqa.selenium.By;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -107,8 +107,6 @@ import static org.keycloak.testsuite.util.IOUtil.loadXML;
 import static org.keycloak.testsuite.util.IOUtil.modifyDocElementAttribute;
 import static org.keycloak.testsuite.util.Matchers.bodyHC;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
-import static org.keycloak.testsuite.util.SamlClient.idpInitiatedLogin;
-import static org.keycloak.testsuite.util.SamlClient.login;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.*;
 
@@ -471,10 +469,9 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
 
     @Test
     public void employeeAcsTest() {
-        SAMLDocumentHolder samlResponse = new SamlClient(employeeAcsServletPage.buildUri()).getSamlResponse(Binding.POST, (client, context, strategy) -> {
-            strategy.setRedirectable(false);
-            return client.execute(new HttpGet(employeeAcsServletPage.buildUri()), context);
-        });
+        SAMLDocumentHolder samlResponse = new SamlClientBuilder()
+          .navigateTo(employeeAcsServletPage.buildUri())
+          .getSamlResponse(Binding.POST);
 
         assertThat(samlResponse.getSamlObject(), instanceOf(AuthnRequestType.class));
         assertThat(((AuthnRequestType) samlResponse.getSamlObject()).getAssertionConsumerServiceURL(), notNullValue());
@@ -1029,58 +1026,44 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
     @Test
     //KEYCLOAK-4020
     public void testBooleanAttribute() throws Exception {
-        AuthnRequestType req = SamlClient.createLoginRequestDocument("http://localhost:8081/employee2/", getAppServerSamlEndpoint(employee2ServletPage).toString(), getAuthServerSamlEndpoint(SAMLSERVLETDEMO));
-        Document doc = SAML2Request.convert(req);
+        new SamlClientBuilder()
+          .authnRequest(getAuthServerSamlEndpoint(SAMLSERVLETDEMO), "http://localhost:8081/employee2/", getAppServerSamlEndpoint(employee2ServletPage).toString(), Binding.POST).build()
+          .login().user(bburkeUser).build()
+          .processSamlResponse(Binding.POST)
+            .transformDocument(responseDoc -> {
+                Element attribute = responseDoc.createElement("saml:Attribute");
+                attribute.setAttribute("Name", "boolean-attribute");
+                attribute.setAttribute("NameFormat", "urn:oasis:names:tc:SAML:2.0:attrname-format:basic");
 
-        SAMLDocumentHolder res = login(bburkeUser, getAuthServerSamlEndpoint(SAMLSERVLETDEMO), doc, null, SamlClient.Binding.POST, SamlClient.Binding.POST);
-        Document responseDoc = res.getSamlDocument();
+                Element attributeValue = responseDoc.createElement("saml:AttributeValue");
+                attributeValue.setAttribute("xmlns:xs", "http://www.w3.org/2001/XMLSchema");
+                attributeValue.setAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
+                attributeValue.setAttribute("xsi:type", "xs:boolean");
+                attributeValue.setTextContent("true");
 
-        Element attribute = responseDoc.createElement("saml:Attribute");
-        attribute.setAttribute("Name", "boolean-attribute");
-        attribute.setAttribute("NameFormat", "urn:oasis:names:tc:SAML:2.0:attrname-format:basic");
+                attribute.appendChild(attributeValue);
+                IOUtil.appendChildInDocument(responseDoc, "samlp:Response/saml:Assertion/saml:AttributeStatement", attribute);
 
-        Element attributeValue = responseDoc.createElement("saml:AttributeValue");
-        attributeValue.setAttribute("xmlns:xs", "http://www.w3.org/2001/XMLSchema");
-        attributeValue.setAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
-        attributeValue.setAttribute("xsi:type", "xs:boolean");
-        attributeValue.setTextContent("true");
+                return responseDoc;
+            })
+            .build()
 
-        attribute.appendChild(attributeValue);
-        IOUtil.appendChildInDocument(responseDoc, "samlp:Response/saml:Assertion/saml:AttributeStatement", attribute);
+          .navigateTo(employee2ServletPage.toString() + "/getAttributes")
 
-        CloseableHttpResponse response = null;
-        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-            HttpClientContext context = HttpClientContext.create();
-
-            HttpUriRequest post = SamlClient.Binding.POST.createSamlUnsignedResponse(getAppServerSamlEndpoint(employee2ServletPage), null, responseDoc);
-            response = client.execute(post, context);
-            assertThat(response, statusCodeIsHC(Response.Status.FOUND));
-            response.close();
-
-            HttpGet get = new HttpGet(employee2ServletPage.toString() + "/getAttributes");
-            response = client.execute(get);
-            assertThat(response, statusCodeIsHC(Response.Status.OK));
-            assertThat(response, bodyHC(containsString("boolean-attribute: true")));
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        } finally {
-            if (response != null) {
-                EntityUtils.consumeQuietly(response.getEntity());
-                try { response.close(); } catch (IOException ex) { }
-            }
-        }
+          .execute(r -> {
+              assertThat(r, statusCodeIsHC(Response.Status.OK));
+              assertThat(r, bodyHC(containsString("boolean-attribute: true")));
+          });
     }
 
     // KEYCLOAK-4329
     @Test
     public void testEmptyKeyInfoElement() {
-        samlidpInitiatedLoginPage.setAuthRealm(SAMLSERVLETDEMO);
-        samlidpInitiatedLoginPage.setUrlName("sales-post-sig-email");
-        System.out.println(samlidpInitiatedLoginPage.toString());
-        URI idpInitiatedLoginPage = URI.create(samlidpInitiatedLoginPage.toString());
-
         log.debug("Log in using idp initiated login");
-        SAMLDocumentHolder documentHolder = idpInitiatedLogin(bburkeUser, idpInitiatedLoginPage, SamlClient.Binding.POST);
+        SAMLDocumentHolder documentHolder = new SamlClientBuilder()
+          .idpInitiatedLogin(getAuthServerSamlEndpoint(SAMLSERVLETDEMO), "sales-post-sig-email").build()
+          .login().user(bburkeUser).build()
+          .getSamlResponse(Binding.POST);
 
 
         log.debug("Removing KeyInfo from Keycloak response");

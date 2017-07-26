@@ -138,6 +138,13 @@ public class SamlService extends AuthorizationEndpointBase {
         protected Response handleSamlResponse(String samlResponse, String relayState) {
             event.event(EventType.LOGOUT);
             SAMLDocumentHolder holder = extractResponseDocument(samlResponse);
+
+            if (! (holder.getSamlObject() instanceof StatusResponseType)) {
+                event.detail(Details.REASON, "invalid_saml_response");
+                event.error(Errors.INVALID_SAML_RESPONSE);
+                return ErrorPage.error(session, Messages.INVALID_REQUEST);
+            }
+
             StatusResponseType statusResponse = (StatusResponseType) holder.getSamlObject();
             // validate destination
             if (statusResponse.getDestination() != null && !uriInfo.getAbsolutePath().toString().equals(statusResponse.getDestination())) {
@@ -177,6 +184,12 @@ public class SamlService extends AuthorizationEndpointBase {
             }
 
             SAML2Object samlObject = documentHolder.getSamlObject();
+
+            if (! (samlObject instanceof RequestAbstractType)) {
+                event.event(EventType.LOGIN);
+                event.error(Errors.INVALID_SAML_AUTHN_REQUEST);
+                return ErrorPage.error(session, Messages.INVALID_REQUEST);
+            }
 
             RequestAbstractType requestAbstractType = (RequestAbstractType) samlObject;
             String issuer = requestAbstractType.getIssuer().getValue();

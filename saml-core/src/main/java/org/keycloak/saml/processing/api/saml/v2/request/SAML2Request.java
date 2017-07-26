@@ -156,7 +156,7 @@ public class SAML2Request {
      * @throws IOException
      * @throws ParsingException
      */
-    public SAML2Object getSAML2ObjectFromStream(InputStream is) throws ConfigurationException, ParsingException,
+    public static SAMLDocumentHolder getSAML2ObjectFromStream(InputStream is) throws ConfigurationException, ParsingException,
             ProcessingException {
         if (is == null)
             throw logger.nullArgumentError("InputStream");
@@ -167,8 +167,7 @@ public class SAML2Request {
         JAXPValidationUtil.checkSchemaValidation(samlDocument);
         SAML2Object requestType = (SAML2Object) samlParser.parse(samlDocument);
 
-        samlDocumentHolder = new SAMLDocumentHolder(requestType, samlDocument);
-        return requestType;
+        return new SAMLDocumentHolder(requestType, samlDocument);
     }
 
     /**
