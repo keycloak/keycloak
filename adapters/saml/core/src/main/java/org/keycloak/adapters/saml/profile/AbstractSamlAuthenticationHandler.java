@@ -407,8 +407,8 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
 
         SubjectType subject = assertion.getSubject();
         SubjectType.STSubType subType = subject.getSubType();
-        NameIDType subjectNameID = (NameIDType) subType.getBaseID();
-        String principalName = subjectNameID.getValue();
+        NameIDType subjectNameID = subType == null ? null : (NameIDType) subType.getBaseID();
+        String principalName = subjectNameID == null ? null : subjectNameID.getValue();
 
         final Set<String> roles = new HashSet<>();
         MultivaluedHashMap<String, String> attributes = new MultivaluedHashMap<>();
@@ -473,7 +473,7 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
         }
 
 
-        URI nameFormat = subjectNameID.getFormat();
+        URI nameFormat = subjectNameID == null ? null : subjectNameID.getFormat();
         String nameFormatString = nameFormat == null ? JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get() : nameFormat.toString();
         final SamlPrincipal principal = new SamlPrincipal(assertion, principalName, principalName, nameFormatString, attributes, friendlyAttributes);
         String index = authn == null ? null : authn.getSessionIndex();

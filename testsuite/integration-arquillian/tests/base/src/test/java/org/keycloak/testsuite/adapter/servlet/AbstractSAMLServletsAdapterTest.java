@@ -96,6 +96,12 @@ import java.security.PublicKey;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathFactory;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
@@ -1053,6 +1059,36 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
           .execute(r -> {
               assertThat(r, statusCodeIsHC(Response.Status.OK));
               assertThat(r, bodyHC(containsString("boolean-attribute: true")));
+          });
+    }
+
+    @Test
+    public void testNameIDUnset() throws Exception {
+        new SamlClientBuilder()
+          .navigateTo(employee2ServletPage.toString())
+          .processSamlResponse(Binding.POST).build()
+          .login().user(bburkeUser).build()
+          .processSamlResponse(Binding.POST)
+            .transformDocument(responseDoc -> {
+                XPathFactory xPathfactory = XPathFactory.newInstance();
+                XPath xpath = xPathfactory.newXPath();
+                XPathExpression expr = xpath.compile("//*[local-name()='NameID']");
+
+                NodeList nodeList = (NodeList) expr.evaluate(responseDoc, XPathConstants.NODESET);
+                assertThat(nodeList.getLength(), is(1));
+
+                final Node nameIdNode = nodeList.item(0);
+                nameIdNode.getParentNode().removeChild(nameIdNode);
+
+                return responseDoc;
+            })
+            .build()
+
+          .navigateTo(employee2ServletPage.toString())
+
+          .execute(r -> {
+              assertThat(r, statusCodeIsHC(Response.Status.OK));
+              assertThat(r, bodyHC(allOf(containsString("principal="), not(containsString("500")))));
           });
     }
 
