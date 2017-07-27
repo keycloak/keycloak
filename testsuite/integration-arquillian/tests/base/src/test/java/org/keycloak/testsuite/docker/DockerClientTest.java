@@ -15,9 +15,9 @@ import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.images.builder.ImageFromDockerfile;
-import org.testcontainers.shaded.com.github.dockerjava.api.model.ContainerNetwork;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -47,6 +47,7 @@ public class DockerClientTest extends AbstractKeycloakTest {
     public static final String MINIMUM_DOCKER_VERSION = "1.8.0";
     public static final String IMAGE_NAME = "busybox";
 
+    private Network dockerNetwork = null;
     private GenericContainer dockerRegistryContainer = null;
     private GenericContainer dockerClientContainer = null;
 
@@ -95,6 +96,8 @@ public class DockerClientTest extends AbstractKeycloakTest {
     public void beforeAbstractKeycloakTest() throws Exception {
         super.beforeAbstractKeycloakTest();
 
+        dockerNetwork = Network.newNetwork();
+
         final Map<String, String> environment = new HashMap<>();
         environment.put("REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY", "/tmp");
         environment.put("REGISTRY_HTTP_TLS_CERTIFICATE", "/opt/certs/localhost.crt");
@@ -107,16 +110,18 @@ public class DockerClientTest extends AbstractKeycloakTest {
 
         String dockerioPrefix = Boolean.parseBoolean(System.getProperty("docker.io-prefix-explicit")) ? "docker.io/" : "";
 
-        // TODO this required me to turn selinux off :(.  Add BindMode options for :z and :Z.  Make selinux enforcing again!
         dockerRegistryContainer = new GenericContainer(dockerioPrefix + "registry:2")
+                // TODO use SelinuxContext argument. Make selinux enforcing again!
                 .withClasspathResourceMapping("dockerClientTest/keycloak-docker-compose-yaml/certs", "/opt/certs", BindMode.READ_ONLY)
                 .withEnv(environment)
+                .withNetwork(dockerNetwork)
+                .withNetworkAliases(REGISTRY_HOSTNAME)
+                .withLogConsumer(new Slf4jLogConsumer(LOGGER))
                 .withPrivilegedMode(true);
         dockerRegistryContainer.start();
-        dockerRegistryContainer.followOutput(new Slf4jLogConsumer(LOGGER));
 
         dockerClientContainer = new GenericContainer(
-                new ImageFromDockerfile()
+                new ImageFromDockerfile("testcontainers/keycloak-docker-client", false)
                         .withDockerfileFromBuilder(dockerfileBuilder -> {
                             dockerfileBuilder.from("centos/systemd:latest")
                                     .run("yum", "install", "-y", "docker", "iptables", ";", "yum", "clean", "all")
@@ -125,16 +130,13 @@ public class DockerClientTest extends AbstractKeycloakTest {
                                     .build();
                         })
         )
+                .withNetwork(dockerNetwork)
                 .withClasspathResourceMapping("dockerClientTest/keycloak-docker-compose-yaml/certs/localhost.crt", "/opt/docker/certs.d/" + REGISTRY_HOSTNAME + "/localhost.crt", BindMode.READ_ONLY)
                 .withClasspathResourceMapping("dockerClientTest/keycloak-docker-compose-yaml/sysconfig_docker", "/etc/sysconfig/docker", BindMode.READ_WRITE)
+                .withLogConsumer(new Slf4jLogConsumer(LOGGER))
                 .withPrivilegedMode(true);
 
-        final Optional<ContainerNetwork> network = dockerRegistryContainer.getContainerInfo().getNetworkSettings().getNetworks().values().stream().findFirst();
-        assumeTrue("Could not find a network adapter whereby the docker client container could connect to host!", network.isPresent());
-        dockerClientContainer.withExtraHost(REGISTRY_HOSTNAME, network.get().getIpAddress());
-
         dockerClientContainer.start();
-        dockerClientContainer.followOutput(new Slf4jLogConsumer(LOGGER));
 
         int i = 0;
         String stdErr = "";
@@ -155,6 +157,15 @@ public class DockerClientTest extends AbstractKeycloakTest {
         log.info("Waiting for docker service...");
         validateDockerStarted();
         log.info("Docker service successfully started");
+    }
+
+    @Override
+    public void afterAbstractKeycloakTest() {
+        super.afterAbstractKeycloakTest();
+
+        dockerClientContainer.close();
+        dockerRegistryContainer.close();
+        dockerNetwork.close();
     }
 
     private void validateDockerStarted() {
