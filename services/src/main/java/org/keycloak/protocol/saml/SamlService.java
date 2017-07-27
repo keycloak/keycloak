@@ -713,23 +713,33 @@ public class SamlService extends AuthorizationEndpointBase {
             return false;
         }
 
+        // Note: parameters are stripped by uriInfo:
         URI expected = uriInfo.getAbsolutePath();
-
-        if (Objects.equals(expected, destination)) {
+        // So do the same here:
+        URI dest = stripParameters(destination);
+        
+        if (Objects.equals(expected, dest)) {
             return true;
         }
 
         Integer portByScheme = knownPorts.get(expected.getScheme());
         if (expected.getPort() < 0 && portByScheme != null) {
-            return Objects.equals(uriInfo.getRequestUriBuilder().port(portByScheme).build(), destination);
+            return Objects.equals(uriInfo.getRequestUriBuilder().port(portByScheme).build(), dest);
         }
 
         String protocolByPort = knownProtocols.get(expected.getPort());
         if (expected.getPort() >= 0 && Objects.equals(protocolByPort, expected.getScheme())) {
-            return Objects.equals(uriInfo.getRequestUriBuilder().port(-1).build(), destination);
+            return Objects.equals(uriInfo.getRequestUriBuilder().port(-1).build(), dest);
         }
 
         return false;
     }
 
+    private static URI stripParameters(URI uri) {
+        if (uri.getQuery() != null) {
+            String uriStr = uri.toString();
+            return URI.create(uriStr.substring(0,  uriStr.indexOf("?")));
+        }
+        return uri;
+    }
 }
