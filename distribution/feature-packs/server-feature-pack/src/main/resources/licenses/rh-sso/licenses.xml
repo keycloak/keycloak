@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0"?>
 <licenseSummary>
   <dependencies>
     <dependency>
@@ -667,7 +667,7 @@
       <version>3.5</version>
       <licenses>
         <license>
-          <name>BSD 3-clause "New" or "Revised" License</name>
+          <name>BSD 3-clause New or Revised License</name>
           <url>https://raw.githubusercontent.com/antlr/antlr3/antlr-3.5/runtime/Python/LICENSE</url>
         </license>
       </licenses>
@@ -678,7 +678,7 @@
       <version>1.4.9</version>
       <licenses>
         <license>
-          <name>BSD 3-clause "New" or "Revised" License</name>
+          <name>BSD 3-clause New or Revised License</name>
           <url>https://raw.githubusercontent.com/x-stream/xstream/XSTREAM_1_4_9/LICENSE.txt</url>
         </license>
       </licenses>
@@ -818,7 +818,7 @@
       </locations>
       <licenses>
         <license>
-          <name>BSD 3-clause "New" or "Revised" License</name>
+          <name>BSD 3-clause New or Revised License</name>
           <url>https://raw.githubusercontent.com/ajaxorg/ace-builds/v1.2.3/LICENSE</url>
         </license>
       </licenses>
