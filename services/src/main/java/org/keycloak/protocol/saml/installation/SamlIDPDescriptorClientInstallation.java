@@ -127,7 +127,7 @@ public class SamlIDPDescriptorClientInstallation implements ClientInstallationPr
 
     @Override
     public String getHelpText() {
-        return "SAML Metadata IDSSODescriptor tailored for the client.  This is special because not every client may require things like digital signatures";
+        return "SAML Metadata IDPSSODescriptor tailored for the client.  This is special because not every client may require things like digital signatures";
     }
 
     @Override
