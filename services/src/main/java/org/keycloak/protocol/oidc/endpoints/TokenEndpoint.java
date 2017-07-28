@@ -572,13 +572,6 @@ public class TokenEndpoint {
             throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Invalid token", Response.Status.BAD_REQUEST);
         }
 
-        if (authResult.getToken().getAudience() == null || authResult.getToken().getAudience().length > 1
-                || !client.getClientId().equals(authResult.getToken().getAudience()[0]) ) {
-
-            event.error(Errors.INVALID_TOKEN);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Cannot exchange token from different client", Response.Status.BAD_REQUEST);
-        }
-
         String audience = formParams.getFirst(OAuth2Constants.AUDIENCE);
         if (audience == null) {
             event.error(Errors.INVALID_REQUEST);
