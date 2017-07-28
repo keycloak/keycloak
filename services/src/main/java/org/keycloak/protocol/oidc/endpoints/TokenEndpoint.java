@@ -602,8 +602,8 @@ public class TokenEndpoint {
         boolean allowed = false;
         UserModel serviceAccount = session.users().getServiceAccount(client);
         if (serviceAccount != null) {
-            RoleModel exchangeable = targetClient.getRole(OAuth2Constants.TOKEN_EXCHANGEABLE);
-            RoleModel realmExchangeable = AdminPermissions.management(session, realm).getRealmManagementClient().getRole(OAuth2Constants.TOKEN_EXCHANGEABLE);
+            RoleModel exchangeable = targetClient.getRole(OAuth2Constants.TOKEN_EXCHANGER);
+            RoleModel realmExchangeable = AdminPermissions.management(session, realm).getRealmManagementClient().getRole(OAuth2Constants.TOKEN_EXCHANGER);
             allowed = (exchangeable != null && serviceAccount.hasRole(exchangeable)) || (realmExchangeable != null && serviceAccount.hasRole(realmExchangeable));
 
         }
