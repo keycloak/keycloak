@@ -106,6 +106,13 @@ public class UserSessionProviderTest {
     }
 
     @Test
+    public void testUpdateSessionInSameTransaction() {
+        UserSessionModel[] sessions = createSessions();
+        session.sessions().getUserSession(realm, sessions[0].getId()).setLastSessionRefresh(1000);
+        assertEquals(1000, session.sessions().getUserSession(realm, sessions[0].getId()).getLastSessionRefresh());
+    }
+
+    @Test
     public void testRestartSession() {
         int started = Time.currentTime();
         UserSessionModel[] sessions = createSessions();
@@ -156,7 +163,8 @@ public class UserSessionProviderTest {
         String userSessionId = sessions[0].getId();
         String clientUUID = realm.getClientByClientId("test-app").getId();
 
-        AuthenticatedClientSessionModel clientSession = sessions[0].getAuthenticatedClientSessions().get(clientUUID);
+        UserSessionModel userSession = session.sessions().getUserSession(realm, userSessionId);
+        AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(clientUUID);
 
         int time = clientSession.getTimestamp();
         assertEquals(null, clientSession.getAction());
@@ -170,6 +178,24 @@ public class UserSessionProviderTest {
         AuthenticatedClientSessionModel updated = session.sessions().getUserSession(realm, userSessionId).getAuthenticatedClientSessions().get(clientUUID);
         assertEquals(AuthenticatedClientSessionModel.Action.CODE_TO_TOKEN.name(), updated.getAction());
         assertEquals(time + 10, updated.getTimestamp());
+    }
+
+    @Test
+    public void testUpdateClientSessionInSameTransaction() {
+        UserSessionModel[] sessions = createSessions();
+
+        String userSessionId = sessions[0].getId();
+        String clientUUID = realm.getClientByClientId("test-app").getId();
+
+        UserSessionModel userSession = session.sessions().getUserSession(realm, userSessionId);
+        AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(clientUUID);
+
+        clientSession.setAction(AuthenticatedClientSessionModel.Action.CODE_TO_TOKEN.name());
+        clientSession.setNote("foo", "bar");
+
+        AuthenticatedClientSessionModel updated = session.sessions().getUserSession(realm, userSessionId).getAuthenticatedClientSessions().get(clientUUID);
+        assertEquals(AuthenticatedClientSessionModel.Action.CODE_TO_TOKEN.name(), updated.getAction());
+        assertEquals("bar", updated.getNote("foo"));
     }
 
     @Test

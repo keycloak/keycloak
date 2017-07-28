@@ -206,7 +206,7 @@ public class AccountService extends AbstractSecuredLocalService {
 
             setReferrerOnPage();
 
-            UserSessionModel userSession = auth.getClientSession().getUserSession();
+            UserSessionModel userSession = auth.getSession();
             AuthenticationSessionModel authSession = session.authenticationSessions().getAuthenticationSession(realm, userSession.getId());
             if (authSession != null) {
                 String forwardedError = authSession.getAuthNote(ACCOUNT_MGMT_FORWARDED_ERROR_NOTE);
@@ -663,7 +663,7 @@ public class AccountService extends AbstractSecuredLocalService {
 
         EventBuilder errorEvent = event.clone().event(EventType.UPDATE_PASSWORD_ERROR)
                 .client(auth.getClient())
-                .user(auth.getClientSession().getUserSession().getUser());
+                .user(auth.getSession().getUser());
 
         if (requireCurrent) {
             if (Validation.isBlank(password)) {

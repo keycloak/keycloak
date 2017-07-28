@@ -50,6 +50,8 @@ public class InfinispanPublicKeyStorageProviderFactory implements PublicKeyStora
 
     public static final String KEYS_CLEAR_CACHE_EVENTS = "KEYS_CLEAR_CACHE_EVENTS";
 
+    public static final String PUBLIC_KEY_STORAGE_INVALIDATION_EVENT = "PUBLIC_KEY_STORAGE_INVALIDATION_EVENT";
+
     private volatile Cache<String, PublicKeysEntry> keysCache;
 
     private final Map<String, FutureTask<PublicKeysEntry>> tasksInProgress = new ConcurrentHashMap<>();
@@ -69,12 +71,10 @@ public class InfinispanPublicKeyStorageProviderFactory implements PublicKeyStora
                     this.keysCache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.KEYS_CACHE_NAME);
 
                     ClusterProvider cluster = session.getProvider(ClusterProvider.class);
-                    cluster.registerListener(ClusterProvider.ALL, (ClusterEvent event) -> {
+                    cluster.registerListener(PUBLIC_KEY_STORAGE_INVALIDATION_EVENT, (ClusterEvent event) -> {
 
-                        if (event instanceof PublicKeyStorageInvalidationEvent) {
-                            PublicKeyStorageInvalidationEvent invalidationEvent = (PublicKeyStorageInvalidationEvent) event;
-                            keysCache.remove(invalidationEvent.getCacheKey());
-                        }
+                        PublicKeyStorageInvalidationEvent invalidationEvent = (PublicKeyStorageInvalidationEvent) event;
+                        keysCache.remove(invalidationEvent.getCacheKey());
 
                     });
 

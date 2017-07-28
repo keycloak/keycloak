@@ -135,20 +135,6 @@ public class ResourceAdminManager {
         }
     }
 
-    public void logoutUserFromClient(URI requestUri, RealmModel realm, ClientModel resource, UserModel user) {
-        List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
-        List<AuthenticatedClientSessionModel> ourAppClientSessions = new LinkedList<>();
-        if (userSessions != null) {
-            for (UserSessionModel userSession : userSessions) {
-                AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(resource.getId());
-                if (clientSession != null) {
-                    ourAppClientSessions.add(clientSession);
-                }
-            }
-        }
-
-        logoutClientSessions(requestUri, realm, resource, ourAppClientSessions);
-    }
 
     public boolean logoutClientSession(URI requestUri, RealmModel realm, ClientModel resource, AuthenticatedClientSessionModel clientSession) {
         return logoutClientSessions(requestUri, realm, resource, Arrays.asList(clientSession));

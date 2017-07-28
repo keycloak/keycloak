@@ -72,7 +72,7 @@ public class CacheCommands {
             log.infof("Cache %s, size: %d", cache.getName(), size);
 
             if (size > 50) {
-                log.info("Skip printing cache recors due to big size");
+                log.info("Skip printing cache records due to big size");
             } else {
                 for (Map.Entry<Object, Object> entry : cache.entrySet()) {
                     log.infof("%s=%s", entry.getKey(), entry.getValue());

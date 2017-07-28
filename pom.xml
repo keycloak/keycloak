@@ -80,6 +80,7 @@
         <sun.jaxb.version>2.2.11</sun.jaxb.version>
         <sun.xsom.version>20140925</sun.xsom.version>
         <undertow.version>1.4.11.Final</undertow.version>
+        <woodstox.version>5.0.3</woodstox.version>
         <xmlsec.version>2.0.5</xmlsec.version>
 
         <!-- Authorization Drools Policy Provider -->
@@ -123,6 +124,7 @@
         <osgi.bundle.plugin.version>2.3.7</osgi.bundle.plugin.version>
         <wildfly.plugin.version>1.1.0.Final</wildfly.plugin.version>
         <nexus.staging.plugin.version>1.6.5</nexus.staging.plugin.version>
+        <frontend.plugin.version>1.5</frontend.plugin.version>
 
         <!-- Surefire Settings -->
         <surefire.memory.settings>-Xms512m -Xmx2048m -XX:MetaspaceSize=96m -XX:MaxMetaspaceSize=256m</surefire.memory.settings>
@@ -1499,6 +1501,11 @@
                     <groupId>org.apache.felix</groupId>
                     <artifactId>maven-bundle-plugin</artifactId>
                     <version>${osgi.bundle.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>com.github.eirslett</groupId>
+                    <artifactId>frontend-maven-plugin</artifactId>
+                    <version>${frontend.plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>

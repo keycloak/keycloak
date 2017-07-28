@@ -42,6 +42,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.exceptions.TokenNotActiveException;
+import org.keycloak.models.ActionTokenKeyModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -406,7 +407,7 @@ public class LoginActionsService {
         return handleActionToken(key, execution, clientId);
     }
 
-    protected <T extends DefaultActionTokenKey> Response handleActionToken(String tokenString, String execution, String clientId) {
+    protected <T extends JsonWebToken & ActionTokenKeyModel> Response handleActionToken(String tokenString, String execution, String clientId) {
         T token;
         ActionTokenHandler<T> handler;
         ActionTokenContext<T> tokenContext;
@@ -555,7 +556,6 @@ public class LoginActionsService {
             return ErrorPage.error(session, errorMessage == null ? Messages.INVALID_REQUEST : errorMessage);
         }
     }
-
 
     private <T extends JsonWebToken> ActionTokenHandler<T> resolveActionTokenHandler(String actionId) throws VerificationException {
         if (actionId == null) {

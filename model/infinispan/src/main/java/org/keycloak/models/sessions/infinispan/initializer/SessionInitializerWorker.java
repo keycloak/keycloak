@@ -31,7 +31,7 @@ import java.util.Set;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class SessionInitializerWorker implements DistributedCallable<String, Serializable, InfinispanUserSessionInitializer.WorkerResult>, Serializable {
+public class SessionInitializerWorker implements DistributedCallable<String, Serializable, InfinispanCacheInitializer.WorkerResult>, Serializable {
 
     private static final Logger log = Logger.getLogger(SessionInitializerWorker.class);
 
@@ -53,7 +53,7 @@ public class SessionInitializerWorker implements DistributedCallable<String, Ser
     }
 
     @Override
-    public InfinispanUserSessionInitializer.WorkerResult call() throws Exception {
+    public InfinispanCacheInitializer.WorkerResult call() throws Exception {
         if (log.isTraceEnabled()) {
             log.tracef("Running computation for segment: %d", segment);
         }
@@ -61,7 +61,7 @@ public class SessionInitializerWorker implements DistributedCallable<String, Ser
         KeycloakSessionFactory sessionFactory = workCache.getAdvancedCache().getComponentRegistry().getComponent(KeycloakSessionFactory.class);
         if (sessionFactory == null) {
             log.debugf("KeycloakSessionFactory not yet set in cache. Worker skipped");
-            return InfinispanUserSessionInitializer.WorkerResult.create(segment, false);
+            return InfinispanCacheInitializer.WorkerResult.create(segment, false);
         }
 
         final int first = segment * sessionsPerSegment;
@@ -76,7 +76,7 @@ public class SessionInitializerWorker implements DistributedCallable<String, Ser
 
         });
 
-        return InfinispanUserSessionInitializer.WorkerResult.create(segment, true);
+        return InfinispanCacheInitializer.WorkerResult.create(segment, true);
     }
 
 }

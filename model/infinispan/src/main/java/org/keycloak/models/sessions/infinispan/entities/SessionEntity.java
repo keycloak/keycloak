@@ -19,6 +19,8 @@ package org.keycloak.models.sessions.infinispan.entities;
 
 import java.io.Serializable;
 
+import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -60,4 +62,10 @@ public class SessionEntity implements Serializable {
     public int hashCode() {
         return id != null ? id.hashCode() : 0;
     }
+
+
+    public SessionEntityWrapper mergeRemoteEntityWithLocalEntity(SessionEntityWrapper localEntityWrapper) {
+        throw new IllegalStateException("Not yet implemented");
+    };
+
 }

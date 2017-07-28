@@ -190,16 +190,9 @@ public class SamlProtocol implements LoginProtocol {
                         }
                         binding.signatureAlgorithm(samlClient.getSignatureAlgorithm()).signWith(keyName, keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate()).signDocument();
                     }
-                    if (samlClient.requiresEncryption()) {
-                        PublicKey publicKey;
-                        try {
-                            publicKey = SamlProtocolUtils.getEncryptionKey(client);
-                        } catch (Exception e) {
-                            logger.error("failed", e);
-                            return ErrorPage.error(session, Messages.FAILED_TO_PROCESS_RESPONSE);
-                        }
-                        binding.encrypt(publicKey);
-                    }
+                    // There is no support for encrypting status messages in SAML.
+                    // Only assertions, attributes, base ID and name ID can be encrypted
+                    // See Chapter 6 of saml-core-2.0-os.pdf
                     Document document = builder.buildDocument();
                     return buildErrorResponse(authSession, binding, document);
                 } catch (Exception e) {

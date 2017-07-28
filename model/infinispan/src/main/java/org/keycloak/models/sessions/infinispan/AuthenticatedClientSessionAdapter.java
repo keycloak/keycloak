@@ -22,13 +22,17 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.infinispan.Cache;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.sessions.infinispan.changes.InfinispanChangelogBasedTransaction;
+import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
+import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask;
+import org.keycloak.models.sessions.infinispan.changes.UserSessionClientSessionUpdateTask;
+import org.keycloak.models.sessions.infinispan.changes.UserSessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
-import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
 /**
@@ -39,19 +43,20 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
     private final AuthenticatedClientSessionEntity entity;
     private final ClientModel client;
     private final InfinispanUserSessionProvider provider;
-    private final Cache<String, SessionEntity> cache;
+    private final InfinispanChangelogBasedTransaction updateTx;
     private UserSessionAdapter userSession;
 
-    public AuthenticatedClientSessionAdapter(AuthenticatedClientSessionEntity entity, ClientModel client, UserSessionAdapter userSession, InfinispanUserSessionProvider provider, Cache<String, SessionEntity> cache) {
+    public AuthenticatedClientSessionAdapter(AuthenticatedClientSessionEntity entity, ClientModel client, UserSessionAdapter userSession,
+                                             InfinispanUserSessionProvider provider, InfinispanChangelogBasedTransaction updateTx) {
         this.provider = provider;
         this.entity = entity;
         this.client = client;
-        this.cache = cache;
+        this.updateTx = updateTx;
         this.userSession = userSession;
     }
 
-    private void update() {
-        provider.getTx().replace(cache, userSession.getEntity().getId(), userSession.getEntity());
+    private void update(UserSessionUpdateTask task) {
+        updateTx.addTask(userSession.getId(), task);
     }
 
 
@@ -62,15 +67,27 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
 
         // Dettach userSession
         if (userSession == null) {
-            if (sessionEntity.getAuthenticatedClientSessions() != null) {
-                sessionEntity.getAuthenticatedClientSessions().remove(clientUUID);
-                update();
-                this.userSession = null;
-            }
+            UserSessionUpdateTask task = new UserSessionUpdateTask() {
+
+                @Override
+                public void runUpdate(UserSessionEntity sessionEntity) {
+                    sessionEntity.getAuthenticatedClientSessions().remove(clientUUID);
+                }
+
+            };
+            update(task);
+            this.userSession = null;
         } else {
             this.userSession = (UserSessionAdapter) userSession;
-            sessionEntity.getAuthenticatedClientSessions().put(clientUUID, entity);
-            update();
+            UserSessionUpdateTask task = new UserSessionUpdateTask() {
+
+                @Override
+                public void runUpdate(UserSessionEntity sessionEntity) {
+                    sessionEntity.getAuthenticatedClientSessions().put(clientUUID, entity);
+                }
+
+            };
+            update(task);
         }
     }
 
@@ -86,8 +103,16 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
 
     @Override
     public void setRedirectUri(String uri) {
-        entity.setRedirectUri(uri);
-        update();
+        UserSessionClientSessionUpdateTask task = new UserSessionClientSessionUpdateTask(client.getId()) {
+
+            @Override
+            protected void runClientSessionUpdate(AuthenticatedClientSessionEntity entity) {
+                entity.setRedirectUri(uri);
+            }
+
+        };
+
+        update(task);
     }
 
     @Override
@@ -112,8 +137,22 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
 
     @Override
     public void setTimestamp(int timestamp) {
-        entity.setTimestamp(timestamp);
-        update();
+        UserSessionClientSessionUpdateTask task = new UserSessionClientSessionUpdateTask(client.getId()) {
+
+            @Override
+            protected void runClientSessionUpdate(AuthenticatedClientSessionEntity entity) {
+                entity.setTimestamp(timestamp);
+            }
+
+            @Override
+            public CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<UserSessionEntity> sessionWrapper) {
+                // We usually update lastSessionRefresh at the same time. That would handle it.
+                return CrossDCMessageStatus.NOT_NEEDED;
+            }
+
+        };
+
+        update(task);
     }
 
     @Override
@@ -123,8 +162,16 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
 
     @Override
     public void setAction(String action) {
-        entity.setAction(action);
-        update();
+        UserSessionClientSessionUpdateTask task = new UserSessionClientSessionUpdateTask(client.getId()) {
+
+            @Override
+            protected void runClientSessionUpdate(AuthenticatedClientSessionEntity entity) {
+                entity.setAction(action);
+            }
+
+        };
+
+        update(task);
     }
 
     @Override
@@ -134,8 +181,16 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
 
     @Override
     public void setProtocol(String method) {
-        entity.setAuthMethod(method);
-        update();
+        UserSessionClientSessionUpdateTask task = new UserSessionClientSessionUpdateTask(client.getId()) {
+
+            @Override
+            protected void runClientSessionUpdate(AuthenticatedClientSessionEntity entity) {
+                entity.setAuthMethod(method);
+            }
+
+        };
+
+        update(task);
     }
 
     @Override
@@ -145,8 +200,16 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
 
     @Override
     public void setRoles(Set<String> roles) {
-        entity.setRoles(roles);
-        update();
+        UserSessionClientSessionUpdateTask task = new UserSessionClientSessionUpdateTask(client.getId()) {
+
+            @Override
+            protected void runClientSessionUpdate(AuthenticatedClientSessionEntity entity) {
+                entity.setRoles(roles); // TODO not thread-safe. But we will remove setRoles anyway...?
+            }
+
+        };
+
+        update(task);
     }
 
     @Override
@@ -156,35 +219,54 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
 
     @Override
     public void setProtocolMappers(Set<String> protocolMappers) {
-        entity.setProtocolMappers(protocolMappers);
-        update();
+        UserSessionClientSessionUpdateTask task = new UserSessionClientSessionUpdateTask(client.getId()) {
+
+            @Override
+            protected void runClientSessionUpdate(AuthenticatedClientSessionEntity entity) {
+                entity.setProtocolMappers(protocolMappers); // TODO not thread-safe. But we will remove setProtocolMappers anyway...?
+            }
+
+        };
+
+        update(task);
     }
 
     @Override
     public String getNote(String name) {
-        return entity.getNotes()==null ? null : entity.getNotes().get(name);
+        return entity.getNotes().get(name);
     }
 
     @Override
     public void setNote(String name, String value) {
-        if (entity.getNotes() == null) {
-            entity.setNotes(new HashMap<>());
-        }
-        entity.getNotes().put(name, value);
-        update();
+        UserSessionClientSessionUpdateTask task = new UserSessionClientSessionUpdateTask(client.getId()) {
+
+            @Override
+            protected void runClientSessionUpdate(AuthenticatedClientSessionEntity entity) {
+                entity.getNotes().put(name, value);
+            }
+
+        };
+
+        update(task);
     }
 
     @Override
     public void removeNote(String name) {
-        if (entity.getNotes() != null) {
-            entity.getNotes().remove(name);
-            update();
-        }
+        UserSessionClientSessionUpdateTask task = new UserSessionClientSessionUpdateTask(client.getId()) {
+
+            @Override
+            protected void runClientSessionUpdate(AuthenticatedClientSessionEntity entity) {
+                entity.getNotes().remove(name);
+            }
+
+        };
+
+        update(task);
     }
 
     @Override
     public Map<String, String> getNotes() {
-        if (entity.getNotes() == null || entity.getNotes().isEmpty()) return Collections.emptyMap();
+        if (entity.getNotes().isEmpty()) return Collections.emptyMap();
         Map<String, String> copy = new HashMap<>();
         copy.putAll(entity.getNotes());
         return copy;

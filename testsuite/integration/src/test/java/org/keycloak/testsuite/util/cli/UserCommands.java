@@ -48,12 +48,6 @@ public class UserCommands {
             return "createUsers";
         }
 
-        private class StateHolder {
-            int firstInThisBatch;
-            int countInThisBatch;
-            int remaining;
-        };
-
         @Override
         protected void doRunCommand(KeycloakSession session) {
             usernamePrefix = getArg(0);
@@ -64,24 +58,7 @@ public class UserCommands {
             int batchCount = getIntArg(5);
             roleNames = getArg(6);
 
-            final StateHolder state = new StateHolder();
-            state.firstInThisBatch = first;
-            state.remaining = count;
-            state.countInThisBatch = Math.min(batchCount, state.remaining);
-            while (state.remaining > 0) {
-                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), new KeycloakSessionTask() {
-
-                    @Override
-                    public void run(KeycloakSession session) {
-                        createUsersInBatch(session, state.firstInThisBatch, state.countInThisBatch);
-                    }
-                });
-
-                // update state
-                state.firstInThisBatch = state.firstInThisBatch + state.countInThisBatch;
-                state.remaining = state.remaining - state.countInThisBatch;
-                state.countInThisBatch = Math.min(batchCount, state.remaining);
-            }
+            BatchTaskRunner.runInBatches(first, count, batchCount, session.getKeycloakSessionFactory(), this::createUsersInBatch);
 
             log.infof("Command finished. All users from %s to %s created", usernamePrefix + first, usernamePrefix + (first + count - 1));
         }

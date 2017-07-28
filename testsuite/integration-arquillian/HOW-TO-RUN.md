@@ -464,8 +464,60 @@ Then you can run the tests using the following command (adjust the test specific
 or
 
   `mvn -Pcache-server-jdg -Dtest=*.crossdc.* -pl testsuite/integration-arquillian/tests/base test`
+  
+It can be useful to add additional system property to enable logging:
+  
+    -Dkeycloak.infinispan.logging.level=debug
+     
+  
 
-_Someone using IntelliJ IDEA, please describe steps for that IDE_
+#### Run Cross-DC Tests from Intellij IDEA
+
+First we will manually download, configure and run infinispan server. Then we can run the tests from IDE against 1 server. It's more effective during
+development as there is no need to restart infinispan server(s) among test runs.
+
+1) Download infinispan server 8.2.X from http://infinispan.org/download/
+
+2) Edit `ISPN_SERVER_HOME/standalone/configuration/standalone.xml` and add these local-caches to the section under cache-container `local` :
+
+    <cache-container name="local" ...
+    
+        ...
+        
+        <local-cache-configuration name="sessions-cfg" start="EAGER" batching="false">
+		    <transaction mode="NON_XA" locking="PESSIMISTIC"/>
+		</local-cache-configuration>
+
+        <local-cache name="sessions" configuration="sessions-cfg" />	
+		<local-cache name="offlineSessions" configuration="sessions-cfg" />	
+		<local-cache name="loginFailures" configuration="sessions-cfg" />	
+		<local-cache name="actionTokens" configuration="sessions-cfg" />	
+		<local-cache name="work" configuration="sessions-cfg" />
+    
+    </cache>
+    
+3) Run the server through `./standalone.sh` 
+       
+4) Setup MySQL database or some other shared database.  
+
+4) Run the LoginCrossDCTest (or any other test) with those properties. In shortcut, it's using MySQL database, disabled L1 lifespan and 
+connects to the remoteStore provided by infinispan server configured in previous steps:
+
+    -Dauth.server.crossdc=true -Dauth.server.undertow.crossdc=true -Dkeycloak.connectionsJpa.url.crossdc=jdbc:mysql://localhost/keycloak 
+    -Dkeycloak.connectionsJpa.driver.crossdc=com.mysql.jdbc.Driver -Dkeycloak.connectionsJpa.user=keycloak 
+    -Dkeycloak.connectionsJpa.password=keycloak -Dkeycloak.connectionsInfinispan.clustered=true -Dkeycloak.connectionsInfinispan.l1Lifespan=0 
+    -Dkeycloak.connectionsInfinispan.remoteStorePort=11222 -Dkeycloak.connectionsInfinispan.remoteStorePort.2=11222 -Dkeycloak.connectionsInfinispan.sessionsOwners=1 
+    -Dsession.cache.owners=1 -Dkeycloak.infinispan.logging.level=debug -Dresources
+    
+5) If you want to debug and test manually, the servers are running on these ports (Note that not all backend servers are running by default and some might be also unused by loadbalancer):
+
+    Loadbalancer -> "http://localhost:8180/auth"
+    auth-server-undertow-cross-dc-0_1 -> "http://localhost:8101/auth"
+    auth-server-undertow-cross-dc-0_2-manual -> "http://localhost:8102/auth"
+    auth-server-undertow-cross-dc-1_1 -> "http://localhost:8111/auth"
+    auth-server-undertow-cross-dc-1_2-manual -> "http://localhost:8112/auth"
+
+TODO: Tests using JMX statistics like ActionTokenCrossDCTest doesn't yet working.
 
 ## Run Docker Authentication test
 

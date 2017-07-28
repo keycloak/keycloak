@@ -24,6 +24,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.services.managers.UserSessionCrossDCManager;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -54,7 +55,9 @@ public class SamlSessionUtils {
             return null;
         }
 
-        UserSessionModel userSession = session.sessions().getUserSession(realm, parts[0]);
+        String userSessionId = parts[0];
+        String clientUUID = parts[1];
+        UserSessionModel userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, userSessionId, false, clientUUID);
         if (userSession == null) {
             return null;
         }

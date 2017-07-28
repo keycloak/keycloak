@@ -56,10 +56,8 @@ public class SAMLRequestParser {
             is = new ByteArrayInputStream(message.getBytes(GeneralConstants.SAML_CHARSET));
 
         }
-        SAML2Request saml2Request = new SAML2Request();
         try {
-            saml2Request.getSAML2ObjectFromStream(is);
-            return saml2Request.getSamlDocumentHolder();
+            return SAML2Request.getSAML2ObjectFromStream(is);
         } catch (Exception e) {
             logger.samlBase64DecodingError(e);
         }
@@ -76,10 +74,8 @@ public class SAMLRequestParser {
             log.debug(str);
         }
         is = new ByteArrayInputStream(samlBytes);
-        SAML2Request saml2Request = new SAML2Request();
         try {
-            saml2Request.getSAML2ObjectFromStream(is);
-            return saml2Request.getSamlDocumentHolder();
+            return SAML2Request.getSAML2ObjectFromStream(is);
         } catch (Exception e) {
             logger.samlBase64DecodingError(e);
         }

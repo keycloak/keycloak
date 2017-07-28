@@ -215,7 +215,7 @@ public class ConcurrencyTest extends AbstractConcurrencyTest {
         long start = System.currentTimeMillis();
         ClientRepresentation c = new ClientRepresentation();
         c.setClientId("client");
-        Response response = realm.clients().create(c);
+        Response response = adminClient.realm(REALM_NAME).clients().create(c);
         final String clientId = ApiUtil.getCreatedId(response);
         response.close();
 

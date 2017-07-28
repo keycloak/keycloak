@@ -192,16 +192,12 @@ public class AuthenticationManager {
 
     // Logout all clientSessions of this user and client
     public static void backchannelUserFromClient(KeycloakSession session, RealmModel realm, UserModel user, ClientModel client, UriInfo uriInfo, HttpHeaders headers) {
-        String clientId = client.getId();
-
         List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
         for (UserSessionModel userSession : userSessions) {
-            Collection<AuthenticatedClientSessionModel> clientSessions = userSession.getAuthenticatedClientSessions().values();
-            for (AuthenticatedClientSessionModel clientSession : clientSessions) {
-                if (clientSession.getClient().getId().equals(clientId)) {
-                    AuthenticationManager.backchannelLogoutClientSession(session, realm, clientSession, userSession, uriInfo, headers);
-                    TokenManager.dettachClientSession(session.sessions(), realm, clientSession);
-                }
+            AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(client.getId());
+            if (clientSession != null) {
+                AuthenticationManager.backchannelLogoutClientSession(session, realm, clientSession, userSession, uriInfo, headers);
+                TokenManager.dettachClientSession(session.sessions(), realm, clientSession);
             }
         }
     }

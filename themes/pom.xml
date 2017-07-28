@@ -50,5 +50,48 @@
             </build>
         </profile>
     </profiles>
+    
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-clean-plugin</artifactId>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>src/main/resources/theme/keycloak/common/resources/node_modules</directory>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.github.eirslett</groupId>
+                <artifactId>frontend-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>install node and yarn</id>
+                        <goals>
+                            <goal>install-node-and-yarn</goal>
+                        </goals>
+                        <phase>generate-resources</phase>
+                    </execution>
+                    <execution>
+                        <id>yarn install</id>
+                        <goals>
+                            <goal>yarn</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>install --production=false --frozen-lockfile</arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+                <configuration>
+                    <nodeVersion>v6.11.1</nodeVersion>
+                    <yarnVersion>v0.27.5</yarnVersion>
+                    <workingDirectory>src/main/resources/theme/keycloak/common/resources</workingDirectory>
+                    <installDirectory>target</installDirectory>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

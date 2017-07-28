@@ -43,15 +43,16 @@ public class TestsuiteCLI {
     private static final Class<?>[] BUILTIN_COMMANDS = {
             ExitCommand.class,
             HelpCommand.class,
-            AbstractOfflineCacheCommand.PutCommand.class,
-            AbstractOfflineCacheCommand.GetCommand.class,
-            AbstractOfflineCacheCommand.GetMultipleCommand.class,
-            AbstractOfflineCacheCommand.GetLocalCommand.class,
-            AbstractOfflineCacheCommand.SizeLocalCommand.class,
-            AbstractOfflineCacheCommand.RemoveCommand.class,
-            AbstractOfflineCacheCommand.SizeCommand.class,
-            AbstractOfflineCacheCommand.ListCommand.class,
-            AbstractOfflineCacheCommand.ClearCommand.class,
+            AbstractSessionCacheCommand.PutCommand.class,
+            AbstractSessionCacheCommand.GetCommand.class,
+            AbstractSessionCacheCommand.GetMultipleCommand.class,
+            AbstractSessionCacheCommand.GetLocalCommand.class,
+            AbstractSessionCacheCommand.SizeLocalCommand.class,
+            AbstractSessionCacheCommand.RemoveCommand.class,
+            AbstractSessionCacheCommand.SizeCommand.class,
+            AbstractSessionCacheCommand.ListCommand.class,
+            AbstractSessionCacheCommand.ClearCommand.class,
+            AbstractSessionCacheCommand.CreateManySessionsCommand.class,
             PersistSessionsCommand.class,
             LoadPersistentSessionsCommand.class,
             UserCommands.Create.class,
@@ -62,7 +63,8 @@ public class TestsuiteCLI {
             RoleCommands.CreateRoles.class,
             CacheCommands.ListCachesCommand.class,
             CacheCommands.GetCacheCommand.class,
-            CacheCommands.CacheRealmObjectsCommand.class
+            CacheCommands.CacheRealmObjectsCommand.class,
+            ClusterProviderTaskCommand.class
     };
 
     private final KeycloakSessionFactory sessionFactory;
