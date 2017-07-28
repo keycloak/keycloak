@@ -90,7 +90,7 @@ public class UserCacheSession implements UserCache {
     public void clear() {
         cache.clear();
         ClusterProvider cluster = session.getProvider(ClusterProvider.class);
-        cluster.notify(InfinispanUserCacheProviderFactory.USER_CLEAR_CACHE_EVENTS, new ClearCacheEvent(), true);
+        cluster.notify(InfinispanUserCacheProviderFactory.USER_CLEAR_CACHE_EVENTS, new ClearCacheEvent(), true, ClusterProvider.DCNotify.ALL_DCS);
     }
 
     public UserProvider getDelegate() {
@@ -129,7 +129,7 @@ public class UserCacheSession implements UserCache {
             cache.invalidateObject(invalidation);
         }
 
-        cache.sendInvalidationEvents(session, invalidationEvents);
+        cache.sendInvalidationEvents(session, invalidationEvents, InfinispanUserCacheProviderFactory.USER_INVALIDATION_EVENTS);
     }
 
     private KeycloakTransaction getTransaction() {

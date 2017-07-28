@@ -232,13 +232,12 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
             Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
 
-            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
 
             response.close();
 
             events.expect(EventType.USER_INFO_REQUEST_ERROR)
                     .error(Errors.USER_SESSION_NOT_FOUND)
-                    .client((String) null)
                     .user(Matchers.nullValue(String.class))
                     .session(Matchers.nullValue(String.class))
                     .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)

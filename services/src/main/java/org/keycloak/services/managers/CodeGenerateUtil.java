@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jboss.logging.Logger;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -120,9 +119,13 @@ class CodeGenerateUtil {
                 String userSessionId = parts[2];
                 String clientUUID = parts[3];
 
-                UserSessionModel userSession = session.sessions().getUserSession(realm, userSessionId);
+                UserSessionModel userSession = new UserSessionCrossDCManager(session).getUserSessionWithClientAndCodeToTokenAction(realm, userSessionId, clientUUID);
                 if (userSession == null) {
-                    return null;
+                    // TODO:mposolda Temporary workaround needed to track if code is invalid or was already used. Will be good to remove once used OAuth codes are tracked through one-time cache
+                    userSession = session.sessions().getUserSession(realm, userSessionId);
+                    if (userSession == null) {
+                        return null;
+                    }
                 }
 
                 return userSession.getAuthenticatedClientSessions().get(clientUUID);

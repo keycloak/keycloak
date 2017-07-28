@@ -24,9 +24,20 @@ import org.keycloak.cluster.ClusterEvent;
  */
 public class WrapperClusterEvent implements ClusterEvent {
 
-    private String sender; // will be null in non-clustered environment
+    private String eventKey;
+    private String sender;
+    private String senderSite;
     private boolean ignoreSender;
+    private boolean ignoreSenderSite;
     private ClusterEvent delegateEvent;
+
+    public String getEventKey() {
+        return eventKey;
+    }
+
+    public void setEventKey(String eventKey) {
+        this.eventKey = eventKey;
+    }
 
     public String getSender() {
         return sender;
@@ -36,12 +47,28 @@ public class WrapperClusterEvent implements ClusterEvent {
         this.sender = sender;
     }
 
+    public String getSenderSite() {
+        return senderSite;
+    }
+
+    public void setSenderSite(String senderSite) {
+        this.senderSite = senderSite;
+    }
+
     public boolean isIgnoreSender() {
         return ignoreSender;
     }
 
     public void setIgnoreSender(boolean ignoreSender) {
         this.ignoreSender = ignoreSender;
+    }
+
+    public boolean isIgnoreSenderSite() {
+        return ignoreSenderSite;
+    }
+
+    public void setIgnoreSenderSite(boolean ignoreSenderSite) {
+        this.ignoreSenderSite = ignoreSenderSite;
     }
 
     public ClusterEvent getDelegateEvent() {
@@ -54,6 +81,6 @@ public class WrapperClusterEvent implements ClusterEvent {
 
     @Override
     public String toString() {
-        return String.format("WrapperClusterEvent [ sender=%s, delegateEvent=%s ]", sender, delegateEvent.toString());
+        return String.format("WrapperClusterEvent [ eventKey=%s, sender=%s, senderSite=%s, delegateEvent=%s ]", eventKey, sender, senderSite, delegateEvent.toString());
     }
 }

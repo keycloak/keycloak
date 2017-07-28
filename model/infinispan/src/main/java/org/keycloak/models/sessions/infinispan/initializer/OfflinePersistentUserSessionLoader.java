@@ -17,20 +17,30 @@
 
 package org.keycloak.models.sessions.infinispan.initializer;
 
+import org.infinispan.Cache;
+import org.infinispan.context.Flag;
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class OfflineUserSessionLoader implements SessionLoader {
+public class OfflinePersistentUserSessionLoader implements SessionLoader, Serializable {
 
-    private static final Logger log = Logger.getLogger(OfflineUserSessionLoader.class);
+    private static final Logger log = Logger.getLogger(OfflinePersistentUserSessionLoader.class);
+
+    // Cross-DC aware flag
+    public static final String PERSISTENT_SESSIONS_LOADED = "PERSISTENT_SESSIONS_LOADED";
+
+    // Just local-DC aware flag
+    public static final String PERSISTENT_SESSIONS_LOADED_IN_CURRENT_DC = "PERSISTENT_SESSIONS_LOADED_IN_CURRENT_DC";
+
 
     @Override
     public void init(KeycloakSession session) {
@@ -45,11 +55,13 @@ public class OfflineUserSessionLoader implements SessionLoader {
         persister.updateAllTimestamps(clusterStartupTime);
     }
 
+
     @Override
     public int getSessionsCount(KeycloakSession session) {
         UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
         return persister.getUserSessionsCount(true);
     }
+
 
     @Override
     public boolean loadSessions(KeycloakSession session, int first, int max) {
@@ -69,5 +81,38 @@ public class OfflineUserSessionLoader implements SessionLoader {
         return true;
     }
 
+
+    @Override
+    public boolean isFinished(BaseCacheInitializer initializer) {
+        Cache<String, Serializable> workCache = initializer.getWorkCache();
+        Boolean sessionsLoaded = (Boolean) workCache.get(PERSISTENT_SESSIONS_LOADED);
+
+        if (sessionsLoaded != null && sessionsLoaded) {
+            log.debugf("Persistent sessions loaded already.");
+            return true;
+        } else {
+            log.debugf("Persistent sessions not yet loaded.");
+            return false;
+        }
+    }
+
+
+    @Override
+    public void afterAllSessionsLoaded(BaseCacheInitializer initializer) {
+        Cache<String, Serializable> workCache = initializer.getWorkCache();
+
+        // Cross-DC aware flag
+        workCache
+                .getAdvancedCache().withFlags(Flag.SKIP_REMOTE_LOOKUP)
+                .put(PERSISTENT_SESSIONS_LOADED, true);
+
+        // Just local-DC aware flag
+        workCache
+                .getAdvancedCache().withFlags(Flag.SKIP_REMOTE_LOOKUP, Flag.SKIP_CACHE_LOAD, Flag.SKIP_CACHE_STORE)
+                .put(PERSISTENT_SESSIONS_LOADED_IN_CURRENT_DC, true);
+
+
+        log.debugf("Persistent sessions loaded successfully!");
+    }
 
 }

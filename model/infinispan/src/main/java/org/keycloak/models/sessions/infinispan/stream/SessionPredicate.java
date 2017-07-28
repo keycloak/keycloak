@@ -17,6 +17,7 @@
 
 package org.keycloak.models.sessions.infinispan.stream;
 
+import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 
 import java.io.Serializable;
@@ -26,7 +27,7 @@ import java.util.function.Predicate;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class SessionPredicate implements Predicate<Map.Entry<String, SessionEntity>>, Serializable {
+public class SessionPredicate<S extends SessionEntity> implements Predicate<Map.Entry<String, SessionEntityWrapper<S>>>, Serializable {
 
     private String realm;
 
@@ -39,8 +40,8 @@ public class SessionPredicate implements Predicate<Map.Entry<String, SessionEnti
     }
 
     @Override
-    public boolean test(Map.Entry<String, SessionEntity> entry) {
-        return realm.equals(entry.getValue().getRealm());
+    public boolean test(Map.Entry<String, SessionEntityWrapper<S>> entry) {
+        return realm.equals(entry.getValue().getEntity().getRealm());
     }
 
 }

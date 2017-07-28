@@ -15,21 +15,15 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.sessions.infinispan.mapreduce;
+package org.keycloak.models.sessions.infinispan.events;
 
-import org.infinispan.distexec.mapreduce.Reducer;
-
-import java.io.Serializable;
-import java.util.Iterator;
+import org.keycloak.cluster.ClusterEvent;
 
 /**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class FirstResultReducer implements Reducer<Object, Object>, Serializable {
+public interface SessionClusterEvent extends ClusterEvent {
 
-    @Override
-    public Object reduce(Object reducedKey, Iterator<Object> itr) {
-        return itr.next();
-    }
+    String getRealmId();
 
 }

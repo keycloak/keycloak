@@ -21,6 +21,7 @@ import org.keycloak.Config;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
 import org.keycloak.sessions.StickySessionEncoderProvider;
 import org.keycloak.sessions.StickySessionEncoderProviderFactory;
 
@@ -29,16 +30,22 @@ import org.keycloak.sessions.StickySessionEncoderProviderFactory;
  */
 public class InfinispanStickySessionEncoderProviderFactory implements StickySessionEncoderProviderFactory {
 
-    private String myNodeName;
 
     @Override
     public StickySessionEncoderProvider create(KeycloakSession session) {
+        String myNodeName = InfinispanUtil.getMyAddress(session);
+
+        if (myNodeName != null && myNodeName.startsWith(InfinispanConnectionProvider.NODE_PREFIX)) {
+
+            // Node name was randomly generated. We won't use anything for sticky sessions in this case
+            myNodeName = null;
+        }
+
         return new InfinispanStickySessionEncoderProvider(session, myNodeName);
     }
 
     @Override
     public void init(Config.Scope config) {
-        myNodeName = config.get("nodeName", System.getProperty(InfinispanConnectionProvider.JBOSS_NODE_NAME));
     }
 
     @Override

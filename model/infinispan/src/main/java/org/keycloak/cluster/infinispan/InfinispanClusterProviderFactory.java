@@ -35,12 +35,15 @@ import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
 
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -62,17 +65,18 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory 
     // Ensure that atomic operations (like putIfAbsent) must work correctly in any of: non-clustered, clustered or cross-Data-Center (cross-DC) setups
     private CrossDCAwareCacheFactory crossDCAwareCacheFactory;
 
-    private String myAddress;
-
     private int clusterStartupTime;
 
     // Just to extract notifications related stuff to separate class
     private InfinispanNotificationsManager notificationsManager;
 
+    private ExecutorService localExecutor = Executors.newCachedThreadPool();
+
     @Override
     public ClusterProvider create(KeycloakSession session) {
         lazyInit(session);
-        return new InfinispanClusterProvider(clusterStartupTime, myAddress, crossDCAwareCacheFactory, notificationsManager);
+        String myAddress = InfinispanUtil.getMyAddress(session);
+        return new InfinispanClusterProvider(clusterStartupTime, myAddress, crossDCAwareCacheFactory, notificationsManager, localExecutor);
     }
 
     private void lazyInit(KeycloakSession session) {
@@ -83,30 +87,20 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory 
                     workCache = ispnConnections.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
 
                     workCache.getCacheManager().addListener(new ViewChangeListener());
-                    initMyAddress();
 
-                    Set<RemoteStore> remoteStores = getRemoteStores();
+                    // See if we have RemoteStore (external JDG) configured for cross-Data-Center scenario
+                    Set<RemoteStore> remoteStores = InfinispanUtil.getRemoteStores(workCache);
                     crossDCAwareCacheFactory = CrossDCAwareCacheFactory.getFactory(workCache, remoteStores);
 
                     clusterStartupTime = initClusterStartupTime(session);
 
-                    notificationsManager = InfinispanNotificationsManager.create(workCache, myAddress, remoteStores);
+                    String myAddress = InfinispanUtil.getMyAddress(session);
+                    String mySite = InfinispanUtil.getMySite(session);
+
+                    notificationsManager = InfinispanNotificationsManager.create(workCache, myAddress, mySite, remoteStores);
                 }
             }
         }
-    }
-
-
-    // See if we have RemoteStore (external JDG) configured for cross-Data-Center scenario
-    private Set<RemoteStore> getRemoteStores() {
-        return workCache.getAdvancedCache().getComponentRegistry().getComponent(PersistenceManager.class).getStores(RemoteStore.class);
-    }
-
-
-    protected void initMyAddress() {
-        Transport transport = workCache.getCacheManager().getTransport();
-        this.myAddress = transport == null ? HostUtils.getHostName() + "-" + workCache.hashCode() : transport.getAddress().toString();
-        logger.debugf("My address: %s", this.myAddress);
     }
 
 
@@ -201,6 +195,10 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory 
                     if (logger.isTraceEnabled()) {
                         logger.tracef("Removing task %s due it's node left cluster", rem);
                     }
+
+                    // If we have task in progress, it needs to be notified
+                    notificationsManager.taskFinished(rem, false);
+
                     cache.remove(rem);
                 }
             }

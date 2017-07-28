@@ -21,6 +21,7 @@ package org.keycloak.cluster;
 import org.keycloak.provider.Provider;
 
 import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
 
 /**
  * Various utils related to clustering and concurrent tasks on cluster nodes
@@ -48,8 +49,20 @@ public interface ClusterProvider extends Provider {
 
 
     /**
+     * Execute given task just if it's not already in progress (either on this or any other cluster node). It will return corresponding future to every caller and this future is fulfilled if:
+     * - The task is successfully finished. In that case Future will be true
+     * - The task wasn't successfully finished. For example because cluster node failover. In that case Future will be false
+     *
+     * @param taskKey
+     * @param taskTimeoutInSeconds timeout for given task. If there is existing task in progress for longer time, it's considered outdated so we will start our task.
+     * @param task
+     * @return Future, which will be completed once the running task is finished. Returns true if task was successfully finished. Otherwise (for example if cluster node when task was running leaved cluster) returns false
+     */
+    Future<Boolean> executeIfNotExecutedAsync(String taskKey, int taskTimeoutInSeconds, Callable task);
+
+
+    /**
      * Register task (listener) under given key. When this key will be put to the cache on any cluster node, the task will be executed.
-     * When using {@link #ALL} as the taskKey, then listener will be always triggered for any value put into the cache.
      *
      * @param taskKey
      * @param task
@@ -58,18 +71,24 @@ public interface ClusterProvider extends Provider {
 
 
     /**
-     * Notify registered listeners on all cluster nodes. It will notify listeners registered under given taskKey AND also listeners registered with {@link #ALL} key (those are always executed)
+     * Notify registered listeners on all cluster nodes in all datacenters. It will notify listeners registered under given taskKey
      *
      * @param taskKey
      * @param event
      * @param ignoreSender if true, then sender node itself won't receive the notification
+     * @param dcNotify Specify which DCs to notify. See {@link DCNotify} enum values for more info
      */
-    void notify(String taskKey, ClusterEvent event, boolean ignoreSender);
+    void notify(String taskKey, ClusterEvent event, boolean ignoreSender, DCNotify dcNotify);
 
+    enum DCNotify {
+        /** Send message to all cluster nodes in all DCs **/
+        ALL_DCS,
 
-    /**
-     * Special value to be used with {@link #registerListener}  to specify that particular listener will be always triggered for all notifications
-     * with any key.
-     */
-    String ALL = "ALL";
+        /** Send message to all cluster nodes on THIS datacenter only **/
+        LOCAL_DC_ONLY,
+
+        /** Send message to all cluster nodes in all datacenters, but NOT to this datacenter. Option "ignoreSender" of method {@link #notify} will be ignored as sender is ignored anyway due it is in this datacenter **/
+        ALL_BUT_LOCAL_DC
+    }
+
 }

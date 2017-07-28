@@ -25,22 +25,31 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public abstract class AbstractConcurrencyTest extends AbstractAdminTest {
+public abstract class AbstractConcurrencyTest extends AbstractTestRealmKeycloakTest {
 
     private static final int DEFAULT_THREADS = 5;
     private static final int DEFAULT_ITERATIONS = 20;
+
+    public static final String REALM_NAME = "test";
 
     // If enabled only one request is allowed at the time. Useful for checking that test is working.
     private static final boolean SYNCHRONIZED = false;
 
     protected void run(final KeycloakRunnable runnable) throws Throwable {
         run(runnable, DEFAULT_THREADS, DEFAULT_ITERATIONS);
+    }
+
+    @Override
+    public void configureTestRealm(RealmRepresentation testRealm) {
     }
 
     protected void run(final KeycloakRunnable runnable, final int numThreads, final int numIterationsPerThread) throws Throwable {

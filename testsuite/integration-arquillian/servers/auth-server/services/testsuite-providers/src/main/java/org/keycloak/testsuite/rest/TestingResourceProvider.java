@@ -170,6 +170,25 @@ public class TestingResourceProvider implements RealmResourceProvider {
     }
 
     @GET
+    @Path("/get-client-sessions-count")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Integer getClientSessionsCountInUserSession(@QueryParam("realm") final String name, @QueryParam("session") final String sessionId) {
+
+        RealmManager realmManager = new RealmManager(session);
+        RealmModel realm = realmManager.getRealmByName(name);
+        if (realm == null) {
+            throw new NotFoundException("Realm not found");
+        }
+
+        UserSessionModel sessionModel = session.sessions().getUserSession(realm, sessionId);
+        if (sessionModel == null) {
+            throw new NotFoundException("Session not found");
+        }
+
+        return sessionModel.getAuthenticatedClientSessions().size();
+    }
+
+    @GET
     @Path("/time-offset")
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, String> getTimeOffset() {

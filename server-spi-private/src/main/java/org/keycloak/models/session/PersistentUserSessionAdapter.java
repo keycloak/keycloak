@@ -116,11 +116,6 @@ public class PersistentUserSessionAdapter implements UserSessionModel {
     }
 
     @Override
-    public void setUser(UserModel user) {
-        throw new IllegalStateException("Not supported");
-    }
-
-    @Override
     public RealmModel getRealm() {
         return realm;
     }

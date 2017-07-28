@@ -208,10 +208,10 @@ public class SimpleUndertowLoadBalancer {
             if (stickyHost != null) {
 
                 if (!stickyHost.isAvailable()) {
-                    log.infof("Sticky host %s not available. Trying different hosts", stickyHost.getUri());
+                    log.debugf("Sticky host %s not available. Trying different hosts", stickyHost.getUri());
                     return null;
                 } else {
-                    log.infof("Sticky host %s found and looks available", stickyHost.getUri());
+                    log.debugf("Sticky host %s found and looks available", stickyHost.getUri());
                 }
             }
 
@@ -259,7 +259,7 @@ public class SimpleUndertowLoadBalancer {
             } else {
                 // Host was restored
                 if (!host.isAvailable()) {
-                    log.infof("Host %s available again", host.getUri());
+                    log.infof("Host %s available again after failover", host.getUri());
                     host.clearError();
                 }
             }

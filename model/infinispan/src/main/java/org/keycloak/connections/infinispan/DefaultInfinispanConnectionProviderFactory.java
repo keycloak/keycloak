@@ -17,6 +17,7 @@
 
 package org.keycloak.connections.infinispan;
 
+import java.security.SecureRandom;
 import java.util.concurrent.TimeUnit;
 
 import org.infinispan.commons.util.FileLookup;
@@ -30,6 +31,7 @@ import org.infinispan.eviction.EvictionType;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
+import org.infinispan.remoting.transport.Transport;
 import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
 import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.TransactionMode;
@@ -38,8 +40,12 @@ import org.jboss.logging.Logger;
 import org.jgroups.JChannel;
 import org.keycloak.Config;
 import org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory;
+import org.keycloak.common.util.HostUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.sessions.infinispan.remotestore.KcRemoteStoreConfigurationBuilder;
+import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.naming.InitialContext;
 
@@ -56,11 +62,15 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
     protected boolean containerManaged;
 
+    private String nodeName;
+
+    private String siteName;
+
     @Override
     public InfinispanConnectionProvider create(KeycloakSession session) {
         lazyInit();
 
-        return new DefaultInfinispanConnectionProvider(cacheManager);
+        return new DefaultInfinispanConnectionProvider(cacheManager, nodeName, siteName);
     }
 
     @Override
@@ -96,6 +106,8 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                     } else {
                         initEmbedded();
                     }
+
+                    logger.infof("Node name: %s, Site name: %s", nodeName, siteName);
                 }
             }
         }
@@ -134,7 +146,20 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
             cacheManager.defineConfiguration(InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_NAME, getRevisionCacheConfig(authzRevisionsMaxEntries));
             cacheManager.getCache(InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_NAME, true);
 
-
+            Transport transport = cacheManager.getTransport();
+            if (transport != null) {
+                this.nodeName = transport.getAddress().toString();
+                this.siteName = cacheManager.getCacheManagerConfiguration().transport().siteId();
+                if (this.siteName == null) {
+                    this.siteName = System.getProperty(InfinispanConnectionProvider.JBOSS_SITE_NAME);
+                }
+            } else {
+                this.nodeName = System.getProperty(InfinispanConnectionProvider.JBOSS_NODE_NAME);
+                this.siteName = System.getProperty(InfinispanConnectionProvider.JBOSS_SITE_NAME);
+            }
+            if (this.nodeName == null || this.nodeName.equals("localhost")) {
+                this.nodeName = generateNodeName();
+            }
 
             logger.debugv("Using container managed Infinispan cache container, lookup={1}", cacheContainerLookup);
         } catch (Exception e) {
@@ -152,19 +177,37 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         boolean async = config.getBoolean("async", false);
         boolean allowDuplicateJMXDomains = config.getBoolean("allowDuplicateJMXDomains", true);
 
+        this.nodeName = config.get("nodeName", System.getProperty(InfinispanConnectionProvider.JBOSS_NODE_NAME));
+        if (this.nodeName != null && this.nodeName.isEmpty()) {
+            this.nodeName = null;
+        }
+
+        this.siteName = config.get("siteName", System.getProperty(InfinispanConnectionProvider.JBOSS_SITE_NAME));
+        if (this.siteName != null && this.siteName.isEmpty()) {
+            this.siteName = null;
+        }
+
         if (clustered) {
-            String nodeName = config.get("nodeName", System.getProperty(InfinispanConnectionProvider.JBOSS_NODE_NAME));
             String jgroupsUdpMcastAddr = config.get("jgroupsUdpMcastAddr", System.getProperty(InfinispanConnectionProvider.JGROUPS_UDP_MCAST_ADDR));
-            configureTransport(gcb, nodeName, jgroupsUdpMcastAddr);
+            configureTransport(gcb, nodeName, siteName, jgroupsUdpMcastAddr);
             gcb.globalJmxStatistics()
               .jmxDomain(InfinispanConnectionProvider.JMX_DOMAIN + "-" + nodeName);
+        } else {
+            if (nodeName == null) {
+                nodeName = generateNodeName();
+            }
         }
+
         gcb.globalJmxStatistics()
           .allowDuplicateDomains(allowDuplicateJMXDomains)
           .enable();
 
         cacheManager = new DefaultCacheManager(gcb.build());
         containerManaged = false;
+
+        if (cacheManager.getTransport() != null) {
+            nodeName = cacheManager.getTransport().getAddress().toString();
+        }
 
         logger.debug("Started embedded Infinispan cache container");
 
@@ -198,11 +241,29 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                     .build();
         }
 
+        // Base configuration doesn't contain any remote stores
+        Configuration sessionCacheConfigurationBase = sessionConfigBuilder.build();
+
+        boolean jdgEnabled = config.getBoolean("remoteStoreEnabled", false);
+
+        if (jdgEnabled) {
+            sessionConfigBuilder = new ConfigurationBuilder();
+            sessionConfigBuilder.read(sessionCacheConfigurationBase);
+            configureRemoteCacheStore(sessionConfigBuilder, async, InfinispanConnectionProvider.SESSION_CACHE_NAME, KcRemoteStoreConfigurationBuilder.class);
+        }
         Configuration sessionCacheConfiguration = sessionConfigBuilder.build();
         cacheManager.defineConfiguration(InfinispanConnectionProvider.SESSION_CACHE_NAME, sessionCacheConfiguration);
+
+        if (jdgEnabled) {
+            sessionConfigBuilder = new ConfigurationBuilder();
+            sessionConfigBuilder.read(sessionCacheConfigurationBase);
+            configureRemoteCacheStore(sessionConfigBuilder, async, InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME, KcRemoteStoreConfigurationBuilder.class);
+        }
+        sessionCacheConfiguration = sessionConfigBuilder.build();
         cacheManager.defineConfiguration(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME, sessionCacheConfiguration);
-        cacheManager.defineConfiguration(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME, sessionCacheConfiguration);
-        cacheManager.defineConfiguration(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME, sessionCacheConfiguration);
+
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME, sessionCacheConfigurationBase);
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME, sessionCacheConfigurationBase);
 
         // Retrieve caches to enforce rebalance
         cacheManager.getCache(InfinispanConnectionProvider.SESSION_CACHE_NAME, true);
@@ -215,9 +276,8 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
             replicationConfigBuilder.clustering().cacheMode(async ? CacheMode.REPL_ASYNC : CacheMode.REPL_SYNC);
         }
 
-        boolean jdgEnabled = config.getBoolean("remoteStoreEnabled", false);
         if (jdgEnabled) {
-            configureRemoteCacheStore(replicationConfigBuilder, async);
+            configureRemoteCacheStore(replicationConfigBuilder, async, InfinispanConnectionProvider.WORK_CACHE_NAME, RemoteStoreConfigurationBuilder.class);
         }
 
         Configuration replicationEvictionCacheConfiguration = replicationConfigBuilder.build();
@@ -267,6 +327,10 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         cacheManager.getCache(InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_NAME, true);
     }
 
+    protected String generateNodeName() {
+        return InfinispanConnectionProvider.NODE_PREFIX + new SecureRandom().nextInt(1000000);
+    }
+
     private Configuration getRevisionCacheConfig(long maxEntries) {
         ConfigurationBuilder cb = new ConfigurationBuilder();
         cb.invocationBatching().enable().transaction().transactionMode(TransactionMode.TRANSACTIONAL);
@@ -281,19 +345,19 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     }
 
     // Used for cross-data centers scenario. Usually integration with external JDG server, which itself handles communication between DCs.
-    private void configureRemoteCacheStore(ConfigurationBuilder builder, boolean async) {
+    private void configureRemoteCacheStore(ConfigurationBuilder builder, boolean async, String cacheName, Class<? extends RemoteStoreConfigurationBuilder> configBuilderClass) {
         String jdgServer = config.get("remoteStoreServer", "localhost");
         Integer jdgPort = config.getInt("remoteStorePort", 11222);
 
         builder.persistence()
                 .passivation(false)
-                .addStore(RemoteStoreConfigurationBuilder.class)
+                .addStore(configBuilderClass)
                     .fetchPersistentState(false)
                     .ignoreModifications(false)
                     .purgeOnStartup(false)
                     .preload(false)
                     .shared(true)
-                    .remoteCacheName(InfinispanConnectionProvider.WORK_CACHE_NAME)
+                    .remoteCacheName(cacheName)
                     .rawValues(true)
                     .forceReturnValues(false)
                     .marshaller(KeycloakHotRodMarshallerFactory.class.getName())
@@ -355,7 +419,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
     private static final Object CHANNEL_INIT_SYNCHRONIZER = new Object();
 
-    protected void configureTransport(GlobalConfigurationBuilder gcb, String nodeName, String jgroupsUdpMcastAddr) {
+    protected void configureTransport(GlobalConfigurationBuilder gcb, String nodeName, String siteName, String jgroupsUdpMcastAddr) {
         if (nodeName == null) {
             gcb.transport().defaultTransport();
         } else {
@@ -376,6 +440,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
                     gcb.transport()
                       .nodeName(nodeName)
+                      .siteId(siteName)
                       .transport(transport)
                       .globalJmxStatistics()
                         .jmxDomain(InfinispanConnectionProvider.JMX_DOMAIN + "-" + nodeName)

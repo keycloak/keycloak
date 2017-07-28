@@ -37,6 +37,7 @@ public class InfinispanUserCacheProviderFactory implements UserCacheProviderFact
 
     private static final Logger log = Logger.getLogger(InfinispanUserCacheProviderFactory.class);
     public static final String USER_CLEAR_CACHE_EVENTS = "USER_CLEAR_CACHE_EVENTS";
+    public static final String USER_INVALIDATION_EVENTS = "USER_INVALIDATION_EVENTS";
 
     protected volatile UserCacheManager userCache;
 
@@ -58,12 +59,10 @@ public class InfinispanUserCacheProviderFactory implements UserCacheProviderFact
 
                     ClusterProvider cluster = session.getProvider(ClusterProvider.class);
 
-                    cluster.registerListener(ClusterProvider.ALL, (ClusterEvent event) -> {
+                    cluster.registerListener(USER_INVALIDATION_EVENTS, (ClusterEvent event) -> {
 
-                        if (event instanceof InvalidationEvent) {
-                            InvalidationEvent invalidationEvent = (InvalidationEvent) event;
-                            userCache.invalidationEventReceived(invalidationEvent);
-                        }
+                        InvalidationEvent invalidationEvent = (InvalidationEvent) event;
+                        userCache.invalidationEventReceived(invalidationEvent);
 
                     });
 

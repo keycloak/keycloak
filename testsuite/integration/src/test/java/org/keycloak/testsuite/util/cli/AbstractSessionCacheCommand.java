@@ -25,16 +25,24 @@ import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public abstract class AbstractOfflineCacheCommand extends AbstractCommand {
+public abstract class AbstractSessionCacheCommand extends AbstractCommand {
 
     @Override
     protected void doRunCommand(KeycloakSession session) {
         InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
-        Cache<String, SessionEntity> ispnCache = provider.getCache(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME);
+        String cacheName = getArg(0);
+        if (!cacheName.equals(InfinispanConnectionProvider.SESSION_CACHE_NAME) && !cacheName.equals(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME)) {
+            log.errorf("Invalid cache name: '%s', Only cache names '%s' or '%s' are supported", cacheName, InfinispanConnectionProvider.SESSION_CACHE_NAME,
+                    InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME);
+            throw new HandledException();
+        }
+
+        Cache<String, SessionEntity> ispnCache = provider.getCache(cacheName);
         doRunCacheCommand(session, ispnCache);
     }
 
@@ -52,12 +60,17 @@ public abstract class AbstractOfflineCacheCommand extends AbstractCommand {
                 ", authenticatedClientSessions: " + clientSessionsSize;
     }
 
+    @Override
+    public String printUsage() {
+        return getName() + " <cache-name>";
+    }
+
     protected abstract void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntity> cache);
 
 
     // IMPLS
 
-    public static class PutCommand extends AbstractOfflineCacheCommand {
+    public static class PutCommand extends AbstractSessionCacheCommand {
 
         @Override
         public String getName() {
@@ -67,10 +80,10 @@ public abstract class AbstractOfflineCacheCommand extends AbstractCommand {
         @Override
         protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntity> cache) {
             UserSessionEntity userSession = new UserSessionEntity();
-            String id = getArg(0);
+            String id = getArg(1);
 
             userSession.setId(id);
-            userSession.setRealm(getArg(1));
+            userSession.setRealm(getArg(2));
 
             userSession.setLastSessionRefresh(Time.currentTime());
             cache.put(id, userSession);
@@ -78,12 +91,12 @@ public abstract class AbstractOfflineCacheCommand extends AbstractCommand {
 
         @Override
         public String printUsage() {
-            return getName() + " <user-session-id> <realm-name>";
+            return getName() + " <cache-name> <user-session-id> <realm-name>";
         }
     }
 
 
-    public static class GetCommand extends AbstractOfflineCacheCommand {
+    public static class GetCommand extends AbstractSessionCacheCommand {
 
         @Override
         public String getName() {
@@ -92,19 +105,19 @@ public abstract class AbstractOfflineCacheCommand extends AbstractCommand {
 
         @Override
         protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntity> cache) {
-            String id = getArg(0);
+            String id = getArg(1);
             UserSessionEntity userSession = (UserSessionEntity) cache.get(id);
             printSession(id, userSession);
         }
 
         @Override
         public String printUsage() {
-            return getName() + " <user-session-id>";
+            return getName() + " <cache-name> <user-session-id>";
         }
     }
 
     // Just to check performance of multiple get calls. And comparing what's the change between the case when item is available locally or not.
-    public static class GetMultipleCommand extends AbstractOfflineCacheCommand {
+    public static class GetMultipleCommand extends AbstractSessionCacheCommand {
 
         @Override
         public String getName() {
@@ -113,8 +126,8 @@ public abstract class AbstractOfflineCacheCommand extends AbstractCommand {
 
         @Override
         protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntity> cache) {
-            String id = getArg(0);
-            int count = getIntArg(1);
+            String id = getArg(1);
+            int count = getIntArg(2);
 
             long start = System.currentTimeMillis();
             for (int i=0 ; i<count ; i++) {
@@ -127,12 +140,12 @@ public abstract class AbstractOfflineCacheCommand extends AbstractCommand {
 
         @Override
         public String printUsage() {
-            return getName() + " <user-session-id> <count-of-gets>";
+            return getName() + " <cache-name> <user-session-id> <count-of-gets>";
         }
     }
 
 
-    public static class RemoveCommand extends AbstractOfflineCacheCommand {
+    public static class RemoveCommand extends AbstractSessionCacheCommand {
 
         @Override
         public String getName() {
@@ -141,18 +154,18 @@ public abstract class AbstractOfflineCacheCommand extends AbstractCommand {
 
         @Override
         protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntity> cache) {
-            String id = getArg(0);
+            String id = getArg(1);
             cache.remove(id);
         }
 
         @Override
         public String printUsage() {
-            return getName() + " <user-session-id>";
+            return getName() + " <cache-name> <user-session-id>";
         }
     }
 
 
-    public static class ClearCommand extends AbstractOfflineCacheCommand {
+    public static class ClearCommand extends AbstractSessionCacheCommand {
 
         @Override
         public String getName() {
@@ -166,7 +179,7 @@ public abstract class AbstractOfflineCacheCommand extends AbstractCommand {
     }
 
 
-    public static class SizeCommand extends AbstractOfflineCacheCommand {
+    public static class SizeCommand extends AbstractSessionCacheCommand {
 
         @Override
         public String getName() {
@@ -180,7 +193,7 @@ public abstract class AbstractOfflineCacheCommand extends AbstractCommand {
     }
 
 
-    public static class ListCommand extends AbstractOfflineCacheCommand {
+    public static class ListCommand extends AbstractSessionCacheCommand {
 
         @Override
         public String getName() {
@@ -201,7 +214,7 @@ public abstract class AbstractOfflineCacheCommand extends AbstractCommand {
     }
 
 
-    public static class GetLocalCommand extends AbstractOfflineCacheCommand {
+    public static class GetLocalCommand extends AbstractSessionCacheCommand {
 
         @Override
         public String getName() {
@@ -211,7 +224,7 @@ public abstract class AbstractOfflineCacheCommand extends AbstractCommand {
 
         @Override
         protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntity> cache) {
-            String id = getArg(0);
+            String id = getArg(1);
             cache = ((AdvancedCache) cache).withFlags(Flag.CACHE_MODE_LOCAL);
             UserSessionEntity userSession = (UserSessionEntity) cache.get(id);
             printSession(id, userSession);
@@ -219,12 +232,12 @@ public abstract class AbstractOfflineCacheCommand extends AbstractCommand {
 
         @Override
         public String printUsage() {
-            return getName() + " <user-session-id>";
+            return getName() + " <cache-name> <user-session-id>";
         }
     }
 
 
-    public static class SizeLocalCommand extends AbstractOfflineCacheCommand {
+    public static class SizeLocalCommand extends AbstractSessionCacheCommand {
 
         @Override
         public String getName() {
@@ -235,6 +248,44 @@ public abstract class AbstractOfflineCacheCommand extends AbstractCommand {
         protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntity> cache) {
             log.info("Size local: " + cache.getAdvancedCache().withFlags(Flag.CACHE_MODE_LOCAL).size());
         }
+    }
+
+    public static class CreateManySessionsCommand extends AbstractSessionCacheCommand {
+
+        @Override
+        public String getName() {
+            return "createManySessions";
+        }
+
+        @Override
+        protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntity> cache) {
+            String realmName = getArg(1);
+            int count = getIntArg(2);
+            int batchCount = getIntArg(3);
+
+            BatchTaskRunner.runInBatches(0, count, batchCount, session.getKeycloakSessionFactory(), (KeycloakSession batchSession, int firstInIteration, int countInIteration) -> {
+                for (int i=0 ; i<countInIteration ; i++) {
+                    UserSessionEntity userSession = new UserSessionEntity();
+                    String id = KeycloakModelUtils.generateId();
+
+                    userSession.setId(id);
+                    userSession.setRealm(realmName);
+
+                    userSession.setLastSessionRefresh(Time.currentTime());
+                    cache.put(id, userSession);
+                }
+
+                log.infof("Created '%d' sessions started from offset '%d'", countInIteration, firstInIteration);
+            });
+
+            log.infof("Created all '%d' sessions", count);
+        }
+
+        @Override
+        public String printUsage() {
+            return getName() + " <cache-name> <realm-name> <count> <count-in-batch>";
+        }
+
     }
 
 }

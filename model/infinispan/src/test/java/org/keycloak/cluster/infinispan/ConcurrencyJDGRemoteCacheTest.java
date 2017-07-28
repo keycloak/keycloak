@@ -214,7 +214,7 @@ public class ConcurrencyJDGRemoteCacheTest {
         }
     }
 
-    private static class EntryInfo {
+    public static class EntryInfo {
         AtomicInteger successfulInitializations = new AtomicInteger(0);
         AtomicInteger successfulListenerWrites = new AtomicInteger(0);
         AtomicInteger th1 = new AtomicInteger();

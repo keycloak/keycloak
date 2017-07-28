@@ -27,7 +27,7 @@ public class Retry {
             try {
                 runnable.run();
                 return;
-            } catch (RuntimeException e) {
+            } catch (RuntimeException | AssertionError e) {
                 retryCount--;
                 if (retryCount > 0) {
                     try {

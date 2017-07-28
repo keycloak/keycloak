@@ -53,7 +53,7 @@ public interface CommonClientSessionModel {
     // TODO: Not needed here...?
     public Set<String> getProtocolMappers();
     public void setProtocolMappers(Set<String> protocolMappers);
-    
+
     public static enum Action {
         OAUTH_GRANT,
         CODE_TO_TOKEN,
