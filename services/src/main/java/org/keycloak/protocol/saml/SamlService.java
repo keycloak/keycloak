@@ -147,7 +147,7 @@ public class SamlService extends AuthorizationEndpointBase {
 
             StatusResponseType statusResponse = (StatusResponseType) holder.getSamlObject();
             // validate destination
-            if (statusResponse.getDestination() != null && !uriInfo.getAbsolutePath().toString().equals(statusResponse.getDestination())) {
+            if (statusResponse.getDestination() != null && !isValidDestination(statusResponse.getDestination())) {
                 event.detail(Details.REASON, "invalid_destination");
                 event.error(Errors.INVALID_SAML_LOGOUT_RESPONSE);
                 return ErrorPage.error(session, Messages.INVALID_REQUEST);
