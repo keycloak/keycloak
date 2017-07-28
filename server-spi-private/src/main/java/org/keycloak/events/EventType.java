@@ -123,7 +123,9 @@ public enum EventType {
     CLIENT_DELETE_ERROR(true),
 
     CLIENT_INITIATED_ACCOUNT_LINKING(true),
-    CLIENT_INITIATED_ACCOUNT_LINKING_ERROR(true);
+    CLIENT_INITIATED_ACCOUNT_LINKING_ERROR(true),
+    TOKEN_EXCHANGE(true),
+    TOKEN_EXCHANGE_ERROR(true);
 
     private boolean saveByDefault;
 

@@ -122,6 +122,7 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
         this.identity = new UserModelIdentity(realm, admin);
     }
 
+    @Override
     public ClientModel getRealmManagementClient() {
         ClientModel client = null;
         if (realm.getName().equals(Config.getAdminRealm())) {
