@@ -221,7 +221,7 @@
             var callbackState = {
                 state: state,
                 nonce: nonce,
-                redirectUri: encodeURIComponent(redirectUri),
+                redirectUri: encodeURIComponent(redirectUri)
             }
 
             if (options && options.prompt) {
