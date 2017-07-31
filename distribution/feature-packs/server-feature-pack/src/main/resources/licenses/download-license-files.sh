@@ -14,6 +14,29 @@ echo "==> Deleting old license files in $output_dir" >&2
 
 find "$output_dir" -maxdepth 1 '(' -type f -or -type l ')' -name '*.txt' -print0 | xargs --no-run-if-empty -0 rm
 
+echo "==> Munging $xml to ensure Windows filename compatibility" >&2
+tempfile="$(mktemp)"
+trap "rm -f '$tempfile'" EXIT
+xmlstarlet tr /dev/stdin "$xml" >> "$tempfile" <<EOF
+<?xml version="1.0" encoding="utf-8"?>
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+    <xsl:template match="/ | @* | node()">
+        <xsl:copy>
+            <xsl:apply-templates select="@* | node()" />
+        </xsl:copy>
+    </xsl:template>
+
+    <xsl:template match="licenseSummary/dependencies/dependency/licenses/license/name/text()">
+        <xsl:value-of select="translate(., '&lt;&gt;&quot;:\\|?*', '')"/>
+    </xsl:template>
+
+    <xsl:template match="licenseSummary/others/other/licenses/license/name/text()">
+        <xsl:value-of select="translate(., '&lt;&gt;&quot;:\\|?*', '')"/>
+    </xsl:template>
+</xsl:stylesheet>
+EOF
+cp "$tempfile" "$xml"
+
 echo "==> Downloading license files for $xml into $output_dir" >&2
 
 xmlstarlet sel -T -t -m "/licenseSummary/dependencies/dependency/licenses/license" -v "../../groupId/text()" -o $'\t' -v "../../artifactId/text()" -o $'\t' -v "../../version/text()" -o $'\t' -v "name/text()" -o $'\t' -v "url/text()" --nl "$xml" | \
