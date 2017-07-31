@@ -25,6 +25,7 @@ import org.keycloak.adapters.spi.AuthenticationError;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
 
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -47,7 +48,7 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 @Path("/")
-public class SendUsernameServlet {
+public class SendUsernameServlet extends HttpServlet {
 
     private static boolean checkRoles = false;
     private static SamlAuthenticationError authError;
