@@ -214,11 +214,11 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 logger.debugv("authenticator SUCCESS: {0}", execution.getAuthenticator());
                 processor.getAuthenticationSession().setExecutionStatus(execution.getId(), AuthenticationSessionModel.ExecutionStatus.SUCCESS);
 
-                String authMethods = processor.getAuthenticationSession().getUserSessionNotes().get(AuthenticationManager.AUTH_METHODS);
+                String authMethods = processor.getAuthenticationSession().getClientNote(AuthenticationManager.AUTH_METHODS);
                 if(authMethods == null){
                     authMethods = "";
                 }
-                processor.getAuthenticationSession().setUserSessionNote(AuthenticationManager.AUTH_METHODS, authMethods + " " + execution.getAuthenticator());
+                processor.getAuthenticationSession().setClientNote(AuthenticationManager.AUTH_METHODS, authMethods + " " + execution.getAuthenticator());
 
                 if (execution.isAlternative()) alternativeSuccessful = true;
                 return null;
