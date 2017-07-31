@@ -72,12 +72,13 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
         testRealmPage.setAuthRealm(TEST);
-        testRealmLoginPage.setAuthRealm(testRealmPage);
-        testRealmAccountPage.setAuthRealm(testRealmPage);
     }
 
     @Before
     public void beforeAuthTest() {
+        testRealmLoginPage.setAuthRealm(testRealmPage);
+        testRealmAccountPage.setAuthRealm(testRealmPage);
+
         testUser = createUserRepresentation("test", "test@email.test", "test", "user", true);
         setPasswordFor(testUser, PASSWORD);
 
