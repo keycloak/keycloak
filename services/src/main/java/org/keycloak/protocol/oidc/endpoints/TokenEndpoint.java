@@ -595,10 +595,36 @@ public class TokenEndpoint {
         boolean allowed = false;
         UserModel serviceAccount = session.users().getServiceAccount(client);
         if (serviceAccount != null) {
-            RoleModel exchangeable = targetClient.getRole(OAuth2Constants.TOKEN_EXCHANGER);
-            RoleModel realmExchangeable = AdminPermissions.management(session, realm).getRealmManagementClient().getRole(OAuth2Constants.TOKEN_EXCHANGER);
-            allowed = (exchangeable != null && serviceAccount.hasRole(exchangeable)) || (realmExchangeable != null && serviceAccount.hasRole(realmExchangeable));
+            if (authResult.getToken().getAudience() == null) {
+                logger.debug("Client doesn't have service account");
+            }
+            boolean tokenAllowed = false;
+            for (String aud : authResult.getToken().getAudience()) {
+                ClientModel audClient = realm.getClientByClientId(aud);
+                if (audClient == null) continue;
+                if (audClient.equals(client)) {
+                    tokenAllowed = true;
+                    break;
+                }
+                RoleModel audExchanger = audClient.getRole(OAuth2Constants.TOKEN_EXCHANGER);
+                if (audExchanger != null && serviceAccount.hasRole(audExchanger)) {
+                    tokenAllowed = true;
+                    break;
+                }
+            }
+            if (!tokenAllowed) {
+                logger.debug("Client does not have exchange rights for audience of token");
+            } else {
+                RoleModel targetExchangable = targetClient.getRole(OAuth2Constants.TOKEN_EXCHANGER);
+                RoleModel realmExchangeable = AdminPermissions.management(session, realm).getRealmManagementClient().getRole(OAuth2Constants.TOKEN_EXCHANGER);
+                allowed = (targetExchangable != null && serviceAccount.hasRole(targetExchangable)) || (realmExchangeable != null && serviceAccount.hasRole(realmExchangeable));
+                if (!allowed) {
+                    logger.debug("Client does not have exchange rights for target audience");
+                }
+            }
 
+        } else {
+            logger.debug("Client doesn't have service account");
         }
 
         if (!allowed) {
