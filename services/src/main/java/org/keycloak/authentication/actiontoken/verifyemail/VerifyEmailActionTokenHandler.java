@@ -21,14 +21,20 @@ import org.keycloak.TokenVerifier.Predicate;
 import org.keycloak.authentication.actiontoken.*;
 import org.keycloak.events.*;
 import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
+import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import java.util.Objects;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
 
 /**
  * Action token handler for verification of e-mail address.
@@ -57,13 +63,29 @@ public class VerifyEmailActionTokenHandler extends AbstractActionTokenHander<Ver
     }
 
     @Override
-        public Response handleToken(VerifyEmailActionToken token, ActionTokenContext<VerifyEmailActionToken> tokenContext) {
+    public Response handleToken(VerifyEmailActionToken token, ActionTokenContext<VerifyEmailActionToken> tokenContext) {
         UserModel user = tokenContext.getAuthenticationSession().getAuthenticatedUser();
         EventBuilder event = tokenContext.getEvent();
 
         event.event(EventType.VERIFY_EMAIL).detail(Details.EMAIL, user.getEmail());
 
         AuthenticationSessionModel authSession = tokenContext.getAuthenticationSession();
+        final UriInfo uriInfo = tokenContext.getUriInfo();
+        final RealmModel realm = tokenContext.getRealm();
+        final KeycloakSession session = tokenContext.getSession();
+
+        if (tokenContext.isAuthenticationSessionFresh()) {
+            // Update the authentication session in the token
+            token.setOriginalAuthenticationSessionId(token.getAuthenticationSessionId());
+            token.setAuthenticationSessionId(authSession.getId());
+            UriBuilder builder = Urls.actionTokenBuilder(uriInfo.getBaseUri(), token.serialize(session, realm, uriInfo));
+            String confirmUri = builder.build(realm.getName()).toString();
+
+            return session.getProvider(LoginFormsProvider.class)
+                    .setSuccess(Messages.CONFIRM_EMAIL_ADDRESS_VERIFICATION, user.getEmail())
+                    .setAttribute(Constants.TEMPLATE_ATTR_ACTION_URI, confirmUri)
+                    .createInfoPage();
+        }
 
         // verify user email as we know it is valid as this entry point would never have gotten here.
         user.setEmailVerified(true);
@@ -72,9 +94,10 @@ public class VerifyEmailActionTokenHandler extends AbstractActionTokenHander<Ver
 
         event.success();
 
-        if (tokenContext.isAuthenticationSessionFresh()) {
+        if (token.getOriginalAuthenticationSessionId() != null) {
             AuthenticationSessionManager asm = new AuthenticationSessionManager(tokenContext.getSession());
             asm.removeAuthenticationSession(tokenContext.getRealm(), authSession, true);
+
             return tokenContext.getSession().getProvider(LoginFormsProvider.class)
                     .setSuccess(Messages.EMAIL_VERIFIED)
                     .createInfoPage();
@@ -82,8 +105,8 @@ public class VerifyEmailActionTokenHandler extends AbstractActionTokenHander<Ver
 
         tokenContext.setEvent(event.clone().removeDetail(Details.EMAIL).event(EventType.LOGIN));
 
-        String nextAction = AuthenticationManager.nextRequiredAction(tokenContext.getSession(), authSession, tokenContext.getClientConnection(), tokenContext.getRequest(), tokenContext.getUriInfo(), event);
-        return AuthenticationManager.redirectToRequiredActions(tokenContext.getSession(), tokenContext.getRealm(), authSession, tokenContext.getUriInfo(), nextAction);
+        String nextAction = AuthenticationManager.nextRequiredAction(session, authSession, tokenContext.getClientConnection(), tokenContext.getRequest(), uriInfo, event);
+        return AuthenticationManager.redirectToRequiredActions(session, realm, authSession, uriInfo, nextAction);
     }
 
 }

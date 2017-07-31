@@ -160,6 +160,12 @@ public class Messages {
 
     public static final String IDENTITY_PROVIDER_LINK_SUCCESS = "identityProviderLinkSuccess";
 
+    public static final String CONFIRM_ACCOUNT_LINKING = "confirmAccountLinking";
+
+    public static final String CONFIRM_EMAIL_ADDRESS_VERIFICATION = "confirmEmailAddressVerification";
+
+    public static final String CONFIRM_EXECUTION_OF_ACTIONS = "confirmExecutionOfActions";
+
     public static final String STALE_CODE = "staleCodeMessage";
 
     public static final String STALE_CODE_ACCOUNT = "staleCodeAccountMessage";

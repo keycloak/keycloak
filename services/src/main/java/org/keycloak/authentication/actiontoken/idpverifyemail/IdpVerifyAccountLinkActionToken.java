@@ -30,12 +30,16 @@ public class IdpVerifyAccountLinkActionToken extends DefaultActionToken {
 
     private static final String JSON_FIELD_IDENTITY_PROVIDER_USERNAME = "idpu";
     private static final String JSON_FIELD_IDENTITY_PROVIDER_ALIAS = "idpa";
+    private static final String JSON_FIELD_ORIGINAL_AUTHENTICATION_SESSION_ID = "oasid";
 
     @JsonProperty(value = JSON_FIELD_IDENTITY_PROVIDER_USERNAME)
     private String identityProviderUsername;
 
     @JsonProperty(value = JSON_FIELD_IDENTITY_PROVIDER_ALIAS)
     private String identityProviderAlias;
+
+    @JsonProperty(value = JSON_FIELD_ORIGINAL_AUTHENTICATION_SESSION_ID)
+    private String originalAuthenticationSessionId;
 
     public IdpVerifyAccountLinkActionToken(String userId, int absoluteExpirationInSecs, String authenticationSessionId,
       String identityProviderUsername, String identityProviderAlias) {
@@ -61,5 +65,13 @@ public class IdpVerifyAccountLinkActionToken extends DefaultActionToken {
 
     public void setIdentityProviderAlias(String identityProviderAlias) {
         this.identityProviderAlias = identityProviderAlias;
+    }
+
+    public String getOriginalAuthenticationSessionId() {
+        return originalAuthenticationSessionId;
+    }
+
+    public void setOriginalAuthenticationSessionId(String originalAuthenticationSessionId) {
+        this.originalAuthenticationSessionId = originalAuthenticationSessionId;
     }
 }

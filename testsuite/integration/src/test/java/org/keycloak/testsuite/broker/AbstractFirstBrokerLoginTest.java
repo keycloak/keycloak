@@ -37,6 +37,7 @@ import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginExpiredPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.LoginUpdateProfileEditUsernameAllowedPage;
+import org.keycloak.testsuite.pages.ProceedPage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
@@ -52,6 +53,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.hamcrest.Matchers;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.assertEquals;
@@ -345,6 +347,9 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractIdentityProvi
         // Go to the same link again
         driver.navigate().to(linkFromMail.trim());
 
+        proceedPage.assertCurrent();
+        Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Confirm linking the account"));
+        proceedPage.clickProceedLink();
         infoPage.assertCurrent();
         Assert.assertThat(infoPage.getInfo(), startsWith("You successfully verified your email. Please go back to your original browser and continue there with the login."));
     }
@@ -379,10 +384,14 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractIdentityProvi
 
             WebDriver driver2 = webRule2.getDriver();
             InfoPage infoPage2 = webRule2.getPage(InfoPage.class);
+            ProceedPage proceedPage2 = webRule2.getPage(ProceedPage.class);
 
             driver2.navigate().to(linkFromMail.trim());
 
             // authenticated, but not redirected to app. Just seeing info page.
+            proceedPage2.assertCurrent();
+            Assert.assertThat(proceedPage2.getInfo(), Matchers.containsString("Confirm linking the account"));
+            proceedPage2.clickProceedLink();
             infoPage2.assertCurrent();
             Assert.assertThat(infoPage2.getInfo(), startsWith("You successfully verified your email. Please go back to your original browser and continue there with the login."));
         } finally {
