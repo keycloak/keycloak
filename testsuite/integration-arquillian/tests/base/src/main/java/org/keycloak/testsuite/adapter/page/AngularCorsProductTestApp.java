@@ -66,6 +66,8 @@ public class AngularCorsProductTestApp extends AbstractPageWithInjectedUrl {
 
     @FindBy(id = "output")
     private WebElement outputArea;
+    @FindBy(id = "headers")
+    private WebElement headers;
 
     public void reloadData() {
         reloadDataButton.click();
@@ -97,6 +99,10 @@ public class AngularCorsProductTestApp extends AbstractPageWithInjectedUrl {
 
     public WebElement getOutput() {
         return outputArea;
+    }
+
+    public WebElement getHeaders() {
+        return headers;
     }
 
 
