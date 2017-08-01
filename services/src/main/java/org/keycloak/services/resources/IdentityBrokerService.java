@@ -221,18 +221,6 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
         }
 
-        // only allow origins from client.  Not sure we need this as I don't believe cookies can be
-        // sent if CORS preflight requests can't execute.
-        String origin = headers.getRequestHeaders().getFirst("Origin");
-        if (origin != null) {
-            String redirectOrigin = UriUtils.getOrigin(redirectUri);
-            if (!redirectOrigin.equals(origin)) {
-                event.error(Errors.ILLEGAL_ORIGIN);
-                throw new ErrorPageException(session, Messages.INVALID_REQUEST);
-
-            }
-        }
-
         AuthenticationManager.AuthResult cookieResult = AuthenticationManager.authenticateIdentityCookie(session, realmModel, true);
         String errorParam = "link_error";
         if (cookieResult == null) {

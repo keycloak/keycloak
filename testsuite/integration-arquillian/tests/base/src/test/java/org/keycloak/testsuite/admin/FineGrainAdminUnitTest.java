@@ -51,6 +51,7 @@ import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.AdminClientUtil;
 
 import javax.ws.rs.ClientErrorException;
+import javax.ws.rs.core.Response;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -739,6 +740,91 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
     public void testRemoveCleanup() throws Exception {
         testingClient.server().run(FineGrainAdminUnitTest::setupDeleteTest);
         testingClient.server().run(FineGrainAdminUnitTest::invokeDelete);
+    }
+
+    // KEYCLOAK-5211
+    @Test
+    public void testCreateRealmCreateClient() throws Exception {
+        ClientRepresentation rep = new ClientRepresentation();
+        rep.setName("fullScopedClient");
+        rep.setClientId("fullScopedClient");
+        rep.setFullScopeAllowed(true);
+        rep.setSecret("618268aa-51e6-4e64-93c4-3c0bc65b8171");
+        rep.setProtocol("openid-connect");
+        rep.setPublicClient(false);
+        rep.setEnabled(true);
+        adminClient.realm("master").clients().create(rep);
+
+        Keycloak realmClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
+                "master", "admin", "admin", "fullScopedClient", "618268aa-51e6-4e64-93c4-3c0bc65b8171");
+
+        RealmRepresentation newRealm=new RealmRepresentation();
+        newRealm.setRealm("anotherRealm");
+        newRealm.setId("anotherRealm");
+        newRealm.setEnabled(true);
+        realmClient.realms().create(newRealm);
+
+        ClientRepresentation newClient = new ClientRepresentation();
+
+        try {
+            newClient.setName("newClient");
+            newClient.setClientId("newClient");
+            newClient.setFullScopeAllowed(true);
+            newClient.setSecret("secret");
+            newClient.setProtocol("openid-connect");
+            newClient.setPublicClient(false);
+            newClient.setEnabled(true);
+            Response response = realmClient.realm("anotherRealm").clients().create(newClient);
+            Assert.assertEquals(403, response.getStatus());
+
+            realmClient.close();
+            realmClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
+                    "master", "admin", "admin", "fullScopedClient", "618268aa-51e6-4e64-93c4-3c0bc65b8171");
+            response = realmClient.realm("anotherRealm").clients().create(newClient);
+            Assert.assertEquals(201, response.getStatus());
+        } finally {
+            adminClient.realm("anotherRealm").remove();
+
+        }
+
+
+    }
+
+    // KEYCLOAK-5211
+    @Test
+    public void testCreateRealmCreateClientWithMaster() throws Exception {
+        ClientRepresentation rep = new ClientRepresentation();
+        rep.setName("fullScopedClient");
+        rep.setClientId("fullScopedClient");
+        rep.setFullScopeAllowed(true);
+        rep.setSecret("618268aa-51e6-4e64-93c4-3c0bc65b8171");
+        rep.setProtocol("openid-connect");
+        rep.setPublicClient(false);
+        rep.setEnabled(true);
+        adminClient.realm("master").clients().create(rep);
+
+        RealmRepresentation newRealm=new RealmRepresentation();
+        newRealm.setRealm("anotherRealm");
+        newRealm.setId("anotherRealm");
+        newRealm.setEnabled(true);
+        adminClient.realms().create(newRealm);
+
+        try {
+            ClientRepresentation newClient = new ClientRepresentation();
+
+            newClient.setName("newClient");
+            newClient.setClientId("newClient");
+            newClient.setFullScopeAllowed(true);
+            newClient.setSecret("secret");
+            newClient.setProtocol("openid-connect");
+            newClient.setPublicClient(false);
+            newClient.setEnabled(true);
+            Response response = adminClient.realm("anotherRealm").clients().create(newClient);
+            Assert.assertEquals(201, response.getStatus());
+        } finally {
+            adminClient.realm("anotherRealm").remove();
+
+        }
     }
 
 
