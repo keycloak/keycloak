@@ -1,1 +1,1 @@
-org.apache.maven,maven-compat,3.2.5,Apache Software License 2.0.txt
+org.sonatype.plexus,plexus-sec-dispatcher,1.3,Apache Software License 2.0.txt
