@@ -17,12 +17,12 @@
 
 package org.keycloak.testsuite.admin.concurrency;
 
-import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -31,7 +31,11 @@ import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import org.keycloak.testsuite.admin.ApiUtil;
 
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -39,203 +43,198 @@ import static org.junit.Assert.fail;
  */
 public class ConcurrencyTest extends AbstractConcurrencyTest {
 
-    boolean passedCreateClient = false;
-    boolean passedCreateRole = false;
+    public void concurrentTest(KeycloakRunnable... tasks) throws Throwable {
+        System.out.println("***************************");
+        long start = System.currentTimeMillis();
+        run(tasks);
+        long end = System.currentTimeMillis() - start;
+        System.out.println("took " + end + " ms");
+    }
 
-    //@Test
+    @Test
     public void testAllConcurrently() throws Throwable {
-        Thread client = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    createClient();
-                    passedCreateClient = true;
-                } catch (Throwable throwable) {
-                    throw new RuntimeException(throwable);
-                }
-            }
-        });
-        Thread role = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    createRole();
-                    passedCreateRole = true;
-                } catch (Throwable throwable) {
-                    throw new RuntimeException(throwable);
-                }
-            }
-        });
-
-        client.start();
-        role.start();
-        client.join();
-        role.join();
-        Assert.assertTrue(passedCreateClient);
-        Assert.assertTrue(passedCreateRole);
+        AtomicInteger uniqueCounter = new AtomicInteger(100000);
+        concurrentTest(
+          new CreateClient(uniqueCounter),
+          new CreateRemoveClient(uniqueCounter),
+          new CreateGroup(uniqueCounter),
+          new CreateRole(uniqueCounter)
+        );
     }
 
     @Test
     public void createClient() throws Throwable {
-        System.out.println("***************************");
-        long start = System.currentTimeMillis();
-        run(new KeycloakRunnable() {
-            @Override
-            public void run(Keycloak keycloak, RealmResource realm, int threadNum, int iterationNum) {
-                String name = "c-" + threadNum + "-" + iterationNum;
-                ClientRepresentation c = new ClientRepresentation();
-                c.setClientId(name);
-                Response response = realm.clients().create(c);
-                String id = ApiUtil.getCreatedId(response);
-                response.close();
-
-                c = realm.clients().get(id).toRepresentation();
-                assertNotNull(c);
-                boolean found = false;
-                for (ClientRepresentation r : realm.clients().findAll()) {
-                    if (r.getClientId().equals(name)) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    fail("Client " + name + " not found in client list");
-                }
-            }
-        });
-        long end = System.currentTimeMillis() - start;
-        System.out.println("createClient took " + end);
-
+        AtomicInteger uniqueCounter = new AtomicInteger();
+        concurrentTest(new CreateClient(uniqueCounter));
     }
 
     @Test
     public void createGroup() throws Throwable {
-        System.out.println("***************************");
-        long start = System.currentTimeMillis();
-        run(new KeycloakRunnable() {
-            @Override
-            public void run(Keycloak keycloak, RealmResource realm, int threadNum, int iterationNum) {
-                String name = "c-" + threadNum + "-" + iterationNum;
-                GroupRepresentation c = new GroupRepresentation();
-                c.setName(name);
-                Response response = realm.groups().add(c);
-                String id = ApiUtil.getCreatedId(response);
-                response.close();
-
-                c = realm.groups().group(id).toRepresentation();
-                assertNotNull(c);
-                boolean found = false;
-                for (GroupRepresentation r : realm.groups().groups()) {
-                    if (r.getName().equals(name)) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    fail("Group " + name + " not found in group list");
-                }
-            }
-        });
-        long end = System.currentTimeMillis() - start;
-        System.out.println("createGroup took " + end);
-
+        AtomicInteger uniqueCounter = new AtomicInteger();
+        concurrentTest(new CreateGroup(uniqueCounter));
     }
 
     @Test
-    @Ignore
     public void createRemoveClient() throws Throwable {
         // FYI< this will fail as HSQL seems to be trying to perform table locks.
-        System.out.println("***************************");
-        long start = System.currentTimeMillis();
-        run(new KeycloakRunnable() {
-            @Override
-            public void run(Keycloak keycloak, RealmResource realm, int threadNum, int iterationNum) {
-                String name = "c-" + threadNum + "-" + iterationNum;
-                ClientRepresentation c = new ClientRepresentation();
-                c.setClientId(name);
-                Response response = realm.clients().create(c);
-                String id = ApiUtil.getCreatedId(response);
-                response.close();
-
-                c = realm.clients().get(id).toRepresentation();
-                assertNotNull(c);
-                boolean found = false;
-                for (ClientRepresentation r : realm.clients().findAll()) {
-                    if (r.getClientId().equals(name)) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    fail("Client " + name + " not found in client list");
-                }
-                realm.clients().get(id).remove();
-                try {
-                    c = realm.clients().get(id).toRepresentation();
-                    fail("Client " + name + " should not be found.  Should throw a 404");
-                } catch (NotFoundException e) {
-
-                }
-                found = false;
-                for (ClientRepresentation r : realm.clients().findAll()) {
-                    if (r.getClientId().equals(name)) {
-                        found = true;
-                        break;
-                    }
-                }
-                Assert.assertFalse("Client " + name + " should not be in client list", found);
-
-            }
-        });
-        long end = System.currentTimeMillis() - start;
-        System.out.println("createClient took " + end);
-
-    }
-
-
-    @Test
-    public void createRole() throws Throwable {
-        long start = System.currentTimeMillis();
-        run(new KeycloakRunnable() {
-            @Override
-            public void run(Keycloak keycloak, RealmResource realm, int threadNum, int iterationNum) {
-                String name = "r-" + threadNum + "-" + iterationNum;
-                RoleRepresentation r = new RoleRepresentation(name, null, false);
-                realm.roles().create(r);
-                assertNotNull(realm.roles().get(name).toRepresentation());
-            }
-        });
-        long end = System.currentTimeMillis() - start;
-        System.out.println("createRole took " + end);
-
+        AtomicInteger uniqueCounter = new AtomicInteger();
+        concurrentTest(new CreateRemoveClient(uniqueCounter));
     }
 
     @Test
     public void createClientRole() throws Throwable {
-        long start = System.currentTimeMillis();
         ClientRepresentation c = new ClientRepresentation();
         c.setClientId("client");
         Response response = adminClient.realm(REALM_NAME).clients().create(c);
         final String clientId = ApiUtil.getCreatedId(response);
         response.close();
 
-        System.out.println("*********************************************");
-
-        run(new KeycloakRunnable() {
-            @Override
-            public void run(Keycloak keycloak, RealmResource realm, int threadNum, int iterationNum) {
-                String name = "r-" + threadNum + "-" + iterationNum;
-                RoleRepresentation r = new RoleRepresentation(name, null, false);
-
-                ClientResource client = realm.clients().get(clientId);
-                client.roles().create(r);
-
-                assertNotNull(client.roles().get(name).toRepresentation());
-            }
-        });
-        long end = System.currentTimeMillis() - start;
-        System.out.println("createClientRole took " + end);
-        System.out.println("*********************************************");
-
+        AtomicInteger uniqueCounter = new AtomicInteger();
+        concurrentTest(new CreateClientRole(uniqueCounter, clientId));
     }
+
+    @Test
+    public void createRole() throws Throwable {
+        AtomicInteger uniqueCounter = new AtomicInteger();
+        run(new CreateRole(uniqueCounter));
+    }
+
+    private class CreateClient implements KeycloakRunnable {
+
+        private final AtomicInteger clientIndex;
+
+        public CreateClient(AtomicInteger clientIndex) {
+            this.clientIndex = clientIndex;
+        }
+
+        @Override
+        public void run(int threadIndex, Keycloak keycloak, RealmResource realm) throws Throwable {
+            String name = "c-" + clientIndex.getAndIncrement();
+            ClientRepresentation c = new ClientRepresentation();
+            c.setClientId(name);
+            Response response = realm.clients().create(c);
+            String id = ApiUtil.getCreatedId(response);
+            response.close();
+
+            c = realm.clients().get(id).toRepresentation();
+            assertNotNull(c);
+            assertTrue("Client " + name + " not found in client list",
+              realm.clients().findAll().stream()
+                .map(ClientRepresentation::getClientId)
+                .filter(Objects::nonNull)
+                .anyMatch(name::equals));
+        }
+    }
+
+    private class CreateRemoveClient implements KeycloakRunnable {
+
+        private final AtomicInteger clientIndex;
+
+        public CreateRemoveClient(AtomicInteger clientIndex) {
+            this.clientIndex = clientIndex;
+        }
+
+        @Override
+        public void run(int threadIndex, Keycloak keycloak, RealmResource realm) throws Throwable {
+            String name = "c-" + clientIndex.getAndIncrement();
+            ClientRepresentation c = new ClientRepresentation();
+            c.setClientId(name);
+            final ClientsResource clients = realm.clients();
+
+            Response response = clients.create(c);
+            String id = ApiUtil.getCreatedId(response);
+            response.close();
+            final ClientResource client = clients.get(id);
+
+            c = client.toRepresentation();
+            assertNotNull(c);
+            assertTrue("Client " + name + " not found in client list",
+              clients.findAll().stream()
+                .map(ClientRepresentation::getClientId)
+                .filter(Objects::nonNull)
+                .anyMatch(name::equals));
+
+            client.remove();
+            try {
+                client.toRepresentation();
+                fail("Client " + name + " should not be found.  Should throw a 404");
+            } catch (NotFoundException e) {
+
+            }
+
+            assertFalse("Client " + name + " should now not present in client list",
+              clients.findAll().stream()
+                .map(ClientRepresentation::getClientId)
+                .filter(Objects::nonNull)
+                .anyMatch(name::equals));
+        }
+    }
+
+    private class CreateGroup implements KeycloakRunnable {
+
+        private final AtomicInteger uniqueIndex;
+
+        public CreateGroup(AtomicInteger uniqueIndex) {
+            this.uniqueIndex = uniqueIndex;
+        }
+
+        @Override
+        public void run(int threadIndex, Keycloak keycloak, RealmResource realm) throws Throwable {
+            String name = "g-" + uniqueIndex.getAndIncrement();
+            GroupRepresentation c = new GroupRepresentation();
+            c.setName(name);
+            Response response = realm.groups().add(c);
+            String id = ApiUtil.getCreatedId(response);
+            response.close();
+
+            c = realm.groups().group(id).toRepresentation();
+            assertNotNull(c);
+            assertTrue("Group " + name + " not found in group list",
+              realm.groups().groups().stream()
+                .map(GroupRepresentation::getName)
+                .filter(Objects::nonNull)
+                .anyMatch(name::equals));
+        }
+    }
+
+    private class CreateClientRole implements KeycloakRunnable {
+
+        private final AtomicInteger uniqueCounter;
+        private final String clientId;
+
+        public CreateClientRole(AtomicInteger uniqueCounter, String clientId) {
+            this.uniqueCounter = uniqueCounter;
+            this.clientId = clientId;
+        }
+
+        @Override
+        public void run(int threadIndex, Keycloak keycloak, RealmResource realm) throws Throwable {
+            String name = "cr-" + uniqueCounter.getAndIncrement();
+            RoleRepresentation r = new RoleRepresentation(name, null, false);
+
+            final RolesResource roles = realm.clients().get(clientId).roles();
+            roles.create(r);
+            assertNotNull(roles.get(name).toRepresentation());
+        }
+    }
+
+    private class CreateRole implements KeycloakRunnable {
+
+        private final AtomicInteger uniqueCounter;
+
+        public CreateRole(AtomicInteger uniqueCounter) {
+            this.uniqueCounter = uniqueCounter;
+        }
+
+        @Override
+        public void run(int threadIndex, Keycloak keycloak, RealmResource realm) throws Throwable {
+            String name = "r-" + uniqueCounter.getAndIncrement();
+            RoleRepresentation r = new RoleRepresentation(name, null, false);
+
+            final RolesResource roles = realm.roles();
+            roles.create(r);
+            assertNotNull(roles.get(name).toRepresentation());
+        }
+    }
+
 }
