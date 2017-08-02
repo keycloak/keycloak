@@ -24,13 +24,18 @@ import org.keycloak.authentication.authenticators.broker.IdpEmailVerificationAut
 import org.keycloak.events.*;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import java.util.Collections;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
 
 /**
  * Action token handler for verification of e-mail address.
@@ -58,6 +63,9 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
     public Response handleToken(IdpVerifyAccountLinkActionToken token, ActionTokenContext<IdpVerifyAccountLinkActionToken> tokenContext) {
         UserModel user = tokenContext.getAuthenticationSession().getAuthenticatedUser();
         EventBuilder event = tokenContext.getEvent();
+        final UriInfo uriInfo = tokenContext.getUriInfo();
+        final RealmModel realm = tokenContext.getRealm();
+        final KeycloakSession session = tokenContext.getSession();
 
         event.event(EventType.IDENTITY_PROVIDER_LINK_ACCOUNT)
           .detail(Details.EMAIL, user.getEmail())
@@ -65,16 +73,28 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
           .detail(Details.IDENTITY_PROVIDER_USERNAME, token.getIdentityProviderUsername())
           .success();
 
+        AuthenticationSessionModel authSession = tokenContext.getAuthenticationSession();
+        if (tokenContext.isAuthenticationSessionFresh()) {
+            token.setOriginalAuthenticationSessionId(token.getAuthenticationSessionId());
+            token.setAuthenticationSessionId(authSession.getId());
+            UriBuilder builder = Urls.actionTokenBuilder(uriInfo.getBaseUri(), token.serialize(session, realm, uriInfo));
+            String confirmUri = builder.build(realm.getName()).toString();
+
+            return session.getProvider(LoginFormsProvider.class)
+                    .setSuccess(Messages.CONFIRM_ACCOUNT_LINKING, token.getIdentityProviderUsername(), token.getIdentityProviderAlias())
+                    .setAttribute(Constants.TEMPLATE_ATTR_ACTION_URI, confirmUri)
+                    .createInfoPage();
+        }
+
         // verify user email as we know it is valid as this entry point would never have gotten here.
         user.setEmailVerified(true);
 
-        AuthenticationSessionModel authSession = tokenContext.getAuthenticationSession();
-        if (tokenContext.isAuthenticationSessionFresh()) {
-            AuthenticationSessionManager asm = new AuthenticationSessionManager(tokenContext.getSession());
-            asm.removeAuthenticationSession(tokenContext.getRealm(), authSession, true);
+        if (token.getOriginalAuthenticationSessionId() != null) {
+            AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
+            asm.removeAuthenticationSession(realm, authSession, true);
 
-            AuthenticationSessionProvider authSessProvider = tokenContext.getSession().authenticationSessions();
-            authSession = authSessProvider.getAuthenticationSession(tokenContext.getRealm(), token.getAuthenticationSessionId());
+            AuthenticationSessionProvider authSessProvider = session.authenticationSessions();
+            authSession = authSessProvider.getAuthenticationSession(realm, token.getOriginalAuthenticationSessionId());
 
             if (authSession != null) {
                 authSession.setAuthNote(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_USERNAME, token.getIdentityProviderUsername());
@@ -85,7 +105,7 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
                 );
             }
 
-            return tokenContext.getSession().getProvider(LoginFormsProvider.class)
+            return session.getProvider(LoginFormsProvider.class)
                     .setSuccess(Messages.IDENTITY_PROVIDER_LINK_SUCCESS, token.getIdentityProviderAlias(), token.getIdentityProviderUsername())
                     .setAttribute(Constants.SKIP_LINK, true)
                     .createInfoPage();

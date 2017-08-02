@@ -37,6 +37,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
+import org.keycloak.testsuite.pages.ProceedPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -80,6 +81,9 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
     @Page
     protected InfoPage infoPage;
+
+    @Page
+    protected ProceedPage proceedPage;
 
     @Page
     protected ErrorPage errorPage;
@@ -330,6 +334,8 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         driver.navigate().to(verificationUrl2.trim());
 
+        proceedPage.assertCurrent();
+        proceedPage.clickProceedLink();
         infoPage.assertCurrent();
         assertEquals("Your email address has been verified.", infoPage.getInfo());
     }
@@ -355,6 +361,9 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         driver.manage().deleteAllCookies();
 
         driver.navigate().to(verificationUrl.trim());
+        proceedPage.assertCurrent();
+        proceedPage.clickProceedLink();
+        infoPage.assertCurrent();
 
         events.expectRequiredAction(EventType.VERIFY_EMAIL)
           .user(testUserId)

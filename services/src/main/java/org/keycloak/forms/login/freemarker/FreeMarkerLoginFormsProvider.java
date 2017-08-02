@@ -449,7 +449,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     public Response createIdpLinkEmailPage() {
         BrokeredIdentityContext brokerContext = (BrokeredIdentityContext) this.attributes.get(IDENTITY_PROVIDER_BROKER_CONTEXT);
         String idpAlias = brokerContext.getIdpConfig().getAlias();
-        idpAlias = ObjectUtil.capitalize(idpAlias);;
+        idpAlias = ObjectUtil.capitalize(idpAlias);
         setMessage(MessageType.WARNING, Messages.LINK_IDP, idpAlias);
 
         return createResponse(LoginFormsPages.LOGIN_IDP_LINK_EMAIL);

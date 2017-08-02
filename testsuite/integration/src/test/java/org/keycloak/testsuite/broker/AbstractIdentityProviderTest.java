@@ -110,6 +110,9 @@ public abstract class AbstractIdentityProviderTest {
     @WebResource
     protected InfoPage infoPage;
 
+    @WebResource
+    protected ProceedPage proceedPage;
+
     protected KeycloakSession session;
 
     protected int logoutTimeOffset = 0;

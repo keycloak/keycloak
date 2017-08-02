@@ -97,7 +97,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
 
     @Override
     public void sendPasswordReset(String link, long expirationInMinutes) throws EmailException {
-        Map<String, Object> attributes = new HashMap<String, Object>();
+        Map<String, Object> attributes = new HashMap<String, Object>(this.attributes);
         attributes.put("user", new ProfileBean(user));
         attributes.put("link", link);
         attributes.put("linkExpiration", expirationInMinutes);
@@ -112,7 +112,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         setRealm(session.getContext().getRealm());
         setUser(user);
 
-        Map<String, Object> attributes = new HashMap<String, Object>();
+        Map<String, Object> attributes = new HashMap<String, Object>(this.attributes);
         attributes.put("user", new ProfileBean(user));
         attributes.put("realmName", realm.getName());
 
@@ -122,7 +122,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
 
     @Override
     public void sendConfirmIdentityBrokerLink(String link, long expirationInMinutes) throws EmailException {
-        Map<String, Object> attributes = new HashMap<String, Object>();
+        Map<String, Object> attributes = new HashMap<String, Object>(this.attributes);
         attributes.put("user", new ProfileBean(user));
         attributes.put("link", link);
         attributes.put("linkExpiration", expirationInMinutes);
@@ -142,7 +142,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
 
     @Override
     public void sendExecuteActions(String link, long expirationInMinutes) throws EmailException {
-        Map<String, Object> attributes = new HashMap<String, Object>();
+        Map<String, Object> attributes = new HashMap<String, Object>(this.attributes);
         attributes.put("user", new ProfileBean(user));
         attributes.put("link", link);
         attributes.put("linkExpiration", expirationInMinutes);
@@ -155,7 +155,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
 
     @Override
     public void sendVerifyEmail(String link, long expirationInMinutes) throws EmailException {
-        Map<String, Object> attributes = new HashMap<String, Object>();
+        Map<String, Object> attributes = new HashMap<String, Object>(this.attributes);
         attributes.put("user", new ProfileBean(user));
         attributes.put("link", link);
         attributes.put("linkExpiration", expirationInMinutes);

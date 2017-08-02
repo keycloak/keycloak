@@ -55,6 +55,7 @@ import org.keycloak.testsuite.page.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.ProceedPage;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -106,6 +107,9 @@ public class UserTest extends AbstractAdminTest {
 
     @Page
     protected InfoPage infoPage;
+
+    @Page
+    protected ProceedPage proceedPage;
 
     @Page
     protected ErrorPage errorPage;
@@ -628,6 +632,9 @@ public class UserTest extends AbstractAdminTest {
 
         driver.navigate().to(link);
 
+        proceedPage.assertCurrent();
+        Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
+        proceedPage.clickProceedLink();
         passwordUpdatePage.assertCurrent();
 
         passwordUpdatePage.changePassword("new-pass", "new-pass");
@@ -664,6 +671,9 @@ public class UserTest extends AbstractAdminTest {
 
             driver.navigate().to(link);
 
+            proceedPage.assertCurrent();
+            Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
+            proceedPage.clickProceedLink();
             passwordUpdatePage.assertCurrent();
 
             passwordUpdatePage.changePassword("new-pass" + i, "new-pass" + i);
@@ -706,6 +716,9 @@ public class UserTest extends AbstractAdminTest {
 
             driver.navigate().to(link);
 
+            proceedPage.assertCurrent();
+            Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
+            proceedPage.clickProceedLink();
             passwordUpdatePage.assertCurrent();
 
             passwordUpdatePage.changePassword("new-pass" + i, "new-pass" + i);
@@ -744,6 +757,9 @@ public class UserTest extends AbstractAdminTest {
 
         driver.navigate().to(link);
 
+        proceedPage.assertCurrent();
+        Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
+        proceedPage.clickProceedLink();
         passwordUpdatePage.assertCurrent();
 
         driver.manage().deleteAllCookies();
@@ -751,6 +767,9 @@ public class UserTest extends AbstractAdminTest {
 
         driver.navigate().to(link);
 
+        proceedPage.assertCurrent();
+        Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
+        proceedPage.clickProceedLink();
         passwordUpdatePage.assertCurrent();
 
         passwordUpdatePage.changePassword("new-pass", "new-pass");
@@ -850,6 +869,9 @@ public class UserTest extends AbstractAdminTest {
 
         driver.navigate().to(link);
 
+        proceedPage.assertCurrent();
+        Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
+        proceedPage.clickProceedLink();
         passwordUpdatePage.assertCurrent();
 
         passwordUpdatePage.changePassword("new-pass", "new-pass");
@@ -910,6 +932,9 @@ public class UserTest extends AbstractAdminTest {
 
         driver.navigate().to(link);
 
+        proceedPage.assertCurrent();
+        Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
+        proceedPage.clickProceedLink();
         passwordUpdatePage.assertCurrent();
 
         passwordUpdatePage.changePassword("new-pass", "new-pass");
@@ -981,11 +1006,17 @@ public class UserTest extends AbstractAdminTest {
 
         driver.navigate().to(link);
 
+        proceedPage.assertCurrent();
+        Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Verify Email"));
+        proceedPage.clickProceedLink();
         Assert.assertEquals("Your account has been updated.", infoPage.getInfo());
 
         driver.navigate().to("about:blank");
 
         driver.navigate().to(link); // It should be possible to use the same action token multiple times
+        proceedPage.assertCurrent();
+        Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Verify Email"));
+        proceedPage.clickProceedLink();
         Assert.assertEquals("Your account has been updated.", infoPage.getInfo());
     }
 

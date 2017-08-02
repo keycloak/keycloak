@@ -704,6 +704,7 @@ public class UserResource {
             String link = builder.build(realm.getName()).toString();
 
             this.session.getProvider(EmailTemplateProvider.class)
+              .setAttribute(Constants.TEMPLATE_ATTR_REQUIRED_ACTIONS, token.getRequiredActions())
               .setRealm(realm)
               .setUser(user)
               .sendExecuteActions(link, TimeUnit.SECONDS.toMinutes(lifespan));
