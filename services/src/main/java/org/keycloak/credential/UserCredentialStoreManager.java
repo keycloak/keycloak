@@ -19,11 +19,15 @@ package org.keycloak.credential;
 import org.keycloak.common.util.reflections.Types;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialManager;
+import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.OnUserCache;
+import org.keycloak.policy.PasswordPolicyManagerProvider;
+import org.keycloak.policy.PolicyError;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageManager;
@@ -155,6 +159,10 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
 
     @Override
     public void updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
+        if (input instanceof UserCredentialModel) {
+            PolicyError error = session.getProvider(PasswordPolicyManagerProvider.class).validate(realm, user, ((UserCredentialModel)input).getValue());
+            if (error != null) throw new ModelException(error.getMessage(), error.getParameters());
+        }
         if (!StorageId.isLocalStorage(user)) {
             String providerId = StorageId.resolveProviderId(user);
             UserStorageProvider provider = UserStorageManager.getStorageProvider(session, realm, providerId);
