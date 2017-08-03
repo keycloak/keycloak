@@ -75,7 +75,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         String defaultScope = config.getDefaultScope();
 
         if (!defaultScope.contains(SCOPE_OPENID)) {
-            config.setDefaultScope(SCOPE_OPENID + " " + defaultScope);
+            config.setDefaultScope((SCOPE_OPENID + " " + defaultScope).trim());
         }
     }
 
@@ -232,48 +232,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         JsonWebToken idToken = validateToken(encodedIdToken);
 
         try {
-            String id = idToken.getSubject();
-            BrokeredIdentityContext identity = new BrokeredIdentityContext(id);
-            String name = (String)idToken.getOtherClaims().get(IDToken.NAME);
-            String preferredUsername = (String)idToken.getOtherClaims().get(IDToken.PREFERRED_USERNAME);
-            String email = (String)idToken.getOtherClaims().get(IDToken.EMAIL);
-
-            if (!getConfig().isDisableUserInfoService()) {
-                String userInfoUrl = getUserInfoUrl();
-                if (userInfoUrl != null && !userInfoUrl.isEmpty() && (id == null || name == null || preferredUsername == null || email == null)) {
-                    SimpleHttp request = JsonSimpleHttp.doGet(userInfoUrl, session)
-                            .header("Authorization", "Bearer " + accessToken);
-                    JsonNode userInfo = JsonSimpleHttp.asJson(request);
-
-                    id = getJsonProperty(userInfo, "sub");
-                    name = getJsonProperty(userInfo, "name");
-                    preferredUsername = getJsonProperty(userInfo, "preferred_username");
-                    email = getJsonProperty(userInfo, "email");
-                    AbstractJsonUserAttributeMapper.storeUserProfileForMapper(identity, userInfo, getConfig().getAlias());
-                }
-            }
-            identity.getContextData().put(FEDERATED_ACCESS_TOKEN_RESPONSE, tokenResponse);
-            identity.getContextData().put(VALIDATED_ID_TOKEN, idToken);
-            processAccessTokenResponse(identity, tokenResponse);
-
-            identity.setId(id);
-            identity.setName(name);
-            identity.setEmail(email);
-
-            identity.setBrokerUserId(getConfig().getAlias() + "." + id);
-            if (tokenResponse.getSessionState() != null) {
-                identity.setBrokerSessionId(getConfig().getAlias() + "." + tokenResponse.getSessionState());
-            }
-
-            if (preferredUsername == null) {
-                preferredUsername = email;
-            }
-
-            if (preferredUsername == null) {
-                preferredUsername = id;
-            }
-
-            identity.setUsername(preferredUsername);
+            BrokeredIdentityContext identity = extractIdentity(tokenResponse, accessToken, idToken);
 
             if (getConfig().isStoreToken()) {
                 identity.setToken(response);
@@ -283,6 +242,56 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         } catch (Exception e) {
             throw new IdentityBrokerException("Could not fetch attributes from userinfo endpoint.", e);
         }
+    }
+
+    protected BrokeredIdentityContext extractIdentity(AccessTokenResponse tokenResponse, String accessToken, JsonWebToken idToken) throws IOException {
+        String id = idToken.getSubject();
+        BrokeredIdentityContext identity = new BrokeredIdentityContext(id);
+        String name = (String)idToken.getOtherClaims().get(IDToken.NAME);
+        String preferredUsername = (String)idToken.getOtherClaims().get(getUsernameClaimName());
+        String email = (String)idToken.getOtherClaims().get(IDToken.EMAIL);
+
+        if (!getConfig().isDisableUserInfoService()) {
+            String userInfoUrl = getUserInfoUrl();
+            if (userInfoUrl != null && !userInfoUrl.isEmpty() && (id == null || name == null || preferredUsername == null || email == null)) {
+                SimpleHttp request = JsonSimpleHttp.doGet(userInfoUrl, session)
+                        .header("Authorization", "Bearer " + accessToken);
+                JsonNode userInfo = JsonSimpleHttp.asJson(request);
+
+                id = getJsonProperty(userInfo, "sub");
+                name = getJsonProperty(userInfo, "name");
+                preferredUsername = getJsonProperty(userInfo, "preferred_username");
+                email = getJsonProperty(userInfo, "email");
+                AbstractJsonUserAttributeMapper.storeUserProfileForMapper(identity, userInfo, getConfig().getAlias());
+            }
+        }
+        identity.getContextData().put(FEDERATED_ACCESS_TOKEN_RESPONSE, tokenResponse);
+        identity.getContextData().put(VALIDATED_ID_TOKEN, idToken);
+        processAccessTokenResponse(identity, tokenResponse);
+
+        identity.setId(id);
+        identity.setName(name);
+        identity.setEmail(email);
+
+        identity.setBrokerUserId(getConfig().getAlias() + "." + id);
+        if (tokenResponse.getSessionState() != null) {
+            identity.setBrokerSessionId(getConfig().getAlias() + "." + tokenResponse.getSessionState());
+        }
+
+        if (preferredUsername == null) {
+            preferredUsername = email;
+        }
+
+        if (preferredUsername == null) {
+            preferredUsername = id;
+        }
+
+        identity.setUsername(preferredUsername);
+        return identity;
+    }
+
+    protected String getUsernameClaimName() {
+        return IDToken.PREFERRED_USERNAME;
     }
 
     protected String getUserInfoUrl() {
