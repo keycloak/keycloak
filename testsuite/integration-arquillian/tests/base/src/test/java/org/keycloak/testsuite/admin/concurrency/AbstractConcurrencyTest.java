@@ -76,6 +76,7 @@ public abstract class AbstractConcurrencyTest extends AbstractTestRealmKeycloakT
                     runnable.run(arrayIndex % numThreads, keycloaks.get(), keycloaks.get().realm(REALM_NAME));
                 } catch (Throwable ex) {
                     failures.add(ex);
+                    log.error(ex.getMessage(), ex);
                 }
                 return null;
             });
@@ -93,7 +94,7 @@ public abstract class AbstractConcurrencyTest extends AbstractTestRealmKeycloakT
         }
 
         if (! failures.isEmpty()) {
-            RuntimeException ex = new RuntimeException("There were failures in threads");
+            RuntimeException ex = new RuntimeException("There were failures in threads. Failures count: " + failures.size());
             failures.forEach(ex::addSuppressed);
             throw ex;
         }

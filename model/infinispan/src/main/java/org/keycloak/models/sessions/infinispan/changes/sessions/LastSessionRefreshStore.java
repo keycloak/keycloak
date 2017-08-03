@@ -90,7 +90,7 @@ public class LastSessionRefreshStore {
         LastSessionRefreshEvent event = new LastSessionRefreshEvent(refreshesToSend);
 
         if (logger.isDebugEnabled()) {
-            logger.debugf("Sending lastSessionRefreshes: %s", event.getLastSessionRefreshes().toString());
+            logger.debugf("Sending lastSessionRefreshes for key '%s'. Refreshes: %s", eventKey, event.getLastSessionRefreshes().toString());
         }
 
         // Don't notify local DC about the lastSessionRefreshes. They were processed here already

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,11 +19,9 @@ package org.keycloak.cluster.infinispan;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.infinispan.Cache;
-import org.infinispan.client.hotrod.Flag;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.annotation.ClientCacheEntryCreated;
 import org.infinispan.client.hotrod.annotation.ClientCacheEntryModified;
@@ -39,47 +37,94 @@ import org.infinispan.persistence.manager.PersistenceManager;
 import org.infinispan.persistence.remote.RemoteStore;
 import org.infinispan.persistence.remote.configuration.ExhaustedAction;
 import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
 
 /**
- * Test concurrency for remoteStore (backed by HotRod RemoteCaches) against external JDG. Especially tests "putIfAbsent" contract.
+ * Test that hotrod ClientListeners are correctly executed as expected
  *
- * Steps: {@see ConcurrencyJDGRemoteCacheClientListenersTest}
+ * STEPS TO REPRODUCE:
+ * - Unzip infinispan-server-8.2.6.Final to some locations ISPN1 and ISPN2
+ *
+ * - Edit both ISPN1/standalone/configuration/clustered.xml and ISPN2/standalone/configuration/clustered.xml . Configure cache in container "clustered"
+ *
+ * 		<replicated-cache-configuration name="sessions-cfg" mode="ASYNC" start="EAGER" batching="false">
+            <transaction mode="NON_XA" locking="PESSIMISTIC"/>
+        </replicated-cache-configuration>
+
+        <replicated-cache name="work" configuration="sessions-cfg" />
+
+    - Run server1
+ ./standalone.sh -c clustered.xml -Djava.net.preferIPv4Stack=true -Djboss.socket.binding.port-offset=1010 -Djboss.default.multicast.address=234.56.78.99 -Djboss.node.name=cache-server
+
+    - Run server2
+ ./standalone.sh -c clustered.xml -Djava.net.preferIPv4Stack=true -Djboss.socket.binding.port-offset=2010 -Djboss.default.multicast.address=234.56.78.99 -Djboss.node.name=cache-server-dc-2
+
+    - Run this test as main class from IDE
+ *
+ *
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class ConcurrencyJDGRemoteCacheTest {
+public class ConcurrencyJDGRemoteCacheClientListenersTest {
 
+    // Helper map to track if listeners were executed
     private static Map<String, EntryInfo> state = new HashMap<>();
+
+    private static AtomicInteger totalListenerCalls = new AtomicInteger(0);
+
+    private static AtomicInteger totalErrors = new AtomicInteger(0);
+
 
     public static void main(String[] args) throws Exception {
         // Init map somehow
-        for (int i=0 ; i<100 ; i++) {
+        for (int i=0 ; i<1000 ; i++) {
             String key = "key-" + i;
-            state.put(key, new EntryInfo());
+            EntryInfo entryInfo = new EntryInfo();
+            entryInfo.val.set(i);
+            state.put(key, entryInfo);
         }
 
         // Create caches, listeners and finally worker threads
         Worker worker1 = createWorker(1);
         Worker worker2 = createWorker(2);
 
-        // Start and join workers
-        worker1.start();
-        worker2.start();
+        // Note "run", so it's not executed asynchronously here!!!
+        worker1.run();
 
-        worker1.join();
-        worker2.join();
+//
+//        // Start and join workers
+//        worker1.start();
+//        worker2.start();
+//
+//        worker1.join();
+//        worker2.join();
 
         // Output
         for (Map.Entry<String, EntryInfo> entry : state.entrySet()) {
             System.out.println(entry.getKey() + ":::" + entry.getValue());
-            worker1.cache.remove(entry.getKey());
         }
 
-        // Finish JVM
-        worker1.cache.getCacheManager().stop();
-        worker2.cache.getCacheManager().stop();
+        System.out.println("totalListeners: " + totalListenerCalls.get() + ", totalErrors: " + totalErrors.get());
+
+
+        // Assert that ClientListener was able to read the value and save it into EntryInfo
+        try {
+            for (Map.Entry<String, EntryInfo> entry : state.entrySet()) {
+                EntryInfo info = entry.getValue();
+                Assert.assertEquals(info.val.get(), info.dc1Created.get());
+                Assert.assertEquals(info.val.get(), info.dc2Created.get());
+                Assert.assertEquals(info.val.get() * 2, info.dc1Updated.get());
+                Assert.assertEquals(info.val.get() * 2, info.dc2Updated.get());
+                worker1.cache.remove(entry.getKey());
+            }
+        } finally {
+            // Finish JVM
+            worker1.cache.getCacheManager().stop();
+            worker2.cache.getCacheManager().stop();
+        }
     }
 
     private static Worker createWorker(int threadId) {
@@ -89,7 +134,7 @@ public class ConcurrencyJDGRemoteCacheTest {
         System.out.println("Retrieved cache: " + threadId);
 
         RemoteStore remoteStore = cache.getAdvancedCache().getComponentRegistry().getComponent(PersistenceManager.class).getStores(RemoteStore.class).iterator().next();
-        HotRodListener listener = new HotRodListener();
+        HotRodListener listener = new HotRodListener(cache, threadId);
         remoteStore.getRemoteCache().addClientListener(listener);
 
         return new Worker(cache, threadId);
@@ -136,11 +181,11 @@ public class ConcurrencyJDGRemoteCacheTest {
                 .rawValues(true)
                 .forceReturnValues(false)
                 .addServer()
-                    .host("localhost")
-                    .port(port)
+                .host("localhost")
+                .port(port)
                 .connectionPool()
-                    .maxActive(20)
-                    .exhaustedAction(ExhaustedAction.CREATE_NEW)
+                .maxActive(20)
+                .exhaustedAction(ExhaustedAction.CREATE_NEW)
                 .async()
                 .   enabled(false).build();
     }
@@ -149,18 +194,50 @@ public class ConcurrencyJDGRemoteCacheTest {
     @ClientListener
     public static class HotRodListener {
 
+        private final RemoteCache<String, Integer> remoteCache;
+        private final int threadId;
+
+        public HotRodListener(Cache<String, Integer> cache, int threadId) {
+            this.remoteCache = InfinispanUtil.getRemoteCache(cache);
+            this.threadId = threadId;
+        }
+
         //private AtomicInteger listenerCount = new AtomicInteger(0);
 
         @ClientCacheEntryCreated
         public void created(ClientCacheEntryCreatedEvent event) {
             String cacheKey = (String) event.getKey();
-            state.get(cacheKey).successfulListenerWrites.incrementAndGet();
+            event(cacheKey, true);
+
         }
+
 
         @ClientCacheEntryModified
         public void updated(ClientCacheEntryModifiedEvent event) {
             String cacheKey = (String) event.getKey();
-            state.get(cacheKey).successfulListenerWrites.incrementAndGet();
+            event(cacheKey, false);
+        }
+
+
+        private void event(String cacheKey, boolean created) {
+            EntryInfo entryInfo = state.get(cacheKey);
+            entryInfo.successfulListenerWrites.incrementAndGet();
+
+            totalListenerCalls.incrementAndGet();
+
+            Integer val = remoteCache.get(cacheKey);
+            if (val != null) {
+                AtomicInteger dcVal;
+                if (created) {
+                    dcVal = threadId == 1 ? entryInfo.dc1Created : entryInfo.dc2Created;
+                } else {
+                    dcVal = threadId == 1 ? entryInfo.dc1Updated : entryInfo.dc2Updated;
+                }
+                dcVal.set(val);
+            } else {
+                System.err.println("NOT A VALUE FOR KEY: " + cacheKey);
+                totalErrors.incrementAndGet();
+            }
         }
 
     }
@@ -181,52 +258,38 @@ public class ConcurrencyJDGRemoteCacheTest {
         public void run() {
             for (Map.Entry<String, EntryInfo> entry : state.entrySet()) {
                 String cacheKey = entry.getKey();
-                EntryInfo wrapper = state.get(cacheKey);
+                Integer value = entry.getValue().val.get();
 
-                int val = getClusterStartupTime(this.cache, cacheKey, wrapper);
-                if (myThreadId == 1) {
-                    wrapper.th1.set(val);
-                } else {
-                    wrapper.th2.set(val);
-                }
-
+                this.cache.put(cacheKey, value);
             }
 
-            System.out.println("Worker finished: " + myThreadId);
+            System.out.println("Worker creating finished: " + myThreadId);
+
+            for (Map.Entry<String, EntryInfo> entry : state.entrySet()) {
+                String cacheKey = entry.getKey();
+                Integer value = entry.getValue().val.get() * 2;
+
+                this.cache.replace(cacheKey, value);
+            }
+
+            System.out.println("Worker updating finished: " + myThreadId);
         }
 
     }
 
-    public static int getClusterStartupTime(Cache<String, Integer> cache, String cacheKey, EntryInfo wrapper) {
-        int startupTime = new Random().nextInt(1024);
-
-        // Concurrency doesn't work correctly with this
-        //Integer existingClusterStartTime = (Integer) cache.putIfAbsent(cacheKey, startupTime);
-
-        // Concurrency works fine with this
-        RemoteCache remoteCache = cache.getAdvancedCache().getComponentRegistry().getComponent(PersistenceManager.class).getStores(RemoteStore.class).iterator().next().getRemoteCache();
-        Integer existingClusterStartTime = (Integer) remoteCache.withFlags(Flag.FORCE_RETURN_VALUE).putIfAbsent(cacheKey, startupTime);
-
-        if (existingClusterStartTime == null) {
-            wrapper.successfulInitializations.incrementAndGet();
-            return startupTime;
-        } else {
-            return existingClusterStartTime;
-        }
-    }
 
     public static class EntryInfo {
-        AtomicInteger successfulInitializations = new AtomicInteger(0);
+        AtomicInteger val = new AtomicInteger();
         AtomicInteger successfulListenerWrites = new AtomicInteger(0);
-        AtomicInteger th1 = new AtomicInteger();
-        AtomicInteger th2 = new AtomicInteger();
+        AtomicInteger dc1Created = new AtomicInteger();
+        AtomicInteger dc2Created = new AtomicInteger();
+        AtomicInteger dc1Updated = new AtomicInteger();
+        AtomicInteger dc2Updated = new AtomicInteger();
 
         @Override
         public String toString() {
-            return String.format("Inits: %d, listeners: %d, th1: %d, th2: %d", successfulInitializations.get(), successfulListenerWrites.get(), th1.get(), th2.get());
+            return String.format("val: %d, successfulListenerWrites: %d, dc1Created: %d, dc2Created: %d, dc1Updated: %d, dc2Updated: %d", val.get(), successfulListenerWrites.get(),
+                    dc1Created.get(), dc2Created.get(), dc1Updated.get(), dc2Updated.get());
         }
     }
-
-
-
 }

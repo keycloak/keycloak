@@ -39,6 +39,7 @@ import org.infinispan.persistence.manager.PersistenceManager;
 import org.infinispan.persistence.remote.RemoteStore;
 import org.infinispan.persistence.remote.configuration.ExhaustedAction;
 import org.jboss.logging.Logger;
+import org.junit.Assert;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
@@ -50,13 +51,9 @@ import org.keycloak.models.sessions.infinispan.remotestore.KcRemoteStoreConfigur
 import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
 
 /**
- * Test requires to prepare 2 JDG (or infinispan servers) before it's runned.
- * Steps:
- * - In JDG1/standalone/configuration/clustered.xml add this: <replicated-cache name="sessions" mode="SYNC" start="EAGER"/>
- * - Same in JDG2
- * - Run JDG1 with: ./standalone.sh -c clustered.xml
- * - Run JDG2 with: ./standalone.sh -c clustered.xml -Djboss.socket.binding.port-offset=100
- * - Run this test
+ * Test concurrency for remoteStore (backed by HotRod RemoteCaches) against external JDG. Especially tests "replaceWithVersion" contract.
+ *
+ * Steps: {@see ConcurrencyJDGRemoteCacheClientListenersTest}
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -65,6 +62,9 @@ public class ConcurrencyJDGSessionsCacheTest {
     protected static final Logger logger = Logger.getLogger(KcRemoteStore.class);
 
     private static final int ITERATION_PER_WORKER = 1000;
+
+    private static RemoteCache remoteCache1;
+    private static RemoteCache remoteCache2;
 
     private static final AtomicInteger failedReplaceCounter = new AtomicInteger(0);
     private static final AtomicInteger failedReplaceCounter2 = new AtomicInteger(0);
@@ -176,6 +176,16 @@ public class ConcurrencyJDGSessionsCacheTest {
                 ", successfulListenerWrites: " + successfulListenerWrites.get() + ", successfulListenerWrites2: " + successfulListenerWrites2.get() +
                 ", failedReplaceCounter: " + failedReplaceCounter.get() + ", failedReplaceCounter2: " + failedReplaceCounter2.get() );
 
+        System.out.println("Sleeping before other report");
+
+        Thread.sleep(1000);
+
+        System.out.println("Finished. Took: " + took + " ms. Notes: " + cache1.get("123").getEntity().getNotes().size() +
+                ", successfulListenerWrites: " + successfulListenerWrites.get() + ", successfulListenerWrites2: " + successfulListenerWrites2.get() +
+                ", failedReplaceCounter: " + failedReplaceCounter.get() + ", failedReplaceCounter2: " + failedReplaceCounter2.get());
+
+
+
         // Finish JVM
         cache1.getCacheManager().stop();
         cache2.getCacheManager().stop();
@@ -186,7 +196,11 @@ public class ConcurrencyJDGSessionsCacheTest {
 
         RemoteCache remoteCache = InfinispanUtil.getRemoteCache(cache);
 
-        remoteCache.keySet();
+        if (threadId == 1) {
+            remoteCache1 = remoteCache;
+        } else {
+            remoteCache2 = remoteCache;
+        }
 
         AtomicInteger counter = threadId ==1 ? successfulListenerWrites : successfulListenerWrites2;
         HotRodListener listener = new HotRodListener(cache, remoteCache, counter);
@@ -224,8 +238,8 @@ public class ConcurrencyJDGSessionsCacheTest {
     private static Configuration getCacheBackedByRemoteStore(int threadId) {
         ConfigurationBuilder cacheConfigBuilder = new ConfigurationBuilder();
 
-        //int port = threadId==1 ? 11222 : 11322;
-        int port = 11222;
+        int port = threadId==1 ? 12232 : 13232;
+        //int port = 12232;
 
         return cacheConfigBuilder.persistence().addStore(KcRemoteStoreConfigurationBuilder.class)
                 .fetchPersistentState(false)
@@ -288,12 +302,12 @@ public class ConcurrencyJDGSessionsCacheTest {
 
     private static class RemoteCacheWorker extends Thread {
 
-        private final RemoteCache<String, UserSessionEntity> cache;
+        private final RemoteCache<String, UserSessionEntity> remoteCache;
 
         private final int myThreadId;
 
-        private RemoteCacheWorker(RemoteCache cache, int myThreadId) {
-            this.cache = cache;
+        private RemoteCacheWorker(RemoteCache remoteCache, int myThreadId) {
+            this.remoteCache = remoteCache;
             this.myThreadId = myThreadId;
         }
 
@@ -306,7 +320,7 @@ public class ConcurrencyJDGSessionsCacheTest {
 
                 boolean replaced = false;
                 while (!replaced) {
-                    VersionedValue<UserSessionEntity> versioned = cache.getVersioned("123");
+                    VersionedValue<UserSessionEntity> versioned = remoteCache.getVersioned("123");
                     UserSessionEntity oldSession = versioned.getValue();
                     //UserSessionEntity clone = DistributedCacheConcurrentWritesTest.cloneSession(oldSession);
                     UserSessionEntity clone = oldSession;
@@ -315,13 +329,20 @@ public class ConcurrencyJDGSessionsCacheTest {
                     //cache.replace("123", clone);
                     replaced = cacheReplace(versioned, clone);
                 }
+
+                // Try to see if remoteCache on 2nd DC is immediatelly seeing our change
+                RemoteCache secondDCRemoteCache = myThreadId == 1 ? remoteCache2 : remoteCache1;
+                UserSessionEntity thatSession = (UserSessionEntity) secondDCRemoteCache.get("123");
+
+                Assert.assertEquals("someVal", thatSession.getNotes().get(noteKey));
+                //System.out.println("Passed");
             }
 
         }
 
         private boolean cacheReplace(VersionedValue<UserSessionEntity> oldSession, UserSessionEntity newSession) {
             try {
-                boolean replaced = cache.replaceWithVersion("123", newSession, oldSession.getVersion());
+                boolean replaced = remoteCache.replaceWithVersion("123", newSession, oldSession.getVersion());
                 //cache.replace("123", newSession);
                 if (!replaced) {
                     failedReplaceCounter.incrementAndGet();
