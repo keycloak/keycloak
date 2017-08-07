@@ -67,7 +67,7 @@ public class RemoteCacheInvoker {
         SessionUpdateTask.CrossDCMessageStatus status = task.getCrossDCMessageStatus(sessionWrapper);
 
         if (status == SessionUpdateTask.CrossDCMessageStatus.NOT_NEEDED) {
-            logger.debugf("Skip writing to remoteCache for entity '%s' of cache '%s' and operation '%s'", key, cacheName, operation.toString());
+            logger.debugf("Skip writing to remoteCache for entity '%s' of cache '%s' and operation '%s'", key, cacheName, operation);
             return;
         }
 
@@ -127,17 +127,15 @@ public class RemoteCacheInvoker {
             // Run task on the remote session
             task.runUpdate(session);
 
-            if (logger.isDebugEnabled()) {
-                logger.debugf("Before replaceWithVersion. Written entity: %s", session.toString());
-            }
+            logger.debugf("Before replaceWithVersion. Entity to write version %d: %s", versioned.getVersion(), session);
 
             replaced = remoteCache.replaceWithVersion(key, session, versioned.getVersion(), lifespanMs, TimeUnit.MILLISECONDS, maxIdleMs, TimeUnit.MILLISECONDS);
 
             if (!replaced) {
-                logger.debugf("Failed to replace entity '%s' . Will retry again", key);
+                logger.debugf("Failed to replace entity '%s' version %d. Will retry again", key, versioned.getVersion());
             } else {
                 if (logger.isDebugEnabled()) {
-                    logger.debugf("Replaced entity in remote cache: %s", session.toString());
+                    logger.debugf("Replaced entity version %d in remote cache: %s", versioned.getVersion(), session);
                 }
             }
         }

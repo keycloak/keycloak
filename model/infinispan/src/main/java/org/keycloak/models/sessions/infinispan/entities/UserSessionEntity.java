@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Map;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -163,7 +164,8 @@ public class UserSessionEntity extends SessionEntity {
 
     @Override
     public String toString() {
-        return String.format("UserSessionEntity [ id=%s, realm=%s, lastSessionRefresh=%d]", getId(), getRealm(), getLastSessionRefresh());
+        return String.format("UserSessionEntity [id=%s, realm=%s, lastSessionRefresh=%d, clients=%s]", getId(), getRealm(), getLastSessionRefresh(),
+          new TreeSet(this.authenticatedClientSessions.keySet()));
     }
 
     @Override

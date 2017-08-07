@@ -22,7 +22,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,11 +45,21 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ClientsResource;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.testsuite.Retry;
+import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import org.apache.http.client.CookieStore;
+import org.apache.http.impl.client.BasicCookieStore;
 import org.hamcrest.Matchers;
 
 
@@ -60,97 +69,95 @@ import org.hamcrest.Matchers;
  */
 public class ConcurrentLoginTest extends AbstractConcurrencyTest {
     
-    private static final int DEFAULT_THREADS = 10;
-    private static final int CLIENTS_PER_THREAD = 10;
-    private static final int DEFAULT_CLIENTS_COUNT = CLIENTS_PER_THREAD * DEFAULT_THREADS;
-    
+    protected static final int DEFAULT_THREADS = 4;
+    protected static final int CLIENTS_PER_THREAD = 30;
+    protected static final int DEFAULT_CLIENTS_COUNT = CLIENTS_PER_THREAD * DEFAULT_THREADS;
+
     @Before
     public void beforeTest() {
         createClients();
     }
 
     protected void createClients() {
+        final ClientsResource clients = adminClient.realm(REALM_NAME).clients();
         for (int i = 0; i < DEFAULT_CLIENTS_COUNT; i++) {
-            ClientRepresentation client = new ClientRepresentation();
-            client.setClientId("client" + i);
-            client.setDirectAccessGrantsEnabled(true);
-            client.setRedirectUris(Arrays.asList("http://localhost:8180/auth/realms/master/app/*"));
-            client.setWebOrigins(Arrays.asList("http://localhost:8180"));
-            client.setSecret("password");
+            ClientRepresentation client = ClientBuilder.create()
+              .clientId("client" + i)
+              .directAccessGrants()
+              .redirectUris("http://localhost:8180/auth/realms/master/app/*")
+              .addWebOrigin("http://localhost:8180")
+              .secret("password")
+              .build();
 
-            log.debug("creating " + client.getClientId());
-            Response create = adminClient.realm("test").clients().create(client);
-            Assert.assertEquals(Response.Status.CREATED, create.getStatusInfo());
+            Response create = clients.create(client);
+            String clientId = ApiUtil.getCreatedId(create);
             create.close();
+            getCleanup(REALM_NAME).addClientUuid(clientId);
+            log.debugf("created %s [uuid=%s]", client.getClientId(), clientId);
         }
         log.debug("clients created");
     }
 
     @Test
-    public void concurrentLogin() throws Throwable {
-        System.out.println("*********************************************");
+    public void concurrentLoginSingleUser() throws Throwable {
+        log.info("*********************************************");
         long start = System.currentTimeMillis();
 
         AtomicReference<String> userSessionId = new AtomicReference<>();
+        LoginTask loginTask = null;
 
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().setRedirectStrategy(new LaxRedirectStrategy()).build()) {
-
-            HttpUriRequest request = handleLogin(getPageContent(oauth.getLoginFormUrl(), httpClient, null), "test-user@localhost", "password");
-            
-            log.debug("Executing login request");
-            
-            Assert.assertTrue(parseAndCloseResponse(httpClient.execute(request)).contains("<title>AUTH_RESPONSE</title>"));
-            AtomicInteger clientIndex = new AtomicInteger();
-            ThreadLocal<OAuthClient> oauthClient = new ThreadLocal<OAuthClient>() {
-                @Override
-                protected OAuthClient initialValue() {
-                    OAuthClient oauth1 = new OAuthClient();
-                    oauth1.init(adminClient, driver);
-                    return oauth1;
-                }
-            };
-
-            run(DEFAULT_THREADS, DEFAULT_CLIENTS_COUNT, (threadIndex, keycloak, realm) -> {
-                int i = clientIndex.getAndIncrement();
-                OAuthClient oauth1 = oauthClient.get();
-                oauth1.clientId("client" + i);
-                log.infof("%d [%s]: Accessing login page for %s", threadIndex, Thread.currentThread().getName(), oauth1.getClientId());
-
-                final HttpClientContext context = HttpClientContext.create();
-                String pageContent = getPageContent(oauth1.getLoginFormUrl(), httpClient, context);
-                String currentUrl = context.getRedirectLocations().get(0).toString();
-                Assert.assertThat(pageContent, Matchers.containsString("<title>AUTH_RESPONSE</title>"));
-                String code = getQueryFromUrl(currentUrl).get(OAuth2Constants.CODE);
-
-                OAuthClient.AccessTokenResponse accessRes = oauth1.doAccessTokenRequest(code, "password");
-                Assert.assertEquals("AccessTokenResponse: error: '" + accessRes.getError() + "' desc: '" + accessRes.getErrorDescription() + "'",
-                  200, accessRes.getStatusCode());
-
-                OAuthClient.AccessTokenResponse refreshRes = oauth1.doRefreshTokenRequest(accessRes.getRefreshToken(), "password");
-                Assert.assertEquals("AccessTokenResponse: error: '" + refreshRes.getError() + "' desc: '" + refreshRes.getErrorDescription() + "'",
-                  200, refreshRes.getStatusCode());
-
-                if (userSessionId.get() == null) {
-                    AccessToken token = oauth.verifyToken(accessRes.getAccessToken());
-                    userSessionId.set(token.getSessionState());
-                }
-            });
-
+            loginTask = new LoginTask(httpClient, userSessionId, 100, 1, Arrays.asList(
+              createHttpClientContextForUser(httpClient, "test-user@localhost", "password")
+            ));
+            run(DEFAULT_THREADS, DEFAULT_CLIENTS_COUNT, loginTask);
             int clientSessionsCount = testingClient.testing().getClientSessionsCountInUserSession("test", userSessionId.get());
-            Assert.assertEquals(clientSessionsCount, 1 + (DEFAULT_THREADS * CLIENTS_PER_THREAD));
+            Assert.assertEquals(1 + DEFAULT_CLIENTS_COUNT, clientSessionsCount);
         } finally {
-            logStats(start);
+            long end = System.currentTimeMillis() - start;
+            log.infof("Statistics: %s", loginTask == null ? "??" : loginTask.getHistogram());
+            log.info("concurrentLoginSingleUser took " + (end/1000) + "s");
+            log.info("*********************************************");
         }
     }
 
-    protected void logStats(long start) {
-        long end = System.currentTimeMillis() - start;
-        log.info("concurrentLogin took " + (end/1000) + "s");
-        log.info("*********************************************");
+    protected HttpClientContext createHttpClientContextForUser(final CloseableHttpClient httpClient, String userName, String password) throws IOException {
+        final HttpClientContext context = HttpClientContext.create();
+        CookieStore cookieStore = new BasicCookieStore();
+        context.setCookieStore(cookieStore);
+        HttpUriRequest request = handleLogin(getPageContent(oauth.getLoginFormUrl(), httpClient, context), userName, password);
+        log.debug("Executing login request");
+        Assert.assertTrue(parseAndCloseResponse(httpClient.execute(request, context)).contains("<title>AUTH_RESPONSE</title>"));
+        return context;
     }
-    
-    private String getPageContent(String url, CloseableHttpClient httpClient, HttpClientContext context) throws IOException {
 
+    @Test
+    public void concurrentLoginMultipleUsers() throws Throwable {
+        log.info("*********************************************");
+        long start = System.currentTimeMillis();
+
+        AtomicReference<String> userSessionId = new AtomicReference<>();
+        LoginTask loginTask = null;
+
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().setRedirectStrategy(new LaxRedirectStrategy()).build()) {
+            loginTask = new LoginTask(httpClient, userSessionId, 100, 1, Arrays.asList(
+              createHttpClientContextForUser(httpClient, "test-user@localhost", "password"),
+              createHttpClientContextForUser(httpClient, "john-doh@localhost", "password"),
+              createHttpClientContextForUser(httpClient, "roleRichUser", "password")
+            ));
+
+            run(DEFAULT_THREADS, DEFAULT_CLIENTS_COUNT, loginTask);
+            int clientSessionsCount = testingClient.testing().getClientSessionsCountInUserSession("test", userSessionId.get());
+            Assert.assertEquals(1 + DEFAULT_CLIENTS_COUNT / 3 + (DEFAULT_CLIENTS_COUNT % 3 <= 0 ? 0 : 1), clientSessionsCount);
+        } finally {
+            long end = System.currentTimeMillis() - start;
+            log.infof("Statistics: %s", loginTask == null ? "??" : loginTask.getHistogram());
+            log.info("concurrentLoginMultipleUsers took " + (end/1000) + "s");
+            log.info("*********************************************");
+        }
+    }
+
+    protected String getPageContent(String url, CloseableHttpClient httpClient, HttpClientContext context) throws IOException {
         HttpGet request = new HttpGet(url);
 
         request.setHeader("User-Agent", "Mozilla/5.0");
@@ -158,15 +165,10 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
                 "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         request.setHeader("Accept-Language", "en-US,en;q=0.5");
 
-        if (context != null) {
-            return parseAndCloseResponse(httpClient.execute(request, context));
-        } else {
-            return parseAndCloseResponse(httpClient.execute(request));
-        }
-
+        return parseAndCloseResponse(httpClient.execute(request, context));
     }
 
-    private String parseAndCloseResponse(CloseableHttpResponse response) {
+    protected String parseAndCloseResponse(CloseableHttpResponse response) {
         try {
             int responseCode = response.getStatusLine().getStatusCode();
             String resp = EntityUtils.toString(response.getEntity());
@@ -186,16 +188,15 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
             }
         }
     }
-    
-    private HttpUriRequest handleLogin(String html, String username, String password) throws UnsupportedEncodingException {
 
-        System.out.println("Extracting form's data...");
+    protected HttpUriRequest handleLogin(String html, String username, String password) throws UnsupportedEncodingException {
+        log.debug("Extracting form's data...");
 
         // Keycloak form id
         Element loginform = Jsoup.parse(html).getElementById("kc-form-login");
         String method = loginform.attr("method");
         String action = loginform.attr("action");
-        
+
         List<NameValuePair> paramList = new ArrayList<>();
 
         for (Element inputElement : loginform.getElementsByTag("input")) {
@@ -207,9 +208,9 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
                 paramList.add(new BasicNameValuePair(key, password));
             }
         }
-        
+
         boolean isPost = method != null && "post".equalsIgnoreCase(method);
-        
+
         if (isPost) {
             HttpPost req = new HttpPost(action);
 
@@ -226,14 +227,107 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
             throw new UnsupportedOperationException("not supported yet!");
         }
     }
-    
-    private Map<String, String> getQueryFromUrl(String url) throws URISyntaxException {
+
+    private static Map<String, String> getQueryFromUrl(String url) throws URISyntaxException {
         Map<String, String> m = new HashMap<>();
         List<NameValuePair> pairs = URLEncodedUtils.parse(new URI(url), "UTF-8");
         for (NameValuePair p : pairs) {
             m.put(p.getName(), p.getValue());
         }
         return m;
+    }
+
+    public class LoginTask implements KeycloakRunnable {
+
+        private final AtomicInteger clientIndex = new AtomicInteger();
+        private final ThreadLocal<OAuthClient> oauthClient = new ThreadLocal<OAuthClient>() {
+                @Override
+                protected OAuthClient initialValue() {
+                    OAuthClient oauth1 = new OAuthClient();
+                    oauth1.init(adminClient, driver);
+                    return oauth1;
+                }
+            };
+
+        private final CloseableHttpClient httpClient;
+        private final AtomicReference<String> userSessionId;
+
+        private final int retryDelayMs;
+        private final int retryCount;
+        private final AtomicInteger[] retryHistogram;
+        private final AtomicInteger totalInvocations = new AtomicInteger();
+        private final List<HttpClientContext> clientContexts;
+
+        public LoginTask(CloseableHttpClient httpClient, AtomicReference<String> userSessionId, int retryDelayMs, int retryCount, List<HttpClientContext> clientContexts) {
+            this.httpClient = httpClient;
+            this.userSessionId = userSessionId;
+            this.retryDelayMs = retryDelayMs;
+            this.retryCount = retryCount;
+            this.retryHistogram = new AtomicInteger[retryCount];
+            for (int i = 0; i < retryHistogram.length; i ++) {
+                retryHistogram[i] = new AtomicInteger();
+            }
+            this.clientContexts = clientContexts;
+        }
+
+        @Override
+        public void run(int threadIndex, Keycloak keycloak, RealmResource realm) throws Throwable {
+            int i = clientIndex.getAndIncrement();
+            OAuthClient oauth1 = oauthClient.get();
+            oauth1.clientId("client" + i);
+            log.infof("%d [%s]: Accessing login page for %s", threadIndex, Thread.currentThread().getName(), oauth1.getClientId());
+
+            final HttpClientContext templateContext = clientContexts.get(i % clientContexts.size());
+            final HttpClientContext context = HttpClientContext.create();
+            context.setCookieStore(templateContext.getCookieStore());
+            String pageContent = getPageContent(oauth1.getLoginFormUrl(), httpClient, context);
+            Assert.assertThat(pageContent, Matchers.containsString("<title>AUTH_RESPONSE</title>"));
+            Assert.assertThat(context.getRedirectLocations(), Matchers.notNullValue());
+            Assert.assertThat(context.getRedirectLocations(), Matchers.not(Matchers.empty()));
+            String currentUrl = context.getRedirectLocations().get(0).toString();
+            String code = getQueryFromUrl(currentUrl).get(OAuth2Constants.CODE);
+
+            AtomicReference<OAuthClient.AccessTokenResponse> accessResRef = new AtomicReference<>();
+            totalInvocations.incrementAndGet();
+
+            // obtain access + refresh token via code-to-token flow
+            OAuthClient.AccessTokenResponse accessRes = oauth1.doAccessTokenRequest(code, "password");
+            Assert.assertEquals("AccessTokenResponse: client: " + oauth1.getClientId() + ", error: '" + accessRes.getError() + "' desc: '" + accessRes.getErrorDescription() + "'",
+              200, accessRes.getStatusCode());
+            accessResRef.set(accessRes);
+
+            // Refresh access + refresh token using refresh token
+            int invocationIndex = Retry.execute(() -> {
+                OAuthClient.AccessTokenResponse refreshRes = oauth1.doRefreshTokenRequest(accessResRef.get().getRefreshToken(), "password");
+                Assert.assertEquals("AccessTokenResponse: client: " + oauth1.getClientId() + ", error: '" + refreshRes.getError() + "' desc: '" + refreshRes.getErrorDescription() + "'",
+                  200, refreshRes.getStatusCode());
+            }, retryCount, retryDelayMs);
+
+            retryHistogram[invocationIndex].incrementAndGet();
+
+            if (userSessionId.get() == null) {
+                AccessToken token = oauth1.verifyToken(accessResRef.get().getAccessToken());
+                userSessionId.set(token.getSessionState());
+            }
+        }
+
+        public int getRetryDelayMs() {
+            return retryDelayMs;
+        }
+
+        public int getRetryCount() {
+            return retryCount;
+        }
+
+        public Map<Integer, Integer> getHistogram() {
+            Map<Integer, Integer> res = new LinkedHashMap<>(retryCount);
+            for (int i = 0; i < retryHistogram.length; i ++) {
+                AtomicInteger item = retryHistogram[i];
+
+                res.put(i * retryDelayMs, item.get());
+            }
+            return res;
+        }
     }
 
     

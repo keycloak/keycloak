@@ -84,7 +84,7 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
     }
 
     @Before
-    public void InitRESTClientsForStartedNodes() {
+    public void initRESTClientsForStartedNodes() {
         log.debug("Init REST clients for automatically started nodes");
         this.suiteContext.getDcAuthServerBackendsInfo().stream()
                 .flatMap(List::stream)

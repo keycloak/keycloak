@@ -22,13 +22,24 @@ package org.keycloak.testsuite;
  */
 public class Retry {
 
-    public static void execute(Runnable runnable, int retryCount, long intervalMillis) {
+    /**
+     * Runs the given {@code runnable} at most {@code retryCount} times until it passes,
+     * leaving {@code intervalMillis} milliseconds between the invocations.
+     * The runnable is reexecuted if it throws a {@link RuntimeException} or {@link AssertionError}.
+     * @param runnable
+     * @param retryCount
+     * @param intervalMillis
+     * @return Index of the first successful invocation, starting from 0.
+     */
+    public static int execute(Runnable runnable, int retryCount, long intervalMillis) {
+        int executionIndex = 0;
         while (true) {
             try {
                 runnable.run();
-                return;
+                return executionIndex;
             } catch (RuntimeException | AssertionError e) {
                 retryCount--;
+                executionIndex++;
                 if (retryCount > 0) {
                     try {
                         Thread.sleep(intervalMillis);

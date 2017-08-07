@@ -163,6 +163,11 @@ public class UserSessionAdapter implements UserSessionModel {
                 return new LastSessionRefreshChecker(provider.getLastSessionRefreshStore(), provider.getOfflineLastSessionRefreshStore())
                         .getCrossDCMessageStatus(UserSessionAdapter.this.session, UserSessionAdapter.this.realm, sessionWrapper, offline, lastSessionRefresh);
             }
+
+            @Override
+            public String toString() {
+                return "setLastSessionRefresh(" + lastSessionRefresh + ')';
+            }
         };
 
         update(task);

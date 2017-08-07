@@ -54,6 +54,7 @@ import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
+import com.google.common.base.Charsets;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
@@ -250,8 +251,7 @@ public class OAuthClient {
     }
 
     public AccessTokenResponse doAccessTokenRequest(String code, String password) {
-        CloseableHttpClient client = newCloseableHttpClient();
-        try {
+        try (CloseableHttpClient client = newCloseableHttpClient()) {
             HttpPost post = new HttpPost(getAccessTokenUrl());
 
             List<NameValuePair> parameters = new LinkedList<NameValuePair>();
@@ -283,12 +283,7 @@ public class OAuthClient {
                 parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_VERIFIER, codeVerifier));
             }
 
-            UrlEncodedFormEntity formEntity = null;
-            try {
-                formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
-            }
+            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, Charsets.UTF_8);
             post.setEntity(formEntity);
 
             try {
@@ -296,8 +291,8 @@ public class OAuthClient {
             } catch (Exception e) {
                 throw new RuntimeException("Failed to retrieve access token", e);
             }
-        } finally {
-            closeClient(client);
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
         }
     }
 
@@ -310,8 +305,7 @@ public class OAuthClient {
     }
 
     public String introspectTokenWithClientCredential(String clientId, String clientSecret, String tokenType, String tokenToIntrospect) {
-        CloseableHttpClient client = new DefaultHttpClient();
-        try {
+        try (CloseableHttpClient client = new DefaultHttpClient()) {
             HttpPost post = new HttpPost(getTokenIntrospectionUrl());
 
             String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
@@ -332,19 +326,16 @@ public class OAuthClient {
 
             post.setEntity(formEntity);
 
-            try {
+            try (CloseableHttpResponse response = client.execute(post)) {
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
 
-                CloseableHttpResponse response = client.execute(post);
                 response.getEntity().writeTo(out);
-                response.close();
-
                 return new String(out.toByteArray());
             } catch (Exception e) {
                 throw new RuntimeException("Failed to retrieve access token", e);
             }
-        } finally {
-            closeClient(client);
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
         }
     }
 

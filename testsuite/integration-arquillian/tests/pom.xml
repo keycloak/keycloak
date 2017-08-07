@@ -85,6 +85,7 @@
         <keycloak.connectionsInfinispan.remoteStorePort>12232</keycloak.connectionsInfinispan.remoteStorePort>
         <keycloak.connectionsInfinispan.remoteStorePort.2>13232</keycloak.connectionsInfinispan.remoteStorePort.2>
         <keycloak.connectionsJpa.url.crossdc>jdbc:h2:mem:test-dc-shared</keycloak.connectionsJpa.url.crossdc>
+        <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} %-5p [%c] %m%n</keycloak.testsuite.logging.pattern>
 
         <adapter.test.props/>
         <migration.import.properties/>
@@ -284,6 +285,7 @@
                             <keycloak.connectionsInfinispan.remoteStorePort>${keycloak.connectionsInfinispan.remoteStorePort}</keycloak.connectionsInfinispan.remoteStorePort>
                             <keycloak.connectionsInfinispan.remoteStorePort.2>${keycloak.connectionsInfinispan.remoteStorePort.2}</keycloak.connectionsInfinispan.remoteStorePort.2>
                             <keycloak.connectionsInfinispan.remoteStoreServer>${keycloak.connectionsInfinispan.remoteStoreServer}</keycloak.connectionsInfinispan.remoteStoreServer>
+                            <keycloak.testsuite.logging.pattern>${keycloak.testsuite.logging.pattern}</keycloak.testsuite.logging.pattern>
 
                             <keycloak.connectionsJpa.url.crossdc>${keycloak.connectionsJpa.url.crossdc}</keycloak.connectionsJpa.url.crossdc>
                         </systemPropertyVariables>
@@ -386,6 +388,7 @@
                 <auth.server.crossdc>true</auth.server.crossdc>
                 <cache.server.jboss>true</cache.server.jboss>
                 <cache.server.config.dir>${cache.server.home}/standalone/configuration</cache.server.config.dir>                
+                <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
             </properties>
             <dependencies>
                 <dependency>
@@ -460,6 +463,7 @@
                 <auth.server.crossdc>true</auth.server.crossdc>
                 <cache.server.jboss>true</cache.server.jboss>
                 <cache.server.config.dir>${cache.server.home}/standalone/configuration</cache.server.config.dir>
+                <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
             </properties>
             <dependencies>
                 <dependency>
@@ -584,6 +588,8 @@
                 <auth.server.backend2.home>${containers.home}/auth-server-${auth.server}-backend2</auth.server.backend2.home>
 
                 <auth.server.config.dir>${auth.server.backend1.home}/standalone/configuration</auth.server.config.dir>
+
+                <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
             </properties>
             <build>
                 <plugins>

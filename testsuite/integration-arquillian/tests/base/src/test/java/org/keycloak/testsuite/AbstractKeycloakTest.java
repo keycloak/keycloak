@@ -144,6 +144,8 @@ public abstract class AbstractKeycloakTest {
             updateMasterAdminPassword();
         }
 
+        beforeAbstractKeycloakTestRealmImport();
+
         if (testContext.getTestRealmReps() == null) {
             importTestRealms();
 
@@ -153,6 +155,9 @@ public abstract class AbstractKeycloakTest {
         }
 
         oauth.init(adminClient, driver);
+    }
+
+    protected void beforeAbstractKeycloakTestRealmImport() throws Exception {
     }
 
     @After
