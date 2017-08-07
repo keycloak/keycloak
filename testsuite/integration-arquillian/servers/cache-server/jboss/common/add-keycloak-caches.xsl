@@ -47,7 +47,7 @@
         <xsl:copy>
             <xsl:apply-templates select="@* | node()" />
 
-            <replicated-cache-configuration name="sessions-cfg" mode="SYNC" start="EAGER" batching="false">
+            <replicated-cache-configuration name="sessions-cfg" mode="ASYNC" start="EAGER" batching="false">
                 <transaction mode="NON_XA" locking="PESSIMISTIC"/>
             </replicated-cache-configuration>
 
