@@ -17,9 +17,7 @@
 
 package org.keycloak.testsuite.admin.concurrency;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -28,8 +26,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
-
 import javax.ws.rs.core.Response;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -50,11 +46,13 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.util.OAuthClient;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import org.hamcrest.Matchers;
+
 
 
 /**
@@ -63,7 +61,6 @@ import org.keycloak.testsuite.util.OAuthClient;
 public class ConcurrentLoginTest extends AbstractConcurrencyTest {
     
     private static final int DEFAULT_THREADS = 10;
-    private static final int DEFAULT_ITERATIONS = 20;
     private static final int CLIENTS_PER_THREAD = 10;
     private static final int DEFAULT_CLIENTS_COUNT = CLIENTS_PER_THREAD * DEFAULT_THREADS;
     
@@ -89,11 +86,6 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
         log.debug("clients created");
     }
 
-    @Override
-    protected void run(final KeycloakRunnable runnable) throws Throwable {
-        run(runnable, DEFAULT_THREADS, DEFAULT_ITERATIONS);
-    }
-
     @Test
     public void concurrentLogin() throws Throwable {
         System.out.println("*********************************************");
@@ -108,42 +100,39 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
             log.debug("Executing login request");
             
             Assert.assertTrue(parseAndCloseResponse(httpClient.execute(request)).contains("<title>AUTH_RESPONSE</title>"));
-
-            run(new KeycloakRunnable() {
+            AtomicInteger clientIndex = new AtomicInteger();
+            ThreadLocal<OAuthClient> oauthClient = new ThreadLocal<OAuthClient>() {
                 @Override
-                public void run(Keycloak keycloak, RealmResource realm, int threadNum, int iterationNum) {
-                    OAuthClient oauth = new OAuthClient();
-                    oauth.init(adminClient, driver);
+                protected OAuthClient initialValue() {
+                    OAuthClient oauth1 = new OAuthClient();
+                    oauth1.init(adminClient, driver);
+                    return oauth1;
+                }
+            };
 
-                    int startIndex = CLIENTS_PER_THREAD * threadNum;
-                    for (int i = startIndex; i < startIndex + CLIENTS_PER_THREAD; i++) {
-                        oauth.clientId("client" + i);
-                        log.trace("Accessing login page for " + oauth.getClientId() + " thread " + threadNum + " iteration " + iterationNum);
-                        try {
-                            final HttpClientContext context = HttpClientContext.create();
+            run(DEFAULT_THREADS, DEFAULT_CLIENTS_COUNT, (threadIndex, keycloak, realm) -> {
+                int i = clientIndex.getAndIncrement();
+                OAuthClient oauth1 = oauthClient.get();
+                oauth1.clientId("client" + i);
+                log.infof("%d [%s]: Accessing login page for %s", threadIndex, Thread.currentThread().getName(), oauth1.getClientId());
 
-                            String pageContent = getPageContent(oauth.getLoginFormUrl(), httpClient, context);
-                            String currentUrl = context.getRedirectLocations().get(0).toString();
+                final HttpClientContext context = HttpClientContext.create();
+                String pageContent = getPageContent(oauth1.getLoginFormUrl(), httpClient, context);
+                String currentUrl = context.getRedirectLocations().get(0).toString();
+                Assert.assertThat(pageContent, Matchers.containsString("<title>AUTH_RESPONSE</title>"));
+                String code = getQueryFromUrl(currentUrl).get(OAuth2Constants.CODE);
 
-                            Assert.assertTrue(pageContent.contains("<title>AUTH_RESPONSE</title>"));
+                OAuthClient.AccessTokenResponse accessRes = oauth1.doAccessTokenRequest(code, "password");
+                Assert.assertEquals("AccessTokenResponse: error: '" + accessRes.getError() + "' desc: '" + accessRes.getErrorDescription() + "'",
+                  200, accessRes.getStatusCode());
 
-                            String code = getQueryFromUrl(currentUrl).get(OAuth2Constants.CODE);
-                            OAuthClient.AccessTokenResponse accessRes = oauth.doAccessTokenRequest(code, "password");
-                            Assert.assertEquals("AccessTokenResponse: error: '" + accessRes.getError() + "' desc: '" + accessRes.getErrorDescription() + "'",
-                                    200, accessRes.getStatusCode());
+                OAuthClient.AccessTokenResponse refreshRes = oauth1.doRefreshTokenRequest(accessRes.getRefreshToken(), "password");
+                Assert.assertEquals("AccessTokenResponse: error: '" + refreshRes.getError() + "' desc: '" + refreshRes.getErrorDescription() + "'",
+                  200, refreshRes.getStatusCode());
 
-                            OAuthClient.AccessTokenResponse refreshRes = oauth.doRefreshTokenRequest(accessRes.getRefreshToken(), "password");
-                            Assert.assertEquals("AccessTokenResponse: error: '" + refreshRes.getError() + "' desc: '" + refreshRes.getErrorDescription() + "'",
-                                    200, refreshRes.getStatusCode());
-
-                            if (userSessionId.get() == null) {
-                                AccessToken token = oauth.verifyToken(accessRes.getAccessToken());
-                                userSessionId.set(token.getSessionState());
-                            }
-                        } catch (Exception ex) {
-                            throw new RuntimeException(ex);
-                        }
-                    }
+                if (userSessionId.get() == null) {
+                    AccessToken token = oauth.verifyToken(accessRes.getAccessToken());
+                    userSessionId.set(token.getSessionState());
                 }
             });
 
@@ -154,15 +143,13 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
         }
     }
 
-
     protected void logStats(long start) {
         long end = System.currentTimeMillis() - start;
         log.info("concurrentLogin took " + (end/1000) + "s");
         log.info("*********************************************");
     }
-
     
-    private String getPageContent(String url, CloseableHttpClient httpClient, HttpClientContext context) throws Exception {
+    private String getPageContent(String url, CloseableHttpClient httpClient, HttpClientContext context) throws IOException {
 
         HttpGet request = new HttpGet(url);
 
@@ -179,23 +166,15 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
 
     }
 
-    private String parseAndCloseResponse(CloseableHttpResponse response) throws UnsupportedOperationException, IOException {
+    private String parseAndCloseResponse(CloseableHttpResponse response) {
         try {
             int responseCode = response.getStatusLine().getStatusCode();
+            String resp = EntityUtils.toString(response.getEntity());
+
             if (responseCode != 200) {
-                log.debug("Response Code : " + responseCode);
+                log.debugf("Response Code: %d, Body: %s", responseCode, resp);
             }
-            BufferedReader rd = new BufferedReader(
-                    new InputStreamReader(response.getEntity().getContent()));
-            StringBuilder result = new StringBuilder();
-            String line;
-            while ((line = rd.readLine()) != null) {
-                result.append(line);
-            }
-            if (responseCode != 200) {
-                log.debug(result.toString());
-            }
-            return result.toString();
+            return resp;
         } catch (IOException | UnsupportedOperationException ex) {
             throw new RuntimeException(ex);
         } finally {

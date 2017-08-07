@@ -23,28 +23,23 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.annotation.ClientCacheEntryCreated;
-import org.infinispan.client.hotrod.annotation.ClientCacheEntryExpired;
 import org.infinispan.client.hotrod.annotation.ClientCacheEntryModified;
 import org.infinispan.client.hotrod.annotation.ClientCacheEntryRemoved;
 import org.infinispan.client.hotrod.annotation.ClientListener;
 import org.infinispan.client.hotrod.event.ClientCacheEntryCreatedEvent;
-import org.infinispan.client.hotrod.event.ClientCacheEntryExpiredEvent;
 import org.infinispan.client.hotrod.event.ClientCacheEntryModifiedEvent;
 import org.infinispan.client.hotrod.event.ClientCacheEntryRemovedEvent;
 import org.infinispan.context.Flag;
 import org.infinispan.notifications.Listener;
 import org.infinispan.notifications.cachelistener.annotation.CacheEntryCreated;
-import org.infinispan.notifications.cachelistener.annotation.CacheEntryExpired;
 import org.infinispan.notifications.cachelistener.annotation.CacheEntryModified;
 import org.infinispan.notifications.cachelistener.annotation.CacheEntryRemoved;
 import org.infinispan.notifications.cachelistener.event.CacheEntryCreatedEvent;
-import org.infinispan.notifications.cachelistener.event.CacheEntryExpiredEvent;
 import org.infinispan.notifications.cachelistener.event.CacheEntryModifiedEvent;
 import org.infinispan.notifications.cachelistener.event.CacheEntryRemovedEvent;
 import org.infinispan.persistence.remote.RemoteStore;
@@ -52,8 +47,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterListener;
 import org.keycloak.cluster.ClusterProvider;
-import org.keycloak.common.util.MultivaluedHashMap;
-
+import org.keycloak.common.util.ConcurrentMultivaluedHashMap;
 /**
  * Impl for sending infinispan messages across cluster and listening to them
  *
@@ -63,7 +57,7 @@ public class InfinispanNotificationsManager {
 
     protected static final Logger logger = Logger.getLogger(InfinispanNotificationsManager.class);
 
-    private final MultivaluedHashMap<String, ClusterListener> listeners = new MultivaluedHashMap<>();
+    private final ConcurrentMultivaluedHashMap<String, ClusterListener> listeners = new ConcurrentMultivaluedHashMap<>();
 
     private final ConcurrentMap<String, TaskCallback> taskCallbacks = new ConcurrentHashMap<>();
 
@@ -132,8 +126,10 @@ public class InfinispanNotificationsManager {
         wrappedEvent.setSender(myAddress);
         wrappedEvent.setSenderSite(mySite);
 
+        String eventKey = UUID.randomUUID().toString();
+
         if (logger.isTraceEnabled()) {
-            logger.tracef("Sending event: %s", event);
+            logger.tracef("Sending event with key %s: %s", eventKey, event);
         }
 
         Flag[] flags = dcNotify == ClusterProvider.DCNotify.LOCAL_DC_ONLY
@@ -142,7 +138,7 @@ public class InfinispanNotificationsManager {
 
         // Put the value to the cache to notify listeners on all the nodes
         workCache.getAdvancedCache().withFlags(flags)
-                .put(UUID.randomUUID().toString(), wrappedEvent, 120, TimeUnit.SECONDS);
+                .put(eventKey, wrappedEvent, 120, TimeUnit.SECONDS);
     }
 
 
@@ -208,6 +204,9 @@ public class InfinispanNotificationsManager {
 
     private void eventReceived(String key, Serializable obj) {
         if (!(obj instanceof WrapperClusterEvent)) {
+            if (obj == null) {
+                logger.warnf("Event object wasn't available in remote cache after event was received. Event key: %s", key);
+            }
             return;
         }
 
