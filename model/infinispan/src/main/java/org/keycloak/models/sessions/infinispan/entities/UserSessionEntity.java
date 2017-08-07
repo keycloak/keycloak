@@ -194,8 +194,12 @@ public class UserSessionEntity extends SessionEntity {
 
     public static class ExternalizerImpl implements Externalizer<UserSessionEntity> {
 
+        private static final int VERSION_1 = 1;
+
         @Override
         public void writeObject(ObjectOutput output, UserSessionEntity session) throws IOException {
+            output.writeByte(VERSION_1);
+
             MarshallUtil.marshallString(session.getAuthMethod(), output);
             MarshallUtil.marshallString(session.getBrokerSessionId(), output);
             MarshallUtil.marshallString(session.getBrokerUserId(), output);
@@ -223,6 +227,15 @@ public class UserSessionEntity extends SessionEntity {
 
         @Override
         public UserSessionEntity readObject(ObjectInput input) throws IOException, ClassNotFoundException {
+            switch (input.readByte()) {
+                case VERSION_1:
+                    return readObjectVersion1(input);
+                default:
+                    throw new IOException("Unknown version");
+            }
+        }
+
+        public UserSessionEntity readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
             UserSessionEntity sessionEntity = new UserSessionEntity();
 
             sessionEntity.setAuthMethod(MarshallUtil.unmarshallString(input));
