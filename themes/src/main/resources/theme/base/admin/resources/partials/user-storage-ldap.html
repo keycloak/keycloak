@@ -260,6 +260,34 @@
                 </div>
                 <kc-tooltip>{{:: 'ldap.use-kerberos-for-password-authentication.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group" data-ng-show="instance.config['allowKerberosAuthentication'][0]">
+                <label class="col-md-2 control-label" for="useKerberosForPasswordChange">{{:: 'use-kerberos-for-password-change' | translate}} </label>
+                <div class="col-md-6">
+                    <input ng-model="instance.config['useKerberosForPasswordChange'][0]" id="useKerberosForPasswordChange" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'ldap.use-kerberos-for-password-change.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix" data-ng-show="instance.config['allowKerberosAuthentication'][0] == 'true'">
+                <label class="col-md-2 control-label" for="kerberosKDCHostname"><span class="required">*</span> {{:: 'kerberos-kdc-hostname' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="kerberosKDCHostname" type="text" ng-model="instance.config['kerberosKDCHostname'][0]" ng-required="instance.config['useKerberosForPasswordChange'][0] == 'true'">
+                </div>
+                <kc-tooltip>{{:: 'kerberos-kdc-hostname.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix" data-ng-show="instance.config['allowKerberosAuthentication'][0] == 'true'">
+                <label class="col-md-2 control-label" for="kerberosPasswdAdminUser"><span class="required">*</span> {{:: 'kerberos-passwd-admin-user' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="kerberosPasswdAdminUser" type="text" ng-model="instance.config['kerberosPasswdAdminUser'][0]" ng-required="instance.config['useKerberosForPasswordChange'][0] == 'true'">
+                </div>
+                <kc-tooltip>{{:: 'kerberos-passwd-admin-user.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix" data-ng-show="instance.config['allowKerberosAuthentication'][0] == 'true'">
+                <label class="col-md-2 control-label" for="kerberosPasswdAdminPasswd"><span class="required">*</span> {{:: 'kerberos-passwd-admin-passwd' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="kerberosPasswdAdminPasswd" type="password" ng-model="instance.config['kerberosPasswdAdminPasswd'][0]" placeholder="{{:: 'kerberos-passwd-admin-passwd' | translate}}" data-ng-required="instance.config['allowKerberosAuthentication'][0] == 'true'">
+                </div>
+                <kc-tooltip>{{:: 'kerberos-passwd-admin-passwd.tooltip' | translate}}</kc-tooltip>
+            </div>
         </fieldset>
 
         <fieldset>
