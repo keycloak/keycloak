@@ -378,7 +378,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         return true;
     }
     
-    @Test
+    //@Test
     public void testDemo() throws Exception {
         testingClient.server().run(FineGrainAdminUnitTest::setupDemo);
         Thread.sleep(1000000000);
