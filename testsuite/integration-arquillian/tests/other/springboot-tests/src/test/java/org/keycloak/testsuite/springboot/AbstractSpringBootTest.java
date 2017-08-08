@@ -1,63 +1,84 @@
 package org.keycloak.testsuite.springboot;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.logging.Logger;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.admin.client.resource.RoleResource;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.test.TestsHelper;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.SuiteContext;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.support.ui.ExpectedCondition;
-import org.openqa.selenium.support.ui.WebDriverWait;
+import static org.keycloak.testsuite.admin.ApiUtil.assignRealmRoles;
+import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
+import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Collections;
 import java.util.List;
 
-import static org.keycloak.testsuite.admin.ApiUtil.*;
+import javax.ws.rs.core.UriBuilder;
 
-public class SpringBootTest extends AbstractKeycloakTest {
+import org.jboss.arquillian.graphene.page.Page;
+import org.jboss.logging.Logger;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.RoleResource;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.SuiteContext;
+import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.util.TokenUtil;
+import org.openqa.selenium.By;
 
-	private static final Logger log = Logger.getLogger(SpringBootTest.class);
-    private static final String REALM_NAME = "test";
+public abstract class AbstractSpringBootTest extends AbstractKeycloakTest {
 
-    private static final String CLIENT_ID = "spring-boot-app";
-    private static final String SECRET = "e3789ac5-bde6-4957-a7b0-612823dac101";
+    protected static final String REALM_NAME = "test";
 
-    private static final String APPLICATION_URL = "http://localhost:8280";
-    private static final String BASE_URL = APPLICATION_URL + "/admin";
+    protected static final String CLIENT_ID = "spring-boot-app";
+    protected static final String SECRET = "e3789ac5-bde6-4957-a7b0-612823dac101";
 
-    private static final String USER_LOGIN = "testuser";
-    private static final String USER_EMAIL = "user@email.test";
-    private static final String USER_PASSWORD = "user-password";
+    protected static final String APPLICATION_URL = "http://localhost:8280";
+    protected static final String BASE_URL = APPLICATION_URL + "/admin";
 
-    private static final String USER_LOGIN_2 = "testuser2";
-    private static final String USER_EMAIL_2 = "user2@email.test";
-    private static final String USER_PASSWORD_2 = "user2-password";
+    protected static final String USER_LOGIN = "testuser";
+    protected static final String USER_EMAIL = "user@email.test";
+    protected static final String USER_PASSWORD = "user-password";
 
-    private static final String CORRECT_ROLE = "admin";
-    private static final String INCORRECT_ROLE = "wrong-admin";
+    protected static final String USER_LOGIN_2 = "testuser2";
+    protected static final String USER_EMAIL_2 = "user2@email.test";
+    protected static final String USER_PASSWORD_2 = "user2-password";
+
+    protected static final String CORRECT_ROLE = "admin";
+    protected static final String INCORRECT_ROLE = "wrong-admin";
+
+    protected static final String REALM_PUBLIC_KEY = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5" +
+            "mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi7" +
+            "9NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB";
+
+    protected static final String REALM_PRIVATE_KEY = "MIICXAIBAAKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3Bj" +
+            "LGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vj" +
+            "O2NjsSAVcWEQMVhJ31LwIDAQABAoGAfmO8gVhyBxdqlxmIuglbz8bcjQbhXJLR2EoS8ngTXmN1bo2L90M0mUKSdc7qF10LgETBzqL8jY" +
+            "lQIbt+e6TH8fcEpKCjUlyq0Mf/vVbfZSNaVycY13nTzo27iPyWQHK5NLuJzn1xvxxrUeXI6A2WFpGEBLbHjwpx5WQG9A+2scECQQDvdn" +
+            "9NE75HPTVPxBqsEd2z10TKkl9CZxu10Qby3iQQmWLEJ9LNmy3acvKrE3gMiYNWb6xHPKiIqOR1as7L24aTAkEAtyvQOlCvr5kAjVqrEK" +
+            "Xalj0Tzewjweuxc0pskvArTI2Oo070h65GpoIKLc9jf+UA69cRtquwP93aZKtW06U8dQJAF2Y44ks/mK5+eyDqik3koCI08qaC8HYq2w" +
+            "Vl7G2QkJ6sbAaILtcvD92ToOvyGyeE0flvmDZxMYlvaZnaQ0lcSQJBAKZU6umJi3/xeEbkJqMfeLclD27XGEFoPeNrmdx0q10Azp4NfJ" +
+            "AY+Z8KRyQCR2BEG+oNitBOZ+YXF9KCpH3cdmECQHEigJhYg+ykOvr1aiZUMFT72HU0jnmQe2FVekuG+LJUt2Tm7GtMjTFoGpf0JwrVuZ" +
+            "N39fOYAlo+nTixgeW7X8Y=";
 
     @Page
-    private LoginPage loginPage;
+    protected LoginPage loginPage;
 
     @Page
-    private SpringApplicationPage applicationPage;
+    protected SpringApplicationPage applicationPage;
 
     @Page
-    private SpringAdminPage adminPage;
+    protected SpringAdminPage adminPage;
+    
+    @Page
+    protected TokenPage tokenPage;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -65,6 +86,9 @@ public class SpringBootTest extends AbstractKeycloakTest {
 
         realm.setRealm(REALM_NAME);
         realm.setEnabled(true);
+
+        realm.setPublicKey(REALM_PUBLIC_KEY);
+        realm.setPrivateKey(REALM_PRIVATE_KEY);
 
         realm.setClients(Collections.singletonList(createClient()));
 
@@ -115,13 +139,23 @@ public class SpringBootTest extends AbstractKeycloakTest {
 
         return result;
     }
+    
+    protected String logoutPage(String redirectUrl) {
+    	return getAuthRoot(suiteContext)
+                + "/auth/realms/" + REALM_NAME
+                + "/protocol/" + "openid-connect"
+                + "/logout?redirect_uri=" + encodeUrl(redirectUrl);
+    }
 
-    private void waitForPage(WebDriver driver, final String title) {
-        WebDriverWait wait = new WebDriverWait(driver, 5);
+    protected void setAdapterAndServerTimeOffset(int timeOffset, String url) {
+        setTimeOffset(timeOffset);
 
-        ExpectedCondition<Boolean> condition = (WebDriver input) -> input.getTitle().toLowerCase().contains(title);
+        String timeOffsetUri = UriBuilder.fromUri(url)
+                .queryParam("timeOffset", timeOffset)
+                .build().toString();
 
-        wait.until(condition);
+        driver.navigate().to(timeOffsetUri);
+        WaitUtils.waitUntilElement(By.tagName("body")).is().visible();
     }
 
     @Before
@@ -166,64 +200,4 @@ public class SpringBootTest extends AbstractKeycloakTest {
         RoleResource incorrectRole = realm.roles().get(INCORRECT_ROLE);
         incorrectRole.remove();
     }
-
-    @Test
-    public void testCorrectUser() {
-        driver.navigate().to(APPLICATION_URL + "/index.html");
-
-        Assert.assertTrue("Must be on application page", applicationPage.isCurrent());
-
-        applicationPage.goAdmin();
-
-        Assert.assertTrue("Must be on login page", loginPage.isCurrent());
-
-        loginPage.login(USER_LOGIN, USER_PASSWORD);
-
-        Assert.assertTrue("Must be on admin page", adminPage.isCurrent());
-        Assert.assertTrue("Admin page must contain correct div",
-                driver.getPageSource().contains("You are now admin"));
-
-        driver.navigate().to(getAuthRoot(suiteContext)
-                + "/auth/realms/" + REALM_NAME
-                + "/protocol/" + "openid-connect"
-                + "/logout?redirect_uri=" + encodeUrl(BASE_URL));
-
-        Assert.assertTrue("Must be on login page", loginPage.isCurrent());
-
-    }
-
-    @Test
-    public void testIncorrectUser() {
-        driver.navigate().to(APPLICATION_URL + "/index.html");
-
-        Assert.assertTrue("Must be on application page", applicationPage.isCurrent());
-
-        applicationPage.goAdmin();
-
-        Assert.assertTrue("Must be on login page", loginPage.isCurrent());
-
-
-        loginPage.login(USER_LOGIN_2, USER_PASSWORD_2);
-
-        Assert.assertTrue("Must return 403 because of incorrect role",
-                driver.getPageSource().contains("There was an unexpected error (type=Forbidden, status=403)")
-                || driver.getPageSource().contains("\"status\":403,\"error\":\"Forbidden\""));
-    }
-
-    @Test
-    public void testIncorrectCredentials() {
-        driver.navigate().to(APPLICATION_URL + "/index.html");
-
-        Assert.assertTrue("Must be on application page", applicationPage.isCurrent());
-
-        applicationPage.goAdmin();
-
-        Assert.assertTrue("Must be on login page", loginPage.isCurrent());
-
-        loginPage.login(USER_LOGIN, USER_PASSWORD_2);
-
-        Assert.assertEquals("Error message about password",
-                "Invalid username or password.", loginPage.getError());
-    }
-
 }
