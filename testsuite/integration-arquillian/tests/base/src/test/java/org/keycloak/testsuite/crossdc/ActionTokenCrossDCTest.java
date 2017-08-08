@@ -41,6 +41,7 @@ import org.keycloak.testsuite.arquillian.annotation.JmxInfinispanCacheStatistics
 import org.keycloak.testsuite.arquillian.annotation.JmxInfinispanChannelStatistics;
 import org.keycloak.testsuite.arquillian.InfinispanStatistics;
 import org.keycloak.testsuite.arquillian.InfinispanStatistics.Constants;
+import org.keycloak.testsuite.pages.ProceedPage;
 import java.util.concurrent.TimeUnit;
 import org.hamcrest.Matchers;
 import static org.hamcrest.Matchers.greaterThan;
@@ -57,6 +58,9 @@ public class ActionTokenCrossDCTest extends AbstractAdminCrossDCTest {
 
     @Page
     protected LoginPasswordUpdatePage passwordUpdatePage;
+
+    @Page
+    protected ProceedPage proceedPage;
 
     @Page
     protected ErrorPage errorPage;
@@ -107,6 +111,8 @@ public class ActionTokenCrossDCTest extends AbstractAdminCrossDCTest {
           Matchers::is
         );
 
+        proceedPage.assertCurrent();
+        proceedPage.clickProceedLink();
         passwordUpdatePage.assertCurrent();
 
         // Verify that there was at least one message sent via the channel
@@ -156,6 +162,8 @@ public class ActionTokenCrossDCTest extends AbstractAdminCrossDCTest {
 
         driver.navigate().to(link);
 
+        proceedPage.assertCurrent();
+        proceedPage.clickProceedLink();
         passwordUpdatePage.assertCurrent();
 
         passwordUpdatePage.changePassword("new-pass", "new-pass");
