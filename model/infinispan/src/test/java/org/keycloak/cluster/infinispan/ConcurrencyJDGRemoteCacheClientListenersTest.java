@@ -28,17 +28,11 @@ import org.infinispan.client.hotrod.annotation.ClientCacheEntryModified;
 import org.infinispan.client.hotrod.annotation.ClientListener;
 import org.infinispan.client.hotrod.event.ClientCacheEntryCreatedEvent;
 import org.infinispan.client.hotrod.event.ClientCacheEntryModifiedEvent;
-import org.infinispan.configuration.cache.Configuration;
-import org.infinispan.configuration.cache.ConfigurationBuilder;
-import org.infinispan.configuration.global.GlobalConfigurationBuilder;
-import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.persistence.manager.PersistenceManager;
 import org.infinispan.persistence.remote.RemoteStore;
-import org.infinispan.persistence.remote.configuration.ExhaustedAction;
 import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
 
@@ -128,7 +122,7 @@ public class ConcurrencyJDGRemoteCacheClientListenersTest {
     }
 
     private static Worker createWorker(int threadId) {
-        EmbeddedCacheManager manager = createManager(threadId);
+        EmbeddedCacheManager manager = new TestCacheManagerFactory().createManager(threadId, InfinispanConnectionProvider.WORK_CACHE_NAME, RemoteStoreConfigurationBuilder.class);
         Cache<String, Integer> cache = manager.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
 
         System.out.println("Retrieved cache: " + threadId);
@@ -138,56 +132,6 @@ public class ConcurrencyJDGRemoteCacheClientListenersTest {
         remoteStore.getRemoteCache().addClientListener(listener);
 
         return new Worker(cache, threadId);
-    }
-
-    private static EmbeddedCacheManager createManager(int threadId) {
-        System.setProperty("java.net.preferIPv4Stack", "true");
-        System.setProperty("jgroups.tcp.port", "53715");
-        GlobalConfigurationBuilder gcb = new GlobalConfigurationBuilder();
-
-        boolean clustered = false;
-        boolean async = false;
-        boolean allowDuplicateJMXDomains = true;
-
-        if (clustered) {
-            gcb = gcb.clusteredDefault();
-            gcb.transport().clusterName("test-clustering");
-        }
-
-        gcb.globalJmxStatistics().allowDuplicateDomains(allowDuplicateJMXDomains);
-
-        EmbeddedCacheManager cacheManager = new DefaultCacheManager(gcb.build());
-
-        Configuration invalidationCacheConfiguration = getCacheBackedByRemoteStore(threadId);
-
-        cacheManager.defineConfiguration(InfinispanConnectionProvider.WORK_CACHE_NAME, invalidationCacheConfiguration);
-        return cacheManager;
-
-    }
-
-    private static Configuration getCacheBackedByRemoteStore(int threadId) {
-        ConfigurationBuilder cacheConfigBuilder = new ConfigurationBuilder();
-
-        int port = threadId==1 ? 12232 : 13232;
-        //int port = 12232;
-
-        return cacheConfigBuilder.persistence().addStore(RemoteStoreConfigurationBuilder.class)
-                .fetchPersistentState(false)
-                .ignoreModifications(false)
-                .purgeOnStartup(false)
-                .preload(false)
-                .shared(true)
-                .remoteCacheName(InfinispanConnectionProvider.WORK_CACHE_NAME)
-                .rawValues(true)
-                .forceReturnValues(false)
-                .addServer()
-                .host("localhost")
-                .port(port)
-                .connectionPool()
-                .maxActive(20)
-                .exhaustedAction(ExhaustedAction.CREATE_NEW)
-                .async()
-                .   enabled(false).build();
     }
 
 
