@@ -41,10 +41,6 @@ public class LastSessionRefreshChecker {
     }
 
 
-    // Metadata attribute, which contains the lastSessionRefresh available on remoteCache. Used in decide whether we need to write to remoteCache (DC) or not
-    public static final String LAST_SESSION_REFRESH_REMOTE = "lsrr";
-
-
     public SessionUpdateTask.CrossDCMessageStatus getCrossDCMessageStatus(KeycloakSession kcSession, RealmModel realm, SessionEntityWrapper<UserSessionEntity> sessionWrapper, boolean offline, int newLastSessionRefresh) {
         // revokeRefreshToken always writes everything to remoteCache immediately
         if (realm.isRevokeRefreshToken()) {
@@ -62,7 +58,7 @@ public class LastSessionRefreshChecker {
             return SessionUpdateTask.CrossDCMessageStatus.NOT_NEEDED;
         }
 
-        Integer lsrr = sessionWrapper.getLocalMetadataNoteInt(LAST_SESSION_REFRESH_REMOTE);
+        Integer lsrr = sessionWrapper.getLocalMetadataNoteInt(UserSessionEntity.LAST_SESSION_REFRESH_REMOTE);
         if (lsrr == null) {
             logger.warnf("Not available lsrr note on user session %s.", sessionWrapper.getEntity().getId());
             return SessionUpdateTask.CrossDCMessageStatus.SYNC;

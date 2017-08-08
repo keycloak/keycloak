@@ -22,7 +22,6 @@ import java.util.List;
 
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.junit.After;
 import org.junit.Before;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -75,9 +74,8 @@ public class ConcurrentLoginClusterTest extends ConcurrentLoginTest {
 
 
     @Override
-    protected void logStats(long start) {
-        super.logStats(start);
-
+    public void concurrentLoginSingleUser() throws Throwable {
+        super.concurrentLoginSingleUser();
         JGroupsStats stats = testingClient.testing().cache(InfinispanConnectionProvider.SESSION_CACHE_NAME).getJgroupsStats();
         log.info("JGroups statistics: " + stats.statsAsString());
     }

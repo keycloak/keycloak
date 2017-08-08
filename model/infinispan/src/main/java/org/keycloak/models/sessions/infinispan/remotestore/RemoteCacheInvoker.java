@@ -17,6 +17,7 @@
 
 package org.keycloak.models.sessions.infinispan.remotestore;
 
+import org.keycloak.common.util.Time;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,6 +33,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -65,7 +67,7 @@ public class RemoteCacheInvoker {
         SessionUpdateTask.CrossDCMessageStatus status = task.getCrossDCMessageStatus(sessionWrapper);
 
         if (status == SessionUpdateTask.CrossDCMessageStatus.NOT_NEEDED) {
-            logger.debugf("Skip writing to remoteCache for entity '%s' of cache '%s' and operation '%s'", key, cacheName, operation.toString());
+            logger.debugf("Skip writing to remoteCache for entity '%s' of cache '%s' and operation '%s'", key, cacheName, operation);
             return;
         }
 
@@ -76,11 +78,12 @@ public class RemoteCacheInvoker {
 
         logger.debugf("Running task '%s' on remote cache '%s' . Key is '%s'", operation, cacheName, key);
 
-        runOnRemoteCache(context.remoteCache, maxIdleTimeMs, key, task, session);
+        runOnRemoteCache(context.remoteCache, maxIdleTimeMs, key, task, sessionWrapper);
     }
 
 
-    private <S extends SessionEntity> void runOnRemoteCache(RemoteCache remoteCache, long maxIdleMs, String key, SessionUpdateTask<S> task, S session) {
+    private <S extends SessionEntity> void runOnRemoteCache(RemoteCache remoteCache, long maxIdleMs, String key, SessionUpdateTask<S> task, SessionEntityWrapper<S> sessionWrapper) {
+        S session = sessionWrapper.getEntity();
         SessionUpdateTask.CacheOperation operation = task.getOperation(session);
 
         switch (operation) {
@@ -92,12 +95,14 @@ public class RemoteCacheInvoker {
                 remoteCache.put(key, session, task.getLifespanMs(), TimeUnit.MILLISECONDS, maxIdleMs, TimeUnit.MILLISECONDS);
                 break;
             case ADD_IF_ABSENT:
+                final int currentTime = Time.currentTime();
                 SessionEntity existing = (SessionEntity) remoteCache
                         .withFlags(Flag.FORCE_RETURN_VALUE)
                         .putIfAbsent(key, session, -1, TimeUnit.MILLISECONDS, maxIdleMs, TimeUnit.MILLISECONDS);
                 if (existing != null) {
                     throw new IllegalStateException("There is already existing value in cache for key " + key);
                 }
+                sessionWrapper.putLocalMetadataNoteInt(UserSessionEntity.LAST_SESSION_REFRESH_REMOTE, currentTime);
                 break;
             case REPLACE:
                 replace(remoteCache, task.getLifespanMs(), maxIdleMs, key, task);
@@ -122,17 +127,15 @@ public class RemoteCacheInvoker {
             // Run task on the remote session
             task.runUpdate(session);
 
-            if (logger.isDebugEnabled()) {
-                logger.debugf("Before replaceWithVersion. Written entity: %s", session.toString());
-            }
+            logger.debugf("Before replaceWithVersion. Entity to write version %d: %s", versioned.getVersion(), session);
 
             replaced = remoteCache.replaceWithVersion(key, session, versioned.getVersion(), lifespanMs, TimeUnit.MILLISECONDS, maxIdleMs, TimeUnit.MILLISECONDS);
 
             if (!replaced) {
-                logger.debugf("Failed to replace entity '%s' . Will retry again", key);
+                logger.debugf("Failed to replace entity '%s' version %d. Will retry again", key, versioned.getVersion());
             } else {
                 if (logger.isDebugEnabled()) {
-                    logger.debugf("Replaced entity in remote cache: %s", session.toString());
+                    logger.debugf("Replaced entity version %d in remote cache: %s", versioned.getVersion(), session);
                 }
             }
         }

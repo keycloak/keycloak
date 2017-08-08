@@ -24,7 +24,7 @@ import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class SessionEntity implements Serializable {
+public abstract class SessionEntity implements Serializable {
 
     private String id;
 

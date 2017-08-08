@@ -117,6 +117,10 @@ public class SessionEntityWrapper<S extends SessionEntity> {
                 + Objects.hashCode(entity);
     }
 
+    @Override
+    public String toString() {
+        return "SessionEntityWrapper{" + "version=" + version + ", entity=" + entity + ", localMetadata=" + localMetadata + '}';
+    }
 
     public static class ExternalizerImpl implements Externalizer<SessionEntityWrapper> {
 

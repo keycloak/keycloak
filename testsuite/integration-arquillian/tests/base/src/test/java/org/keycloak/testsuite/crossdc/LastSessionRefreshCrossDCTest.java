@@ -43,7 +43,7 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
         testRealm().update(realmRep);
 
         // Enable second DC
-        enableDcOnLoadBalancer(1);
+        enableDcOnLoadBalancer(DC.SECOND);
 
         // Login
         OAuthClient.AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
@@ -68,7 +68,7 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
         setTimeOffset(10);
 
         // refresh token on DC0
-        disableDcOnLoadBalancer(1);
+        disableDcOnLoadBalancer(DC.SECOND);
         tokenResponse = oauth.doRefreshTokenRequest(refreshToken1, "password");
         String refreshToken2 = tokenResponse.getRefreshToken();
 
@@ -85,8 +85,8 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
         }, 50, 50);
 
         // try refresh with old token on DC1. It should fail.
-        disableDcOnLoadBalancer(0);
-        enableDcOnLoadBalancer(1);
+        disableDcOnLoadBalancer(DC.FIRST);
+        enableDcOnLoadBalancer(DC.SECOND);
         tokenResponse = oauth.doRefreshTokenRequest(refreshToken1, "password");
         Assert.assertNull(tokenResponse.getAccessToken());
         Assert.assertNotNull(tokenResponse.getError());
@@ -106,7 +106,7 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
     @Test
     public void testLastSessionRefreshUpdate() {
         // Disable DC1 on loadbalancer
-        disableDcOnLoadBalancer(1);
+        disableDcOnLoadBalancer(DC.SECOND);
 
         // Get statistics
         int stores0 = getRemoteCacheStats(0).getGlobalStores();
