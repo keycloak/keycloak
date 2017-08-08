@@ -22,6 +22,7 @@ import javax.ws.rs.core.Response;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.junit.Test;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.Retry;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.OAuthClient;
 
@@ -34,13 +35,12 @@ public class LoginCrossDCTest extends AbstractAdminCrossDCTest {
 
     @Test
     public void loginTest() throws Exception {
-        log.info("Started to sleep");
+        enableDcOnLoadBalancer(DC.SECOND);
 
-        enableDcOnLoadBalancer(1);
-
+        //log.info("Started to sleep");
         //Thread.sleep(10000000);
         for (int i=0 ; i<10 ; i++) {
-            OAuthClient.AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
+            OAuthClient.AuthorizationEndpointResponse response1 = Retry.call(() -> oauth.doLogin("test-user@localhost", "password"), 20, 100);
             String code = response1.getCode();
             OAuthClient.AccessTokenResponse response2 = oauth.doAccessTokenRequest(code, "password");
             Assert.assertNotNull(response2.getAccessToken());

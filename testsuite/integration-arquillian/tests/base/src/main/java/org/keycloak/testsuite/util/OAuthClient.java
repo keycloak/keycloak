@@ -204,6 +204,7 @@ public class OAuthClient {
     }
 
     public void fillLoginForm(String username, String password) {
+        WaitUtils.waitForPageToLoad(driver);
         String src = driver.getPageSource();
         try {
             driver.findElement(By.id("username")).sendKeys(username);

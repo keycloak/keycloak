@@ -33,6 +33,7 @@ import java.util.Set;
 import org.keycloak.testsuite.arquillian.annotation.JmxInfinispanChannelStatistics;
 import org.keycloak.testsuite.arquillian.jmx.JmxConnectorRegistry;
 import org.keycloak.testsuite.arquillian.undertow.KeycloakOnUndertow;
+import org.keycloak.testsuite.crossdc.DC;
 import java.io.NotSerializableException;
 import java.lang.management.ManagementFactory;
 import java.util.Objects;
@@ -84,7 +85,7 @@ public class CacheStatisticsControllerEnricher implements TestEnricher {
 
         ObjectName mbeanName = new ObjectName(String.format(
           "%s:type=%s,name=\"%s(%s)\",manager=\"%s\",component=%s",
-          annotation.domain().isEmpty() ? getDefaultDomain(annotation.dcIndex(), annotation.dcNodeIndex()) : InfinispanConnectionProvider.JMX_DOMAIN,
+          annotation.domain().isEmpty() ? getDefaultDomain(annotation.dc().getDcIndex(), annotation.dcNodeIndex()) : InfinispanConnectionProvider.JMX_DOMAIN,
           annotation.type(),
           annotation.cacheName(),
           annotation.cacheMode(),
@@ -98,8 +99,8 @@ public class CacheStatisticsControllerEnricher implements TestEnricher {
             try {
                 Retry.execute(() -> value.reset(), 2, 150);
             } catch (RuntimeException ex) {
-                if (annotation.dcIndex() != -1 && annotation.dcNodeIndex() != -1
-                   && suiteContext.get().getAuthServerBackendsInfo(annotation.dcIndex()).get(annotation.dcNodeIndex()).isStarted()) {
+                if (annotation.dc() != DC.UNDEFINED && annotation.dcNodeIndex() != -1
+                   && suiteContext.get().getAuthServerBackendsInfo(annotation.dc().getDcIndex()).get(annotation.dcNodeIndex()).isStarted()) {
                     LOG.warn("Could not reset statistics for " + mbeanName);
                 }
             }
@@ -113,7 +114,7 @@ public class CacheStatisticsControllerEnricher implements TestEnricher {
 
         ObjectName mbeanName = new ObjectName(String.format(
           "%s:type=%s,cluster=\"%s\"",
-          annotation.domain().isEmpty() ? getDefaultDomain(annotation.dcIndex(), annotation.dcNodeIndex()) : InfinispanConnectionProvider.JMX_DOMAIN,
+          annotation.domain().isEmpty() ? getDefaultDomain(annotation.dc().getDcIndex(), annotation.dcNodeIndex()) : InfinispanConnectionProvider.JMX_DOMAIN,
           annotation.type(),
           annotation.cluster()
         ));
@@ -124,8 +125,8 @@ public class CacheStatisticsControllerEnricher implements TestEnricher {
             try {
                 Retry.execute(() -> value.reset(), 2, 150);
             } catch (RuntimeException ex) {
-                if (annotation.dcIndex() != -1 && annotation.dcNodeIndex() != -1
-                   && suiteContext.get().getAuthServerBackendsInfo(annotation.dcIndex()).get(annotation.dcNodeIndex()).isStarted()) {
+                if (annotation.dc() != DC.UNDEFINED && annotation.dcNodeIndex() != -1
+                   && suiteContext.get().getAuthServerBackendsInfo(annotation.dc().getDcIndex()).get(annotation.dcNodeIndex()).isStarted()) {
                     LOG.warn("Could not reset statistics for " + mbeanName);
                 }
             }
@@ -170,8 +171,8 @@ public class CacheStatisticsControllerEnricher implements TestEnricher {
         final String host;
         final int port;
 
-        if (annotation.dcIndex() != -1 && annotation.dcNodeIndex() != -1) {
-            ContainerInfo node = suiteContext.get().getAuthServerBackendsInfo(annotation.dcIndex()).get(annotation.dcNodeIndex());
+        if (annotation.dc() != DC.UNDEFINED && annotation.dcNodeIndex() != -1) {
+            ContainerInfo node = suiteContext.get().getAuthServerBackendsInfo(annotation.dc().getDcIndex()).get(annotation.dcNodeIndex());
             Container container = node.getArquillianContainer();
             if (container.getDeployableContainer() instanceof KeycloakOnUndertow) {
                 return ManagementFactory.getPlatformMBeanServer();
@@ -204,8 +205,8 @@ public class CacheStatisticsControllerEnricher implements TestEnricher {
         final String host;
         final int port;
 
-        if (annotation.dcIndex() != -1 && annotation.dcNodeIndex() != -1) {
-            ContainerInfo node = suiteContext.get().getAuthServerBackendsInfo(annotation.dcIndex()).get(annotation.dcNodeIndex());
+        if (annotation.dc() != DC.UNDEFINED && annotation.dcNodeIndex() != -1) {
+            ContainerInfo node = suiteContext.get().getAuthServerBackendsInfo(annotation.dc().getDcIndex()).get(annotation.dcNodeIndex());
             Container container = node.getArquillianContainer();
             if (container.getDeployableContainer() instanceof KeycloakOnUndertow) {
                 return ManagementFactory.getPlatformMBeanServer();

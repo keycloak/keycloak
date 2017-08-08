@@ -77,11 +77,11 @@ public class ActionTokenCrossDCTest extends AbstractAdminCrossDCTest {
 
     @Test
     public void sendResetPasswordEmailSuccessWorksInCrossDc(
-      @JmxInfinispanCacheStatistics(dcIndex=0, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.ACTION_TOKEN_CACHE) InfinispanStatistics cacheDc0Node0Statistics,
-      @JmxInfinispanCacheStatistics(dcIndex=0, dcNodeIndex=1, cacheName=InfinispanConnectionProvider.ACTION_TOKEN_CACHE) InfinispanStatistics cacheDc0Node1Statistics,
-      @JmxInfinispanCacheStatistics(dcIndex=1, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.ACTION_TOKEN_CACHE) InfinispanStatistics cacheDc1Node0Statistics,
+      @JmxInfinispanCacheStatistics(dc=DC.FIRST, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.ACTION_TOKEN_CACHE) InfinispanStatistics cacheDc0Node0Statistics,
+      @JmxInfinispanCacheStatistics(dc=DC.FIRST, dcNodeIndex=1, cacheName=InfinispanConnectionProvider.ACTION_TOKEN_CACHE) InfinispanStatistics cacheDc0Node1Statistics,
+      @JmxInfinispanCacheStatistics(dc=DC.SECOND, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.ACTION_TOKEN_CACHE) InfinispanStatistics cacheDc1Node0Statistics,
       @JmxInfinispanChannelStatistics() InfinispanStatistics channelStatisticsCrossDc) throws Exception {
-        startBackendNode(0, 1);
+        startBackendNode(DC.FIRST, 1);
         cacheDc0Node1Statistics.waitToBecomeAvailable(10, TimeUnit.SECONDS);
 
         Comparable originalNumberOfEntries = cacheDc0Node0Statistics.getSingleStatistics(Constants.STAT_CACHE_NUMBER_OF_ENTRIES);
@@ -126,8 +126,8 @@ public class ActionTokenCrossDCTest extends AbstractAdminCrossDCTest {
         // Verify that there was an action token added in the node which was targetted by the link
         assertThat(cacheDc0Node0Statistics.getSingleStatistics(Constants.STAT_CACHE_NUMBER_OF_ENTRIES), greaterThan(originalNumberOfEntries));
 
-        disableDcOnLoadBalancer(0);
-        enableDcOnLoadBalancer(1);
+        disableDcOnLoadBalancer(DC.FIRST);
+        enableDcOnLoadBalancer(DC.SECOND);
 
         // Make sure that after going to the link, the invalidated action token has been retrieved from Infinispan server cluster in the other DC
         assertSingleStatistics(cacheDc1Node0Statistics, Constants.STAT_CACHE_NUMBER_OF_ENTRIES,
@@ -140,7 +140,7 @@ public class ActionTokenCrossDCTest extends AbstractAdminCrossDCTest {
 
     @Test
     public void sendResetPasswordEmailAfterNewNodeAdded() throws IOException, MessagingException {
-        disableDcOnLoadBalancer(1);
+        disableDcOnLoadBalancer(DC.SECOND);
 
         UserRepresentation userRep = new UserRepresentation();
         userRep.setEnabled(true);
@@ -170,8 +170,8 @@ public class ActionTokenCrossDCTest extends AbstractAdminCrossDCTest {
 
         assertEquals("Your account has been updated.", driver.getTitle());
 
-        disableDcOnLoadBalancer(0);
-        getManuallyStartedBackendNodes(1)
+        disableDcOnLoadBalancer(DC.FIRST);
+        getManuallyStartedBackendNodes(DC.SECOND)
           .findFirst()
           .ifPresent(c -> {
               containerController.start(c.getQualifier());
