@@ -321,13 +321,26 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
                     // Recursion. We should have it locally now
                     return getUserSessionWithPredicate(realm, id, offline, predicate);
+                } else {
+                    log.debugf("getUserSessionWithPredicate(%s): found, but predicate doesn't pass", id);
+
+                    return null;
                 }
+            } else {
+                log.debugf("getUserSessionWithPredicate(%s): not found", id);
+
+                // Session not available on remoteCache. Was already removed there. So removing locally too.
+                // TODO: Can be optimized to skip calling remoteCache.remove
+                removeUserSession(realm, userSession);
+
+                return null;
             }
+        } else {
+
+            log.debugf("getUserSessionWithPredicate(%s): remote cache not available", id);
+
+            return null;
         }
-
-        log.debugf("getUserSessionWithPredicate(%s): not found", id);
-
-        return null;
     }
 
 

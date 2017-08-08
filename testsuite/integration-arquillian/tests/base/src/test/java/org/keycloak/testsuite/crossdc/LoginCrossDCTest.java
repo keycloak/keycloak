@@ -39,8 +39,8 @@ public class LoginCrossDCTest extends AbstractAdminCrossDCTest {
 
         //log.info("Started to sleep");
         //Thread.sleep(10000000);
-        for (int i=0 ; i<10 ; i++) {
-            OAuthClient.AuthorizationEndpointResponse response1 = Retry.call(() -> oauth.doLogin("test-user@localhost", "password"), 20, 100);
+        for (int i=0 ; i<30 ; i++) {
+            OAuthClient.AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
             String code = response1.getCode();
             OAuthClient.AccessTokenResponse response2 = oauth.doAccessTokenRequest(code, "password");
             Assert.assertNotNull(response2.getAccessToken());

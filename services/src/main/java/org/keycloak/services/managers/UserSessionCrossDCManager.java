@@ -62,4 +62,17 @@ public class UserSessionCrossDCManager {
 
         });
     }
+
+
+    // Just check if userSession also exists on remoteCache. It can happen that logout happened on 2nd DC and userSession is already removed on remoteCache and this DC wasn't yet notified
+    public UserSessionModel getUserSessionIfExistsRemotely(RealmModel realm, String id) {
+        UserSessionModel userSession = kcSession.sessions().getUserSession(realm, id);
+
+        // This will remove userSession "locally" if it doesn't exists on remoteCache
+        kcSession.sessions().getUserSessionWithPredicate(realm, id, false, (UserSessionModel userSession2) -> {
+            return userSession2 == null;
+        });
+
+        return kcSession.sessions().getUserSession(realm, id);
+    }
 }

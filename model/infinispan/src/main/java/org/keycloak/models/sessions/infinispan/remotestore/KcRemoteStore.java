@@ -87,8 +87,8 @@ public class KcRemoteStore extends RemoteStore {
     public boolean delete(Object key) throws PersistenceException {
         logger.debugf("Calling delete for key '%s' on cache '%s'", key, cacheName);
 
-        // Optimization - we don't need to know the previous value. Also it's ok to trigger asynchronously
-        getRemoteCache().removeAsync(key);
+        // Optimization - we don't need to know the previous value.
+        getRemoteCache().remove(key);
 
         return true;
     }
