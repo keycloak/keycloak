@@ -205,7 +205,7 @@ public abstract class AbstractFuseAdminAdapterTest extends AbstractExampleAdapte
         pipe.write("logout\n".getBytes());
         pipe.flush();
 
-        channel.waitFor(EnumSet.of(ClientChannelEvent.CLOSED), 0);
+        channel.waitFor(EnumSet.of(ClientChannelEvent.CLOSED), TimeUnit.SECONDS.toMillis(15L));
         session.close(true);
         client.stop();
 
