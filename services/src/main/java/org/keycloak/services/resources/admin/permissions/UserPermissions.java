@@ -34,6 +34,7 @@ import org.keycloak.services.ForbiddenException;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -121,9 +122,10 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
 
     @Override
     public Map<String, String> getPermissions() {
-        Map<String, String> scopes = new HashMap<>();
-        scopes.put(AdminPermissionManagement.MANAGE_SCOPE, managePermission().getId());
+        initialize();
+        Map<String, String> scopes = new LinkedHashMap<>();
         scopes.put(AdminPermissionManagement.VIEW_SCOPE, viewPermission().getId());
+        scopes.put(AdminPermissionManagement.MANAGE_SCOPE, managePermission().getId());
         scopes.put(MAP_ROLES_SCOPE, mapRolesPermission().getId());
         scopes.put(MANAGE_GROUP_MEMBERSHIP_SCOPE, manageGroupMembershipPermission().getId());
         scopes.put(IMPERSONATE_SCOPE, adminImpersonatingPermission().getId());

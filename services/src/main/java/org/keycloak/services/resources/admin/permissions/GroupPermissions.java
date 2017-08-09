@@ -31,6 +31,7 @@ import org.keycloak.services.ForbiddenException;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -242,11 +243,12 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
 
     @Override
     public Map<String, String> getPermissions(GroupModel group) {
-        Map<String, String> scopes = new HashMap<>();
+        initialize(group);
+        Map<String, String> scopes = new LinkedHashMap<>();
         scopes.put(AdminPermissionManagement.VIEW_SCOPE, viewPermission(group).getId());
         scopes.put(AdminPermissionManagement.MANAGE_SCOPE, managePermission(group).getId());
-        scopes.put(MANAGE_MEMBERS_SCOPE, manageMembersPermission(group).getId());
         scopes.put(VIEW_MEMBERS_SCOPE, viewMembersPermission(group).getId());
+        scopes.put(MANAGE_MEMBERS_SCOPE, manageMembersPermission(group).getId());
         scopes.put(MANAGE_MEMBERSHIP_SCOPE, manageMembershipPermission(group).getId());
         return scopes;
     }

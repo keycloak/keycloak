@@ -593,45 +593,28 @@ public class TokenEndpoint {
             throw new ErrorResponseException(OAuthErrorException.INVALID_CLIENT, "Client requires user consent", Response.Status.BAD_REQUEST);
         }
 
-        boolean allowed = false;
-        UserModel serviceAccount = session.users().getServiceAccount(client);
-        if (serviceAccount != null) {
-            if (authResult.getToken().getAudience() == null) {
-                logger.debug("Client doesn't have service account");
+        boolean exchangeFromAllowed = false;
+        for (String aud : authResult.getToken().getAudience()) {
+            ClientModel audClient = realm.getClientByClientId(aud);
+            if (audClient == null) continue;
+            if (audClient.equals(client)) {
+                exchangeFromAllowed = true;
+                break;
             }
-            boolean tokenAllowed = false;
-            for (String aud : authResult.getToken().getAudience()) {
-                ClientModel audClient = realm.getClientByClientId(aud);
-                if (audClient == null) continue;
-                if (audClient.equals(client)) {
-                    tokenAllowed = true;
-                    break;
-                }
-                RoleModel audExchanger = audClient.getRole(OAuth2Constants.TOKEN_EXCHANGER);
-                if (audExchanger != null && serviceAccount.hasRole(audExchanger)) {
-                    tokenAllowed = true;
-                    break;
-                }
+            if (AdminPermissions.management(session, realm).clients().canExchangeFrom(client, audClient)) {
+                exchangeFromAllowed = true;
+                break;
             }
-            if (!tokenAllowed) {
-                logger.debug("Client does not have exchange rights for audience of token");
-            } else {
-                RoleModel targetExchangable = targetClient.getRole(OAuth2Constants.TOKEN_EXCHANGER);
-                RoleModel realmExchangeable = AdminPermissions.management(session, realm).getRealmManagementClient().getRole(OAuth2Constants.TOKEN_EXCHANGER);
-                allowed = (targetExchangable != null && serviceAccount.hasRole(targetExchangable)) || (realmExchangeable != null && serviceAccount.hasRole(realmExchangeable));
-                if (!allowed) {
-                    logger.debug("Client does not have exchange rights for target audience");
-                }
-            }
-
-        } else {
-            logger.debug("Client doesn't have service account");
         }
-
-        if (!allowed) {
+        if (!exchangeFromAllowed) {
+            logger.debug("Client does not have exchange rights for audience of provided token");
             event.error(Errors.NOT_ALLOWED);
             throw new ErrorResponseException(OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);
-
+        }
+        if (!AdminPermissions.management(session, realm).clients().canExchangeTo(client, targetClient)) {
+            logger.debug("Client does not have exchange rights for target audience");
+            event.error(Errors.NOT_ALLOWED);
+            throw new ErrorResponseException(OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);
         }
 
         AuthenticationSessionModel authSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, targetClient, false);
@@ -656,6 +639,8 @@ public class TokenEndpoint {
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, targetClient, event, session, userSession, clientSession)
                 .generateAccessToken()
                 .generateRefreshToken();
+        responseBuilder.getAccessToken().issuedFor(client.getClientId());
+        responseBuilder.getRefreshToken().issuedFor(client.getClientId());
 
         String scopeParam = clientSession.getNote(OAuth2Constants.SCOPE);
         if (TokenUtil.isOIDCRequest(scopeParam)) {
