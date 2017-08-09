@@ -19,6 +19,7 @@ package org.keycloak.models.sessions.infinispan.remotestore;
 
 import java.util.concurrent.Executor;
 
+import org.infinispan.client.hotrod.Flag;
 import org.infinispan.commons.configuration.ConfiguredBy;
 import org.infinispan.filter.KeyFilter;
 import org.infinispan.marshall.core.MarshalledEntry;
@@ -70,10 +71,11 @@ public class KcRemoteStore extends RemoteStore {
     }
 
 
+    // Don't do anything. Iterate over remoteCache.keySet() can have big performance impact. We handle bulk load by ourselves if needed.
     @Override
     public void process(KeyFilter filter, CacheLoaderTask task, Executor executor, boolean fetchValue, boolean fetchMetadata) {
-        logger.infof("Calling process with filter '%s' on cache '%s'", filter, cacheName);
-        super.process(filter, task, executor, fetchValue, fetchMetadata);
+        logger.debugf("Skip calling process with filter '%s' on cache '%s'", filter, cacheName);
+        // super.process(filter, task, executor, fetchValue, fetchMetadata);
     }
 
 
@@ -88,6 +90,7 @@ public class KcRemoteStore extends RemoteStore {
         logger.debugf("Calling delete for key '%s' on cache '%s'", key, cacheName);
 
         // Optimization - we don't need to know the previous value.
+        // TODO: For some usecases (bulk removal of user sessions), it may be better for performance to call removeAsync and wait for all futures to be finished
         getRemoteCache().remove(key);
 
         return true;

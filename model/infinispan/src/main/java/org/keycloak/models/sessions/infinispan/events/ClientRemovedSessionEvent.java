@@ -17,31 +17,24 @@
 
 package org.keycloak.models.sessions.infinispan.events;
 
-import org.keycloak.cluster.ClusterEvent;
+import org.keycloak.models.KeycloakSession;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class ClientRemovedSessionEvent implements SessionClusterEvent  {
+public class ClientRemovedSessionEvent extends SessionClusterEvent  {
 
-    private String realmId;
     private String clientUuid;
 
-    public static ClientRemovedSessionEvent create(String realmId, String clientUuid) {
-        ClientRemovedSessionEvent event = new ClientRemovedSessionEvent();
-        event.realmId = realmId;
+    public static ClientRemovedSessionEvent create(KeycloakSession session, String eventKey, String realmId, boolean resendingEvent, String clientUuid) {
+        ClientRemovedSessionEvent event = ClientRemovedSessionEvent.createEvent(ClientRemovedSessionEvent.class, eventKey, session, realmId, resendingEvent);
         event.clientUuid = clientUuid;
         return event;
     }
 
     @Override
     public String toString() {
-        return String.format("ClientRemovedSessionEvent [ realmId=%s , clientUuid=%s ]", realmId, clientUuid);
-    }
-
-    @Override
-    public String getRealmId() {
-        return realmId;
+        return String.format("ClientRemovedSessionEvent [ realmId=%s , clientUuid=%s ]", getRealmId(), clientUuid);
     }
 
     public String getClientUuid() {

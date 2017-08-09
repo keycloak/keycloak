@@ -20,12 +20,14 @@ package org.keycloak.models.sessions.infinispan.events;
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterListener;
+import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProvider;
 import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFactory;
+import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 /**
@@ -48,17 +50,33 @@ public abstract class AbstractUserSessionClusterListener<SE extends SessionClust
             InfinispanUserSessionProvider provider = (InfinispanUserSessionProvider) session.getProvider(UserSessionProvider.class, InfinispanUserSessionProviderFactory.PROVIDER_ID);
             SE sessionEvent = (SE) event;
 
-            String realmId = sessionEvent.getRealmId();
+            boolean shouldResendEvent = shouldResendEvent(session, sessionEvent);
 
             if (log.isDebugEnabled()) {
-                log.debugf("Received user session event '%s'", sessionEvent.toString());
+                log.debugf("Received user session event '%s'. Should resend event: %b", sessionEvent.toString(), shouldResendEvent);
             }
 
             eventReceived(session, provider, sessionEvent);
+
+            if (shouldResendEvent) {
+                session.getProvider(ClusterProvider.class).notify(sessionEvent.getEventKey(), event, true, ClusterProvider.DCNotify.ALL_BUT_LOCAL_DC);
+            }
 
         });
     }
 
     protected abstract void eventReceived(KeycloakSession session, InfinispanUserSessionProvider provider, SE sessionEvent);
+
+
+    private boolean shouldResendEvent(KeycloakSession session, SessionClusterEvent event) {
+        if (!event.isResendingEvent()) {
+            return false;
+        }
+
+        // Just the initiator will re-send the event after receiving it
+        String myNode = InfinispanUtil.getMyAddress(session);
+        String mySite = InfinispanUtil.getMySite(session);
+        return (event.getNodeId() != null && event.getNodeId().equals(myNode) && event.getSiteId() != null && event.getSiteId().equals(mySite));
+    }
 
 }

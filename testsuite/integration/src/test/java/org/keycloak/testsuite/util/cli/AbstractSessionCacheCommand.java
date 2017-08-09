@@ -23,6 +23,8 @@ import org.infinispan.context.Flag;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -250,6 +252,7 @@ public abstract class AbstractSessionCacheCommand extends AbstractCommand {
         }
     }
 
+
     public static class CreateManySessionsCommand extends AbstractSessionCacheCommand {
 
         @Override
@@ -284,6 +287,43 @@ public abstract class AbstractSessionCacheCommand extends AbstractCommand {
         @Override
         public String printUsage() {
             return getName() + " <cache-name> <realm-name> <count> <count-in-batch>";
+        }
+
+    }
+
+
+    // This will propagate creating sessions to remoteCache too
+    public static class CreateManySessionsProviderCommand extends AbstractSessionCacheCommand {
+
+        @Override
+        public String getName() {
+            return "createManySessionsProvider";
+        }
+
+        @Override
+        protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntity> cache) {
+            String realmName = getArg(1);
+            String username = getArg(2);
+            int count = getIntArg(3);
+            int batchCount = getIntArg(4);
+
+            BatchTaskRunner.runInBatches(0, count, batchCount, session.getKeycloakSessionFactory(), (KeycloakSession batchSession, int firstInIteration, int countInIteration) -> {
+                RealmModel realm = batchSession.realms().getRealmByName(realmName);
+                UserModel user = batchSession.users().getUserByUsername(username, realm);
+
+                for (int i=0 ; i<countInIteration ; i++) {
+                    session.sessions().createUserSession(KeycloakModelUtils.generateId(), realm, user, username, "127.0.0.1", "form", false, null, null);
+                }
+
+                log.infof("Created '%d' sessions started from offset '%d'", countInIteration, firstInIteration);
+            });
+
+            log.infof("Created all '%d' sessions", count);
+        }
+
+        @Override
+        public String printUsage() {
+            return getName() + " <cache-name> <realm-name> <user-name> <count> <count-in-batch>";
         }
 
     }

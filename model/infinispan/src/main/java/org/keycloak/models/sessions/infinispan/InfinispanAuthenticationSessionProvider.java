@@ -135,7 +135,10 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
 
     @Override
     public void onRealmRemoved(RealmModel realm) {
-        clusterEventsSenderTx.addEvent(InfinispanAuthenticationSessionProviderFactory.REALM_REMOVED_AUTHSESSION_EVENT, RealmRemovedSessionEvent.create(realm.getId()), true);
+        // Send message to all DCs. The remoteCache will notify client listeners on all DCs for remove authentication sessions
+        clusterEventsSenderTx.addEvent(
+                RealmRemovedSessionEvent.createEvent(RealmRemovedSessionEvent.class, InfinispanAuthenticationSessionProviderFactory.REALM_REMOVED_AUTHSESSION_EVENT, session, realm.getId(), false),
+                ClusterProvider.DCNotify.ALL_DCS);
     }
 
     protected void onRealmRemovedEvent(String realmId) {
@@ -154,7 +157,10 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
 
     @Override
     public void onClientRemoved(RealmModel realm, ClientModel client) {
-        clusterEventsSenderTx.addEvent(InfinispanAuthenticationSessionProviderFactory.CLIENT_REMOVED_AUTHSESSION_EVENT, ClientRemovedSessionEvent.create(realm.getId(), client.getId()), true);
+        // Send message to all DCs. The remoteCache will notify client listeners on all DCs for remove authentication sessions of this client
+        clusterEventsSenderTx.addEvent(
+                ClientRemovedSessionEvent.create(session, InfinispanAuthenticationSessionProviderFactory.CLIENT_REMOVED_AUTHSESSION_EVENT, realm.getId(), false, client.getId()),
+                ClusterProvider.DCNotify.ALL_DCS);
     }
 
     protected void onClientRemovedEvent(String realmId, String clientUuid) {

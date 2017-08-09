@@ -20,23 +20,5 @@ package org.keycloak.models.sessions.infinispan.events;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class RealmRemovedSessionEvent implements SessionClusterEvent {
-
-    private String realmId;
-
-    public static RealmRemovedSessionEvent create(String realmId) {
-        RealmRemovedSessionEvent event = new RealmRemovedSessionEvent();
-        event.realmId = realmId;
-        return event;
-    }
-
-    @Override
-    public String toString() {
-        return String.format("RealmRemovedSessionEvent [ realmId=%s ]", realmId);
-    }
-
-    @Override
-    public String getRealmId() {
-        return realmId;
-    }
+public class RealmRemovedSessionEvent extends SessionClusterEvent {
 }

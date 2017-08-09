@@ -229,7 +229,10 @@ public class CacheStatisticsControllerEnricher implements TestEnricher {
               : annotation.managementPort();
         }
 
-        JMXServiceURL url = new JMXServiceURL("service:jmx:remote+http://" + host + ":" + port);
+        String jmxUrl = "service:jmx:remote+http://" + host + ":" + port;
+        LOG.infof("JMX Service URL: %s", jmxUrl);
+
+        JMXServiceURL url = new JMXServiceURL(jmxUrl);
         JMXConnector jmxc = jmxConnectorRegistry.get().getConnection(url);
 
         return jmxc.getMBeanServerConnection();

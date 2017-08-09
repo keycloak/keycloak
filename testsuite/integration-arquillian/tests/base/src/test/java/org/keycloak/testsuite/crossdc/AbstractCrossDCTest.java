@@ -135,6 +135,15 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
         return KeycloakTestingClient.getInstance(node.getContextRoot() + "/auth");
     }
 
+
+    protected Keycloak getAdminClientForStartedNodeInDc(int dcIndex) {
+        ContainerInfo firstStartedNode = this.suiteContext.getDcAuthServerBackendsInfo().get(dcIndex).stream()
+                .filter(ContainerInfo::isStarted)
+                .findFirst().get();
+
+        return getAdminClientFor(firstStartedNode);
+    }
+
     /**
      * Get admin client directed to the given node.
      * @param node
@@ -147,6 +156,16 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
         }
         return client;
     }
+
+
+    protected KeycloakTestingClient getTestingClientForStartedNodeInDc(int dcIndex) {
+        ContainerInfo firstStartedNode = this.suiteContext.getDcAuthServerBackendsInfo().get(dcIndex).stream()
+                .filter(ContainerInfo::isStarted)
+                .findFirst().get();
+
+        return getTestingClientFor(firstStartedNode);
+    }
+
 
     /**
      * Get testing client directed to the given node.

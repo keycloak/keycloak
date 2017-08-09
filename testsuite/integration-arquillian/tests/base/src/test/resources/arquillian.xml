@@ -174,7 +174,7 @@
     <group qualifier="auth-server-undertow-cross-dc">
         <container qualifier="cache-server-cross-dc-1" mode="suite" >
             <configuration>
-                <property name="enabled">${auth.server.undertow.crossdc}</property>
+                <property name="enabled">${auth.server.undertow.crossdc} &amp;&amp; ! ${cache.server.lifecycle.skip}</property>
                 <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
                 <property name="jbossHome">${cache.server.home}</property>
                 <property name="serverConfig">clustered.xml</property>
@@ -197,7 +197,7 @@
 
         <container qualifier="cache-server-cross-dc-2" mode="suite" >
             <configuration>
-                <property name="enabled">${auth.server.undertow.crossdc}</property>
+                <property name="enabled">${auth.server.undertow.crossdc} &amp;&amp; ! ${cache.server.lifecycle.skip}</property>
                 <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
                 <property name="jbossHome">${cache.server.home}</property>
                 <property name="setupCleanServerBaseDir">true</property>

@@ -17,11 +17,10 @@
 
 package org.keycloak.models.sessions.infinispan.events;
 
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import org.keycloak.cluster.ClusterProvider;
-import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
 
@@ -34,41 +33,41 @@ public class SessionEventsSenderTransaction extends AbstractKeycloakTransaction 
 
     private final KeycloakSession session;
 
-    private final MultivaluedHashMap<String, SessionClusterEvent> sessionEvents = new MultivaluedHashMap<>();
-    private final MultivaluedHashMap<String, SessionClusterEvent> localDCSessionEvents = new MultivaluedHashMap<>();
+    private final List<DCEventContext> sessionEvents = new LinkedList<>();
 
     public SessionEventsSenderTransaction(KeycloakSession session) {
         this.session = session;
     }
 
-    public void addEvent(String eventName, SessionClusterEvent event, boolean sendToAllDCs) {
-        if (sendToAllDCs) {
-            sessionEvents.add(eventName, event);
-        } else {
-            localDCSessionEvents.add(eventName, event);
-        }
+    public void addEvent(SessionClusterEvent event, ClusterProvider.DCNotify dcNotify) {
+        sessionEvents.add(new DCEventContext(dcNotify, event));
     }
+
 
     @Override
     protected void commitImpl() {
         ClusterProvider cluster = session.getProvider(ClusterProvider.class);
 
         // TODO bulk notify (send whole list instead of separate events?)
-        for (Map.Entry<String, List<SessionClusterEvent>> entry : sessionEvents.entrySet()) {
-            for (SessionClusterEvent event : entry.getValue()) {
-                cluster.notify(entry.getKey(), event, false, ClusterProvider.DCNotify.ALL_DCS);
-            }
-        }
-
-        for (Map.Entry<String, List<SessionClusterEvent>> entry : localDCSessionEvents.entrySet()) {
-            for (SessionClusterEvent event : entry.getValue()) {
-                cluster.notify(entry.getKey(), event, false, ClusterProvider.DCNotify.LOCAL_DC_ONLY);
-            }
+        for (DCEventContext entry : sessionEvents) {
+            cluster.notify(entry.event.getEventKey(), entry.event, false, entry.dcNotify);
         }
     }
+
 
     @Override
     protected void rollbackImpl() {
 
+    }
+
+
+    private class DCEventContext {
+        private final ClusterProvider.DCNotify dcNotify;
+        private final SessionClusterEvent event;
+
+        DCEventContext(ClusterProvider.DCNotify dcNotify, SessionClusterEvent event) {
+            this.dcNotify = dcNotify;
+            this.event = event;
+        }
     }
 }
