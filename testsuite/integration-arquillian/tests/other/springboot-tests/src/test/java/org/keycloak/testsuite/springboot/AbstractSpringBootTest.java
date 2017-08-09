@@ -7,6 +7,7 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -34,6 +35,8 @@ import org.keycloak.util.TokenUtil;
 import org.openqa.selenium.By;
 
 public abstract class AbstractSpringBootTest extends AbstractKeycloakTest {
+
+    protected static final String REALM_ID = "cd8ee421-5100-41ba-95dd-b27c8e5cf042";
 
     protected static final String REALM_NAME = "test";
 
@@ -84,6 +87,7 @@ public abstract class AbstractSpringBootTest extends AbstractKeycloakTest {
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation realm = new RealmRepresentation();
 
+        realm.setId(REALM_ID);
         realm.setRealm(REALM_NAME);
         realm.setEnabled(true);
 
@@ -91,6 +95,11 @@ public abstract class AbstractSpringBootTest extends AbstractKeycloakTest {
         realm.setPrivateKey(REALM_PRIVATE_KEY);
 
         realm.setClients(Collections.singletonList(createClient()));
+
+        List<String> eventListeners = new ArrayList<>();
+        eventListeners.add("jboss-logging");
+        eventListeners.add("event-queue");
+        realm.setEventsListeners(eventListeners);
 
         testRealms.add(realm);
     }
@@ -156,6 +165,11 @@ public abstract class AbstractSpringBootTest extends AbstractKeycloakTest {
 
         driver.navigate().to(timeOffsetUri);
         WaitUtils.waitUntilElement(By.tagName("body")).is().visible();
+    }
+
+    protected String getCorrectUserId() {
+        return adminClient.realms().realm(REALM_NAME).users().search(USER_LOGIN)
+                .get(0).getId();
     }
 
     @Before
