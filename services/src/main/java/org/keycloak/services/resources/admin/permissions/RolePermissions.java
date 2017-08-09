@@ -36,6 +36,7 @@ import org.keycloak.services.ForbiddenException;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -88,7 +89,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
     @Override
     public Map<String, String> getPermissions(RoleModel role) {
         initialize(role);
-        Map<String, String> scopes = new HashMap<>();
+        Map<String, String> scopes = new LinkedHashMap<>();
         scopes.put(RolePermissionManagement.MAP_ROLE_SCOPE, mapRolePermission(role).getId());
         scopes.put(RolePermissionManagement.MAP_ROLE_CLIENT_SCOPE_SCOPE, mapClientScopePermission(role).getId());
         scopes.put(RolePermissionManagement.MAP_ROLE_COMPOSITE_SCOPE, mapCompositePermission(role).getId());
