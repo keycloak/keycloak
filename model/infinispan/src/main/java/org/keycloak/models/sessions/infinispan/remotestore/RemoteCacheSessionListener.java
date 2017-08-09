@@ -36,6 +36,9 @@ import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
+import java.util.Random;
+import java.util.logging.Level;
+import org.infinispan.client.hotrod.VersionedValue;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -85,25 +88,48 @@ public class RemoteCacheSessionListener  {
 
         if (shouldUpdateLocalCache(event.getType(), key, event.isCommandRetried())) {
 
-            replaceRemoteEntityInCache(key);
+            replaceRemoteEntityInCache(key, event.getVersion());
         }
     }
 
+    private static final int MAXIMUM_REPLACE_RETRIES = 10;
 
-    private void replaceRemoteEntityInCache(String key) {
+    private void replaceRemoteEntityInCache(String key, long eventVersion) {
         // TODO can be optimized and remoteSession sent in the event itself?
-        SessionEntityWrapper localEntityWrapper = cache.get(key);
-        SessionEntity remoteSession = (SessionEntity) remoteCache.get(key);
+        boolean replaced = false;
+        int replaceRetries = 0;
+        int sleepInterval = 25;
+        do {
+            replaceRetries++;
+            
+            SessionEntityWrapper localEntityWrapper = cache.get(key);
+            VersionedValue remoteSessionVersioned = remoteCache.getVersioned(key);
+            if (remoteSessionVersioned == null || remoteSessionVersioned.getVersion() < eventVersion) {
+                try {
+                    logger.debugf("Got replace remote entity event prematurely, will try again. Event version: %d, got: %d",
+                      eventVersion, remoteSessionVersioned == null ? -1 : remoteSessionVersioned.getVersion());
+                    Thread.sleep(new Random().nextInt(sleepInterval));  // using exponential backoff
+                    continue;
+                } catch (InterruptedException ex) {
+                    continue;
+                } finally {
+                    sleepInterval = sleepInterval << 1;
+                }
+            }
+            SessionEntity remoteSession = (SessionEntity) remoteCache.get(key);
 
-        if (logger.isDebugEnabled()) {
-            logger.debugf("Read session. Entity read from remote cache: %s", remoteSession.toString());
-        }
+            logger.debugf("Read session%s. Entity read from remote cache: %s", replaceRetries > 1 ? "" : " again", remoteSession);
 
-        SessionEntityWrapper sessionWrapper = remoteSession.mergeRemoteEntityWithLocalEntity(localEntityWrapper);
+            SessionEntityWrapper sessionWrapper = remoteSession.mergeRemoteEntityWithLocalEntity(localEntityWrapper);
 
-        // We received event from remoteCache, so we won't update it back
-        cache.getAdvancedCache().withFlags(Flag.SKIP_CACHE_STORE, Flag.SKIP_CACHE_LOAD, Flag.IGNORE_RETURN_VALUES)
-                .replace(key, sessionWrapper);
+            // We received event from remoteCache, so we won't update it back
+            replaced = cache.getAdvancedCache().withFlags(Flag.SKIP_CACHE_STORE, Flag.SKIP_CACHE_LOAD, Flag.IGNORE_RETURN_VALUES)
+                    .replace(key, localEntityWrapper, sessionWrapper);
+
+            if (! replaced) {
+                logger.debugf("Did not succeed in merging sessions, will try again: %s", remoteSession);
+            }
+        } while (replaceRetries < MAXIMUM_REPLACE_RETRIES && ! replaced);
     }
 
 

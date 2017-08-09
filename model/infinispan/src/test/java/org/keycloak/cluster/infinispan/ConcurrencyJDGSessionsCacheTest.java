@@ -59,7 +59,7 @@ import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
  */
 public class ConcurrencyJDGSessionsCacheTest {
 
-    protected static final Logger logger = Logger.getLogger(KcRemoteStore.class);
+    protected static final Logger logger = Logger.getLogger(ConcurrencyJDGSessionsCacheTest.class);
 
     private static final int ITERATION_PER_WORKER = 1000;
 
@@ -210,56 +210,11 @@ public class ConcurrencyJDGSessionsCacheTest {
         //return new CacheWorker(cache, threadId);
     }
 
+
     private static EmbeddedCacheManager createManager(int threadId) {
-        System.setProperty("java.net.preferIPv4Stack", "true");
-        System.setProperty("jgroups.tcp.port", "53715");
-        GlobalConfigurationBuilder gcb = new GlobalConfigurationBuilder();
-
-        boolean clustered = false;
-        boolean async = false;
-        boolean allowDuplicateJMXDomains = true;
-
-        if (clustered) {
-            gcb = gcb.clusteredDefault();
-            gcb.transport().clusterName("test-clustering");
-        }
-
-        gcb.globalJmxStatistics().allowDuplicateDomains(allowDuplicateJMXDomains);
-
-        EmbeddedCacheManager cacheManager = new DefaultCacheManager(gcb.build());
-
-        Configuration invalidationCacheConfiguration = getCacheBackedByRemoteStore(threadId);
-
-        cacheManager.defineConfiguration(InfinispanConnectionProvider.SESSION_CACHE_NAME, invalidationCacheConfiguration);
-        return cacheManager;
-
+        return new TestCacheManagerFactory().createManager(threadId, InfinispanConnectionProvider.SESSION_CACHE_NAME, KcRemoteStoreConfigurationBuilder.class);
     }
 
-    private static Configuration getCacheBackedByRemoteStore(int threadId) {
-        ConfigurationBuilder cacheConfigBuilder = new ConfigurationBuilder();
-
-        int port = threadId==1 ? 12232 : 13232;
-        //int port = 12232;
-
-        return cacheConfigBuilder.persistence().addStore(KcRemoteStoreConfigurationBuilder.class)
-                .fetchPersistentState(false)
-                .ignoreModifications(false)
-                .purgeOnStartup(false)
-                .preload(false)
-                .shared(true)
-                .remoteCacheName(InfinispanConnectionProvider.SESSION_CACHE_NAME)
-                .rawValues(true)
-                .forceReturnValues(false)
-                .marshaller(KeycloakHotRodMarshallerFactory.class.getName())
-                .addServer()
-                    .host("localhost")
-                    .port(port)
-                .connectionPool()
-                    .maxActive(20)
-                    .exhaustedAction(ExhaustedAction.CREATE_NEW)
-                .async()
-                    .enabled(false).build();
-    }
 
     @ClientListener
     public static class HotRodListener {

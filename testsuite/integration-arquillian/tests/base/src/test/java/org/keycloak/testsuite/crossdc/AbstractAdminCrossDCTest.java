@@ -96,7 +96,7 @@ public abstract class AbstractAdminCrossDCTest extends AbstractCrossDCTest {
 
             Matcher<? super T> matcherInstance = matcherOnOldStat.apply(oldStat);
             assertThat(newStat, matcherInstance);
-        }, 5, 200);
+        }, 20, 200);
     }
 
     protected void assertStatistics(InfinispanStatistics stats, Runnable testedCode, BiConsumer<Map<String, Object>, Map<String, Object>> assertionOnStats) {

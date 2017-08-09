@@ -95,5 +95,10 @@ class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<S> {
         return result;
     }
 
+    @Override
+    public String toString() {
+        return "MergedUpdate" + childUpdates;
+    }
+
 
 }

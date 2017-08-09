@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Map;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -39,7 +40,7 @@ public class UserSessionEntity extends SessionEntity {
 
     public static final Logger logger = Logger.getLogger(UserSessionEntity.class);
 
-    // Tracks the "lastSessionRefresh" from userSession entity from remote cache
+    // Metadata attribute, which contains the lastSessionRefresh available on remoteCache. Used in decide whether we need to write to remoteCache (DC) or not
     public static final String LAST_SESSION_REFRESH_REMOTE = "lsrr";
 
     private String user;
@@ -163,7 +164,8 @@ public class UserSessionEntity extends SessionEntity {
 
     @Override
     public String toString() {
-        return String.format("UserSessionEntity [ id=%s, realm=%s, lastSessionRefresh=%d]", getId(), getRealm(), getLastSessionRefresh());
+        return String.format("UserSessionEntity [id=%s, realm=%s, lastSessionRefresh=%d, clients=%s]", getId(), getRealm(), getLastSessionRefresh(),
+          new TreeSet(this.authenticatedClientSessions.keySet()));
     }
 
     @Override
@@ -194,8 +196,12 @@ public class UserSessionEntity extends SessionEntity {
 
     public static class ExternalizerImpl implements Externalizer<UserSessionEntity> {
 
+        private static final int VERSION_1 = 1;
+
         @Override
         public void writeObject(ObjectOutput output, UserSessionEntity session) throws IOException {
+            output.writeByte(VERSION_1);
+
             MarshallUtil.marshallString(session.getAuthMethod(), output);
             MarshallUtil.marshallString(session.getBrokerSessionId(), output);
             MarshallUtil.marshallString(session.getBrokerUserId(), output);
@@ -223,6 +229,15 @@ public class UserSessionEntity extends SessionEntity {
 
         @Override
         public UserSessionEntity readObject(ObjectInput input) throws IOException, ClassNotFoundException {
+            switch (input.readByte()) {
+                case VERSION_1:
+                    return readObjectVersion1(input);
+                default:
+                    throw new IOException("Unknown version");
+            }
+        }
+
+        public UserSessionEntity readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
             UserSessionEntity sessionEntity = new UserSessionEntity();
 
             sessionEntity.setAuthMethod(MarshallUtil.unmarshallString(input));

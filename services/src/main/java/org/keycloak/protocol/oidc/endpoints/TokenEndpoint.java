@@ -386,6 +386,7 @@ public class TokenEndpoint {
             }
 
         } catch (OAuthErrorException e) {
+            logger.trace(e.getMessage(), e);
             event.error(Errors.INVALID_TOKEN);
             throw new ErrorResponseException(e.getError(), e.getDescription(), Response.Status.BAD_REQUEST);
         }

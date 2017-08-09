@@ -40,7 +40,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
- *
+ * Abstract cross-data-centre test that defines primitives for handling cross-DC setup.
  * @author hmlnarik
  */
 public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest {
@@ -63,7 +63,7 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
     @Before
     public void enableOnlyFirstNodeInFirstDc() {
         this.loadBalancerCtrl.disableAllBackendNodes();
-        loadBalancerCtrl.enableBackendNodeByName(getAutomaticallyStartedBackendNodes(0)
+        loadBalancerCtrl.enableBackendNodeByName(getAutomaticallyStartedBackendNodes(DC.FIRST)
                         .findFirst()
                         .orElseThrow(() -> new IllegalStateException("No node is started automatically"))
                         .getQualifier()
@@ -84,7 +84,7 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
     }
 
     @Before
-    public void InitRESTClientsForStartedNodes() {
+    public void initRESTClientsForStartedNodes() {
         log.debug("Init REST clients for automatically started nodes");
         this.suiteContext.getDcAuthServerBackendsInfo().stream()
                 .flatMap(List::stream)
@@ -188,7 +188,8 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
      * Disables routing requests to the given data center in the load balancer.
      * @param dcIndex
      */
-    public void disableDcOnLoadBalancer(int dcIndex) {
+    public void disableDcOnLoadBalancer(DC dc) {
+        int dcIndex = dc.ordinal();
         log.infof("Disabling load balancer for dc=%d", dcIndex);
         this.suiteContext.getDcAuthServerBackendsInfo().get(dcIndex).forEach(c -> loadBalancerCtrl.disableBackendNodeByName(c.getQualifier()));
     }
@@ -197,7 +198,8 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
      * Enables routing requests to all started nodes to the given data center in the load balancer.
      * @param dcIndex
      */
-    public void enableDcOnLoadBalancer(int dcIndex) {
+    public void enableDcOnLoadBalancer(DC dc) {
+        int dcIndex = dc.ordinal();
         log.infof("Enabling load balancer for dc=%d", dcIndex);
         final List<ContainerInfo> dcNodes = this.suiteContext.getDcAuthServerBackendsInfo().get(dcIndex);
         if (! dcNodes.stream().anyMatch(ContainerInfo::isStarted)) {
@@ -214,7 +216,8 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
      * @param dcIndex
      * @param nodeIndex
      */
-    public void disableLoadBalancerNode(int dcIndex, int nodeIndex) {
+    public void disableLoadBalancerNode(DC dc, int nodeIndex) {
+        int dcIndex = dc.ordinal();
         log.infof("Disabling load balancer for dc=%d, node=%d", dcIndex, nodeIndex);
         loadBalancerCtrl.disableBackendNodeByName(this.suiteContext.getDcAuthServerBackendsInfo().get(dcIndex).get(nodeIndex).getQualifier());
     }
@@ -224,7 +227,8 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
      * @param dcIndex
      * @param nodeIndex
      */
-    public void enableLoadBalancerNode(int dcIndex, int nodeIndex) {
+    public void enableLoadBalancerNode(DC dc, int nodeIndex) {
+        int dcIndex = dc.ordinal();
         log.infof("Enabling load balancer for dc=%d, node=%d", dcIndex, nodeIndex);
         final ContainerInfo backendNode = this.suiteContext.getDcAuthServerBackendsInfo().get(dcIndex).get(nodeIndex);
         if (backendNode == null) {
@@ -242,7 +246,8 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
      * @param nodeIndex
      * @return Started instance descriptor.
      */
-    public ContainerInfo startBackendNode(int dcIndex, int nodeIndex) {
+    public ContainerInfo startBackendNode(DC dc, int nodeIndex) {
+        int dcIndex = dc.ordinal();
         assertThat((Integer) dcIndex, lessThan(this.suiteContext.getDcAuthServerBackendsInfo().size()));
         final List<ContainerInfo> dcNodes = this.suiteContext.getDcAuthServerBackendsInfo().get(dcIndex);
         assertThat((Integer) nodeIndex, lessThan(dcNodes.size()));
@@ -261,7 +266,8 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
      * @param nodeIndex
      * @return Stopped instance descriptor.
      */
-    public ContainerInfo stopBackendNode(int dcIndex, int nodeIndex) {
+    public ContainerInfo stopBackendNode(DC dc, int nodeIndex) {
+        int dcIndex = dc.ordinal();
         assertThat((Integer) dcIndex, lessThan(this.suiteContext.getDcAuthServerBackendsInfo().size()));
         final List<ContainerInfo> dcNodes = this.suiteContext.getDcAuthServerBackendsInfo().get(dcIndex);
         assertThat((Integer) nodeIndex, lessThan(dcNodes.size()));
@@ -279,7 +285,8 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
      * @param dcIndex
      * @return
      */
-    public Stream<ContainerInfo> getManuallyStartedBackendNodes(int dcIndex) {
+    public Stream<ContainerInfo> getManuallyStartedBackendNodes(DC dc) {
+        int dcIndex = dc.ordinal();
         final List<ContainerInfo> dcNodes = this.suiteContext.getDcAuthServerBackendsInfo().get(dcIndex);
         return dcNodes.stream().filter(ContainerInfo::isManual);
     }
@@ -289,7 +296,8 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
      * @param dcIndex
      * @return
      */
-    public Stream<ContainerInfo> getAutomaticallyStartedBackendNodes(int dcIndex) {
+    public Stream<ContainerInfo> getAutomaticallyStartedBackendNodes(DC dc) {
+        int dcIndex = dc.ordinal();
         final List<ContainerInfo> dcNodes = this.suiteContext.getDcAuthServerBackendsInfo().get(dcIndex);
         return dcNodes.stream().filter(c -> ! c.isManual());
     }

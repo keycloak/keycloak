@@ -127,7 +127,16 @@ public class InfinispanChangelogBasedTransaction<S extends SessionEntity> extend
 
             return wrappedEntity;
         } else {
-            return myUpdates.getEntityWrapper();
+            S entity = myUpdates.getEntityWrapper().getEntity();
+
+            // If entity is scheduled for remove, we don't return it.
+            boolean scheduledForRemove = myUpdates.getUpdateTasks().stream().filter((SessionUpdateTask task) -> {
+
+                return task.getOperation(entity) == SessionUpdateTask.CacheOperation.REMOVE;
+
+            }).findFirst().isPresent();
+
+            return scheduledForRemove ? null : myUpdates.getEntityWrapper();
         }
     }
 

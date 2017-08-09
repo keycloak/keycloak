@@ -292,6 +292,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
         // We have userSession, which passes predicate. No need for remote lookup.
         if (predicate.test(userSession)) {
+            log.debugf("getUserSessionWithPredicate(%s): found in local cache", id);
             return userSession;
         }
 
@@ -302,6 +303,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         if (remoteCache != null) {
             UserSessionEntity remoteSessionEntity = (UserSessionEntity) remoteCache.get(id);
             if (remoteSessionEntity != null) {
+                log.debugf("getUserSessionWithPredicate(%s): remote cache contains session entity %s", id, remoteSessionEntity);
 
                 UserSessionModel remoteSessionAdapter = wrap(realm, remoteSessionEntity, offline);
                 if (predicate.test(remoteSessionAdapter)) {
@@ -319,11 +321,26 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
                     // Recursion. We should have it locally now
                     return getUserSessionWithPredicate(realm, id, offline, predicate);
-                }
-            }
-        }
+                } else {
+                    log.debugf("getUserSessionWithPredicate(%s): found, but predicate doesn't pass", id);
 
-        return null;
+                    return null;
+                }
+            } else {
+                log.debugf("getUserSessionWithPredicate(%s): not found", id);
+
+                // Session not available on remoteCache. Was already removed there. So removing locally too.
+                // TODO: Can be optimized to skip calling remoteCache.remove
+                removeUserSession(realm, userSession);
+
+                return null;
+            }
+        } else {
+
+            log.debugf("getUserSessionWithPredicate(%s): remote cache not available", id);
+
+            return null;
+        }
     }
 
 

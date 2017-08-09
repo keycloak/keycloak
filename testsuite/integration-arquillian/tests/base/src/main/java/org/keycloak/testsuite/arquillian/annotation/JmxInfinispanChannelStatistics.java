@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.arquillian.annotation;
 
 import org.keycloak.testsuite.arquillian.InfinispanStatistics.Constants;
+import org.keycloak.testsuite.crossdc.DC;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -40,7 +41,7 @@ public @interface JmxInfinispanChannelStatistics {
     // Host address - either given by arrangement of DC ...
 
     /** Index of the data center, starting from 0 */
-    int dcIndex() default -1;
+    DC dc() default DC.UNDEFINED;
     /** Index of the node within data center, starting from 0. Nodes are ordered by arquillian qualifier as per {@link AuthServerTestEnricher} */
     int dcNodeIndex() default -1;
 
