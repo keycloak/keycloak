@@ -23,6 +23,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
+import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -32,6 +34,9 @@ import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
@@ -68,7 +73,6 @@ public class TokenExchangeTest extends AbstractKeycloakTest {
 
     public static void setupRealm(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName(TEST);
-        RoleModel realmExchangeable = AdminPermissions.management(session, realm).getRealmManagementClient().addRole(OAuth2Constants.TOKEN_EXCHANGER);
 
         RoleModel exampleRole = realm.addRole("example");
 
@@ -79,48 +83,62 @@ public class TokenExchangeTest extends AbstractKeycloakTest {
         target.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         target.setFullScopeAllowed(false);
         target.addScopeMapping(exampleRole);
-        RoleModel targetExchangeable = target.addRole(OAuth2Constants.TOKEN_EXCHANGER);
 
-        target = realm.addClient("realm-exchanger");
-        target.setClientId("realm-exchanger");
-        target.setDirectAccessGrantsEnabled(true);
-        target.setEnabled(true);
-        target.setSecret("secret");
-        target.setServiceAccountsEnabled(true);
-        target.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        target.setFullScopeAllowed(false);
-        new org.keycloak.services.managers.ClientManager(new org.keycloak.services.managers.RealmManager(session)).enableServiceAccount(target);
-        session.users().getServiceAccount(target).grantRole(realmExchangeable);
+        ClientModel clientExchanger = realm.addClient("client-exchanger");
+        clientExchanger.setClientId("client-exchanger");
+        clientExchanger.setPublicClient(false);
+        clientExchanger.setDirectAccessGrantsEnabled(true);
+        clientExchanger.setEnabled(true);
+        clientExchanger.setSecret("secret");
+        clientExchanger.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        clientExchanger.setFullScopeAllowed(false);
 
-        target = realm.addClient("client-exchanger");
-        target.setClientId("client-exchanger");
-        target.setDirectAccessGrantsEnabled(true);
-        target.setEnabled(true);
-        target.setSecret("secret");
-        target.setServiceAccountsEnabled(true);
-        target.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        target.setFullScopeAllowed(false);
-        new org.keycloak.services.managers.ClientManager(new org.keycloak.services.managers.RealmManager(session)).enableServiceAccount(target);
-        session.users().getServiceAccount(target).grantRole(targetExchangeable);
+        ClientModel illegal = realm.addClient("illegal");
+        illegal.setClientId("illegal");
+        illegal.setPublicClient(false);
+        illegal.setDirectAccessGrantsEnabled(true);
+        illegal.setEnabled(true);
+        illegal.setSecret("secret");
+        illegal.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        illegal.setFullScopeAllowed(false);
 
-        target = realm.addClient("account-not-allowed");
-        target.setClientId("account-not-allowed");
-        target.setDirectAccessGrantsEnabled(true);
-        target.setEnabled(true);
-        target.setSecret("secret");
-        target.setServiceAccountsEnabled(true);
-        target.setFullScopeAllowed(false);
-        target.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        new org.keycloak.services.managers.ClientManager(new org.keycloak.services.managers.RealmManager(session)).enableServiceAccount(target);
+        ClientModel illegalTo = realm.addClient("illegal-to");
+        illegalTo.setClientId("illegal-to");
+        illegalTo.setPublicClient(false);
+        illegalTo.setDirectAccessGrantsEnabled(true);
+        illegalTo.setEnabled(true);
+        illegalTo.setSecret("secret");
+        illegalTo.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        illegalTo.setFullScopeAllowed(false);
 
-        target = realm.addClient("no-account");
-        target.setClientId("no-account");
-        target.setDirectAccessGrantsEnabled(true);
-        target.setEnabled(true);
-        target.setSecret("secret");
-        target.setServiceAccountsEnabled(true);
-        target.setFullScopeAllowed(false);
-        target.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        ClientModel legal = realm.addClient("legal");
+        legal.setClientId("legal");
+        legal.setPublicClient(false);
+        legal.setDirectAccessGrantsEnabled(true);
+        legal.setEnabled(true);
+        legal.setSecret("secret");
+        legal.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        legal.setFullScopeAllowed(false);
+
+        AdminPermissionManagement management = AdminPermissions.management(session, realm);
+
+        management.clients().setPermissionsEnabled(target, true);
+        ClientPolicyRepresentation clientRep = new ClientPolicyRepresentation();
+        clientRep.setName("to");
+        clientRep.addClient(clientExchanger.getId());
+        clientRep.addClient(legal.getId());
+        ResourceServer server = management.realmResourceServer();
+        Policy clientPolicy = management.authz().getStoreFactory().getPolicyStore().create(clientRep, server);
+        management.clients().exchangeToPermission(target).addAssociatedPolicy(clientPolicy);
+
+        management.clients().setPermissionsEnabled(clientExchanger, true);
+        ClientPolicyRepresentation client2Rep = new ClientPolicyRepresentation();
+        client2Rep.setName("from");
+        client2Rep.addClient(legal.getId());
+        client2Rep.addClient(illegalTo.getId());
+        Policy client2Policy = management.authz().getStoreFactory().getPolicyStore().create(client2Rep, server);
+        management.clients().exchangeFromPermission(clientExchanger).addAssociatedPolicy(client2Policy);
+
 
         UserModel user = session.users().addUser(realm, "user");
         user.setEnabled(true);
@@ -140,18 +158,46 @@ public class TokenExchangeTest extends AbstractKeycloakTest {
         testingClient.server().run(TokenExchangeTest::setupRealm);
 
         oauth.realm(TEST);
-        oauth.clientId("realm-exchanger");
+        oauth.clientId("client-exchanger");
 
         OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
         String accessToken = response.getAccessToken();
+        TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
+        AccessToken token = accessTokenVerifier.parse().getToken();
+        Assert.assertEquals(token.getPreferredUsername(), "user");
+        Assert.assertTrue(token.getRealmAccess() == null || !token.getRealmAccess().isUserInRole("example"));
 
-        response = oauth.doTokenExchange(TEST,accessToken, "target", "realm-exchanger", "secret");
+        {
+            response = oauth.doTokenExchange(TEST, accessToken, "target", "client-exchanger", "secret");
 
-        String exchangedTokenString = response.getAccessToken();
-        TokenVerifier<AccessToken> verifier = TokenVerifier.create(exchangedTokenString, AccessToken.class);
-        AccessToken exchangedToken = verifier.parse().getToken();
-        Assert.assertEquals(exchangedToken.getPreferredUsername(), "user");
-        Assert.assertTrue(exchangedToken.getRealmAccess().isUserInRole("example"));
+            String exchangedTokenString = response.getAccessToken();
+            TokenVerifier<AccessToken> verifier = TokenVerifier.create(exchangedTokenString, AccessToken.class);
+            AccessToken exchangedToken = verifier.parse().getToken();
+            Assert.assertEquals("client-exchanger", exchangedToken.getIssuedFor());
+            Assert.assertEquals("target", exchangedToken.getAudience()[0]);
+            Assert.assertEquals(exchangedToken.getPreferredUsername(), "user");
+            Assert.assertTrue(exchangedToken.getRealmAccess().isUserInRole("example"));
+        }
+
+        {
+            response = oauth.doTokenExchange(TEST, accessToken, "target", "legal", "secret");
+
+            String exchangedTokenString = response.getAccessToken();
+            TokenVerifier<AccessToken> verifier = TokenVerifier.create(exchangedTokenString, AccessToken.class);
+            AccessToken exchangedToken = verifier.parse().getToken();
+            Assert.assertEquals("legal", exchangedToken.getIssuedFor());
+            Assert.assertEquals("target", exchangedToken.getAudience()[0]);
+            Assert.assertEquals(exchangedToken.getPreferredUsername(), "user");
+            Assert.assertTrue(exchangedToken.getRealmAccess().isUserInRole("example"));
+        }
+        {
+            response = oauth.doTokenExchange(TEST, accessToken, "target", "illegal", "secret");
+            Assert.assertEquals(403, response.getStatusCode());
+        }
+        {
+            response = oauth.doTokenExchange(TEST, accessToken, "target", "illegal-to", "secret");
+            Assert.assertEquals(403, response.getStatusCode());
+        }
 
 
     }

@@ -683,6 +683,18 @@ public class TokenManager {
             this.clientSession = clientSession;
         }
 
+        public AccessToken getAccessToken() {
+            return accessToken;
+        }
+
+        public RefreshToken getRefreshToken() {
+            return refreshToken;
+        }
+
+        public IDToken getIdToken() {
+            return idToken;
+        }
+
         public AccessTokenResponseBuilder accessToken(AccessToken accessToken) {
             this.accessToken = accessToken;
             return this;

@@ -18,18 +18,26 @@ package org.keycloak.services.resources.admin.permissions;
 
 import org.jboss.logging.Logger;
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.attribute.Attributes;
+import org.keycloak.authorization.common.ClientModelIdentity;
+import org.keycloak.authorization.common.DefaultEvaluationContext;
+import org.keycloak.authorization.identity.Identity;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ForbiddenException;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -79,6 +87,14 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
         return MAP_ROLES_COMPOSITE_SCOPE + ".permission.client." + client.getId();
     }
 
+    private String getExchangeToPermissionName(ClientModel client) {
+        return AdminPermissionManagement.EXCHANGE_TO_SCOPE + ".permission.client." + client.getId();
+    }
+
+    private String getExchangeFromPermissionName(ClientModel client) {
+        return AdminPermissionManagement.EXCHANGE_FROM_SCOPE + ".permission.client." + client.getId();
+    }
+
     private void initialize(ClientModel client) {
         ResourceServer server = root.findOrCreateResourceServer(client);
         Scope manageScope = manageScope(server);
@@ -93,18 +109,11 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
         if (mapRoleScope == null) {
             mapRoleScope = authz.getStoreFactory().getScopeStore().create(MAP_ROLES_SCOPE, server);
         }
-        Scope mapRoleClientScope = authz.getStoreFactory().getScopeStore().findByName(MAP_ROLES_CLIENT_SCOPE, server.getId());
-        if (mapRoleClientScope == null) {
-            mapRoleClientScope = authz.getStoreFactory().getScopeStore().create(MAP_ROLES_CLIENT_SCOPE, server);
-        }
-        Scope mapRoleCompositeScope = authz.getStoreFactory().getScopeStore().findByName(MAP_ROLES_COMPOSITE_SCOPE, server.getId());
-        if (mapRoleCompositeScope == null) {
-            mapRoleCompositeScope = authz.getStoreFactory().getScopeStore().create(MAP_ROLES_COMPOSITE_SCOPE, server);
-        }
-        Scope configureScope = authz.getStoreFactory().getScopeStore().findByName(CONFIGURE_SCOPE, server.getId());
-        if (configureScope == null) {
-            configureScope = authz.getStoreFactory().getScopeStore().create(CONFIGURE_SCOPE, server);
-        }
+        Scope mapRoleClientScope = root.initializeScope(MAP_ROLES_CLIENT_SCOPE, server);
+        Scope mapRoleCompositeScope = root.initializeScope(MAP_ROLES_COMPOSITE_SCOPE, server);
+        Scope configureScope = root.initializeScope(CONFIGURE_SCOPE, server);
+        Scope exchangeFromScope = root.initializeScope(AdminPermissionManagement.EXCHANGE_FROM_SCOPE, server);
+        Scope exchangeToScope = root.initializeScope(AdminPermissionManagement.EXCHANGE_TO_SCOPE, server);
 
         String resourceName = getResourceName(client);
         Resource resource = authz.getStoreFactory().getResourceStore().findByName(resourceName, server.getId());
@@ -118,6 +127,8 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
             scopeset.add(mapRoleScope);
             scopeset.add(mapRoleClientScope);
             scopeset.add(mapRoleCompositeScope);
+            scopeset.add(exchangeFromScope);
+            scopeset.add(exchangeToScope);
             resource.updateScopes(scopeset);
         }
         String managePermissionName = getManagePermissionName(client);
@@ -149,6 +160,16 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
         Policy mapRoleCompositePermission = authz.getStoreFactory().getPolicyStore().findByName(mapRoleCompositePermissionName, server.getId());
         if (mapRoleCompositePermission == null) {
             Helper.addEmptyScopePermission(authz, server, mapRoleCompositePermissionName, resource, mapRoleCompositeScope);
+        }
+        String exchangeToPermissionName = getExchangeToPermissionName(client);
+        Policy exchangeToPermission = authz.getStoreFactory().getPolicyStore().findByName(exchangeToPermissionName, server.getId());
+        if (exchangeToPermission == null) {
+            Helper.addEmptyScopePermission(authz, server, exchangeToPermissionName, resource, exchangeToScope);
+        }
+        String exchangeFromPermissionName = getExchangeFromPermissionName(client);
+        Policy exchangeFromPermission = authz.getStoreFactory().getPolicyStore().findByName(exchangeFromPermissionName, server.getId());
+        if (exchangeFromPermission == null) {
+            Helper.addEmptyScopePermission(authz, server, exchangeFromPermissionName, resource, exchangeFromScope);
         }
     }
 
@@ -194,6 +215,14 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
 
     private Scope manageScope(ResourceServer server) {
         return authz.getStoreFactory().getScopeStore().findByName(AdminPermissionManagement.MANAGE_SCOPE, server.getId());
+    }
+
+    private Scope exchangeFromScope(ResourceServer server) {
+        return authz.getStoreFactory().getScopeStore().findByName(AdminPermissionManagement.EXCHANGE_FROM_SCOPE, server.getId());
+    }
+
+    private Scope exchangeToScope(ResourceServer server) {
+        return authz.getStoreFactory().getScopeStore().findByName(AdminPermissionManagement.EXCHANGE_TO_SCOPE, server.getId());
     }
 
     private Scope configureScope(ResourceServer server) {
@@ -271,6 +300,7 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
 
     @Override
     public Map<String, String> getPermissions(ClientModel client) {
+        initialize(client);
         Map<String, String> scopes = new HashMap<>();
         scopes.put(MAP_ROLES_SCOPE,  mapRolesPermission(client).getId());
         scopes.put(MAP_ROLES_CLIENT_SCOPE, mapRolesClientScopePermission(client).getId());
@@ -280,6 +310,106 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
         scopes.put(CONFIGURE_SCOPE, configurePermission(client).getId());
         return scopes;
     }
+
+    @Override
+    public boolean canExchangeFrom(ClientModel authorizedClient, ClientModel from) {
+        if (!authorizedClient.equals(from)) {
+            ResourceServer server = resourceServer(from);
+            if (server == null) {
+                logger.debug("No resource server set up for target client");
+                return false;
+            }
+
+            Resource resource =  authz.getStoreFactory().getResourceStore().findByName(getResourceName(from), server.getId());
+            if (resource == null) {
+                logger.debug("No resource object set up for target client");
+                return false;
+            }
+
+            Policy policy = authz.getStoreFactory().getPolicyStore().findByName(getExchangeFromPermissionName(from), server.getId());
+            if (policy == null) {
+                logger.debug("No permission object set up for target client");
+                return false;
+            }
+
+            Set<Policy> associatedPolicies = policy.getAssociatedPolicies();
+            // if no policies attached to permission then just do default behavior
+            if (associatedPolicies == null || associatedPolicies.isEmpty()) {
+                logger.debug("No policies set up for permission on target client");
+                return false;
+            }
+
+            Scope scope = exchangeFromScope(server);
+            if (scope == null) {
+                logger.debug(AdminPermissionManagement.EXCHANGE_FROM_SCOPE + " not initialized");
+                return false;
+            }
+            ClientModelIdentity identity = new ClientModelIdentity(session, authorizedClient);
+            EvaluationContext context = new DefaultEvaluationContext(identity, session) {
+                @Override
+                public Map<String, Collection<String>> getBaseAttributes() {
+                    Map<String, Collection<String>> attributes = super.getBaseAttributes();
+                    attributes.put("kc.client.id", Arrays.asList(authorizedClient.getClientId()));
+                    return attributes;
+                }
+
+            };
+            return root.evaluatePermission(resource, scope, server, context);
+        }
+        return true;
+    }
+
+    @Override
+    public boolean canExchangeTo(ClientModel authorizedClient, ClientModel to) {
+
+        if (!authorizedClient.equals(to)) {
+            ResourceServer server = resourceServer(to);
+            if (server == null) {
+                logger.debug("No resource server set up for target client");
+                return false;
+            }
+
+            Resource resource =  authz.getStoreFactory().getResourceStore().findByName(getResourceName(to), server.getId());
+            if (resource == null) {
+                logger.debug("No resource object set up for target client");
+                return false;
+            }
+
+            Policy policy = authz.getStoreFactory().getPolicyStore().findByName(getExchangeToPermissionName(to), server.getId());
+            if (policy == null) {
+                logger.debug("No permission object set up for target client");
+                return false;
+            }
+
+            Set<Policy> associatedPolicies = policy.getAssociatedPolicies();
+            // if no policies attached to permission then just do default behavior
+            if (associatedPolicies == null || associatedPolicies.isEmpty()) {
+                logger.debug("No policies set up for permission on target client");
+                return false;
+            }
+
+            Scope scope = exchangeToScope(server);
+            if (scope == null) {
+                logger.debug(AdminPermissionManagement.EXCHANGE_TO_SCOPE + " not initialized");
+                return false;
+            }
+            ClientModelIdentity identity = new ClientModelIdentity(session, authorizedClient);
+            EvaluationContext context = new DefaultEvaluationContext(identity, session) {
+                @Override
+                public Map<String, Collection<String>> getBaseAttributes() {
+                    Map<String, Collection<String>> attributes = super.getBaseAttributes();
+                    attributes.put("kc.client.id", Arrays.asList(authorizedClient.getClientId()));
+                    return attributes;
+                }
+
+            };
+            return root.evaluatePermission(resource, scope, server, context);
+        }
+        return true;
+    }
+
+
+
 
 
     @Override
@@ -461,6 +591,20 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
 
         Scope scope = mapRolesScope(server);
         return root.evaluatePermission(resource, scope, server);
+    }
+
+    @Override
+    public Policy exchangeFromPermission(ClientModel client) {
+        ResourceServer server = resourceServer(client);
+        if (server == null) return null;
+        return authz.getStoreFactory().getPolicyStore().findByName(getExchangeFromPermissionName(client), server.getId());
+    }
+
+    @Override
+    public Policy exchangeToPermission(ClientModel client) {
+        ResourceServer server = resourceServer(client);
+        if (server == null) return null;
+        return authz.getStoreFactory().getPolicyStore().findByName(getExchangeToPermissionName(client), server.getId());
     }
 
     @Override

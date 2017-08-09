@@ -277,6 +277,14 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
         return scope;
     }
 
+    public Scope initializeScope(String name, ResourceServer server) {
+        Scope scope  = authz.getStoreFactory().getScopeStore().findByName(name, server.getId());
+        if (scope == null) {
+            scope = authz.getStoreFactory().getScopeStore().create(name, server);
+        }
+        return scope;
+    }
+
 
 
     public Scope realmManageScope() {
@@ -307,10 +315,14 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
     }
 
     public boolean evaluatePermission(Resource resource, Scope scope, ResourceServer resourceServer, Identity identity) {
+        EvaluationContext context = new DefaultEvaluationContext(identity, session);
+        return evaluatePermission(resource, scope, resourceServer, context);
+    }
+
+    public boolean evaluatePermission(Resource resource, Scope scope, ResourceServer resourceServer, EvaluationContext context) {
         RealmModel oldRealm = session.getContext().getRealm();
         try {
             session.getContext().setRealm(realm);
-            EvaluationContext context = new DefaultEvaluationContext(identity, session);
             DecisionResult decisionCollector = new DecisionResult();
             List<ResourcePermission> permissions = Permissions.permission(resourceServer, resource, scope);
             PermissionEvaluator from = authz.evaluators().from(permissions, context);

@@ -121,6 +121,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
 
     @Override
     public Map<String, String> getPermissions() {
+        initialize();
         Map<String, String> scopes = new HashMap<>();
         scopes.put(AdminPermissionManagement.MANAGE_SCOPE, managePermission().getId());
         scopes.put(AdminPermissionManagement.VIEW_SCOPE, viewPermission().getId());

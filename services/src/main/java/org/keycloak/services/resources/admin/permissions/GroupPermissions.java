@@ -242,6 +242,7 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
 
     @Override
     public Map<String, String> getPermissions(GroupModel group) {
+        initialize(group);
         Map<String, String> scopes = new HashMap<>();
         scopes.put(AdminPermissionManagement.VIEW_SCOPE, viewPermission(group).getId());
         scopes.put(AdminPermissionManagement.MANAGE_SCOPE, managePermission(group).getId());

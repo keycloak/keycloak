@@ -87,6 +87,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
 
     @Override
     public Map<String, String> getPermissions(RoleModel role) {
+        initialize(role);
         Map<String, String> scopes = new HashMap<>();
         scopes.put(RolePermissionManagement.MAP_ROLE_SCOPE, mapRolePermission(role).getId());
         scopes.put(RolePermissionManagement.MAP_ROLE_CLIENT_SCOPE_SCOPE, mapClientScopePermission(role).getId());

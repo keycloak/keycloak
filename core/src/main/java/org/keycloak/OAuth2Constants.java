@@ -101,7 +101,6 @@ public interface OAuth2Constants {
     String REFRESH_TOKEN_TYPE="urn:ietf:params:oauth:token-type:refresh_token";
     String JWT_TOKEN_TYPE="urn:ietf:params:oauth:token-type:jwt";
     String ID_TOKEN_TYPE="urn:ietf:params:oauth:token-type:id_token";
-    String TOKEN_EXCHANGER ="token-exchanger";
 
 
 }
