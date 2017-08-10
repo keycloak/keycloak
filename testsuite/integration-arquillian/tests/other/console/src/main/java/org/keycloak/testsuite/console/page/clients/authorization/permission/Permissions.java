@@ -25,7 +25,9 @@ import org.keycloak.representations.idm.authorization.ResourcePermissionRepresen
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.testsuite.console.page.clients.authorization.policy.PolicyTypeUI;
 import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.util.WaitUtils;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
@@ -58,11 +60,9 @@ public class Permissions extends Form {
 
         if ("resource".equals(type)) {
             resourcePermission.form().populate((ResourcePermissionRepresentation) expected);
-            resourcePermission.form().save();
             return (P) resourcePermission;
         } else if ("scope".equals(type)) {
             scopePermission.form().populate((ScopePermissionRepresentation) expected);
-            scopePermission.form().save();
             return (P) scopePermission;
         }
 
@@ -73,7 +73,7 @@ public class Permissions extends Form {
         for (WebElement row : permissions().rows()) {
             PolicyRepresentation actual = permissions().toRepresentation(row);
             if (actual.getName().equalsIgnoreCase(name)) {
-                row.findElements(tagName("a")).get(0).click();
+                URLUtils.navigateToUri(driver, row.findElements(tagName("a")).get(0).getAttribute("href"), true);
                 WaitUtils.waitForPageToLoad(driver);
                 String type = representation.getType();
 
@@ -92,7 +92,7 @@ public class Permissions extends Form {
         for (WebElement row : permissions().rows()) {
             PolicyRepresentation actual = permissions().toRepresentation(row);
             if (actual.getName().equalsIgnoreCase(name)) {
-                row.findElements(tagName("a")).get(0).click();
+                URLUtils.navigateToUri(driver, row.findElements(tagName("a")).get(0).getAttribute("href"), true);
                 WaitUtils.waitForPageToLoad(driver);
                 String type = actual.getType();
                 if ("resource".equals(type)) {
@@ -109,7 +109,7 @@ public class Permissions extends Form {
         for (WebElement row : permissions().rows()) {
             PolicyRepresentation actual = permissions().toRepresentation(row);
             if (actual.getName().equalsIgnoreCase(name)) {
-                row.findElements(tagName("a")).get(0).click();
+                URLUtils.navigateToUri(driver, row.findElements(tagName("a")).get(0).getAttribute("href"), true);
                 WaitUtils.waitForPageToLoad(driver);
 
                 String type = actual.getType();
@@ -120,6 +120,17 @@ public class Permissions extends Form {
                     scopePermission.form().delete();
                 }
 
+                return;
+            }
+        }
+    }
+
+    public void deleteFromList(String name) {
+        for (WebElement row : permissions().rows()) {
+            PolicyRepresentation actual = permissions().toRepresentation(row);
+            if (actual.getName().equalsIgnoreCase(name)) {
+                row.findElements(tagName("td")).get(4).click();
+                driver.findElement(By.xpath(".//button[text()='Delete']")).click();
                 return;
             }
         }

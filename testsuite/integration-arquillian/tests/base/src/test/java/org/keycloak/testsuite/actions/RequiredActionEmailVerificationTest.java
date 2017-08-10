@@ -37,6 +37,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
+import org.keycloak.testsuite.pages.ProceedPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -80,6 +81,9 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
     @Page
     protected InfoPage infoPage;
+
+    @Page
+    protected ProceedPage proceedPage;
 
     @Page
     protected ErrorPage errorPage;
@@ -330,6 +334,8 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         driver.navigate().to(verificationUrl2.trim());
 
+        proceedPage.assertCurrent();
+        proceedPage.clickProceedLink();
         infoPage.assertCurrent();
         assertEquals("Your email address has been verified.", infoPage.getInfo());
     }
@@ -355,6 +361,9 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         driver.manage().deleteAllCookies();
 
         driver.navigate().to(verificationUrl.trim());
+        proceedPage.assertCurrent();
+        proceedPage.clickProceedLink();
+        infoPage.assertCurrent();
 
         events.expectRequiredAction(EventType.VERIFY_EMAIL)
           .user(testUserId)
@@ -424,7 +433,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
             driver.navigate().to(verificationUrl.trim());
 
             loginPage.assertCurrent();
-            assertEquals("You took too long to login. Login process starting from beginning.", loginPage.getError());
+            assertEquals("Action expired. Please start again.", loginPage.getError());
 
             events.expectRequiredAction(EventType.EXECUTE_ACTION_TOKEN_ERROR)
                     .error(Errors.EXPIRED_CODE)
@@ -462,7 +471,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
             driver.navigate().to(verificationUrl.trim());
 
             errorPage.assertCurrent();
-            assertEquals("The link you clicked is a old stale link and is no longer valid. Maybe you have already verified your email?", errorPage.getError());
+            assertEquals("Action expired.", errorPage.getError());
 
             events.expectRequiredAction(EventType.EXECUTE_ACTION_TOKEN_ERROR)
                     .error(Errors.EXPIRED_CODE)

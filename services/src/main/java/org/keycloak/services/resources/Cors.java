@@ -133,7 +133,11 @@ public class Cors {
             return builder.build();
         }
 
-        builder.header(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+        if (allowedOrigins != null && allowedOrigins.contains(ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD)) {
+            builder.header(ACCESS_CONTROL_ALLOW_ORIGIN, ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD);
+        } else {
+            builder.header(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+        }
 
         if (preflight) {
             if (allowedMethods != null) {
@@ -178,7 +182,11 @@ public class Cors {
 
         logger.debug("build CORS headers and return");
 
-        response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+        if (allowedOrigins.contains(ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD)) {
+            response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_ORIGIN, ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD);
+        } else {
+            response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+        }
 
         if (preflight) {
             if (allowedMethods != null) {

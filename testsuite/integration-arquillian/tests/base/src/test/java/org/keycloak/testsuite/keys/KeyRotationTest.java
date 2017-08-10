@@ -23,6 +23,9 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.RSATokenVerifier;
+import org.keycloak.client.registration.Auth;
+import org.keycloak.client.registration.ClientRegistration;
+import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -31,6 +34,8 @@ import org.keycloak.keys.Attributes;
 import org.keycloak.keys.GeneratedHmacKeyProviderFactory;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.keys.ImportedRsaKeyProviderFactory;
+import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
+import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
@@ -41,11 +46,11 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserInfoClientUtil;
 
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.security.KeyPair;
@@ -127,11 +132,26 @@ public class KeyRotationTest extends AbstractKeycloakTest {
         assertTokenSignature(key1, response.getAccessToken());
         assertTokenSignature(key1, response.getRefreshToken());
 
+        // Create client with keys #1
+        ClientInitialAccessCreatePresentation initialToken = new ClientInitialAccessCreatePresentation();
+        initialToken.setCount(100);
+        initialToken.setExpiration(0);
+        ClientInitialAccessPresentation accessRep = adminClient.realm("test").clientInitialAccess().create(initialToken);
+        String initialAccessToken = accessRep.getToken();
+
+        ClientRegistration reg = ClientRegistration.create().url(suiteContext.getAuthServerInfo().getContextRoot() + "/auth", "test").build();
+        reg.auth(Auth.token(initialAccessToken));
+        ClientRepresentation clientRep = reg.create(ClientBuilder.create().clientId("test").build());
+
         // Userinfo with keys #1
         assertUserInfo(response.getAccessToken(), 200);
 
         // Token introspection with keys #1
         assertTokenIntrospection(response.getAccessToken(), true);
+
+        // Get client with keys #1 - registration access token should not have changed
+        ClientRepresentation clientRep2 = reg.auth(Auth.token(clientRep.getRegistrationAccessToken())).get("test");
+        assertEquals(clientRep.getRegistrationAccessToken(), clientRep2.getRegistrationAccessToken());
 
         // Create keys #2
         PublicKey key2 = createKeys2();
@@ -148,6 +168,10 @@ public class KeyRotationTest extends AbstractKeycloakTest {
         // Token introspection with keys #2
         assertTokenIntrospection(response.getAccessToken(), true);
 
+        // Get client with keys #2 - registration access token should be changed
+        ClientRepresentation clientRep3 = reg.auth(Auth.token(clientRep.getRegistrationAccessToken())).get("test");
+        assertNotEquals(clientRep.getRegistrationAccessToken(), clientRep3.getRegistrationAccessToken());
+
         // Drop key #1
         dropKeys1();
 
@@ -161,6 +185,17 @@ public class KeyRotationTest extends AbstractKeycloakTest {
 
         // Token introspection with keys #1 dropped
         assertTokenIntrospection(response.getAccessToken(), true);
+
+        // Get client with keys #1 - should fail
+        try {
+            reg.auth(Auth.token(clientRep.getRegistrationAccessToken())).get("test");
+            fail("Expected to fail");
+        } catch (ClientRegistrationException e) {
+        }
+
+        // Get client with keys #2 - should succeed
+        ClientRepresentation clientRep4 = reg.auth(Auth.token(clientRep3.getRegistrationAccessToken())).get("test");
+        assertNotEquals(clientRep2.getRegistrationAccessToken(), clientRep4.getRegistrationAccessToken());
 
         // Drop key #2
         dropKeys2();
@@ -292,7 +327,7 @@ public class KeyRotationTest extends AbstractKeycloakTest {
     }
 
     private void assertUserInfo(String token, int expectedStatus) {
-        Response userInfoResponse = UserInfoClientUtil.executeUserInfoRequest_getMethod(ClientBuilder.newClient(), token);
+        Response userInfoResponse = UserInfoClientUtil.executeUserInfoRequest_getMethod(javax.ws.rs.client.ClientBuilder.newClient(), token);
         assertEquals(expectedStatus, userInfoResponse.getStatus());
         userInfoResponse.close();
     }

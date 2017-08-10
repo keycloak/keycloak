@@ -28,6 +28,9 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.models.AccountRoles;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.Constants;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -78,11 +81,18 @@ public class AccountTest extends AbstractTestRealmKeycloakTest {
         //UserRepresentation user = findUserInRealmRep(testRealm, "test-user@localhost");
         //ClientRepresentation accountApp = findClientInRealmRep(testRealm, ACCOUNT_MANAGEMENT_CLIENT_ID);
         UserRepresentation user2 = UserBuilder.create()
-                                              .enabled(true)
-                                              .username("test-user-no-access@localhost")
-                                              .email("test-user-no-access@localhost")
-                                              .password("password")
-                                              .build();
+                .enabled(true)
+                .username("test-user-no-access@localhost")
+                .email("test-user-no-access@localhost")
+                .password("password")
+                .build();
+        UserRepresentation realmAdmin = UserBuilder.create()
+                .enabled(true)
+                .username("realm-admin")
+                .password("password")
+                .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN)
+                .role(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, AccountRoles.MANAGE_ACCOUNT)
+                .build();
 
         testRealm.addIdentityProvider(IdentityProviderBuilder.create()
                                               .providerId("github")
@@ -105,7 +115,8 @@ public class AccountTest extends AbstractTestRealmKeycloakTest {
                                               .build());
 
         RealmBuilder.edit(testRealm)
-                    .user(user2);
+                    .user(user2)
+                    .user(realmAdmin);
     }
 
     private static final UriBuilder BASE = UriBuilder.fromUri("http://localhost:8180/auth");
@@ -870,6 +881,19 @@ public class AccountTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
+    // KEYCLOAK-5155
+    @Test
+    public void testConsoleListedInApplications() {
+        applicationsPage.open();
+        loginPage.login("realm-admin", "password");
+        Assert.assertTrue(applicationsPage.isCurrent());
+        Map<String, AccountApplicationsPage.AppEntry> apps = applicationsPage.getApplications();
+        Assert.assertThat(apps.keySet(), hasItems("Admin CLI", "Security Admin Console"));
+        events.clear();
+    }
+
+
+
     // More tests (including revoke) are in OAuthGrantTest and OfflineTokenTest
     @Test
     public void applications() {
@@ -880,7 +904,7 @@ public class AccountTest extends AbstractTestRealmKeycloakTest {
         Assert.assertTrue(applicationsPage.isCurrent());
 
         Map<String, AccountApplicationsPage.AppEntry> apps = applicationsPage.getApplications();
-        Assert.assertThat(apps.keySet(), containsInAnyOrder("Account", "test-app", "test-app-scope", "third-party", "test-app-authz", "My Named Test App", "Test App Named - ${client_account}"));
+        Assert.assertThat(apps.keySet(), containsInAnyOrder("root-url-client", "Account", "test-app", "test-app-scope", "third-party", "test-app-authz", "My Named Test App", "Test App Named - ${client_account}"));
 
         AccountApplicationsPage.AppEntry accountEntry = apps.get("Account");
         Assert.assertEquals(3, accountEntry.getRolesAvailable().size());
@@ -891,12 +915,14 @@ public class AccountTest extends AbstractTestRealmKeycloakTest {
         Assert.assertTrue(accountEntry.getRolesGranted().contains("Full Access"));
         Assert.assertEquals(1, accountEntry.getProtocolMappersGranted().size());
         Assert.assertTrue(accountEntry.getProtocolMappersGranted().contains("Full Access"));
+        Assert.assertEquals("http://localhost:8180/auth/realms/test/account", accountEntry.getHref());
 
         AccountApplicationsPage.AppEntry testAppEntry = apps.get("test-app");
         Assert.assertEquals(5, testAppEntry.getRolesAvailable().size());
         Assert.assertTrue(testAppEntry.getRolesAvailable().contains("Offline access"));
         Assert.assertTrue(testAppEntry.getRolesGranted().contains("Full Access"));
         Assert.assertTrue(testAppEntry.getProtocolMappersGranted().contains("Full Access"));
+        Assert.assertEquals("http://localhost:8180/auth/realms/master/app/auth", testAppEntry.getHref());
 
         AccountApplicationsPage.AppEntry thirdPartyEntry = apps.get("third-party");
         Assert.assertEquals(2, thirdPartyEntry.getRolesAvailable().size());
@@ -904,6 +930,22 @@ public class AccountTest extends AbstractTestRealmKeycloakTest {
         Assert.assertTrue(thirdPartyEntry.getRolesAvailable().contains("Have Customer User privileges in test-app"));
         Assert.assertEquals(0, thirdPartyEntry.getRolesGranted().size());
         Assert.assertEquals(0, thirdPartyEntry.getProtocolMappersGranted().size());
+        Assert.assertEquals("http://localhost:8180/auth/realms/master/app/auth", thirdPartyEntry.getHref());
+        
+        AccountApplicationsPage.AppEntry testAppNamed = apps.get("Test App Named - ${client_account}");
+        Assert.assertEquals("http://localhost:8180/varnamedapp/base", testAppNamed.getHref());
+        
+        AccountApplicationsPage.AppEntry rootUrlClient = apps.get("root-url-client");
+        Assert.assertEquals("http://localhost:8180/foo/bar/baz", rootUrlClient.getHref());
+        
+        AccountApplicationsPage.AppEntry authzApp = apps.get("test-app-authz");
+        Assert.assertEquals("http://localhost:8180/test-app-authz", authzApp.getHref());
+        
+        AccountApplicationsPage.AppEntry namedApp = apps.get("My Named Test App");
+        Assert.assertEquals("http://localhost:8180/namedapp/base", namedApp.getHref());
+        
+        AccountApplicationsPage.AppEntry testAppScope = apps.get("test-app-scope");
+        Assert.assertNull(testAppScope.getHref());
     }
 
     @Test

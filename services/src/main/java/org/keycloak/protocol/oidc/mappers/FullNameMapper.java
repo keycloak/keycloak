@@ -26,8 +26,10 @@ import org.keycloak.representations.IDToken;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Set the 'name' claim to be first + last name.
@@ -73,9 +75,12 @@ public class FullNameMapper extends AbstractOIDCProtocolMapper implements OIDCAc
 
     protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession) {
         UserModel user = userSession.getUser();
-        String first = user.getFirstName() == null ? "" : user.getFirstName() + " ";
-        String last = user.getLastName() == null ? "" : user.getLastName();
-        token.getOtherClaims().put("name", first + last);
+        List<String> parts = new LinkedList<>();
+        Optional.ofNullable(user.getFirstName()).filter(s -> !s.isEmpty()).ifPresent(parts::add);
+        Optional.ofNullable(user.getLastName()).filter(s -> !s.isEmpty()).ifPresent(parts::add);
+        if (!parts.isEmpty()) {
+            token.getOtherClaims().put("name", String.join(" ", parts));
+        }
     }
 
     public static ProtocolMapperModel create(String name,

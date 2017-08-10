@@ -61,10 +61,6 @@ public class InfinispanActionTokenStoreProvider implements ActionTokenStoreProvi
         this.tx.put(actionKeyCache, tokenKey, tokenValue, key.getExpiration() - Time.currentTime(), TimeUnit.SECONDS);
     }
 
-    private static String generateActionTokenEventId() {
-        return InfinispanActionTokenStoreProviderFactory.ACTION_TOKEN_EVENTS + "/" + UUID.randomUUID();
-    }
-
     @Override
     public ActionTokenValueModel get(ActionTokenKeyModel actionTokenKey) {
         if (actionTokenKey == null || actionTokenKey.getUserId() == null || actionTokenKey.getActionId() == null) {
@@ -98,6 +94,6 @@ public class InfinispanActionTokenStoreProvider implements ActionTokenStoreProvi
         }
 
         ClusterProvider cluster = session.getProvider(ClusterProvider.class);
-        this.tx.notify(cluster, generateActionTokenEventId(), new RemoveActionTokensSpecificEvent(userId, actionId), false);
+        this.tx.notify(cluster, InfinispanActionTokenStoreProviderFactory.ACTION_TOKEN_EVENTS, new RemoveActionTokensSpecificEvent(userId, actionId), false);
     }
 }

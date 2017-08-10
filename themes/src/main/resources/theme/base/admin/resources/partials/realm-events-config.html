@@ -19,9 +19,7 @@
                     <label class="col-md-2 control-label" for="eventsListeners" class="control-label">{{:: 'event-listeners' | translate}}</label>
                     <kc-tooltip>{{:: 'event-listeners.tooltip' | translate}}</kc-tooltip>
                     <div class="col-md-6">
-                        <select ui-select2 ng-model="eventsConfig.eventsListeners" data-placeholder="{{:: 'select-an-action.placeholder' | translate}}" multiple>
-                            <option ng-repeat="listener in eventListeners" value="{{listener}}">{{listener}}</option>
-                        </select>
+                        <input ui-select2="eventsConfigSelectOptions" id="eventsListeners" ng-model="eventsConfig.eventsListeners" data-placeholder="{{:: 'select-an-action.placeholder' | translate}}"/>
                     </div>
                 </div>
             </fieldset>

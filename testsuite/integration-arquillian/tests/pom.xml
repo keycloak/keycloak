@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian</artifactId>
-        <version>3.2.0.CR1-SNAPSHOT</version>
+        <version>3.3.0.CR1-SNAPSHOT</version>
     </parent>
 
     <packaging>pom</packaging>
@@ -43,6 +43,7 @@
         <auth.server.undertow>true</auth.server.undertow>
         <auth.server.undertow.crossdc>false</auth.server.undertow.crossdc>
         <auth.server.crossdc>false</auth.server.crossdc>
+        <cache.server.lifecycle.skip>false</cache.server.lifecycle.skip>
         
         <auth.server.container>auth-server-${auth.server}</auth.server.container>
         <auth.server.home>${containers.home}/${auth.server.container}</auth.server.home>
@@ -85,6 +86,7 @@
         <keycloak.connectionsInfinispan.remoteStorePort>12232</keycloak.connectionsInfinispan.remoteStorePort>
         <keycloak.connectionsInfinispan.remoteStorePort.2>13232</keycloak.connectionsInfinispan.remoteStorePort.2>
         <keycloak.connectionsJpa.url.crossdc>jdbc:h2:mem:test-dc-shared</keycloak.connectionsJpa.url.crossdc>
+        <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} %-5p [%c] %m%n</keycloak.testsuite.logging.pattern>
 
         <adapter.test.props/>
         <migration.import.properties/>
@@ -271,6 +273,7 @@
                             <!--cache server properties-->
                             <auth.server.crossdc>${auth.server.crossdc}</auth.server.crossdc>
                             <auth.server.undertow.crossdc>${auth.server.undertow.crossdc}</auth.server.undertow.crossdc>
+                            <cache.server.lifecycle.skip>${cache.server.lifecycle.skip}</cache.server.lifecycle.skip>
 
                             <cache.server>${cache.server}</cache.server>
                             <cache.server.port.offset>${cache.server.port.offset}</cache.server.port.offset>
@@ -284,13 +287,14 @@
                             <keycloak.connectionsInfinispan.remoteStorePort>${keycloak.connectionsInfinispan.remoteStorePort}</keycloak.connectionsInfinispan.remoteStorePort>
                             <keycloak.connectionsInfinispan.remoteStorePort.2>${keycloak.connectionsInfinispan.remoteStorePort.2}</keycloak.connectionsInfinispan.remoteStorePort.2>
                             <keycloak.connectionsInfinispan.remoteStoreServer>${keycloak.connectionsInfinispan.remoteStoreServer}</keycloak.connectionsInfinispan.remoteStoreServer>
+                            <keycloak.testsuite.logging.pattern>${keycloak.testsuite.logging.pattern}</keycloak.testsuite.logging.pattern>
 
                             <keycloak.connectionsJpa.url.crossdc>${keycloak.connectionsJpa.url.crossdc}</keycloak.connectionsJpa.url.crossdc>
                         </systemPropertyVariables>
                         <properties>
                             <property>
                                 <name>listener</name>
-                                <value>org.keycloak.testsuite.util.TestEventsLogger,org.keycloak.testsuite.util.junit.AggregateResultsReporter,org.keycloak.testsuite.util.NonIDERunListener</value>
+                                <value>org.keycloak.testsuite.util.TestEventsLogger,org.keycloak.testsuite.util.NonIDERunListener</value>
                             </property>
                         </properties>
                     </configuration>
@@ -386,6 +390,7 @@
                 <auth.server.crossdc>true</auth.server.crossdc>
                 <cache.server.jboss>true</cache.server.jboss>
                 <cache.server.config.dir>${cache.server.home}/standalone/configuration</cache.server.config.dir>                
+                <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
             </properties>
             <dependencies>
                 <dependency>
@@ -460,6 +465,7 @@
                 <auth.server.crossdc>true</auth.server.crossdc>
                 <cache.server.jboss>true</cache.server.jboss>
                 <cache.server.config.dir>${cache.server.home}/standalone/configuration</cache.server.config.dir>
+                <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
             </properties>
             <dependencies>
                 <dependency>
@@ -540,7 +546,7 @@
 
         <!--
             profile that enables/disables specified feature, for more details see 
-            https://keycloak.gitbooks.io/server-installation-and-configuration/content/topics/profiles.html 
+            https://keycloak.gitbooks.io/documentation/content/server_installation/topics/profiles.html 
         -->
         <profile>
             <id>auth-server-enable-disable-feature</id>
@@ -584,6 +590,8 @@
                 <auth.server.backend2.home>${containers.home}/auth-server-${auth.server}-backend2</auth.server.backend2.home>
 
                 <auth.server.config.dir>${auth.server.backend1.home}/standalone/configuration</auth.server.config.dir>
+
+                <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
             </properties>
             <build>
                 <plugins>
@@ -944,13 +952,6 @@
                 </file>
             </activation>
             <dependencies>
-
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-test-utils</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-
                 <!-- TEST DEPENDENCIES -->
                 <dependency>
                     <groupId>junit</groupId>

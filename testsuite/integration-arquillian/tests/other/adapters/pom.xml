@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests-other</artifactId>
-        <version>3.2.0.CR1-SNAPSHOT</version>
+        <version>3.3.0.CR1-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-adapters</artifactId>
@@ -98,6 +98,8 @@
         <module>jboss</module>
         <module>karaf</module>
         <module>tomcat</module>
+        <module>was</module>
+        <module>wls</module>
     </modules>
 
     <profiles>

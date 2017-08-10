@@ -12,6 +12,7 @@ import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClient.RedirectStrategyWithSwitchableFollowRedirect;
+import org.keycloak.testsuite.util.SamlClientBuilder;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -25,10 +26,10 @@ import org.w3c.dom.Document;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertThat;
+import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_NAME;
 import static org.keycloak.testsuite.util.IOUtil.documentToString;
 import static org.keycloak.testsuite.util.IOUtil.setDocElementAttributeValue;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
-import static org.keycloak.testsuite.util.SamlClient.login;
 
 /**
  * @author mhajas
@@ -38,13 +39,15 @@ public class BasicSamlTest extends AbstractSamlTest {
     // KEYCLOAK-4160
     @Test
     public void testPropertyValueInAssertion() throws ParsingException, ConfigurationException, ProcessingException {
-        AuthnRequestType loginRep = createLoginRequestDocument(SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, REALM_NAME);
-
-        Document doc = SAML2Request.convert(loginRep);
-
-        setDocElementAttributeValue(doc, "samlp:AuthnRequest", "ID", "${java.version}" );
-
-        SAMLDocumentHolder document = login(bburkeUser, getAuthServerSamlEndpoint(REALM_NAME), doc, null, SamlClient.Binding.POST, SamlClient.Binding.POST);
+        SAMLDocumentHolder document = new SamlClientBuilder()
+          .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, Binding.POST)
+            .transformDocument(doc -> {
+                setDocElementAttributeValue(doc, "samlp:AuthnRequest", "ID", "${java.version}" );
+                return doc;
+            })
+            .build()
+          .login().user(bburkeUser).build()
+          .getSamlResponse(Binding.POST);
 
         assertThat(documentToString(document.getSamlDocument()), not(containsString("InResponseTo=\"" + System.getProperty("java.version") + "\"")));
     }

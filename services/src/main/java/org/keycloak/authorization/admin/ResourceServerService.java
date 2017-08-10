@@ -19,7 +19,6 @@ package org.keycloak.authorization.admin;
 
 import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
 
-import java.io.IOException;
 import java.util.HashMap;
 
 import javax.ws.rs.Consumes;
@@ -36,10 +35,6 @@ import javax.ws.rs.core.UriInfo;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.authorization.store.PolicyStore;
-import org.keycloak.authorization.store.ResourceStore;
-import org.keycloak.authorization.store.ScopeStore;
-import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.exportimport.util.ExportUtils;
@@ -56,8 +51,8 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -83,7 +78,11 @@ public class ResourceServerService {
         this.adminEvent = adminEvent;
     }
 
-    public void create(boolean newClient) {
+    public ResourceServer create(boolean newClient) {
+        if (resourceServer != null) {
+            throw new IllegalStateException("Resource server already created");
+        }
+
         this.auth.realm().requireManageAuthorization();
 
         UserModel serviceAccount = this.session.users().getServiceAccount(client);
@@ -96,6 +95,8 @@ public class ResourceServerService {
         createDefaultRoles(serviceAccount);
         createDefaultPermission(createDefaultResource(), createDefaultPolicy());
         audit(OperationType.CREATE, uriInfo, newClient);
+
+        return resourceServer;
     }
 
     @PUT
@@ -111,22 +112,7 @@ public class ResourceServerService {
 
     public void delete() {
         this.auth.realm().requireManageAuthorization();
-        StoreFactory storeFactory = authorization.getStoreFactory();
-        ResourceStore resourceStore = storeFactory.getResourceStore();
-        String id = resourceServer.getId();
-
-        PolicyStore policyStore = storeFactory.getPolicyStore();
-
-        policyStore.findByResourceServer(id).forEach(scope -> policyStore.delete(scope.getId()));
-
-        resourceStore.findByResourceServer(id).forEach(resource -> resourceStore.delete(resource.getId()));
-
-        ScopeStore scopeStore = storeFactory.getScopeStore();
-
-        scopeStore.findByResourceServer(id).forEach(scope -> scopeStore.delete(scope.getId()));
-
-        storeFactory.getResourceServerStore().delete(id);
-
+        authorization.getStoreFactory().getResourceServerStore().delete(resourceServer.getId());
         audit(OperationType.DELETE, uriInfo, false);
     }
 
@@ -148,7 +134,7 @@ public class ResourceServerService {
     @Path("/import")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response importSettings(@Context final UriInfo uriInfo, ResourceServerRepresentation rep) throws IOException {
+    public Response importSettings(@Context final UriInfo uriInfo, ResourceServerRepresentation rep) {
         this.auth.realm().requireManageAuthorization();
 
         rep.setClientId(client.getId());

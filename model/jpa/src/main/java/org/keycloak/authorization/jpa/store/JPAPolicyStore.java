@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.persistence.EntityManager;
+import javax.persistence.FlushModeType;
 import javax.persistence.NoResultException;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
@@ -34,14 +35,10 @@ import javax.persistence.criteria.Root;
 
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.jpa.entities.PolicyEntity;
-import org.keycloak.authorization.jpa.entities.ResourceServerEntity;
 import org.keycloak.authorization.model.Policy;
-import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.PolicyStore;
-import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 
 /**
@@ -96,8 +93,10 @@ public class JPAPolicyStore implements PolicyStore {
     public Policy findByName(String name, String resourceServerId) {
         TypedQuery<String> query = entityManager.createNamedQuery("findPolicyIdByName", String.class);
 
+        query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("serverId", resourceServerId);
         query.setParameter("name", name);
+
         try {
             String id = query.getSingleResult();
             return provider.getStoreFactory().getPolicyStore().findById(id, resourceServerId);
@@ -167,6 +166,7 @@ public class JPAPolicyStore implements PolicyStore {
     public List<Policy> findByResource(final String resourceId, String resourceServerId) {
         TypedQuery<String> query = entityManager.createNamedQuery("findPolicyIdByResource", String.class);
 
+        query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("resourceId", resourceId);
         query.setParameter("serverId", resourceServerId);
 
@@ -182,6 +182,7 @@ public class JPAPolicyStore implements PolicyStore {
     public List<Policy> findByResourceType(final String resourceType, String resourceServerId) {
         TypedQuery<String> query = entityManager.createNamedQuery("findPolicyIdByResourceType", String.class);
 
+        query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("type", resourceType);
         query.setParameter("serverId", resourceServerId);
 
@@ -202,6 +203,7 @@ public class JPAPolicyStore implements PolicyStore {
         // Use separate subquery to handle DB2 and MSSSQL
         TypedQuery<String> query = entityManager.createNamedQuery("findPolicyIdByScope", String.class);
 
+        query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("scopeIds", scopeIds);
         query.setParameter("serverId", resourceServerId);
 
@@ -217,6 +219,7 @@ public class JPAPolicyStore implements PolicyStore {
     public List<Policy> findByType(String type, String resourceServerId) {
         TypedQuery<String> query = entityManager.createNamedQuery("findPolicyIdByType", String.class);
 
+        query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("serverId", resourceServerId);
         query.setParameter("type", type);
 
@@ -233,6 +236,7 @@ public class JPAPolicyStore implements PolicyStore {
 
         TypedQuery<String> query = entityManager.createNamedQuery("findPolicyIdByDependentPolices", String.class);
 
+        query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("serverId", resourceServerId);
         query.setParameter("policyId", policyId);
 

@@ -78,6 +78,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -153,20 +154,20 @@ public class KeycloakApplication extends Application {
                 exportImportManager[0].runExport();
             }
 
-            boolean bootstrapAdminUser = false;
-            KeycloakSession session = sessionFactory.create();
-            try {
-                session.getTransactionManager().begin();
-                bootstrapAdminUser = new ApplianceBootstrap(session).isNoMasterUser();
+            AtomicBoolean bootstrapAdminUser = new AtomicBoolean(false);
+            KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
 
-                session.getTransactionManager().commit();
-            } finally {
-                session.close();
-            }
+                @Override
+                public void run(KeycloakSession session) {
+                    boolean shouldBootstrapAdmin = new ApplianceBootstrap(session).isNoMasterUser();
+                    bootstrapAdminUser.set(shouldBootstrapAdmin);
 
-            sessionFactory.publish(new PostMigrationEvent());
+                    sessionFactory.publish(new PostMigrationEvent(session));
+                }
 
-            singletons.add(new WelcomeResource(bootstrapAdminUser));
+            });
+
+            singletons.add(new WelcomeResource(bootstrapAdminUser.get()));
 
             setupScheduledTasks(sessionFactory);
         } catch (Throwable t) {

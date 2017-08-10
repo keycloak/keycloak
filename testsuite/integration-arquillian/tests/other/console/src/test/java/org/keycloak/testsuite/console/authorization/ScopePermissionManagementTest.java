@@ -166,6 +166,23 @@ public class ScopePermissionManagementTest extends AbstractAuthorizationSettings
         assertNull(authorizationPage.authorizationTabs().permissions().permissions().findByName(expected.getName()));
     }
 
+    @Test
+    public void testDeleteFromList() throws InterruptedException {
+        authorizationPage.navigateTo();
+        ScopePermissionRepresentation expected = new ScopePermissionRepresentation();
+
+        expected.setName("Test Delete Scope Permission");
+        expected.setDescription("description");
+        expected.addScope("Scope C");
+        expected.addPolicy("Policy C");
+
+        expected = createPermission(expected);
+        authorizationPage.navigateTo();
+        authorizationPage.authorizationTabs().permissions().deleteFromList(expected.getName());
+        authorizationPage.navigateTo();
+        assertNull(authorizationPage.authorizationTabs().permissions().permissions().findByName(expected.getName()));
+    }
+
     private ScopePermissionRepresentation createPermission(ScopePermissionRepresentation expected) {
         ScopePermission policy = authorizationPage.authorizationTabs().permissions().create(expected);
         assertAlertSuccess();

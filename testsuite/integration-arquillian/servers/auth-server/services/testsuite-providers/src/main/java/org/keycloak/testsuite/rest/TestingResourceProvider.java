@@ -64,6 +64,7 @@ import org.keycloak.testsuite.runonserver.FetchOnServer;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.runonserver.SerializationUtil;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.MediaType;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -74,7 +75,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -167,6 +167,25 @@ public class TestingResourceProvider implements RealmResourceProvider {
         session.realms().removeExpiredClientInitialAccess();
 
         return Response.ok().build();
+    }
+
+    @GET
+    @Path("/get-client-sessions-count")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Integer getClientSessionsCountInUserSession(@QueryParam("realm") final String name, @QueryParam("session") final String sessionId) {
+
+        RealmManager realmManager = new RealmManager(session);
+        RealmModel realm = realmManager.getRealmByName(name);
+        if (realm == null) {
+            throw new NotFoundException("Realm not found");
+        }
+
+        UserSessionModel sessionModel = session.sessions().getUserSession(realm, sessionId);
+        if (sessionModel == null) {
+            throw new NotFoundException("Session not found");
+        }
+
+        return sessionModel.getAuthenticatedClientSessions().size();
     }
 
     @GET
@@ -655,8 +674,8 @@ public class TestingResourceProvider implements RealmResourceProvider {
 
     @POST
     @Path("/run-on-server")
-    @Consumes(MediaType.TEXT_PLAIN)
-    @Produces(MediaType.TEXT_PLAIN)
+    @Consumes(MediaType.TEXT_PLAIN_UTF_8)
+    @Produces(MediaType.TEXT_PLAIN_UTF_8)
     public String runOnServer(String runOnServer) throws Exception {
         try {
             ClassLoader cl = ModuleUtil.isModules() ? ModuleUtil.getClassLoader() : getClass().getClassLoader();

@@ -11,7 +11,7 @@
         <div class="form-group">
             <label class="col-md-2 control-label" for="permissionsEnabled">{{:: 'permissions-enabled-role' | translate}}</label>
             <div class="col-md-6">
-                <input ng-model="permissions.enabled" ng-click="setEnabled()" name="permissionsEnabled" id="permissionsEnabled" ng-disabled="!access.manageAuthorization" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                <input ng-model="permissions.enabled" name="permissionsEnabled" id="permissionsEnabled" ng-disabled="!access.manageAuthorization" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
             </div>
             <kc-tooltip>{{:: 'permissions-enabled-role.tooltip' | translate}}</kc-tooltip>
         </div>

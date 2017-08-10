@@ -43,12 +43,6 @@ public class RoleCommands {
             return "createRoles";
         }
 
-        private class StateHolder {
-            int firstInThisBatch;
-            int countInThisBatch;
-            int remaining;
-        };
-
         @Override
         protected void doRunCommand(KeycloakSession session) {
             rolePrefix = getArg(0);
@@ -57,24 +51,9 @@ public class RoleCommands {
             int count = getIntArg(3);
             int batchCount = getIntArg(4);
 
-            final StateHolder state = new StateHolder();
-            state.firstInThisBatch = first;
-            state.remaining = count;
-            state.countInThisBatch = Math.min(batchCount, state.remaining);
-            while (state.remaining > 0) {
-                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), new KeycloakSessionTask() {
-
-                    @Override
-                    public void run(KeycloakSession session) {
-                        createRolesInBatch(session, roleContainer, rolePrefix, state.firstInThisBatch, state.countInThisBatch);
-                    }
-                });
-
-                // update state
-                state.firstInThisBatch = state.firstInThisBatch + state.countInThisBatch;
-                state.remaining = state.remaining - state.countInThisBatch;
-                state.countInThisBatch = Math.min(batchCount, state.remaining);
-            }
+            BatchTaskRunner.runInBatches(first, count, batchCount, session.getKeycloakSessionFactory(), (KeycloakSession bathcSession, int firstInThisIteration, int countInThisIteration) -> {
+                createRolesInBatch(session, roleContainer, rolePrefix, firstInThisIteration, countInThisIteration);
+            });
 
             log.infof("Command finished. All roles from %s to %s created", rolePrefix + first, rolePrefix + (first + count - 1));
         }

@@ -41,8 +41,18 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public class SamlAuthenticatorValve extends AbstractSamlAuthenticatorValve {
+    /**
+     * Method called by Tomcat &lt; 8.5.5
+     */
     public boolean authenticate(Request request, HttpServletResponse response) throws IOException {
        return authenticateInternal(request, response, request.getContext().getLoginConfig());
+    }
+
+    /**
+     * Method called by Tomcat &gt;= 8.5.5
+     */
+    protected boolean doAuthenticate(Request request, HttpServletResponse response) throws IOException {
+       return this.authenticate(request, response);
     }
 
     @Override

@@ -29,8 +29,16 @@
                         /*[local-name()='cache-container' and starts-with(namespace-uri(), $nsCacheServer) and @name='local']">
         <xsl:copy>
             <xsl:apply-templates select="@* | node()" />
-            <local-cache name="work" start="EAGER" batching="false" />
-            <local-cache name="actionTokens" start="EAGER" batching="false" />
+
+            <local-cache-configuration name="sessions-cfg" start="EAGER" batching="false">
+                <transaction mode="NON_XA" locking="PESSIMISTIC"/>
+            </local-cache-configuration>
+
+            <local-cache name="sessions" configuration="sessions-cfg" />
+            <local-cache name="offlineSessions" configuration="sessions-cfg" />
+            <local-cache name="loginFailures" configuration="sessions-cfg" />
+            <local-cache name="actionTokens" configuration="sessions-cfg" />
+            <local-cache name="work" configuration="sessions-cfg" />
         </xsl:copy>
     </xsl:template>
 
@@ -38,8 +46,17 @@
                         /*[local-name()='cache-container' and starts-with(namespace-uri(), $nsCacheServer) and @name='clustered']">
         <xsl:copy>
             <xsl:apply-templates select="@* | node()" />
-            <replicated-cache name="work" start="EAGER" batching="false" />
-            <replicated-cache name="actionTokens" start="EAGER" batching="false" />
+
+            <replicated-cache-configuration name="sessions-cfg" mode="ASYNC" start="EAGER" batching="false">
+                <transaction mode="NON_XA" locking="PESSIMISTIC"/>
+            </replicated-cache-configuration>
+
+
+            <replicated-cache name="sessions" configuration="sessions-cfg" />
+            <replicated-cache name="offlineSessions" configuration="sessions-cfg" />
+            <replicated-cache name="loginFailures" configuration="sessions-cfg" />
+            <replicated-cache name="actionTokens" configuration="sessions-cfg" />
+            <replicated-cache name="work" configuration="sessions-cfg" />
         </xsl:copy>
     </xsl:template>
 

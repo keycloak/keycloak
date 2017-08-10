@@ -36,6 +36,9 @@ public class DefaultActionTokenKey extends JsonWebToken implements ActionTokenKe
     @JsonProperty(value = JSON_FIELD_ACTION_VERIFICATION_NONCE, required = true)
     private UUID actionVerificationNonce;
 
+    public DefaultActionTokenKey() {
+    }
+
     public DefaultActionTokenKey(String userId, String actionId, int absoluteExpirationInSecs, UUID actionVerificationNonce) {
         this.subject = userId;
         this.type = actionId;
@@ -58,10 +61,6 @@ public class DefaultActionTokenKey extends JsonWebToken implements ActionTokenKe
     @Override
     public UUID getActionVerificationNonce() {
         return actionVerificationNonce;
-    }
-
-    public String serializeKey() {
-        return String.format("%s.%d.%s.%s", getUserId(), getExpiration(), getActionVerificationNonce(), getActionId());
     }
 
     public static DefaultActionTokenKey from(String serializedKey) {

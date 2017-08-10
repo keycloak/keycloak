@@ -50,6 +50,7 @@ public interface OAuth2Constants {
 
     String AUTHORIZATION_CODE = "authorization_code";
 
+
     String IMPLICIT = "implicit";
 
     String PASSWORD = "password";
@@ -91,6 +92,16 @@ public interface OAuth2Constants {
     // https://tools.ietf.org/html/rfc7636#section-6.2.2
     String PKCE_METHOD_PLAIN = "plain";
     String PKCE_METHOD_S256 = "S256";
+
+    String TOKEN_EXCHANGE_GRANT_TYPE="urn:ietf:params:oauth:grant-type:token-exchange";
+    String AUDIENCE="audience";
+    String SUBJECT_TOKEN="subject_token";
+    String SUBJECT_TOKEN_TYPE="subject_token_type";
+    String ACCESS_TOKEN_TYPE="urn:ietf:params:oauth:token-type:access_token";
+    String REFRESH_TOKEN_TYPE="urn:ietf:params:oauth:token-type:refresh_token";
+    String JWT_TOKEN_TYPE="urn:ietf:params:oauth:token-type:jwt";
+    String ID_TOKEN_TYPE="urn:ietf:params:oauth:token-type:id_token";
+
 
 }
 

@@ -71,7 +71,7 @@ class KeycloakHttpServerAuthenticationMechanism implements HttpServerAuthenticat
         AdapterDeploymentContext deploymentContext = getDeploymentContext(request);
 
         if (deploymentContext == null) {
-            LOGGER.debugf("Ignoring request for path [%s] from mechanism [%s]. No deployment context found.", request.getRequestURI());
+            LOGGER.debugf("Ignoring request for path [%s] from mechanism [%s]. No deployment context found.", request.getRequestURI(), getMechanismName());
             request.noAuthenticationInProgress();
             return;
         }

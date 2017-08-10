@@ -50,9 +50,11 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
+import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
+import com.google.common.base.Charsets;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
@@ -73,10 +75,22 @@ import java.util.*;
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public class OAuthClient {
-    public static final String SERVER_ROOT = AuthServerTestEnricher.getAuthServerContextRoot();
-    public static String AUTH_SERVER_ROOT = SERVER_ROOT + "/auth";
-    public static final String APP_ROOT = AUTH_SERVER_ROOT + "/realms/master/app";
+    public static String SERVER_ROOT;
+    public static String AUTH_SERVER_ROOT;
+    public static String APP_ROOT;
     private static final boolean sslRequired = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required"));
+
+    static {
+        updateURLs(AuthServerTestEnricher.getAuthServerContextRoot());
+    }
+
+    // Workaround, but many tests directly use system properties like OAuthClient.AUTH_SERVER_ROOT instead of taking the URL from suite context
+    public static void updateURLs(String serverRoot) {
+        SERVER_ROOT = serverRoot;
+        AUTH_SERVER_ROOT = SERVER_ROOT + "/auth";
+        APP_ROOT = AUTH_SERVER_ROOT + "/realms/master/app";
+    }
+
 
     private Keycloak adminClient;
 
@@ -190,6 +204,7 @@ public class OAuthClient {
     }
 
     public void fillLoginForm(String username, String password) {
+        WaitUtils.waitForPageToLoad(driver);
         String src = driver.getPageSource();
         try {
             driver.findElement(By.id("username")).sendKeys(username);
@@ -237,8 +252,7 @@ public class OAuthClient {
     }
 
     public AccessTokenResponse doAccessTokenRequest(String code, String password) {
-        CloseableHttpClient client = newCloseableHttpClient();
-        try {
+        try (CloseableHttpClient client = newCloseableHttpClient()) {
             HttpPost post = new HttpPost(getAccessTokenUrl());
 
             List<NameValuePair> parameters = new LinkedList<NameValuePair>();
@@ -270,12 +284,7 @@ public class OAuthClient {
                 parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_VERIFIER, codeVerifier));
             }
 
-            UrlEncodedFormEntity formEntity = null;
-            try {
-                formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
-            }
+            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, Charsets.UTF_8);
             post.setEntity(formEntity);
 
             try {
@@ -283,8 +292,8 @@ public class OAuthClient {
             } catch (Exception e) {
                 throw new RuntimeException("Failed to retrieve access token", e);
             }
-        } finally {
-            closeClient(client);
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
         }
     }
 
@@ -297,8 +306,7 @@ public class OAuthClient {
     }
 
     public String introspectTokenWithClientCredential(String clientId, String clientSecret, String tokenType, String tokenToIntrospect) {
-        CloseableHttpClient client = new DefaultHttpClient();
-        try {
+        try (CloseableHttpClient client = new DefaultHttpClient()) {
             HttpPost post = new HttpPost(getTokenIntrospectionUrl());
 
             String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
@@ -319,19 +327,16 @@ public class OAuthClient {
 
             post.setEntity(formEntity);
 
-            try {
+            try (CloseableHttpResponse response = client.execute(post)) {
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
 
-                CloseableHttpResponse response = client.execute(post);
                 response.getEntity().writeTo(out);
-                response.close();
-
                 return new String(out.toByteArray());
             } catch (Exception e) {
                 throw new RuntimeException("Failed to retrieve access token", e);
             }
-        } finally {
-            closeClient(client);
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
         }
     }
 
@@ -388,6 +393,51 @@ public class OAuthClient {
             closeClient(client);
         }
     }
+
+    public AccessTokenResponse doTokenExchange(String realm, String token, String targetAudience,
+                                                         String clientId, String clientSecret) throws Exception {
+        CloseableHttpClient client = newCloseableHttpClient();
+        try {
+            HttpPost post = new HttpPost(getResourceOwnerPasswordCredentialGrantUrl(realm));
+
+            List<NameValuePair> parameters = new LinkedList<NameValuePair>();
+            parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE));
+            parameters.add(new BasicNameValuePair(OAuth2Constants.SUBJECT_TOKEN, token));
+            parameters.add(new BasicNameValuePair(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE));
+            parameters.add(new BasicNameValuePair(OAuth2Constants.AUDIENCE, targetAudience));
+
+            if (clientSecret != null) {
+                String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
+                post.setHeader("Authorization", authorization);
+            } else {
+                parameters.add(new BasicNameValuePair("client_id", clientId));
+
+            }
+
+            if (clientSessionState != null) {
+                parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_STATE, clientSessionState));
+            }
+            if (clientSessionHost != null) {
+                parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_HOST, clientSessionHost));
+            }
+            if (scope != null) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, scope));
+            }
+
+            UrlEncodedFormEntity formEntity;
+            try {
+                formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
+            post.setEntity(formEntity);
+
+            return new AccessTokenResponse(client.execute(post));
+        } finally {
+            closeClient(client);
+        }
+    }
+
 
     public JSONWebKeySet doCertsRequest(String realm) throws Exception {
         CloseableHttpClient client = new DefaultHttpClient();

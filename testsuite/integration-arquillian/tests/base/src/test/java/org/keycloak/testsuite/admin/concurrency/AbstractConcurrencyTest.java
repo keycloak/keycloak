@@ -19,85 +19,90 @@ package org.keycloak.testsuite.admin.concurrency;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import java.util.LinkedList;
+import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-import org.keycloak.testsuite.admin.AbstractAdminTest;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public abstract class AbstractConcurrencyTest extends AbstractAdminTest {
+public abstract class AbstractConcurrencyTest extends AbstractTestRealmKeycloakTest {
 
-    private static final int DEFAULT_THREADS = 5;
-    private static final int DEFAULT_ITERATIONS = 20;
+    private static final int DEFAULT_THREADS = 4;
+    private static final int DEFAULT_NUMBER_OF_EXECUTIONS = 20 * DEFAULT_THREADS;
+
+    public static final String REALM_NAME = "test";
 
     // If enabled only one request is allowed at the time. Useful for checking that test is working.
     private static final boolean SYNCHRONIZED = false;
 
-    protected void run(final KeycloakRunnable runnable) throws Throwable {
-        run(runnable, DEFAULT_THREADS, DEFAULT_ITERATIONS);
+    @Override
+    public void configureTestRealm(RealmRepresentation testRealm) {
     }
 
-    protected void run(final KeycloakRunnable runnable, final int numThreads, final int numIterationsPerThread) throws Throwable {
-        final CountDownLatch latch = new CountDownLatch(numThreads);
-        final AtomicReference<Throwable> failed = new AtomicReference();
-        final List<Thread> threads = new LinkedList<>();
-        final Lock lock = SYNCHRONIZED ? new ReentrantLock() : null;
+    protected void run(final KeycloakRunnable... runnables) {
+        run(DEFAULT_THREADS, DEFAULT_NUMBER_OF_EXECUTIONS, runnables);
+    }
 
-        for (int t = 0; t < numThreads; t++) {
-            final int threadNum = t;
-            Thread thread = new Thread() {
-                @Override
-                public void run() {
-                    Keycloak keycloak = null;
-                    try {
-                        if (lock != null) {
-                            lock.lock();
-                        }
+    protected void run(final int numThreads, final int totalNumberOfExecutions, final KeycloakRunnable... runnables) {
+        final ExecutorService service = SYNCHRONIZED
+          ? Executors.newSingleThreadExecutor()
+          : Executors.newFixedThreadPool(numThreads);
 
-                        keycloak = Keycloak.getInstance(getAuthServerRoot().toString(), "master", "admin", "admin", org.keycloak.models.Constants.ADMIN_CLI_CLIENT_ID);
-                        RealmResource realm = keycloak.realm(REALM_NAME);
-                        for (int i = 0; i < numIterationsPerThread && latch.getCount() > 0; i++) {
-                            log.infov("thread {0}, iteration {1}", threadNum, i);
-                            runnable.run(keycloak, realm, threadNum, i);
-                        }
-                        latch.countDown();
-                    } catch (Throwable t) {
-                        failed.compareAndSet(null, t);
-                        while (latch.getCount() > 0) {
-                            latch.countDown();
-                        }
-                    } finally {
-                        keycloak.close();
-                        if (lock != null) {
-                            lock.unlock();
-                        }
-                    }
+        ThreadLocal<Keycloak> keycloaks = new ThreadLocal<Keycloak>() {
+            @Override
+            protected Keycloak initialValue() {
+                return Keycloak.getInstance(getAuthServerRoot().toString(), "master", "admin", "admin", org.keycloak.models.Constants.ADMIN_CLI_CLIENT_ID);
+            }
+        };
+
+        AtomicInteger currentThreadIndex = new AtomicInteger();
+        Collection<Callable<Void>> tasks = new LinkedList<>();
+        Collection<Throwable> failures = new ConcurrentLinkedQueue<>();
+        final List<Callable<Void>> runnablesToTasks = new LinkedList<>();
+        for (KeycloakRunnable runnable : runnables) {
+            runnablesToTasks.add(() -> {
+                int arrayIndex = currentThreadIndex.getAndIncrement() % numThreads;
+                try {
+                    runnable.run(arrayIndex % numThreads, keycloaks.get(), keycloaks.get().realm(REALM_NAME));
+                } catch (Throwable ex) {
+                    failures.add(ex);
                 }
-            };
-            thread.start();
-            threads.add(thread);
+                return null;
+            });
+        }
+        for (int i = 0; i < totalNumberOfExecutions; i ++) {
+            runnablesToTasks.forEach(tasks::add);
         }
 
-        latch.await();
-
-        for (Thread t : threads) {
-            t.join();
+        try {
+            service.invokeAll(tasks);
+            service.shutdown();
+            service.awaitTermination(3, TimeUnit.MINUTES);
+        } catch (InterruptedException ex) {
+            throw new RuntimeException(ex);
         }
 
-        if (failed.get() != null) {
-            throw failed.get();
+        if (! failures.isEmpty()) {
+            RuntimeException ex = new RuntimeException("There were failures in threads. Failures count: " + failures.size());
+            failures.forEach(ex::addSuppressed);
+            failures.forEach(e -> log.error(e.getMessage(), e));
+            throw ex;
         }
     }
 
     protected interface KeycloakRunnable {
 
-        void run(Keycloak keycloak, RealmResource realm, int threadNum, int iterationNum);
+        void run(int threadIndex, Keycloak keycloak, RealmResource realm) throws Throwable;
 
     }
 

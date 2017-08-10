@@ -614,7 +614,7 @@ public class KeycloakUriBuilder {
             if (value == null) throw new IllegalArgumentException("A passed in value was null");
             if (query == null) query = "";
             else query += "&";
-            query += Encode.encodeQueryParam(name) + "=" + Encode.encodeQueryParam(value.toString());
+            query += Encode.encodeQueryParamAsIs(name) + "=" + Encode.encodeQueryParamAsIs(value.toString());
         }
         return this;
     }

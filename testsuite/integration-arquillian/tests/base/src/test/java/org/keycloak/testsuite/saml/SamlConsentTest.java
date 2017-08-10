@@ -9,16 +9,15 @@ import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.IOUtil;
-import org.keycloak.testsuite.util.SamlClient;
 
-import java.net.URI;
+import org.keycloak.testsuite.util.SamlClient.Binding;
+import org.keycloak.testsuite.util.SamlClientBuilder;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.util.IOUtil.loadRealm;
-import static org.keycloak.testsuite.util.SamlClient.idpInitiatedLoginWithRequiredConsent;
 
 /**
  * @author mhajas
@@ -48,13 +47,17 @@ public class SamlConsentTest extends AbstractSamlTest {
                         .build());
 
         log.debug("Log in using idp initiated login");
-        String idpInitiatedLogin = getAuthServerRoot() + "realms/" + REALM_NAME + "/protocol/saml/clients/sales-post-enc";
-        SAMLDocumentHolder documentHolder = idpInitiatedLoginWithRequiredConsent(bburkeUser, URI.create(idpInitiatedLogin), SamlClient.Binding.POST, false);
+        SAMLDocumentHolder documentHolder = new SamlClientBuilder()
+          .idpInitiatedLogin(getAuthServerSamlEndpoint(REALM_NAME), "sales-post-enc").build()
+          .login().user(bburkeUser).build()
+          .consentRequired().approveConsent(false).build()
+          .getSamlResponse(Binding.POST);
 
-        assertThat(IOUtil.documentToString(documentHolder.getSamlDocument()), containsString("<dsig:Signature")); // KEYCLOAK-4262
-        assertThat(IOUtil.documentToString(documentHolder.getSamlDocument()), not(containsString("<samlp:LogoutResponse"))); // KEYCLOAK-4261
-        assertThat(IOUtil.documentToString(documentHolder.getSamlDocument()), containsString("<samlp:Response")); // KEYCLOAK-4261
-        assertThat(IOUtil.documentToString(documentHolder.getSamlDocument()), containsString("<samlp:Status")); // KEYCLOAK-4181
-        assertThat(IOUtil.documentToString(documentHolder.getSamlDocument()), containsString("<samlp:StatusCode Value=\"urn:oasis:names:tc:SAML:2.0:status:RequestDenied\"")); // KEYCLOAK-4181
+        final String samlDocumentString = IOUtil.documentToString(documentHolder.getSamlDocument());
+        assertThat(samlDocumentString, containsString("<dsig:Signature")); // KEYCLOAK-4262
+        assertThat(samlDocumentString, not(containsString("<samlp:LogoutResponse"))); // KEYCLOAK-4261
+        assertThat(samlDocumentString, containsString("<samlp:Response")); // KEYCLOAK-4261
+        assertThat(samlDocumentString, containsString("<samlp:Status")); // KEYCLOAK-4181
+        assertThat(samlDocumentString, containsString("<samlp:StatusCode Value=\"urn:oasis:names:tc:SAML:2.0:status:RequestDenied\"")); // KEYCLOAK-4181
     }
 }

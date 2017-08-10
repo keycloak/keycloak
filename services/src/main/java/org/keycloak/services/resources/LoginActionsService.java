@@ -16,7 +16,6 @@
  */
 package org.keycloak.services.resources;
 
-import org.keycloak.authentication.actiontoken.DefaultActionToken;
 import org.keycloak.authentication.actiontoken.DefaultActionTokenKey;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
@@ -27,6 +26,7 @@ import org.keycloak.authentication.RequiredActionContextResult;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.TokenVerifier;
+import org.keycloak.authentication.ExplainedVerificationException;
 import org.keycloak.authentication.actiontoken.*;
 import org.keycloak.authentication.actiontoken.resetcred.ResetCredentialsActionTokenHandler;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
@@ -42,6 +42,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.exceptions.TokenNotActiveException;
+import org.keycloak.models.ActionTokenKeyModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -59,6 +60,7 @@ import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
@@ -179,7 +181,7 @@ public class LoginActionsService {
     }
 
     private SessionCodeChecks checksForCode(String code, String execution, String clientId, String flowPath) {
-        SessionCodeChecks res = new SessionCodeChecks(realm, uriInfo, clientConnection, session, event, code, execution, clientId, flowPath);
+        SessionCodeChecks res = new SessionCodeChecks(realm, uriInfo, request, clientConnection, session, event, code, execution, clientId, flowPath);
         res.initialVerify();
         return res;
     }
@@ -200,7 +202,7 @@ public class LoginActionsService {
     @GET
     public Response restartSession(@QueryParam("client_id") String clientId) {
         event.event(EventType.RESTART_AUTHENTICATION);
-        SessionCodeChecks checks = new SessionCodeChecks(realm, uriInfo, clientConnection, session, event, null, null, clientId, null);
+        SessionCodeChecks checks = new SessionCodeChecks(realm, uriInfo, request, clientConnection, session, event, null, null, clientId, null);
 
         AuthenticationSessionModel authSession = checks.initialVerifyAuthSession();
         if (authSession == null) {
@@ -286,7 +288,7 @@ public class LoginActionsService {
             authSession = processor.getAuthenticationSession(); // Could be changed (eg. Forked flow)
         }
 
-        return BrowserHistoryHelper.getInstance().saveResponseAndRedirect(session, authSession, response, action);
+        return BrowserHistoryHelper.getInstance().saveResponseAndRedirect(session, authSession, response, action, request);
     }
 
     /**
@@ -342,7 +344,7 @@ public class LoginActionsService {
 
             }
             authSession = createAuthenticationSessionForClient();
-            return processResetCredentials(false, null, authSession);
+            return processResetCredentials(false, null, authSession, null);
         }
 
         event.event(EventType.RESET_PASSWORD);
@@ -386,7 +388,7 @@ public class LoginActionsService {
 
         }
 
-        return processResetCredentials(checks.isActionRequest(), execution, authSession);
+        return processResetCredentials(checks.isActionRequest(), execution, authSession, null);
     }
 
     /**
@@ -405,7 +407,7 @@ public class LoginActionsService {
         return handleActionToken(key, execution, clientId);
     }
 
-    protected <T extends DefaultActionToken> Response handleActionToken(String tokenString, String execution, String clientId) {
+    protected <T extends JsonWebToken & ActionTokenKeyModel> Response handleActionToken(String tokenString, String execution, String clientId) {
         T token;
         ActionTokenHandler<T> handler;
         ActionTokenContext<T> tokenContext;
@@ -430,8 +432,8 @@ public class LoginActionsService {
                 throw new ExplainedTokenVerificationException(null, Errors.NOT_ALLOWED, Messages.INVALID_REQUEST);
             }
 
-            TokenVerifier<DefaultActionToken> tokenVerifier = TokenVerifier.create(tokenString, DefaultActionToken.class);
-            DefaultActionToken aToken = tokenVerifier.getToken();
+            TokenVerifier<DefaultActionTokenKey> tokenVerifier = TokenVerifier.create(tokenString, DefaultActionTokenKey.class);
+            DefaultActionTokenKey aToken = tokenVerifier.getToken();
 
             event
               .detail(Details.TOKEN_ID, aToken.getId())
@@ -469,11 +471,15 @@ public class LoginActionsService {
                     flowPath = AUTHENTICATE_PATH;
                 }
                 AuthenticationProcessor.resetFlow(authSession, flowPath);
-                return processAuthentication(false, null, authSession, Messages.LOGIN_TIMEOUT);
+
+                // Process correct flow
+                return processFlowFromPath(flowPath, authSession, Messages.EXPIRED_ACTION_TOKEN_SESSION_EXISTS);
             }
 
-            return handleActionTokenVerificationException(null, ex, Errors.EXPIRED_CODE, defaultErrorMessage);
+            return handleActionTokenVerificationException(null, ex, Errors.EXPIRED_CODE, Messages.EXPIRED_ACTION_TOKEN_NO_SESSION);
         } catch (ExplainedTokenVerificationException ex) {
+            return handleActionTokenVerificationException(null, ex, ex.getErrorEvent(), ex.getMessage());
+        } catch (ExplainedVerificationException ex) {
             return handleActionTokenVerificationException(null, ex, ex.getErrorEvent(), ex.getMessage());
         } catch (VerificationException ex) {
             return handleActionTokenVerificationException(null, ex, eventError, defaultErrorMessage);
@@ -483,7 +489,7 @@ public class LoginActionsService {
         tokenContext = new ActionTokenContext(session, realm, uriInfo, clientConnection, request, event, handler, execution, this::processFlow, this::brokerLoginFlow);
 
         try {
-            String tokenAuthSessionId = handler.getAuthenticationSessionIdFromToken(token);
+            String tokenAuthSessionId = handler.getAuthenticationSessionIdFromToken(token, tokenContext);
 
             if (tokenAuthSessionId != null) {
                 // This can happen if the token contains ID but user opens the link in a new browser
@@ -539,7 +545,19 @@ public class LoginActionsService {
         }
     }
 
-    private <T extends DefaultActionToken> ActionTokenHandler<T> resolveActionTokenHandler(String actionId) throws VerificationException {
+    private Response processFlowFromPath(String flowPath, AuthenticationSessionModel authSession, String errorMessage) {
+        if (AUTHENTICATE_PATH.equals(flowPath)) {
+            return processAuthentication(false, null, authSession, errorMessage);
+        } else if (REGISTRATION_PATH.equals(flowPath)) {
+            return processRegistration(false, null, authSession, errorMessage);
+        } else if (RESET_CREDENTIALS_PATH.equals(flowPath)) {
+            return processResetCredentials(false, null, authSession, errorMessage);
+        } else {
+            return ErrorPage.error(session, errorMessage == null ? Messages.INVALID_REQUEST : errorMessage);
+        }
+    }
+
+    private <T extends JsonWebToken> ActionTokenHandler<T> resolveActionTokenHandler(String actionId) throws VerificationException {
         if (actionId == null) {
             throw new VerificationException("Action token operation not set");
         }
@@ -562,10 +580,10 @@ public class LoginActionsService {
         return ErrorPage.error(session, errorMessage == null ? Messages.INVALID_CODE : errorMessage);
     }
 
-    protected Response processResetCredentials(boolean actionRequest, String execution, AuthenticationSessionModel authSession) {
+    protected Response processResetCredentials(boolean actionRequest, String execution, AuthenticationSessionModel authSession, String errorMessage) {
         AuthenticationProcessor authProcessor = new ResetCredentialsActionTokenHandler.ResetCredsAuthenticationProcessor();
 
-        return processFlow(actionRequest, execution, authSession, RESET_CREDENTIALS_PATH, realm.getResetCredentialsFlow(), null, authProcessor);
+        return processFlow(actionRequest, execution, authSession, RESET_CREDENTIALS_PATH, realm.getResetCredentialsFlow(), errorMessage, authProcessor);
     }
 
 
@@ -911,7 +929,7 @@ public class LoginActionsService {
             throw new RuntimeException("Unreachable");
         }
 
-        return BrowserHistoryHelper.getInstance().saveResponseAndRedirect(session, authSession, response, true);
+        return BrowserHistoryHelper.getInstance().saveResponseAndRedirect(session, authSession, response, true, request);
     }
 
 }

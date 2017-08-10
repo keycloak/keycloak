@@ -61,6 +61,14 @@ public class AccountApplicationsPage extends AbstractAccountPage {
                     case 1:
                         currentEntry = new AppEntry();
                         String client = col.getText();
+                        WebElement link = null;
+                        try {
+                            link = col.findElement(By.tagName("a"));
+                            String href = link.getAttribute("href");
+                            currentEntry.setHref(href);
+                        } catch (Exception e) {
+                            //ignore
+                        }
                         table.put(client, currentEntry);
                         break;
                     case 2:
@@ -111,6 +119,7 @@ public class AccountApplicationsPage extends AbstractAccountPage {
         private final List<String> rolesGranted = new ArrayList<String>();
         private final List<String> protocolMappersGranted = new ArrayList<String>();
         private final List<String> additionalGrants = new ArrayList<>();
+        private String href = null;
 
         private void addAvailableRole(String role) {
             rolesAvailable.add(role);
@@ -126,6 +135,14 @@ public class AccountApplicationsPage extends AbstractAccountPage {
 
         private void addAdditionalGrant(String grant) {
             additionalGrants.add(grant);
+        }
+        
+        public void setHref(String href) {
+            this.href = href;
+        }
+        
+        public String getHref() {
+            return this.href;
         }
 
         public List<String> getRolesGranted() {

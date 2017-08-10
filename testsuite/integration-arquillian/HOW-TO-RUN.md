@@ -61,7 +61,7 @@ More info: http://javahowto.blogspot.cz/2010/09/java-agentlibjdwp-for-attaching.
 Analogically, there is the same behaviour for JBoss based app server as for auth server. The default port is set to 5006. There are app server properties.
 
     -Dapp.server.debug.port=$PORT
-    -Dapp.server.debug.suspend=y    
+    -Dapp.server.debug.suspend=y
 
 ## Testsuite logging
 
@@ -262,6 +262,8 @@ The UI tests are focused on the Admin Console as well as on some login scenarios
 
 The tests also use some constants placed in [test-constants.properties](tests/base/src/test/resources/test-constants.properties). A different file can be specified by `-Dtestsuite.constants=path/to/different-test-constants.properties`
 
+In case a custom `settings.xml` is used for Maven, you need to specify it also in `-Dkie.maven.settings.custom=path/to/settings.xml`.
+
 #### Execution example
 ```
 mvn -f testsuite/integration-arquillian/tests/other/console/pom.xml \
@@ -452,7 +454,7 @@ First compile the Infinispan/JDG test server via the following command:
   `mvn -Pcache-server-infinispan -f testsuite/integration-arquillian -DskipTests clean install`
 
 or
-  
+
   `mvn -Pcache-server-jdg -f testsuite/integration-arquillian -DskipTests clean install`
 
 Then you can run the tests using the following command (adjust the test specification according to your needs):
@@ -462,5 +464,159 @@ Then you can run the tests using the following command (adjust the test specific
 or
 
   `mvn -Pcache-server-jdg -Dtest=*.crossdc.* -pl testsuite/integration-arquillian/tests/base test`
+  
+It can be useful to add additional system property to enable logging:
+  
+    -Dkeycloak.infinispan.logging.level=debug
+     
+  
 
-_Someone using IntelliJ IDEA, please describe steps for that IDE_
+#### Run Cross-DC Tests from Intellij IDEA
+
+First we will manually download, configure and run infinispan server. Then we can run the tests from IDE against 1 server. It's more effective during
+development as there is no need to restart infinispan server(s) among test runs.
+
+1) Download infinispan server 8.2.X from http://infinispan.org/download/
+
+2) Edit `ISPN_SERVER_HOME/standalone/configuration/standalone.xml` and add these local-caches to the section under cache-container `local` :
+
+    <cache-container name="local" ...
+    
+        ...
+        
+        <local-cache-configuration name="sessions-cfg" start="EAGER" batching="false">
+		    <transaction mode="NON_XA" locking="PESSIMISTIC"/>
+		</local-cache-configuration>
+
+        <local-cache name="sessions" configuration="sessions-cfg" />	
+		<local-cache name="offlineSessions" configuration="sessions-cfg" />	
+		<local-cache name="loginFailures" configuration="sessions-cfg" />	
+		<local-cache name="actionTokens" configuration="sessions-cfg" />	
+		<local-cache name="work" configuration="sessions-cfg" />
+    
+    </cache>
+    
+3) Run the server through `./standalone.sh` 
+       
+4) Setup MySQL database or some other shared database.  
+
+5) Ensure that org.wildfly.arquillian:wildfly-arquillian-container-managed is on the classpath when running test. On Intellij, it can be 
+done by going to: View -> Tool Windows -> Maven projects. Then check profile "cache-server-infinispan". The tests will use this profile when executed.
+
+6) Run the LoginCrossDCTest (or any other test) with those properties. In shortcut, it's using MySQL database, disabled L1 lifespan and 
+connects to the remoteStore provided by infinispan server configured in previous steps:
+
+    -Dauth.server.crossdc=true -Dauth.server.undertow.crossdc=true -Dcache.server.lifecycle.skip=true -Dkeycloak.connectionsJpa.url.crossdc=jdbc:mysql://localhost/keycloak 
+    -Dkeycloak.connectionsJpa.driver.crossdc=com.mysql.jdbc.Driver -Dkeycloak.connectionsJpa.user=keycloak 
+    -Dkeycloak.connectionsJpa.password=keycloak -Dkeycloak.connectionsInfinispan.clustered=true -Dkeycloak.connectionsInfinispan.l1Lifespan=0 
+    -Dkeycloak.connectionsInfinispan.remoteStorePort=11222 -Dkeycloak.connectionsInfinispan.remoteStorePort.2=11222 -Dkeycloak.connectionsInfinispan.sessionsOwners=1 
+    -Dsession.cache.owners=1 -Dkeycloak.infinispan.logging.level=debug -Dresources
+    
+7) If you want to debug and test manually, the servers are running on these ports (Note that not all backend servers are running by default and some might be also unused by loadbalancer):
+
+    Loadbalancer -> "http://localhost:8180/auth"
+    auth-server-undertow-cross-dc-0_1 -> "http://localhost:8101/auth"
+    auth-server-undertow-cross-dc-0_2-manual -> "http://localhost:8102/auth"
+    auth-server-undertow-cross-dc-1_1 -> "http://localhost:8111/auth"
+    auth-server-undertow-cross-dc-1_2-manual -> "http://localhost:8112/auth"
+
+
+## Run Docker Authentication test
+
+First, validate that your machine has a valid docker installation and that it is available to the JVM running the test.
+The exact steps to configure Docker depend on the operating system.
+
+By default, the test will run against Undertow based embedded Keycloak Server, thus no distribution build is required beforehand.
+The exact command line arguments depend on the operating system.
+
+### General guidelines
+
+If docker daemon doesn't run locally, or if you're not running on Linux, you may need
+ to determine the IP of the bridge interface or local interface that Docker daemon can use to connect to Keycloak Server. 
+ Then specify that IP as additional system property called *host.ip*, for example:
+   
+    -Dhost.ip=192.168.64.1
+
+If using Docker for Mac, you can create an alias for your local network interface:
+
+    sudo ifconfig lo0 alias 10.200.10.1/24
+    
+Then pass the IP as *host.ip*:
+
+    -Dhost.ip=10.200.10.1
+
+
+If you're running a Docker fork that always lists a host component of an image on `docker images` (e.g. Fedora / RHEL Docker) 
+use `-Ddocker.io-prefix-explicit=true` argument when running the test.
+
+
+### Fedora
+
+On Fedora one way to set up Docker server is the following:
+
+    # install docker
+    sudo dnf install docker
+
+    # configure docker
+    # remove --selinux-enabled from OPTIONS
+    sudo vi /etc/sysconfig/docker
+    
+    # create docker group and add your user (so docker wouldn't need root permissions)
+    sudo groupadd docker && sudo gpasswd -a ${USER} docker && sudo systemctl restart docker
+    newgrp docker
+    
+    # you need to login again after this
+    
+    
+    # make sure Docker is available
+    docker pull registry:2
+
+You may also need to add an iptables rule to allow container to host traffic
+
+    sudo iptables -I INPUT -i docker0 -j ACCEPT
+
+Then, run the test passing `-Ddocker.io-prefix-explicit=true`:
+
+    mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
+        clean test \
+        -Dtest=DockerClientTest \
+        -Dkeycloak.profile.feature.docker=enabled \
+        -Ddocker.io-prefix-explicit=true
+
+
+### macOS
+
+On macOS all you need to do is install Docker for Mac, start it up, and check that it works:
+
+    # make sure Docker is available
+    docker pull registry:2
+
+Be especially careful to restart Docker server after every sleep / suspend to ensure system clock of Docker VM is synchronized with
+that of the host operating system - Docker for Mac runs inside a VM.
+
+
+Then, run the test passing `-Dhost.ip=IP` where IP corresponds to en0 interface or an alias for localhost:
+
+    mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
+        clean test \
+        -Dtest=DockerClientTest \
+        -Dkeycloak.profile.feature.docker=enabled \
+        -Dhost.ip=10.200.10.1
+
+
+
+### Running Docker test against Keycloak Server distribution
+
+Make sure to build the distribution:
+
+    mvn clean install -f distribution
+    
+Then, before running the test, setup Keycloak Server distribution for the tests:
+
+    mvn -f testsuite/integration-arquillian/servers/pom.xml \
+        clean install \
+        -Pauth-server-wildfly
+
+When running the test, add the following arguments to the command line:
+
+    -Pauth-server-wildfly -Pauth-server-enable-disable-feature -Dfeature.name=docker -Dfeature.value=enabled

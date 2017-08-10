@@ -35,4 +35,5 @@ org.keycloak.protocol.saml.mappers.GroupMembershipMapper
 org.keycloak.protocol.oidc.mappers.UserClientRoleMappingMapper
 org.keycloak.protocol.oidc.mappers.UserRealmRoleMappingMapper
 org.keycloak.protocol.oidc.mappers.SHA256PairwiseSubMapper
+org.keycloak.protocol.docker.mapper.AllowAllDockerProtocolMapper
 

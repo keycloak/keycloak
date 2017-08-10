@@ -52,6 +52,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.provider.ProviderFactory;
@@ -162,8 +163,9 @@ public class UsersResource {
         try {
             UserModel user = session.users().addUser(realm, rep.getUsername());
             Set<String> emptySet = Collections.emptySet();
-            UserResource.updateUserFromRep(user, rep, emptySet, realm, session, false);
 
+            UserResource.updateUserFromRep(user, rep, emptySet, realm, session, false);
+            RepresentationToModel.createCredentials(rep, session, realm, user);
             adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, user.getId()).representation(rep).success();
 
             if (session.getTransactionManager().isActive()) {

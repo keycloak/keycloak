@@ -155,7 +155,7 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
             theTaskKey = taskKey + "-" + (i++);
         }
 
-        tasks.put(taskKey, () -> clusterProvider.notify(taskKey, event, ignoreSender));
+        tasks.put(taskKey, () -> clusterProvider.notify(taskKey, event, ignoreSender, ClusterProvider.DCNotify.ALL_DCS));
     }
 
     public <K, V> void remove(Cache<K, V> cache, K key) {
@@ -168,7 +168,7 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
     // This is for possibility to lookup for session by id, which was created in this transaction
     public <K, V> V get(Cache<K, V> cache, K key) {
         Object taskKey = getTaskKey(cache, key);
-        CacheTask<V> current = tasks.get(taskKey);
+        CacheTask current = tasks.get(taskKey);
         if (current != null) {
             if (current instanceof CacheTaskWithValue) {
                 return ((CacheTaskWithValue<V>) current).getValue();
@@ -190,11 +190,11 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
         }
     }
 
-    public interface CacheTask<V> {
+    public interface CacheTask {
         void execute();
     }
 
-    public abstract class CacheTaskWithValue<V> implements CacheTask<V> {
+    public abstract class CacheTaskWithValue<V> implements CacheTask {
         protected V value;
 
         public CacheTaskWithValue(V value) {

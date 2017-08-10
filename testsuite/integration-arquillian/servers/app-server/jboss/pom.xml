@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-app-server</artifactId>
-        <version>3.2.0.CR1-SNAPSHOT</version>
+        <version>3.3.0.CR1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -309,7 +309,7 @@
                                     </goals>
                                     <configuration>
                                         <executable>${common.resources}/install-patch.${script.suffix}</executable>
-                                        <workingDirectory>${app.server.home}/bin</workingDirectory>
+                                        <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
                                         <environmentVariables>
                                             <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
                                             <JBOSS_HOME>${app.server.jboss.home}</JBOSS_HOME>

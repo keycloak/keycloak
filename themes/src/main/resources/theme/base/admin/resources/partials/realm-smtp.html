@@ -10,6 +10,9 @@
             <div class="col-md-6">
                 <input class="form-control" id="smtpHost" type="text" ng-model="realm.smtpServer.host" placeholder="{{:: 'smtp-host' | translate}}" required>
             </div>
+            <div class="col-sm-4">
+                <a class="btn btn-primary" data-ng-click="testConnection()">{{:: 'test-connection' | translate}}</a>
+            </div>
         </div>
         <div class="form-group clearfix">
             <label class="col-md-2 control-label" for="smtpPort">{{:: 'port' | translate}}</label>

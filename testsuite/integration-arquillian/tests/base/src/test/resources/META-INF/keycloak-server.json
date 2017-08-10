@@ -108,7 +108,8 @@
     "connectionsInfinispan": {
         "default": {
             "jgroupsUdpMcastAddr": "${keycloak.connectionsInfinispan.jgroupsUdpMcastAddr:234.56.78.90}",
-            "nodeName": "${keycloak.connectionsInfinispan.nodeName,jboss.node.name:defaultNodeName}",
+            "nodeName": "${keycloak.connectionsInfinispan.nodeName,jboss.node.name:}",
+            "siteName": "${keycloak.connectionsInfinispan.siteName,jboss.site.name:}",
             "clustered": "${keycloak.connectionsInfinispan.clustered:false}",
             "async": "${keycloak.connectionsInfinispan.async:false}",
             "sessionsOwners": "${keycloak.connectionsInfinispan.sessionsOwners:1}",
@@ -118,13 +119,6 @@
             "remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:11222}"
         }
     },
-    
-    "stickySessionEncoder": {
-        "infinispan": {
-            "nodeName": "${keycloak.stickySessionEncoder.nodeName,jboss.node.name:defaultNodeName}"
-        }
-    },
-
 
     "truststore": {
         "file": {

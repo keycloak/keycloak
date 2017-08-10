@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.2.0.CR1-SNAPSHOT</version>
+        <version>3.3.0.CR1-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <name>Keycloak OIDC Client Adapter Modules</name>
@@ -34,6 +34,7 @@
         <module>adapter-core</module>
         <module>as7-eap6</module>
         <module>installed</module>
+        <module>cli-sso</module>
         <module>jaxrs-oauth-client</module>
         <module>jetty</module>
         <module>js</module>

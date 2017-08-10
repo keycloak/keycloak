@@ -17,6 +17,7 @@
 
 package org.keycloak.models.utils;
 
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderEvent;
 
 /**
@@ -25,4 +26,14 @@ import org.keycloak.provider.ProviderEvent;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class PostMigrationEvent implements ProviderEvent {
+
+    private final KeycloakSession session;
+
+    public PostMigrationEvent(KeycloakSession session) {
+        this.session = session;
+    }
+
+    public KeycloakSession getSession() {
+        return session;
+    }
 }

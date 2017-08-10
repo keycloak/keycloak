@@ -43,11 +43,12 @@ import org.junit.Ignore;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 
 /**
- * Test concurrency for remoteStore (backed by HotRod RemoteCaches) against external JDG
+ * Test concurrency for remoteStore (backed by HotRod RemoteCaches) against external JDG. Especially tests "putIfAbsent" contract.
+ *
+ * Steps: {@see ConcurrencyJDGRemoteCacheClientListenersTest}
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@Ignore
 public class ConcurrencyJDGRemoteCacheTest {
 
     private static Map<String, EntryInfo> state = new HashMap<>();
@@ -82,7 +83,7 @@ public class ConcurrencyJDGRemoteCacheTest {
     }
 
     private static Worker createWorker(int threadId) {
-        EmbeddedCacheManager manager = createManager(threadId);
+        EmbeddedCacheManager manager = new TestCacheManagerFactory().createManager(threadId, InfinispanConnectionProvider.WORK_CACHE_NAME, RemoteStoreConfigurationBuilder.class);
         Cache<String, Integer> cache = manager.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
 
         System.out.println("Retrieved cache: " + threadId);
@@ -92,56 +93,6 @@ public class ConcurrencyJDGRemoteCacheTest {
         remoteStore.getRemoteCache().addClientListener(listener);
 
         return new Worker(cache, threadId);
-    }
-
-    private static EmbeddedCacheManager createManager(int threadId) {
-        System.setProperty("java.net.preferIPv4Stack", "true");
-        System.setProperty("jgroups.tcp.port", "53715");
-        GlobalConfigurationBuilder gcb = new GlobalConfigurationBuilder();
-
-        boolean clustered = false;
-        boolean async = false;
-        boolean allowDuplicateJMXDomains = true;
-
-        if (clustered) {
-            gcb = gcb.clusteredDefault();
-            gcb.transport().clusterName("test-clustering");
-        }
-
-        gcb.globalJmxStatistics().allowDuplicateDomains(allowDuplicateJMXDomains);
-
-        EmbeddedCacheManager cacheManager = new DefaultCacheManager(gcb.build());
-
-        Configuration invalidationCacheConfiguration = getCacheBackedByRemoteStore(threadId);
-
-        cacheManager.defineConfiguration(InfinispanConnectionProvider.WORK_CACHE_NAME, invalidationCacheConfiguration);
-        return cacheManager;
-
-    }
-
-    private static Configuration getCacheBackedByRemoteStore(int threadId) {
-        ConfigurationBuilder cacheConfigBuilder = new ConfigurationBuilder();
-
-        // int port = threadId==1 ? 11222 : 11322;
-        int port = 11222;
-
-        return cacheConfigBuilder.persistence().addStore(RemoteStoreConfigurationBuilder.class)
-                .fetchPersistentState(false)
-                .ignoreModifications(false)
-                .purgeOnStartup(false)
-                .preload(false)
-                .shared(true)
-                .remoteCacheName(InfinispanConnectionProvider.WORK_CACHE_NAME)
-                .rawValues(true)
-                .forceReturnValues(false)
-                .addServer()
-                    .host("localhost")
-                    .port(port)
-                .connectionPool()
-                    .maxActive(20)
-                    .exhaustedAction(ExhaustedAction.CREATE_NEW)
-                .async()
-                .   enabled(false).build();
     }
 
 
@@ -214,7 +165,7 @@ public class ConcurrencyJDGRemoteCacheTest {
         }
     }
 
-    private static class EntryInfo {
+    public static class EntryInfo {
         AtomicInteger successfulInitializations = new AtomicInteger(0);
         AtomicInteger successfulListenerWrites = new AtomicInteger(0);
         AtomicInteger th1 = new AtomicInteger();

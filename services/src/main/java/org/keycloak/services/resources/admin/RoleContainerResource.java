@@ -364,9 +364,9 @@ public class RoleContainerResource extends RoleResource {
             throw new NotFoundException("Could not find role");
         }
 
+        AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
+        permissions.roles().setPermissionsEnabled(role, ref.isEnabled());
         if (ref.isEnabled()) {
-            AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
-            permissions.roles().setPermissionsEnabled(role, ref.isEnabled());
             return RoleByIdResource.toMgmtRef(role, permissions);
         } else {
             return new ManagementPermissionReference();

@@ -59,6 +59,7 @@ import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.ClientSessionCode;
+import org.keycloak.services.managers.UserSessionCrossDCManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
@@ -120,17 +121,10 @@ public class TokenManager {
     }
 
     public TokenValidation validateToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm, AccessToken oldToken, HttpHeaders headers) throws OAuthErrorException {
-        UserModel user = session.users().getUserById(oldToken.getSubject(), realm);
-        if (user == null) {
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token", "Unknown user");
-        }
-
-        if (!user.isEnabled()) {
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "User disabled", "User disabled");
-        }
-
         UserSessionModel userSession = null;
-        if (TokenUtil.TOKEN_TYPE_OFFLINE.equals(oldToken.getType())) {
+        boolean offline = TokenUtil.TOKEN_TYPE_OFFLINE.equals(oldToken.getType());
+
+        if (offline) {
 
             UserSessionManager sessionManager = new UserSessionManager(session);
             userSession = sessionManager.findOfflineUserSession(realm, oldToken.getSessionState());
@@ -142,6 +136,8 @@ public class TokenManager {
                     throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Offline session not active", "Offline session not active");
                 }
 
+            } else {
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Offline user session not found", "Offline user session not found");
             }
         } else {
             // Find userSession regularly for online tokens
@@ -152,12 +148,27 @@ public class TokenManager {
             }
         }
 
-        if (userSession == null) {
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Offline user session not found", "Offline user session not found");
+        UserModel user = userSession.getUser();
+        if (user == null) {
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token", "Unknown user");
+        }
+
+        if (!user.isEnabled()) {
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "User disabled", "User disabled");
         }
 
         ClientModel client = session.getContext().getClient();
         AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(client.getId());
+
+        // Can theoretically happen in cross-dc environment. Try to see if userSession with our client is available in remoteCache
+        if (clientSession == null) {
+            userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, userSession.getId(), offline, client.getId());
+            if (userSession != null) {
+                clientSession = userSession.getAuthenticatedClientSessions().get(client.getId());
+            } else {
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Session doesn't have required client", "Session doesn't have required client");
+            }
+        }
 
         if (!client.getClientId().equals(oldToken.getIssuedFor())) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Unmatching clients", "Unmatching clients");
@@ -202,21 +213,15 @@ public class TokenManager {
             return false;
         }
 
-        UserSessionModel userSession =  session.sessions().getUserSession(realm, token.getSessionState());
+        UserSessionModel userSession =  new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), false, client.getId());
         if (AuthenticationManager.isSessionValid(realm, userSession)) {
-            AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(client.getId());
-            if (clientSession != null) {
-                return true;
-            }
+            return true;
         }
 
 
-        userSession = session.sessions().getOfflineUserSession(realm, token.getSessionState());
+        userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), true, client.getId());
         if (AuthenticationManager.isOfflineSessionValid(realm, userSession)) {
-            AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(client.getId());
-            if (clientSession != null) {
-                return true;
-            }
+            return true;
         }
 
         return false;
@@ -676,6 +681,18 @@ public class TokenManager {
             this.session = session;
             this.userSession = userSession;
             this.clientSession = clientSession;
+        }
+
+        public AccessToken getAccessToken() {
+            return accessToken;
+        }
+
+        public RefreshToken getRefreshToken() {
+            return refreshToken;
+        }
+
+        public IDToken getIdToken() {
+            return idToken;
         }
 
         public AccessTokenResponseBuilder accessToken(AccessToken accessToken) {

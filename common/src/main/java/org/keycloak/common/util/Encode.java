@@ -24,6 +24,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +37,7 @@ import java.util.regex.Pattern;
  */
 public class Encode
 {
-   private static final String UTF_8 = "UTF-8";
+   private static final String UTF_8 = StandardCharsets.UTF_8.name();
 
    private static final Pattern PARAM_REPLACEMENT = Pattern.compile("_resteasy_uri_parameter");
 
@@ -84,9 +85,7 @@ public class Encode
             case '@':
                continue;
          }
-         StringBuffer sb = new StringBuffer();
-         sb.append((char) i);
-         pathEncoding[i] = URLEncoder.encode(sb.toString());
+         pathEncoding[i] = URLEncoder.encode(String.valueOf((char) i));
       }
       pathEncoding[' '] = "%20";
       System.arraycopy(pathEncoding, 0, matrixParameterEncoding, 0, pathEncoding.length);
@@ -119,9 +118,7 @@ public class Encode
                queryNameValueEncoding[i] = "+";
                continue;
          }
-         StringBuffer sb = new StringBuffer();
-         sb.append((char) i);
-         queryNameValueEncoding[i] = URLEncoder.encode(sb.toString());
+         queryNameValueEncoding[i] = URLEncoder.encode(String.valueOf((char) i));
       }
 
       /*
@@ -159,9 +156,7 @@ public class Encode
                queryStringEncoding[i] = "%20";
                continue;
          }
-         StringBuffer sb = new StringBuffer();
-         sb.append((char) i);
-         queryStringEncoding[i] = URLEncoder.encode(sb.toString());
+         queryStringEncoding[i] = URLEncoder.encode(String.valueOf((char) i));
       }
    }
 
@@ -194,7 +189,7 @@ public class Encode
     */
    public static String encodeFragment(String value)
    {
-      return encodeValue(value, queryNameValueEncoding);
+      return encodeValue(value, queryStringEncoding);
    }
 
    /**
@@ -221,18 +216,19 @@ public class Encode
    public static String decodePath(String path)
    {
       Matcher matcher = encodedCharsMulti.matcher(path);
-      StringBuffer buf = new StringBuffer();
+      int start=0;
+      StringBuilder builder = new StringBuilder();
       CharsetDecoder decoder = Charset.forName(UTF_8).newDecoder();
       while (matcher.find())
       {
+    	 builder.append(path, start, matcher.start());
          decoder.reset();
          String decoded = decodeBytes(matcher.group(1), decoder);
-         decoded = decoded.replace("\\", "\\\\");
-         decoded = decoded.replace("$", "\\$");
-         matcher.appendReplacement(buf, decoded);
+         builder.append(decoded);
+         start = matcher.end();
       }
-      matcher.appendTail(buf);
-      return buf.toString();
+      builder.append(path, start, path.length());
+      return builder.toString();
    }
 
    private static String decodeBytes(String enc, CharsetDecoder decoder)
@@ -264,7 +260,7 @@ public class Encode
    public static String encodeNonCodes(String string)
    {
       Matcher matcher = nonCodes.matcher(string);
-      StringBuffer buf = new StringBuffer();
+      StringBuilder builder = new StringBuilder();
 
 
       // FYI: we do not use the no-arg matcher.find()
@@ -276,29 +272,32 @@ public class Encode
       while (matcher.find(idx))
       {
          int start = matcher.start();
-         buf.append(string.substring(idx, start));
-         buf.append("%25");
+         builder.append(string.substring(idx, start));
+         builder.append("%25");
          idx = start + 1;
       }
-      buf.append(string.substring(idx));
-      return buf.toString();
+      builder.append(string.substring(idx));
+      return builder.toString();
    }
 
-   private static boolean savePathParams(String segment, StringBuffer newSegment, List<String> params)
+   public static boolean savePathParams(String segment, StringBuilder newSegment, List<String> params)
    {
       boolean foundParam = false;
       // Regular expressions can have '{' and '}' characters.  Replace them to do match
       segment = PathHelper.replaceEnclosedCurlyBraces(segment);
       Matcher matcher = PathHelper.URI_TEMPLATE_PATTERN.matcher(segment);
+      int start = 0;
       while (matcher.find())
       {
+    	 newSegment.append(segment, start, matcher.start());
          foundParam = true;
          String group = matcher.group();
          // Regular expressions can have '{' and '}' characters.  Recover earlier replacement
          params.add(PathHelper.recoverEnclosedCurlyBraces(group));
-         matcher.appendReplacement(newSegment, "_resteasy_uri_parameter");
+         newSegment.append("_resteasy_uri_parameter");
+         start = matcher.end();
       }
-      matcher.appendTail(newSegment);
+      newSegment.append(segment, start, segment.length());
       return foundParam;
    }
 
@@ -309,11 +308,11 @@ public class Encode
     * @param encoding
     * @return
     */
-   private static String encodeValue(String segment, String[] encoding)
+   public static String encodeValue(String segment, String[] encoding)
    {
       ArrayList<String> params = new ArrayList<String>();
       boolean foundParam = false;
-      StringBuffer newSegment = new StringBuffer();
+      StringBuilder newSegment = new StringBuilder();
       if (savePathParams(segment, newSegment, params))
       {
          foundParam = true;
@@ -411,21 +410,21 @@ public class Encode
       return encodeFromArray(nameOrValue, queryNameValueEncoding, true);
    }
 
-   private static String encodeFromArray(String segment, String[] encodingMap, boolean encodePercent)
+   protected static String encodeFromArray(String segment, String[] encodingMap, boolean encodePercent)
    {
-      StringBuffer result = new StringBuffer();
+      StringBuilder result = new StringBuilder();
       for (int i = 0; i < segment.length(); i++)
       {
-         if (!encodePercent && segment.charAt(i) == '%')
+    	 char currentChar = segment.charAt(i);
+         if (!encodePercent && currentChar == '%')
          {
-            result.append(segment.charAt(i));
+            result.append(currentChar);
             continue;
          }
-         int idx = segment.charAt(i);
-         String encoding = encode(idx, encodingMap);
+         String encoding = encode(currentChar, encodingMap);
          if (encoding == null)
          {
-            result.append(segment.charAt(i));
+            result.append(currentChar);
          }
          else
          {
@@ -461,20 +460,20 @@ public class Encode
       return encoded;
    }
 
-   private static String pathParamReplacement(String segment, List<String> params)
+   public static String pathParamReplacement(String segment, List<String> params)
    {
-      StringBuffer newSegment = new StringBuffer();
+      StringBuilder newSegment = new StringBuilder();
       Matcher matcher = PARAM_REPLACEMENT.matcher(segment);
       int i = 0;
+      int start = 0;
       while (matcher.find())
       {
+    	 newSegment.append(segment, start, matcher.start());
          String replacement = params.get(i++);
-         // double encode slashes, so that slashes stay where they are 
-         replacement = replacement.replace("\\", "\\\\");
-         replacement = replacement.replace("$", "\\$");
-         matcher.appendReplacement(newSegment, replacement);
+     	 newSegment.append(replacement);
+		 start = matcher.end();
       }
-      matcher.appendTail(newSegment);
+  	  newSegment.append(segment, start, segment.length());
       segment = newSegment.toString();
       return segment;
    }
@@ -496,6 +495,38 @@ public class Encode
             try
             {
                decoded.add(URLDecoder.decode(entry.getKey(), UTF_8), URLDecoder.decode(value, UTF_8));
+            }
+            catch (UnsupportedEncodingException e)
+            {
+               throw new RuntimeException(e);
+            }
+         }
+      }
+      return decoded;
+   }
+   
+   /**
+    * decode an encoded map
+    *
+    * @param map
+    * @param charset
+    * @return
+    */
+   public static MultivaluedHashMap<String, String> decode(MultivaluedHashMap<String, String> map, String charset)
+   {
+      if (charset == null)
+      {
+         charset = UTF_8;
+      }
+      MultivaluedHashMap<String, String> decoded = new MultivaluedHashMap<String, String>();
+      for (Map.Entry<String, List<String>> entry : map.entrySet())
+      {
+         List<String> values = entry.getValue();
+         for (String value : values)
+         {
+            try
+            {
+               decoded.add(URLDecoder.decode(entry.getKey(), charset), URLDecoder.decode(value, charset));
             }
             catch (UnsupportedEncodingException e)
             {

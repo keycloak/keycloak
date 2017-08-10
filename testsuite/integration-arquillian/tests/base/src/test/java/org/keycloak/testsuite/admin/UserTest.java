@@ -18,9 +18,11 @@
 package org.keycloak.testsuite.admin;
 
 import org.hamcrest.Matchers;
+import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -29,9 +31,13 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.common.util.Base64;
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
+import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -44,10 +50,13 @@ import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.page.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.ProceedPage;
+import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GreenMailRule;
@@ -65,12 +74,15 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-
 import java.util.concurrent.atomic.AtomicInteger;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -90,7 +102,6 @@ public class UserTest extends AbstractAdminTest {
     @Page
     protected LoginPasswordUpdatePage passwordUpdatePage;
 
-
     @ArquillianResource
     protected OAuthClient oAuthClient;
 
@@ -98,11 +109,22 @@ public class UserTest extends AbstractAdminTest {
     protected InfoPage infoPage;
 
     @Page
+    protected ProceedPage proceedPage;
+
+    @Page
     protected ErrorPage errorPage;
 
     @Page
     protected LoginPage loginPage;
 
+    @Deployment
+    public static WebArchive deploy() {
+        return RunOnServerDeployment.create(
+                AbstractAdminTest.class, 
+                AbstractTestRealmKeycloakTest.class, 
+                UserResource.class);
+    }
+    
     public String createUser() {
         return createUser("user1", "user1@localhost");
     }
@@ -166,6 +188,73 @@ public class UserTest extends AbstractAdminTest {
         Response response = realm.users().create(user);
         assertEquals(409, response.getStatus());
         response.close();
+    }
+    
+    @Test
+    public void createUserWithHashedCredentials() {
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("user_creds");
+        user.setEmail("email@localhost");
+        
+        CredentialRepresentation hashedPassword = new CredentialRepresentation();
+        hashedPassword.setAlgorithm("my-algorithm");
+        hashedPassword.setCounter(11);
+        hashedPassword.setCreatedDate(1001l);
+        hashedPassword.setDevice("deviceX");
+        hashedPassword.setDigits(6);
+        hashedPassword.setHashIterations(22);
+        hashedPassword.setHashedSaltedValue("ABC");
+        hashedPassword.setPeriod(99);
+        hashedPassword.setSalt(Base64.encodeBytes("theSalt".getBytes()));
+        hashedPassword.setType(CredentialRepresentation.PASSWORD);
+        
+        user.setCredentials(Arrays.asList(hashedPassword));
+        
+        createUser(user);
+        
+        CredentialModel credentialHashed = fetchCredentials("user_creds");
+        assertNotNull("Expecting credential", credentialHashed);
+        assertEquals("my-algorithm", credentialHashed.getAlgorithm());
+        assertEquals(11, credentialHashed.getCounter());
+        assertEquals(Long.valueOf(1001), credentialHashed.getCreatedDate());
+        assertEquals("deviceX", credentialHashed.getDevice());
+        assertEquals(6, credentialHashed.getDigits());
+        assertEquals(22, credentialHashed.getHashIterations());
+        assertEquals("ABC", credentialHashed.getValue());
+        assertEquals(99, credentialHashed.getPeriod());
+        assertEquals("theSalt", new String(credentialHashed.getSalt()));
+        assertEquals(CredentialRepresentation.PASSWORD, credentialHashed.getType());
+    }
+    
+    @Test
+    public void createUserWithRawCredentials() {
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("user_rawpw");
+        user.setEmail("email.raw@localhost");
+
+        CredentialRepresentation rawPassword = new CredentialRepresentation();
+        rawPassword.setValue("ABCD");
+        rawPassword.setType(CredentialRepresentation.PASSWORD);
+        user.setCredentials(Arrays.asList(rawPassword));
+        
+        createUser(user);
+
+        CredentialModel credential = fetchCredentials("user_rawpw");
+        assertNotNull("Expecting credential", credential);
+        assertEquals(PasswordPolicy.HASH_ALGORITHM_DEFAULT, credential.getAlgorithm());
+        assertEquals(PasswordPolicy.HASH_ITERATIONS_DEFAULT, credential.getHashIterations());
+        assertNotEquals("ABCD", credential.getValue());
+        assertEquals(CredentialRepresentation.PASSWORD, credential.getType());
+    }
+    
+    private CredentialModel fetchCredentials(String username) {
+        return getTestingClient().server(REALM_NAME).fetch(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(username, realm);
+            List<CredentialModel> storedCredentialsByType = session.userCredentialManager().getStoredCredentialsByType(realm, user, CredentialRepresentation.PASSWORD);
+            System.out.println(storedCredentialsByType.size());
+            return storedCredentialsByType.get(0);
+        }, CredentialModel.class);
     }
     
     @Test
@@ -543,6 +632,9 @@ public class UserTest extends AbstractAdminTest {
 
         driver.navigate().to(link);
 
+        proceedPage.assertCurrent();
+        Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
+        proceedPage.clickProceedLink();
         passwordUpdatePage.assertCurrent();
 
         passwordUpdatePage.changePassword("new-pass", "new-pass");
@@ -579,6 +671,9 @@ public class UserTest extends AbstractAdminTest {
 
             driver.navigate().to(link);
 
+            proceedPage.assertCurrent();
+            Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
+            proceedPage.clickProceedLink();
             passwordUpdatePage.assertCurrent();
 
             passwordUpdatePage.changePassword("new-pass" + i, "new-pass" + i);
@@ -621,6 +716,9 @@ public class UserTest extends AbstractAdminTest {
 
             driver.navigate().to(link);
 
+            proceedPage.assertCurrent();
+            Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
+            proceedPage.clickProceedLink();
             passwordUpdatePage.assertCurrent();
 
             passwordUpdatePage.changePassword("new-pass" + i, "new-pass" + i);
@@ -659,6 +757,9 @@ public class UserTest extends AbstractAdminTest {
 
         driver.navigate().to(link);
 
+        proceedPage.assertCurrent();
+        Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
+        proceedPage.clickProceedLink();
         passwordUpdatePage.assertCurrent();
 
         driver.manage().deleteAllCookies();
@@ -666,6 +767,9 @@ public class UserTest extends AbstractAdminTest {
 
         driver.navigate().to(link);
 
+        proceedPage.assertCurrent();
+        Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
+        proceedPage.clickProceedLink();
         passwordUpdatePage.assertCurrent();
 
         passwordUpdatePage.changePassword("new-pass", "new-pass");
@@ -706,7 +810,7 @@ public class UserTest extends AbstractAdminTest {
             driver.navigate().to(link);
 
             errorPage.assertCurrent();
-            assertEquals("An error occurred, please login again through your application.", errorPage.getError());
+            assertEquals("Action expired.", errorPage.getError());
         } finally {
             setTimeOffset(0);
 
@@ -765,6 +869,9 @@ public class UserTest extends AbstractAdminTest {
 
         driver.navigate().to(link);
 
+        proceedPage.assertCurrent();
+        Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
+        proceedPage.clickProceedLink();
         passwordUpdatePage.assertCurrent();
 
         passwordUpdatePage.changePassword("new-pass", "new-pass");
@@ -825,6 +932,9 @@ public class UserTest extends AbstractAdminTest {
 
         driver.navigate().to(link);
 
+        proceedPage.assertCurrent();
+        Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
+        proceedPage.clickProceedLink();
         passwordUpdatePage.assertCurrent();
 
         passwordUpdatePage.changePassword("new-pass", "new-pass");
@@ -896,11 +1006,17 @@ public class UserTest extends AbstractAdminTest {
 
         driver.navigate().to(link);
 
+        proceedPage.assertCurrent();
+        Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Verify Email"));
+        proceedPage.clickProceedLink();
         Assert.assertEquals("Your account has been updated.", infoPage.getInfo());
 
         driver.navigate().to("about:blank");
 
         driver.navigate().to(link); // It should be possible to use the same action token multiple times
+        proceedPage.assertCurrent();
+        Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Verify Email"));
+        proceedPage.clickProceedLink();
         Assert.assertEquals("Your account has been updated.", infoPage.getInfo());
     }
 

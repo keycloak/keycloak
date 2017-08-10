@@ -35,13 +35,13 @@ import java.util.Set;
 public class Profile {
 
     public enum Feature {
-        AUTHORIZATION, IMPERSONATION, SCRIPTS
+        AUTHORIZATION, IMPERSONATION, SCRIPTS, DOCKER
     }
 
     private enum ProfileValue {
-        PRODUCT(Feature.AUTHORIZATION, Feature.SCRIPTS),
+        PRODUCT(Feature.AUTHORIZATION, Feature.SCRIPTS, Feature.DOCKER),
         PREVIEW,
-        COMMUNITY;
+        COMMUNITY(Feature.DOCKER);
 
         private List<Feature> disabled;
 

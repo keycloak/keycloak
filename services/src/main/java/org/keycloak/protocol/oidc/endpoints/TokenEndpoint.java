@@ -36,6 +36,7 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -52,6 +53,7 @@ import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.Cors;
+import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 
@@ -65,6 +67,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.security.MessageDigest;
@@ -80,7 +83,7 @@ public class TokenEndpoint {
     private Map<String, String> clientAuthAttributes;
 
     private enum Action {
-        AUTHORIZATION_CODE, REFRESH_TOKEN, PASSWORD, CLIENT_CREDENTIALS
+        AUTHORIZATION_CODE, REFRESH_TOKEN, PASSWORD, CLIENT_CREDENTIALS, TOKEN_EXCHANGE
     }
 
     // https://tools.ietf.org/html/rfc7636#section-4.2
@@ -134,6 +137,8 @@ public class TokenEndpoint {
                 return buildResourceOwnerPasswordCredentialsGrant();
             case CLIENT_CREDENTIALS:
                 return buildClientCredentialsGrant();
+            case TOKEN_EXCHANGE:
+                return buildTokenExchange();
         }
 
         throw new RuntimeException("Unknown action " + action);
@@ -197,6 +202,10 @@ public class TokenEndpoint {
         } else if (grantType.equals(OAuth2Constants.CLIENT_CREDENTIALS)) {
             event.event(EventType.CLIENT_LOGIN);
             action = Action.CLIENT_CREDENTIALS;
+        } else if (grantType.equals(OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)) {
+            event.event(EventType.TOKEN_EXCHANGE);
+            action = Action.TOKEN_EXCHANGE;
+
         } else {
             throw new ErrorResponseException(Errors.INVALID_REQUEST, "Invalid " + OIDCLoginProtocol.GRANT_TYPE_PARAM, Response.Status.BAD_REQUEST);
         }
@@ -258,6 +267,7 @@ public class TokenEndpoint {
         }
 
         event.user(userSession.getUser());
+
         event.session(userSession.getId());
 
         String redirectUri = clientSession.getNote(OIDCLoginProtocol.REDIRECT_URI_PARAM);
@@ -376,6 +386,7 @@ public class TokenEndpoint {
             }
 
         } catch (OAuthErrorException e) {
+            logger.trace(e.getMessage(), e);
             event.error(Errors.INVALID_TOKEN);
             throw new ErrorResponseException(e.getError(), e.getDescription(), Response.Status.BAD_REQUEST);
         }
@@ -398,9 +409,16 @@ public class TokenEndpoint {
             logger.debugf("Adapter Session '%s' saved in ClientSession for client '%s'. Host is '%s'", adapterSessionId, client.getClientId(), adapterSessionHost);
 
             event.detail(AdapterConstants.CLIENT_SESSION_STATE, adapterSessionId);
-            clientSession.setNote(AdapterConstants.CLIENT_SESSION_STATE, adapterSessionId);
+            String oldClientSessionState = clientSession.getNote(AdapterConstants.CLIENT_SESSION_STATE);
+            if (!adapterSessionId.equals(oldClientSessionState)) {
+                clientSession.setNote(AdapterConstants.CLIENT_SESSION_STATE, adapterSessionId);
+            }
+
             event.detail(AdapterConstants.CLIENT_SESSION_HOST, adapterSessionHost);
-            clientSession.setNote(AdapterConstants.CLIENT_SESSION_HOST, adapterSessionHost);
+            String oldClientSessionHost = clientSession.getNote(AdapterConstants.CLIENT_SESSION_HOST);
+            if (!Objects.equals(adapterSessionHost, oldClientSessionHost)) {
+                clientSession.setNote(AdapterConstants.CLIENT_SESSION_HOST, adapterSessionHost);
+            }
         }
     }
 
@@ -542,6 +560,100 @@ public class TokenEndpoint {
 
         return Cors.add(request, Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).auth().allowedOrigins(uriInfo, client).allowedMethods("POST").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
     }
+
+    public Response buildTokenExchange() {
+        event.detail(Details.AUTH_METHOD, "oauth_credentials");
+
+        String scope = formParams.getFirst(OAuth2Constants.SCOPE);
+        String subjectToken = formParams.getFirst(OAuth2Constants.SUBJECT_TOKEN);
+        String subjectTokenType = formParams.getFirst(OAuth2Constants.SUBJECT_TOKEN_TYPE);
+        AuthenticationManager.AuthResult authResult = AuthenticationManager.verifyIdentityToken(session, realm, uriInfo, clientConnection, true, true, false, subjectToken, headers);
+        if (authResult == null) {
+            event.error(Errors.INVALID_TOKEN);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Invalid token", Response.Status.BAD_REQUEST);
+        }
+
+        String audience = formParams.getFirst(OAuth2Constants.AUDIENCE);
+        if (audience == null) {
+            event.error(Errors.INVALID_REQUEST);
+            throw new ErrorResponseException("invalid_audience", "No audience specified", Response.Status.BAD_REQUEST);
+
+        }
+        ClientModel targetClient = null;
+        if (audience != null) {
+            targetClient = realm.getClientByClientId(audience);
+        }
+        if (targetClient == null) {
+            event.error(Errors.INVALID_CLIENT);
+            throw new ErrorResponseException("invalid_client", "Client authentication ended, but client is null", Response.Status.BAD_REQUEST);
+        }
+
+        if (targetClient.isConsentRequired()) {
+            event.error(Errors.CONSENT_DENIED);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_CLIENT, "Client requires user consent", Response.Status.BAD_REQUEST);
+        }
+
+        boolean exchangeFromAllowed = false;
+        for (String aud : authResult.getToken().getAudience()) {
+            ClientModel audClient = realm.getClientByClientId(aud);
+            if (audClient == null) continue;
+            if (audClient.equals(client)) {
+                exchangeFromAllowed = true;
+                break;
+            }
+            if (AdminPermissions.management(session, realm).clients().canExchangeFrom(client, audClient)) {
+                exchangeFromAllowed = true;
+                break;
+            }
+        }
+        if (!exchangeFromAllowed) {
+            logger.debug("Client does not have exchange rights for audience of provided token");
+            event.error(Errors.NOT_ALLOWED);
+            throw new ErrorResponseException(OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);
+        }
+        if (!AdminPermissions.management(session, realm).clients().canExchangeTo(client, targetClient)) {
+            logger.debug("Client does not have exchange rights for target audience");
+            event.error(Errors.NOT_ALLOWED);
+            throw new ErrorResponseException(OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);
+        }
+
+        AuthenticationSessionModel authSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, targetClient, false);
+        authSession.setAuthenticatedUser(authResult.getUser());
+        authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
+        authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, scope);
+
+        UserSessionModel userSession = authResult.getSession();
+        event.session(userSession);
+
+        AuthenticationManager.setRolesAndMappersInSession(authSession);
+        AuthenticatedClientSessionModel clientSession = TokenManager.attachAuthenticationSession(session, userSession, authSession);
+
+        // Notes about client details
+        userSession.setNote(ServiceAccountConstants.CLIENT_ID, client.getClientId());
+        userSession.setNote(ServiceAccountConstants.CLIENT_HOST, clientConnection.getRemoteHost());
+        userSession.setNote(ServiceAccountConstants.CLIENT_ADDRESS, clientConnection.getRemoteAddr());
+
+        updateUserSessionFromClientAuth(userSession);
+
+        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, targetClient, event, session, userSession, clientSession)
+                .generateAccessToken()
+                .generateRefreshToken();
+        responseBuilder.getAccessToken().issuedFor(client.getClientId());
+        responseBuilder.getRefreshToken().issuedFor(client.getClientId());
+
+        String scopeParam = clientSession.getNote(OAuth2Constants.SCOPE);
+        if (TokenUtil.isOIDCRequest(scopeParam)) {
+            responseBuilder.generateIDToken();
+        }
+
+        AccessTokenResponse res = responseBuilder.build();
+
+        event.success();
+
+        return Cors.add(request, Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).auth().allowedOrigins(uriInfo, client).allowedMethods("POST").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
+    }
+
 
     // https://tools.ietf.org/html/rfc7636#section-4.1
     private boolean isValidPkceCodeVerifier(String codeVerifier) {

@@ -94,6 +94,7 @@ public abstract class AbstractCorsExampleAdapterTest extends AbstractExampleAdap
         waitUntilElement(angularCorsProductPage.getOutput()).text().contains("iphone");
         waitUntilElement(angularCorsProductPage.getOutput()).text().contains("ipad");
         waitUntilElement(angularCorsProductPage.getOutput()).text().contains("ipod");
+        waitUntilElement(angularCorsProductPage.getHeaders()).text().contains("\"x-custom1\":\"some-value\"");
 
         angularCorsProductPage.loadRoles();
         waitUntilElement(angularCorsProductPage.getOutput()).text().contains("user");

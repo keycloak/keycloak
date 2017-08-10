@@ -562,9 +562,9 @@ public class ClientResource {
     @NoCache
     public ManagementPermissionReference setManagementPermissionsEnabled(ManagementPermissionReference ref) {
         auth.clients().requireManage(client);
-         if (ref.isEnabled()) {
-            AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
-            permissions.clients().setPermissionsEnabled(client, ref.isEnabled());
+        AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
+        permissions.clients().setPermissionsEnabled(client, ref.isEnabled());
+        if (ref.isEnabled()) {
             return toMgmtRef(client, permissions);
         } else {
             return new ManagementPermissionReference();

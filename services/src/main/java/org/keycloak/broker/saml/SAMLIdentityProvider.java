@@ -54,6 +54,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.keycloak.keys.KeyMetadata;
+import org.keycloak.keys.KeyMetadata.Status;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
@@ -237,18 +238,27 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
 
         boolean wantAuthnRequestsSigned = getConfig().isWantAuthnRequestsSigned();
         boolean wantAssertionsSigned = getConfig().isWantAssertionsSigned();
+        boolean wantAssertionsEncrypted = getConfig().isWantAssertionsEncrypted();
         String entityId = getEntityId(uriInfo, realm);
         String nameIDPolicyFormat = getConfig().getNameIDPolicyFormat();
 
-        StringBuilder keysString = new StringBuilder();
+        StringBuilder signingKeysString = new StringBuilder();
+        StringBuilder encryptionKeysString = new StringBuilder();
         Set<RsaKeyMetadata> keys = new TreeSet<>((o1, o2) -> o1.getStatus() == o2.getStatus() // Status can be only PASSIVE OR ACTIVE, push PASSIVE to end of list
           ? (int) (o2.getProviderPriority() - o1.getProviderPriority())
           : (o1.getStatus() == KeyMetadata.Status.PASSIVE ? 1 : -1));
         keys.addAll(session.keys().getRsaKeys(realm, false));
         for (RsaKeyMetadata key : keys) {
-            addKeyInfo(keysString, key, KeyTypes.SIGNING.value());
+            addKeyInfo(signingKeysString, key, KeyTypes.SIGNING.value());
+
+            if (key.getStatus() == Status.ACTIVE) {
+                addKeyInfo(encryptionKeysString, key, KeyTypes.ENCRYPTION.value());
+            }
         }
-        String descriptor = SPMetadataDescriptor.getSPDescriptor(authnBinding, endpoint, endpoint, wantAuthnRequestsSigned, wantAssertionsSigned, entityId, nameIDPolicyFormat, keysString.toString());
+        String descriptor = SPMetadataDescriptor.getSPDescriptor(authnBinding, endpoint, endpoint,
+          wantAuthnRequestsSigned, wantAssertionsSigned, wantAssertionsEncrypted,
+          entityId, nameIDPolicyFormat, signingKeysString.toString(), encryptionKeysString.toString());
+
         return Response.ok(descriptor, MediaType.APPLICATION_XML_TYPE).build();
     }
 

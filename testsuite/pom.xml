@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.2.0.CR1-SNAPSHOT</version>
+        <version>3.3.0.CR1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -53,6 +53,7 @@
         <module>integration</module>
         <module>tomcat8</module>
         <module>integration-arquillian</module>
+        <module>utils</module>
     </modules>
 
     <profiles>

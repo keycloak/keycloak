@@ -109,6 +109,33 @@ public class TimePolicyManagementTest extends AbstractAuthorizationSettingsTest 
         assertNull(authorizationPage.authorizationTabs().policies().policies().findByName(expected.getName()));
     }
 
+    @Test
+    public void testDeleteFromList() throws InterruptedException {
+        authorizationPage.navigateTo();
+        TimePolicyRepresentation expected = new TimePolicyRepresentation();
+
+        expected.setName("Test Time Policy");
+        expected.setDescription("description");
+        expected.setNotBefore("2017-01-01 00:00:00");
+        expected.setNotBefore("2018-01-01 00:00:00");
+        expected.setDayMonth("1");
+        expected.setDayMonthEnd("2");
+        expected.setMonth("3");
+        expected.setMonthEnd("4");
+        expected.setYear("5");
+        expected.setYearEnd("6");
+        expected.setHour("7");
+        expected.setHourEnd("8");
+        expected.setMinute("9");
+        expected.setMinuteEnd("10");
+
+        expected = createPolicy(expected);
+        authorizationPage.navigateTo();
+        authorizationPage.authorizationTabs().policies().deleteFromList(expected.getName());
+        authorizationPage.navigateTo();
+        assertNull(authorizationPage.authorizationTabs().policies().policies().findByName(expected.getName()));
+    }
+
     private TimePolicyRepresentation createPolicy(TimePolicyRepresentation expected) {
         TimePolicy policy = authorizationPage.authorizationTabs().policies().create(expected);
         assertAlertSuccess();

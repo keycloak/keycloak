@@ -1336,6 +1336,18 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
+    public AuthenticationFlowModel getDockerAuthenticationFlow() {
+        String flowId = realm.getDockerAuthenticationFlow();
+        if (flowId == null) return null;
+        return getAuthenticationFlowById(flowId);
+    }
+
+    @Override
+    public void setDockerAuthenticationFlow(AuthenticationFlowModel flow) {
+        realm.setDockerAuthenticationFlow(flow.getId());
+    }
+
+    @Override
     public List<AuthenticationFlowModel> getAuthenticationFlows() {
         return realm.getAuthenticationFlows().stream()
                 .map(this::entityToModel)

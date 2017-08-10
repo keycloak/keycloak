@@ -31,6 +31,7 @@ import org.keycloak.services.ForbiddenException;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -184,8 +185,12 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
             authz.getStoreFactory().getPolicyStore().delete(manageMembersPermission.getId());
         }
         Policy viewMembersPermission = viewMembersPermission(group);
-        if (manageMembersPermission == null) {
+        if (viewMembersPermission == null) {
             authz.getStoreFactory().getPolicyStore().delete(viewMembersPermission.getId());
+        }
+        Policy manageMembershipPermission = manageMembershipPermission(group);
+        if (manageMembershipPermission != null) {
+            authz.getStoreFactory().getPolicyStore().delete(manageMembershipPermission.getId());
         }
         Resource resource = groupResource(group);
         if (resource != null) authz.getStoreFactory().getResourceStore().delete(resource.getId());
@@ -242,11 +247,12 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
 
     @Override
     public Map<String, String> getPermissions(GroupModel group) {
-        Map<String, String> scopes = new HashMap<>();
+        initialize(group);
+        Map<String, String> scopes = new LinkedHashMap<>();
         scopes.put(AdminPermissionManagement.VIEW_SCOPE, viewPermission(group).getId());
         scopes.put(AdminPermissionManagement.MANAGE_SCOPE, managePermission(group).getId());
-        scopes.put(MANAGE_MEMBERS_SCOPE, manageMembersPermission(group).getId());
         scopes.put(VIEW_MEMBERS_SCOPE, viewMembersPermission(group).getId());
+        scopes.put(MANAGE_MEMBERS_SCOPE, manageMembersPermission(group).getId());
         scopes.put(MANAGE_MEMBERSHIP_SCOPE, manageMembershipPermission(group).getId());
         return scopes;
     }

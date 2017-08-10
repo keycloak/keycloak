@@ -18,6 +18,7 @@ package org.keycloak.services.resources.admin.permissions;
 
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.models.ClientModel;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -26,6 +27,10 @@ import org.keycloak.authorization.model.ResourceServer;
 public interface AdminPermissionManagement {
     public static final String MANAGE_SCOPE = "manage";
     public static final String VIEW_SCOPE = "view";
+    public static final String EXCHANGE_FROM_SCOPE="exchange-from";
+    public static final String EXCHANGE_TO_SCOPE="exchange-to";
+
+    ClientModel getRealmManagementClient();
 
     AuthorizationProvider authz();
 

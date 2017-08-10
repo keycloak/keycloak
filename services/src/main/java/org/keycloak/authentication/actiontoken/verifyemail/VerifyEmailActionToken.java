@@ -29,9 +29,13 @@ public class VerifyEmailActionToken extends DefaultActionToken {
     public static final String TOKEN_TYPE = "verify-email";
 
     private static final String JSON_FIELD_EMAIL = "eml";
+    private static final String JSON_FIELD_ORIGINAL_AUTHENTICATION_SESSION_ID = "oasid";
 
     @JsonProperty(value = JSON_FIELD_EMAIL)
     private String email;
+
+    @JsonProperty(value = JSON_FIELD_ORIGINAL_AUTHENTICATION_SESSION_ID)
+    private String originalAuthenticationSessionId;
 
     public VerifyEmailActionToken(String userId, int absoluteExpirationInSecs, String authenticationSessionId, String email) {
         super(userId, TOKEN_TYPE, absoluteExpirationInSecs, null, authenticationSessionId);
@@ -47,5 +51,13 @@ public class VerifyEmailActionToken extends DefaultActionToken {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getOriginalAuthenticationSessionId() {
+        return originalAuthenticationSessionId;
+    }
+
+    public void setOriginalAuthenticationSessionId(String originalAuthenticationSessionId) {
+        this.originalAuthenticationSessionId = originalAuthenticationSessionId;
     }
 }

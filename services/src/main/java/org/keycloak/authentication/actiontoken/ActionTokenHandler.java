@@ -17,6 +17,7 @@
 package org.keycloak.authentication.actiontoken;
 
 import org.keycloak.TokenVerifier.Predicate;
+import org.keycloak.common.VerificationException;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.provider.Provider;
@@ -64,7 +65,7 @@ public interface ActionTokenHandler<T extends JsonWebToken> extends Provider {
      * @param token Token. Can be {@code null}
      * @return authentication session ID
      */
-    String getAuthenticationSessionIdFromToken(T token);
+    String getAuthenticationSessionIdFromToken(T token, ActionTokenContext<T> tokenContext);
 
     /**
      * Returns a event type logged with {@link EventBuilder} class.
@@ -93,7 +94,7 @@ public interface ActionTokenHandler<T extends JsonWebToken> extends Provider {
      * @param tokenContext
      * @return
      */
-    AuthenticationSessionModel startFreshAuthenticationSession(T token, ActionTokenContext<T> tokenContext);
+    AuthenticationSessionModel startFreshAuthenticationSession(T token, ActionTokenContext<T> tokenContext) throws VerificationException;
 
     /**
      * Returns {@code true} when the token can be used repeatedly to invoke the action, {@code false} when the token

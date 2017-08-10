@@ -345,7 +345,7 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
         logger.debugv("saml document: {0}", documentAsString);
         byte[] responseBytes = documentAsString.getBytes(GeneralConstants.SAML_CHARSET);
 
-        return RedirectBindingUtil.deflateBase64URLEncode(responseBytes);
+        return RedirectBindingUtil.deflateBase64Encode(responseBytes);
     }
 
 
@@ -370,7 +370,7 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
             } catch (InvalidKeyException | SignatureException e) {
                 throw new ProcessingException(e);
             }
-            String encodedSig = RedirectBindingUtil.base64URLEncode(sig);
+            String encodedSig = RedirectBindingUtil.base64Encode(sig);
             builder.queryParam(GeneralConstants.SAML_SIGNATURE_REQUEST_KEY, encodedSig);
         }
         return builder.build();

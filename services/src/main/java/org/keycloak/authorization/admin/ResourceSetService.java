@@ -101,39 +101,24 @@ public class ResourceSetService {
         Resource existingResource = storeFactory.getResourceStore().findByName(resource.getName(), this.resourceServer.getId());
         ResourceOwnerRepresentation owner = resource.getOwner();
 
-        if (existingResource != null && existingResource.getResourceServer().getId().equals(this.resourceServer.getId())
-                && existingResource.getOwner().equals(owner)) {
+        if (owner == null) {
+            owner = new ResourceOwnerRepresentation();
+            owner.setId(resourceServer.getClientId());
+        }
+
+        String ownerId = owner.getId();
+
+        if (ownerId == null) {
+            return ErrorResponse.error("You must specify the resource owner.", Status.BAD_REQUEST);
+        }
+
+        if (existingResource != null && existingResource.getOwner().equals(ownerId)) {
             return ErrorResponse.exists("Resource with name [" + resource.getName() + "] already exists.");
         }
 
-        if (owner != null) {
-            String ownerId = owner.getId();
-
-            if (ownerId != null) {
-                if (!resourceServer.getClientId().equals(ownerId)) {
-                    RealmModel realm = authorization.getRealm();
-                    KeycloakSession keycloakSession = authorization.getKeycloakSession();
-                    UserProvider users = keycloakSession.users();
-                    UserModel ownerModel = users.getUserById(ownerId, realm);
-
-                    if (ownerModel == null) {
-                        ownerModel = users.getUserByUsername(ownerId, realm);
-                    }
-
-                    if (ownerModel == null) {
-                        return ErrorResponse.error("Owner must be a valid username or user identifier. If the resource server, the client id or null.", Status.BAD_REQUEST);
-                    }
-
-                    owner.setId(ownerModel.getId());
-                }
-            }
-        }
-
-        Resource model = toModel(resource, this.resourceServer, authorization);
-
         ResourceRepresentation representation = new ResourceRepresentation();
 
-        representation.setId(model.getId());
+        representation.setId(toModel(resource, this.resourceServer, authorization).getId());
 
         return Response.status(Status.CREATED).entity(representation).build();
     }

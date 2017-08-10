@@ -76,6 +76,7 @@ import org.keycloak.models.ScopeContainerModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
@@ -614,6 +615,18 @@ public class RepresentationToModel {
             }
         }
 
+        // Added in 3.2
+        if (rep.getDockerAuthenticationFlow() == null) {
+            AuthenticationFlowModel dockerAuthenticationFlow = newRealm.getFlowByAlias(DefaultAuthenticationFlows.DOCKER_AUTH);
+            if (dockerAuthenticationFlow == null) {
+                DefaultAuthenticationFlows.dockerAuthenticationFlow(newRealm);
+            } else {
+                newRealm.setDockerAuthenticationFlow(dockerAuthenticationFlow);
+            }
+        } else {
+            newRealm.setDockerAuthenticationFlow(newRealm.getFlowByAlias(rep.getDockerAuthenticationFlow()));
+        }
+
         DefaultAuthenticationFlows.addIdentityProviderAuthenticator(newRealm, defaultProvider);
     }
 
@@ -897,6 +910,9 @@ public class RepresentationToModel {
         }
         if (rep.getClientAuthenticationFlow() != null) {
             realm.setClientAuthenticationFlow(realm.getFlowByAlias(rep.getClientAuthenticationFlow()));
+        }
+        if (rep.getDockerAuthenticationFlow() != null) {
+            realm.setDockerAuthenticationFlow(realm.getFlowByAlias(rep.getDockerAuthenticationFlow()));
         }
     }
 
@@ -1201,6 +1217,7 @@ public class RepresentationToModel {
         if (rep.isUseTemplateScope() != null) resource.setUseTemplateScope(rep.isUseTemplateScope());
         if (rep.isUseTemplateMappers() != null) resource.setUseTemplateMappers(rep.isUseTemplateMappers());
 
+        if (rep.getSecret() != null) resource.setSecret(rep.getSecret());
 
         if (rep.getClientTemplate() != null) {
             if (rep.getClientTemplate().equals(ClientTemplateRepresentation.NONE)) {
@@ -1913,24 +1930,21 @@ public class RepresentationToModel {
         resourceServer.setPolicyEnforcementMode(rep.getPolicyEnforcementMode());
         resourceServer.setAllowRemoteResourceManagement(rep.isAllowRemoteResourceManagement());
 
-        rep.getScopes().forEach(scope -> {
+        for (ScopeRepresentation scope : rep.getScopes()) {
             toModel(scope, resourceServer, authorization);
-        });
+        }
 
         KeycloakSession session = authorization.getKeycloakSession();
         RealmModel realm = authorization.getRealm();
 
-        rep.getResources().forEach(resourceRepresentation -> {
-            ResourceOwnerRepresentation owner = resourceRepresentation.getOwner();
+        for (ResourceRepresentation resource : rep.getResources()) {
+            ResourceOwnerRepresentation owner = resource.getOwner();
 
             if (owner == null) {
                 owner = new ResourceOwnerRepresentation();
-                resourceRepresentation.setOwner(owner);
-            }
-
-            owner.setId(resourceServer.getClientId());
-
-            if (owner.getName() != null) {
+                owner.setId(resourceServer.getClientId());
+                resource.setOwner(owner);
+            } else if (owner.getName() != null) {
                 UserModel user = session.users().getUserByUsername(owner.getName(), realm);
 
                 if (user != null) {
@@ -1938,8 +1952,8 @@ public class RepresentationToModel {
                 }
             }
 
-            toModel(resourceRepresentation, resourceServer, authorization);
-        });
+            toModel(resource, resourceServer, authorization);
+        }
 
         importPolicies(authorization, resourceServer, rep.getPolicies(), null);
     }
@@ -1958,7 +1972,9 @@ public class RepresentationToModel {
                 PolicyStore policyStore = storeFactory.getPolicyStore();
                 try {
                     List<String> policies = (List<String>) JsonSerialization.readValue(applyPolicies, List.class);
-                    config.put("applyPolicies", JsonSerialization.writeValueAsString(policies.stream().map(policyName -> {
+                    Set<String> policyIds = new HashSet<>();
+
+                    for (String policyName : policies) {
                         Policy policy = policyStore.findByName(policyName, resourceServer.getId());
 
                         if (policy == null) {
@@ -1972,8 +1988,10 @@ public class RepresentationToModel {
                             }
                         }
 
-                        return policy.getId();
-                    }).collect(Collectors.toList())));
+                        policyIds.add(policy.getId());
+                    }
+
+                    config.put("applyPolicies", JsonSerialization.writeValueAsString(policyIds));
                 } catch (Exception e) {
                     throw new RuntimeException("Error while importing policy [" + policyRepresentation.getName() + "].", e);
                 }
@@ -2012,33 +2030,40 @@ public class RepresentationToModel {
 
         if (representation instanceof PolicyRepresentation) {
             PolicyRepresentation policy = PolicyRepresentation.class.cast(representation);
-            String resourcesConfig = policy.getConfig().get("resources");
 
-            if (resourcesConfig != null) {
-                try {
-                    resources = JsonSerialization.readValue(resourcesConfig, Set.class);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+            if (resources == null) {
+                String resourcesConfig = policy.getConfig().get("resources");
+
+                if (resourcesConfig != null) {
+                    try {
+                        resources = JsonSerialization.readValue(resourcesConfig, Set.class);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             }
 
-            String scopesConfig = policy.getConfig().get("scopes");
+            if (scopes == null) {
+                String scopesConfig = policy.getConfig().get("scopes");
 
-            if (scopesConfig != null) {
-                try {
-                    scopes = JsonSerialization.readValue(scopesConfig, Set.class);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+                if (scopesConfig != null) {
+                    try {
+                        scopes = JsonSerialization.readValue(scopesConfig, Set.class);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             }
 
-            String policiesConfig = policy.getConfig().get("applyPolicies");
+            if (policies == null) {
+                String policiesConfig = policy.getConfig().get("applyPolicies");
 
-            if (policiesConfig != null) {
-                try {
-                    policies = JsonSerialization.readValue(policiesConfig, Set.class);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+                if (policiesConfig != null) {
+                    try {
+                        policies = JsonSerialization.readValue(policiesConfig, Set.class);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             }
 
@@ -2229,10 +2254,10 @@ public class RepresentationToModel {
             existing.setType(resource.getType());
             existing.setUri(resource.getUri());
             existing.setIconUri(resource.getIconUri());
-
             existing.updateScopes(resource.getScopes().stream()
                     .map((ScopeRepresentation scope) -> toModel(scope, resourceServer, authorization))
                     .collect(Collectors.toSet()));
+
             return existing;
         }
 
@@ -2243,11 +2268,30 @@ public class RepresentationToModel {
             owner.setId(resourceServer.getClientId());
         }
 
-        if (owner.getId() == null) {
+        String ownerId = owner.getId();
+
+        if (ownerId == null) {
             throw new RuntimeException("No owner specified for resource [" + resource.getName() + "].");
         }
 
-        Resource model = resourceStore.create(resource.getName(), resourceServer, owner.getId());
+        if (!resourceServer.getClientId().equals(ownerId)) {
+            RealmModel realm = authorization.getRealm();
+            KeycloakSession keycloakSession = authorization.getKeycloakSession();
+            UserProvider users = keycloakSession.users();
+            UserModel ownerModel = users.getUserById(ownerId, realm);
+
+            if (ownerModel == null) {
+                ownerModel = users.getUserByUsername(ownerId, realm);
+            }
+
+            if (ownerModel == null) {
+                throw new RuntimeException("Owner must be a valid username or user identifier. If the resource server, the client id or null.");
+            }
+
+            owner.setId(ownerModel.getId());
+        }
+
+        Resource model = resourceStore.create(resource.getName(), resourceServer, ownerId);
 
         model.setType(resource.getType());
         model.setUri(resource.getUri());

@@ -23,6 +23,8 @@ import org.keycloak.testsuite.arquillian.ContainerInfo;
 import org.keycloak.testsuite.arquillian.LoadBalancerController;
 import org.keycloak.testsuite.arquillian.annotation.LoadBalancer;
 import org.keycloak.testsuite.auth.page.AuthRealm;
+
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,13 +33,14 @@ import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.After;
 import org.junit.Before;
+import org.keycloak.testsuite.client.KeycloakTestingClient;
 
 import static org.hamcrest.Matchers.lessThan;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
- *
+ * Abstract cross-data-centre test that defines primitives for handling cross-DC setup.
  * @author hmlnarik
  */
 public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest {
@@ -54,14 +57,16 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
 
     protected Map<ContainerInfo, Keycloak> backendAdminClients = new HashMap<>();
 
+    protected Map<ContainerInfo, KeycloakTestingClient> backendTestingClients = new HashMap<>();
+
     @After
     @Before
     public void enableOnlyFirstNodeInFirstDc() {
         this.loadBalancerCtrl.disableAllBackendNodes();
-        loadBalancerCtrl.enableBackendNodeByName(getAutomaticallyStartedBackendNodes(0)
-          .findFirst()
-          .orElseThrow(() -> new IllegalStateException("No node is started automatically"))
-          .getQualifier()
+        loadBalancerCtrl.enableBackendNodeByName(getAutomaticallyStartedBackendNodes(DC.FIRST)
+                        .findFirst()
+                        .orElseThrow(() -> new IllegalStateException("No node is started automatically"))
+                        .getQualifier()
         );
     }
 
@@ -72,8 +77,23 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
           .flatMap(List::stream)
           .filter(ContainerInfo::isStarted)
           .filter(ContainerInfo::isManual)
-          .map(ContainerInfo::getQualifier)
-          .forEach(containerController::stop);
+          .forEach(containerInfo -> {
+              containerController.stop(containerInfo.getQualifier());
+              removeRESTClientsForNode(containerInfo);
+          });
+    }
+
+    @Before
+    public void initRESTClientsForStartedNodes() {
+        log.debug("Init REST clients for automatically started nodes");
+        this.suiteContext.getDcAuthServerBackendsInfo().stream()
+                .flatMap(List::stream)
+                .filter(ContainerInfo::isStarted)
+                .filter(containerInfo -> !containerInfo.isManual())
+                .forEach(containerInfo -> {
+                    createRESTClientsForNode(containerInfo);
+                });
+
     }
 
     @Override
@@ -98,7 +118,7 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
     public void initLoadBalancer() {
         log.debug("Initializing load balancer - only enabling started nodes in the first DC");
         this.loadBalancerCtrl.disableAllBackendNodes();
-        // Enable only the started nodes in each datacenter
+        // Enable only the started nodes in first datacenter
         this.suiteContext.getDcAuthServerBackendsInfo().get(0).stream()
           .filter(ContainerInfo::isStarted)
           .map(ContainerInfo::getQualifier)
@@ -110,8 +130,22 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
         return Keycloak.getInstance(node.getContextRoot() + "/auth", AuthRealm.MASTER, AuthRealm.ADMIN, AuthRealm.ADMIN, Constants.ADMIN_CLI_CLIENT_ID);
     }
 
+    protected KeycloakTestingClient createTestingClientFor(ContainerInfo node) {
+        log.info("Initializing testing client for " + node.getContextRoot() + "/auth");
+        return KeycloakTestingClient.getInstance(node.getContextRoot() + "/auth");
+    }
+
+
+    protected Keycloak getAdminClientForStartedNodeInDc(int dcIndex) {
+        ContainerInfo firstStartedNode = this.suiteContext.getDcAuthServerBackendsInfo().get(dcIndex).stream()
+                .filter(ContainerInfo::isStarted)
+                .findFirst().get();
+
+        return getAdminClientFor(firstStartedNode);
+    }
+
     /**
-     * Creates admin client directed to the given node.
+     * Get admin client directed to the given node.
      * @param node
      * @return
      */
@@ -123,11 +157,58 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
         return client;
     }
 
+
+    protected KeycloakTestingClient getTestingClientForStartedNodeInDc(int dcIndex) {
+        ContainerInfo firstStartedNode = this.suiteContext.getDcAuthServerBackendsInfo().get(dcIndex).stream()
+                .filter(ContainerInfo::isStarted)
+                .findFirst().get();
+
+        return getTestingClientFor(firstStartedNode);
+    }
+
+
+    /**
+     * Get testing client directed to the given node.
+     * @param node
+     * @return
+     */
+    protected KeycloakTestingClient getTestingClientFor(ContainerInfo node) {
+        KeycloakTestingClient client = backendTestingClients.get(node);
+        if (client == null && node.equals(suiteContext.getAuthServerInfo())) {
+            client = this.testingClient;
+        }
+        return client;
+    }
+
+    protected void createRESTClientsForNode(ContainerInfo node) {
+        if (!backendAdminClients.containsKey(node)) {
+            backendAdminClients.put(node, createAdminClientFor(node));
+        }
+
+        if (!backendTestingClients.containsKey(node)) {
+            backendTestingClients.put(node, createTestingClientFor(node));
+        }
+    }
+
+    protected void removeRESTClientsForNode(ContainerInfo node) {
+        if (backendAdminClients.containsKey(node)) {
+            backendAdminClients.get(node).close();
+            backendAdminClients.remove(node);
+        }
+
+        if (backendTestingClients.containsKey(node)) {
+            backendTestingClients.get(node).close();
+            backendTestingClients.remove(node);
+        }
+    }
+
+
     /**
      * Disables routing requests to the given data center in the load balancer.
      * @param dcIndex
      */
-    public void disableDcOnLoadBalancer(int dcIndex) {
+    public void disableDcOnLoadBalancer(DC dc) {
+        int dcIndex = dc.ordinal();
         log.infof("Disabling load balancer for dc=%d", dcIndex);
         this.suiteContext.getDcAuthServerBackendsInfo().get(dcIndex).forEach(c -> loadBalancerCtrl.disableBackendNodeByName(c.getQualifier()));
     }
@@ -136,7 +217,8 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
      * Enables routing requests to all started nodes to the given data center in the load balancer.
      * @param dcIndex
      */
-    public void enableDcOnLoadBalancer(int dcIndex) {
+    public void enableDcOnLoadBalancer(DC dc) {
+        int dcIndex = dc.ordinal();
         log.infof("Enabling load balancer for dc=%d", dcIndex);
         final List<ContainerInfo> dcNodes = this.suiteContext.getDcAuthServerBackendsInfo().get(dcIndex);
         if (! dcNodes.stream().anyMatch(ContainerInfo::isStarted)) {
@@ -153,7 +235,8 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
      * @param dcIndex
      * @param nodeIndex
      */
-    public void disableLoadBalancerNode(int dcIndex, int nodeIndex) {
+    public void disableLoadBalancerNode(DC dc, int nodeIndex) {
+        int dcIndex = dc.ordinal();
         log.infof("Disabling load balancer for dc=%d, node=%d", dcIndex, nodeIndex);
         loadBalancerCtrl.disableBackendNodeByName(this.suiteContext.getDcAuthServerBackendsInfo().get(dcIndex).get(nodeIndex).getQualifier());
     }
@@ -163,7 +246,8 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
      * @param dcIndex
      * @param nodeIndex
      */
-    public void enableLoadBalancerNode(int dcIndex, int nodeIndex) {
+    public void enableLoadBalancerNode(DC dc, int nodeIndex) {
+        int dcIndex = dc.ordinal();
         log.infof("Enabling load balancer for dc=%d, node=%d", dcIndex, nodeIndex);
         final ContainerInfo backendNode = this.suiteContext.getDcAuthServerBackendsInfo().get(dcIndex).get(nodeIndex);
         if (backendNode == null) {
@@ -181,13 +265,17 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
      * @param nodeIndex
      * @return Started instance descriptor.
      */
-    public ContainerInfo startBackendNode(int dcIndex, int nodeIndex) {
+    public ContainerInfo startBackendNode(DC dc, int nodeIndex) {
+        int dcIndex = dc.ordinal();
         assertThat((Integer) dcIndex, lessThan(this.suiteContext.getDcAuthServerBackendsInfo().size()));
         final List<ContainerInfo> dcNodes = this.suiteContext.getDcAuthServerBackendsInfo().get(dcIndex);
         assertThat((Integer) nodeIndex, lessThan(dcNodes.size()));
         ContainerInfo dcNode = dcNodes.get(nodeIndex);
         assertTrue("Node " + dcNode.getQualifier() + " has to be controlled manually", dcNode.isManual());
         containerController.start(dcNode.getQualifier());
+
+        createRESTClientsForNode(dcNode);
+
         return dcNode;
     }
 
@@ -197,11 +285,15 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
      * @param nodeIndex
      * @return Stopped instance descriptor.
      */
-    public ContainerInfo stopBackendNode(int dcIndex, int nodeIndex) {
+    public ContainerInfo stopBackendNode(DC dc, int nodeIndex) {
+        int dcIndex = dc.ordinal();
         assertThat((Integer) dcIndex, lessThan(this.suiteContext.getDcAuthServerBackendsInfo().size()));
         final List<ContainerInfo> dcNodes = this.suiteContext.getDcAuthServerBackendsInfo().get(dcIndex);
         assertThat((Integer) nodeIndex, lessThan(dcNodes.size()));
         ContainerInfo dcNode = dcNodes.get(nodeIndex);
+
+        removeRESTClientsForNode(dcNode);
+
         assertTrue("Node " + dcNode.getQualifier() + " has to be controlled manually", dcNode.isManual());
         containerController.stop(dcNode.getQualifier());
         return dcNode;
@@ -212,7 +304,8 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
      * @param dcIndex
      * @return
      */
-    public Stream<ContainerInfo> getManuallyStartedBackendNodes(int dcIndex) {
+    public Stream<ContainerInfo> getManuallyStartedBackendNodes(DC dc) {
+        int dcIndex = dc.ordinal();
         final List<ContainerInfo> dcNodes = this.suiteContext.getDcAuthServerBackendsInfo().get(dcIndex);
         return dcNodes.stream().filter(ContainerInfo::isManual);
     }
@@ -222,8 +315,39 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
      * @param dcIndex
      * @return
      */
-    public Stream<ContainerInfo> getAutomaticallyStartedBackendNodes(int dcIndex) {
+    public Stream<ContainerInfo> getAutomaticallyStartedBackendNodes(DC dc) {
+        int dcIndex = dc.ordinal();
         final List<ContainerInfo> dcNodes = this.suiteContext.getDcAuthServerBackendsInfo().get(dcIndex);
         return dcNodes.stream().filter(c -> ! c.isManual());
+    }
+
+
+    /**
+     * Sets time offset on all the started containers.
+     *
+     * @param offset
+     */
+    @Override
+    public void setTimeOffset(int offset) {
+        super.setTimeOffset(offset);
+        setTimeOffsetOnAllStartedContainers(offset);
+    }
+
+    private void setTimeOffsetOnAllStartedContainers(int offset) {
+        backendTestingClients.entrySet().stream()
+                .filter(testingClientEntry -> testingClientEntry.getKey().isStarted())
+                .forEach(testingClientEntry -> {
+                    KeycloakTestingClient testingClient = testingClientEntry.getValue();
+                    testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(offset)));
+                });
+    }
+
+    /**
+     * Resets time offset on all the started containers.
+     */
+    @Override
+    public void resetTimeOffset() {
+        super.resetTimeOffset();
+        setTimeOffsetOnAllStartedContainers(0);
     }
 }

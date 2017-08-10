@@ -76,7 +76,7 @@ public class UserPolicyManagementTest extends AbstractAuthorizationSettingsTest 
     }
 
     @Test
-    public void testDeletePolicy() throws InterruptedException {
+    public void testDelete() throws InterruptedException {
         authorizationPage.navigateTo();
         UserPolicyRepresentation expected = new UserPolicyRepresentation();
 
@@ -88,6 +88,22 @@ public class UserPolicyManagementTest extends AbstractAuthorizationSettingsTest 
         authorizationPage.navigateTo();
         authorizationPage.authorizationTabs().policies().delete(expected.getName());
         assertAlertSuccess();
+        authorizationPage.navigateTo();
+        assertNull(authorizationPage.authorizationTabs().policies().policies().findByName(expected.getName()));
+    }
+
+    @Test
+    public void testDeleteFromList() throws InterruptedException {
+        authorizationPage.navigateTo();
+        UserPolicyRepresentation expected = new UserPolicyRepresentation();
+
+        expected.setName("Test User Policy");
+        expected.setDescription("description");
+        expected.addUser("user c");
+
+        expected = createPolicy(expected);
+        authorizationPage.navigateTo();
+        authorizationPage.authorizationTabs().policies().deleteFromList(expected.getName());
         authorizationPage.navigateTo();
         assertNull(authorizationPage.authorizationTabs().policies().policies().findByName(expected.getName()));
     }

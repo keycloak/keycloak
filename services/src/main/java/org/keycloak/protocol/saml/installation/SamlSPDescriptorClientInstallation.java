@@ -47,8 +47,10 @@ public class SamlSPDescriptorClientInstallation implements ClientInstallationPro
         String nameIdFormat = samlClient.getNameIDFormat();
         if (nameIdFormat == null) nameIdFormat = SamlProtocol.SAML_DEFAULT_NAMEID_FORMAT;
         String spCertificate = SPMetadataDescriptor.xmlKeyInfo("        ", null, samlClient.getClientSigningCertificate(), KeyTypes.SIGNING.value(), true);
+        String encCertificate = SPMetadataDescriptor.xmlKeyInfo("        ", null, samlClient.getClientEncryptingCertificate(), KeyTypes.ENCRYPTION.value(), true);
         return SPMetadataDescriptor.getSPDescriptor(JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get(), assertionUrl, logoutUrl,
-                samlClient.requiresClientSignature(), samlClient.requiresAssertionSignature(), client.getClientId(), nameIdFormat, spCertificate);
+                samlClient.requiresClientSignature(), samlClient.requiresAssertionSignature(), samlClient.requiresEncryption(),
+                client.getClientId(), nameIdFormat, spCertificate, encCertificate);
     }
 
     @Override

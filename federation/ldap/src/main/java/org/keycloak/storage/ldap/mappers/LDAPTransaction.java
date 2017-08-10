@@ -18,6 +18,7 @@
 package org.keycloak.storage.ldap.mappers;
 
 import org.jboss.logging.Logger;
+import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
@@ -25,11 +26,9 @@ import org.keycloak.storage.ldap.idm.model.LDAPObject;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class LDAPTransaction implements KeycloakTransaction {
+public class LDAPTransaction extends AbstractKeycloakTransaction {
 
     public static final Logger logger = Logger.getLogger(LDAPTransaction.class);
-
-    protected TransactionState state = TransactionState.NOT_STARTED;
 
     private final LDAPStorageProvider ldapProvider;
     private final LDAPObject ldapUser;
@@ -39,57 +38,21 @@ public class LDAPTransaction implements KeycloakTransaction {
         this.ldapUser = ldapUser;
     }
 
-    @Override
-    public void begin() {
-        if (state != TransactionState.NOT_STARTED) {
-            throw new IllegalStateException("Transaction already started");
-        }
-
-        state = TransactionState.STARTED;
-    }
 
     @Override
-    public void commit() {
-        if (state != TransactionState.STARTED) {
-            throw new IllegalStateException("Transaction in illegal state for commit: " + state);
-        }
-
+    protected void commitImpl() {
         if (logger.isTraceEnabled()) {
             logger.trace("Transaction commit! Updating LDAP attributes for object " + ldapUser.getDn().toString() + ", attributes: " + ldapUser.getAttributes());
         }
 
         ldapProvider.getLdapIdentityStore().update(ldapUser);
-        state = TransactionState.FINISHED;
     }
 
-    @Override
-    public void rollback() {
-        if (state != TransactionState.STARTED && state != TransactionState.ROLLBACK_ONLY) {
-            throw new IllegalStateException("Transaction in illegal state for rollback: " + state);
-        }
 
+    @Override
+    protected void rollbackImpl() {
         logger.warn("Transaction rollback! Ignoring LDAP updates for object " + ldapUser.getDn().toString());
-        state = TransactionState.FINISHED;
     }
 
-    @Override
-    public void setRollbackOnly() {
-        state = TransactionState.ROLLBACK_ONLY;
-    }
-
-    @Override
-    public boolean getRollbackOnly() {
-        return state == TransactionState.ROLLBACK_ONLY;
-    }
-
-    @Override
-    public boolean isActive() {
-        return state == TransactionState.STARTED || state == TransactionState.ROLLBACK_ONLY;
-    }
-
-
-    protected enum TransactionState {
-        NOT_STARTED, STARTED, ROLLBACK_ONLY, FINISHED
-    }
 }
 

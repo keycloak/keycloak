@@ -36,6 +36,7 @@ import org.keycloak.services.ForbiddenException;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -87,7 +88,8 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
 
     @Override
     public Map<String, String> getPermissions(RoleModel role) {
-        Map<String, String> scopes = new HashMap<>();
+        initialize(role);
+        Map<String, String> scopes = new LinkedHashMap<>();
         scopes.put(RolePermissionManagement.MAP_ROLE_SCOPE, mapRolePermission(role).getId());
         scopes.put(RolePermissionManagement.MAP_ROLE_CLIENT_SCOPE_SCOPE, mapClientScopePermission(role).getId());
         scopes.put(RolePermissionManagement.MAP_ROLE_COMPOSITE_SCOPE, mapCompositePermission(role).getId());
@@ -136,10 +138,13 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
             if (root.admin().hasRole(role)) return true;
 
             ClientModel adminClient = root.getRealmManagementClient();
+            // is this an admin role in 'realm-management' client of the realm we are managing?
             if (adminClient.equals(role.getContainer())) {
                 // if this is realm admin role, then check to see if admin has similar permissions
                 // we do this so that the authz service is invoked
-                if (role.getName().equals(AdminRoles.MANAGE_CLIENTS)) {
+                if (role.getName().equals(AdminRoles.MANAGE_CLIENTS)
+                        || role.getName().equals(AdminRoles.CREATE_CLIENT)
+                        ) {
                     if (!root.clients().canManage()) {
                         return adminConflictMessage(role);
                     } else {
@@ -151,6 +156,9 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
                     } else {
                         return true;
                     }
+
+                } else if (role.getName().equals(AdminRoles.QUERY_REALMS)) {
+                    return true;
                 } else if (role.getName().equals(AdminRoles.QUERY_CLIENTS)) {
                     return true;
                 } else if (role.getName().equals(AdminRoles.QUERY_USERS)) {

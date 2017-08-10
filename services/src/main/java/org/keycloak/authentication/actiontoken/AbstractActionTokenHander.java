@@ -20,6 +20,7 @@ import org.keycloak.Config.Scope;
 import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
@@ -27,7 +28,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
  *
  * @author hmlnarik
  */
-public abstract class AbstractActionTokenHander<T extends DefaultActionToken> implements ActionTokenHandler<T>, ActionTokenHandlerFactory<T> {
+public abstract class AbstractActionTokenHander<T extends JsonWebToken> implements ActionTokenHandler<T>, ActionTokenHandlerFactory<T> {
 
     private final String id;
     private final Class<T> tokenClass;
@@ -86,8 +87,8 @@ public abstract class AbstractActionTokenHander<T extends DefaultActionToken> im
     }
 
     @Override
-    public String getAuthenticationSessionIdFromToken(T token) {
-        return token == null ? null : token.getAuthenticationSessionId();
+    public String getAuthenticationSessionIdFromToken(T token, ActionTokenContext<T> tokenContext) {
+        return token instanceof DefaultActionToken ? ((DefaultActionToken) token).getAuthenticationSessionId() : null;
     }
 
     @Override

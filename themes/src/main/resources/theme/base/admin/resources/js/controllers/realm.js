@@ -406,16 +406,20 @@ module.controller('RealmThemeCtrl', function($scope, Current, Realm, realm, serv
 
     $scope.supportedLocalesOptions = {
         'multiple' : true,
-        'simple_tags' : true
+        'simple_tags' : true,
+        'tags' : []
     };
-
+    
+    updateSupported();
+    
     function localeForTheme(type, name) {
         name = name || 'base';
         for (var i = 0; i < serverInfo.themes[type].length; i++) {
             if (serverInfo.themes[type][i].name == name) {
-                return serverInfo.themes[type][i].locales;
+                return serverInfo.themes[type][i].locales || [];
             }
         }
+        return [];
     }
 
     function updateSupported() {
@@ -923,11 +927,11 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
                 //formDataAppender: function(formData, key, val){}
             }).progress(function(evt) {
                 console.log('percent: ' + parseInt(100.0 * evt.loaded / evt.total));
-            }).success(function(data, status, headers) {
-                setConfig(data);
+            }).then(function(response) {
+                setConfig(response.data);
                 $scope.clearFileSelect();
                 Notifications.success("The IDP metadata has been loaded from file.");
-            }).error(function() {
+            }).catch(function() {
                 Notifications.error("The file can not be uploaded. Please verify the file.");
             });
         }
@@ -943,12 +947,12 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
             providerId: providerFactory.id
         }
         $http.post(authUrl + '/admin/realms/' + realm.realm + '/identity-provider/import-config', input)
-            .success(function(data, status, headers) {
-                setConfig(data);
+            .then(function(response) {
+                setConfig(response.data);
                 $scope.fromUrl.data = '';
                 $scope.importUrl = false;
                 Notifications.success("Imported config information from url.");
-            }).error(function() {
+            }).catch(function() {
                 Notifications.error("Config can not be imported. Please verify the url.");
             });
     };
@@ -1047,9 +1051,9 @@ module.controller('RealmIdentityProviderExportCtrl', function(realm, identityPro
     $scope.exportedType = "";
 
     var url = IdentityProviderExport.url({realm: realm.realm, alias: identityProvider.alias}) ;
-    $http.get(url).success(function(data, status, headers, config) {
-        $scope.exportedType = headers('Content-Type');
-        $scope.exported = data;
+    $http.get(url).then(function(response) {
+        $scope.exportedType = response.headers('Content-Type');
+        $scope.exported = response.data;
     });
 
     $scope.download = function() {
@@ -1449,7 +1453,7 @@ module.controller('RoleDetailCtrl', function($scope, realm, role, roles, clients
         $http, $location, Notifications, Dialog);
 });
 
-module.controller('RealmSMTPSettingsCtrl', function($scope, Current, Realm, realm, $http, $location, Dialog, Notifications) {
+module.controller('RealmSMTPSettingsCtrl', function($scope, Current, Realm, realm, $http, $location, Dialog, Notifications, RealmSMTPConnectionTester) {
     console.log('RealmSMTPSettingsCtrl');
 
     var booleanSmtpAtts = ["auth","ssl","starttls"];
@@ -1482,6 +1486,25 @@ module.controller('RealmSMTPSettingsCtrl', function($scope, Current, Realm, real
     $scope.reset = function() {
         $scope.realm = angular.copy(oldCopy);
         $scope.changed = false;
+    };
+
+    var initSMTPTest = function() {
+        return {
+            realm: $scope.realm.realm,
+            config: JSON.stringify(realm.smtpServer)
+        };
+    };
+
+    $scope.testConnection = function() {
+        RealmSMTPConnectionTester.send(initSMTPTest(), function() {
+            Notifications.success("SMTP connection successful. E-mail was sent!");
+        }, function(errorResponse) {
+            if (error.data.errorMessage) {
+                Notifications.error(error.data.errorMessage);
+            } else {
+                Notifications.error('Unexpected error during SMTP validation');
+            }
+        });
     };
 
     /* Convert string attributes containing a boolean to actual boolean type + convert an integer string (port) to integer. */
@@ -1526,9 +1549,15 @@ module.controller('RealmEventsConfigCtrl', function($scope, eventsConfig, RealmE
 
     $scope.eventsConfig.expirationUnit = TimeUnit.autoUnit(eventsConfig.eventsExpiration);
     $scope.eventsConfig.eventsExpiration = TimeUnit.toUnit(eventsConfig.eventsExpiration, $scope.eventsConfig.expirationUnit);
-
+    
     $scope.eventListeners = Object.keys(serverInfo.providers.eventsListener.providers);
-
+    
+    $scope.eventsConfigSelectOptions = {
+        'multiple': true,
+        'simple_tags': true,
+        'tags': $scope.eventListeners
+    };
+    
     $scope.eventSelectOptions = {
         'multiple': true,
         'simple_tags': true,
@@ -1916,6 +1945,8 @@ module.controller('RealmFlowBindingCtrl', function($scope, flows, Current, Realm
         }
     }
 
+    $scope.profileInfo = serverInfo.profileInfo;
+
     genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications, "/realms/" + realm.realm + "/authentication/flow-bindings");
 });
 
@@ -2109,6 +2140,9 @@ module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flo
 
         } else if (realm.clientAuthenticationFlow == $scope.flow.alias) {
             Notifications.error("Cannot remove flow, it is currently being used as the client authentication flow.");
+
+        } else if (realm.dockerAuthenticationFlow == $scope.flow.alias) {
+            Notifications.error("Cannot remove flow, it is currently being used as the docker authentication flow.");
 
         } else {
             AuthenticationFlows.remove({realm: realm.realm, flow: $scope.flow.id}, function () {
@@ -2770,11 +2804,11 @@ module.controller('RealmExportCtrl', function($scope, realm, $http,
             exportUrl += '?' + $httpParamSerializer(params);
         }
         $http.post(exportUrl)
-            .success(function(data, status, headers) {
-                var download = angular.fromJson(data);
+            .then(function(response) {
+                var download = angular.fromJson(response.data);
                 download = angular.toJson(download, true);
                 saveAs(new Blob([download], { type: 'application/json' }), 'realm-export.json');
-            }).error(function() {
+            }).catch(function() {
                 Notifications.error("Sorry, something went wrong.");
             });
     }
