@@ -188,6 +188,10 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
         if (manageMembersPermission == null) {
             authz.getStoreFactory().getPolicyStore().delete(viewMembersPermission.getId());
         }
+        Policy manageMembershipPermission = manageMembershipPermission(group);
+        if (manageMembershipPermission != null) {
+            authz.getStoreFactory().getPolicyStore().delete(manageMembershipPermission.getId());
+        }
         Resource resource = groupResource(group);
         if (resource != null) authz.getStoreFactory().getResourceStore().delete(resource.getId());
     }
