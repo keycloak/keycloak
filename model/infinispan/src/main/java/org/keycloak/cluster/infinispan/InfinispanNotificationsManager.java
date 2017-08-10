@@ -48,6 +48,8 @@ import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterListener;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.ConcurrentMultivaluedHashMap;
+import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
+
 /**
  * Impl for sending infinispan messages across cluster and listening to them
  *
@@ -63,13 +65,16 @@ public class InfinispanNotificationsManager {
 
     private final Cache<String, Serializable> workCache;
 
+    private final RemoteCache workRemoteCache;
+
     private final String myAddress;
 
     private final String mySite;
 
 
-    protected InfinispanNotificationsManager(Cache<String, Serializable> workCache, String myAddress, String mySite) {
+    protected InfinispanNotificationsManager(Cache<String, Serializable> workCache, RemoteCache workRemoteCache, String myAddress, String mySite) {
         this.workCache = workCache;
+        this.workRemoteCache = workRemoteCache;
         this.myAddress = myAddress;
         this.mySite = mySite;
     }
@@ -77,24 +82,27 @@ public class InfinispanNotificationsManager {
 
     // Create and init manager including all listeners etc
     public static InfinispanNotificationsManager create(Cache<String, Serializable> workCache, String myAddress, String mySite, Set<RemoteStore> remoteStores) {
-        InfinispanNotificationsManager manager = new InfinispanNotificationsManager(workCache, myAddress, mySite);
+        RemoteCache workRemoteCache = null;
 
-        // We need CacheEntryListener just if we don't have remoteStore. With remoteStore will be all cluster nodes notified anyway from HotRod listener
-        if (remoteStores.isEmpty()) {
-            workCache.addListener(manager.new CacheEntryListener());
-
-            logger.debugf("Added listener for infinispan cache: %s", workCache.getName());
-        } else {
-            for (RemoteStore remoteStore : remoteStores) {
-                RemoteCache<Object, Object> remoteCache = remoteStore.getRemoteCache();
-                remoteCache.addClientListener(manager.new HotRodListener(remoteCache));
-
-                logger.debugf("Added listener for HotRod remoteStore cache: %s", remoteCache.getName());
-            }
+        if (!remoteStores.isEmpty()) {
+            RemoteStore remoteStore = remoteStores.iterator().next();
+            workRemoteCache = remoteStore.getRemoteCache();
 
             if (mySite == null) {
                 throw new IllegalStateException("Multiple datacenters available, but site name is not configured! Check your configuration");
             }
+        }
+
+        InfinispanNotificationsManager manager = new InfinispanNotificationsManager(workCache, workRemoteCache, myAddress, mySite);
+
+        // We need CacheEntryListener for communication within current DC
+        workCache.addListener(manager.new CacheEntryListener());
+        logger.debugf("Added listener for infinispan cache: %s", workCache.getName());
+
+        // Added listener for remoteCache to notify other DCs
+        if (workRemoteCache != null) {
+            workRemoteCache.addClientListener(manager.new HotRodListener(workRemoteCache));
+            logger.debugf("Added listener for HotRod remoteStore cache: %s", workRemoteCache.getName());
         }
 
         return manager;
@@ -132,13 +140,15 @@ public class InfinispanNotificationsManager {
             logger.tracef("Sending event with key %s: %s", eventKey, event);
         }
 
-        Flag[] flags = dcNotify == ClusterProvider.DCNotify.LOCAL_DC_ONLY
-                ? new Flag[] { Flag.IGNORE_RETURN_VALUES, Flag.SKIP_CACHE_STORE }
-                : new Flag[] { Flag.IGNORE_RETURN_VALUES };
-
-        // Put the value to the cache to notify listeners on all the nodes
-        workCache.getAdvancedCache().withFlags(flags)
-                .put(eventKey, wrappedEvent, 120, TimeUnit.SECONDS);
+        if (dcNotify == ClusterProvider.DCNotify.LOCAL_DC_ONLY || workRemoteCache == null) {
+            // Just put it to workCache, but skip notifying remoteCache
+            workCache.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES, Flag.SKIP_CACHE_STORE)
+                    .put(eventKey, wrappedEvent, 120, TimeUnit.SECONDS);
+        } else {
+            // Add directly to remoteCache. Will notify remote listeners on all nodes in all DCs
+            RemoteCache remoteCache = InfinispanUtil.getRemoteCache(workCache);
+            remoteCache.put(eventKey, wrappedEvent, 120, TimeUnit.SECONDS);
+        }
     }
 
 
@@ -219,7 +229,7 @@ public class InfinispanNotificationsManager {
         }
 
         if (event.isIgnoreSenderSite()) {
-            if (this.mySite != null && this.mySite.equals(event.getSender())) {
+            if (this.mySite == null || this.mySite.equals(event.getSenderSite())) {
                 return;
             }
         }

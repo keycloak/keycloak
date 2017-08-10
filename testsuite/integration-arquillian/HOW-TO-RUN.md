@@ -500,16 +500,19 @@ development as there is no need to restart infinispan server(s) among test runs.
        
 4) Setup MySQL database or some other shared database.  
 
-4) Run the LoginCrossDCTest (or any other test) with those properties. In shortcut, it's using MySQL database, disabled L1 lifespan and 
+5) Ensure that org.wildfly.arquillian:wildfly-arquillian-container-managed is on the classpath when running test. On Intellij, it can be 
+done by going to: View -> Tool Windows -> Maven projects. Then check profile "cache-server-infinispan". The tests will use this profile when executed.
+
+6) Run the LoginCrossDCTest (or any other test) with those properties. In shortcut, it's using MySQL database, disabled L1 lifespan and 
 connects to the remoteStore provided by infinispan server configured in previous steps:
 
-    -Dauth.server.crossdc=true -Dauth.server.undertow.crossdc=true -Dkeycloak.connectionsJpa.url.crossdc=jdbc:mysql://localhost/keycloak 
+    -Dauth.server.crossdc=true -Dauth.server.undertow.crossdc=true -Dcache.server.lifecycle.skip=true -Dkeycloak.connectionsJpa.url.crossdc=jdbc:mysql://localhost/keycloak 
     -Dkeycloak.connectionsJpa.driver.crossdc=com.mysql.jdbc.Driver -Dkeycloak.connectionsJpa.user=keycloak 
     -Dkeycloak.connectionsJpa.password=keycloak -Dkeycloak.connectionsInfinispan.clustered=true -Dkeycloak.connectionsInfinispan.l1Lifespan=0 
     -Dkeycloak.connectionsInfinispan.remoteStorePort=11222 -Dkeycloak.connectionsInfinispan.remoteStorePort.2=11222 -Dkeycloak.connectionsInfinispan.sessionsOwners=1 
     -Dsession.cache.owners=1 -Dkeycloak.infinispan.logging.level=debug -Dresources
     
-5) If you want to debug and test manually, the servers are running on these ports (Note that not all backend servers are running by default and some might be also unused by loadbalancer):
+7) If you want to debug and test manually, the servers are running on these ports (Note that not all backend servers are running by default and some might be also unused by loadbalancer):
 
     Loadbalancer -> "http://localhost:8180/auth"
     auth-server-undertow-cross-dc-0_1 -> "http://localhost:8101/auth"
@@ -517,7 +520,6 @@ connects to the remoteStore provided by infinispan server configured in previous
     auth-server-undertow-cross-dc-1_1 -> "http://localhost:8111/auth"
     auth-server-undertow-cross-dc-1_2-manual -> "http://localhost:8112/auth"
 
-TODO: Tests using JMX statistics like ActionTokenCrossDCTest doesn't yet working.
 
 ## Run Docker Authentication test
 

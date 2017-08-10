@@ -43,6 +43,7 @@
         <auth.server.undertow>true</auth.server.undertow>
         <auth.server.undertow.crossdc>false</auth.server.undertow.crossdc>
         <auth.server.crossdc>false</auth.server.crossdc>
+        <cache.server.lifecycle.skip>false</cache.server.lifecycle.skip>
         
         <auth.server.container>auth-server-${auth.server}</auth.server.container>
         <auth.server.home>${containers.home}/${auth.server.container}</auth.server.home>
@@ -272,6 +273,7 @@
                             <!--cache server properties-->
                             <auth.server.crossdc>${auth.server.crossdc}</auth.server.crossdc>
                             <auth.server.undertow.crossdc>${auth.server.undertow.crossdc}</auth.server.undertow.crossdc>
+                            <cache.server.lifecycle.skip>${cache.server.lifecycle.skip}</cache.server.lifecycle.skip>
 
                             <cache.server>${cache.server}</cache.server>
                             <cache.server.port.offset>${cache.server.port.offset}</cache.server.port.offset>

@@ -21,6 +21,7 @@ import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.context.Flag;
 import org.jboss.logging.Logger;
+import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -463,8 +464,10 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     @Override
     public void removeUserSessions(RealmModel realm) {
-        // Don't send message to all DCs, just to all cluster nodes in current DC. The remoteCache will notify client listeners for removed userSessions. This assumes that 2nd DC contains same userSessions like current one.
-        clusterEventsSenderTx.addEvent(InfinispanUserSessionProviderFactory.REMOVE_USER_SESSIONS_EVENT, RemoveUserSessionsEvent.create(realm.getId()), false);
+        // Don't send message to all DCs, just to all cluster nodes in current DC. The remoteCache will notify client listeners for removed userSessions.
+        clusterEventsSenderTx.addEvent(
+                RemoveUserSessionsEvent.createEvent(RemoveUserSessionsEvent.class, InfinispanUserSessionProviderFactory.REMOVE_USER_SESSIONS_EVENT, session, realm.getId(), true),
+                ClusterProvider.DCNotify.LOCAL_DC_ONLY);
     }
 
     protected void onRemoveUserSessionsEvent(String realmId) {
@@ -486,6 +489,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
                     @Override
                     public void accept(String sessionId) {
+                        // Remove session from remoteCache too
                         localCache.remove(sessionId);
                     }
 
@@ -515,7 +519,9 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     @Override
     public void removeAllUserLoginFailures(RealmModel realm) {
-        clusterEventsSenderTx.addEvent(InfinispanUserSessionProviderFactory.REMOVE_ALL_LOGIN_FAILURES_EVENT, RemoveAllUserLoginFailuresEvent.create(realm.getId()), false);
+        clusterEventsSenderTx.addEvent(
+                RemoveAllUserLoginFailuresEvent.createEvent(RemoveAllUserLoginFailuresEvent.class, InfinispanUserSessionProviderFactory.REMOVE_ALL_LOGIN_FAILURES_EVENT, session, realm.getId(), true),
+                ClusterProvider.DCNotify.LOCAL_DC_ONLY);
     }
 
     protected void onRemoveAllUserLoginFailuresEvent(String realmId) {
@@ -527,22 +533,23 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
         Cache<LoginFailureKey, LoginFailureEntity> localCacheStoreIgnore = CacheDecorators.skipCacheLoaders(localCache);
 
-        Iterator<LoginFailureKey> itr = localCacheStoreIgnore
+        localCacheStoreIgnore
                 .entrySet()
                 .stream()
                 .filter(UserLoginFailurePredicate.create(realmId))
                 .map(Mappers.loginFailureId())
-                .iterator();
-
-        while (itr.hasNext()) {
-            LoginFailureKey key = itr.next();
-            localCache.remove(key);
-        }
+                .forEach(loginFailureKey -> {
+                    // Remove loginFailure from remoteCache too
+                    localCache.remove(loginFailureKey);
+                });
     }
 
     @Override
     public void onRealmRemoved(RealmModel realm) {
-        clusterEventsSenderTx.addEvent(InfinispanUserSessionProviderFactory.REALM_REMOVED_SESSION_EVENT, RealmRemovedSessionEvent.create(realm.getId()), false);
+        // Don't send message to all DCs, just to all cluster nodes in current DC. The remoteCache will notify client listeners for removed userSessions.
+        clusterEventsSenderTx.addEvent(
+                RealmRemovedSessionEvent.createEvent(RealmRemovedSessionEvent.class, InfinispanUserSessionProviderFactory.REALM_REMOVED_SESSION_EVENT, session, realm.getId(), true),
+                ClusterProvider.DCNotify.LOCAL_DC_ONLY);
     }
 
     protected void onRealmRemovedEvent(String realmId) {
@@ -553,7 +560,9 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     @Override
     public void onClientRemoved(RealmModel realm, ClientModel client) {
-        clusterEventsSenderTx.addEvent(InfinispanUserSessionProviderFactory.CLIENT_REMOVED_SESSION_EVENT, ClientRemovedSessionEvent.create(realm.getId(), client.getId()), false);
+//        clusterEventsSenderTx.addEvent(
+//                ClientRemovedSessionEvent.createEvent(ClientRemovedSessionEvent.class, InfinispanUserSessionProviderFactory.CLIENT_REMOVED_SESSION_EVENT, session, realm.getId(), true),
+//                ClusterProvider.DCNotify.LOCAL_DC_ONLY);
     }
 
     protected void onClientRemovedEvent(String realmId, String clientUuid) {

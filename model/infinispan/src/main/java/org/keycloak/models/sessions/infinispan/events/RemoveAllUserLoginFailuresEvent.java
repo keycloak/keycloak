@@ -20,23 +20,5 @@ package org.keycloak.models.sessions.infinispan.events;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class RemoveAllUserLoginFailuresEvent implements SessionClusterEvent {
-
-    private String realmId;
-
-    public static RemoveAllUserLoginFailuresEvent create(String realmId) {
-        RemoveAllUserLoginFailuresEvent event = new RemoveAllUserLoginFailuresEvent();
-        event.realmId = realmId;
-        return event;
-    }
-
-    @Override
-    public String toString() {
-        return String.format("RemoveAllUserLoginFailuresEvent [ realmId=%s ]", realmId);
-    }
-
-    @Override
-    public String getRealmId() {
-        return realmId;
-    }
+public class RemoveAllUserLoginFailuresEvent extends SessionClusterEvent {
 }

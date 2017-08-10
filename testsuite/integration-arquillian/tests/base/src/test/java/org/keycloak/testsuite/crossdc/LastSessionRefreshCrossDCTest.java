@@ -230,15 +230,6 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
     }
 
 
-    private KeycloakTestingClient getTestingClientForStartedNodeInDc(int dcIndex) {
-        ContainerInfo firstStartedNode = this.suiteContext.getDcAuthServerBackendsInfo().get(dcIndex).stream()
-                .filter(ContainerInfo::isStarted)
-                .findFirst().get();
-
-        return getTestingClientFor(firstStartedNode);
-    }
-
-
     private RemoteCacheStats getRemoteCacheStats(int dcIndex) {
         return getTestingClientForStartedNodeInDc(dcIndex).testing("test")
                 .cache(InfinispanConnectionProvider.SESSION_CACHE_NAME)

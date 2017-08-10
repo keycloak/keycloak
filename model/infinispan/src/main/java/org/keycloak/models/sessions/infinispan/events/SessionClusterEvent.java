@@ -18,12 +18,64 @@
 package org.keycloak.models.sessions.infinispan.events;
 
 import org.keycloak.cluster.ClusterEvent;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface SessionClusterEvent extends ClusterEvent {
+public abstract class SessionClusterEvent implements ClusterEvent {
 
-    String getRealmId();
+    private String realmId;
+    private String eventKey;
+    private boolean resendingEvent;
+    private String siteId;
+    private String nodeId;
 
+
+    public static <T extends SessionClusterEvent> T createEvent(Class<T> eventClass, String eventKey, KeycloakSession session, String realmId, boolean resendingEvent) {
+        try {
+            T event = eventClass.newInstance();
+            event.setData(session, eventKey, realmId, resendingEvent);
+            return event;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    void setData(KeycloakSession session, String eventKey, String realmId, boolean resendingEvent) {
+        this.realmId = realmId;
+        this.eventKey = eventKey;
+        this.resendingEvent = resendingEvent;
+        this.siteId = InfinispanUtil.getMySite(session);
+        this.nodeId = InfinispanUtil.getMyAddress(session);
+    }
+
+
+    public String getRealmId() {
+        return realmId;
+    }
+
+    public String getEventKey() {
+        return eventKey;
+    }
+
+    public boolean isResendingEvent() {
+        return resendingEvent;
+    }
+
+    public String getSiteId() {
+        return siteId;
+    }
+
+    public String getNodeId() {
+        return nodeId;
+    }
+
+    @Override
+    public String toString() {
+        String simpleClassName = getClass().getSimpleName();
+        return String.format("%s [ realmId=%s ]", simpleClassName, realmId);
+    }
 }
