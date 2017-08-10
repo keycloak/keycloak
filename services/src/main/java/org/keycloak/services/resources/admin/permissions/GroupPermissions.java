@@ -185,7 +185,7 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
             authz.getStoreFactory().getPolicyStore().delete(manageMembersPermission.getId());
         }
         Policy viewMembersPermission = viewMembersPermission(group);
-        if (viewMembersPermission == null) {
+        if (viewMembersPermission != null) {
             authz.getStoreFactory().getPolicyStore().delete(viewMembersPermission.getId());
         }
         Policy manageMembershipPermission = manageMembershipPermission(group);
