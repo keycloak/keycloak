@@ -248,12 +248,12 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
     private void loadSessionsFromRemoteCaches(KeycloakSession session) {
         for (String cacheName : remoteCacheInvoker.getRemoteCacheNames()) {
-            loadSessionsFromRemoteCache(session.getKeycloakSessionFactory(), cacheName, getMaxErrors());
+            loadSessionsFromRemoteCache(session.getKeycloakSessionFactory(), cacheName, getSessionsPerSegment(), getMaxErrors());
         }
     }
 
 
-    private void loadSessionsFromRemoteCache(final KeycloakSessionFactory sessionFactory, String cacheName, final int maxErrors) {
+    private void loadSessionsFromRemoteCache(final KeycloakSessionFactory sessionFactory, String cacheName, final int sessionsPerSegment, final int maxErrors) {
         log.debugf("Check pre-loading userSessions from remote cache '%s'", cacheName);
 
         KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
@@ -263,8 +263,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                 InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
                 Cache<String, Serializable> workCache = connections.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
 
-                // Use limit for sessionsPerSegment as RemoteCache bulk load doesn't have support for pagination :/
-                BaseCacheInitializer initializer = new SingleWorkerCacheInitializer(session, workCache, new RemoteCacheSessionsLoader(cacheName), "remoteCacheLoad::" + cacheName);
+                InfinispanCacheInitializer initializer = new InfinispanCacheInitializer(sessionFactory, workCache, new RemoteCacheSessionsLoader(cacheName), "remoteCacheLoad::" + cacheName, sessionsPerSegment, maxErrors);
 
                 initializer.initCache();
                 initializer.loadSessions();

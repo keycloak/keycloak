@@ -17,6 +17,8 @@
 
 package org.keycloak.testsuite.util.cli;
 
+import java.util.function.Function;
+
 import org.infinispan.AdvancedCache;
 import org.infinispan.Cache;
 import org.infinispan.context.Flag;
@@ -25,6 +27,7 @@ import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -44,8 +47,20 @@ public abstract class AbstractSessionCacheCommand extends AbstractCommand {
             throw new HandledException();
         }
 
-        Cache<String, SessionEntity> ispnCache = provider.getCache(cacheName);
+        Cache<String, SessionEntityWrapper> ispnCache = provider.getCache(cacheName);
         doRunCacheCommand(session, ispnCache);
+
+        ispnCache.entrySet().stream().skip(0).limit(10).collect(java.util.stream.Collectors.toMap(new java.util.function.Function() {
+
+            public Object apply(Object entry) {
+                return ((java.util.Map.Entry) entry).getKey();
+            }
+        }, new java.util.function.Function() {
+
+            public Object apply(Object entry) {
+                return ((java.util.Map.Entry) entry).getValue();
+            }
+        }));
     }
 
     protected void printSession(String id, UserSessionEntity userSession) {
@@ -67,7 +82,7 @@ public abstract class AbstractSessionCacheCommand extends AbstractCommand {
         return getName() + " <cache-name>";
     }
 
-    protected abstract void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntity> cache);
+    protected abstract void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntityWrapper> cache);
 
 
     // IMPLS
@@ -80,7 +95,7 @@ public abstract class AbstractSessionCacheCommand extends AbstractCommand {
         }
 
         @Override
-        protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntity> cache) {
+        protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntityWrapper> cache) {
             UserSessionEntity userSession = new UserSessionEntity();
             String id = getArg(1);
 
@@ -88,7 +103,7 @@ public abstract class AbstractSessionCacheCommand extends AbstractCommand {
             userSession.setRealm(getArg(2));
 
             userSession.setLastSessionRefresh(Time.currentTime());
-            cache.put(id, userSession);
+            cache.put(id, new SessionEntityWrapper(userSession));
         }
 
         @Override
@@ -106,9 +121,9 @@ public abstract class AbstractSessionCacheCommand extends AbstractCommand {
         }
 
         @Override
-        protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntity> cache) {
+        protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntityWrapper> cache) {
             String id = getArg(1);
-            UserSessionEntity userSession = (UserSessionEntity) cache.get(id);
+            UserSessionEntity userSession = (UserSessionEntity) cache.get(id).getEntity();
             printSession(id, userSession);
         }
 
@@ -127,13 +142,13 @@ public abstract class AbstractSessionCacheCommand extends AbstractCommand {
         }
 
         @Override
-        protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntity> cache) {
+        protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntityWrapper> cache) {
             String id = getArg(1);
             int count = getIntArg(2);
 
             long start = System.currentTimeMillis();
             for (int i=0 ; i<count ; i++) {
-                UserSessionEntity userSession = (UserSessionEntity) cache.get(id);
+                UserSessionEntity userSession = (UserSessionEntity) cache.get(id).getEntity();
                 //printSession(id, userSession);
             }
             long took = System.currentTimeMillis() - start;
@@ -155,7 +170,7 @@ public abstract class AbstractSessionCacheCommand extends AbstractCommand {
         }
 
         @Override
-        protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntity> cache) {
+        protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntityWrapper> cache) {
             String id = getArg(1);
             cache.remove(id);
         }
@@ -175,7 +190,7 @@ public abstract class AbstractSessionCacheCommand extends AbstractCommand {
         }
 
         @Override
-        protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntity> cache) {
+        protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntityWrapper> cache) {
             cache.clear();
         }
     }
@@ -189,7 +204,7 @@ public abstract class AbstractSessionCacheCommand extends AbstractCommand {
         }
 
         @Override
-        protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntity> cache) {
+        protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntityWrapper> cache) {
             log.info("Size: " + cache.size());
         }
     }
@@ -203,13 +218,13 @@ public abstract class AbstractSessionCacheCommand extends AbstractCommand {
         }
 
         @Override
-        protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntity> cache) {
+        protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntityWrapper> cache) {
             for (String id : cache.keySet()) {
-                SessionEntity entity = cache.get(id);
+                SessionEntity entity = cache.get(id).getEntity();
                 if (!(entity instanceof UserSessionEntity)) {
                     continue;
                 }
-                UserSessionEntity userSession = (UserSessionEntity) cache.get(id);
+                UserSessionEntity userSession = (UserSessionEntity) cache.get(id).getEntity();
                 log.info("list: key=" + id + ", value=" + toString(userSession));
             }
         }
@@ -225,10 +240,10 @@ public abstract class AbstractSessionCacheCommand extends AbstractCommand {
 
 
         @Override
-        protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntity> cache) {
+        protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntityWrapper> cache) {
             String id = getArg(1);
             cache = ((AdvancedCache) cache).withFlags(Flag.CACHE_MODE_LOCAL);
-            UserSessionEntity userSession = (UserSessionEntity) cache.get(id);
+            UserSessionEntity userSession = (UserSessionEntity) cache.get(id).getEntity();
             printSession(id, userSession);
         }
 
@@ -247,7 +262,7 @@ public abstract class AbstractSessionCacheCommand extends AbstractCommand {
         }
 
         @Override
-        protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntity> cache) {
+        protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntityWrapper> cache) {
             log.info("Size local: " + cache.getAdvancedCache().withFlags(Flag.CACHE_MODE_LOCAL).size());
         }
     }
@@ -261,7 +276,7 @@ public abstract class AbstractSessionCacheCommand extends AbstractCommand {
         }
 
         @Override
-        protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntity> cache) {
+        protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntityWrapper> cache) {
             String realmName = getArg(1);
             int count = getIntArg(2);
             int batchCount = getIntArg(3);
@@ -275,7 +290,7 @@ public abstract class AbstractSessionCacheCommand extends AbstractCommand {
                     userSession.setRealm(realmName);
 
                     userSession.setLastSessionRefresh(Time.currentTime());
-                    cache.put(id, userSession);
+                    cache.put(id, new SessionEntityWrapper(userSession));
                 }
 
                 log.infof("Created '%d' sessions started from offset '%d'", countInIteration, firstInIteration);
@@ -301,7 +316,7 @@ public abstract class AbstractSessionCacheCommand extends AbstractCommand {
         }
 
         @Override
-        protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntity> cache) {
+        protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntityWrapper> cache) {
             String realmName = getArg(1);
             String username = getArg(2);
             int count = getIntArg(3);
