@@ -102,17 +102,14 @@ public class RemoteCacheSessionsLoader implements SessionLoader {
 
         RemoteCache<?, ?> remoteCache = InfinispanUtil.getRemoteCache(cache);
 
-        // TODO:mposolda
-        log.infof("Will do bulk load of sessions from remote cache '%s' . First: %d, max: %d", cache.getName(), first, max);
-
+        log.debugf("Will do bulk load of sessions from remote cache '%s' . First: %d, max: %d", cache.getName(), first, max);
 
         Map<String, Integer> remoteParams = new HashMap<>();
         remoteParams.put("first", first);
         remoteParams.put("max", max);
         Map<byte[], byte[]> remoteObjects = remoteCache.execute("load-sessions.js", remoteParams);
 
-        // TODO:mposolda
-        log.infof("Finished loading sessions '%s' . First: %d, max: %d", cache.getName(), first, max);
+        log.debugf("Successfully finished loading sessions '%s' . First: %d, max: %d", cache.getName(), first, max);
 
         Marshaller marshaller = remoteCache.getRemoteCacheManager().getMarshaller();
 
