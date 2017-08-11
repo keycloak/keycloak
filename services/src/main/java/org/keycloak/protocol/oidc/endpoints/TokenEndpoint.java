@@ -564,19 +564,43 @@ public class TokenEndpoint {
     public Response buildTokenExchange() {
         event.detail(Details.AUTH_METHOD, "oauth_credentials");
 
-        String scope = formParams.getFirst(OAuth2Constants.SCOPE);
         String subjectToken = formParams.getFirst(OAuth2Constants.SUBJECT_TOKEN);
         String subjectTokenType = formParams.getFirst(OAuth2Constants.SUBJECT_TOKEN_TYPE);
+        if (subjectTokenType != null && !subjectTokenType.equals(OAuth2Constants.ACCESS_TOKEN_TYPE)) {
+            event.error(Errors.INVALID_TOKEN);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Invalid token type, must be access token", Response.Status.BAD_REQUEST);
+
+        }
+
+
         AuthenticationManager.AuthResult authResult = AuthenticationManager.verifyIdentityToken(session, realm, uriInfo, clientConnection, true, true, false, subjectToken, headers);
         if (authResult == null) {
             event.error(Errors.INVALID_TOKEN);
             throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Invalid token", Response.Status.BAD_REQUEST);
         }
 
+        String requestedIssuer = formParams.getFirst(OAuth2Constants.REQUESTED_ISSUER);
+
+        if (requestedIssuer == null) {
+
+        }
+
+        return exchangeClientToClient(authResult);
+    }
+
+    public Response exchangeClientToClient(AuthenticationManager.AuthResult subject) {
+        String requestedTokenType = formParams.getFirst(OAuth2Constants.REQUESTED_TOKEN_TYPE);
+        if (requestedTokenType == null) {
+            requestedTokenType = OAuth2Constants.REFRESH_TOKEN_TYPE;
+        } else if (!requestedTokenType.equals(OAuth2Constants.ACCESS_TOKEN_TYPE) && !requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)) {
+            event.error(Errors.INVALID_REQUEST);
+            throw new ErrorResponseException("unsupported_requested_token_type", "Unsupported requested token type", Response.Status.BAD_REQUEST);
+
+        }
         String audience = formParams.getFirst(OAuth2Constants.AUDIENCE);
         if (audience == null) {
             event.error(Errors.INVALID_REQUEST);
-            throw new ErrorResponseException("invalid_audience", "No audience specified", Response.Status.BAD_REQUEST);
+            throw new ErrorResponseException("invalid_audience", "Audience parameter required", Response.Status.BAD_REQUEST);
 
         }
         ClientModel targetClient = null;
@@ -594,7 +618,7 @@ public class TokenEndpoint {
         }
 
         boolean exchangeFromAllowed = false;
-        for (String aud : authResult.getToken().getAudience()) {
+        for (String aud : subject.getToken().getAudience()) {
             ClientModel audClient = realm.getClientByClientId(aud);
             if (audClient == null) continue;
             if (audClient.equals(client)) {
@@ -617,13 +641,15 @@ public class TokenEndpoint {
             throw new ErrorResponseException(OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);
         }
 
+        String scope = formParams.getFirst(OAuth2Constants.SCOPE);
+
         AuthenticationSessionModel authSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, targetClient, false);
-        authSession.setAuthenticatedUser(authResult.getUser());
+        authSession.setAuthenticatedUser(subject.getUser());
         authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
         authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, scope);
 
-        UserSessionModel userSession = authResult.getSession();
+        UserSessionModel userSession = subject.getSession();
         event.session(userSession);
 
         AuthenticationManager.setRolesAndMappersInSession(authSession);
@@ -637,10 +663,13 @@ public class TokenEndpoint {
         updateUserSessionFromClientAuth(userSession);
 
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, targetClient, event, session, userSession, clientSession)
-                .generateAccessToken()
-                .generateRefreshToken();
+                .generateAccessToken();
         responseBuilder.getAccessToken().issuedFor(client.getClientId());
-        responseBuilder.getRefreshToken().issuedFor(client.getClientId());
+
+        if (requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)) {
+            responseBuilder.generateRefreshToken();
+            responseBuilder.getRefreshToken().issuedFor(client.getClientId());
+        }
 
         String scopeParam = clientSession.getNote(OAuth2Constants.SCOPE);
         if (TokenUtil.isOIDCRequest(scopeParam)) {
