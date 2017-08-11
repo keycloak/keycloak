@@ -468,6 +468,16 @@ or
 It can be useful to add additional system property to enable logging:
   
     -Dkeycloak.infinispan.logging.level=debug
+    
+Tests from package "manual" uses manual lifecycle for all servers, so needs to be executed manually. Also needs to be executed with real DB like MySQL. You can run them with:
+
+    mvn -Pcache-server-infinispan -Dtest=*.crossdc.manual.* -Dmanual.mode=true \
+    -Dkeycloak.connectionsJpa.url.crossdc=jdbc:mysql://localhost/keycloak -Dkeycloak.connectionsJpa.driver.crossdc=com.mysql.jdbc.Driver \
+    -Dkeycloak.connectionsJpa.user=keycloak -Dkeycloak.connectionsJpa.password=keycloak \
+    -pl testsuite/integration-arquillian/tests/base test
+
+    
+    
      
   
 
@@ -511,6 +521,9 @@ connects to the remoteStore provided by infinispan server configured in previous
     -Dkeycloak.connectionsJpa.password=keycloak -Dkeycloak.connectionsInfinispan.clustered=true -Dkeycloak.connectionsInfinispan.l1Lifespan=0 
     -Dkeycloak.connectionsInfinispan.remoteStorePort=11222 -Dkeycloak.connectionsInfinispan.remoteStorePort.2=11222 -Dkeycloak.connectionsInfinispan.sessionsOwners=1 
     -Dsession.cache.owners=1 -Dkeycloak.infinispan.logging.level=debug -Dresources
+    
+NOTE: Tests from package "manual" (eg. SessionsPreloadCrossDCTest) needs to be executed with managed containers. 
+So skip steps 1,2 and add property `-Dmanual.mode=true` and change "cache.server.lifecycle.skip" to false `-Dcache.server.lifecycle.skip=false` or remove it.    
     
 7) If you want to debug and test manually, the servers are running on these ports (Note that not all backend servers are running by default and some might be also unused by loadbalancer):
 

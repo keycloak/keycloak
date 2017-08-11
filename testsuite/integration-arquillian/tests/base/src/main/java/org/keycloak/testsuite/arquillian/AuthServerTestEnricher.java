@@ -54,7 +54,7 @@ import javax.ws.rs.NotFoundException;
  */
 public class AuthServerTestEnricher {
 
-    protected final Logger log = Logger.getLogger(this.getClass());
+    protected static final Logger log = Logger.getLogger(AuthServerTestEnricher.class);
 
     @Inject
     private Instance<ContainerRegistry> containerRegistry;
@@ -83,6 +83,10 @@ public class AuthServerTestEnricher {
 
     private static final Boolean START_MIGRATION_CONTAINER = "auto".equals(System.getProperty("migration.mode")) || 
             "manual".equals(System.getProperty("migration.mode"));
+
+    // In manual mode are all containers despite loadbalancers started in mode "manual" and nothing is managed through "suite".
+    // Useful for tests, which require restart servers etc.
+    private static final String MANUAL_MODE = "manual.mode";
 
     @Inject
     @SuiteScoped
@@ -118,6 +122,9 @@ public class AuthServerTestEnricher {
           .map(ContainerInfo::new)
           .collect(Collectors.toSet());
 
+        // A way to specify that containers should be in mode "manual" rather then "suite"
+        checkManualMode(containers);
+
         suiteContext = new SuiteContext(containers);
 
         if (AUTH_SERVER_CROSS_DC) {
@@ -148,6 +155,15 @@ public class AuthServerTestEnricher {
                 suiteContext.addAuthServerBackendsInfo(Integer.valueOf(dcString), c);
               });
 
+            containers.stream()
+                    .filter(c -> c.getQualifier().startsWith("cache-server-cross-dc-"))
+                    .sorted((a, b) -> a.getQualifier().compareTo(b.getQualifier()))
+                    .forEach(containerInfo -> {
+                        int prefixSize = "cache-server-cross-dc-".length();
+                        int dcIndex = Integer.parseInt(containerInfo.getQualifier().substring(prefixSize)) -1;
+                        suiteContext.addCacheServerInfo(dcIndex, containerInfo);
+                    });
+
             if (suiteContext.getDcAuthServerInfo().isEmpty()) {
                 throw new RuntimeException(String.format("No auth server container matching '%s' found in arquillian.xml.", AUTH_SERVER_BACKEND));
             }
@@ -156,6 +172,9 @@ public class AuthServerTestEnricher {
             }
             if (suiteContext.getDcAuthServerBackendsInfo().stream().anyMatch(List::isEmpty)) {
                 throw new RuntimeException(String.format("Some data center has no auth server container matching '%s' defined in arquillian.xml.", AUTH_SERVER_BACKEND));
+            }
+            if (suiteContext.getCacheServersInfo().isEmpty()) {
+                throw new IllegalStateException("Cache containers misconfiguration");
             }
 
             log.info("Using frontend containers: " + this.suiteContext.getDcAuthServerInfo().stream()
@@ -270,10 +289,23 @@ public class AuthServerTestEnricher {
     public void afterClass(@Observes(precedence = 2) AfterClass event) {
         TestContext testContext = testContextProducer.get();
 
-        List<RealmRepresentation> testRealmReps = testContext.getTestRealmReps();
         Keycloak adminClient = testContext.getAdminClient();
         KeycloakTestingClient testingClient = testContext.getTestingClient();
 
+        removeTestRealms(testContext, adminClient);
+
+        if (adminClient != null) {
+            adminClient.close();
+        }
+
+        if (testingClient != null) {
+            testingClient.close();
+        }
+    }
+
+
+    public static void removeTestRealms(TestContext testContext, Keycloak adminClient) {
+        List<RealmRepresentation> testRealmReps = testContext.getTestRealmReps();
         if (testRealmReps != null) {
             log.info("removing test realms after test class");
             for (RealmRepresentation testRealm : testRealmReps) {
@@ -286,13 +318,20 @@ public class AuthServerTestEnricher {
                 }
             }
         }
+    }
 
-        if (adminClient != null) {
-            adminClient.close();
-        }
 
-        if (testingClient != null) {
-            testingClient.close();
+    private void checkManualMode(Set<ContainerInfo> containers) {
+        String manualMode = System.getProperty(MANUAL_MODE);
+
+        if (Boolean.parseBoolean(manualMode)) {
+
+            containers.stream()
+                    .filter(containerInfo -> !containerInfo.getQualifier().contains("balancer"))
+                    .forEach(containerInfo -> {
+                        log.infof("Container '%s' will be in manual mode", containerInfo.getQualifier());
+                        containerInfo.getArquillianContainer().getContainerConfiguration().setMode("manual");
+                    });
         }
     }
 
