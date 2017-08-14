@@ -36,13 +36,19 @@
             <groupId>org.wildfly.extras.creaper</groupId>
             <artifactId>creaper-core</artifactId>
             <scope>test</scope>
-            <version>1.5.0</version>
+            <version>1.6.1</version>
         </dependency>
         <dependency>
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-cli</artifactId>
             <scope>test</scope>
-            <version>3.0.0.Beta30</version>
+            <version>${wildfly.core.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-controller-client</artifactId>
+            <scope>test</scope>
+            <version>${wildfly.core.version}</version>
         </dependency>
     </dependencies>    
 

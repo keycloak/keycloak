@@ -152,12 +152,19 @@ public class ServletSamlSessionStore implements SamlSessionStore {
     public boolean isLoggedIn() {
         HttpSession session = getSession(false);
         if (session == null) {
-            log.debug("session was null, returning null");
+            log.debug("Session was not found");
             return false;
         }
+
+        if (! idMapper.hasSession(session.getId())) {
+            log.debugf("Session %s has expired on some other node", session.getId());
+            session.removeAttribute(SamlSession.class.getName());
+            return false;
+        }
+
         final SamlSession samlSession = (SamlSession)session.getAttribute(SamlSession.class.getName());
         if (samlSession == null) {
-            log.debug("SamlSession was not in session, returning null");
+            log.debug("SamlSession was not found in the session");
             return false;
         }
 
