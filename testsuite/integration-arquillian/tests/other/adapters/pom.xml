@@ -68,6 +68,7 @@
         <app.server.2.management.port.jmx>10399</app.server.2.management.port.jmx>
 
         <settings.path></settings.path>
+        <maven.repo.local></maven.repo.local>
         <repo.url></repo.url>
 
         <adapter.test.props>
@@ -81,6 +82,7 @@
             -Djava.security.krb5.conf=${project.build.directory}/dependency/kerberos/test-krb5.conf
             -Dkie.maven.settings.custom=${settings.path}
             -Drepo.url=${repo.url}
+            -Dmaven.repo.local=${maven.repo.local}
         </adapter.test.props>
 
         <app.server.home>${containers.home}/app-server-${app.server}</app.server.home>
