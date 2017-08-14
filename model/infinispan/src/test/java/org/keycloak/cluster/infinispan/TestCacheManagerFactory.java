@@ -60,8 +60,9 @@ class TestCacheManagerFactory {
     private <T extends RemoteStoreConfigurationBuilder> Configuration getCacheBackedByRemoteStore(int threadId, String cacheName, Class<T> builderClass) {
         ConfigurationBuilder cacheConfigBuilder = new ConfigurationBuilder();
 
+        String host = "localhost";
         int port = threadId==1 ? 12232 : 13232;
-        //int port = 12232;
+        //int port = 11222;
 
         return cacheConfigBuilder.persistence().addStore(builderClass)
                 .fetchPersistentState(false)
@@ -74,8 +75,8 @@ class TestCacheManagerFactory {
                 .forceReturnValues(false)
                 .marshaller(KeycloakHotRodMarshallerFactory.class.getName())
                 .addServer()
-                    .host("localhost")
-                .port(port)
+                    .host(host)
+                    .port(port)
                 .connectionPool()
                     .maxActive(20)
                     .exhaustedAction(ExhaustedAction.CREATE_NEW)

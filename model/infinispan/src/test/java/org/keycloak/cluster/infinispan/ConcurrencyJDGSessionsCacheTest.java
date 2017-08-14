@@ -244,6 +244,10 @@ public class ConcurrencyJDGSessionsCacheTest {
             SessionEntity session = (SessionEntity) remoteCache.get(cacheKey);
             SessionEntityWrapper sessionWrapper = new SessionEntityWrapper(session);
 
+            if (listenerCount.get() % 100 == 0) {
+                logger.infof("Listener count: " + listenerCount.get());
+            }
+
             // TODO: for distributed caches, ensure that it is executed just on owner OR if event.isCommandRetried
             origCache
                     .getAdvancedCache().withFlags(Flag.SKIP_CACHE_LOAD, Flag.SKIP_CACHE_STORE)
