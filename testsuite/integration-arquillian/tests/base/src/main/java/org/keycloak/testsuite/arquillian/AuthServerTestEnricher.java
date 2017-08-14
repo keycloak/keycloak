@@ -173,7 +173,8 @@ public class AuthServerTestEnricher {
             if (suiteContext.getDcAuthServerBackendsInfo().stream().anyMatch(List::isEmpty)) {
                 throw new RuntimeException(String.format("Some data center has no auth server container matching '%s' defined in arquillian.xml.", AUTH_SERVER_BACKEND));
             }
-            if (suiteContext.getCacheServersInfo().isEmpty()) {
+            boolean cacheServerLifecycleSkip = Boolean.parseBoolean(System.getProperty("cache.server.lifecycle.skip"));
+            if (suiteContext.getCacheServersInfo().isEmpty() && !cacheServerLifecycleSkip) {
                 throw new IllegalStateException("Cache containers misconfiguration");
             }
 
