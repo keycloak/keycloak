@@ -17,6 +17,9 @@
 
 package org.keycloak.testsuite.crossdc.manual;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -110,7 +113,7 @@ public class SessionsPreloadCrossDCTest extends AbstractAdminCrossDCTest {
         log.infof("sessionsBefore: %d", sessionsBefore);
 
         // Create initial sessions
-        createInitialSessions(false);
+        List<OAuthClient.AccessTokenResponse> tokenResponses = createInitialSessions(false);
 
         // Start 2nd DC.
         containerController.start(getCacheServer(DC.SECOND).getQualifier());
@@ -126,6 +129,13 @@ public class SessionsPreloadCrossDCTest extends AbstractAdminCrossDCTest {
 
         // On DC2 sessions were preloaded from from remoteCache
         Assert.assertTrue(getTestingClientForStartedNodeInDc(1).testing().cache(InfinispanConnectionProvider.WORK_CACHE_NAME).contains("distributed::remoteCacheLoad::sessions"));
+
+        // Assert refreshing works
+        for (OAuthClient.AccessTokenResponse resp : tokenResponses) {
+            OAuthClient.AccessTokenResponse newResponse = oauth.doRefreshTokenRequest(resp.getRefreshToken(), "password");
+            Assert.assertNull(newResponse.getError());
+            Assert.assertNotNull(newResponse.getAccessToken());
+        }
     }
 
 
@@ -135,7 +145,7 @@ public class SessionsPreloadCrossDCTest extends AbstractAdminCrossDCTest {
         log.infof("offlineSessionsBefore: %d", offlineSessionsBefore);
 
         // Create initial sessions
-        createInitialSessions(true);
+        List<OAuthClient.AccessTokenResponse> tokenResponses = createInitialSessions(true);
 
         int offlineSessions01 = getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME).size();
         Assert.assertEquals(offlineSessions01, offlineSessionsBefore + SESSIONS_COUNT);
@@ -167,19 +177,31 @@ public class SessionsPreloadCrossDCTest extends AbstractAdminCrossDCTest {
 
         Assert.assertFalse(getTestingClientForStartedNodeInDc(1).testing().cache(InfinispanConnectionProvider.WORK_CACHE_NAME).contains("distributed::offlineUserSessions"));
         Assert.assertTrue(getTestingClientForStartedNodeInDc(1).testing().cache(InfinispanConnectionProvider.WORK_CACHE_NAME).contains("distributed::remoteCacheLoad::offlineSessions"));
+
+        // Assert refreshing with offline tokens work
+        for (OAuthClient.AccessTokenResponse resp : tokenResponses) {
+            OAuthClient.AccessTokenResponse newResponse = oauth.doRefreshTokenRequest(resp.getRefreshToken(), "password");
+            Assert.assertNull(newResponse.getError());
+            Assert.assertNotNull(newResponse.getAccessToken());
+        }
     }
 
 
-    private void createInitialSessions(boolean offline) throws Exception {
+    private List<OAuthClient.AccessTokenResponse> createInitialSessions(boolean offline) throws Exception {
         if (offline) {
             oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         }
+
+        List<OAuthClient.AccessTokenResponse> responses = new LinkedList<>();
 
         for (int i=0 ; i<SESSIONS_COUNT ; i++) {
             OAuthClient.AccessTokenResponse resp = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
             Assert.assertNull(resp.getError());
             Assert.assertNotNull(resp.getAccessToken());
+            responses.add(resp);
         }
+
+        return responses;
     }
 
 
