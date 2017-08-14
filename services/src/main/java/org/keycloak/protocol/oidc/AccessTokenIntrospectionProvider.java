@@ -18,6 +18,7 @@
 package org.keycloak.protocol.oidc;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.jboss.logging.Logger;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.models.KeycloakSession;
@@ -35,6 +36,8 @@ import java.security.PublicKey;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvider {
+
+    protected static final Logger logger = Logger.getLogger(AccessTokenIntrospectionProvider.class);
 
     private final KeycloakSession session;
     private final TokenManager tokenManager;
@@ -58,6 +61,7 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
 
                 PublicKey publicKey = session.keys().getRsaPublicKey(realm, verifier.getHeader().getKeyId());
                 if (publicKey == null) {
+                    logger.debug("Verification failed: public key not found");
                     valid = false;
                 } else {
                     verifier.publicKey(publicKey);
@@ -65,6 +69,10 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
                     toIntrospect = verifier.getToken();
                 }
             } catch (VerificationException e) {
+                logger.debug("Verification failed: " + e.getMessage());
+                for (Throwable th = e.getCause(); th != null; th = th.getCause()) {
+                    logger.debug("    Verification failed (" + th.getClass().getName() + "): " + th.getMessage());
+                }
                 valid = false;
             }
 
