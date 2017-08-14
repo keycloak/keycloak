@@ -67,6 +67,11 @@ public class InMemorySessionIdMapper implements SessionIdMapper {
             ssoToSession.put(sso, session);
             sessionToSso.put(session, sso);
         }
+
+        if (principal == null) {
+            return;
+        }
+
         Set<String> userSessions = principalToSession.get(principal);
         if (userSessions == null) {
             final Set<String> tmp = Collections.synchronizedSet(new HashSet<String>());

@@ -79,6 +79,18 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-core</artifactId>
+            <scope>provided</scope>
+            <version>5.2.20.Final</version> <!-- override version to match EAP's -->
+        </dependency>
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-cachestore-remote</artifactId>
+            <scope>provided</scope>
+            <version>5.2.20.Final</version> <!-- override version to match EAP's -->
+        </dependency>
+        <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-saml-tomcat-adapter-core</artifactId>
             <exclusions>

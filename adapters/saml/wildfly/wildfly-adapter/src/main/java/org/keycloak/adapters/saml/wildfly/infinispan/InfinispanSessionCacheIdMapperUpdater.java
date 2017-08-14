@@ -16,6 +16,7 @@
  */
 package org.keycloak.adapters.saml.wildfly.infinispan;
 
+import org.keycloak.adapters.saml.AdapterConstants;
 import org.keycloak.adapters.spi.SessionIdMapper;
 import org.keycloak.adapters.spi.SessionIdMapperUpdater;
 
@@ -27,6 +28,8 @@ import org.infinispan.Cache;
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.manager.EmbeddedCacheManager;
+import org.infinispan.persistence.manager.PersistenceManager;
+import org.infinispan.persistence.remote.RemoteStore;
 import org.jboss.logging.Logger;
 
 /**
@@ -37,64 +40,55 @@ public class InfinispanSessionCacheIdMapperUpdater {
 
     private static final Logger LOG = Logger.getLogger(InfinispanSessionCacheIdMapperUpdater.class);
 
-    public static final String DEFAULT_CACHE_CONTAINER_JNDI_NAME = "java:jboss/infinispan/container/web";
-
-    private static final String DEPLOYMENT_CACHE_CONTAINER_JNDI_NAME_PARAM_NAME = "keycloak.sessionIdMapperUpdater.infinispan.cacheContainerJndi";
-    private static final String DEPLOYMENT_CACHE_NAME_PARAM_NAME = "keycloak.sessionIdMapperUpdater.infinispan.deploymentCacheName";
-    private static final String SSO_CACHE_NAME_PARAM_NAME = "keycloak.sessionIdMapperUpdater.infinispan.cacheName";
+    public static final String DEFAULT_CACHE_CONTAINER_JNDI_NAME = "java:jboss/infinispan/container";
 
     public static SessionIdMapperUpdater addTokenStoreUpdaters(DeploymentInfo deploymentInfo, SessionIdMapper mapper, SessionIdMapperUpdater previousIdMapperUpdater) {
-       boolean distributable = Objects.equals(
-          deploymentInfo.getSessionManagerFactory().getClass().getName(),
-          "org.wildfly.clustering.web.undertow.session.DistributableSessionManagerFactory"
-        );
+        Map<String, String> initParameters = deploymentInfo.getInitParameters();
+        String containerName = initParameters == null ? null : initParameters.get(AdapterConstants.REPLICATION_CONFIG_CONTAINER_PARAM_NAME);
+        String cacheName = initParameters == null ? null : initParameters.get(AdapterConstants.REPLICATION_CONFIG_SSO_CACHE_PARAM_NAME);
 
-        if (! distributable) {
-            LOG.warnv("Deployment {0} does not use supported distributed session cache mechanism", deploymentInfo.getDeploymentName());
+        if (containerName == null || cacheName == null) {
+            LOG.warnv("Cannot determine parameters of SSO cache for deployment {0}.", deploymentInfo.getDeploymentName());
+
             return previousIdMapperUpdater;
         }
 
-        Map<String, String> initParameters = deploymentInfo.getInitParameters();
-        String cacheContainerLookup = (initParameters != null && initParameters.get(DEPLOYMENT_CACHE_CONTAINER_JNDI_NAME_PARAM_NAME) != null)
-          ? initParameters.get(DEPLOYMENT_CACHE_CONTAINER_JNDI_NAME_PARAM_NAME)
-          : DEFAULT_CACHE_CONTAINER_JNDI_NAME;
-        boolean deploymentSessionCacheNamePreset = initParameters != null && initParameters.get(DEPLOYMENT_CACHE_NAME_PARAM_NAME) != null;
-        String deploymentSessionCacheName = deploymentSessionCacheNamePreset
-          ? initParameters.get(DEPLOYMENT_CACHE_NAME_PARAM_NAME)
-          : deploymentInfo.getDeploymentName();
-        boolean ssoCacheNamePreset = initParameters != null && initParameters.get(SSO_CACHE_NAME_PARAM_NAME) != null;
-        String ssoCacheName = ssoCacheNamePreset
-          ? initParameters.get(SSO_CACHE_NAME_PARAM_NAME)
-          : deploymentSessionCacheName + ".ssoCache";
+        String cacheContainerLookup = DEFAULT_CACHE_CONTAINER_JNDI_NAME + "/" + containerName;
+        String deploymentSessionCacheName = deploymentInfo.getDeploymentName();
 
         try {
             EmbeddedCacheManager cacheManager = (EmbeddedCacheManager) new InitialContext().lookup(cacheContainerLookup);
 
-            Configuration ssoCacheConfiguration = cacheManager.getCacheConfiguration(ssoCacheName);
+            Configuration ssoCacheConfiguration = cacheManager.getCacheConfiguration(cacheName);
             if (ssoCacheConfiguration == null) {
                 Configuration cacheConfiguration = cacheManager.getCacheConfiguration(deploymentSessionCacheName);
                 if (cacheConfiguration == null) {
-                    LOG.debugv("Using default cache container configuration for SSO cache. lookup={0}, looked up configuration of cache={1}", cacheContainerLookup, deploymentSessionCacheName);
+                    LOG.debugv("Using default configuration for SSO cache {0}.{1}.", containerName, cacheName);
                     ssoCacheConfiguration = cacheManager.getDefaultCacheConfiguration();
                 } else {
-                    LOG.debugv("Using distributed HTTP session cache configuration for SSO cache. lookup={0}, configuration taken from cache={1}", cacheContainerLookup, deploymentSessionCacheName);
+                    LOG.debugv("Using distributed HTTP session cache configuration for SSO cache {0}.{1}, configuration taken from cache {2}",
+                      containerName, cacheName, deploymentSessionCacheName);
                     ssoCacheConfiguration = cacheConfiguration;
-                    cacheManager.defineConfiguration(ssoCacheName, ssoCacheConfiguration);
+                    cacheManager.defineConfiguration(cacheName, ssoCacheConfiguration);
                 }
             } else {
-                LOG.debugv("Using custom configuration of SSO cache. lookup={0}, cache name={1}", cacheContainerLookup, ssoCacheName);
+                LOG.debugv("Using custom configuration of SSO cache {0}.{1}.", containerName, cacheName);
             }
 
             CacheMode ssoCacheMode = ssoCacheConfiguration.clustering().cacheMode();
             if (ssoCacheMode != CacheMode.REPL_ASYNC && ssoCacheMode != CacheMode.REPL_SYNC) {
-                LOG.warnv("SSO cache mode is {0}, it is recommended to use replicated mode instead", ssoCacheConfiguration.clustering().cacheModeString());
+                LOG.warnv("SSO cache mode is {0}, it is recommended to use replicated mode instead.", ssoCacheConfiguration.clustering().cacheModeString());
             }
 
-            Cache<String, String[]> ssoCache = cacheManager.getCache(ssoCacheName, true);
-            ssoCache.addListener(new SsoSessionCacheListener(mapper));
+            Cache<String, String[]> ssoCache = cacheManager.getCache(cacheName, true);
+            final SsoSessionCacheListener listener = new SsoSessionCacheListener(ssoCache, mapper);
+            ssoCache.addListener(listener);
 
-            LOG.debugv("Added distributed SSO session cache, lookup={0}, cache name={1}", cacheContainerLookup, deploymentSessionCacheName);
+            addSsoCacheCrossDcListener(ssoCache, listener);
 
+            LOG.debugv("Added distributed SSO session cache, lookup={0}, cache name={1}", cacheContainerLookup, cacheName);
+
+            LOG.debugv("Adding session listener for SSO session cache, lookup={0}, cache name={1}", cacheContainerLookup, cacheName);
             SsoCacheSessionIdMapperUpdater updater = new SsoCacheSessionIdMapperUpdater(ssoCache, previousIdMapperUpdater);
             deploymentInfo.addSessionListener(updater);
 
@@ -103,5 +97,26 @@ public class InfinispanSessionCacheIdMapperUpdater {
             LOG.warnv("Failed to obtain distributed session cache container, lookup={0}", cacheContainerLookup);
             return previousIdMapperUpdater;
         }
+    }
+
+    private static void addSsoCacheCrossDcListener(Cache<String, String[]> ssoCache, SsoSessionCacheListener listener) {
+        if (ssoCache.getCacheConfiguration().persistence() == null) {
+            return;
+        }
+
+        final Set<RemoteStore> stores = getRemoteStores(ssoCache);
+        if (stores == null || stores.isEmpty()) {
+            return;
+        }
+
+        LOG.infov("Listening for events on remote stores configured for cache {0}", ssoCache.getName());
+
+        for (RemoteStore store : stores) {
+            store.getRemoteCache().addClientListener(listener);
+        }
+    }
+
+    public static Set<RemoteStore> getRemoteStores(Cache ispnCache) {
+        return ispnCache.getAdvancedCache().getComponentRegistry().getComponent(PersistenceManager.class).getStores(RemoteStore.class);
     }
 }
