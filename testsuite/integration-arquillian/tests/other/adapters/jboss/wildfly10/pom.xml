@@ -48,6 +48,7 @@
 
     <properties>
         <app.server>wildfly10</app.server>
+        <arquillian-wildfly-container.version>2.0.0.Final</arquillian-wildfly-container.version>
     </properties>
     
 </project>

@@ -40,13 +40,13 @@ import static org.keycloak.testsuite.adapter.AbstractServletsAdapterTest.samlSer
 @AppServerContainer("app-server-wildfly10")
 public class Wildfly10SAMLAdapterClusterTest extends AbstractSAMLAdapterClusterTest {
 
-    @TargetsContainer(value = "app-server-wildfly-" + NODE_1_NAME)
+    @TargetsContainer(value = "app-server-wildfly10-" + NODE_1_NAME)
     @Deployment(name = EmployeeServletDistributable.DEPLOYMENT_NAME, managed = false)
     protected static WebArchive employee() {
         return samlServletDeployment(EmployeeServletDistributable.DEPLOYMENT_NAME, EmployeeServletDistributable.DEPLOYMENT_NAME + "/WEB-INF/web.xml", SendUsernameServlet.class);
     }
 
-    @TargetsContainer(value = "app-server-wildfly-" + NODE_2_NAME)
+    @TargetsContainer(value = "app-server-wildfly10-" + NODE_2_NAME)
     @Deployment(name = EmployeeServletDistributable.DEPLOYMENT_NAME + "_2", managed = false)
     protected static WebArchive employee2() {
         return employee();

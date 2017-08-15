@@ -39,7 +39,7 @@ public class HtmlUnitScreenshots {
     public void configureExtension(@Observes ScreenshooterExtensionConfigured event) {
         ScreenshooterConfiguration conf = configuration.get();
 
-        if (System.getProperty("browser").equals("htmlUnit")) {
+        if (System.getProperty("browser", "htmlUnit").equals("htmlUnit")) {
             conf.setProperty("takeWhenTestFailed", "false");
             log.info("Screenshots disabled as htmlUnit is used");
         } else {

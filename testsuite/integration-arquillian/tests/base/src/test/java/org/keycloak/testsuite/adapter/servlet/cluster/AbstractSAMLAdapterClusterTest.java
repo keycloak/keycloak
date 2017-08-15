@@ -55,7 +55,7 @@ import org.openqa.selenium.support.PageFactory;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertThat;
+import static org.keycloak.testsuite.AbstractAuthTest.createUserRepresentation;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.getNearestSuperclassWithAnnotation;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
