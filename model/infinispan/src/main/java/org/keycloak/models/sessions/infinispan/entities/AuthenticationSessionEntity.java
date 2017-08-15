@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.keycloak.sessions.AuthenticationSessionModel;
 
@@ -28,6 +29,8 @@ import org.keycloak.sessions.AuthenticationSessionModel;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class AuthenticationSessionEntity extends SessionEntity {
+
+    private String id;
 
     private String clientUuid;
     private String authUserId;
@@ -45,6 +48,14 @@ public class AuthenticationSessionEntity extends SessionEntity {
     private Map<String, String> authNotes;
     private Set<String> requiredActions  = new HashSet<>();
     private Map<String, String> userSessionNotes;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 
     public String getClientUuid() {
         return clientUuid;
@@ -148,5 +159,27 @@ public class AuthenticationSessionEntity extends SessionEntity {
 
     public void setAuthNotes(Map<String, String> authNotes) {
         this.authNotes = authNotes;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof AuthenticationSessionEntity)) return false;
+
+        AuthenticationSessionEntity that = (AuthenticationSessionEntity) o;
+
+        if (id != null ? !id.equals(that.id) : that.id != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return id != null ? id.hashCode() : 0;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("AuthenticationSessionEntity [id=%s, realm=%s, clientUuid=%s ]", getId(), getRealm(), getClientUuid());
     }
 }

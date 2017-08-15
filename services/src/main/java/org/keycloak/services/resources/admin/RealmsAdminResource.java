@@ -146,7 +146,8 @@ public class RealmsAdminResource {
 
             return Response.created(location).build();
         } catch (ModelDuplicateException e) {
-            return ErrorResponse.exists("Realm with same name exists");
+            logger.error("Conflict detected", e);
+            return ErrorResponse.exists("Conflict detected. See logs for details");
         }
     }
 
