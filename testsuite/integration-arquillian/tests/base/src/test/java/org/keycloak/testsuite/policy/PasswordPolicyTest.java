@@ -142,35 +142,20 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
     }
 
     /**
-     *
+     * KEYCLOAK-5244
      */
     @Test
-    public void testBlacklistPasswordPolicyWithTestBlacklist(){
+    public void testBlacklistPasswordPolicyWithTestBlacklist() throws Exception {
+
         testingClient.server("passwordPolicy").run(session -> {
 
             RealmModel realmModel = session.getContext().getRealm();
             PasswordPolicyManagerProvider policyManager = session.getProvider(PasswordPolicyManagerProvider.class);
 
-            //TODO move test-password-blacklist.txt to src/test/resources
-            realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "passwordBlacklist(default/test-password-blacklist.txt)"));
+            realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "passwordBlacklist(test-password-blacklist.txt)"));
 
             Assert.assertEquals(BlacklistPasswordPolicyProvider.ERROR_MESSAGE, policyManager.validate("jdoe", "blacklisted1").getMessage());
             Assert.assertEquals(BlacklistPasswordPolicyProvider.ERROR_MESSAGE, policyManager.validate("jdoe", "blacklisted2").getMessage());
-            assertNull(policyManager.validate("jdoe", "notblacklisted"));
-        });
-    }
-
-    @Test
-    public void testBlacklistPasswordPolicyWithEmpty(){
-        testingClient.server("passwordPolicy").run(session -> {
-
-            RealmModel realmModel = session.getContext().getRealm();
-            PasswordPolicyManagerProvider policyManager = session.getProvider(PasswordPolicyManagerProvider.class);
-
-            realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "passwordBlacklist()"));
-
-            assertNull(policyManager.validate("jdoe", "blacklisted1"));
-            assertNull(policyManager.validate("jdoe", "blacklisted2"));
             assertNull(policyManager.validate("jdoe", "notblacklisted"));
         });
     }

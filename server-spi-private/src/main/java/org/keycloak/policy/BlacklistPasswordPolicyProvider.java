@@ -3,9 +3,8 @@ package org.keycloak.policy;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.policy.BlacklistPasswordPolicyProviderFactory.FileBasedPasswordBlacklist;
 import org.keycloak.policy.BlacklistPasswordPolicyProviderFactory.PasswordBlacklist;
-
-import java.util.Map;
 
 /**
  * Checks a password against a configured password blacklist.
@@ -18,11 +17,11 @@ public class BlacklistPasswordPolicyProvider implements PasswordPolicyProvider {
 
   private final KeycloakContext context;
 
-  private final Map<String, PasswordBlacklist> blacklistRegistry;
+  private final BlacklistPasswordPolicyProviderFactory factory;
 
-  public BlacklistPasswordPolicyProvider(KeycloakContext context, Map<String, PasswordBlacklist> blacklistRegistry) {
+  public BlacklistPasswordPolicyProvider(KeycloakContext context, BlacklistPasswordPolicyProviderFactory factory) {
     this.context = context;
-    this.blacklistRegistry = blacklistRegistry;
+    this.factory = factory;
   }
 
   /**
@@ -40,15 +39,11 @@ public class BlacklistPasswordPolicyProvider implements PasswordPolicyProvider {
       return null;
     }
 
-    if (!PasswordBlacklist.class.isInstance(policyConfig)) {
+    if (!(policyConfig instanceof PasswordBlacklist)) {
       return null;
     }
 
-    PasswordBlacklist blacklist = (PasswordBlacklist) policyConfig;
-
-    if (blacklist.isEmpty()) {
-      return null;
-    }
+    PasswordBlacklist blacklist = (FileBasedPasswordBlacklist) policyConfig;
 
     if (!blacklist.contains(password)) {
       return null;
@@ -69,19 +64,7 @@ public class BlacklistPasswordPolicyProvider implements PasswordPolicyProvider {
       return null;
     }
 
-    if (blacklistName.trim().isEmpty()) {
-      return null;
-    }
-
-    if (!blacklistRegistry.containsKey(blacklistName)) {
-      //TODO this might be too hard since it could prevent the server from starting...
-      throw new IllegalArgumentException("Password blacklist " + blacklistName + " not found!");
-    }
-
-    return blacklistRegistry.computeIfPresent(blacklistName, (name, pbl) -> {
-      pbl.lazyInit();
-      return pbl;
-    });
+    return factory.resolvePasswordBlacklist(blacklistName);
   }
 
   @Override

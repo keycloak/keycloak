@@ -17,24 +17,22 @@
 
 package org.keycloak.policy;
 
+import com.google.common.hash.BloomFilter;
+import com.google.common.hash.Funnels;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Scanner;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Creates {@link BlacklistPasswordPolicyProvider} instances.
@@ -42,27 +40,25 @@ import java.util.stream.Collectors;
  * Password blacklists are simple text files where every line is a blacklisted password delimited by {@code \n}.
  * Blacklist files are discovered and registered at startup.
  * <p>Blacklists can be configured via the <em>Authentication: Password Policy</em> section in the admin-console.
- * A blacklist is referred to by its name in the policy configuration.
- * <p>Keycloak provides a few password blacklists by default.
- * Note: Names of default blacklists are prefixed with {@code default/}.
- * <p>The following blacklists are currently supported by default.
- * <ul>
- * <li>default/empty-password-blacklist.txt</li>
- * <li>default/test-password-blacklist.txt</li>
- * </ul>
- * <p>Users can provide custom blacklists via the password-policy SPI.
- * Note: Name of custom blacklists are prefixed with {@code custom/}.
- * <p>To register a custom password blacklist, run the following jboss-cli script:
+ * A blacklist-file is referred to by its name in the policy configuration.
+ * <p>Users can provide custom blacklists by adding a blacklist password file to the configured blacklist folder.
+ * <p>
+ * <p>The location of the password-blacklists folder is derived as follows</p>
+ * <ol>
+ * <li>the value of the System property {@code keycloak.password.blacklists.path} if configured - fails if folder is missing</li>
+ * <li>the value of the SPI config property: {@code blacklistsPath} when explicitly configured - fails if folder is missing</li>
+ * <li>otherwise {@code ${jboss.server.data.dir}/password-blacklists/} if nothing else is configured - the folder is created automatically if not present</li>
+ * </ol>
+ * <p>Note that the preferred way for configuration is to copy the password file to the {@code ${jboss.server.data.dir}/password-blacklists/} folder</p>
+ * <p>To configure a password blacklist via the SPI configuration, run the following jboss-cli script:</p>
  * <pre>{@code
  * /subsystem=keycloak-server/spi=password-policy:add()
  * /subsystem=keycloak-server/spi=password-policy/provider=passwordBlacklist:add(enabled=true)
- * /subsystem=keycloak-server/spi=password-policy/provider=passwordBlacklist:write-attribute(name=properties.blacklistsFolderUri, value=file:///data/keycloak/blacklists/)
- * }
- * </pre>
+ * /subsystem=keycloak-server/spi=password-policy/provider=passwordBlacklist:write-attribute(name=properties.blacklistsPath, value=/data/keycloak/blacklists/)
+ * }</pre>
  * <p>A password blacklist with the filename {@code 10_million_password_list_top_1000000-password-blacklist.txt}
  * that is located beneath {@code /data/keycloak/blacklists/} can be referred to
- * as {@code custom/10_million_password_list_top_1000000-password-blacklist.txt} in the <em>Authentication: Password Policy</em> configuration.
- *
+ * as {@code 10_million_password_list_top_1000000-password-blacklist.txt} in the <em>Authentication: Password Policy</em> configuration.
  *
  * @author <a href="mailto:thomas.darimont@gmail.com">Thomas Darimont</a>
  */
@@ -72,61 +68,26 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
 
   public static final String ID = "passwordBlacklist";
 
-  private Map<String, PasswordBlacklist> blacklistRegistry;
+  public static final String SYSTEM_PROPERTY = "keycloak.password.blacklists.path";
+
+  public static final String BLACKLISTS_PATH_PROPERTY = "blacklistsPath";
+
+  public static final String JBOSS_SERVER_DATA_DIR = "jboss.server.data.dir";
+
+  public static final String PASSWORD_BLACKLISTS_FOLDER = "password-blacklists/";
+
+  private ConcurrentMap<String, FileBasedPasswordBlacklist> blacklistRegistry = new ConcurrentHashMap<>();
+
+  private Path blacklistsBasePath;
 
   @Override
   public PasswordPolicyProvider create(KeycloakSession session) {
-    return new BlacklistPasswordPolicyProvider(session.getContext(), blacklistRegistry);
+    return new BlacklistPasswordPolicyProvider(session.getContext(), this);
   }
 
   @Override
   public void init(Config.Scope config) {
-    this.blacklistRegistry = findPasswordBlacklists(config);
-  }
-
-  private Map<String, PasswordBlacklist> findPasswordBlacklists(Config.Scope config) {
-
-    Map<String, PasswordBlacklist> blacklists = new HashMap<>();
-
-    try {
-      // TODO where to place and how to find default blacklists?
-      // currently default backlists reside in server-spi-private/src/main/resources/blacklists
-      blacklists.putAll(findPasswordBlacklists("default", //
-        getClass().getClassLoader().getResource("blacklists").toURI()));
-    } catch (URISyntaxException e) {
-      LOG.warn("Could not load default password blacklist", e);
-    }
-
-    // TODO should we use a custom SPI for password-blacklist discovery to let users drop-in password blacklists?
-    String customBlacklistFolderUri = config.get("blacklistsFolderUri");
-    if (customBlacklistFolderUri == null) {
-      return blacklists;
-    }
-
-    blacklists.putAll(findPasswordBlacklists("custom", URI.create(customBlacklistFolderUri)));
-
-    return blacklists;
-  }
-
-  /**
-   * Discovers password blacklist files stored beneath the given {@code baseUri}.
-   * The name of a found password blacklist is prefixed with {@code prefix} and a {@code '/'}.
-   *
-   * @param prefix
-   * @param baseUri
-   * @return a {@link Map} with the found password blacklists
-   */
-  private Map<String, PasswordBlacklist> findPasswordBlacklists(String prefix, URI baseUri) {
-
-    try {
-      return Files.list(Paths.get(baseUri)) //
-        .map(p -> new PasswordBlacklist(prefix + "/" + p.getFileName(), p.toUri())) //
-        .peek(pbl -> LOG.infof("Found password blacklist name=%s", pbl.getName())) //
-        .collect(Collectors.toMap(PasswordBlacklist::getName, Function.identity()));
-    } catch (Exception e) {
-      LOG.errorf("Error during password blacklist discovery", e);
-      return Collections.emptyMap();
-    }
+    this.blacklistsBasePath = FileBasedPasswordBlacklist.detectBlacklistsBasePath(config);
   }
 
   @Override
@@ -162,21 +123,102 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
     return ID;
   }
 
-  /**
-   * Describes a lists of too easy to guess passwords or potentially leaked passwords
-   * that users should not be able to use.
-   */
-  public static class PasswordBlacklist {
 
+  /**
+   * Resolves and potentially registers a {@link PasswordBlacklist} for the given {@code blacklistName}.
+   *
+   * @param blacklistName
+   * @return
+   */
+  public PasswordBlacklist resolvePasswordBlacklist(String blacklistName) {
+
+    Objects.requireNonNull(blacklistName, "blacklistName");
+
+    String cleanedBlacklistName = blacklistName.trim();
+    if (cleanedBlacklistName.isEmpty()) {
+      throw new IllegalArgumentException("Password blacklist name must not be empty!");
+    }
+
+    return blacklistRegistry.computeIfAbsent(cleanedBlacklistName, (name) -> {
+      FileBasedPasswordBlacklist pbl = new FileBasedPasswordBlacklist(this.blacklistsBasePath, name);
+      pbl.lazyInit();
+      return pbl;
+    });
+  }
+
+  /**
+   * A {@link PasswordBlacklist} describes a list of too easy to guess
+   * or potentially leaked passwords that users should not be able to use.
+   */
+  public interface PasswordBlacklist {
+
+
+    /**
+     * @return the logical name of the {@link PasswordBlacklist}
+     */
+    String getName();
+
+    /**
+     * Checks whether a given {@code password} is contained in this {@link PasswordBlacklist}.
+     *
+     * @param password
+     * @return
+     */
+    boolean contains(String password);
+  }
+
+  /**
+   * A {@link FileBasedPasswordBlacklist} uses password-blacklist files as
+   * to construct a {@link PasswordBlacklist}.
+   * <p>
+   * This implementation uses a dynamically sized {@link BloomFilter}
+   * to provide a false positive probability of 1%.
+   *
+   * @see BloomFilter
+   */
+  public static class FileBasedPasswordBlacklist implements PasswordBlacklist {
+
+    private static final double FALSE_POSITIVE_PROBABILITY = 0.01;
+
+    private static final int BUFFER_SIZE_IN_BYTES = 512 * 1024;
+
+    /**
+     * The name of the blacklist filename.
+     */
     private final String name;
 
-    private final URI resourceUri;
+    /**
+     * The concrete path to the password-blacklist file.
+     */
+    private final Path path;
 
-    private Set<String> blacklist;
+    /**
+     * Initialized lazily via {@link #lazyInit()}
+     */
+    private BloomFilter<String> blacklist;
 
-    public PasswordBlacklist(String name, URI resourceUri) {
+    public FileBasedPasswordBlacklist(Path blacklistBasePath, String name) {
+
       this.name = name;
-      this.resourceUri = resourceUri;
+      this.path = blacklistBasePath.resolve(name);
+
+
+      if (name.contains("/")) {
+        // disallow '/' to avoid accidental filesystem traversal
+        throw new IllegalArgumentException("" + name + " must not contain slashes!");
+      }
+
+      if (!Files.exists(this.path)) {
+        throw new IllegalArgumentException("Password blacklist " + name + " not found!");
+      }
+    }
+
+    public String getName() {
+      return name;
+    }
+
+    public boolean contains(String password) {
+      return blacklist != null && blacklist.mightContain(password);
     }
 
     void lazyInit() {
@@ -185,44 +227,105 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
         return;
       }
 
-      this.blacklist = loadBlacklist();
+      this.blacklist = load();
     }
 
     /**
-     * Loads the referenced blacklist into a {@link java.util.Set}.
+     * Loads the referenced blacklist into a {@link BloomFilter}.
      *
-     * @return the {@link java.util.Set} backing a password blacklist
+     * @return the {@link BloomFilter} backing a password blacklist
      */
-    private Set<String> loadBlacklist() {
+    private BloomFilter<String> load() {
 
-      //TODO use more efficient data structure (e.g. a PatriciaTrie) to support large blacklists.
-      /*
-       * The initial implementation used a PatriciaTree from apache commons-collections4 but
-       * the dependency couldn't be added to the wildfly base.
-       */
-      try (Scanner scanner = new Scanner(resourceUri.toURL().openStream())) {
-        LOG.debugf("Loading blacklist for %s: start", name);
-        Set<String> set = new TreeSet<>();
-        while (scanner.hasNextLine()) {
-          set.add(scanner.nextLine());
+      try {
+        LOG.infof("Loading blacklist with name %s from %s - start", name, path);
+
+        long passwordCount = getPasswordCount();
+
+        BloomFilter<String> filter = BloomFilter.create(
+          Funnels.stringFunnel(StandardCharsets.UTF_8),
+          passwordCount,
+          FALSE_POSITIVE_PROBABILITY);
+
+        try (BufferedReader br = newReader(path)) {
+          br.lines().forEach(filter::put);
         }
-        LOG.debugf("Loading blacklist for %s: end", name);
-        return set;
+
+        LOG.infof("Loading blacklist with name %s from %s - end", name, path);
+
+        return filter;
       } catch (IOException e) {
-        throw new RuntimeException("Could not load password blacklist from uri: " + resourceUri, e);
+        throw new RuntimeException("Could not load password blacklist from path: " + path, e);
       }
     }
 
-    public String getName() {
-      return name;
+    /**
+     * Determines password blacklist size to correctly size the {@link BloomFilter} backing this blacklist.
+     *
+     * @return
+     * @throws IOException
+     */
+    private long getPasswordCount() throws IOException {
+
+      /*
+       * TODO find a more efficient way to determine the password count,
+       * e.g. require a header-line in the password-blacklist file
+       */
+      try (BufferedReader br = newReader(path)) {
+        return br.lines().count();
+      }
     }
 
-    public boolean isEmpty() {
-      return blacklist == null || blacklist.isEmpty();
+    private static BufferedReader newReader(Path path) throws IOException {
+      return new BufferedReader(Files.newBufferedReader(path), BUFFER_SIZE_IN_BYTES);
     }
 
-    public boolean contains(String password) {
-      return blacklist != null && blacklist.contains(password);
+    /**
+     * Discovers password blacklists location.
+     * <p>
+     * <ol>
+     * <li>
+     * system property {@code keycloak.password.blacklists.path} if present
+     * </li>
+     * <li>SPI config property {@code blacklistsPath}</li>
+     * </ol>
+     * and fallback to the {@code /data/password-blacklists} folder of the currently
+     * running wildfly instance.
+     *
+     * @param config
+     * @return the detected blacklist path
+     * @throws IllegalStateException if no blacklist folder could be detected
+     */
+    private static Path detectBlacklistsBasePath(Config.Scope config) {
+
+      String pathFromSysProperty = System.getProperty(SYSTEM_PROPERTY);
+      if (pathFromSysProperty != null) {
+        return ensureExists(Paths.get(pathFromSysProperty));
+      }
+
+      String pathFromSpiConfig = config.get(BLACKLISTS_PATH_PROPERTY);
+      if (pathFromSpiConfig != null) {
+        return ensureExists(Paths.get(pathFromSpiConfig));
+      }
+
+      String pathFromJbossDataPath = System.getProperty(JBOSS_SERVER_DATA_DIR) + "/" + PASSWORD_BLACKLISTS_FOLDER;
+      if (!Files.exists(Paths.get(pathFromJbossDataPath))) {
+        if (!Paths.get(pathFromJbossDataPath).toFile().mkdirs()) {
+          LOG.errorf("Could not create folder for password blacklists: %s", pathFromJbossDataPath);
+        }
+      }
+      return ensureExists(Paths.get(pathFromJbossDataPath));
+    }
+
+    private static Path ensureExists(Path path) {
+
+      Objects.requireNonNull(path, "path");
+
+      if (Files.exists(path)) {
+        return path;
+      }
+
+      throw new IllegalStateException("Password blacklists location does not exist: " + path);
     }
   }
 }

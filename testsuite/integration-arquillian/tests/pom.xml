@@ -311,6 +311,9 @@
                             <keycloak.testsuite.logging.pattern>${keycloak.testsuite.logging.pattern}</keycloak.testsuite.logging.pattern>
 
                             <keycloak.connectionsJpa.url.crossdc>${keycloak.connectionsJpa.url.crossdc}</keycloak.connectionsJpa.url.crossdc>
+
+                            <!-- used by PasswordPolicyTest.testBlacklistPasswordPolicyWithTestBlacklist, see KEYCLOAK-5244 -->
+                            <keycloak.password.blacklists.path>${project.build.directory}/test-classes/password-blacklists</keycloak.password.blacklists.path>
                         </systemPropertyVariables>
                         <properties>
                             <property>
