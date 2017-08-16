@@ -48,6 +48,8 @@
             
     <properties>
         <app.server>eap6</app.server>
+        <arquillian-wildfly-container.version>2.0.0.Final</arquillian-wildfly-container.version>
+        <infinispan.version>8.2.5.Final</infinispan.version>    <!-- KEYCLOAK-5302 -->
 
         <app.server.management.protocol>remote</app.server.management.protocol>
         <app.server.management.port>${app.server.management.port.jmx}</app.server.management.port>

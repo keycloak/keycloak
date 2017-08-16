@@ -49,6 +49,7 @@
     <properties>
         <app.server>wildfly10</app.server>
         <arquillian-wildfly-container.version>2.0.0.Final</arquillian-wildfly-container.version>
+        <infinispan.version>8.2.5.Final</infinispan.version>    <!-- KEYCLOAK-5302 -->
     </properties>
     
 </project>
