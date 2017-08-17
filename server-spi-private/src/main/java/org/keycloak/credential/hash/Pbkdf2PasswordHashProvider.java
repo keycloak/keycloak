@@ -49,7 +49,12 @@ public class Pbkdf2PasswordHashProvider implements PasswordHashProvider {
 
     @Override
     public boolean policyCheck(PasswordPolicy policy, CredentialModel credential) {
-        return credential.getHashIterations() == policy.getHashIterations() && providerId.equals(credential.getAlgorithm());
+        int policyHashIterations = policy.getHashIterations();
+        if (policyHashIterations == -1) {
+            policyHashIterations = defaultIterations;
+        }
+
+        return credential.getHashIterations() == policyHashIterations && providerId.equals(credential.getAlgorithm());
     }
 
     @Override
