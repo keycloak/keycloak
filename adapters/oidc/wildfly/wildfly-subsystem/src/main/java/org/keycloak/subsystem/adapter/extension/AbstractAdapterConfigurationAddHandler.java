@@ -17,25 +17,32 @@
 
 package org.keycloak.subsystem.adapter.extension;
 
-import org.jboss.as.controller.AbstractRemoveStepHandler;
+import java.util.List;
+
+import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.SimpleAttributeDefinition;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.dmr.ModelNode;
 
 /**
- * Remove a secure-deployment from a realm.
+ * Add a deployment to a realm.
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2013 Red Hat Inc.
  */
-public final class SecureDeploymentRemoveHandler extends AbstractRemoveStepHandler {
+abstract class AbstractAdapterConfigurationAddHandler extends AbstractAddStepHandler {
 
-    public static SecureDeploymentRemoveHandler INSTANCE = new SecureDeploymentRemoveHandler();
+    private final boolean elytronEnabled;
 
-    private SecureDeploymentRemoveHandler() {}
+    AbstractAdapterConfigurationAddHandler(RuntimeCapability<Void> runtimeCapability, List<SimpleAttributeDefinition> attributes) {
+        super(runtimeCapability, attributes);
+        elytronEnabled = runtimeCapability != null;
+    }
 
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         KeycloakAdapterConfigService ckService = KeycloakAdapterConfigService.getInstance();
-        ckService.removeSecureDeployment(operation);
+        ckService.addSecureDeployment(operation, context.resolveExpressions(model), elytronEnabled);
     }
 }
