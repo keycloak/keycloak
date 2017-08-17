@@ -42,7 +42,6 @@ import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessi
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
-import org.keycloak.models.sessions.infinispan.events.ClientRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.RemoveAllUserLoginFailuresEvent;
 import org.keycloak.models.sessions.infinispan.events.RemoveUserSessionsEvent;
@@ -76,11 +75,11 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     protected final Cache<String, SessionEntityWrapper<UserSessionEntity>> sessionCache;
     protected final Cache<String, SessionEntityWrapper<UserSessionEntity>> offlineSessionCache;
-    protected final Cache<LoginFailureKey, LoginFailureEntity> loginFailureCache;
+    protected final Cache<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> loginFailureCache;
 
-    protected final InfinispanChangelogBasedTransaction<UserSessionEntity> sessionTx;
-    protected final InfinispanChangelogBasedTransaction<UserSessionEntity> offlineSessionTx;
-    protected final InfinispanKeycloakTransaction tx;
+    protected final InfinispanChangelogBasedTransaction<String, UserSessionEntity> sessionTx;
+    protected final InfinispanChangelogBasedTransaction<String, UserSessionEntity> offlineSessionTx;
+    protected final InfinispanChangelogBasedTransaction<LoginFailureKey, LoginFailureEntity> loginFailuresTx;
 
     protected final SessionEventsSenderTransaction clusterEventsSenderTx;
 
@@ -93,7 +92,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                                          LastSessionRefreshStore offlineLastSessionRefreshStore,
                                          Cache<String, SessionEntityWrapper<UserSessionEntity>> sessionCache,
                                          Cache<String, SessionEntityWrapper<UserSessionEntity>> offlineSessionCache,
-                                         Cache<LoginFailureKey, LoginFailureEntity> loginFailureCache) {
+                                         Cache<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> loginFailureCache) {
         this.session = session;
 
         this.sessionCache = sessionCache;
@@ -103,24 +102,24 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         this.sessionTx = new InfinispanChangelogBasedTransaction<>(session, InfinispanConnectionProvider.SESSION_CACHE_NAME, sessionCache, remoteCacheInvoker);
         this.offlineSessionTx = new InfinispanChangelogBasedTransaction<>(session, InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME, offlineSessionCache, remoteCacheInvoker);
 
-        this.tx = new InfinispanKeycloakTransaction();
+        this.loginFailuresTx = new InfinispanChangelogBasedTransaction<>(session, InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME, loginFailureCache, remoteCacheInvoker);
 
         this.clusterEventsSenderTx = new SessionEventsSenderTransaction(session);
 
         this.lastSessionRefreshStore = lastSessionRefreshStore;
         this.offlineLastSessionRefreshStore = offlineLastSessionRefreshStore;
 
-        session.getTransactionManager().enlistAfterCompletion(tx);
         session.getTransactionManager().enlistAfterCompletion(clusterEventsSenderTx);
         session.getTransactionManager().enlistAfterCompletion(sessionTx);
         session.getTransactionManager().enlistAfterCompletion(offlineSessionTx);
+        session.getTransactionManager().enlistAfterCompletion(loginFailuresTx);
     }
 
     protected Cache<String, SessionEntityWrapper<UserSessionEntity>> getCache(boolean offline) {
         return offline ? offlineSessionCache : sessionCache;
     }
 
-    protected InfinispanChangelogBasedTransaction<UserSessionEntity> getTransaction(boolean offline) {
+    protected InfinispanChangelogBasedTransaction<String, UserSessionEntity> getTransaction(boolean offline) {
         return offline ? offlineSessionTx : sessionTx;
     }
 
@@ -136,7 +135,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     public AuthenticatedClientSessionModel createClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession) {
         AuthenticatedClientSessionEntity entity = new AuthenticatedClientSessionEntity();
 
-        InfinispanChangelogBasedTransaction<UserSessionEntity> updateTx = getTransaction(false);
+        InfinispanChangelogBasedTransaction<String, UserSessionEntity> updateTx = getTransaction(false);
         AuthenticatedClientSessionAdapter adapter = new AuthenticatedClientSessionAdapter(entity, client, (UserSessionAdapter) userSession, this, updateTx);
         adapter.setUserSession(userSession);
         return adapter;
@@ -202,7 +201,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     }
 
     private UserSessionEntity getUserSessionEntity(String id, boolean offline) {
-        InfinispanChangelogBasedTransaction<UserSessionEntity> tx = getTransaction(offline);
+        InfinispanChangelogBasedTransaction<String, UserSessionEntity> tx = getTransaction(offline);
         SessionEntityWrapper<UserSessionEntity> entityWrapper = tx.get(id);
         return entityWrapper==null ? null : entityWrapper.getEntity();
     }
@@ -311,7 +310,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                 UserSessionModel remoteSessionAdapter = wrap(realm, remoteSessionEntity, offline);
                 if (predicate.test(remoteSessionAdapter)) {
 
-                    InfinispanChangelogBasedTransaction<UserSessionEntity> tx = getTransaction(offline);
+                    InfinispanChangelogBasedTransaction<String, UserSessionEntity> tx = getTransaction(offline);
 
                     // Remote entity contains our predicate. Update local cache with the remote entity
                     SessionEntityWrapper<UserSessionEntity> sessionWrapper = remoteSessionEntity.mergeRemoteEntityWithLocalEntity(tx.get(id));
@@ -511,7 +510,14 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     @Override
     public UserLoginFailureModel getUserLoginFailure(RealmModel realm, String userId) {
         LoginFailureKey key = new LoginFailureKey(realm.getId(), userId);
-        return wrap(key, loginFailureCache.get(key));
+        LoginFailureEntity entity = getLoginFailureEntity(key);
+        return wrap(key, entity);
+    }
+
+    private LoginFailureEntity getLoginFailureEntity(LoginFailureKey key) {
+        InfinispanChangelogBasedTransaction<LoginFailureKey, LoginFailureEntity> tx = getLoginFailuresTx();
+        SessionEntityWrapper<LoginFailureEntity> entityWrapper = tx.get(key);
+        return entityWrapper==null ? null : entityWrapper.getEntity();
     }
 
     @Override
@@ -520,13 +526,53 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         LoginFailureEntity entity = new LoginFailureEntity();
         entity.setRealm(realm.getId());
         entity.setUserId(userId);
-        tx.put(loginFailureCache, key, entity);
+
+        SessionUpdateTask<LoginFailureEntity> createLoginFailureTask = new SessionUpdateTask<LoginFailureEntity>() {
+
+            @Override
+            public void runUpdate(LoginFailureEntity session) {
+
+            }
+
+            @Override
+            public CacheOperation getOperation(LoginFailureEntity session) {
+                return CacheOperation.ADD_IF_ABSENT;
+            }
+
+            @Override
+            public CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<LoginFailureEntity> sessionWrapper) {
+                return CrossDCMessageStatus.SYNC;
+            }
+
+        };
+
+        loginFailuresTx.addTask(key, createLoginFailureTask, entity);
+
         return wrap(key, entity);
     }
 
     @Override
     public void removeUserLoginFailure(RealmModel realm, String userId) {
-        tx.remove(loginFailureCache, new LoginFailureKey(realm.getId(), userId));
+        SessionUpdateTask<LoginFailureEntity> removeTask = new SessionUpdateTask<LoginFailureEntity>() {
+
+            @Override
+            public void runUpdate(LoginFailureEntity entity) {
+
+            }
+
+            @Override
+            public CacheOperation getOperation(LoginFailureEntity entity) {
+                return CacheOperation.REMOVE;
+            }
+
+            @Override
+            public CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<LoginFailureEntity> sessionWrapper) {
+                return CrossDCMessageStatus.SYNC;
+            }
+
+        };
+
+        loginFailuresTx.addTask(new LoginFailureKey(realm.getId(), userId), removeTask);
     }
 
     @Override
@@ -543,9 +589,9 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     private void removeAllLocalUserLoginFailuresEvent(String realmId) {
         FuturesHelper futures = new FuturesHelper();
 
-        Cache<LoginFailureKey, LoginFailureEntity> localCache = CacheDecorators.localCache(loginFailureCache);
+        Cache<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> localCache = CacheDecorators.localCache(loginFailureCache);
 
-        Cache<LoginFailureKey, LoginFailureEntity> localCacheStoreIgnore = CacheDecorators.skipCacheLoaders(localCache);
+        Cache<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> localCacheStoreIgnore = CacheDecorators.skipCacheLoaders(localCache);
 
         localCacheStoreIgnore
                 .entrySet()
@@ -593,8 +639,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         removeUserSessions(realm, user, true);
         removeUserSessions(realm, user, false);
 
-        loginFailureCache.remove(new LoginFailureKey(realm.getId(), user.getUsername()));
-        loginFailureCache.remove(new LoginFailureKey(realm.getId(), user.getEmail()));
+        removeUserLoginFailure(realm, user.getId());
     }
 
     @Override
@@ -602,7 +647,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     }
 
     protected void removeUserSession(UserSessionEntity sessionEntity, boolean offline) {
-        InfinispanChangelogBasedTransaction<UserSessionEntity> tx = getTransaction(offline);
+        InfinispanChangelogBasedTransaction<String, UserSessionEntity> tx = getTransaction(offline);
 
         SessionUpdateTask<UserSessionEntity> removeTask = new SessionUpdateTask<UserSessionEntity>() {
 
@@ -626,17 +671,17 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         tx.addTask(sessionEntity.getId(), removeTask);
     }
 
-    InfinispanKeycloakTransaction getTx() {
-        return tx;
+    InfinispanChangelogBasedTransaction<LoginFailureKey, LoginFailureEntity> getLoginFailuresTx() {
+        return loginFailuresTx;
     }
 
     UserSessionAdapter wrap(RealmModel realm, UserSessionEntity entity, boolean offline) {
-        InfinispanChangelogBasedTransaction<UserSessionEntity> tx = getTransaction(offline);
+        InfinispanChangelogBasedTransaction<String, UserSessionEntity> tx = getTransaction(offline);
         return entity != null ? new UserSessionAdapter(session, this, tx, realm, entity, offline) : null;
     }
 
     UserLoginFailureModel wrap(LoginFailureKey key, LoginFailureEntity entity) {
-        return entity != null ? new UserLoginFailureAdapter(this, loginFailureCache, key, entity) : null;
+        return entity != null ? new UserLoginFailureAdapter(this, key, entity) : null;
     }
 
     UserSessionEntity getUserSessionEntity(UserSessionModel userSession, boolean offline) {
@@ -739,7 +784,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         entity.setLastSessionRefresh(userSession.getLastSessionRefresh());
 
 
-        InfinispanChangelogBasedTransaction<UserSessionEntity> tx = getTransaction(offline);
+        InfinispanChangelogBasedTransaction<String, UserSessionEntity> tx = getTransaction(offline);
 
         SessionUpdateTask importTask = new SessionUpdateTask<UserSessionEntity>() {
 
@@ -775,7 +820,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
 
     private AuthenticatedClientSessionAdapter importClientSession(UserSessionAdapter importedUserSession, AuthenticatedClientSessionModel clientSession,
-                                                                  InfinispanChangelogBasedTransaction<UserSessionEntity> updateTx) {
+                                                                  InfinispanChangelogBasedTransaction<String, UserSessionEntity> updateTx) {
         AuthenticatedClientSessionEntity entity = new AuthenticatedClientSessionEntity();
 
         entity.setAction(clientSession.getAction());

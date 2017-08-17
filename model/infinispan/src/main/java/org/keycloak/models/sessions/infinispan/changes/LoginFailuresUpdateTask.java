@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,20 +17,20 @@
 
 package org.keycloak.models.sessions.infinispan.changes;
 
-import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public abstract class UserSessionUpdateTask implements SessionUpdateTask<UserSessionEntity> {
+public abstract class LoginFailuresUpdateTask implements SessionUpdateTask<LoginFailureEntity> {
 
     @Override
-    public CacheOperation getOperation(UserSessionEntity session) {
+    public CacheOperation getOperation(LoginFailureEntity session) {
         return CacheOperation.REPLACE;
     }
 
     @Override
-    public CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<UserSessionEntity> sessionWrapper) {
+    public CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<LoginFailureEntity> sessionWrapper) {
         return CrossDCMessageStatus.SYNC;
     }
 }

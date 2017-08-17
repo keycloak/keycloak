@@ -262,7 +262,14 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         sessionCacheConfiguration = sessionConfigBuilder.build();
         cacheManager.defineConfiguration(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME, sessionCacheConfiguration);
 
-        cacheManager.defineConfiguration(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME, sessionCacheConfigurationBase);
+        if (jdgEnabled) {
+            sessionConfigBuilder = new ConfigurationBuilder();
+            sessionConfigBuilder.read(sessionCacheConfigurationBase);
+            configureRemoteCacheStore(sessionConfigBuilder, async, InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME, KcRemoteStoreConfigurationBuilder.class);
+        }
+        sessionCacheConfiguration = sessionConfigBuilder.build();
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME, sessionCacheConfiguration);
+
         cacheManager.defineConfiguration(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME, sessionCacheConfigurationBase);
 
         // Retrieve caches to enforce rebalance

@@ -17,15 +17,12 @@
 
 package org.keycloak.models.sessions.infinispan.entities;
 
-import java.io.Serializable;
-
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class LoginFailureEntity implements Serializable {
+public class LoginFailureEntity extends SessionEntity {
 
     private String userId;
-    private String realm;
     private int failedLoginNotBefore;
     private int numFailures;
     private long lastFailure;
@@ -37,14 +34,6 @@ public class LoginFailureEntity implements Serializable {
 
     public void setUserId(String userId) {
         this.userId = userId;
-    }
-
-    public String getRealm() {
-        return realm;
-    }
-
-    public void setRealm(String realm) {
-        this.realm = realm;
     }
 
     public int getFailedLoginNotBefore() {
@@ -84,5 +73,31 @@ public class LoginFailureEntity implements Serializable {
         this.numFailures = 0;
         this.lastFailure = 0;
         this.lastIPFailure = null;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof LoginFailureEntity)) return false;
+
+        LoginFailureEntity that = (LoginFailureEntity) o;
+
+        if (userId != null ? !userId.equals(that.userId) : that.userId != null) return false;
+        if (getRealm() != null ? !getRealm().equals(that.getRealm()) : that.getRealm() != null) return false;
+
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int hashCode = getRealm() != null ? getRealm().hashCode() : 0;
+        hashCode = hashCode * 13 + (userId != null ? userId.hashCode() : 0);
+        return hashCode;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("LoginFailureEntity [ userId=%s, realm=%s, numFailures=%d ]", userId, getRealm(), numFailures);
     }
 }

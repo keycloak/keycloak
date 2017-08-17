@@ -115,14 +115,14 @@ public class RemoteCacheSessionsLoader implements SessionLoader {
 
         for (Map.Entry<byte[], byte[]> entry : remoteObjects.entrySet()) {
             try {
-                String key = (String) marshaller.objectFromByteBuffer(entry.getKey());
+                Object key = marshaller.objectFromByteBuffer(entry.getKey());
                 SessionEntity entity = (SessionEntity) marshaller.objectFromByteBuffer(entry.getValue());
 
                 SessionEntityWrapper entityWrapper = new SessionEntityWrapper(entity);
 
                 decoratedCache.putAsync(key, entityWrapper);
             } catch (Exception e) {
-                log.warnf("Error loading session from remote cache", e);
+                log.warn("Error loading session from remote cache", e);
             }
         }
 
