@@ -197,7 +197,7 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
                 .removeDetail(Details.REDIRECT_URI)
                 .assertEvent();
 
-        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatusCode());
         assertEquals("invalid_grant", response.getError());
         assertEquals("Account temporarily disabled", response.getErrorDescription());
     }
