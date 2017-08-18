@@ -2513,6 +2513,7 @@ module.controller('ClientRegPolicyDetailCtrl', function($scope, realm, clientReg
 
     if ($scope.providerType.properties) {
         ComponentUtils.addLastEmptyValueToMultivaluedLists($scope.providerType.properties, $scope.instance.config);
+        ComponentUtils.addMvOptionsToMultivaluedLists($scope.providerType.properties);
     }
 
     var oldCopy = angular.copy($scope.instance);
@@ -2523,7 +2524,7 @@ module.controller('ClientRegPolicyDetailCtrl', function($scope, realm, clientReg
             $scope.changed = true;
         }
     }, true);
-
+    
     $scope.reset = function() {
         $route.reload();
     };
