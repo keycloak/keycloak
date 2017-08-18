@@ -18,6 +18,9 @@
 package org.keycloak.testsuite.console.page.users;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.console.page.AdminConsoleRealm;
+import org.keycloak.testsuite.console.page.fragment.DataTable;
 import org.keycloak.testsuite.util.URLUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -26,13 +29,8 @@ import org.openqa.selenium.support.FindBy;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.keycloak.representations.idm.UserRepresentation;
-
-import org.keycloak.testsuite.console.page.AdminConsoleRealm;
-import org.keycloak.testsuite.console.page.fragment.DataTable;
 
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 import static org.openqa.selenium.By.*;
 
 /**
@@ -55,7 +53,7 @@ public class Users extends AdminConsoleRealm {
     public static final String IMPERSONATE = "Impersonate";
     public static final String DELETE = "Delete";
 
-    @FindBy(xpath = "//div[./h1[text()='Users']]/table")
+    @FindBy(id = "user-table")
     private UsersTable table;
 
     public UsersTable table() {

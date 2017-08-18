@@ -50,13 +50,23 @@ public class AccountFederatedIdentityPage extends AbstractAccountPage {
     public boolean isCurrent() {
         return driver.getTitle().contains("Account Management") && driver.getPageSource().contains("Federated Identities");
     }
-
-    public void clickAddProvider(String providerId) {
-        driver.findElement(By.id("add-" + providerId)).click();
+    
+    public WebElement findAddProviderButton(String alias) {
+        return driver.findElement(By.id("add-" + alias));
+    }
+    
+    public WebElement findRemoveProviderButton(String alias) {
+        return driver.findElement(By.id("remove-" + alias));
     }
 
-    public void clickRemoveProvider(String providerId) {
-        driver.findElement(By.id("remove-" + providerId)).click();
+    public void clickAddProvider(String alias) {
+        WebElement addButton = findAddProviderButton(alias);
+        addButton.click();
+    }
+
+    public void clickRemoveProvider(String alias) {
+        WebElement addButton = findRemoveProviderButton(alias);
+        addButton.click();
     }
 
     public String getError() {

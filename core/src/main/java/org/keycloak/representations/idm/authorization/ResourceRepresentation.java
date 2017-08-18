@@ -16,15 +16,16 @@
  */
 package org.keycloak.representations.idm.authorization;
 
+import java.net.URI;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.function.Predicate;
 
 /**
  * <p>One or more resources that the resource server manages as a set of protected resources.
@@ -90,6 +91,15 @@ public class ResourceRepresentation {
      */
     public ResourceRepresentation(String name, Set<ScopeRepresentation> scopes) {
         this(name, scopes, null, null, null);
+    }
+
+    public ResourceRepresentation(String name, String... scopes) {
+        this.name = name;
+        this.scopes = new HashSet<>();
+        for (String s : scopes) {
+            ScopeRepresentation rep = new ScopeRepresentation(s);
+            this.scopes.add(rep);
+        }
     }
 
     /**
@@ -160,23 +170,22 @@ public class ResourceRepresentation {
         this.owner = owner;
     }
 
-    public List<PolicyRepresentation> getPolicies() {
-        return this.policies;
-    }
-
-    public void setPolicies(List<PolicyRepresentation> policies) {
-        this.policies = policies;
-    }
-
-    <T> T test(Predicate<T> t) {
-        return null;
-    }
-
     public void setTypedScopes(List<ScopeRepresentation> typedScopes) {
         this.typedScopes = typedScopes;
     }
 
     public List<ScopeRepresentation> getTypedScopes() {
         return typedScopes;
+    }
+
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ResourceRepresentation scope = (ResourceRepresentation) o;
+        return Objects.equals(getName(), scope.getName());
+    }
+
+    public int hashCode() {
+        return Objects.hash(getName());
     }
 }

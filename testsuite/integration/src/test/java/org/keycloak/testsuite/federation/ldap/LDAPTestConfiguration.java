@@ -17,17 +17,17 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
+import org.jboss.logging.Logger;
+import org.keycloak.common.constants.KerberosConstants;
+import org.keycloak.models.LDAPConstants;
+import org.keycloak.storage.UserStorageProvider;
+
 import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-
-import org.jboss.logging.Logger;
-import org.keycloak.common.constants.KerberosConstants;
-import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.UserFederationProvider;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -38,10 +38,11 @@ public class LDAPTestConfiguration {
 
     private String connectionPropertiesLocation;
     private int sleepTime;
-    private boolean startEmbeddedLdapLerver = true;
+    private boolean startEmbeddedLdapServer = true;
     private Map<String, String> config;
 
     protected static final Map<String, String> PROP_MAPPINGS = new HashMap<String, String>();
+
     protected static final Map<String, String> DEFAULT_VALUES = new HashMap<String, String>();
 
     static {
@@ -79,14 +80,14 @@ public class LDAPTestConfiguration {
         DEFAULT_VALUES.put(LDAPConstants.BATCH_SIZE_FOR_SYNC, String.valueOf(LDAPConstants.DEFAULT_BATCH_SIZE_FOR_SYNC));
         DEFAULT_VALUES.put(LDAPConstants.USERNAME_LDAP_ATTRIBUTE, null);
         DEFAULT_VALUES.put(LDAPConstants.USER_OBJECT_CLASSES, null);
-        DEFAULT_VALUES.put(LDAPConstants.EDIT_MODE, UserFederationProvider.EditMode.READ_ONLY.toString());
+        DEFAULT_VALUES.put(LDAPConstants.EDIT_MODE, UserStorageProvider.EditMode.READ_ONLY.toString());
 
         DEFAULT_VALUES.put(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION, "false");
         DEFAULT_VALUES.put(KerberosConstants.KERBEROS_REALM, "KEYCLOAK.ORG");
         DEFAULT_VALUES.put(KerberosConstants.SERVER_PRINCIPAL, "HTTP/localhost@KEYCLOAK.ORG");
-        URL keytabUrl = LDAPTestConfiguration.class.getResource("/kerberos/http.keytab");
-        String keyTabPath = new File(keytabUrl.getFile()).getAbsolutePath();
-        DEFAULT_VALUES.put(KerberosConstants.KEYTAB, keyTabPath);
+//        URL keytabUrl = LDAPTestConfiguration.class.getResource("/kerberos/http.keytab");
+//        String keyTabPath = new File(keytabUrl.getFile()).getAbsolutePath();
+//        DEFAULT_VALUES.put(KerberosConstants.KEYTAB, keyTabPath);
         DEFAULT_VALUES.put(KerberosConstants.DEBUG, "true");
         DEFAULT_VALUES.put(KerberosConstants.ALLOW_PASSWORD_AUTHENTICATION, "true");
         DEFAULT_VALUES.put(KerberosConstants.UPDATE_PROFILE_FIRST_LOGIN, "true");
@@ -124,9 +125,10 @@ public class LDAPTestConfiguration {
             config.put(propertyName, value);
         }
 
-        startEmbeddedLdapLerver = Boolean.parseBoolean(p.getProperty("idm.test.ldap.start.embedded.ldap.server", "true"));
+        startEmbeddedLdapServer = Boolean.parseBoolean(p.getProperty("idm.test.ldap.start.embedded.ldap.server", "true"));
         sleepTime = Integer.parseInt(p.getProperty("idm.test.ldap.sleepTime", "1000"));
-        log.info("Start embedded server: " + startEmbeddedLdapLerver);
+        config.put("startEmbeddedLdapServer", Boolean.toString(startEmbeddedLdapServer));
+        log.info("Start embedded server: " + startEmbeddedLdapServer);
         log.info("Read config: " + config);
     }
 
@@ -138,8 +140,8 @@ public class LDAPTestConfiguration {
         this.connectionPropertiesLocation = connectionPropertiesLocation;
     }
 
-    public boolean isStartEmbeddedLdapLerver() {
-        return startEmbeddedLdapLerver;
+    public boolean isStartEmbeddedLdapServer() {
+        return startEmbeddedLdapServer;
     }
 
     public int getSleepTime() {

@@ -16,13 +16,13 @@
  */
 package org.keycloak.saml.processing.core.parsers.saml;
 
+import org.keycloak.dom.saml.v2.assertion.NameIDType;
+import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.parsers.ParserNamespaceSupport;
 import org.keycloak.saml.common.util.StaxParserUtil;
-import org.keycloak.dom.saml.v2.assertion.NameIDType;
-import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLEventReader;
@@ -60,6 +60,9 @@ public class SAMLSloResponseParser extends SAMLStatusResponseTypeParser implemen
             } else if (JBossSAMLConstants.SIGNATURE.get().equals(elementName)) {
                 startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
                 StaxParserUtil.bypassElementBlock(xmlEventReader, JBossSAMLConstants.SIGNATURE.get());
+            } else if (JBossSAMLConstants.EXTENSIONS.get().equals(elementName)) {
+                SAMLExtensionsParser extensionsParser = new SAMLExtensionsParser();
+                response.setExtensions(extensionsParser.parse(xmlEventReader));
             } else if (JBossSAMLConstants.STATUS.get().equals(elementName)) {
                 response.setStatus(parseStatus(xmlEventReader));
             }

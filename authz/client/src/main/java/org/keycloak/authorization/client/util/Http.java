@@ -18,6 +18,7 @@
 package org.keycloak.authorization.client.util;
 
 import org.apache.http.client.methods.RequestBuilder;
+import org.keycloak.authorization.client.ClientAuthenticator;
 import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.representation.ServerConfiguration;
 
@@ -29,34 +30,40 @@ import java.net.URI;
 public class Http {
 
     private final Configuration configuration;
+    private final ClientAuthenticator authenticator;
     private ServerConfiguration serverConfiguration;
 
-    public Http(Configuration configuration) {
+    public Http(Configuration configuration, ClientAuthenticator authenticator) {
         this.configuration = configuration;
+        this.authenticator = authenticator;
     }
 
     public <R> HttpMethod<R> get(String path) {
-        return method(RequestBuilder.get(this.serverConfiguration.getIssuer() + path));
+        return method(RequestBuilder.get().setUri(this.serverConfiguration.getIssuer() + path));
     }
 
     public <R> HttpMethod<R> get(URI path) {
-        return method(RequestBuilder.get(path));
+        return method(RequestBuilder.get().setUri(path));
     }
 
     public <R> HttpMethod<R> post(URI path) {
-        return method(RequestBuilder.post(path));
+        return method(RequestBuilder.post().setUri(path));
     }
 
     public <R> HttpMethod<R> post(String path) {
-        return method(RequestBuilder.post(this.serverConfiguration.getIssuer() + path));
+        return method(RequestBuilder.post().setUri(this.serverConfiguration.getIssuer() + path));
+    }
+
+    public <R> HttpMethod<R> put(String path) {
+        return method(RequestBuilder.put().setUri(this.serverConfiguration.getIssuer() + path));
     }
 
     public <R> HttpMethod<R> delete(String path) {
-        return method(RequestBuilder.delete(this.serverConfiguration.getIssuer() + path));
+        return method(RequestBuilder.delete().setUri(this.serverConfiguration.getIssuer() + path));
     }
 
     private <R> HttpMethod<R> method(RequestBuilder builder) {
-        return new HttpMethod(this.configuration, builder);
+        return new HttpMethod(this.configuration, authenticator, builder);
     }
 
     public void setServerConfiguration(ServerConfiguration serverConfiguration) {

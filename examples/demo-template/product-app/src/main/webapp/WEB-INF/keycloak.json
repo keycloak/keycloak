@@ -1,10 +1,16 @@
 {
   "realm" : "demo",
   "resource" : "product-portal",
-  "realm-public-key" : "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB",
   "auth-server-url" : "/auth",
   "ssl-required" : "external",
-  "credentials" : {
-      "secret": "password"
+  "credentials": {
+    "jwt": {
+      "client-keystore-file": "classpath:keystore-client.jks",
+      "client-keystore-type": "JKS",
+      "client-keystore-password": "storepass",
+      "client-key-password": "keypass",
+      "client-key-alias": "clientkey",
+      "token-expiration": 10
+    }
   }
 }

@@ -17,13 +17,14 @@
 
 package org.keycloak.testsuite.util;
 
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -161,8 +162,15 @@ public class UserBuilder {
         return this;
     }
 
+    public UserBuilder addGroups(String... group) {
+        if (rep.getGroups() == null) {
+            rep.setGroups(new ArrayList<>());
+        }
+        rep.getGroups().addAll(Arrays.asList(group));
+        return this;
+    }
+
     public UserRepresentation build() {
         return rep;
     }
-
 }

@@ -1,16 +1,18 @@
 package org.keycloak.testsuite.performance;
 
+import org.jboss.logging.Logger;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import org.jboss.logging.Logger;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
+
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 /**

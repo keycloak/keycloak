@@ -63,6 +63,9 @@ public class StorageId implements Serializable {
     public static String externalId(String keycloakId) {
         return new StorageId(keycloakId).getExternalId();
     }
+    public static String providerId(String keycloakId) {
+        return new StorageId(keycloakId).getProviderId();
+    }
 
 
 
@@ -71,6 +74,13 @@ public class StorageId implements Serializable {
     }
     public static boolean isLocalStorage(UserModel user) {
         return new StorageId(user.getId()).getProviderId() == null;
+    }
+    public static boolean isLocalStorage(String userId) {
+        return new StorageId(userId).getProviderId() == null;
+    }
+    public boolean isLocal() {
+        return getProviderId() == null;
+
     }
 
     public String getId() {

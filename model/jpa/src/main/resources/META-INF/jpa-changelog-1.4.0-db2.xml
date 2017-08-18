@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<databaseChangeLog logicalFilePath="META-INF/db2-jpa-changelog-1.4.0.xml" xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+    <changeSet author="bburke@redhat.com" id="1.4.0">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <dbms type="db2" />
+        </preConditions>
+
+        <delete tableName="CLIENT_SESSION_AUTH_STATUS"/>
+        <delete tableName="CLIENT_SESSION_ROLE"/>
+        <delete tableName="CLIENT_SESSION_PROT_MAPPER"/>
+        <delete tableName="CLIENT_SESSION_NOTE"/>
+        <delete tableName="CLIENT_SESSION"/>
+        <delete tableName="USER_SESSION_NOTE"/>
+        <delete tableName="USER_SESSION"/>
+
+        <addColumn tableName="CLIENT">
+            <column name="SERVICE_ACCOUNTS_ENABLED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="CLIENT_SESSION">
+            <column name="CURRENT_ACTION" type="VARCHAR(36)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="AUTHENTICATION_FLOW">
+            <column name="PROVIDER_ID" type="VARCHAR(36)" defaultValue="basic-flow">
+                <constraints nullable="false"/>
+            </column>
+            <column name="TOP_LEVEL" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="BUILT_IN" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="AUTHENTICATION_EXECUTION">
+            <column name="AUTH_FLOW_ID" type="VARCHAR(36)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="AUTH_CONFIG" type="VARCHAR(36)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="USER_ATTRIBUTE">
+            <column name="ID" type="VARCHAR(36)" defaultValue="sybase-needs-something-here">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <dropColumn tableName="AUTHENTICATOR"  columnName="PROVIDER_ID"/>
+        <renameTable oldTableName="AUTHENTICATOR_CONFIG" newTableName="AUTHENTICATOR_CONFIG_ENTRY"/>
+
+        <dropForeignKeyConstraint baseTableName="AUTHENTICATOR" constraintName="FK_AUTH_REALM" />
+        <renameTable oldTableName="AUTHENTICATOR" newTableName="AUTHENTICATOR_CONFIG"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="AUTHENTICATOR_CONFIG" constraintName="FK_AUTH_REALM_2" referencedColumnNames="ID" referencedTableName="REALM"/>
+
+        <!-- OAUTH_GRANT,
+        CODE_TO_TOKEN,
+        VERIFY_EMAIL,
+        UPDATE_PROFILE,
+        CONFIGURE_TOTP,
+        UPDATE_PASSWORD,
+        RECOVER_PASSWORD,
+        AUTHENTICATE,
+        SOCIAL_CALLBACK,
+        LOGGED_OUT -->
+        <update tableName="CLIENT_SESSION">
+            <column name="CURRENT_ACTION" value="OAUTH_GRANT"/>
+            <where>ACTION = 0</where>
+        </update>
+        <update tableName="CLIENT_SESSION">
+            <column name="CURRENT_ACTION" value="CODE_TO_TOKEN"/>
+            <where>ACTION = 1</where>
+        </update>
+        <update tableName="CLIENT_SESSION">
+            <column name="CURRENT_ACTION" value="VERIFY_EMAIL"/>
+            <where>ACTION = 2</where>
+        </update>
+        <update tableName="CLIENT_SESSION">
+            <column name="CURRENT_ACTION" value="UPDATE_PROFILE"/>
+            <where>ACTION = 3</where>
+        </update>
+        <update tableName="CLIENT_SESSION">
+            <column name="CURRENT_ACTION" value="CONFIGURE_TOTP"/>
+            <where>ACTION = 4</where>
+        </update>
+        <update tableName="CLIENT_SESSION">
+            <column name="CURRENT_ACTION" value="UPDATE_PASSWORD"/>
+            <where>ACTION = 5</where>
+        </update>
+        <update tableName="CLIENT_SESSION">
+            <column name="CURRENT_ACTION" value="RECOVER_PASSWORD"/>
+            <where>ACTION = 6</where>
+        </update>
+        <update tableName="CLIENT_SESSION">
+            <column name="CURRENT_ACTION" value="AUTHENTICATE"/>
+            <where>ACTION = 7</where>
+        </update>
+        <update tableName="CLIENT_SESSION">
+            <column name="CURRENT_ACTION" value="SOCIAL_CALLBACK"/>
+            <where>ACTION = 8</where>
+        </update>
+        <update tableName="CLIENT_SESSION">
+            <column name="CURRENT_ACTION" value="LOGGED_OUT"/>
+            <where>ACTION = 9</where>
+        </update>
+
+        <createTable tableName="CLIENT_USER_SESSION_NOTE">
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VALUE" type="VARCHAR(2048)"/>
+            <column name="CLIENT_SESSION" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="REQUIRED_ACTION_PROVIDER">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ALIAS" type="VARCHAR(255)"/>
+            <column name="NAME" type="VARCHAR(255)"/>
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+            <column name="ENABLED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DEFAULT_ACTION" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="PROVIDER_ID" type="VARCHAR(255)"/>
+        </createTable>
+        <createTable tableName="REQUIRED_ACTION_CONFIG">
+            <column name="REQUIRED_ACTION_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VALUE" type="CLOB"/>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate1_4_0_Final"/>
+
+        <dropPrimaryKey constraintName="CONSTRAINT_6" tableName="USER_ATTRIBUTE"/>
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_USER_ATTRIBUTE_PK" tableName="USER_ATTRIBUTE"/>
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_REQ_ACT_PRV_PK" tableName="REQUIRED_ACTION_PROVIDER"/>
+        <addPrimaryKey columnNames="REQUIRED_ACTION_ID, NAME" constraintName="CONSTRAINT_REQ_ACT_CFG_PK" tableName="REQUIRED_ACTION_CONFIG"/>
+        <addPrimaryKey columnNames="CLIENT_SESSION, NAME" constraintName="CONSTR_CL_USR_SES_NOTE" tableName="CLIENT_USER_SESSION_NOTE"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="REQUIRED_ACTION_PROVIDER" constraintName="FK_REQ_ACT_REALM" referencedColumnNames="ID" referencedTableName="REALM"/>
+        <addForeignKeyConstraint baseColumnNames="CLIENT_SESSION" baseTableName="CLIENT_USER_SESSION_NOTE" constraintName="FK_CL_USR_SES_NOTE" referencedColumnNames="ID" referencedTableName="CLIENT_SESSION"/>
+        <dropColumn tableName="CLIENT_SESSION" columnName="ACTION"/>
+        <addColumn tableName="USER_ENTITY">
+            <column name="CREATED_TIMESTAMP" type="BIGINT"/>
+            <column name="SERVICE_ACCOUNT_CLIENT_LINK" type="VARCHAR(36)"/>
+        </addColumn>
+
+    </changeSet>
+</databaseChangeLog>

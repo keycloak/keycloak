@@ -17,11 +17,10 @@
 
 package org.keycloak.authentication.authenticators.resetcred;
 
+import org.keycloak.authentication.actiontoken.DefaultActionTokenKey;
+import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.authentication.AuthenticationFlowContext;
-import org.keycloak.authentication.AuthenticationFlowError;
-import org.keycloak.authentication.Authenticator;
-import org.keycloak.authentication.AuthenticatorFactory;
+import org.keycloak.authentication.*;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.events.Details;
@@ -33,7 +32,6 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -46,17 +44,29 @@ import java.util.List;
  */
 public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFactory {
 
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(ResetCredentialChooseUser.class);
 
     public static final String PROVIDER_ID = "reset-credentials-choose-user";
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
-        String existingUserId = context.getClientSession().getNote(AbstractIdpAuthenticator.EXISTING_USER_INFO);
+        String existingUserId = context.getAuthenticationSession().getAuthNote(AbstractIdpAuthenticator.EXISTING_USER_INFO);
         if (existingUserId != null) {
-            UserModel existingUser = AbstractIdpAuthenticator.getExistingUser(context.getSession(), context.getRealm(), context.getClientSession());
+            UserModel existingUser = AbstractIdpAuthenticator.getExistingUser(context.getSession(), context.getRealm(), context.getAuthenticationSession());
 
             logger.debugf("Forget-password triggered when reauthenticating user after first broker login. Skipping reset-credential-choose-user screen and using user '%s' ", existingUser.getUsername());
+            context.setUser(existingUser);
+            context.success();
+            return;
+        }
+
+        String actionTokenUserId = context.getAuthenticationSession().getAuthNote(DefaultActionTokenKey.ACTION_TOKEN_USER_ID);
+        if (actionTokenUserId != null) {
+            UserModel existingUser = context.getSession().users().getUserById(actionTokenUserId, context.getRealm());
+
+            // Action token logics handles checks for user ID validity and user being enabled
+
+            logger.debugf("Forget-password triggered when reauthenticating user after authentication via action token. Skipping reset-credential-choose-user screen and using user '%s' ", existingUser.getUsername());
             context.setUser(existingUser);
             context.success();
             return;
@@ -80,12 +90,15 @@ public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFa
             return;
         }
 
-        UserModel user = context.getSession().users().getUserByUsername(username, context.getRealm());
-        if (user == null && username.contains("@")) {
-            user =  context.getSession().users().getUserByEmail(username, context.getRealm());
+        username = username.trim();
+        
+        RealmModel realm = context.getRealm();
+        UserModel user = context.getSession().users().getUserByUsername(username, realm);
+        if (user == null && realm.isLoginWithEmailAllowed() && username.contains("@")) {
+            user =  context.getSession().users().getUserByEmail(username, realm);
         }
 
-        context.getClientSession().setNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
+        context.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
 
         // we don't want people guessing usernames, so if there is a problem, just continue, but don't set the user
         // a null user will notify further executions, that this was a failure.

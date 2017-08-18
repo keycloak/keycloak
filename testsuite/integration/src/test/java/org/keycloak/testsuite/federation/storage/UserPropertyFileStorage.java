@@ -17,6 +17,8 @@
 package org.keycloak.testsuite.federation.storage;
 
 import org.keycloak.component.ComponentModel;
+import org.keycloak.credential.CredentialInput;
+import org.keycloak.credential.CredentialInputValidator;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -27,7 +29,6 @@ import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.adapter.AbstractUserAdapter;
 import org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage;
-import org.keycloak.storage.user.UserCredentialValidatorProvider;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
 
@@ -41,7 +42,7 @@ import java.util.Properties;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserPropertyFileStorage implements UserLookupProvider, UserStorageProvider, UserCredentialValidatorProvider, UserQueryProvider {
+public class UserPropertyFileStorage implements UserLookupProvider, UserStorageProvider, UserQueryProvider, CredentialInputValidator {
 
     protected Properties userPasswords;
     protected ComponentModel model;
@@ -116,15 +117,26 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
     }
 
     @Override
-    public boolean validCredentials(KeycloakSession session, RealmModel realm, UserModel user, List<UserCredentialModel> input) {
-        for (UserCredentialModel cred : input) {
-            if (!cred.getType().equals(UserCredentialModel.PASSWORD)) return false;
-            String password = (String)userPasswords.get(user.getUsername());
-            if (password == null) return false;
-            if (!password.equals(cred.getValue())) return false;
-        }
-        return true;
+    public boolean supportsCredentialType(String credentialType) {
+        return credentialType.equals(UserCredentialModel.PASSWORD);
     }
+
+    @Override
+    public boolean isConfiguredFor(RealmModel realm, UserModel user, String credentialType) {
+        return credentialType.equals(UserCredentialModel.PASSWORD) && userPasswords.get(user.getUsername()) != null;
+    }
+
+    @Override
+    public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
+        if (!(input instanceof UserCredentialModel)) return false;
+        if (input.getType().equals(UserCredentialModel.PASSWORD)) {
+            String pw = (String)userPasswords.get(user.getUsername());
+            return pw != null && pw.equals( ((UserCredentialModel)input).getValue());
+        } else {
+            return false;
+        }
+    }
+
 
     @Override
     public int getUsersCount(RealmModel realm) {

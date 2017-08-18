@@ -30,7 +30,17 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.UserIdentity;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.jboss.logging.Logger;
+import org.keycloak.adapters.jetty.spi.JettyHttpFacade;
+import org.keycloak.adapters.jetty.spi.JettyUserSessionManagement;
+import org.keycloak.adapters.saml.AdapterConstants;
+import org.keycloak.adapters.saml.SamlAuthenticator;
+import org.keycloak.adapters.saml.SamlConfigResolver;
+import org.keycloak.adapters.saml.SamlDeployment;
+import org.keycloak.adapters.saml.SamlDeploymentContext;
+import org.keycloak.adapters.saml.SamlSession;
 import org.keycloak.adapters.saml.SamlSessionStore;
+import org.keycloak.adapters.saml.config.parsers.DeploymentBuilder;
+import org.keycloak.adapters.saml.config.parsers.ResourceLoader;
 import org.keycloak.adapters.saml.profile.SamlAuthenticationHandler;
 import org.keycloak.adapters.saml.profile.webbrowsersso.BrowserHandler;
 import org.keycloak.adapters.saml.profile.webbrowsersso.SamlEndpoint;
@@ -40,16 +50,6 @@ import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.spi.InMemorySessionIdMapper;
 import org.keycloak.adapters.spi.SessionIdMapper;
-import org.keycloak.adapters.jetty.spi.JettyHttpFacade;
-import org.keycloak.adapters.jetty.spi.JettyUserSessionManagement;
-import org.keycloak.adapters.saml.AdapterConstants;
-import org.keycloak.adapters.saml.SamlAuthenticator;
-import org.keycloak.adapters.saml.SamlConfigResolver;
-import org.keycloak.adapters.saml.SamlDeployment;
-import org.keycloak.adapters.saml.SamlDeploymentContext;
-import org.keycloak.adapters.saml.SamlSession;
-import org.keycloak.adapters.saml.config.parsers.DeploymentBuilder;
-import org.keycloak.adapters.saml.config.parsers.ResourceLoader;
 import org.keycloak.saml.common.exceptions.ParsingException;
 
 import javax.security.auth.Subject;
@@ -104,11 +104,13 @@ public abstract class AbstractSamlAuthenticator extends LoginAuthenticator {
 
     protected JettySamlSessionStore createJettySamlSessionStore(Request request, HttpFacade facade, SamlDeployment resolvedDeployment) {
         JettySamlSessionStore store;
-        store = new JettySamlSessionStore(request, createSessionTokenStore(request, resolvedDeployment), facade, idMapper, new JettyUserSessionManagement(request.getSessionManager()), resolvedDeployment);
+        store = new JettySamlSessionStore(request, createSessionTokenStore(request, resolvedDeployment), facade, idMapper, createSessionManagement(request), resolvedDeployment);
         return store;
     }
 
     public abstract AdapterSessionStore createSessionTokenStore(Request request, SamlDeployment resolvedDeployment);
+
+    public abstract JettyUserSessionManagement createSessionManagement(Request request);
 
     public void logoutCurrent(Request request) {
         JettyHttpFacade facade = new JettyHttpFacade(request, null);

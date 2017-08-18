@@ -17,8 +17,8 @@
 
 package org.keycloak.authentication.authenticators.directgrant;
 
-import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
@@ -53,9 +53,7 @@ public class ValidateOTP extends AbstractDirectGrantAuthenticator {
             }
             return;
         }
-        MultivaluedMap<String, String> inputData = context.getHttpRequest().getDecodedFormParameters();
-        List<UserCredentialModel> credentials = new LinkedList<>();
-        String otp = inputData.getFirst(CredentialRepresentation.TOTP);
+        String otp = retrieveOTP(context);
         if (otp == null) {
             if (context.getUser() != null) {
                 context.getEvent().user(context.getUser());
@@ -65,8 +63,7 @@ public class ValidateOTP extends AbstractDirectGrantAuthenticator {
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
-        credentials.add(UserCredentialModel.otp(context.getRealm().getOTPPolicy().getType(), otp));
-        boolean valid = context.getSession().users().validCredentials(context.getSession(), context.getRealm(), context.getUser(), credentials);
+        boolean valid = context.getSession().userCredentialManager().isValid(context.getRealm(), context.getUser(), UserCredentialModel.otp(context.getRealm().getOTPPolicy().getType(), otp));
         if (!valid) {
             context.getEvent().user(context.getUser());
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
@@ -89,7 +86,7 @@ public class ValidateOTP extends AbstractDirectGrantAuthenticator {
     }
 
     private boolean isConfigured(KeycloakSession session, RealmModel realm, UserModel user) {
-        return session.users().configuredForCredentialType(realm.getOTPPolicy().getType(), realm, user);
+        return session.userCredentialManager().isConfiguredFor(realm, user, realm.getOTPPolicy().getType());
     }
 
     @Override
@@ -142,5 +139,10 @@ public class ValidateOTP extends AbstractDirectGrantAuthenticator {
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+    
+    protected String retrieveOTP(AuthenticationFlowContext context) {
+        MultivaluedMap<String, String> inputData = context.getHttpRequest().getDecodedFormParameters();
+        return inputData.getFirst(CredentialRepresentation.TOTP);
     }
 }

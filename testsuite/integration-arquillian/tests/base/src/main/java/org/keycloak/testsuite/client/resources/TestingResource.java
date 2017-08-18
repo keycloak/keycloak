@@ -17,13 +17,15 @@
 
 package org.keycloak.testsuite.client.resources;
 
-import java.util.List;
-
+import org.jboss.resteasy.annotations.cache.NoCache;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.components.TestProvider;
 import org.keycloak.testsuite.rest.representation.AuthenticatorState;
+import org.keycloak.testsuite.rest.resource.TestCacheResource;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -35,14 +37,14 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.List;
 import java.util.Map;
-import org.jboss.resteasy.annotations.cache.NoCache;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 
-@Path("/realms/master/testing")
+@Path("/testing")
 @Consumes(MediaType.APPLICATION_JSON)
 public interface TestingResource {
 
@@ -70,27 +72,27 @@ public interface TestingResource {
     @POST
     @Path("/clear-event-queue")
     @Produces(MediaType.APPLICATION_JSON)
-    Response clearEventQueue();
+    void clearEventQueue();
 
     @POST
     @Path("/clear-admin-event-queue")
     @Produces(MediaType.APPLICATION_JSON)
-    Response clearAdminEventQueue();
+    void clearAdminEventQueue();
 
     @GET
     @Path("/clear-event-store")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response clearEventStore();
+    void clearEventStore();
 
     @GET
     @Path("/clear-event-store-for-realm")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response clearEventStore(@QueryParam("realmId") String realmId);
+    void clearEventStore(@QueryParam("realmId") String realmId);
 
     @GET
     @Path("/clear-event-store-older-than")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response clearEventStore(@QueryParam("realmId") String realmId, @QueryParam("olderThan") long olderThan);
+    void clearEventStore(@QueryParam("realmId") String realmId, @QueryParam("olderThan") long olderThan);
 
     /**
      * Query events
@@ -125,17 +127,17 @@ public interface TestingResource {
     @GET
     @Path("/clear-admin-event-store")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response clearAdminEventStore();
+    void clearAdminEventStore();
 
     @GET
     @Path("/clear-admin-event-store-for-realm")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response clearAdminEventStore(@QueryParam("realmId") String realmId);
+    void clearAdminEventStore(@QueryParam("realmId") String realmId);
 
     @GET
     @Path("/clear-admin-event-store-older-than")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response clearAdminEventStore(@QueryParam("realmId") String realmId, @QueryParam("olderThan") long olderThan);
+    void clearAdminEventStore(@QueryParam("realmId") String realmId, @QueryParam("olderThan") long olderThan);
 
     /**
      * Get admin events
@@ -168,17 +170,17 @@ public interface TestingResource {
     @POST
     @Path("/on-admin-event")
     @Consumes(MediaType.APPLICATION_JSON)
-    public void onAdminEvent(final AdminEventRepresentation rep, @QueryParam("includeRepresentation") boolean includeRepresentation);
+    void onAdminEvent(final AdminEventRepresentation rep, @QueryParam("includeRepresentation") boolean includeRepresentation);
 
     @POST
     @Path("/remove-user-session")
     @Produces(MediaType.APPLICATION_JSON)
-    Response removeUserSession(@QueryParam("realm") final String realm, @QueryParam("session") final String sessionId);
+    void removeUserSession(@QueryParam("realm") final String realm, @QueryParam("session") final String sessionId);
 
     @POST
     @Path("/remove-user-sessions")
     @Produces(MediaType.APPLICATION_JSON)
-    Response removeUserSessions(@QueryParam("realm") final String realm);
+    void removeUserSessions(@QueryParam("realm") final String realm);
 
     @GET
     @Path("/get-user-session")
@@ -188,17 +190,15 @@ public interface TestingResource {
     @POST
     @Path("/remove-expired")
     @Produces(MediaType.APPLICATION_JSON)
-    Response removeExpired(@QueryParam("realm") final String realm);
+    void removeExpired(@QueryParam("realm") final String realm);
 
     @GET
-    @Path("/cache/{cache}/{id}")
+    @Path("/get-client-sessions-count")
     @Produces(MediaType.APPLICATION_JSON)
-    boolean isCached(@PathParam("cache") String cacheName, @PathParam("id") String id);
+    Integer getClientSessionsCountInUserSession(@QueryParam("realm") final String realmName, @QueryParam("session") final String sessionId);
 
-    @GET
-    @Path("/verify-code")
-    @Produces(MediaType.APPLICATION_JSON)
-    String verifyCode(@QueryParam("realm") String realmName, @QueryParam("code") String code);
+    @Path("/cache/{cache}")
+    TestingCacheResource cache(@PathParam("cache") String cacheName);
 
     @POST
     @Path("/update-pass-through-auth-state")
@@ -241,5 +241,26 @@ public interface TestingResource {
 
     @Path("export-import")
     TestingExportImportResource exportImport();
+
+    @GET
+    @Path("/test-component")
+    @Produces(MediaType.APPLICATION_JSON)
+    Map<String, TestProvider.DetailsRepresentation> getTestComponentDetails();
+
+    @GET
+    @Path("/identity-config")
+    @Produces(MediaType.APPLICATION_JSON)
+    Map<String, String> getIdentityProviderConfig(@QueryParam("alias") String alias);
+
+    @PUT
+    @Path("/set-krb5-conf-file")
+    @Consumes(MediaType.APPLICATION_JSON)
+    void setKrb5ConfFile(@QueryParam("krb5-conf-file") String krb5ConfFile);
+
+    @POST
+    @Path("/run-on-server")
+    @Consumes(MediaType.TEXT_PLAIN)
+    @Produces(MediaType.TEXT_PLAIN)
+    String runOnServer(String runOnServer);
 
 }

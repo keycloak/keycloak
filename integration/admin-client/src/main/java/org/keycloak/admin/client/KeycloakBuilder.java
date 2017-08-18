@@ -60,8 +60,9 @@ public class KeycloakBuilder {
     private String password;
     private String clientId;
     private String clientSecret;
-    private String grantType = PASSWORD;
+    private String grantType;
     private ResteasyClient resteasyClient;
+    private String authorization;
 
     public KeycloakBuilder serverUrl(String serverUrl) {
         this.serverUrl = serverUrl;
@@ -104,6 +105,11 @@ public class KeycloakBuilder {
         return this;
     }
 
+    public KeycloakBuilder authorization(String auth) {
+        this.authorization = auth;
+        return this;
+    }
+
     /**
      * Builds a new Keycloak client from this builder.
      */
@@ -114,6 +120,10 @@ public class KeycloakBuilder {
 
         if (realm == null) {
             throw new IllegalStateException("realm required");
+        }
+
+        if (authorization == null && grantType == null) {
+            grantType = PASSWORD;
         }
 
         if (PASSWORD.equals(grantType)) {
@@ -130,11 +140,11 @@ public class KeycloakBuilder {
             }
         }
 
-        if (clientId == null) {
+        if (authorization == null && clientId == null) {
             throw new IllegalStateException("clientId required");
         }
 
-        return new Keycloak(serverUrl, realm, username, password, clientId, clientSecret, grantType, resteasyClient);
+        return new Keycloak(serverUrl, realm, username, password, clientId, clientSecret, grantType, resteasyClient, authorization);
     }
 
     private KeycloakBuilder() {

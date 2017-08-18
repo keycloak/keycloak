@@ -16,12 +16,6 @@
  */
 package org.keycloak.partialimport;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import javax.ws.rs.core.Response;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -30,6 +24,13 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.ErrorResponse;
+
+import javax.ws.rs.core.Response;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Partial Import handler for Client Roles.
@@ -102,6 +103,11 @@ public class ClientRolesPartialImport {
             return;
         }
         RoleModel role = client.getRole(getName(roleRep));
+        if (role == null) {
+            // role might not exist if client was just created as part of the
+            // partial import
+            return;
+        }
         client.removeRole(role);
     }
 

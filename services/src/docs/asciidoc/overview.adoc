@@ -1,7 +1,7 @@
-= Keycloak Admin REST API
+= ${product.name.full} Admin REST API
 
 == Overview
-This is a REST API reference for the Keycloak Admin
+This is a REST API reference for the ${product.name.full} Admin
 
 === Version information
 Version: 1
@@ -10,4 +10,3 @@ Version: 1
 Host: localhost:8080
 BasePath: /auth
 Schemes: HTTP
-

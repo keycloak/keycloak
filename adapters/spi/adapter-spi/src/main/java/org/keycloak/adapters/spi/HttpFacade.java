@@ -44,6 +44,13 @@ public interface HttpFacade {
         String getURI();
 
         /**
+         * Get the request relative path.
+         *
+         * @return the request relative path
+         */
+        String getRelativePath();
+
+        /**
          * HTTPS?
          *
          * @return

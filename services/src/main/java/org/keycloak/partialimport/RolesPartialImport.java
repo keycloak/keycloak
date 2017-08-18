@@ -16,10 +16,6 @@
  */
 package org.keycloak.partialimport;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import javax.ws.rs.core.Response;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -29,6 +25,11 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ServicesLogger;
+
+import javax.ws.rs.core.Response;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * This class handles both realm roles and client roles.  It delegates to
@@ -44,7 +45,6 @@ import org.keycloak.services.ServicesLogger;
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public class RolesPartialImport implements PartialImport<RolesRepresentation> {
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     private Set<RoleRepresentation> realmRolesToOverwrite;
     private Set<RoleRepresentation> realmRolesToSkip;
@@ -97,7 +97,7 @@ public class RolesPartialImport implements PartialImport<RolesRepresentation> {
         try {
             RepresentationToModel.importRoles(rep.getRoles(), realm);
         } catch (Exception e) {
-            logger.roleImportError(e);
+            ServicesLogger.LOGGER.roleImportError(e);
             throw new ErrorResponseException(ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR));
         }
 

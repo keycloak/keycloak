@@ -17,14 +17,17 @@
 
 package org.keycloak.testsuite.util;
 
-import java.io.IOException;
-import javax.mail.MessagingException;
+import org.jboss.logging.Logger;
 
+import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMessage.RecipientType;
 import javax.mail.internet.MimeMultipart;
-import org.jboss.logging.Logger;
-import static org.junit.Assert.*;
+import java.io.IOException;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class MailAssert {
 
@@ -38,7 +41,8 @@ public class MailAssert {
                 message= SslMailServer.getLastReceivedMessage();
             } else {
                 message = MailServer.getLastReceivedMessage();
-            }            assertNotNull("There is no received email.", message);
+            }            
+            assertNotNull("There is no received email.", message);
             assertEquals(recipient, message.getRecipients(RecipientType.TO)[0].toString());
             assertEquals(from, message.getFrom()[0].toString());
 

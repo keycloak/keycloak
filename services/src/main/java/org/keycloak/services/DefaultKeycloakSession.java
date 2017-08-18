@@ -16,16 +16,33 @@
  */
 package org.keycloak.services;
 
-import org.keycloak.models.*;
+import org.keycloak.component.ComponentFactory;
+import org.keycloak.component.ComponentModel;
+import org.keycloak.credential.UserCredentialStoreManager;
+import org.keycloak.keys.DefaultKeyManager;
+import org.keycloak.models.KeycloakContext;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.KeycloakTransactionManager;
+import org.keycloak.models.KeyManager;
+import org.keycloak.models.RealmProvider;
+import org.keycloak.models.UserCredentialManager;
+import org.keycloak.models.UserProvider;
+import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.cache.CacheRealmProvider;
-import org.keycloak.models.cache.CacheUserProvider;
+import org.keycloak.models.cache.UserCache;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
-import org.keycloak.scripting.ScriptingProvider;
+import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.storage.UserStorageManager;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -38,18 +55,17 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private final DefaultKeycloakTransactionManager transactionManager;
     private final Map<String, Object> attributes = new HashMap<>();
     private RealmProvider model;
-    private UserProvider userModel;
     private UserStorageManager userStorageManager;
-    private ScriptingProvider scriptingProvider;
+    private UserCredentialStoreManager userCredentialStorageManager;
     private UserSessionProvider sessionProvider;
-    private UserFederationManager federationManager;
+    private AuthenticationSessionProvider authenticationSessionProvider;
     private UserFederatedStorageProvider userFederatedStorageProvider;
     private KeycloakContext context;
+    private KeyManager keyManager;
 
     public DefaultKeycloakSession(DefaultKeycloakSessionFactory factory) {
         this.factory = factory;
-        this.transactionManager = new DefaultKeycloakTransactionManager();
-        federationManager = new UserFederationManager(this);
+        this.transactionManager = new DefaultKeycloakTransactionManager(this);
         context = new DefaultKeycloakContext(this);
     }
 
@@ -67,13 +83,10 @@ public class DefaultKeycloakSession implements KeycloakSession {
         }
     }
 
-    private UserProvider getUserProvider() {
-        CacheUserProvider cache = getProvider(CacheUserProvider.class);
-        if (cache != null) {
-            return cache;
-        } else {
-            return getProvider(UserProvider.class);
-        }
+    @Override
+    public UserCache userCache() {
+        return getProvider(UserCache.class);
+
     }
 
     @Override
@@ -126,11 +139,19 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
-    public UserProvider userStorage() {
-        if (userModel == null) {
-            userModel = getUserProvider();
+    public UserProvider users() {
+        UserCache cache = getProvider(UserCache.class);
+        if (cache != null) {
+            return cache;
+        } else {
+            return userStorageManager();
         }
-        return userModel;
+    }
+
+    @Override
+    public UserCredentialManager userCredentialManager() {
+        if (userCredentialStorageManager == null) userCredentialStorageManager = new UserCredentialStoreManager(this);
+        return userCredentialStorageManager;
     }
 
     public <T extends Provider> T getProvider(Class<T> clazz) {
@@ -160,6 +181,28 @@ public class DefaultKeycloakSession implements KeycloakSession {
         return provider;
     }
 
+    @Override
+    public <T extends Provider> T getProvider(Class<T> clazz, ComponentModel componentModel) {
+        String modelId = componentModel.getId();
+
+        Object found = getAttribute(modelId);
+        if (found != null) {
+            return clazz.cast(found);
+        }
+
+        ProviderFactory<T> providerFactory = factory.getProviderFactory(clazz, componentModel.getProviderId());
+        if (providerFactory == null) {
+            return null;
+        }
+
+        ComponentFactory<T, T> componentFactory = (ComponentFactory<T, T>) providerFactory;
+        T provider = componentFactory.create(this, componentModel);
+        enlistForClose(provider);
+        setAttribute(modelId, provider);
+
+        return provider;
+    }
+
     public <T extends Provider> Set<String> listProviderIds(Class<T> clazz) {
         return factory.getAllProviderIds(clazz);
     }
@@ -174,6 +217,11 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
+    public Class<? extends Provider> getProviderClass(String providerClassName) {
+        return factory.getProviderClass(providerClassName);
+    }
+
+    @Override
     public RealmProvider realms() {
         if (model == null) {
             model = getRealmProvider();
@@ -182,16 +230,27 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
-    public UserFederationManager users() {
-        return federationManager;
-    }
-
-    @Override
     public UserSessionProvider sessions() {
         if (sessionProvider == null) {
             sessionProvider = getProvider(UserSessionProvider.class);
         }
         return sessionProvider;
+    }
+
+    @Override
+    public AuthenticationSessionProvider authenticationSessions() {
+        if (authenticationSessionProvider == null) {
+            authenticationSessionProvider = getProvider(AuthenticationSessionProvider.class);
+        }
+        return authenticationSessionProvider;
+    }
+
+    @Override
+    public KeyManager keys() {
+        if (keyManager == null) {
+            keyManager = new DefaultKeyManager(this);
+        }
+        return keyManager;
     }
 
     public void close() {
@@ -207,15 +266,5 @@ public class DefaultKeycloakSession implements KeycloakSession {
             } catch (Exception e) {
             }
         }
-    }
-
-    @Override
-    public ScriptingProvider scripting() {
-
-        if (scriptingProvider == null) {
-            scriptingProvider = getProvider(ScriptingProvider.class);
-        }
-
-        return scriptingProvider;
     }
 }

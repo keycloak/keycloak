@@ -17,7 +17,7 @@
 
 package org.keycloak.storage.jpa.entity;
 
-import org.keycloak.models.jpa.entities.UserEntity;
+import org.keycloak.storage.jpa.KeyUtils;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -66,6 +66,7 @@ public class FederatedUserRoleMappingEntity {
     }
 
     public void setUserId(String userId) {
+        KeyUtils.assertValidKey(userId);
         this.userId = userId;
     }
 

@@ -19,9 +19,9 @@ package org.keycloak.testsuite.broker;
 import org.junit.Test;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
-import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.broker.social.SocialIdentityProviderFactory;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.testsuite.broker.provider.CustomIdentityProvider;
 import org.keycloak.testsuite.broker.provider.CustomIdentityProviderFactory;
 import org.keycloak.testsuite.broker.provider.social.CustomSocialProvider;
@@ -64,7 +64,7 @@ public class IdentityProviderRegistrationTest extends AbstractIdentityProviderMo
 
         identityProviderModel.setAlias("custom-provider");
 
-        CustomSocialProvider customSocialProvider = providerFactory.create(identityProviderModel);
+        CustomSocialProvider customSocialProvider = providerFactory.create(this.session, identityProviderModel);
 
         assertNotNull(customSocialProvider);
         IdentityProviderModel config = customSocialProvider.getConfig();
@@ -87,7 +87,7 @@ public class IdentityProviderRegistrationTest extends AbstractIdentityProviderMo
 
         identityProviderModel.setAlias("custom-provider");
 
-        CustomIdentityProvider provider = providerFactory.create(identityProviderModel);
+        CustomIdentityProvider provider = providerFactory.create(this.session, identityProviderModel);
 
         assertNotNull(provider);
         IdentityProviderModel config = provider.getConfig();

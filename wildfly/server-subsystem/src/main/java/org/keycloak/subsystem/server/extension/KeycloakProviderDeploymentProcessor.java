@@ -22,20 +22,10 @@ import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
-import org.jboss.as.server.deployment.module.ModuleDependency;
-import org.jboss.as.server.deployment.module.ModuleSpecification;
-import org.jboss.as.server.deployment.module.ResourceRoot;
 import org.jboss.logging.Logger;
 import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
-import org.jboss.modules.ModuleLoader;
-import org.jboss.vfs.VirtualFile;
-import org.jboss.vfs.util.AbstractVirtualFileFilterWithAttributes;
 import org.keycloak.provider.ProviderManager;
 import org.keycloak.provider.ProviderManagerRegistry;
-
-import java.io.IOException;
-import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -58,7 +48,7 @@ public class KeycloakProviderDeploymentProcessor implements DeploymentUnitProces
 
         if (!KeycloakProviderDependencyProcessor.isKeycloakProviderDeployment(deploymentUnit)) return;
 
-        logger.infof("Deploying Keycloak provider: {0}", deploymentUnit.getName());
+        logger.infov("Deploying Keycloak provider: {0}", deploymentUnit.getName());
         final Module module = deploymentUnit.getAttachment(Attachments.MODULE);
         ProviderManager pm = new ProviderManager(module.getClassLoader());
         ProviderManagerRegistry.SINGLETON.deploy(pm);
@@ -76,7 +66,7 @@ public class KeycloakProviderDeploymentProcessor implements DeploymentUnitProces
     public void undeploy(DeploymentUnit context) {
         ProviderManager pm = context.getAttachment(ATTACHMENT_KEY);
         if (pm != null) {
-            logger.infof("Undeploying Keycloak provider: {0}", context.getName());
+            logger.infov("Undeploying Keycloak provider: {0}", context.getName());
             ProviderManagerRegistry.SINGLETON.undeploy(pm);
             context.removeAttachment(ATTACHMENT_KEY);
         }

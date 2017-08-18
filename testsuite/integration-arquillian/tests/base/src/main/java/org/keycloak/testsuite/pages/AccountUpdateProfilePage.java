@@ -17,7 +17,10 @@
 
 package org.keycloak.testsuite.pages;
 
+import org.keycloak.models.Constants;
 import org.keycloak.services.resources.RealmsResource;
+import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -60,6 +63,10 @@ public class AccountUpdateProfilePage extends AbstractAccountPage {
         return RealmsResource.accountUrl(UriBuilder.fromUri(getAuthServerRoot())).build("test").toString();
     }
 
+    public String getPath(String realm) {
+        return RealmsResource.accountUrl(UriBuilder.fromUri(getAuthServerRoot())).build(realm).toString();
+    }
+
     public void updateProfile(String firstName, String lastName, String email) {
         firstNameInput.clear();
         firstNameInput.sendKeys(firstName);
@@ -96,6 +103,14 @@ public class AccountUpdateProfilePage extends AbstractAccountPage {
         submitButton.click();
     }
 
+    public void updateAttribute(String attrName, String attrValue) {
+        WebElement attrElement = findAttributeInputElement(attrName);
+        attrElement.clear();
+        attrElement.sendKeys(attrValue);
+        submitButton.click();
+    }
+
+
     public void clickCancel() {
         cancelButton.click();
     }
@@ -117,6 +132,11 @@ public class AccountUpdateProfilePage extends AbstractAccountPage {
         return emailInput.getAttribute("value");
     }
 
+    public String getAttribute(String attrName) {
+        WebElement attrElement = findAttributeInputElement(attrName);
+        return attrElement.getAttribute("value");
+    }
+
     public boolean isCurrent() {
         return driver.getTitle().contains("Account Management") && driver.getPageSource().contains("Edit Account");
     }
@@ -125,8 +145,30 @@ public class AccountUpdateProfilePage extends AbstractAccountPage {
         driver.navigate().to(getPath());
     }
 
+    public void open(String realm) {
+        driver.navigate().to(getPath(realm));
+    }
+
     public void backToApplication() {
         backToApplicationLink.click();
+    }
+    
+    public String getBackToApplicationLinkText() {
+        try {
+            // Optional screen element, may not be present
+            return backToApplicationLink.getText();
+        } catch (NoSuchElementException ignored) {
+            return null;
+        }
+    }
+    
+    public String getBackToApplicationLinkHref() {
+        try {
+            // Optional screen element, may not be present
+            return backToApplicationLink.getAttribute("href");
+        } catch (NoSuchElementException ignored) {
+            return null;
+        }
     }
 
     public String getSuccess(){
@@ -139,5 +181,10 @@ public class AccountUpdateProfilePage extends AbstractAccountPage {
 
     public boolean isPasswordUpdateSupported() {
         return driver.getPageSource().contains(getPath() + "/password");
+    }
+
+    private WebElement findAttributeInputElement(String attrName) {
+        String attrId = Constants.USER_ATTRIBUTES_PREFIX + attrName;
+        return driver.findElement(By.id(attrId));
     }
 }

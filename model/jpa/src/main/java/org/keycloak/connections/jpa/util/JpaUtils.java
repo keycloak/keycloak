@@ -28,7 +28,6 @@ import org.keycloak.models.KeycloakSession;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.spi.PersistenceUnitTransactionType;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -46,8 +45,9 @@ public class JpaUtils {
         return (schema==null) ? tableName : schema + "." + tableName;
     }
 
-    public static EntityManagerFactory createEntityManagerFactory(KeycloakSession session, String unitName, Map<String, Object> properties, ClassLoader classLoader) {
-        PersistenceXmlParser parser = new PersistenceXmlParser(new ClassLoaderServiceImpl(classLoader), PersistenceUnitTransactionType.RESOURCE_LOCAL);
+    public static EntityManagerFactory createEntityManagerFactory(KeycloakSession session, String unitName, Map<String, Object> properties, ClassLoader classLoader, boolean jta) {
+        PersistenceUnitTransactionType txType = jta ? PersistenceUnitTransactionType.JTA : PersistenceUnitTransactionType.RESOURCE_LOCAL;
+        PersistenceXmlParser parser = new PersistenceXmlParser(new ClassLoaderServiceImpl(classLoader), txType);
         List<ParsedPersistenceXmlDescriptor> persistenceUnits = parser.doResolve(properties);
         for (ParsedPersistenceXmlDescriptor persistenceUnit : persistenceUnits) {
             if (persistenceUnit.getName().equals(unitName)) {
@@ -58,6 +58,7 @@ public class JpaUtils {
                 }
                 // Now build the entity manager factory, supplying a proxy classloader, so Hibernate will be able
                 // to find and load the extra provided entities. Set the provided classloader as parent classloader.
+                persistenceUnit.setTransactionType(txType);
                 return Bootstrap.getEntityManagerFactoryBuilder(persistenceUnit, properties,
                         new ProxyClassLoader(providedEntities, classLoader)).build();
             }

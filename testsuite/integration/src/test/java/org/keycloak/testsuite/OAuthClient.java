@@ -31,14 +31,15 @@ import org.junit.Assert;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.util.BasicAuthHelper;
-import org.keycloak.common.util.PemUtils;
 import org.keycloak.util.TokenUtil;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -69,7 +70,9 @@ public class OAuthClient {
 
     private String redirectUri = "http://localhost:8081/app/auth";
 
-    private String state = "mystate";
+    private StateParamProvider state = () -> {
+        return KeycloakModelUtils.generateId();
+    };
 
     private String scope;
 
@@ -438,7 +441,7 @@ public class OAuthClient {
             b.queryParam(OAuth2Constants.REDIRECT_URI, redirectUri);
         }
         if (state != null) {
-            b.queryParam(OAuth2Constants.STATE, state);
+            b.queryParam(OAuth2Constants.STATE, state.getState());
         }
         if(uiLocales != null){
             b.queryParam(OAuth2Constants.UI_LOCALES_PARAM, uiLocales);
@@ -509,8 +512,17 @@ public class OAuthClient {
         return this;
     }
 
-    public OAuthClient state(String state) {
-        this.state = state;
+    public OAuthClient stateParamHardcoded(String value) {
+        this.state = () -> {
+            return value;
+        };
+        return this;
+    }
+
+    public OAuthClient stateParamRandom() {
+        this.state = () -> {
+            return KeycloakModelUtils.generateId();
+        };
         return this;
     }
 
@@ -637,6 +649,12 @@ public class OAuthClient {
         public String getTokenType() {
             return tokenType;
         }
+    }
+
+    private interface StateParamProvider {
+
+        String getState();
+
     }
 
 }

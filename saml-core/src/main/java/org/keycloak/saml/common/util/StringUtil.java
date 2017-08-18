@@ -59,6 +59,9 @@ public class StringUtil {
         return str == null || str.isEmpty();
     }
 
+    private static final Pattern PROPERTY_REPLACEMENT = Pattern.compile("(.*?)"    + "\\$\\{(.*?)"   + "(?:::(.*?))?\\}");
+                                                                      // 1: PREFIX | START  2: NAME  |       3: OPTIONAL DEFAULT VALUE
+
     /**
      * <p>
      * Get the system property value if the string is of the format ${sysproperty}
@@ -84,37 +87,25 @@ public class StringUtil {
     public static String getSystemPropertyAsString(String str) {
         if (str == null)
             throw logger.nullArgumentError("str");
-        if (str.contains("${")) {
-            Pattern pattern = Pattern.compile("\\$\\{([^}]+)}");
-            Matcher matcher = pattern.matcher(str);
 
-            StringBuffer buffer = new StringBuffer();
-            String sysPropertyValue = null;
+        Matcher m = PROPERTY_REPLACEMENT.matcher(str);
+        StringBuilder sb = new StringBuilder();
+        int lastPosition = 0;
+        while (m.find()) {
+            String propertyName = m.group(2);
+            String defaultValue = m.group(3);
 
-            while (matcher.find()) {
-                String subString = matcher.group(1);
-                String defaultValue = "";
-
-                // Look for default value
-                if (subString.contains("::")) {
-                    int index = subString.indexOf("::");
-                    defaultValue = subString.substring(index + 2);
-                    subString = subString.substring(0, index);
-                }
-                sysPropertyValue = SecurityActions.getSystemProperty(subString, defaultValue);
-                if (sysPropertyValue.isEmpty()) {
-                    throw logger.systemPropertyMissingError(matcher.group(1));
-                }else{
-                    // sanitize the value before we use append-and-replace
-                    sysPropertyValue = Matcher.quoteReplacement(sysPropertyValue);
-                }
-                matcher.appendReplacement(buffer, sysPropertyValue);
+            String sysPropertyValue = SecurityActions.getSystemProperty(propertyName, defaultValue);
+            if (sysPropertyValue.isEmpty()) {
+                throw logger.systemPropertyMissingError(propertyName);
             }
 
-            matcher.appendTail(buffer);
-            str = buffer.toString();
+            sb.append(m.group(1)).append(sysPropertyValue);
+
+            lastPosition = m.end();
         }
-        return str;
+
+        return sb.append(str.substring(lastPosition)).toString();
     }
 
     /**

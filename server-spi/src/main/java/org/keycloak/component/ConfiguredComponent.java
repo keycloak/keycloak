@@ -16,7 +16,6 @@
  */
 package org.keycloak.component;
 
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ConfiguredProvider;
 
 /**

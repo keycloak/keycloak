@@ -29,7 +29,6 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.AttributeFormDataProcessor;
 import org.keycloak.services.validation.Validation;
@@ -43,7 +42,6 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public class UpdateProfile implements RequiredActionProvider, RequiredActionFactory {
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
     }
@@ -106,16 +104,18 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
         boolean emailChanged = oldEmail != null ? !oldEmail.equals(email) : email != null;
 
         if (emailChanged) {
-            UserModel userByEmail = session.users().getUserByEmail(email, realm);
+            if (!realm.isDuplicateEmailsAllowed()) {
+                UserModel userByEmail = session.users().getUserByEmail(email, realm);
 
-            // check for duplicated email
-            if (userByEmail != null && !userByEmail.getId().equals(user.getId())) {
-                Response challenge = context.form()
-                        .setError(Messages.EMAIL_EXISTS)
-                        .setFormData(formData)
-                        .createResponse(UserModel.RequiredAction.UPDATE_PROFILE);
-                context.challenge(challenge);
-                return;
+                // check for duplicated email
+                if (userByEmail != null && !userByEmail.getId().equals(user.getId())) {
+                    Response challenge = context.form()
+                            .setError(Messages.EMAIL_EXISTS)
+                            .setFormData(formData)
+                            .createResponse(UserModel.RequiredAction.UPDATE_PROFILE);
+                    context.challenge(challenge);
+                    return;
+                }
             }
 
             user.setEmail(email);

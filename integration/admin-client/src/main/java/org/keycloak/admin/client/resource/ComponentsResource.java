@@ -46,6 +46,12 @@ public interface ComponentsResource {
     @Produces(MediaType.APPLICATION_JSON)
     public List<ComponentRepresentation> query(@QueryParam("parent") String parent, @QueryParam("type") String type);
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<ComponentRepresentation> query(@QueryParam("parent") String parent,
+                                               @QueryParam("type") String type,
+                                               @QueryParam("name") String name);
+
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     Response add(ComponentRepresentation rep);

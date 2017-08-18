@@ -17,9 +17,6 @@
 
 package org.keycloak.util.ldap;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.config.CacheConfiguration;
 import net.sf.ehcache.config.Configuration;
@@ -30,8 +27,8 @@ import org.apache.directory.api.ldap.model.schema.SchemaManager;
 import org.apache.directory.api.ldap.model.schema.comparators.NormalizingComparator;
 import org.apache.directory.api.ldap.model.schema.registries.ComparatorRegistry;
 import org.apache.directory.api.ldap.model.schema.registries.SchemaLoader;
-import org.apache.directory.api.ldap.schemaloader.JarLdifSchemaLoader;
-import org.apache.directory.api.ldap.schemamanager.impl.DefaultSchemaManager;
+import org.apache.directory.api.ldap.schema.loader.JarLdifSchemaLoader;
+import org.apache.directory.api.ldap.schema.manager.impl.DefaultSchemaManager;
 import org.apache.directory.api.util.exception.Exceptions;
 import org.apache.directory.server.constants.ServerDNConstants;
 import org.apache.directory.server.core.DefaultDirectoryService;
@@ -45,6 +42,10 @@ import org.apache.directory.server.core.factory.DirectoryServiceFactory;
 import org.apache.directory.server.core.factory.PartitionFactory;
 import org.apache.directory.server.i18n.I18n;
 import org.jboss.logging.Logger;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
 
 /**
  * Factory for a fast (mostly in-memory-only) ApacheDS DirectoryService. Use only for tests!!

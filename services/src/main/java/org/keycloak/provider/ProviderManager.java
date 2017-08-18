@@ -16,8 +16,8 @@
  */
 package org.keycloak.provider;
 
+import org.jboss.logging.Logger;
 import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.services.ServicesLogger;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,7 +32,7 @@ import java.util.ServiceLoader;
  */
 public class ProviderManager {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(ProviderManager.class);
 
     private List<ProviderLoader> loaders = new LinkedList<ProviderLoader>();
     private MultivaluedHashMap<Class<? extends Provider>, ProviderFactory> cache = new MultivaluedHashMap<>();

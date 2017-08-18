@@ -16,9 +16,8 @@
  */
 package org.keycloak.testsuite.actions;
 
-import java.util.LinkedList;
-import java.util.List;
 import org.jboss.arquillian.graphene.page.Page;
+import org.jboss.arquillian.junit.InSequence;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -34,8 +33,10 @@ import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentatio
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.TestRealmKeycloakTest;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AccountTotpPage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
@@ -44,11 +45,16 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.util.UserBuilder;
+
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class RequiredActionTotpSetupTest extends TestRealmKeycloakTest {
+public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -74,6 +80,15 @@ public class RequiredActionTotpSetupTest extends TestRealmKeycloakTest {
                 adminClient.realm("test").flows().updateExecutions("browser", execution);
             }
         }
+
+        ApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
+        UserRepresentation user = UserBuilder.create().enabled(true)
+                .username("test-user@localhost")
+                .email("test-user@localhost")
+                .firstName("Tom")
+                .lastName("Brady")
+                .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name()).build();
+        ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
     }
 
 
@@ -112,11 +127,12 @@ public class RequiredActionTotpSetupTest extends TestRealmKeycloakTest {
 
         totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
 
-        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setuptotp").assertEvent().getSessionId();
+        String authSessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setuptotp").assertEvent()
+                .getDetails().get(Details.CODE_ID);
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().user(userId).session(sessionId).detail(Details.USERNAME, "setuptotp").assertEvent();
+        events.expectLogin().user(userId).session(authSessionId).detail(Details.USERNAME, "setuptotp").assertEvent();
     }
 
     @Test
@@ -130,15 +146,16 @@ public class RequiredActionTotpSetupTest extends TestRealmKeycloakTest {
 
         totpPage.configure(totp.generateTOTP(totpSecret));
 
-        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent().getSessionId();
+        String authSessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent()
+                .getDetails().get(Details.CODE_ID);
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        EventRepresentation loginEvent = events.expectLogin().session(sessionId).assertEvent();
+        EventRepresentation loginEvent = events.expectLogin().session(authSessionId).assertEvent();
 
         oauth.openLogout();
 
-        events.expectLogout(loginEvent.getSessionId()).assertEvent();
+        events.expectLogout(authSessionId).assertEvent();
 
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
@@ -214,7 +231,8 @@ public class RequiredActionTotpSetupTest extends TestRealmKeycloakTest {
         totpPage.assertCurrent();
         totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
 
-        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent().getSessionId();
+        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent()
+                .getDetails().get(Details.CODE_ID);
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
@@ -245,7 +263,8 @@ public class RequiredActionTotpSetupTest extends TestRealmKeycloakTest {
         TimeBasedOTP timeBased = new TimeBasedOTP(HmacOTP.HMAC_SHA1, 8, 30, 1);
         totpPage.configure(timeBased.generateTOTP(totpSecret));
 
-        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent().getSessionId();
+        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent()
+                .getDetails().get(Details.CODE_ID);
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
@@ -265,6 +284,12 @@ public class RequiredActionTotpSetupTest extends TestRealmKeycloakTest {
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         events.expectLogin().assertEvent();
+
+        // Revert
+        realmRep = adminClient.realm("test").toRepresentation();
+        RealmBuilder.edit(realmRep)
+                .otpDigits(6);
+        adminClient.realm("test").update(realmRep);
     }
 
     @Test
@@ -290,7 +315,8 @@ public class RequiredActionTotpSetupTest extends TestRealmKeycloakTest {
         HmacOTP otpgen = new HmacOTP(6, HmacOTP.HMAC_SHA1, 1);
         totpPage.configure(otpgen.generateHOTP(totpSecret, 0));
         String uri = driver.getCurrentUrl();
-        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent().getSessionId();
+        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent()
+            .getDetails().get(Details.CODE_ID);
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
@@ -333,6 +359,18 @@ public class RequiredActionTotpSetupTest extends TestRealmKeycloakTest {
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         events.expectLogin().assertEvent();
+
+        // Revert
+        realmRep = adminClient.realm("test").toRepresentation();
+        RealmBuilder.edit(realmRep)
+                .otpLookAheadWindow(1)
+                .otpDigits(6)
+                .otpPeriod(30)
+                .otpType(UserCredentialModel.TOTP)
+                .otpAlgorithm(HmacOTP.HMAC_SHA1)
+                .otpInitialCounter(0);
+        adminClient.realm("test").update(realmRep);
+
     }
 
 }

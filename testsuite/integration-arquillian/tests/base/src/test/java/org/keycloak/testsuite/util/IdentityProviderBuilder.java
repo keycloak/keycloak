@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.util;
 
+import java.util.HashMap;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 
 /**
@@ -41,6 +42,19 @@ public class IdentityProviderBuilder {
 
     public IdentityProviderBuilder providerId(String providerId) {
         rep.setProviderId(providerId);
+        return this;
+    }
+
+    public IdentityProviderBuilder displayName(String displayName) {
+        rep.setDisplayName(displayName);
+        return this;
+    }
+    
+    public IdentityProviderBuilder hideOnLoginPage() {
+        if (rep.getConfig() == null) {
+            rep.setConfig(new HashMap<>());
+        }
+        rep.getConfig().put("hideOnLoginPage", "true");
         return this;
     }
 

@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-auth-server-jboss</artifactId>
-        <version>2.2.0-SNAPSHOT</version>
+        <version>3.3.0.CR1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -30,6 +30,14 @@
     <artifactId>integration-arquillian-servers-auth-server-wildfly</artifactId>
     
     <name>Auth Server - JBoss - Wildfly</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-server-dist</artifactId>
+            <type>zip</type>
+        </dependency>
+    </dependencies>
     
     <properties>
         <auth.server.jboss>wildfly</auth.server.jboss>

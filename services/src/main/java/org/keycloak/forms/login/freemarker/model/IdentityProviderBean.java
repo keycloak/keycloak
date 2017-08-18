@@ -17,7 +17,9 @@
 package org.keycloak.forms.login.freemarker.model;
 
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.Urls;
 
 import javax.ws.rs.core.UriInfo;
@@ -25,6 +27,7 @@ import java.net.URI;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -35,17 +38,18 @@ import java.util.TreeSet;
 public class IdentityProviderBean {
 
     private boolean displaySocial;
-
     private List<IdentityProvider> providers;
     private RealmModel realm;
+    private final KeycloakSession session;
 
-    public IdentityProviderBean(RealmModel realm, List<IdentityProviderModel> identityProviders, URI baseURI, UriInfo uriInfo) {
+    public IdentityProviderBean(RealmModel realm, KeycloakSession session, List<IdentityProviderModel> identityProviders, URI baseURI) {
         this.realm = realm;
+        this.session = session;
 
         if (!identityProviders.isEmpty()) {
             Set<IdentityProvider> orderedSet = new TreeSet<>(IdentityProviderComparator.INSTANCE);
             for (IdentityProviderModel identityProvider : identityProviders) {
-                if (identityProvider.isEnabled()) {
+                if (identityProvider.isEnabled() && !identityProvider.isLinkOnly()) {
                     addIdentityProvider(orderedSet, realm, baseURI, identityProvider);
                 }
             }
@@ -59,8 +63,14 @@ public class IdentityProviderBean {
 
     private void addIdentityProvider(Set<IdentityProvider> orderedSet, RealmModel realm, URI baseURI, IdentityProviderModel identityProvider) {
         String loginUrl = Urls.identityProviderAuthnRequest(baseURI, identityProvider.getAlias(), realm.getName()).toString();
-        orderedSet.add(new IdentityProvider(identityProvider.getAlias(), identityProvider.getProviderId(), loginUrl,
-                identityProvider.getConfig() != null ? identityProvider.getConfig().get("guiOrder") : null));
+        String displayName = KeycloakModelUtils.getIdentityProviderDisplayName(session, identityProvider);
+        Map<String, String> config = identityProvider.getConfig();
+        boolean hideOnLoginPage = config != null && Boolean.parseBoolean(config.get("hideOnLoginPage"));
+        if (!hideOnLoginPage) {
+            orderedSet.add(new IdentityProvider(identityProvider.getAlias(),
+                    displayName, identityProvider.getProviderId(), loginUrl,
+                    config != null ? config.get("guiOrder") : null));
+        }
     }
 
     public List<IdentityProvider> getProviders() {
@@ -77,9 +87,11 @@ public class IdentityProviderBean {
         private final String providerId; // This refer to providerType (facebook, google, etc.)
         private final String loginUrl;
         private final String guiOrder;
+        private final String displayName;
 
-        public IdentityProvider(String alias, String providerId, String loginUrl, String guiOrder) {
+        public IdentityProvider(String alias, String displayName, String providerId, String loginUrl, String guiOrder) {
             this.alias = alias;
+            this.displayName = displayName;
             this.providerId = providerId;
             this.loginUrl = loginUrl;
             this.guiOrder = guiOrder;
@@ -100,6 +112,10 @@ public class IdentityProviderBean {
         public String getGuiOrder() {
             return guiOrder;
         }
+
+        public String getDisplayName() {
+            return displayName;
+        }
     }
 
     public static class IdentityProviderComparator implements Comparator<IdentityProvider> {
@@ -112,7 +128,7 @@ public class IdentityProviderBean {
 
         @Override
         public int compare(IdentityProvider o1, IdentityProvider o2) {
-            
+
             int o1order = parseOrder(o1);
             int o2order = parseOrder(o2);
 
@@ -120,7 +136,7 @@ public class IdentityProviderBean {
                 return 1;
             else if (o1order < o2order)
                 return -1;
-            
+
             return 1;
         }
 
@@ -134,6 +150,5 @@ public class IdentityProviderBean {
             }
             return 10000;
         }
-
     }
 }

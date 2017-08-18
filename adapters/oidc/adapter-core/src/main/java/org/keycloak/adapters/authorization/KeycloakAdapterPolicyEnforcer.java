@@ -17,10 +17,14 @@
  */
 package org.keycloak.adapters.authorization;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.jboss.logging.Logger;
-import org.keycloak.RSATokenVerifier;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OIDCHttpFacade;
+import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.AuthzClient;
@@ -33,11 +37,6 @@ import org.keycloak.authorization.client.representation.PermissionResponse;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.PathConfig;
 import org.keycloak.representations.idm.authorization.Permission;
-import org.keycloak.util.JsonSerialization;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -52,44 +51,45 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
 
     @Override
     protected boolean isAuthorized(PathConfig pathConfig, Set<String> requiredScopes, AccessToken accessToken, OIDCHttpFacade httpFacade) {
-        int retry = 2;
         AccessToken original = accessToken;
 
-        while (retry > 0) {
-            if (super.isAuthorized(pathConfig, requiredScopes, accessToken, httpFacade)) {
-                return true;
-            }
-
-            accessToken = requestAuthorizationToken(pathConfig, requiredScopes, httpFacade);
-
-            if (accessToken == null) {
-                return false;
-            }
-
-            AccessToken.Authorization authorization = original.getAuthorization();
-
-            if (authorization == null) {
-                authorization = new AccessToken.Authorization();
-                authorization.setPermissions(new ArrayList<Permission>());
-            }
-
-            AccessToken.Authorization newAuthorization = accessToken.getAuthorization();
-
-            if (newAuthorization != null) {
-                authorization.getPermissions().addAll(newAuthorization.getPermissions());
-            }
-
-            original.setAuthorization(authorization);
-
-            retry--;
+        if (super.isAuthorized(pathConfig, requiredScopes, accessToken, httpFacade)) {
+            return true;
         }
 
-        return false;
+        accessToken = requestAuthorizationToken(pathConfig, requiredScopes, httpFacade);
+
+        if (accessToken == null) {
+            return false;
+        }
+
+        AccessToken.Authorization authorization = original.getAuthorization();
+
+        if (authorization == null) {
+            authorization = new AccessToken.Authorization();
+            authorization.setPermissions(new ArrayList<Permission>());
+        }
+
+        AccessToken.Authorization newAuthorization = accessToken.getAuthorization();
+
+        if (newAuthorization != null) {
+            authorization.getPermissions().addAll(newAuthorization.getPermissions());
+        }
+
+        original.setAuthorization(authorization);
+
+        return super.isAuthorized(pathConfig, requiredScopes, accessToken, httpFacade);
     }
 
     @Override
     protected boolean challenge(PathConfig pathConfig, Set<String> requiredScopes, OIDCHttpFacade facade) {
-        String accessDeniedPath = getEnforcerConfig().getAccessDeniedPath();
+        handleAccessDenied(facade);
+        return true;
+    }
+
+    @Override
+    protected void handleAccessDenied(OIDCHttpFacade facade) {
+        String accessDeniedPath = getEnforcerConfig().getOnDenyRedirectTo();
         HttpFacade.Response response = facade.getResponse();
 
         if (accessDeniedPath != null) {
@@ -98,8 +98,6 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
         } else {
             response.sendError(403);
         }
-
-        return true;
     }
 
     private AccessToken requestAuthorizationToken(PathConfig pathConfig, Set<String> requiredScopes, OIDCHttpFacade httpFacade) {
@@ -108,8 +106,8 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
             AuthzClient authzClient = getAuthzClient();
             KeycloakDeployment deployment = getPolicyEnforcer().getDeployment();
 
-            if (getEnforcerConfig().getUmaProtocolConfig() != null) {
-                LOGGER.debug("Obtaining authorization for  authenticated user.");
+            if (getEnforcerConfig().getUserManagedAccess() != null) {
+                LOGGER.debug("Obtaining authorization for authenticated user.");
                 PermissionRequest permissionRequest = new PermissionRequest();
 
                 permissionRequest.setResourceSetId(pathConfig.getId());
@@ -120,7 +118,7 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
                 AuthorizationResponse authzResponse = authzClient.authorization(accessToken).authorize(authzRequest);
 
                 if (authzResponse != null) {
-                    return RSATokenVerifier.verifyToken(authzResponse.getRpt(), deployment.getRealmKey(), deployment.getRealmInfoUrl());
+                    return AdapterRSATokenVerifier.verifyToken(authzResponse.getRpt(), deployment);
                 }
 
                 return null;
@@ -129,20 +127,22 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
                 AccessToken token = httpFacade.getSecurityContext().getToken();
 
                 if (token.getAuthorization() == null) {
-                    EntitlementResponse authzResponse = authzClient.entitlement(accessToken).getAll(authzClient.getConfiguration().getClientId());
-                    return RSATokenVerifier.verifyToken(authzResponse.getRpt(), deployment.getRealmKey(), deployment.getRealmInfoUrl());
+                    EntitlementResponse authzResponse = authzClient.entitlement(accessToken).getAll(authzClient.getConfiguration().getResource());
+                    return AdapterRSATokenVerifier.verifyToken(authzResponse.getRpt(), deployment);
                 } else {
                     EntitlementRequest request = new EntitlementRequest();
                     PermissionRequest permissionRequest = new PermissionRequest();
                     permissionRequest.setResourceSetId(pathConfig.getId());
                     permissionRequest.setResourceSetName(pathConfig.getName());
                     permissionRequest.setScopes(new HashSet<>(pathConfig.getScopes()));
+                    LOGGER.debugf("Sending entitlements request: resource_set_id [%s], resource_set_name [%s], scopes [%s].", permissionRequest.getResourceSetId(), permissionRequest.getResourceSetName(), permissionRequest.getScopes());
                     request.addPermission(permissionRequest);
-                    EntitlementResponse authzResponse = authzClient.entitlement(accessToken).get(authzClient.getConfiguration().getClientId(), request);
-                    return RSATokenVerifier.verifyToken(authzResponse.getRpt(), deployment.getRealmKey(), deployment.getRealmInfoUrl());
+                    EntitlementResponse authzResponse = authzClient.entitlement(accessToken).get(authzClient.getConfiguration().getResource(), request);
+                    return AdapterRSATokenVerifier.verifyToken(authzResponse.getRpt(), deployment);
                 }
             }
         } catch (AuthorizationDeniedException e) {
+            LOGGER.debug("Authorization denied", e);
             return null;
         } catch (Exception e) {
             throw new RuntimeException("Unexpected error during authorization request.", e);

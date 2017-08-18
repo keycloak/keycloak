@@ -31,7 +31,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.TestRealmKeycloakTest;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
@@ -39,13 +39,16 @@ import org.keycloak.util.JsonSerialization;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public class TokenIntrospectionTest extends TestRealmKeycloakTest {
+public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -170,7 +173,25 @@ public class TokenIntrospectionTest extends TestRealmKeycloakTest {
     @Test
     public void testInactiveAccessToken() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
-        String inactiveAccessToken = "eyJhbGciOiJSUzI1NiJ9.eyJub25jZSI6IjczMGZjNjQ1LTBlMDQtNDE3Yi04MDY0LTkyYWIyY2RjM2QwZSIsImp0aSI6ImU5ZGU1NjU2LWUzMjctNDkxNC1hNjBmLTI1MzJlYjBiNDk4OCIsImV4cCI6MTQ1MjI4MTAwMCwibmJmIjowLCJpYXQiOjE0NTIyODA3MDAsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9hdXRoL3JlYWxtcy9leGFtcGxlIiwiYXVkIjoianMtY29uc29sZSIsInN1YiI6IjFkNzQ0MDY5LWYyOTgtNGU3Yy1hNzNiLTU1YzlhZjgzYTY4NyIsInR5cCI6IkJlYXJlciIsImF6cCI6ImpzLWNvbnNvbGUiLCJzZXNzaW9uX3N0YXRlIjoiNzc2YTA0OTktODNjNC00MDhkLWE5YjctYTZiYzQ5YmQ3MThjIiwiY2xpZW50X3Nlc3Npb24iOiJjN2Y5ODczOC05MDhlLTQxOWYtYTdkNC1kODYxYjRhYTI3NjkiLCJhbGxvd2VkLW9yaWdpbnMiOltdLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsidXNlciJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJ2aWV3LXByb2ZpbGUiXX19LCJuYW1lIjoiU2FtcGxlIFVzZXIiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJ1c2VyIiwiZ2l2ZW5fbmFtZSI6IlNhbXBsZSIsImZhbWlseV9uYW1lIjoiVXNlciIsImVtYWlsIjoic2FtcGxlLXVzZXJAZXhhbXBsZSJ9.YyPV74j9CqOG2Jmq692ZZpqycjNpUgtYVRfQJccS_FU84tGVXoKKsXKYeY2UJ1Y_bPiYG1I1J6JSXC8XqgQijCG7Nh7oK0yN74JbRN58HG75fvg6K9BjR6hgJ8mHT8qPrCux2svFucIMIZ180eoBoRvRstkidOhl_mtjT_i31fU";
+        String inactiveAccessToken = "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJGSjg2R2NGM2pUYk5MT2NvNE52WmtVQ0lVbWZZQ3FvcXRPUWVNZmJoTmxFIn0.eyJqdGkiOiI5NjgxZTRlOC01NzhlLTQ3M2ItOTIwNC0yZWE5OTdhYzMwMTgiLCJleHAiOjE0NzYxMDY4NDksIm5iZiI6MCwiaWF0IjoxNDc2MTA2NTQ5LCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgxODAvYXV0aC9yZWFsbXMvdGVzdCIsImF1ZCI6InRlc3QtYXBwIiwic3ViIjoiZWYyYzk0NjAtZDRkYy00OTk5LWJlYmUtZWVmYWVkNmJmMGU3IiwidHlwIjoiQmVhcmVyIiwiYXpwIjoidGVzdC1hcHAiLCJhdXRoX3RpbWUiOjE0NzYxMDY1NDksInNlc3Npb25fc3RhdGUiOiI1OGY4M2MzMi03MDhkLTQzNjktODhhNC05YjI5OGRjMDY5NzgiLCJhY3IiOiIxIiwiY2xpZW50X3Nlc3Npb24iOiI2NTYyOTVkZC1kZWNkLTQyZDAtYWJmYy0zZGJjZjJlMDE3NzIiLCJhbGxvd2VkLW9yaWdpbnMiOlsiaHR0cDovL2xvY2FsaG9zdDo4MTgwIl0sInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJ1c2VyIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsidGVzdC1hcHAiOnsicm9sZXMiOlsiY3VzdG9tZXItdXNlciJdfSwiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsInZpZXctcHJvZmlsZSJdfX0sIm5hbWUiOiJUb20gQnJhZHkiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJ0ZXN0LXVzZXJAbG9jYWxob3N0IiwiZ2l2ZW5fbmFtZSI6IlRvbSIsImZhbWlseV9uYW1lIjoiQnJhZHkiLCJlbWFpbCI6InRlc3QtdXNlckBsb2NhbGhvc3QifQ.LYU7opqZsc9e-ZmdsIhcecjHL3kQkpP13VpwO4MHMqEVNeJsZI1WOkTM5HGVAihcPfQazhaYvcik0gFTF_6ZcKzDqanjx80TGhSIrV5FoCeUrbp7w_66VKDH7ImPc8T2kICQGHh2d521WFBnvXNifw7P6AR1rGg4qrUljHdf_KU";
+        String tokenResponse = oauth.introspectAccessTokenWithClientCredential("confidential-cli", "secret1", inactiveAccessToken);
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonNode = objectMapper.readTree(tokenResponse);
+
+        assertFalse(jsonNode.get("active").asBoolean());
+
+        TokenMetadataRepresentation rep = objectMapper.readValue(tokenResponse, TokenMetadataRepresentation.class);
+
+        assertFalse(rep.isActive());
+        assertNull(rep.getUserName());
+        assertNull(rep.getClientId());
+        assertNull(rep.getSubject());
+    }
+
+    @Test
+    public void testUnsupportedToken() throws Exception {
+        oauth.doLogin("test-user@localhost", "password");
+        String inactiveAccessToken = "unsupported";
         String tokenResponse = oauth.introspectAccessTokenWithClientCredential("confidential-cli", "secret1", inactiveAccessToken);
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode jsonNode = objectMapper.readTree(tokenResponse);
@@ -215,6 +236,38 @@ public class TokenIntrospectionTest extends TestRealmKeycloakTest {
         assertNull(rep.getClientId());
         assertNull(rep.getSubject());
     }
+
+    // KEYCLOAK-4829
+    @Test
+    public void testIntrospectAccessTokenOfflineAccess() throws Exception {
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code, "password");
+
+        setTimeOffset(86400);
+
+        // "Online" session still exists, but is invalid
+        accessTokenResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken(), "password");
+        String tokenResponse = oauth.introspectAccessTokenWithClientCredential("confidential-cli", "secret1", accessTokenResponse.getAccessToken());
+        TokenMetadataRepresentation rep = JsonSerialization.readValue(tokenResponse, TokenMetadataRepresentation.class);
+
+        assertTrue(rep.isActive());
+        assertEquals("test-user@localhost", rep.getUserName());
+        assertEquals("test-app", rep.getClientId());
+
+        // "Online" session doesn't even exists
+        testingClient.testing().removeExpired("test");
+
+        accessTokenResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken(), "password");
+        tokenResponse = oauth.introspectAccessTokenWithClientCredential("confidential-cli", "secret1", accessTokenResponse.getAccessToken());
+        rep = JsonSerialization.readValue(tokenResponse, TokenMetadataRepresentation.class);
+
+        assertTrue(rep.isActive());
+        assertEquals("test-user@localhost", rep.getUserName());
+        assertEquals("test-app", rep.getClientId());
+    }
+
 
     @Test
     public void testIntrospectAccessTokenUserDisabled() throws Exception {

@@ -25,22 +25,20 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 
 import java.net.URL;
-import java.security.PublicKey;
 
 /**
  * Tests Undertow Adapter
  *
  * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
+ * @author <a href="mailto:john.ament@spartasystems.com">John Ament</a>
  */
 public class AdapterTest {
 
-    public static PublicKey realmPublicKey;
     @ClassRule
     public static AbstractKeycloakRule keycloakRule = new AbstractKeycloakRule() {
         @Override
         protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
-            RealmModel realm = AdapterTestStrategy.baseAdapterTestInitialization(session, manager, adminRealm, getClass());
-            realmPublicKey = realm.getPublicKey();
+            AdapterTestStrategy.baseAdapterTestInitialization(session, manager, adminRealm, getClass());
 
             URL url = getClass().getResource("/adapter-test/cust-app-keycloak.json");
             createApplicationDeployment()
@@ -72,6 +70,12 @@ public class AdapterTest {
                     .name("product-portal").contextPath("/product-portal")
                     .servletClass(ProductServlet.class).adapterConfigPath(url.getPath())
                     .role("user").deployApplication();
+           
+            url = getClass().getResource("/adapter-test/product-autodetect-bearer-only-keycloak.json");
+            createApplicationDeployment()
+                    .name("product-portal-autodetect-bearer-only").contextPath("/product-portal-autodetect-bearer-only")
+                    .servletClass(ProductServlet.class).adapterConfigPath(url.getPath())
+                    .role("user").deployApplication();
 
             // Test that replacing system properties works for adapters
             System.setProperty("app.server.base.url", "http://localhost:8081");
@@ -87,17 +91,33 @@ public class AdapterTest {
                     .name("input-portal").contextPath("/input-portal")
                     .servletClass(InputServlet.class).adapterConfigPath(url.getPath())
                     .role("user").constraintUrl("/secured/*").deployApplication();
+
+            url = getClass().getResource("/adapter-test/no-access-token.json");
+            createApplicationDeployment()
+                    .name("no-access-token").contextPath("/no-access-token")
+                    .servletClass(InputServlet.class).adapterConfigPath(url.getPath())
+                    .role("user").constraintUrl("/secured/*").deployApplication();
         }
     };
 
     @Rule
     public AdapterTestStrategy testStrategy = new AdapterTestStrategy("http://localhost:8081/auth", "http://localhost:8081", keycloakRule);
 
+    //@Test
+    public void testUi() throws Exception {
+        Thread.sleep(1000000000);
+    }
+
     @Test
     public void testLoginSSOAndLogout() throws Exception {
         testStrategy.testLoginSSOMax();
 
         testStrategy.testLoginSSOAndLogout();
+    }
+
+    @Test
+    public void testLoginEncodedRedirectUri() throws Exception {
+        testStrategy.testLoginEncodedRedirectUri();
     }
 
     @Test
@@ -142,6 +162,11 @@ public class AdapterTest {
     @Test
     public void testNullBearerTokenCustomErrorPage() throws Exception {
         testStrategy.testNullBearerTokenCustomErrorPage();
+    }
+
+    @Test
+    public void testAutodetectBearerOnly() throws Exception {
+        testStrategy.testAutodetectBearerOnly();
     }
 
     @Test
@@ -215,5 +240,10 @@ public class AdapterTest {
     public void testRestCallWithAccessTokenAsQueryParameter() throws Exception {
         testStrategy.testRestCallWithAccessTokenAsQueryParameter();
 
+    }
+
+    @Test
+    public void testCallURLWithAccessToken() throws Exception {
+        testStrategy.checkThatAccessTokenCanBeSentPublicly();
     }
 }

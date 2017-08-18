@@ -91,7 +91,10 @@
       "serviceAccountClientId": "photoz-restful-api",
       "realmRoles": [
         "uma_protection"
-      ]
+      ],
+      "clientRoles": {
+        "photoz-restful-api" : ["uma_protection"]
+      }
     }
   ],
   "roles": {
@@ -153,6 +156,26 @@
         "/confidential-no-service-account/*"
       ],
       "secret": "secret"
+    },
+    {
+      "clientId": "test-client-1",
+      "secret": "secret",
+      "enabled": true,
+      "baseUrl": "test-client-1",
+      "redirectUris": [
+        "/test-client-1/*"
+      ],
+      "webOrigins" : ["*"]
+    },
+    {
+      "clientId": "test-client-2",
+      "secret": "secret",
+      "enabled": true,
+      "baseUrl": "test-client-2",
+      "redirectUris": [
+        "/test-client-2/*"
+      ],
+      "webOrigins" : ["*"]
     }
   ]
 }

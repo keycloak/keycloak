@@ -16,22 +16,19 @@
  */
 package org.keycloak.examples.storage.user;
 
-import org.keycloak.Config;
+import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.storage.UserStorageProviderFactory;
 
 import javax.naming.InitialContext;
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class EjbExampleUserStorageProviderFactory implements UserStorageProviderFactory<EjbExampleUserStorageProvider> {
+    private static final Logger logger = Logger.getLogger(EjbExampleUserStorageProviderFactory.class);
 
 
     @Override
@@ -55,5 +52,11 @@ public class EjbExampleUserStorageProviderFactory implements UserStorageProvider
     @Override
     public String getHelpText() {
         return "JPA Example User Storage Provider";
+    }
+
+    @Override
+    public void close() {
+        logger.info("<<<<<< Closing factory");
+
     }
 }

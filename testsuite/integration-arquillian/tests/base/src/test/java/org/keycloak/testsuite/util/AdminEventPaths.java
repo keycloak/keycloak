@@ -17,10 +17,6 @@
 
 package org.keycloak.testsuite.util;
 
-import java.net.URI;
-
-import javax.ws.rs.core.UriBuilder;
-
 import org.keycloak.admin.client.resource.AttackDetectionResource;
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.ClientAttributeCertificateResource;
@@ -29,6 +25,7 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientTemplateResource;
 import org.keycloak.admin.client.resource.ClientTemplatesResource;
 import org.keycloak.admin.client.resource.ClientsResource;
+import org.keycloak.admin.client.resource.ComponentsResource;
 import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.GroupsResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
@@ -39,10 +36,11 @@ import org.keycloak.admin.client.resource.RoleByIdResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.RolesResource;
-import org.keycloak.admin.client.resource.UserFederationProviderResource;
-import org.keycloak.admin.client.resource.UserFederationProvidersResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
+
+import javax.ws.rs.core.UriBuilder;
+import java.net.URI;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -285,28 +283,19 @@ public class AdminEventPaths {
         return uri.toString();
     }
 
-    // USER FEDERATION PROVIDERS AND MAPPERS
-
-    public static String userFederationsResourcePath() {
-        URI uri = UriBuilder.fromUri("").path(RealmResource.class, "userFederation").build();
+    // COMPONENTS
+    public static String componentsPath() {
+        URI uri = UriBuilder.fromUri("").path(RealmResource.class, "components").build();
         return uri.toString();
     }
 
-    public static String userFederationCreateResourcePath() {
-        URI uri = UriBuilder.fromUri(userFederationsResourcePath()).path(UserFederationProvidersResource.class, "create").build();
+    public static String componentPath(String componentId) {
+        URI uri = UriBuilder.fromUri(componentsPath()).path(ComponentsResource.class, "component").build(componentId);
         return uri.toString();
     }
 
-    public static String userFederationResourcePath(String userFederationId) {
-        URI uri = UriBuilder.fromUri(userFederationsResourcePath()).path(UserFederationProvidersResource.class, "get").build(userFederationId);
-        return uri.toString();
-    }
 
-    public static String userFederationMapperResourcePath(String userFederationId, String userFederationMapperId) {
-        URI uri = UriBuilder.fromUri(userFederationResourcePath(userFederationId))
-                .path(UserFederationProviderResource.class, "getMapperById").build(userFederationMapperId);
-        return uri.toString();
-    }
+
 
     // CLIENT INITIAL ACCESS
 
@@ -314,15 +303,6 @@ public class AdminEventPaths {
         URI uri = UriBuilder.fromUri("").path(RealmResource.class, "clientInitialAccess")
                 .path(ClientInitialAccessResource.class, "delete")
                 .build(clientInitialAccessId);
-        return uri.toString();
-    }
-
-    // CLIENT REGISTRATION TRUSTED HOSTS
-
-    public static String clientRegistrationTrustedHostPath(String hostName) {
-        URI uri = UriBuilder.fromUri("").path(RealmResource.class, "clientRegistrationTrustedHost")
-                .path(ClientInitialAccessResource.class, "delete")
-                .build(hostName);
         return uri.toString();
     }
 

@@ -50,8 +50,8 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
     }
 
     @Override
-    public SAMLIdentityProvider create(IdentityProviderModel model) {
-        return new SAMLIdentityProvider(new SAMLIdentityProviderConfig(model));
+    public SAMLIdentityProvider create(KeycloakSession session, IdentityProviderModel model) {
+        return new SAMLIdentityProvider(session, new SAMLIdentityProviderConfig(model));
     }
 
     @Override
@@ -84,11 +84,12 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                 if (idpDescriptor != null) {
                     SAMLIdentityProviderConfig samlIdentityProviderConfig = new SAMLIdentityProviderConfig();
                     String singleSignOnServiceUrl = null;
-                    boolean postBinding = false;
+                    boolean postBindingResponse = false;
+                    boolean postBindingLogout = false;
                     for (EndpointType endpoint : idpDescriptor.getSingleSignOnService()) {
                         if (endpoint.getBinding().toString().equals(JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get())) {
                             singleSignOnServiceUrl = endpoint.getLocation().toString();
-                            postBinding = true;
+                            postBindingResponse = true;
                             break;
                         } else if (endpoint.getBinding().toString().equals(JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get())){
                             singleSignOnServiceUrl = endpoint.getLocation().toString();
@@ -96,10 +97,11 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                     }
                     String singleLogoutServiceUrl = null;
                     for (EndpointType endpoint : idpDescriptor.getSingleLogoutService()) {
-                        if (postBinding && endpoint.getBinding().toString().equals(JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get())) {
+                        if (postBindingResponse && endpoint.getBinding().toString().equals(JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get())) {
                             singleLogoutServiceUrl = endpoint.getLocation().toString();
+                            postBindingLogout = true;
                             break;
-                        } else if (!postBinding && endpoint.getBinding().toString().equals(JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get())){
+                        } else if (!postBindingResponse && endpoint.getBinding().toString().equals(JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get())){
                             singleLogoutServiceUrl = endpoint.getLocation().toString();
                             break;
                         }
@@ -108,9 +110,11 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                     samlIdentityProviderConfig.setSingleLogoutServiceUrl(singleLogoutServiceUrl);
                     samlIdentityProviderConfig.setSingleSignOnServiceUrl(singleSignOnServiceUrl);
                     samlIdentityProviderConfig.setWantAuthnRequestsSigned(idpDescriptor.isWantAuthnRequestsSigned());
+                    samlIdentityProviderConfig.setAddExtensionsElementWithKeyInfo(false);
                     samlIdentityProviderConfig.setValidateSignature(idpDescriptor.isWantAuthnRequestsSigned());
-                    samlIdentityProviderConfig.setPostBindingResponse(postBinding);
-                    samlIdentityProviderConfig.setPostBindingAuthnRequest(postBinding);
+                    samlIdentityProviderConfig.setPostBindingResponse(postBindingResponse);
+                    samlIdentityProviderConfig.setPostBindingAuthnRequest(postBindingResponse);
+                    samlIdentityProviderConfig.setPostBindingLogout(postBindingLogout);
 
                     List<KeyDescriptorType> keyDescriptor = idpDescriptor.getKeyDescriptor();
                     String defaultCertificate = null;
@@ -121,7 +125,7 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                             Element x509KeyInfo = DocumentUtil.getChildElement(keyInfo, new QName("dsig", "X509Certificate"));
 
                             if (KeyTypes.SIGNING.equals(keyDescriptorType.getUse())) {
-                                samlIdentityProviderConfig.setSigningCertificate(x509KeyInfo.getTextContent());
+                                samlIdentityProviderConfig.addSigningCertificate(x509KeyInfo.getTextContent());
                             } else if (KeyTypes.ENCRYPTION.equals(keyDescriptorType.getUse())) {
                                 samlIdentityProviderConfig.setEncryptionPublicKey(x509KeyInfo.getTextContent());
                             } else if (keyDescriptorType.getUse() ==  null) {
@@ -131,8 +135,8 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                     }
 
                     if (defaultCertificate != null) {
-                        if (samlIdentityProviderConfig.getSigningCertificate() == null) {
-                            samlIdentityProviderConfig.setSigningCertificate(defaultCertificate);
+                        if (samlIdentityProviderConfig.getSigningCertificates().length == 0) {
+                            samlIdentityProviderConfig.addSigningCertificate(defaultCertificate);
                         }
 
                         if (samlIdentityProviderConfig.getEncryptionPublicKey() == null) {

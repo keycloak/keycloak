@@ -21,7 +21,6 @@
  */
 package org.keycloak.testsuite.console.page.authentication.bindings;
 
-import org.keycloak.testsuite.console.page.authentication.bindings.BindingsForm.BindingsSelect;
 import org.keycloak.testsuite.page.Form;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;

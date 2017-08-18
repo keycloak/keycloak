@@ -17,13 +17,17 @@
 
 package org.keycloak.models.sessions.infinispan;
 
-import org.infinispan.Cache;
-import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
+import org.keycloak.models.sessions.infinispan.changes.InfinispanChangelogBasedTransaction;
+import org.keycloak.models.sessions.infinispan.changes.sessions.LastSessionRefreshChecker;
+import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
+import org.keycloak.models.sessions.infinispan.changes.UserSessionUpdateTask;
+import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
 import java.util.Collections;
@@ -41,7 +45,7 @@ public class UserSessionAdapter implements UserSessionModel {
 
     private final InfinispanUserSessionProvider provider;
 
-    private final Cache<String, SessionEntity> cache;
+    private final InfinispanChangelogBasedTransaction updateTx;
 
     private final RealmModel realm;
 
@@ -49,14 +53,52 @@ public class UserSessionAdapter implements UserSessionModel {
 
     private final boolean offline;
 
-    public UserSessionAdapter(KeycloakSession session, InfinispanUserSessionProvider provider, Cache<String, SessionEntity> cache, RealmModel realm,
+    public UserSessionAdapter(KeycloakSession session, InfinispanUserSessionProvider provider, InfinispanChangelogBasedTransaction updateTx, RealmModel realm,
                               UserSessionEntity entity, boolean offline) {
         this.session = session;
         this.provider = provider;
-        this.cache = cache;
+        this.updateTx = updateTx;
         this.realm = realm;
         this.entity = entity;
         this.offline = offline;
+    }
+
+    @Override
+    public Map<String, AuthenticatedClientSessionModel> getAuthenticatedClientSessions() {
+        Map<String, AuthenticatedClientSessionEntity> clientSessionEntities = entity.getAuthenticatedClientSessions();
+        Map<String, AuthenticatedClientSessionModel> result = new HashMap<>();
+
+        List<String> removedClientUUIDS = new LinkedList<>();
+
+        if (clientSessionEntities != null) {
+            clientSessionEntities.forEach((String key, AuthenticatedClientSessionEntity value) -> {
+                // Check if client still exists
+                ClientModel client = realm.getClientById(key);
+                if (client != null) {
+                    result.put(key, new AuthenticatedClientSessionAdapter(value, client, this, provider, updateTx));
+                } else {
+                    removedClientUUIDS.add(key);
+                }
+            });
+        }
+
+        // Update user session
+        if (!removedClientUUIDS.isEmpty()) {
+            UserSessionUpdateTask task = new UserSessionUpdateTask() {
+
+                @Override
+                public void runUpdate(UserSessionEntity entity) {
+                    for (String clientUUID : removedClientUUIDS) {
+                        entity.getAuthenticatedClientSessions().remove(clientUUID);
+                    }
+                }
+
+            };
+
+            update(task);
+        }
+
+        return Collections.unmodifiableMap(result);
     }
 
     public String getId() {
@@ -109,8 +151,26 @@ public class UserSessionAdapter implements UserSessionModel {
     }
 
     public void setLastSessionRefresh(int lastSessionRefresh) {
-        entity.setLastSessionRefresh(lastSessionRefresh);
-        update();
+        UserSessionUpdateTask task = new UserSessionUpdateTask() {
+
+            @Override
+            public void runUpdate(UserSessionEntity entity) {
+                entity.setLastSessionRefresh(lastSessionRefresh);
+            }
+
+            @Override
+            public CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<UserSessionEntity> sessionWrapper) {
+                return new LastSessionRefreshChecker(provider.getLastSessionRefreshStore(), provider.getOfflineLastSessionRefreshStore())
+                        .getCrossDCMessageStatus(UserSessionAdapter.this.session, UserSessionAdapter.this.realm, sessionWrapper, offline, lastSessionRefresh);
+            }
+
+            @Override
+            public String toString() {
+                return "setLastSessionRefresh(" + lastSessionRefresh + ')';
+            }
+        };
+
+        update(task);
     }
 
     @Override
@@ -120,19 +180,36 @@ public class UserSessionAdapter implements UserSessionModel {
 
     @Override
     public void setNote(String name, String value) {
-        if (entity.getNotes() == null) {
-            entity.setNotes(new HashMap<String, String>());
-        }
-        entity.getNotes().put(name, value);
-        update();
+        UserSessionUpdateTask task = new UserSessionUpdateTask() {
+
+            @Override
+            public void runUpdate(UserSessionEntity entity) {
+                if (value == null) {
+                    if (entity.getNotes().containsKey(name)) {
+                        removeNote(name);
+                    }
+                    return;
+                }
+                entity.getNotes().put(name, value);
+            }
+
+        };
+
+        update(task);
     }
 
     @Override
     public void removeNote(String name) {
-        if (entity.getNotes() != null) {
-            entity.getNotes().remove(name);
-            update();
-        }
+        UserSessionUpdateTask task = new UserSessionUpdateTask() {
+
+            @Override
+            public void runUpdate(UserSessionEntity entity) {
+                entity.getNotes().remove(name);
+            }
+
+        };
+
+        update(task);
     }
 
     @Override
@@ -147,24 +224,34 @@ public class UserSessionAdapter implements UserSessionModel {
 
     @Override
     public void setState(State state) {
-        entity.setState(state);
-        update();
+        UserSessionUpdateTask task = new UserSessionUpdateTask() {
+
+            @Override
+            public void runUpdate(UserSessionEntity entity) {
+                entity.setState(state);
+            }
+
+        };
+
+        update(task);
     }
 
     @Override
-    public List<ClientSessionModel> getClientSessions() {
-        if (entity.getClientSessions() != null) {
-            List<ClientSessionModel> clientSessions = new LinkedList<>();
-            for (String c : entity.getClientSessions()) {
-                ClientSessionModel clientSession = provider.getClientSession(realm, c, offline);
-                if (clientSession != null) {
-                    clientSessions.add(clientSession);
-                }
+    public void restartSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
+        UserSessionUpdateTask task = new UserSessionUpdateTask() {
+
+            @Override
+            public void runUpdate(UserSessionEntity entity) {
+                provider.updateSessionEntity(entity, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId);
+
+                entity.setState(null);
+                entity.getNotes().clear();
+                entity.getAuthenticatedClientSessions().clear();
             }
-            return clientSessions;
-        } else {
-            return Collections.emptyList();
-        }
+
+        };
+
+        update(task);
     }
 
     @Override
@@ -185,8 +272,8 @@ public class UserSessionAdapter implements UserSessionModel {
         return entity;
     }
 
-    void update() {
-        provider.getTx().replace(cache, entity.getId(), entity);
+    void update(UserSessionUpdateTask task) {
+        updateTx.addTask(getId(), task);
     }
 
 }

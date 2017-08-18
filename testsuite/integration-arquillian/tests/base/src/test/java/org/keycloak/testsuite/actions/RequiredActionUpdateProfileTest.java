@@ -16,24 +16,32 @@
  */
 package org.keycloak.testsuite.actions;
 
+import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.TestRealmKeycloakTest;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
+import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfileEditUsernameAllowedPage;
+import org.keycloak.testsuite.util.UserBuilder;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class RequiredActionUpdateProfileTest extends TestRealmKeycloakTest {
+public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -47,10 +55,34 @@ public class RequiredActionUpdateProfileTest extends TestRealmKeycloakTest {
     @Page
     protected LoginUpdateProfileEditUsernameAllowedPage updateProfilePage;
 
+    @Page
+    protected ErrorPage errorPage;
+
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         ActionUtil.addRequiredActionForUser(testRealm, "test-user@localhost", UserModel.RequiredAction.UPDATE_PROFILE.name());
         ActionUtil.addRequiredActionForUser(testRealm, "john-doh@localhost", UserModel.RequiredAction.UPDATE_PROFILE.name());
+    }
+
+    @Before
+    public void beforeTest() {
+        ApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
+        UserRepresentation user = UserBuilder.create().enabled(true)
+                .username("test-user@localhost")
+                .email("test-user@localhost")
+                .firstName("Tom")
+                .lastName("Brady")
+                .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name()).build();
+        ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+
+        ApiUtil.removeUserByUsername(testRealm(), "john-doh@localhost");
+        user = UserBuilder.create().enabled(true)
+                .username("john-doh@localhost")
+                .email("john-doh@localhost")
+                .firstName("John")
+                .lastName("Doh")
+                .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name()).build();
+        ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
     }
 
     @Test
@@ -63,12 +95,12 @@ public class RequiredActionUpdateProfileTest extends TestRealmKeycloakTest {
 
         updateProfilePage.update("New first", "New last", "new@email.com", "test-user@localhost");
 
-        String sessionId = events.expectRequiredAction(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent().getSessionId();
-        events.expectRequiredAction(EventType.UPDATE_PROFILE).session(sessionId).assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
+       events.expectRequiredAction(EventType.UPDATE_PROFILE).assertEvent();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().session(sessionId).assertEvent();
+        events.expectLogin().assertEvent();
 
         // assert user is really updated in persistent store
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
@@ -90,19 +122,17 @@ public class RequiredActionUpdateProfileTest extends TestRealmKeycloakTest {
 
         updateProfilePage.update("New first", "New last", "john-doh@localhost", "new");
 
-        String sessionId = events
-                .expectLogin()
+        events.expectLogin()
                 .event(EventType.UPDATE_PROFILE)
                 .detail(Details.USERNAME, "john-doh@localhost")
                 .user(userId)
-                .session(AssertEvents.isUUID())
+                .session(Matchers.nullValue(String.class))
                 .removeDetail(Details.CONSENT)
-                .assertEvent()
-                .getSessionId();
+                .assertEvent();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().detail(Details.USERNAME, "john-doh@localhost").user(userId).session(sessionId).assertEvent();
+        events.expectLogin().detail(Details.USERNAME, "john-doh@localhost").user(userId).assertEvent();
 
         // assert user is really updated in persistent store
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "new");
@@ -110,6 +140,7 @@ public class RequiredActionUpdateProfileTest extends TestRealmKeycloakTest {
         Assert.assertEquals("New last", user.getLastName());
         Assert.assertEquals("john-doh@localhost", user.getEmail());
         Assert.assertEquals("new", user.getUsername());
+        getCleanup().addUserId(user.getId());
     }
 
     @Test
@@ -266,6 +297,25 @@ public class RequiredActionUpdateProfileTest extends TestRealmKeycloakTest {
         Assert.assertEquals("Email already exists.", updateProfilePage.getError());
 
         events.assertEmpty();
+    }
+
+    @Test
+    public void updateProfileExpiredCookies() {
+        loginPage.open();
+        loginPage.login("john-doh@localhost", "password");
+
+        updateProfilePage.assertCurrent();
+
+        // Expire cookies and assert the page with "back to application" link present
+        driver.manage().deleteAllCookies();
+
+        updateProfilePage.update("New first", "New last", "keycloak-user@localhost", "test-user@localhost");
+        errorPage.assertCurrent();
+
+        String backToAppLink = errorPage.getBackToApplicationLink();
+
+        ClientRepresentation client = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app").toRepresentation();
+        Assert.assertEquals(backToAppLink, client.getBaseUrl());
     }
 
 }

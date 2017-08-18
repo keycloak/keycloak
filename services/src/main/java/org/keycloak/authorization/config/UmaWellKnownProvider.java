@@ -17,6 +17,7 @@
  */
 package org.keycloak.authorization.config;
 
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -46,7 +47,7 @@ public class UmaWellKnownProvider implements WellKnownProvider {
         return Configuration.fromDefault(RealmsResource.realmBaseUrl(uriInfo).build(realm.getName()).toString(), realm.getName(),
                 URI.create(RealmsResource.protocolUrl(uriInfo).path(OIDCLoginProtocolService.class, "auth").build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString()),
                 URI.create(RealmsResource.protocolUrl(uriInfo).path(OIDCLoginProtocolService.class, "token").build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString()),
-                realm.getPublicKeyPem());
+                PemUtils.encodeKey(session.keys().getActiveRsaKey(realm).getPublicKey()));
     }
 
     @Override

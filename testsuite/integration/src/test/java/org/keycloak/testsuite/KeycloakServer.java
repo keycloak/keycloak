@@ -27,6 +27,8 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.plugins.server.servlet.HttpServlet30Dispatcher;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.spi.ResteasyDeployment;
+import org.keycloak.common.Version;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -43,7 +45,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
+import javax.net.ssl.SSLContext;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -57,6 +64,7 @@ public class KeycloakServer {
     public static class KeycloakServerConfig {
         private String host = "localhost";
         private int port = 8081;
+        private int portHttps = -1;
         private int workerThreads = Math.max(Runtime.getRuntime().availableProcessors(), 2) * 8;
         private String resourcesHome;
 
@@ -66,6 +74,10 @@ public class KeycloakServer {
 
         public int getPort() {
             return port;
+        }
+
+        public int getPortHttps() {
+            return portHttps;
         }
 
         public String getResourcesHome() {
@@ -78,6 +90,10 @@ public class KeycloakServer {
 
         public void setPort(int port) {
             this.port = port;
+        }
+
+        public void setPortHttps(int portHttps) {
+            this.portHttps = portHttps;
         }
 
         public void setResourcesHome(String resourcesHome) {
@@ -102,6 +118,10 @@ public class KeycloakServer {
     }
 
     public static void main(String[] args) throws Throwable {
+        if (!System.getenv().containsKey("MAVEN_CMD_LINE_ARGS")) {
+            Version.BUILD_TIME = new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date());
+        }
+
         bootstrapKeycloakServer(args);
     }
 
@@ -127,6 +147,10 @@ public class KeycloakServer {
 
         if (System.getProperty("keycloak.port") != null) {
             config.setPort(Integer.valueOf(System.getProperty("keycloak.port")));
+        }
+
+        if (System.getProperty("keycloak.port.https") != null) {
+            config.setPortHttps(Integer.valueOf(System.getProperty("keycloak.port.https")));
         }
 
         if (System.getProperty("keycloak.bind.address") != null) {
@@ -186,6 +210,8 @@ public class KeycloakServer {
             int undertowWorkerThreads = Integer.parseInt(System.getProperty("undertowWorkerThreads"));
             config.setWorkerThreads(undertowWorkerThreads);
         }
+
+        detectNodeName(config);
 
         final KeycloakServer keycloak = new KeycloakServer(config);
         keycloak.sysout = true;
@@ -299,6 +325,10 @@ public class KeycloakServer {
                 .setWorkerThreads(config.getWorkerThreads())
                 .setIoThreads(config.getWorkerThreads() / 8);
 
+        if (config.getPortHttps() != -1) {
+            builder = builder.addHttpsListener(config.getPortHttps(), config.getHost(), SSLContext.getDefault());
+        }
+
         server = new UndertowJaxrsServer();
         try {
             server.start(builder);
@@ -309,7 +339,7 @@ public class KeycloakServer {
             di.setDeploymentName("Keycloak");
             di.setDefaultEncoding("UTF-8");
 
-            di.addInitParameter("keycloak.embedded", "true");
+            di.addInitParameter(KeycloakApplication.KEYCLOAK_EMBEDDED, "true");
 
             di.setDefaultServletConfig(new DefaultServletConfig(true));
 
@@ -337,7 +367,9 @@ public class KeycloakServer {
                 info("Loading resources from " + config.getResourcesHome());
             }
 
-            info("Started Keycloak (http://" + config.getHost() + ":" + config.getPort() + "/auth) in "
+            info("Started Keycloak (http://" + config.getHost() + ":" + config.getPort() + "/auth"
+                    + (config.getPortHttps() > 0 ? ", https://" + config.getHost() + ":" + config.getPortHttps()+ "/auth" : "")
+                    + ") in "
                     + (System.currentTimeMillis() - start) + " ms\n");
         } catch (RuntimeException e) {
             server.stop();
@@ -367,6 +399,26 @@ public class KeycloakServer {
             s.append(p);
         }
         return new File(s.toString());
+    }
+
+
+    private static void detectNodeName(KeycloakServerConfig config) {
+        String nodeName = System.getProperty(InfinispanConnectionProvider.JBOSS_NODE_NAME);
+        if (nodeName == null) {
+            // Try to autodetect "jboss.node.name" from the port
+            Map<Integer, String> nodesCfg = new HashMap<>();
+            nodesCfg.put(8181, "node1");
+            nodesCfg.put(8182, "node2");
+
+            nodeName = nodesCfg.get(config.getPort());
+            if (nodeName != null) {
+                System.setProperty(InfinispanConnectionProvider.JBOSS_NODE_NAME, nodeName);
+            }
+        }
+
+        if (nodeName != null) {
+            log.infof("Node name: %s", nodeName);
+        }
     }
 
 }

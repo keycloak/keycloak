@@ -17,7 +17,8 @@
 
 package org.keycloak.testsuite.rest.resource;
 
-import java.io.File;
+import org.keycloak.exportimport.ExportImportManager;
+import org.keycloak.models.KeycloakSession;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -27,9 +28,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
-import org.keycloak.exportimport.ExportImportManager;
-import org.keycloak.models.KeycloakSession;
+import java.io.File;
 
 import static org.keycloak.exportimport.ExportImportConfig.ACTION;
 import static org.keycloak.exportimport.ExportImportConfig.DEFAULT_USERS_PER_FILE;
@@ -37,7 +36,9 @@ import static org.keycloak.exportimport.ExportImportConfig.DIR;
 import static org.keycloak.exportimport.ExportImportConfig.FILE;
 import static org.keycloak.exportimport.ExportImportConfig.PROVIDER;
 import static org.keycloak.exportimport.ExportImportConfig.REALM_NAME;
+import static org.keycloak.exportimport.ExportImportConfig.STRATEGY;
 import static org.keycloak.exportimport.ExportImportConfig.USERS_PER_FILE;
+import org.keycloak.exportimport.Strategy;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -96,6 +97,13 @@ public class TestingExportImportResource {
     @Produces(MediaType.APPLICATION_JSON)
     public String setDir(@QueryParam("dir") String dir) {
         return System.setProperty(DIR, dir);
+    }
+
+    @PUT
+    @Path("/set-import-strategy")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void setStrategy(@QueryParam("importStrategy") Strategy strategy) {
+        System.setProperty(STRATEGY, strategy.name());
     }
 
     @PUT

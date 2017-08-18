@@ -24,6 +24,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * Optional capability interface implemented by UserStorageProviders.
+ * Defines complex queries that are used to locate one or more users.  You must implement this interface
+ * if you want to view and manager users from the administration console.
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
@@ -81,7 +85,7 @@ public interface UserQueryProvider {
     List<UserModel> searchForUser(Map<String, String> params, RealmModel realm);
 
     /**
-     * Search for user by parameter.  Valid parameters are:
+     * Search for user by parameter.    Valid parameters are:
      * "first" - first name
      * "last" - last name
      * "email" - email
@@ -99,10 +103,47 @@ public interface UserQueryProvider {
      */
     List<UserModel> searchForUser(Map<String, String> params, RealmModel realm, int firstResult, int maxResults);
 
+    /**
+     * Get users that belong to a specific group.  Implementations do not have to search in UserFederatedStorageProvider
+     * as this is done automatically.
+     *
+     * @see org.keycloak.storage.federated.UserFederatedStorageProvider
+     *
+     * @param realm
+     * @param group
+     * @param firstResult
+     * @param maxResults
+     * @return
+     */
     List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults);
+
+    /**
+     * Get users that belong to a specific group.  Implementations do not have to search in UserFederatedStorageProvider
+     * as this is done automatically.
+     *
+     * @see org.keycloak.storage.federated.UserFederatedStorageProvider
+     *
+     *
+     *
+     * @param realm
+     * @param group
+     * @return
+     */
     List<UserModel> getGroupMembers(RealmModel realm, GroupModel group);
 
+    /**
+     * Search for users that have a specific attribute with a specific value.
+     * Implementations do not have to search in UserFederatedStorageProvider
+     * as this is done automatically.
+     *
+     * @see org.keycloak.storage.federated.UserFederatedStorageProvider
+     *
 
-    // Searching by UserModel.attribute (not property)
+     *
+     * @param attrName
+     * @param attrValue
+     * @param realm
+     * @return
+     */
     List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm);
 }

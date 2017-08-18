@@ -65,9 +65,7 @@
                 <label class="col-md-2 control-label" for="supportedLocales" class="control-label two-lines">{{:: 'supported-locales' | translate}}</label>
 
                 <div class="col-md-6">
-                    <select ui-select2 id="supportedLocales" ng-model="realm.supportedLocales" data-placeholder="{{:: 'supported-locales.placeholder' | translate}}" ng-required="realm.internationalizationEnabled" multiple>
-                        <option ng-repeat="option in supportedLocalesOptions.tags" value="{{option}}">{{option}}</option>
-                    </select>
+                    <input ui-select2="supportedLocalesOptions" id="supportedLocales" ng-model="realm.supportedLocales" data-placeholder="{{:: 'supported-locales.placeholder' | translate}}"/>
                 </div>
             </div>
             <div class="form-group" data-ng-show="realm.internationalizationEnabled">

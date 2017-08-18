@@ -19,12 +19,14 @@ package org.keycloak.adapters;
 
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.RSATokenVerifier;
+import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
 import org.keycloak.adapters.spi.AdapterSessionStore;
 import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.enums.TokenStore;
 import org.keycloak.jose.jws.JWSInput;
@@ -32,12 +34,13 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
-import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.common.util.UriUtils;
 import org.keycloak.util.TokenUtil;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicLong;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Map;
+import java.util.logging.Level;
 
 
 /**
@@ -140,6 +143,7 @@ public class OAuthRequestAuthenticator {
     protected String getRedirectUri(String state) {
         String url = getRequestUrl();
         log.debugf("callback uri: %s", url);
+      
         if (!facade.getRequest().isSecure() && deployment.getSslRequired().isRequired(facade.getRequest().getRemoteAddr())) {
             int port = sslRedirectPort();
             if (port < 0) {
@@ -169,7 +173,7 @@ public class OAuthRequestAuthenticator {
         KeycloakUriBuilder redirectUriBuilder = deployment.getAuthUrl().clone()
                 .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE)
                 .queryParam(OAuth2Constants.CLIENT_ID, deployment.getResourceName())
-                .queryParam(OAuth2Constants.REDIRECT_URI, url)
+                .queryParam(OAuth2Constants.REDIRECT_URI, rewrittenRedirectUri(url))
                 .queryParam(OAuth2Constants.STATE, state)
                 .queryParam("login", "true");
         if(loginHint != null && loginHint.length() > 0){
@@ -195,15 +199,13 @@ public class OAuthRequestAuthenticator {
         return sslRedirectPort;
     }
 
-    protected static final AtomicLong counter = new AtomicLong();
-
     protected String getStateCode() {
-        return counter.getAndIncrement() + "/" + AdapterUtils.generateId();
+        return AdapterUtils.generateId();
     }
 
     protected AuthChallenge loginRedirect() {
         final String state = getStateCode();
-        final String redirect = getRedirectUri(state);
+        final String redirect =  getRedirectUri(state);
         if (redirect == null) {
             return challenge(403, OIDCAuthenticationError.Reason.NO_REDIRECT_URI, null);
         }
@@ -321,10 +323,11 @@ public class OAuthRequestAuthenticator {
 
         AccessTokenResponse tokenResponse = null;
         strippedOauthParametersRequestUri = stripOauthParametersFromRedirect();
+    
         try {
             // For COOKIE store we don't have httpSessionId and single sign-out won't be available
             String httpSessionId = deployment.getTokenStore() == TokenStore.SESSION ? reqAuthenticator.changeHttpSessionId(true) : null;
-            tokenResponse = ServerRequest.invokeAccessCodeToToken(deployment, code, strippedOauthParametersRequestUri, httpSessionId);
+            tokenResponse = ServerRequest.invokeAccessCodeToToken(deployment, code, rewrittenRedirectUri(strippedOauthParametersRequestUri), httpSessionId);
         } catch (ServerRequest.HttpFailure failure) {
             log.error("failed to turn code into token");
             log.error("status from server: " + failure.getStatus());
@@ -342,7 +345,7 @@ public class OAuthRequestAuthenticator {
         refreshToken = tokenResponse.getRefreshToken();
         idTokenString = tokenResponse.getIdToken();
         try {
-            token = RSATokenVerifier.verifyToken(tokenString, deployment.getRealmKey(), deployment.getRealmInfoUrl());
+            token = AdapterRSATokenVerifier.verifyToken(tokenString, deployment);
             if (idTokenString != null) {
                 try {
                     JWSInput input = new JWSInput(idTokenString);
@@ -357,7 +360,7 @@ public class OAuthRequestAuthenticator {
             return challenge(403, OIDCAuthenticationError.Reason.INVALID_TOKEN, null);
         }
         if (tokenResponse.getNotBeforePolicy() > deployment.getNotBefore()) {
-            deployment.setNotBefore(tokenResponse.getNotBeforePolicy());
+            deployment.updateNotBefore(tokenResponse.getNotBeforePolicy());
         }
         if (token.getIssuedAt() < deployment.getNotBefore()) {
             log.error("Stale token");
@@ -376,6 +379,23 @@ public class OAuthRequestAuthenticator {
                 .replaceQueryParam(OAuth2Constants.STATE, null);
         return builder.build().toString();
     }
-
+    
+    private String rewrittenRedirectUri(String originalUri) {
+        Map<String, String> rewriteRules = deployment.getRedirectRewriteRules();
+            if(rewriteRules != null && !rewriteRules.isEmpty()) {
+            try {
+                URL url = new URL(originalUri);
+                Map.Entry<String, String> rule =  rewriteRules.entrySet().iterator().next();
+                StringBuilder redirectUriBuilder = new StringBuilder(url.getProtocol());
+                redirectUriBuilder.append("://"+ url.getAuthority());
+                redirectUriBuilder.append(url.getPath().replaceFirst(rule.getKey(), rule.getValue()));
+                return redirectUriBuilder.toString();
+            } catch (MalformedURLException ex) {
+                log.error("Not a valid request url");
+                throw new RuntimeException(ex);
+            }
+            }
+        return originalUri;
+    }
 
 }

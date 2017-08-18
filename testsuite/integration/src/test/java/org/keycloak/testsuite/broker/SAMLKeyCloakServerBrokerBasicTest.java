@@ -19,16 +19,16 @@ package org.keycloak.testsuite.broker;
 
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.services.managers.RealmManager;
-import org.keycloak.testsuite.rule.AbstractKeycloakRule;
-import org.keycloak.testsuite.KeycloakServer;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
-import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.saml.processing.web.util.PostBindingUtil;
+import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.KeycloakServer;
+import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -93,9 +93,9 @@ public class SAMLKeyCloakServerBrokerBasicTest extends AbstractKeycloakIdentityP
     @Override
     protected void doAssertTokenRetrieval(String pageSource) {
         try {
-            SAML2Request saml2Request = new SAML2Request();
-            ResponseType responseType = (ResponseType) saml2Request
-                    .getSAML2ObjectFromStream(PostBindingUtil.base64DecodeAsStream(pageSource));
+            ResponseType responseType = (ResponseType) SAML2Request
+                    .getSAML2ObjectFromStream(PostBindingUtil.base64DecodeAsStream(pageSource))
+                    .getSamlObject();
                     //.getSAML2ObjectFromStream(PostBindingUtil.base64DecodeAsStream(URLDecoder.decode(pageSource, "UTF-8")));
 
             assertNotNull(responseType);
@@ -128,7 +128,7 @@ public class SAMLKeyCloakServerBrokerBasicTest extends AbstractKeycloakIdentityP
     }
 
     @Test
-    public void testSuccessfulAuthenticationWithoutUpdateProfile_newUser_emailAsUsername() {
+    public void testSuccessfulAuthenticationWithoutUpdateProfile_newUser_emailAsUsername() throws Exception {
         super.testSuccessfulAuthenticationWithoutUpdateProfile_newUser_emailAsUsername();
     }
 

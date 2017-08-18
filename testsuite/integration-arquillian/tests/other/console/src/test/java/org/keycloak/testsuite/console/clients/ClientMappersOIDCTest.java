@@ -21,21 +21,23 @@
  */
 package org.keycloak.testsuite.console.clients;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Test;
-
-import static org.junit.Assert.*;
 import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import static org.keycloak.testsuite.auth.page.login.Login.OIDC;
-import static org.keycloak.testsuite.console.clients.AbstractClientTest.createClientRep;
 import org.keycloak.testsuite.console.page.clients.mappers.ClientMapper;
 import org.keycloak.testsuite.console.page.clients.mappers.ClientMappers;
 import org.keycloak.testsuite.console.page.clients.mappers.CreateClientMappers;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+import static org.keycloak.testsuite.auth.page.login.Login.OIDC;
+import static org.keycloak.testsuite.console.clients.AbstractClientTest.createClientRep;
 import static org.keycloak.testsuite.console.page.clients.mappers.CreateClientMappersForm.*;
 
 /**
@@ -91,7 +93,6 @@ public class ClientMappersOIDCTest extends AbstractClientTest {
         assertEquals("oidc-hardcoded-role-mapper", found.getProtocolMapper());
         Map<String, String> config = found.getConfig();
         
-        assertEquals(1, config.size());
         assertEquals("offline_access", config.get("role"));
         
         //edit
@@ -163,8 +164,6 @@ public class ClientMappersOIDCTest extends AbstractClientTest {
         assertEquals("oidc-usersessionmodel-note-mapper", found.getProtocolMapper());
         
         Map<String, String> config = found.getConfig();
-        assertNull(config.get("id.token.claim"));
-        assertNull(config.get("access.token.claim"));
         assertEquals("claim name", config.get("claim.name"));
         assertEquals("session note", config.get("user.session.note"));
         assertEquals("int", config.get("jsonType.label"));

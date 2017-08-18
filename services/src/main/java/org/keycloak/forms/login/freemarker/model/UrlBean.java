@@ -16,9 +16,9 @@
  */
 package org.keycloak.forms.login.freemarker.model;
 
-import org.keycloak.theme.Theme;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.Urls;
+import org.keycloak.theme.Theme;
 
 import java.net.URI;
 
@@ -50,6 +50,10 @@ public class UrlBean {
         return Urls.realmLoginPage(baseURI, realm).toString();
     }
 
+    public String getLoginRestartFlowUrl() {
+        return Urls.realmLoginRestartPage(baseURI, realm).toString();
+    }
+
     public String getRegistrationAction() {
         if (this.actionuri != null) {
             return this.actionuri.toString();
@@ -79,10 +83,6 @@ public class UrlBean {
 
     public String getLoginUsernameReminderUrl() {
         return Urls.loginUsernameReminder(baseURI, realm).toString();
-    }
-
-    public String getLoginEmailVerificationUrl() {
-        return Urls.loginActionEmailVerification(baseURI, realm).toString();
     }
 
     public String getFirstBrokerLoginUrl() {

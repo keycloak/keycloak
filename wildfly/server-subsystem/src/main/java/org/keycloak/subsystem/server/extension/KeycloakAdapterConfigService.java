@@ -19,8 +19,9 @@ package org.keycloak.subsystem.server.extension;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.dmr.ModelNode;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
 import org.jboss.dmr.Property;
+
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
 
 /**
  * This service keeps track of the entire Keycloak management model so as to provide
@@ -84,7 +85,7 @@ public final class KeycloakAdapterConfigService {
     // be where the Keycloak server's Config interface expects it to be.
     
     private void massageScheduledTaskInterval(ModelNode copy) {
-        if (!copy.hasDefined("scheduled-task-intervale")) return;
+        if (!copy.hasDefined("scheduled-task-interval")) return;
         ModelNode taskInterval = copy.remove("scheduled-task-interval");
         copy.get("scheduled", "interval").set(taskInterval);
     }

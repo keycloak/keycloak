@@ -17,7 +17,7 @@
 
 package org.keycloak.protocol.oidc.mappers;
 
-import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
@@ -88,8 +88,8 @@ public class RoleNameMapper extends AbstractOIDCProtocolMapper implements OIDCAc
     }
 
     @Override
-    public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session2,
-                                            UserSessionModel userSession2, ClientSessionModel clientSessio2n) {
+    public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
+                                            UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
         String role = mappingModel.getConfig().get(ROLE_CONFIG);
         String newName = mappingModel.getConfig().get(NEW_ROLE_NAME);
 
@@ -120,6 +120,7 @@ public class RoleNameMapper extends AbstractOIDCProtocolMapper implements OIDCAc
         } else {
             access = token.addAccess(newAppName);
         }
+
         access.addRole(newRoleName);
         return token;
     }

@@ -17,8 +17,6 @@
  */
 package org.keycloak.authorization.client;
 
-import org.keycloak.authorization.client.util.HttpResponseException;
-
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */

@@ -25,14 +25,17 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.TestRealmKeycloakTest;
-import org.keycloak.testsuite.pages.*;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
+import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
+import org.keycloak.testsuite.pages.LoginUpdateProfileEditUsernameAllowedPage;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class RequiredActionMultipleActionsTest extends TestRealmKeycloakTest {
+public class RequiredActionMultipleActionsTest extends AbstractTestRealmKeycloakTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -60,46 +63,50 @@ public class RequiredActionMultipleActionsTest extends TestRealmKeycloakTest {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 
-        String sessionId = null;
+        String codeId = null;
         if (changePasswordPage.isCurrent()) {
-            sessionId = updatePassword(sessionId);
+            codeId = updatePassword(codeId);
 
             updateProfilePage.assertCurrent();
-            updateProfile(sessionId);
+            updateProfile(codeId);
         } else if (updateProfilePage.isCurrent()) {
-            sessionId = updateProfile(sessionId);
+            codeId = updateProfile(codeId);
 
             changePasswordPage.assertCurrent();
-            updatePassword(sessionId);
+            updatePassword(codeId);
         } else {
             Assert.fail("Expected to update password and profile before login");
         }
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().session(sessionId).assertEvent();
+        events.expectLogin().session(codeId).assertEvent();
     }
 
-    public String updatePassword(String sessionId) {
+    public String updatePassword(String codeId) {
         changePasswordPage.changePassword("new-password", "new-password");
 
         AssertEvents.ExpectedEvent expectedEvent = events.expectRequiredAction(EventType.UPDATE_PASSWORD);
-        if (sessionId != null) {
-            expectedEvent.session(sessionId);
+        if (codeId != null) {
+            expectedEvent.detail(Details.CODE_ID, codeId);
         }
-        return expectedEvent.assertEvent().getSessionId();
+        return expectedEvent.assertEvent().getDetails().get(Details.CODE_ID);
     }
 
-    public String updateProfile(String sessionId) {
+    public String updateProfile(String codeId) {
         updateProfilePage.update("New first", "New last", "new@email.com", "test-user@localhost");
 
-        AssertEvents.ExpectedEvent expectedEvent = events.expectRequiredAction(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com");
-        if (sessionId != null) {
-            expectedEvent.session(sessionId);
+        AssertEvents.ExpectedEvent expectedEvent = events.expectRequiredAction(EventType.UPDATE_EMAIL)
+                .detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
+                .detail(Details.UPDATED_EMAIL, "new@email.com");
+        if (codeId != null) {
+            expectedEvent.detail(Details.CODE_ID, codeId);
         }
-        sessionId = expectedEvent.assertEvent().getSessionId();
-        events.expectRequiredAction(EventType.UPDATE_PROFILE).session(sessionId).assertEvent();
-        return sessionId;
+        codeId = expectedEvent.assertEvent().getDetails().get(Details.CODE_ID);
+        events.expectRequiredAction(EventType.UPDATE_PROFILE)
+                .detail(Details.CODE_ID, codeId)
+                .assertEvent();
+        return codeId;
     }
 
 }

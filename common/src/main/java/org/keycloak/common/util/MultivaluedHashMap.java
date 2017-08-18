@@ -30,6 +30,13 @@ import java.util.Map;
 @SuppressWarnings("serial")
 public class MultivaluedHashMap<K, V> extends HashMap<K, List<V>>
 {
+   public MultivaluedHashMap() {
+   }
+
+   public MultivaluedHashMap(MultivaluedHashMap<K, V> config) {
+      addAll(config);
+   }
+
    public void putSingle(K key, V value)
    {
       List<V> list = new ArrayList<V>();

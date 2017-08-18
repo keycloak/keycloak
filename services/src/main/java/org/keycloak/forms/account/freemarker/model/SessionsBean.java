@@ -17,11 +17,10 @@
 
 package org.keycloak.forms.account.freemarker.model;
 
+import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.common.util.Time;
 
 import java.util.Date;
 import java.util.HashSet;
@@ -79,8 +78,8 @@ public class SessionsBean {
 
         public Set<String> getClients() {
             Set<String> clients = new HashSet<String>();
-            for (ClientSessionModel clientSession : session.getClientSessions()) {
-                ClientModel client = clientSession.getClient();
+            for (String clientUUID : session.getAuthenticatedClientSessions().keySet()) {
+                ClientModel client = realm.getClientById(clientUUID);
                 clients.add(client.getClientId());
             }
             return clients;

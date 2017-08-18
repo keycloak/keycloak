@@ -17,26 +17,33 @@
 
 package org.keycloak.testsuite.exportimport;
 
-import org.junit.Assert;
+import org.jboss.arquillian.container.spi.client.container.LifecycleException;
+import org.junit.After;
 import org.junit.Test;
-import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.dir.DirExportProvider;
 import org.keycloak.exportimport.dir.DirExportProviderFactory;
 import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.KeysMetadataRepresentation;
+import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.util.UserBuilder;
 
 import java.io.File;
 import java.net.URL;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
-import java.util.regex.Matcher;
-import org.jboss.arquillian.container.spi.client.container.LifecycleException;
-import org.junit.After;
-import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.util.UserBuilder;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 
+import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
 /**
@@ -45,7 +52,7 @@ import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public class ExportImportTest extends AbstractExportImportTest {
+public class ExportImportTest extends AbstractKeycloakTest {
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -53,11 +60,29 @@ public class ExportImportTest extends AbstractExportImportTest {
         testRealm1.getUsers().add(makeUser("user1"));
         testRealm1.getUsers().add(makeUser("user2"));
         testRealm1.getUsers().add(makeUser("user3"));
+
+        setEventsConfig(testRealm1);
         testRealms.add(testRealm1);
 
         RealmRepresentation testRealm2 = loadJson(getClass().getResourceAsStream("/model/testrealm.json"), RealmRepresentation.class);
         testRealm2.setId("test-realm");
         testRealms.add(testRealm2);
+    }
+
+    private void setEventsConfig(RealmRepresentation realm) {
+        realm.setEventsEnabled(true);
+        realm.setAdminEventsEnabled(true);
+        realm.setAdminEventsDetailsEnabled(true);
+        realm.setEventsExpiration(600);
+        realm.setEnabledEventTypes(Arrays.asList("REGISTER", "REGISTER_ERROR", "LOGIN", "LOGIN_ERROR", "LOGOUT_ERROR"));
+    }
+
+    private void checkEventsConfig(RealmEventsConfigRepresentation config) {
+        Assert.assertTrue(config.isEventsEnabled());
+        Assert.assertTrue(config.isAdminEventsEnabled());
+        Assert.assertTrue(config.isAdminEventsDetailsEnabled());
+        Assert.assertEquals((Long) 600L, config.getEventsExpiration());
+        Assert.assertNames(new HashSet(config.getEnabledEventTypes()),"REGISTER", "REGISTER_ERROR", "LOGIN", "LOGIN_ERROR", "LOGOUT_ERROR");
     }
 
     private UserRepresentation makeUser(String userName) {
@@ -84,7 +109,7 @@ public class ExportImportTest extends AbstractExportImportTest {
         testFullExportImport();
 
         // There should be 6 files in target directory (3 realm, 3 user)
-        Assert.assertEquals(6, new File(targetDirPath).listFiles().length);
+        assertEquals(6, new File(targetDirPath).listFiles().length);
     }
 
     @Test
@@ -99,9 +124,9 @@ public class ExportImportTest extends AbstractExportImportTest {
 
         testRealmExportImport();
 
-        // There should be 3 files in target directory (1 realm, 3 user)
+        // There should be 3 files in target directory (1 realm, 4 user)
         File[] files = new File(targetDirPath).listFiles();
-        Assert.assertEquals(4, files.length);
+        assertEquals(5, files.length);
     }
 
     @Test
@@ -141,69 +166,7 @@ public class ExportImportTest extends AbstractExportImportTest {
 
         ExportImportUtil.assertDataImportedInRealm(adminClient, testingClient, testRealmRealm.toRepresentation());
     }
-
-    @Test
-    public void testComponentExportImport() throws Throwable {
-        RealmRepresentation realmRep = new RealmRepresentation();
-        realmRep.setRealm("component-realm");
-        adminClient.realms().create(realmRep);
-        Assert.assertEquals(4, adminClient.realms().findAll().size());
-        RealmResource realm = adminClient.realm("component-realm");
-        realmRep = realm.toRepresentation();
-        ComponentRepresentation component = new ComponentRepresentation();
-        component.setProviderId("dummy");
-        component.setProviderType("dummyType");
-        component.setName("dummy-name");
-        component.setParentId(realmRep.getId());
-        component.setConfig(new MultivaluedHashMap<>());
-        component.getConfig().add("name", "value");
-        realm.components().add(component);
-
-
-        testingClient.testing().exportImport().setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
-
-        String targetFilePath = testingClient.testing().exportImport().getExportImportTestDirectory() + File.separator + "singleFile-realm.json";
-        testingClient.testing().exportImport().setFile(targetFilePath);
-        testingClient.testing().exportImport().setAction(ExportImportConfig.ACTION_EXPORT);
-        testingClient.testing().exportImport().setRealmName("component-realm");
-
-        testingClient.testing().exportImport().runExport();
-
-        // Delete some realm (and some data in admin realm)
-        adminClient.realm("component-realm").remove();
-
-        Assert.assertEquals(3, adminClient.realms().findAll().size());
-
-        // Configure import
-        testingClient.testing().exportImport().setAction(ExportImportConfig.ACTION_IMPORT);
-
-        testingClient.testing().exportImport().runImport();
-
-        realmRep = realm.toRepresentation();
-
-        List<ComponentRepresentation> components = realm.components().query();
-
-        Assert.assertEquals(1, components.size());
-
-        component = components.get(0);
-
-        Assert.assertEquals("dummy-name", component.getName());
-        Assert.assertEquals("dummyType", component.getProviderType());
-        Assert.assertEquals("dummy", component.getProviderId());
-        Assert.assertEquals(realmRep.getId(), component.getParentId());
-        Assert.assertEquals(1, component.getConfig().size());
-        Assert.assertEquals("value", component.getConfig().getFirst("name"));
-
-        adminClient.realm("component-realm").remove();
-    }
-
-
-
-
-    private void removeRealm(String realmName) {
-        adminClient.realm(realmName).remove();
-    }
-
+    
     private void testFullExportImport() throws LifecycleException {
         testingClient.testing().exportImport().setAction(ExportImportConfig.ACTION_EXPORT);
         testingClient.testing().exportImport().setRealmName("");
@@ -212,7 +175,7 @@ public class ExportImportTest extends AbstractExportImportTest {
 
         removeRealm("test");
         removeRealm("test-realm");
-        Assert.assertEquals(1, adminClient.realms().findAll().size());
+        Assert.assertNames(adminClient.realms().findAll(), "master");
 
         assertNotAuthenticated("test", "test-user@localhost", "password");
         assertNotAuthenticated("test", "user1", "password");
@@ -225,7 +188,7 @@ public class ExportImportTest extends AbstractExportImportTest {
         testingClient.testing().exportImport().runImport();
 
         // Ensure data are imported back
-        Assert.assertEquals(3, adminClient.realms().findAll().size());
+        Assert.assertNames(adminClient.realms().findAll(), "master", "test", "test-realm");
 
         assertAuthenticated("test", "test-user@localhost", "password");
         assertAuthenticated("test", "user1", "password");
@@ -239,10 +202,16 @@ public class ExportImportTest extends AbstractExportImportTest {
 
         testingClient.testing().exportImport().runExport();
 
+        List<ComponentRepresentation> components = adminClient.realm("test").components().query();
+        KeysMetadataRepresentation keyMetadata = adminClient.realm("test").keys().getKeyMetadata();
+        String sampleRealmRoleId = adminClient.realm("test").roles().get("sample-realm-role").toRepresentation().getId();
+        String testAppId = adminClient.realm("test").clients().findByClientId("test-app").get(0).getId();
+        String sampleClientRoleId = adminClient.realm("test").clients().get(testAppId).roles().get("sample-client-role").toRepresentation().getId();
+
         // Delete some realm (and some data in admin realm)
         adminClient.realm("test").remove();
 
-        Assert.assertEquals(2, adminClient.realms().findAll().size());
+        Assert.assertNames(adminClient.realms().findAll(), "test-realm", "master");
 
         assertNotAuthenticated("test", "test-user@localhost", "password");
         assertNotAuthenticated("test", "user1", "password");
@@ -255,12 +224,26 @@ public class ExportImportTest extends AbstractExportImportTest {
         testingClient.testing().exportImport().runImport();
 
         // Ensure data are imported back, but just for "test" realm
-        Assert.assertEquals(3, adminClient.realms().findAll().size());
+        Assert.assertNames(adminClient.realms().findAll(), "master", "test", "test-realm");
 
         assertAuthenticated("test", "test-user@localhost", "password");
         assertAuthenticated("test", "user1", "password");
         assertAuthenticated("test", "user2", "password");
         assertAuthenticated("test", "user3", "password");
+
+        List<ComponentRepresentation> componentsImported = adminClient.realm("test").components().query();
+        assertComponents(components, componentsImported);
+
+        KeysMetadataRepresentation keyMetadataImported = adminClient.realm("test").keys().getKeyMetadata();
+        assertEquals(keyMetadata.getActive(), keyMetadataImported.getActive());
+
+        String importedSampleRealmRoleId = adminClient.realm("test").roles().get("sample-realm-role").toRepresentation().getId();
+        assertEquals(sampleRealmRoleId, importedSampleRealmRoleId);
+
+        String importedSampleClientRoleId = adminClient.realm("test").clients().get(testAppId).roles().get("sample-client-role").toRepresentation().getId();
+        assertEquals(sampleClientRoleId, importedSampleClientRoleId);
+
+        checkEventsConfig(adminClient.realm("test").getRealmEventsConfig());
     }
 
     private void assertAuthenticated(String realmName, String username, String password) {
@@ -272,7 +255,50 @@ public class ExportImportTest extends AbstractExportImportTest {
     }
 
     private void assertAuth(boolean expectedResult, String realmName, String username, String password) {
-        Assert.assertEquals(expectedResult, testingClient.testing().validCredentials(realmName, username, password));
+        assertEquals(expectedResult, testingClient.testing().validCredentials(realmName, username, password));
     }
+
+    private void assertComponents(List<ComponentRepresentation> expected, List<ComponentRepresentation> actual) {
+        expected.sort((o1, o2) -> o1.getId().compareTo(o2.getId()));
+        actual.sort((o1, o2) -> o1.getId().compareTo(o2.getId()));
+
+        assertEquals(expected.size(), actual.size());
+        for (int i = 0 ; i < expected.size(); i++) {
+            ComponentRepresentation e = expected.get(i);
+            ComponentRepresentation a = actual.get(i);
+
+            assertEquals(e.getId(), a.getId());
+            assertEquals(e.getName(), a.getName());
+            assertEquals(e.getProviderId(), a.getProviderId());
+            assertEquals(e.getProviderType(), a.getProviderType());
+            assertEquals(e.getParentId(), a.getParentId());
+            assertEquals(e.getSubType(), a.getSubType());
+            Assert.assertNames(e.getConfig().keySet(), a.getConfig().keySet().toArray(new String[] {}));
+
+            // Compare config values without take order into account
+            for (Map.Entry<String, List<String>> entry : e.getConfig().entrySet()) {
+                List<String> eList = entry.getValue();
+                List<String> aList = a.getConfig().getList(entry.getKey());
+                Assert.assertNames(eList, aList.toArray(new String[] {}));
+            }
+        }
+    }
+
+    private void clearExportImportProperties() {
+        // Clear export/import properties after test
+        Properties systemProps = System.getProperties();
+        Set<String> propsToRemove = new HashSet<String>();
+
+        for (Object key : systemProps.keySet()) {
+            if (key.toString().startsWith(ExportImportConfig.PREFIX)) {
+                propsToRemove.add(key.toString());
+            }
+        }
+
+        for (String propToRemove : propsToRemove) {
+            systemProps.remove(propToRemove);
+        }
+    }
+
 
 }

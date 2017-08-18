@@ -17,10 +17,11 @@
 
 package org.keycloak.models;
 
+import org.keycloak.component.ComponentModel;
+import org.keycloak.models.cache.UserCache;
 import org.keycloak.provider.Provider;
-import org.keycloak.scripting.ScriptingProvider;
+import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
-import org.keycloak.storage.federated.UserFederatedStorageProviderFactory;
 
 import java.util.Set;
 
@@ -59,6 +60,8 @@ public interface KeycloakSession {
      */
     <T extends Provider> T getProvider(Class<T> clazz, String id);
 
+    <T extends Provider> T getProvider(Class<T> clazz, ComponentModel componentModel);
+
     /**
      * Get all provider factories that manage provider instances of class.
      *
@@ -70,9 +73,12 @@ public interface KeycloakSession {
 
     <T extends Provider> Set<T> getAllProviders(Class<T> clazz);
 
+    Class<? extends Provider> getProviderClass(String providerClassName);
+
     Object getAttribute(String attribute);
     Object removeAttribute(String attribute);
     void setAttribute(String name, Object value);
+
 
     void enlistForClose(Provider provider);
 
@@ -97,31 +103,43 @@ public interface KeycloakSession {
     UserSessionProvider sessions();
 
 
+    AuthenticationSessionProvider authenticationSessions();
+
+
 
     void close();
 
     /**
-     * A cached view of all users in system.
+     * The user cache
+     *
+     * @return may be null if cache is disabled
+     */
+    UserCache userCache();
+
+    /**
+     * A cached view of all users in system including  users loaded by UserStorageProviders
      *
      * @return
      */
-    UserFederationManager users();
+    UserProvider users();
 
 
     /**
-     * Un-cached view of all users in system that does NOT include users available from the deprecated UserFederationProvider SPI.
+     * Un-cached view of all users in system including users loaded by UserStorageProviders
      *
      * @return
      */
     UserProvider userStorageManager();
 
     /**
-     *  A cached view of all users in system that does NOT include users available from the deprecated UserFederationProvider SPI.
+     * Service that allows you to valid and update credentials for a user
+     *
+     * @return
      */
-    UserProvider userStorage();
+    UserCredentialManager userCredentialManager();
 
     /**
-     * Keycloak specific local storage for users.  No cache in front, this api talks directly to database.
+     * Keycloak specific local storage for users.  No cache in front, this api talks directly to database configured for Keycloak
      *
      * @return
      */
@@ -129,14 +147,17 @@ public interface KeycloakSession {
 
     /**
      * Hybrid storage for UserStorageProviders that can't store a specific piece of keycloak data in their external storage.
+     * No cache in front.
      *
      * @return
      */
     UserFederatedStorageProvider userFederatedStorage();
 
-
     /**
-     * Keycloak scripting support.
+     * Key manager
+     *
+      * @return
      */
-    ScriptingProvider scripting();
+    KeyManager keys();
+
 }

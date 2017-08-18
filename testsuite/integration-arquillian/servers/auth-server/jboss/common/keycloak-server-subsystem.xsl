@@ -36,9 +36,23 @@
             </provider>
         </spi>
     </xsl:variable>
+    <xsl:variable name="samlPortsDefinition">
+            <spi name="login-protocol">
+                <provider name="saml" enabled="true">
+                    <properties>
+                        <property name="knownProtocols" value="[&quot;http=${{auth.server.http.port}}&quot;,&quot;https=${{auth.server.https.port}}&quot;]"/>
+                    </properties>
+                </provider>
+            </spi>
+    </xsl:variable>
+    <xsl:variable name="themeModuleDefinition">
+        <modules>
+            <module>org.keycloak.testsuite.integration-arquillian-testsuite-providers</module>
+        </modules>
+    </xsl:variable>
     
-    <!--inject provider-->
-    <xsl:template match="//*[local-name()='providers']/*[local-name()='provider']">
+    <!--inject provider; note: due to ibmjdk issues it tries to find out provider which has no attributes-->
+    <xsl:template match="//*[local-name()='subsystem' and starts-with(namespace-uri(), $nsKS)]//*[local-name()='provider' and not(@*)]">
         <xsl:copy>
             <xsl:apply-templates select="@*|node()" />
         </xsl:copy>
@@ -46,12 +60,21 @@
             <xsl:text>module:org.keycloak.testsuite.integration-arquillian-testsuite-providers</xsl:text>
         </provider>
     </xsl:template>
+
+    <!--inject provider for themes -->
+    <xsl:template match="//*[local-name()='theme']">
+        <xsl:copy>
+            <xsl:apply-templates select="@*|node()" />
+            <xsl:copy-of select="$themeModuleDefinition"/>
+        </xsl:copy>
+    </xsl:template>
     
-    <!--inject truststore-->
+    <!--inject truststore and SAML port-protocol mappings-->
     <xsl:template match="//*[local-name()='subsystem' and starts-with(namespace-uri(), $nsKS)]">
         <xsl:copy>
             <xsl:apply-templates select="@*|node()" />
             <xsl:copy-of select="$truststoreDefinition"/>
+            <xsl:copy-of select="$samlPortsDefinition"/>
         </xsl:copy>
     </xsl:template>
 

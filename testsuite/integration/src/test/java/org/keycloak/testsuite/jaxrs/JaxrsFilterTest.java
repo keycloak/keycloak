@@ -17,15 +17,6 @@
 
 package org.keycloak.testsuite.jaxrs;
 
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.UUID;
-
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.Form;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
@@ -38,8 +29,9 @@ import org.junit.rules.ExternalResource;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenIdGenerator;
 import org.keycloak.adapters.CorsHeaders;
-import org.keycloak.constants.AdapterConstants;
 import org.keycloak.adapters.HttpClientBuilder;
+import org.keycloak.common.util.Time;
+import org.keycloak.constants.AdapterConstants;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -52,8 +44,15 @@ import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
-import org.keycloak.common.util.Time;
 import org.openqa.selenium.WebDriver;
+
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.Form;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.UUID;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -289,46 +288,6 @@ public class JaxrsFilterTest {
         JaxrsTestResource.SimpleRepresentation getRep = goodResp.readEntity(JaxrsTestResource.SimpleRepresentation.class);
         Assert.assertEquals("get", getRep.getMethod());
         goodResp.close();
-    }
-
-    @Test
-    public void testPushNotBefore() {
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                Map<String,String> initParams = new TreeMap<String,String>();
-                initParams.put(CONFIG_FILE_INIT_PARAM, "classpath:jaxrs-test/jaxrs-keycloak.json");
-                keycloakRule.deployJaxrsApplication("JaxrsSimpleApp", "/jaxrs-simple", JaxrsTestApplication.class, initParams);
-            }
-
-        });
-
-        // Retrieve token
-        OAuthClient.AccessTokenResponse accessTokenResp = retrieveAccessToken();
-        String authHeader = "Bearer " + accessTokenResp.getAccessToken();
-
-        // Send GET request with token and assert it's passing
-        JaxrsTestResource.SimpleRepresentation getRep = client.target(JAXRS_APP_URL).request()
-                .header(HttpHeaders.AUTHORIZATION, authHeader)
-                .get(JaxrsTestResource.SimpleRepresentation.class);
-        Assert.assertEquals("get", getRep.getMethod());
-        Assert.assertTrue(getRep.getHasUserRole());
-
-        // Push new notBefore now TODO: should use admin console (admin client) instead..
-        int currentTime = Time.currentTime();
-        PushNotBeforeAction action = new PushNotBeforeAction(TokenIdGenerator.generateId(), currentTime + 30, "jaxrs-app", currentTime + 1);
-        String token = new TokenManager().encodeToken(appRealm, action);
-        Response response = client.target(JAXRS_APP_PUSN_NOT_BEFORE_URL).request().post(Entity.text(token));
-        Assert.assertEquals(204, response.getStatus());
-        response.close();
-
-        // Assert that previous token shouldn't pass anymore
-        response = client.target(JAXRS_APP_URL).request()
-                .header(HttpHeaders.AUTHORIZATION, authHeader)
-                .get();
-        Assert.assertEquals(401, response.getStatus());
-        response.close();
     }
 
     // @Test

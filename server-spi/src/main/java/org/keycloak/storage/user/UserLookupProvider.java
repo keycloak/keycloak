@@ -20,6 +20,9 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
 /**
+ * Optional capability interface implemented by UserStorageProviders.  This interface is required
+ * if you want the UserStorageProvider to support basic login capabilities.
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */

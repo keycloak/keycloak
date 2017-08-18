@@ -25,7 +25,9 @@ import org.keycloak.exportimport.util.ExportImportSessionTask;
 import org.keycloak.exportimport.util.ImportUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.util.JsonSerialization;
 
@@ -61,6 +63,10 @@ public class DirImportProvider implements ImportProvider {
 
     public DirImportProvider(File rootDirectory) {
         this.rootDirectory = rootDirectory;
+
+        if (!this.rootDirectory.exists()) {
+            throw new IllegalStateException("Directory " + this.rootDirectory + " doesn't exists");
+        }
 
         logger.infof("Importing from directory %s", this.rootDirectory.getAbsolutePath());
     }
@@ -115,6 +121,13 @@ public class DirImportProvider implements ImportProvider {
                 return name.matches(realmName + "-users-[0-9]+\\.json");
             }
         });
+        File[] federatedUserFiles = this.rootDirectory.listFiles(new FilenameFilter() {
+
+            @Override
+            public boolean accept(File dir, String name) {
+                return name.matches(realmName + "-federated-users-[0-9]+\\.json");
+            }
+        });
 
         // Import realm first
         FileInputStream is = new FileInputStream(realmFile);
@@ -125,7 +138,7 @@ public class DirImportProvider implements ImportProvider {
 
             @Override
             public void runExportImportTask(KeycloakSession session) throws IOException {
-                boolean imported = ImportUtils.importRealm(session, realmRep, strategy);
+                boolean imported = ImportUtils.importRealm(session, realmRep, strategy, true);
                 realmImported.set(imported);
             }
 
@@ -143,7 +156,28 @@ public class DirImportProvider implements ImportProvider {
                     }
                 });
             }
+            for (final File userFile : federatedUserFiles) {
+                final FileInputStream fis = new FileInputStream(userFile);
+                KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
+                    @Override
+                    protected void runExportImportTask(KeycloakSession session) throws IOException {
+                        ImportUtils.importFederatedUsersFromStream(session, realmName, JsonSerialization.mapper, fis);
+                        logger.infof("Imported federated users from %s", userFile.getAbsolutePath());
+                    }
+                });
+            }
         }
+
+        // Import authorization last, as authzPolicies can require users already in DB
+        KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
+
+            @Override
+            public void runExportImportTask(KeycloakSession session) throws IOException {
+                RealmModel realm = session.realms().getRealmByName(realmName);
+                RepresentationToModel.importRealmAuthorizationSettings(realmRep, realm, session);
+            }
+
+        });
     }
 
     @Override

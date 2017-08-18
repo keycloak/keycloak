@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-authz-provider-parent</artifactId>
-        <version>2.2.0-SNAPSHOT</version>
+        <version>3.3.0.CR1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -17,10 +17,28 @@
     <name>KeyCloak AuthZ: Drools Policy Provider</name>
     <description>KeyCloak AuthZ: Drools Policy Provider</description>
 
+    <dependencyManagement>
+        <dependencies>
+            <!-- Authorization Drools Policy Provider -->
+            <dependency>
+                <groupId>org.drools</groupId>
+                <artifactId>drools-bom</artifactId>
+                <type>pom</type>
+                <version>${version.org.drools}</version>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-server-spi</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-server-spi-private</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>

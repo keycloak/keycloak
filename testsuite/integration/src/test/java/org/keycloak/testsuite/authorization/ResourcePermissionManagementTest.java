@@ -25,6 +25,10 @@ import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.DefaultEvaluation;
+import org.keycloak.authorization.store.PolicyStore;
+import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.models.ClientModel;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
@@ -34,6 +38,7 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -41,8 +46,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -70,7 +78,7 @@ public class ResourcePermissionManagementTest extends AbstractPhotozAdminTest {
         PolicyRepresentation permission = response.readEntity(PolicyRepresentation.class);
 
         onAuthorizationSession(authorizationProvider -> {
-            Policy policyModel = authorizationProvider.getStoreFactory().getPolicyStore().findById(permission.getId());
+            Policy policyModel = authorizationProvider.getStoreFactory().getPolicyStore().findById(permission.getId(), resourceServer.getId());
 
             assertNotNull(policyModel);
             assertEquals(permission.getId(), policyModel.getId());
@@ -325,6 +333,96 @@ public class ResourcePermissionManagementTest extends AbstractPhotozAdminTest {
         assertEquals(0, evaluationsUserRole.size());
     }
 
+    @Test
+    public void testResourceAccessWithClientBasedPolicy() throws Exception {
+        ClientModel testClient1 = getClientByClientId("test-client-1");
+        ClientModel testClient2 = getClientByClientId("test-client-2");
+        Policy clientPolicy = createClientPolicy(Collections.singletonList(testClient1));
+
+        PolicyRepresentation newPermission = new PolicyRepresentation();
+
+        newPermission.setName("Client Permission");
+        newPermission.setType("resource");
+
+        HashedMap config = new HashedMap();
+
+        config.put("defaultResourceType", "http://photoz.com/admin");
+        config.put("applyPolicies", JsonSerialization.writeValueAsString(new String[] {clientPolicy.getId()}));
+
+        newPermission.setConfig(config);
+
+        Response response = newPermissionRequest().post(Entity.entity(newPermission, MediaType.APPLICATION_JSON_TYPE));
+
+        assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+
+        PolicyRepresentation permission = response.readEntity(PolicyRepresentation.class);
+
+        onAuthorizationSession(authorizationProvider -> {
+            Policy policyModel = authorizationProvider.getStoreFactory().getPolicyStore().findById(permission.getId(), resourceServer.getId());
+
+            assertNotNull(policyModel);
+            assertEquals(permission.getId(), policyModel.getId());
+            assertEquals(newPermission.getName(), policyModel.getName());
+            assertEquals(resourceServer.getId(), policyModel.getResourceServer().getId());
+        });
+
+        Map<String, DefaultEvaluation> evaluations = performEvaluation(
+                Collections.singletonList(new ResourcePermission(adminResource, Collections.emptyList(), resourceServer)),
+                createAccessTokenForClient(testClient1),
+                createClientConnection("127.0.0.1"));
+
+        assertEquals(1, evaluations.size());
+        assertTrue(evaluations.containsKey(clientPolicy.getId()));
+        assertEquals(Effect.PERMIT, evaluations.get(clientPolicy.getId()).getEffect());
+
+        Map<String, DefaultEvaluation> evaluations2 = performEvaluation(
+                Collections.singletonList(new ResourcePermission(adminResource, Collections.emptyList(), resourceServer)),
+                createAccessTokenForClient(testClient2),
+                createClientConnection("127.0.0.1"));
+
+        assertEquals(1, evaluations2.size());
+        assertTrue(evaluations2.containsKey(clientPolicy.getId()));
+        assertEquals(Effect.DENY, evaluations2.get(clientPolicy.getId()).getEffect());
+    }
+
+    private Policy createClientPolicy(List<ClientModel> allowedClients) {
+        return onAuthorizationSession(authorizationProvider -> {
+            StoreFactory storeFactory = authorizationProvider.getStoreFactory();
+            PolicyStore policyStore = storeFactory.getPolicyStore();
+            PolicyRepresentation representation = new PolicyRepresentation();
+
+            representation.setName("Client-Based Policy");
+            representation.setType("client");
+
+            List<String> clientIds = new ArrayList<>();
+            for (ClientModel client : allowedClients) {
+                clientIds.add(client.getId());
+            }
+
+            String[] clients = clientIds.toArray(new String[clientIds.size()]);
+            HashedMap config = new HashedMap();
+
+            try {
+                config.put("clients", JsonSerialization.writeValueAsString(clients));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            representation.setConfig(config);
+
+            return policyStore.create(representation, resourceServer);
+        });
+    }
+
+    private AccessToken createAccessTokenForClient(ClientModel client) {
+        AccessToken accessToken = new AccessToken();
+
+        accessToken.setRealmAccess(new AccessToken.Access());
+        accessToken.issuedFor = client.getClientId();
+
+        return accessToken;
+    }
+
     private PolicyRepresentation createAlbumResourceTypePermission() throws Exception {
         PolicyRepresentation newPermission = new PolicyRepresentation();
 
@@ -336,7 +434,8 @@ public class ResourcePermissionManagementTest extends AbstractPhotozAdminTest {
 
         config.put("defaultResourceType",  albumResource.getType());
 
-        String applyPolicies = JsonSerialization.writeValueAsString(new String[]{this.anyUserPolicy.getId(), this.administrationPolicy.getId()});
+        String[] associatedPolicies = {this.anyUserPolicy.getId(), this.administrationPolicy.getId()};
+        String applyPolicies = JsonSerialization.writeValueAsString(associatedPolicies);
 
         config.put("applyPolicies", applyPolicies);
 
@@ -349,14 +448,15 @@ public class ResourcePermissionManagementTest extends AbstractPhotozAdminTest {
         PolicyRepresentation permission = response.readEntity(PolicyRepresentation.class);
 
         onAuthorizationSession(authorizationProvider -> {
-            Policy policyModel = authorizationProvider.getStoreFactory().getPolicyStore().findById(permission.getId());
+            Policy policyModel = authorizationProvider.getStoreFactory().getPolicyStore().findById(permission.getId(), resourceServer.getId());
 
             assertNotNull(policyModel);
             assertEquals(permission.getId(), policyModel.getId());
             assertEquals(permission.getName(), policyModel.getName());
             assertEquals(permission.getType(), policyModel.getType());
             assertTrue(permission.getConfig().containsValue(albumResource.getType()));
-            assertTrue(permission.getConfig().containsValue(applyPolicies));
+            assertTrue(policyModel.getAssociatedPolicies().stream().map(Policy::getId).collect(Collectors.toList()).containsAll(Arrays.asList(associatedPolicies)));
+
             assertEquals(resourceServer.getId(), policyModel.getResourceServer().getId());
         });
 

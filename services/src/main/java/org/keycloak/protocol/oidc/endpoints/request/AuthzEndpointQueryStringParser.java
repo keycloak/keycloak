@@ -17,9 +17,8 @@
 
 package org.keycloak.protocol.oidc.endpoints.request;
 
-import java.util.Set;
-
 import javax.ws.rs.core.MultivaluedMap;
+import java.util.Set;
 
 /**
  * Parse the parameters from request queryString

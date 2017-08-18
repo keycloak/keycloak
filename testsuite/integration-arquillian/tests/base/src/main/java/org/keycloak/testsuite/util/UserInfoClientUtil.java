@@ -17,18 +17,17 @@
 
 package org.keycloak.testsuite.util;
 
-import java.net.URI;
+import org.junit.Assert;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.representations.UserInfo;
+import org.keycloak.utils.MediaType;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
-
-import org.junit.Assert;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
-import org.keycloak.representations.UserInfo;
-import org.keycloak.utils.MediaType;
+import java.net.URI;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -50,7 +49,7 @@ public class UserInfoClientUtil {
         return client.target(userInfoUri);
     }
 
-    public static void testSuccessfulUserInfoResponse(Response response, String expectedUsername, String expectedEmail) {
+    public static UserInfo testSuccessfulUserInfoResponse(Response response, String expectedUsername, String expectedEmail) {
         Assert.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         Assert.assertEquals(response.getHeaderString(HttpHeaders.CONTENT_TYPE), MediaType.APPLICATION_JSON);
 
@@ -62,6 +61,7 @@ public class UserInfoClientUtil {
         Assert.assertNotNull(userInfo.getSubject());
         Assert.assertEquals(expectedEmail, userInfo.getEmail());
         Assert.assertEquals(expectedUsername, userInfo.getPreferredUsername());
+        return userInfo;
     }
 
 }

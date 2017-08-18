@@ -12,7 +12,7 @@
             <a href="#/realms/{{realm.realm}}/client-templates/{{template.id}}/mappers">{{:: 'mappers' | translate}}</a>
             <kc-tooltip>{{:: 'mappers.tooltip' | translate}}</kc-tooltip>
         </li>
-        <li ng-class="{active: path[4] == 'scope-mappings'}" >
+        <li ng-class="{active: path[4] == 'scope-mappings'}" data-ng-show="client.protocol != 'docker-v2'">
             <a href="#/realms/{{realm.realm}}/client-templates/{{template.id}}/scope-mappings">{{:: 'scope' | translate}}</a>
             <kc-tooltip>{{:: 'scope.tooltip' | translate}}</kc-tooltip>
         </li>

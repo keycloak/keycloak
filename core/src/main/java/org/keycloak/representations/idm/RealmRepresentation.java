@@ -20,7 +20,12 @@ package org.keycloak.representations.idm;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.keycloak.common.util.MultivaluedHashMap;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -41,6 +46,8 @@ public class RealmRepresentation {
     protected Integer accessCodeLifespan;
     protected Integer accessCodeLifespanUserAction;
     protected Integer accessCodeLifespanLogin;
+    protected Integer actionTokenGeneratedByAdminLifespan;
+    protected Integer actionTokenGeneratedByUserLifespan;
     protected Boolean enabled;
     protected String sslRequired;
     @Deprecated
@@ -49,6 +56,8 @@ public class RealmRepresentation {
     protected Boolean registrationEmailAsUsername;
     protected Boolean rememberMe;
     protected Boolean verifyEmail;
+    protected Boolean loginWithEmailAllowed;
+    protected Boolean duplicateEmailsAllowed;
     protected Boolean resetPasswordAllowed;
     protected Boolean editUsernameAllowed;
 
@@ -59,6 +68,7 @@ public class RealmRepresentation {
 
     //--- brute force settings
     protected Boolean bruteForceProtected;
+    protected Boolean permanentLockout;
     protected Integer maxFailureWaitSeconds;
     protected Integer minimumQuickLoginWaitSeconds;
     protected Integer waitIncrementSeconds;
@@ -67,9 +77,13 @@ public class RealmRepresentation {
     protected Integer failureFactor;
     //--- end brute force settings
 
+    @Deprecated
     protected String privateKey;
+    @Deprecated
     protected String publicKey;
+    @Deprecated
     protected String certificate;
+    @Deprecated
     protected String codeSecret;
     protected RolesRepresentation roles;
     protected List<GroupRepresentation> groups;
@@ -86,6 +100,7 @@ public class RealmRepresentation {
     protected Integer otpPolicyPeriod;
 
     protected List<UserRepresentation> users;
+    protected List<UserRepresentation> federatedUsers;
     protected List<ScopeMappingRepresentation> scopeMappings;
     protected Map<String, List<ScopeMappingRepresentation>> clientScopeMappings;
     protected List<ClientRepresentation> clients;
@@ -122,6 +137,9 @@ public class RealmRepresentation {
     protected String directGrantFlow;
     protected String resetCredentialsFlow;
     protected String clientAuthenticationFlow;
+    protected String dockerAuthenticationFlow;
+
+    protected Map<String, String> attributes;
 
     protected String keycloakVersion;
 
@@ -323,6 +341,22 @@ public class RealmRepresentation {
         this.accessCodeLifespanLogin = accessCodeLifespanLogin;
     }
 
+    public Integer getActionTokenGeneratedByAdminLifespan() {
+        return actionTokenGeneratedByAdminLifespan;
+    }
+
+    public void setActionTokenGeneratedByAdminLifespan(Integer actionTokenGeneratedByAdminLifespan) {
+        this.actionTokenGeneratedByAdminLifespan = actionTokenGeneratedByAdminLifespan;
+    }
+
+    public Integer getActionTokenGeneratedByUserLifespan() {
+        return actionTokenGeneratedByUserLifespan;
+    }
+
+    public void setActionTokenGeneratedByUserLifespan(Integer actionTokenGeneratedByUserLifespan) {
+        this.actionTokenGeneratedByUserLifespan = actionTokenGeneratedByUserLifespan;
+    }
+
     public List<String> getDefaultRoles() {
         return defaultRoles;
     }
@@ -405,6 +439,22 @@ public class RealmRepresentation {
 
     public void setVerifyEmail(Boolean verifyEmail) {
         this.verifyEmail = verifyEmail;
+    }
+    
+    public Boolean isLoginWithEmailAllowed() {
+        return loginWithEmailAllowed;
+    }
+
+    public void setLoginWithEmailAllowed(Boolean loginWithEmailAllowed) {
+        this.loginWithEmailAllowed = loginWithEmailAllowed;
+    }
+    
+    public Boolean isDuplicateEmailsAllowed() {
+        return duplicateEmailsAllowed;
+    }
+
+    public void setDuplicateEmailsAllowed(Boolean duplicateEmailsAllowed) {
+        this.duplicateEmailsAllowed = duplicateEmailsAllowed;
     }
 
     public Boolean isResetPasswordAllowed() {
@@ -526,6 +576,14 @@ public class RealmRepresentation {
 
     public void setBruteForceProtected(Boolean bruteForceProtected) {
         this.bruteForceProtected = bruteForceProtected;
+    }
+
+    public Boolean isPermanentLockout() {
+        return permanentLockout;
+    }
+
+    public void setPermanentLockout(Boolean permanentLockout) {
+        this.permanentLockout = permanentLockout;
     }
 
     public Integer getMaxFailureWaitSeconds() {
@@ -827,6 +885,15 @@ public class RealmRepresentation {
         this.clientAuthenticationFlow = clientAuthenticationFlow;
     }
 
+    public String getDockerAuthenticationFlow() {
+        return dockerAuthenticationFlow;
+    }
+
+    public RealmRepresentation setDockerAuthenticationFlow(final String dockerAuthenticationFlow) {
+        this.dockerAuthenticationFlow = dockerAuthenticationFlow;
+        return this;
+    }
+
     public String getKeycloakVersion() {
         return keycloakVersion;
     }
@@ -864,4 +931,19 @@ public class RealmRepresentation {
         return identityProviders != null && !identityProviders.isEmpty();
     }
 
+    public void setAttributes(Map<String, String> attributes) {
+        this.attributes = attributes;
+    }
+
+    public Map<String, String> getAttributes() {
+        return attributes;
+    }
+
+    public List<UserRepresentation> getFederatedUsers() {
+        return federatedUsers;
+    }
+
+    public void setFederatedUsers(List<UserRepresentation> federatedUsers) {
+        this.federatedUsers = federatedUsers;
+    }
 }

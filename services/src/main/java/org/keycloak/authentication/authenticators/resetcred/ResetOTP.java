@@ -33,13 +33,13 @@ public class ResetOTP extends AbstractSetRequiredActionAuthenticator {
         if (context.getExecution().isRequired() ||
                 (context.getExecution().isOptional() &&
                         configuredFor(context))) {
-            context.getClientSession().addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP);
+            context.getAuthenticationSession().addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP);
         }
         context.success();
     }
 
     protected boolean configuredFor(AuthenticationFlowContext context) {
-        return context.getSession().users().configuredForCredentialType(context.getRealm().getOTPPolicy().getType(), context.getRealm(), context.getUser());
+        return context.getSession().userCredentialManager().isConfiguredFor(context.getRealm(), context.getUser(), context.getRealm().getOTPPolicy().getType());
     }
 
     @Override

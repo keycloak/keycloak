@@ -40,10 +40,14 @@ public class WebRule extends ExternalResource {
         this.test = test;
     }
 
-    @Override
-    public void before() throws Throwable {
+    public void initProperties() {
         driver = createWebDriver();
         oauth = new OAuthClient(driver);
+    }
+
+    @Override
+    public void before() throws Throwable {
+        initProperties();
         initWebResources(test);
     }
 
@@ -58,6 +62,7 @@ public class WebRule extends ExternalResource {
             HtmlUnitDriver d = new HtmlUnitDriver();
             d.getWebClient().getOptions().setJavaScriptEnabled(true);
             d.getWebClient().getOptions().setCssEnabled(false);
+            d.getWebClient().getOptions().setTimeout(1000000);
             driver = d;
         } else if (browser.equals("chrome")) {
             driver = new ChromeDriver();

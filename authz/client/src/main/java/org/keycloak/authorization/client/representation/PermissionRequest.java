@@ -19,8 +19,6 @@ package org.keycloak.authorization.client.representation;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -35,6 +33,25 @@ public class PermissionRequest {
     private String resourceSetName;
 
     private Set<String> scopes;
+
+    public PermissionRequest() {
+
+    }
+
+    public PermissionRequest(String resourceSetId, String resourceSetName, Set<String> scopes) {
+        this.resourceSetId = resourceSetId;
+        this.resourceSetName = resourceSetName;
+        this.scopes = scopes;
+    }
+
+    public PermissionRequest(String resourceSetName) {
+        this.resourceSetName = resourceSetName;
+    }
+
+    public PermissionRequest(String resourceSetName, Set<String> scopes) {
+        this.resourceSetName = resourceSetName;
+        this.scopes = scopes;
+    }
 
     public String getResourceSetId() {
         return this.resourceSetId;

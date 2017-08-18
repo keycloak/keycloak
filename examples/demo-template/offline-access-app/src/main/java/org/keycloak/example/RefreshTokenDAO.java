@@ -17,14 +17,14 @@
 
 package org.keycloak.example;
 
+import org.keycloak.common.util.StreamUtil;
+
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-
-import org.keycloak.common.util.StreamUtil;
 
 /**
  * Very simple DAO, which stores/loads just one token per whole application into file in tmp directory. Useful just for example purposes.

@@ -17,6 +17,8 @@
 
 package org.keycloak.representations.idm;
 
+import org.keycloak.common.util.MultivaluedHashMap;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -45,6 +47,7 @@ public class CredentialRepresentation {
     private Integer digits;
     private Integer period;
     private Long createdDate;
+    private MultivaluedHashMap<String, String> config;
 
     // only used when updating a credential.  Might set required action
     protected Boolean temporary;
@@ -143,5 +146,110 @@ public class CredentialRepresentation {
 
     public void setCreatedDate(Long createdDate) {
         this.createdDate = createdDate;
+    }
+
+    public MultivaluedHashMap<String, String> getConfig() {
+        return config;
+    }
+
+    public void setConfig(MultivaluedHashMap<String, String> config) {
+        this.config = config;
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((algorithm == null) ? 0 : algorithm.hashCode());
+        result = prime * result + ((config == null) ? 0 : config.hashCode());
+        result = prime * result + ((counter == null) ? 0 : counter.hashCode());
+        result = prime * result + ((createdDate == null) ? 0 : createdDate.hashCode());
+        result = prime * result + ((device == null) ? 0 : device.hashCode());
+        result = prime * result + ((digits == null) ? 0 : digits.hashCode());
+        result = prime * result + ((hashIterations == null) ? 0 : hashIterations.hashCode());
+        result = prime * result + ((hashedSaltedValue == null) ? 0 : hashedSaltedValue.hashCode());
+        result = prime * result + ((period == null) ? 0 : period.hashCode());
+        result = prime * result + ((salt == null) ? 0 : salt.hashCode());
+        result = prime * result + ((temporary == null) ? 0 : temporary.hashCode());
+        result = prime * result + ((type == null) ? 0 : type.hashCode());
+        result = prime * result + ((value == null) ? 0 : value.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        CredentialRepresentation other = (CredentialRepresentation) obj;
+        if (algorithm == null) {
+            if (other.algorithm != null)
+                return false;
+        } else if (!algorithm.equals(other.algorithm))
+            return false;
+        if (config == null) {
+            if (other.config != null)
+                return false;
+        } else if (!config.equals(other.config))
+            return false;
+        if (counter == null) {
+            if (other.counter != null)
+                return false;
+        } else if (!counter.equals(other.counter))
+            return false;
+        if (createdDate == null) {
+            if (other.createdDate != null)
+                return false;
+        } else if (!createdDate.equals(other.createdDate))
+            return false;
+        if (device == null) {
+            if (other.device != null)
+                return false;
+        } else if (!device.equals(other.device))
+            return false;
+        if (digits == null) {
+            if (other.digits != null)
+                return false;
+        } else if (!digits.equals(other.digits))
+            return false;
+        if (hashIterations == null) {
+            if (other.hashIterations != null)
+                return false;
+        } else if (!hashIterations.equals(other.hashIterations))
+            return false;
+        if (hashedSaltedValue == null) {
+            if (other.hashedSaltedValue != null)
+                return false;
+        } else if (!hashedSaltedValue.equals(other.hashedSaltedValue))
+            return false;
+        if (period == null) {
+            if (other.period != null)
+                return false;
+        } else if (!period.equals(other.period))
+            return false;
+        if (salt == null) {
+            if (other.salt != null)
+                return false;
+        } else if (!salt.equals(other.salt))
+            return false;
+        if (temporary == null) {
+            if (other.temporary != null)
+                return false;
+        } else if (!temporary.equals(other.temporary))
+            return false;
+        if (type == null) {
+            if (other.type != null)
+                return false;
+        } else if (!type.equals(other.type))
+            return false;
+        if (value == null) {
+            if (other.value != null)
+                return false;
+        } else if (!value.equals(other.value))
+            return false;
+        return true;
     }
 }

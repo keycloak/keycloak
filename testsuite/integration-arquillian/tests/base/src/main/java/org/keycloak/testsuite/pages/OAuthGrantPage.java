@@ -22,7 +22,7 @@ import org.openqa.selenium.support.FindBy;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class OAuthGrantPage extends AbstractPage {
+public class OAuthGrantPage extends LanguageComboboxAwarePage {
 
     @FindBy(css = "input[name=\"accept\"]")
     private WebElement acceptButton;

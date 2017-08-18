@@ -26,14 +26,13 @@ import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentati
 import org.keycloak.testsuite.actions.DummyRequiredActionFactory;
 import org.keycloak.testsuite.util.AdminEventPaths;
 
+import javax.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import javax.ws.rs.NotFoundException;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>

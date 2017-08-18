@@ -24,22 +24,25 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * Configuration for Java based adapters
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @author <a href="mailto:brad.culley@spartasystems.com">Brad Culley</a>
+ * @author <a href="mailto:john.ament@spartasystems.com">John D. Ament</a>
  * @version $Revision: 1 $
  */
 @JsonPropertyOrder({"realm", "realm-public-key", "auth-server-url", "ssl-required",
         "resource", "public-client", "credentials",
         "use-resource-role-mappings",
-        "enable-cors", "cors-max-age", "cors-allowed-methods",
-        "expose-token", "bearer-only",
+        "enable-cors", "cors-max-age", "cors-allowed-methods", "cors-exposed-headers",
+        "expose-token", "bearer-only", "autodetect-bearer-only",
         "connection-pool-size",
         "allow-any-hostname", "disable-trust-manager", "truststore", "truststore-password",
         "client-keystore", "client-keystore-password", "client-key-password",
         "always-refresh-token",
         "register-node-at-startup", "register-node-period", "token-store", "principal-attribute",
         "proxy-url", "turn-off-change-session-id-on-login", "token-minimum-time-to-live",
-        "policy-enforcer"
+        "min-time-between-jwks-requests", "public-key-cache-ttl",
+        "policy-enforcer", "ignore-oauth-query-parameter"
 })
-public class AdapterConfig extends BaseAdapterConfig {
+public class AdapterConfig extends BaseAdapterConfig implements AdapterHttpClientConfig {
 
     @JsonProperty("allow-any-hostname")
     protected boolean allowAnyHostname;
@@ -71,8 +74,17 @@ public class AdapterConfig extends BaseAdapterConfig {
     protected Boolean turnOffChangeSessionIdOnLogin;
     @JsonProperty("token-minimum-time-to-live")
     protected int tokenMinimumTimeToLive = 0;
+    @JsonProperty("min-time-between-jwks-requests")
+    protected int minTimeBetweenJwksRequests = 10;
+    @JsonProperty("public-key-cache-ttl")
+    protected int publicKeyCacheTtl = 86400; // 1 day
     @JsonProperty("policy-enforcer")
     protected PolicyEnforcerConfig policyEnforcerConfig;
+    // https://tools.ietf.org/html/rfc7636
+    @JsonProperty("enable-pkce")
+    protected boolean pkce = false;
+    @JsonProperty("ignore-oauth-query-parameter")
+    protected boolean ignoreOAuthQueryParameter = false;
 
     /**
      * The Proxy url to use for requests to the auth-server, configurable via the adapter config property {@code proxy-url}.
@@ -80,6 +92,7 @@ public class AdapterConfig extends BaseAdapterConfig {
     @JsonProperty("proxy-url")
     protected String proxyUrl;
 
+    @Override
     public boolean isAllowAnyHostname() {
         return allowAnyHostname;
     }
@@ -88,6 +101,7 @@ public class AdapterConfig extends BaseAdapterConfig {
         this.allowAnyHostname = allowAnyHostname;
     }
 
+    @Override
     public boolean isDisableTrustManager() {
         return disableTrustManager;
     }
@@ -96,6 +110,7 @@ public class AdapterConfig extends BaseAdapterConfig {
         this.disableTrustManager = disableTrustManager;
     }
 
+    @Override
     public String getTruststore() {
         return truststore;
     }
@@ -104,6 +119,7 @@ public class AdapterConfig extends BaseAdapterConfig {
         this.truststore = truststore;
     }
 
+    @Override
     public String getTruststorePassword() {
         return truststorePassword;
     }
@@ -112,6 +128,7 @@ public class AdapterConfig extends BaseAdapterConfig {
         this.truststorePassword = truststorePassword;
     }
 
+    @Override
     public String getClientKeystore() {
         return clientKeystore;
     }
@@ -120,6 +137,7 @@ public class AdapterConfig extends BaseAdapterConfig {
         this.clientKeystore = clientKeystore;
     }
 
+    @Override
     public String getClientKeystorePassword() {
         return clientKeystorePassword;
     }
@@ -136,6 +154,7 @@ public class AdapterConfig extends BaseAdapterConfig {
         this.clientKeyPassword = clientKeyPassword;
     }
 
+    @Override
     public int getConnectionPoolSize() {
         return connectionPoolSize;
     }
@@ -200,6 +219,7 @@ public class AdapterConfig extends BaseAdapterConfig {
         this.policyEnforcerConfig = policyEnforcerConfig;
     }
 
+    @Override
     public String getProxyUrl() {
         return proxyUrl;
     }
@@ -216,4 +236,36 @@ public class AdapterConfig extends BaseAdapterConfig {
         this.tokenMinimumTimeToLive = tokenMinimumTimeToLive;
     }
 
+    public int getMinTimeBetweenJwksRequests() {
+        return minTimeBetweenJwksRequests;
+    }
+
+    public void setMinTimeBetweenJwksRequests(int minTimeBetweenJwksRequests) {
+        this.minTimeBetweenJwksRequests = minTimeBetweenJwksRequests;
+    }
+
+    public int getPublicKeyCacheTtl() {
+        return publicKeyCacheTtl;
+    }
+
+    public void setPublicKeyCacheTtl(int publicKeyCacheTtl) {
+        this.publicKeyCacheTtl = publicKeyCacheTtl;
+    }
+
+    // https://tools.ietf.org/html/rfc7636
+    public boolean isPkce() {
+        return pkce;
+    }
+
+    public void setPkce(boolean pkce) {
+        this.pkce = pkce;
+    }
+
+    public boolean isIgnoreOAuthQueryParameter() {
+        return ignoreOAuthQueryParameter;
+    }
+
+    public void setIgnoreOAuthQueryParameter(boolean ignoreOAuthQueryParameter) {
+        this.ignoreOAuthQueryParameter = ignoreOAuthQueryParameter;
+    }
 }

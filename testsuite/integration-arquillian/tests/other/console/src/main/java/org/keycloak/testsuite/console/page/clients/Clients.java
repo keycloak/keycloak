@@ -17,15 +17,14 @@
  */
 package org.keycloak.testsuite.console.page.clients;
 
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.testsuite.console.page.AdminConsoleRealm;
+import org.keycloak.testsuite.console.page.fragment.DataTable;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.keycloak.admin.client.resource.ClientsResource;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.testsuite.console.page.AdminConsoleRealm;
-import org.keycloak.testsuite.console.page.fragment.DataTable;
 
 import static org.openqa.selenium.By.linkText;
 import static org.openqa.selenium.By.tagName;

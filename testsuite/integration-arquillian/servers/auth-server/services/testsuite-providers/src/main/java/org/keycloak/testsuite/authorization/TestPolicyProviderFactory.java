@@ -18,7 +18,6 @@ package org.keycloak.testsuite.authorization;
 
 import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
@@ -26,8 +25,6 @@ import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-
-import static org.bouncycastle.asn1.x500.style.RFC4519Style.l;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -45,12 +42,12 @@ public class TestPolicyProviderFactory implements PolicyProviderFactory {
     }
 
     @Override
-    public PolicyProvider create(Policy policy, AuthorizationProvider authorization) {
-        return new TestPolicyProvider(policy, authorization);
+    public PolicyProvider create(AuthorizationProvider authorization) {
+        return new TestPolicyProvider(authorization);
     }
 
     @Override
-    public PolicyProviderAdminService getAdminResource(ResourceServer resourceServer) {
+    public PolicyProviderAdminService getAdminResource(ResourceServer resourceServer, AuthorizationProvider authorization) {
         return null;
     }
 
@@ -81,11 +78,9 @@ public class TestPolicyProviderFactory implements PolicyProviderFactory {
 
     private class TestPolicyProvider implements PolicyProvider {
 
-        private final Policy policy;
         private final AuthorizationProvider authorization;
 
-        public TestPolicyProvider(Policy policy, AuthorizationProvider authorization) {
-            this.policy = policy;
+        public TestPolicyProvider(AuthorizationProvider authorization) {
             this.authorization = authorization;
         }
 

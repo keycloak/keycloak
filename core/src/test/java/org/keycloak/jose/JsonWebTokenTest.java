@@ -23,7 +23,8 @@ import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Created by st on 20.08.15.

@@ -17,14 +17,15 @@
 package org.keycloak.component;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderFactory;
-import org.keycloak.storage.UserStorageProviderModel;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -38,6 +39,79 @@ public interface ComponentFactory<CreatedType, ProviderType extends Provider> ex
         return null;
     }
 
-    void validateConfiguration(KeycloakSession session, ComponentModel config) throws ComponentValidationException;
+    /**
+     * Called before a component is created or updated.  Allows you to validate the configuration
+     *
+     * @param session
+     * @param realm
+     * @param model
+     * @throws ComponentValidationException
+     */
+    default
+    void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel model) throws ComponentValidationException
+    {
+
+    }
+
+    /**
+     * Called after a component is created
+     *
+     * @param session
+     * @param realm
+     * @param model
+     */
+    default
+    void onCreate(KeycloakSession session, RealmModel realm, ComponentModel model) {
+
+    }
+
+
+    /**
+     * Called after the component is updated.
+     *
+     * @param session
+     * @param realm
+     * @param oldModel old saved model
+     * @param newModel new configuration
+     */
+    default
+    void onUpdate(KeycloakSession session, RealmModel realm, ComponentModel oldModel, ComponentModel newModel) {
+
+    }
+
+    /**
+     * Called before the component is removed.
+     *
+     * @param session
+     * @param realm
+     * @param model model of the component, which is going to be removed
+     */
+    default
+    void preRemove(KeycloakSession session, RealmModel realm, ComponentModel model) {
+
+    }
+
+    /**
+     * These are config properties that are common across all implementation of this component type
+     *
+     * @return
+     */
+    default
+    List<ProviderConfigProperty> getCommonProviderConfigProperties() {
+        return Collections.EMPTY_LIST;
+    }
+
+    /**
+     * This is metadata about this component type.  Its really configuration information about the component type and not
+     * an individual instance
+     *
+     * @return
+     */
+    default
+    Map<String, Object> getTypeMetadata() {
+        return Collections.EMPTY_MAP;
+
+    }
+
 
 }

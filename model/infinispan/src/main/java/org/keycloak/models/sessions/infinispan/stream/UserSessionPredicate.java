@@ -17,6 +17,7 @@
 
 package org.keycloak.models.sessions.infinispan.stream;
 
+import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
@@ -27,11 +28,13 @@ import java.util.function.Predicate;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class UserSessionPredicate implements Predicate<Map.Entry<String, SessionEntity>>, Serializable {
+public class UserSessionPredicate implements Predicate<Map.Entry<String, SessionEntityWrapper<UserSessionEntity>>>, Serializable {
 
     private String realm;
 
     private String user;
+
+    private String client;
 
     private Integer expired;
 
@@ -53,6 +56,11 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
         return this;
     }
 
+    public UserSessionPredicate client(String clientUUID) {
+        this.client = clientUUID;
+        return this;
+    }
+
     public UserSessionPredicate expired(Integer expired, Integer expiredRefresh) {
         this.expired = expired;
         this.expiredRefresh = expiredRefresh;
@@ -70,12 +78,8 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
     }
 
     @Override
-    public boolean test(Map.Entry<String, SessionEntity> entry) {
-        SessionEntity e = entry.getValue();
-
-        if (!(e instanceof UserSessionEntity)) {
-            return false;
-        }
+    public boolean test(Map.Entry<String, SessionEntityWrapper<UserSessionEntity>> entry) {
+        SessionEntity e = entry.getValue().getEntity();
 
         UserSessionEntity entity = (UserSessionEntity) e;
 
@@ -84,6 +88,10 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
         }
 
         if (user != null && !entity.getUser().equals(user)) {
+            return false;
+        }
+
+        if (client != null && (entity.getAuthenticatedClientSessions() == null || !entity.getAuthenticatedClientSessions().containsKey(client))) {
             return false;
         }
 

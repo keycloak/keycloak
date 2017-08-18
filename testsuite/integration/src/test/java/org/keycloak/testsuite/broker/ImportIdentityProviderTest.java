@@ -16,11 +16,6 @@
  */
 package org.keycloak.testsuite.broker;
 
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
@@ -42,11 +37,19 @@ import org.keycloak.social.google.GoogleIdentityProvider;
 import org.keycloak.social.google.GoogleIdentityProviderFactory;
 import org.keycloak.social.linkedin.LinkedInIdentityProvider;
 import org.keycloak.social.linkedin.LinkedInIdentityProviderFactory;
+import org.keycloak.social.openshift.OpenshiftV3IdentityProviderConfig;
+import org.keycloak.social.openshift.OpenshiftV3IdentityProvider;
+import org.keycloak.social.openshift.OpenshiftV3IdentityProviderFactory;
 import org.keycloak.social.stackoverflow.StackOverflowIdentityProviderConfig;
 import org.keycloak.social.stackoverflow.StackoverflowIdentityProvider;
 import org.keycloak.social.stackoverflow.StackoverflowIdentityProviderFactory;
 import org.keycloak.social.twitter.TwitterIdentityProvider;
 import org.keycloak.social.twitter.TwitterIdentityProviderFactory;
+
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -146,6 +149,8 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
                     assertLinkedInIdentityProviderConfig(identityProvider);
                 } else if (StackoverflowIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
                     assertStackoverflowIdentityProviderConfig(identityProvider);
+                } else if (OpenshiftV3IdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
+                    assertOpenshiftIdentityProviderConfig(identityProvider);
                 } else {
                     continue;
                 }
@@ -158,7 +163,7 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
     }
 
     private void assertGoogleIdentityProviderConfig(IdentityProviderModel identityProvider) {
-        GoogleIdentityProvider googleIdentityProvider = new GoogleIdentityProviderFactory().create(identityProvider);
+        GoogleIdentityProvider googleIdentityProvider = new GoogleIdentityProviderFactory().create(session, identityProvider);
         OIDCIdentityProviderConfig config = googleIdentityProvider.getConfig();
 
         assertEquals("model-google", config.getAlias());
@@ -176,7 +181,7 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
     }
 
     private void assertSamlIdentityProviderConfig(IdentityProviderModel identityProvider) {
-        SAMLIdentityProvider samlIdentityProvider = new SAMLIdentityProviderFactory().create(identityProvider);
+        SAMLIdentityProvider samlIdentityProvider = new SAMLIdentityProviderFactory().create(session, identityProvider);
         SAMLIdentityProviderConfig config = samlIdentityProvider.getConfig();
 
         assertEquals("model-saml-signed-idp", config.getAlias());
@@ -193,10 +198,11 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         assertEquals(true, config.isPostBindingAuthnRequest());
         assertEquals(true, config.isPostBindingResponse());
         assertEquals(true, config.isValidateSignature());
+        assertEquals(false, config.isAddExtensionsElementWithKeyInfo());
     }
 
     private void assertOidcIdentityProviderConfig(IdentityProviderModel identityProvider) {
-        OIDCIdentityProvider googleIdentityProvider = new OIDCIdentityProviderFactory().create(identityProvider);
+        OIDCIdentityProvider googleIdentityProvider = new OIDCIdentityProviderFactory().create(session, identityProvider);
         OIDCIdentityProviderConfig config = googleIdentityProvider.getConfig();
 
         assertEquals("model-oidc-idp", config.getAlias());
@@ -210,7 +216,7 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
     }
 
     private void assertFacebookIdentityProviderConfig(RealmModel realm, IdentityProviderModel identityProvider) {
-        FacebookIdentityProvider facebookIdentityProvider = new FacebookIdentityProviderFactory().create(identityProvider);
+        FacebookIdentityProvider facebookIdentityProvider = new FacebookIdentityProviderFactory().create(session, identityProvider);
         OAuth2IdentityProviderConfig config = facebookIdentityProvider.getConfig();
 
         assertEquals("model-facebook", config.getAlias());
@@ -229,7 +235,7 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
     }
 
     private void assertGitHubIdentityProviderConfig(RealmModel realm, IdentityProviderModel identityProvider) {
-        GitHubIdentityProvider gitHubIdentityProvider = new GitHubIdentityProviderFactory().create(identityProvider);
+        GitHubIdentityProvider gitHubIdentityProvider = new GitHubIdentityProviderFactory().create(session, identityProvider);
         OAuth2IdentityProviderConfig config = gitHubIdentityProvider.getConfig();
 
         assertEquals("model-github", config.getAlias());
@@ -248,7 +254,7 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
     }
 
     private void assertLinkedInIdentityProviderConfig(IdentityProviderModel identityProvider) {
-        LinkedInIdentityProvider liIdentityProvider = new LinkedInIdentityProviderFactory().create(identityProvider);
+        LinkedInIdentityProvider liIdentityProvider = new LinkedInIdentityProviderFactory().create(session, identityProvider);
         OAuth2IdentityProviderConfig config = liIdentityProvider.getConfig();
 
         assertEquals("model-linkedin", config.getAlias());
@@ -265,7 +271,7 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
     }
 
     private void assertStackoverflowIdentityProviderConfig(IdentityProviderModel identityProvider) {
-        StackoverflowIdentityProvider soIdentityProvider = new StackoverflowIdentityProviderFactory().create(identityProvider);
+        StackoverflowIdentityProvider soIdentityProvider = new StackoverflowIdentityProviderFactory().create(session, identityProvider);
         StackOverflowIdentityProviderConfig config = soIdentityProvider.getConfig();
 
         assertEquals("model-stackoverflow", config.getAlias());
@@ -282,8 +288,23 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         assertEquals(StackoverflowIdentityProvider.PROFILE_URL, config.getUserInfoUrl());
     }
 
+    private void assertOpenshiftIdentityProviderConfig(IdentityProviderModel identityProvider) {
+        OpenshiftV3IdentityProvider osoIdentityProvider = new OpenshiftV3IdentityProviderFactory().create(session, identityProvider);
+        OpenshiftV3IdentityProviderConfig config = osoIdentityProvider.getConfig();
+
+        assertEquals("model-openshift-v3", config.getAlias());
+        assertEquals(OpenshiftV3IdentityProviderFactory.PROVIDER_ID, config.getProviderId());
+        assertEquals(true, config.isEnabled());
+        assertEquals(false, config.isTrustEmail());
+        assertEquals(false, config.isAuthenticateByDefault());
+        assertEquals(true, config.isStoreToken());
+        assertEquals(OpenshiftV3IdentityProvider.BASE_URL, config.getBaseUrl());
+        assertEquals("clientId", config.getClientId());
+        assertEquals("clientSecret", config.getClientSecret());
+    }
+
     private void assertTwitterIdentityProviderConfig(IdentityProviderModel identityProvider) {
-        TwitterIdentityProvider twitterIdentityProvider = new TwitterIdentityProviderFactory().create(identityProvider);
+        TwitterIdentityProvider twitterIdentityProvider = new TwitterIdentityProviderFactory().create(session, identityProvider);
         OAuth2IdentityProviderConfig config = twitterIdentityProvider.getConfig();
 
         assertEquals("model-twitter", config.getAlias());

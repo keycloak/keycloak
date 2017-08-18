@@ -87,8 +87,13 @@ module.controller('GlobalCtrl', function($scope, $http) {
     };
 
     $scope.loadPublicRealmInfo = function() {
-        $http.get("http://localhost-auth:8080/auth/realms/cors").success(function(data) {
-            $scope.realm = angular.fromJson(data);
+        $http.get("http://localhost-auth:8080/auth/realms/cors/.well-known/openid-configuration").success(function(data) {
+            $scope.realmOIDCInfo = angular.fromJson(data);
+
+            var jwksUri = $scope.realmOIDCInfo.jwks_uri;
+            $http.get(jwksUri).success(function(data) {
+                $scope.publicKeys = angular.fromJson(data);
+            });
         });
     };
 

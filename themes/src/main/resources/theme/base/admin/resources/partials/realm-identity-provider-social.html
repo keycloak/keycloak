@@ -1,7 +1,8 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
     <ol class="breadcrumb">
         <li><a href="#/realms/{{realm.realm}}/identity-provider-settings">{{:: 'identity-providers' | translate}}</a></li>
-        <li>{{identityProvider.alias}}</li>
+        <li data-ng-hide="newIdentityProvider">{{provider.name}}</li>
+        <li data-ng-show="newIdentityProvider">{{:: 'add-identity-provider' | translate}}</li>
     </ol>
 
     <kc-tabs-identity-provider></kc-tabs-identity-provider>
@@ -64,6 +65,13 @@
                 <kc-tooltip>{{:: 'identity-provider.enabled.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
+                <label class="col-md-2 control-label" for="disableUserInfo">{{:: 'disableUserInfo' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="identityProvider.config.disableUserInfo" id="disableUserInfo" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'identity-provider.disableUserInfo.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
                 <label class="col-md-2 control-label" for="trustEmail">{{:: 'trust-email' | translate}}</label>
                 <div class="col-md-6">
                     <input ng-model="identityProvider.trustEmail" name="identityProvider.trustEmail" id="trustEmail" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
@@ -71,11 +79,18 @@
                 <kc-tooltip>{{:: 'trust-email.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="authenticateByDefault">{{:: 'authenticate-by-default' | translate}}</label>
+                <label class="col-md-2 control-label" for="linkOnly">{{:: 'link-only' | translate}}</label>
                 <div class="col-md-6">
-                    <input ng-model="identityProvider.authenticateByDefault" name="identityProvider.authenticateByDefault" id="authenticateByDefault" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                    <input ng-model="identityProvider.linkOnly" name="identityProvider.trustEmail" id="linkOnly" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip>{{:: 'identity-provider.authenticate-by-default.tooltip' | translate}}</kc-tooltip>
+                <kc-tooltip>{{:: 'link-only.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="hideOnLoginPage">{{:: 'hide-on-login-page' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="identityProvider.config.hideOnLoginPage" name="identityProvider.config.hideOnLoginPage" id="hideOnLoginPage" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'hide-on-login-page.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
                 <label class="col-md-2 control-label" for="guiOrder">{{:: 'gui-order' | translate}}</label>

@@ -17,11 +17,11 @@
 
 package org.keycloak.connections.jpa.updater.liquibase.conn;
 
-import java.sql.Connection;
-
 import liquibase.Liquibase;
 import liquibase.exception.LiquibaseException;
 import org.keycloak.provider.Provider;
+
+import java.sql.Connection;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

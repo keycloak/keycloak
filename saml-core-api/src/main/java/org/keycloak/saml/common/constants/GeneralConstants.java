@@ -16,6 +16,7 @@
  */
 package org.keycloak.saml.common.constants;
 
+import java.nio.charset.Charset;
 
 /**
  * Constants
@@ -147,4 +148,7 @@ public interface GeneralConstants {
     String BASE64_ENCODE_WSTRUST_SECRET_KEY = "picketlink.wstrust.base64_encode_wstrust_secret_key";
 
     String HTTP_HEADER_X_REQUESTED_WITH = "X-Requested-With";
+
+    public static final String  SAML_CHARSET_NAME = System.getProperty("keycloak.saml.saml_message_charset", "UTF-8");
+    public static final Charset SAML_CHARSET = Charset.forName(SAML_CHARSET_NAME);
 }

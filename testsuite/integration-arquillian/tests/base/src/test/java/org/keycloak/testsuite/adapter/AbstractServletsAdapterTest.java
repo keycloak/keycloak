@@ -22,6 +22,7 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 
@@ -64,11 +65,11 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         return deployment;
     }
 
-    protected static WebArchive samlServletDeployment(String name, Class... servletClasses) {
+    public static WebArchive samlServletDeployment(String name, Class... servletClasses) {
         return samlServletDeployment(name, "web.xml", servletClasses);
     }
 
-    protected static WebArchive samlServletDeployment(String name, String webXMLPath, Class... servletClasses) {
+    public static WebArchive samlServletDeployment(String name, String webXMLPath, Class... servletClasses) {
         String baseSAMLPath = "/adapter-test/keycloak-saml/";
         String webInfPath = baseSAMLPath + name + "/WEB-INF/";
 
@@ -110,14 +111,17 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         testRealmPage.setAuthRealm(DEMO);
     }
 
-    protected void setAdapterAndServerTimeOffset(int timeOffset, String servletUri) {
+    protected void setAdapterAndServerTimeOffset(int timeOffset, String... servletUris) {
         setTimeOffset(timeOffset);
-        String timeOffsetUri = UriBuilder.fromUri(servletUri)
-                .queryParam("timeOffset", timeOffset)
-                .build().toString();
 
-        driver.navigate().to(timeOffsetUri);
-        WaitUtils.waitUntilElement(By.tagName("body")).is().visible();
+        for (String servletUri : servletUris) {
+            String timeOffsetUri = UriBuilder.fromUri(servletUri)
+                    .queryParam(AdapterActionsFilter.TIME_OFFSET_PARAM, timeOffset)
+                    .build().toString();
+
+            driver.navigate().to(timeOffsetUri);
+            WaitUtils.waitUntilElement(By.tagName("body")).is().visible();
+        }
     }
 
 }

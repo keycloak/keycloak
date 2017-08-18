@@ -16,15 +16,16 @@
  */
 package org.keycloak.subsystem.server.extension;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.dmr.ModelNode;
 import org.junit.Test;
-import static org.junit.Assert.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
+import static org.junit.Assert.assertEquals;
 
 /**
  *

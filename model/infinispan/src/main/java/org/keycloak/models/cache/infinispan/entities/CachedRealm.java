@@ -18,6 +18,7 @@
 package org.keycloak.models.cache.infinispan.entities;
 
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
@@ -32,13 +33,7 @@ import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
-import org.keycloak.models.UserFederationMapperModel;
-import org.keycloak.models.UserFederationProviderModel;
-import org.keycloak.common.util.MultivaluedHashMap;
 
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -52,7 +47,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class CachedRealm extends AbstractRevisioned {
+public class CachedRealm extends AbstractExtendableRevisioned {
 
     protected String name;
     protected String displayName;
@@ -63,11 +58,14 @@ public class CachedRealm extends AbstractRevisioned {
     protected boolean registrationEmailAsUsername;
     protected boolean rememberMe;
     protected boolean verifyEmail;
+    protected boolean loginWithEmailAllowed;
+    protected boolean duplicateEmailsAllowed;
     protected boolean resetPasswordAllowed;
     protected boolean identityFederationEnabled;
     protected boolean editUsernameAllowed;
     //--- brute force settings
     protected boolean bruteForceProtected;
+    protected boolean permanentLockout;
     protected int maxFailureWaitSeconds;
     protected int minimumQuickLoginWaitSeconds;
     protected int waitIncrementSeconds;
@@ -85,18 +83,11 @@ public class CachedRealm extends AbstractRevisioned {
     protected int accessCodeLifespan;
     protected int accessCodeLifespanUserAction;
     protected int accessCodeLifespanLogin;
+    protected int actionTokenGeneratedByAdminLifespan;
+    protected int actionTokenGeneratedByUserLifespan;
     protected int notBefore;
     protected PasswordPolicy passwordPolicy;
     protected OTPPolicy otpPolicy;
-
-    protected transient String keyId;
-    protected transient PublicKey publicKey;
-    protected String publicKeyPem;
-    protected transient PrivateKey privateKey;
-    protected String privateKeyPem;
-    protected transient X509Certificate certificate;
-    protected String certificatePem;
-    protected String codeSecret;
 
     protected String loginTheme;
     protected String accountTheme;
@@ -105,12 +96,9 @@ public class CachedRealm extends AbstractRevisioned {
     protected String masterAdminClient;
 
     protected List<RequiredCredentialModel> requiredCredentials;
-    protected List<UserFederationProviderModel> userFederationProviders;
     protected MultivaluedHashMap<String, ComponentModel> componentsByParent = new MultivaluedHashMap<>();
     protected MultivaluedHashMap<String, ComponentModel> componentsByParentAndType = new MultivaluedHashMap<>();
     protected Map<String, ComponentModel> components = new HashMap<>();
-    protected MultivaluedHashMap<String, UserFederationMapperModel> userFederationMappers = new MultivaluedHashMap<String, UserFederationMapperModel>();
-    protected Set<UserFederationMapperModel> userFederationMapperSet;
     protected List<IdentityProviderModel> identityProviders;
 
     protected Map<String, String> browserSecurityHeaders;
@@ -129,6 +117,7 @@ public class CachedRealm extends AbstractRevisioned {
     protected AuthenticationFlowModel directGrantFlow;
     protected AuthenticationFlowModel resetCredentialsFlow;
     protected AuthenticationFlowModel clientAuthenticationFlow;
+    protected AuthenticationFlowModel dockerAuthenticationFlow;
 
     protected boolean eventsEnabled;
     protected long eventsExpiration;
@@ -144,13 +133,14 @@ public class CachedRealm extends AbstractRevisioned {
     }
 
     protected List<String> defaultGroups = new LinkedList<String>();
-    protected Set<String> groups = new HashSet<String>();
     protected List<String> clientTemplates= new LinkedList<>();
     protected boolean internationalizationEnabled;
     protected Set<String> supportedLocales;
     protected String defaultLocale;
     protected MultivaluedHashMap<String, IdentityProviderMapperModel> identityProviderMappers = new MultivaluedHashMap<>();
     protected Set<IdentityProviderMapperModel> identityProviderMapperSet;
+
+    protected Map<String, String> attributes;
 
     public CachedRealm(Long revision, RealmModel model) {
         super(revision, model.getId());
@@ -163,11 +153,14 @@ public class CachedRealm extends AbstractRevisioned {
         registrationEmailAsUsername = model.isRegistrationEmailAsUsername();
         rememberMe = model.isRememberMe();
         verifyEmail = model.isVerifyEmail();
+        loginWithEmailAllowed = model.isLoginWithEmailAllowed();
+        duplicateEmailsAllowed = model.isDuplicateEmailsAllowed();
         resetPasswordAllowed = model.isResetPasswordAllowed();
         identityFederationEnabled = model.isIdentityFederationEnabled();
         editUsernameAllowed = model.isEditUsernameAllowed();
         //--- brute force settings
         bruteForceProtected = model.isBruteForceProtected();
+        permanentLockout = model.isPermanentLockout();
         maxFailureWaitSeconds = model.getMaxFailureWaitSeconds();
         minimumQuickLoginWaitSeconds = model.getMinimumQuickLoginWaitSeconds();
         waitIncrementSeconds = model.getWaitIncrementSeconds();
@@ -185,18 +178,11 @@ public class CachedRealm extends AbstractRevisioned {
         accessCodeLifespan = model.getAccessCodeLifespan();
         accessCodeLifespanUserAction = model.getAccessCodeLifespanUserAction();
         accessCodeLifespanLogin = model.getAccessCodeLifespanLogin();
+        actionTokenGeneratedByAdminLifespan = model.getActionTokenGeneratedByAdminLifespan();
+        actionTokenGeneratedByUserLifespan = model.getActionTokenGeneratedByUserLifespan();
         notBefore = model.getNotBefore();
         passwordPolicy = model.getPasswordPolicy();
         otpPolicy = model.getOTPPolicy();
-
-        keyId = model.getKeyId();
-        publicKeyPem = model.getPublicKeyPem();
-        publicKey = model.getPublicKey();
-        privateKeyPem = model.getPrivateKeyPem();
-        privateKey = model.getPrivateKey();
-        certificatePem = model.getCertificatePem();
-        certificate = model.getCertificate();
-        codeSecret = model.getCodeSecret();
 
         loginTheme = model.getLoginTheme();
         accountTheme = model.getAccountTheme();
@@ -204,11 +190,6 @@ public class CachedRealm extends AbstractRevisioned {
         emailTheme = model.getEmailTheme();
 
         requiredCredentials = model.getRequiredCredentials();
-        userFederationProviders = model.getUserFederationProviders();
-        userFederationMapperSet = model.getUserFederationMappers();
-        for (UserFederationMapperModel mapper : userFederationMapperSet) {
-            this.userFederationMappers.add(mapper.getFederationProviderId(), mapper);
-        }
 
         this.identityProviders = new ArrayList<>();
 
@@ -231,10 +212,10 @@ public class CachedRealm extends AbstractRevisioned {
         eventsExpiration = model.getEventsExpiration();
         eventsListeners = model.getEventsListeners();
         enabledEventTypes = model.getEnabledEventTypes();
-        
+
         adminEventsEnabled = model.isAdminEventsEnabled();
         adminEventsDetailsEnabled = model.isAdminEventsDetailsEnabled();
-        
+
         defaultRoles = model.getDefaultRoles();
         ClientModel masterAdminClient = model.getMasterAdminClient();
         this.masterAdminClient = (masterAdminClient != null) ? masterAdminClient.getId() : null;
@@ -253,9 +234,7 @@ public class CachedRealm extends AbstractRevisioned {
                 executionsById.put(execution.getId(), execution);
             }
         }
-        for (GroupModel group : model.getGroups()) {
-            groups.add(group.getId());
-        }
+
         for (AuthenticatorConfigModel authenticator : model.getAuthenticatorConfigs()) {
             authenticatorConfigs.put(authenticator.getId(), authenticator);
         }
@@ -274,6 +253,7 @@ public class CachedRealm extends AbstractRevisioned {
         directGrantFlow = model.getDirectGrantFlow();
         resetCredentialsFlow = model.getResetCredentialsFlow();
         clientAuthenticationFlow = model.getClientAuthenticationFlow();
+        dockerAuthenticationFlow = model.getDockerAuthenticationFlow();
 
         for (ComponentModel component : model.getComponents()) {
             componentsByParentAndType.add(component.getParentId() + component.getProviderType(), component);
@@ -283,6 +263,11 @@ public class CachedRealm extends AbstractRevisioned {
         }
         for (ComponentModel component : model.getComponents()) {
             components.put(component.getId(), component);
+        }
+
+        try {
+            attributes = model.getAttributes();
+        } catch (UnsupportedOperationException ex) {
         }
 
     }
@@ -337,6 +322,10 @@ public class CachedRealm extends AbstractRevisioned {
         return bruteForceProtected;
     }
 
+    public boolean isPermanentLockout() {
+        return permanentLockout;
+    }
+
     public int getMaxFailureWaitSeconds() {
         return this.maxFailureWaitSeconds;
     }
@@ -363,6 +352,14 @@ public class CachedRealm extends AbstractRevisioned {
 
     public boolean isVerifyEmail() {
         return verifyEmail;
+    }
+    
+    public boolean isLoginWithEmailAllowed() {
+        return loginWithEmailAllowed;
+    }
+    
+    public boolean isDuplicateEmailsAllowed() {
+        return duplicateEmailsAllowed;
     }
 
     public boolean isResetPasswordAllowed() {
@@ -408,20 +405,12 @@ public class CachedRealm extends AbstractRevisioned {
         return accessCodeLifespanLogin;
     }
 
-    public String getKeyId() {
-        return keyId;
+    public int getActionTokenGeneratedByAdminLifespan() {
+        return actionTokenGeneratedByAdminLifespan;
     }
 
-    public String getPublicKeyPem() {
-        return publicKeyPem;
-    }
-
-    public String getPrivateKeyPem() {
-        return privateKeyPem;
-    }
-
-    public String getCodeSecret() {
-        return codeSecret;
+    public int getActionTokenGeneratedByUserLifespan() {
+        return actionTokenGeneratedByUserLifespan;
     }
 
     public List<RequiredCredentialModel> getRequiredCredentials() {
@@ -475,7 +464,7 @@ public class CachedRealm extends AbstractRevisioned {
     public Set<String> getEventsListeners() {
         return eventsListeners;
     }
-    
+
     public Set<String> getEnabledEventTypes() {
         return enabledEventTypes;
     }
@@ -490,18 +479,6 @@ public class CachedRealm extends AbstractRevisioned {
 
     public boolean isAdminEventsDetailsEnabled() {
         return adminEventsDetailsEnabled;
-    }
-
-    public List<UserFederationProviderModel> getUserFederationProviders() {
-        return userFederationProviders;
-    }
-
-    public MultivaluedHashMap<String, UserFederationMapperModel> getUserFederationMappers() {
-        return userFederationMappers;
-    }
-
-    public String getCertificatePem() {
-        return certificatePem;
     }
 
     public List<IdentityProviderModel> getIdentityProviders() {
@@ -572,8 +549,8 @@ public class CachedRealm extends AbstractRevisioned {
         return clientAuthenticationFlow;
     }
 
-    public Set<String> getGroups() {
-        return groups;
+    public AuthenticationFlowModel getDockerAuthenticationFlow() {
+        return dockerAuthenticationFlow;
     }
 
     public List<String> getDefaultGroups() {
@@ -582,22 +559,6 @@ public class CachedRealm extends AbstractRevisioned {
 
     public List<String> getClientTemplates() {
         return clientTemplates;
-    }
-
-    public PublicKey getPublicKey() {
-        return publicKey;
-    }
-
-    public PrivateKey getPrivateKey() {
-        return privateKey;
-    }
-
-    public X509Certificate getCertificate() {
-        return certificate;
-    }
-
-    public Set<UserFederationMapperModel> getUserFederationMapperSet() {
-        return userFederationMapperSet;
     }
 
     public List<AuthenticationFlowModel> getAuthenticationFlowList() {
@@ -619,4 +580,28 @@ public class CachedRealm extends AbstractRevisioned {
     public Map<String, ComponentModel> getComponents() {
         return components;
     }
+
+    public String getAttribute(String name) {
+        return attributes != null ? attributes.get(name) : null;
+    }
+
+    public Integer getAttribute(String name, Integer defaultValue) {
+        String v = getAttribute(name);
+        return v != null ? Integer.parseInt(v) : defaultValue;
+    }
+
+    public Long getAttribute(String name, Long defaultValue) {
+        String v = getAttribute(name);
+        return v != null ? Long.parseLong(v) : defaultValue;
+    }
+
+    public Boolean getAttribute(String name, Boolean defaultValue) {
+        String v = getAttribute(name);
+        return v != null ? Boolean.parseBoolean(v) : defaultValue;
+    }
+
+    public Map<String, String> getAttributes() {
+        return attributes;
+    }
+
 }

@@ -1,142 +1,38 @@
 package org.keycloak.testsuite.broker;
 
-import org.junit.Ignore;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import org.keycloak.broker.saml.mappers.AttributeToRoleMapper;
+import org.keycloak.broker.saml.mappers.UserAttributeMapper;
+import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static org.keycloak.testsuite.broker.BrokerTestConstants.*;
-
-@Ignore
 public class KcSamlBrokerTest extends AbstractBrokerTest {
 
     @Override
-    protected RealmRepresentation createProviderRealm() {
-        RealmRepresentation realm = new RealmRepresentation();
-
-        realm.setEnabled(true);
-        realm.setRealm(REALM_PROV_NAME);
-
-        return realm;
+    protected BrokerConfiguration getBrokerConfiguration() {
+        return KcSamlBrokerConfiguration.INSTANCE;
     }
 
     @Override
-    protected RealmRepresentation createConsumerRealm() {
-        RealmRepresentation realm = new RealmRepresentation();
+    protected Iterable<IdentityProviderMapperRepresentation> createIdentityProviderMappers() {
+        IdentityProviderMapperRepresentation attrMapper1 = new IdentityProviderMapperRepresentation();
+        attrMapper1.setName("manager-role-mapper");
+        attrMapper1.setIdentityProviderMapper(AttributeToRoleMapper.PROVIDER_ID);
+        attrMapper1.setConfig(ImmutableMap.<String,String>builder()
+                .put(UserAttributeMapper.ATTRIBUTE_NAME, "Role")
+                .put(ATTRIBUTE_VALUE, "manager")
+                .put("role", "manager")
+                .build());
 
-        realm.setEnabled(true);
-        realm.setRealm(REALM_CONS_NAME);
+        IdentityProviderMapperRepresentation attrMapper2 = new IdentityProviderMapperRepresentation();
+        attrMapper2.setName("user-role-mapper");
+        attrMapper2.setIdentityProviderMapper(AttributeToRoleMapper.PROVIDER_ID);
+        attrMapper2.setConfig(ImmutableMap.<String,String>builder()
+                .put(UserAttributeMapper.ATTRIBUTE_NAME, "Role")
+                .put(ATTRIBUTE_VALUE, "user")
+                .put("role", "user")
+                .build());
 
-        return realm;
-    }
-
-    @Override
-    protected List<ClientRepresentation> createProviderClients() {
-        ClientRepresentation client = new ClientRepresentation();
-
-        client.setClientId(getAuthRoot() + "/auth/realms/" + REALM_CONS_NAME);
-        client.setEnabled(true);
-        client.setProtocol(IDP_SAML_PROVIDER_ID);
-        client.setRedirectUris(Collections.singletonList(
-                getAuthRoot() + "/auth/realms/" + REALM_CONS_NAME + "/broker/" + IDP_SAML_ALIAS + "/endpoint"
-        ));
-
-        Map<String, String> attributes = new HashMap<>();
-
-        attributes.put("saml.authnstatement", "true");
-        attributes.put("saml_single_logout_service_url_post",
-                getAuthRoot() + "/auth/realms/" + REALM_CONS_NAME + "/broker/" + IDP_SAML_ALIAS + "/endpoint");
-        attributes.put("saml_assertion_consumer_url_post",
-                getAuthRoot() + "/auth/realms/" + REALM_CONS_NAME + "/broker/" + IDP_SAML_ALIAS + "/endpoint");
-        attributes.put("saml_force_name_id_format", "true");
-        attributes.put("saml_name_id_format", "username");
-        attributes.put("saml.assertion.signature", "false");
-        attributes.put("saml.server.signature", "false");
-        attributes.put("saml.client.signature", "false");
-        attributes.put("saml.encrypt", "false");
-
-        client.setAttributes(attributes);
-
-        ProtocolMapperRepresentation mapper = new ProtocolMapperRepresentation();
-        mapper.setName("email");
-        mapper.setProtocol("saml");
-        mapper.setProtocolMapper("saml-user-property-mapper");
-        mapper.setConsentRequired(false);
-
-        Map<String, String> mapperConfig = mapper.getConfig();
-        mapperConfig.put("user.attribute", "email");
-        mapperConfig.put("attribute.name", "urn:oid:1.2.840.113549.1.9.1");
-        mapperConfig.put("attribute.nameformat", "urn:oasis:names:tc:SAML:2.0:attrname-format:uri");
-        mapperConfig.put("friendly.name", "email");
-
-        client.setProtocolMappers(Collections.singletonList(
-                mapper
-        ));
-
-        return Collections.singletonList(client);
-    }
-
-    @Override
-    protected List<ClientRepresentation> createConsumerClients() {
-        return null;
-    }
-
-    @Override
-    protected IdentityProviderRepresentation setUpIdentityProvider() {
-        IdentityProviderRepresentation idp = createIdentityProvider(IDP_SAML_ALIAS, IDP_SAML_PROVIDER_ID);
-
-        idp.setTrustEmail(true);
-        idp.setAddReadTokenRoleOnCreate(true);
-        idp.setStoreToken(true);
-
-        Map<String, String> config = idp.getConfig();
-
-        config.put("singleSignOnServiceUrl", getAuthRoot() + "/auth/realms/" + REALM_PROV_NAME + "/protocol/saml");
-        config.put("singleLogoutServiceUrl", getAuthRoot() + "/auth/realms/" + REALM_PROV_NAME + "/protocol/saml");
-        config.put("nameIDPolicyFormat", "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress");
-        config.put("forceAuthn", "true");
-        config.put("postBindingResponse", "true");
-        config.put("postBindingAuthnRequest", "true");
-        config.put("validateSignature", "false");
-        config.put("wantAuthnRequestsSigned", "false");
-        config.put("backchannelSupported", "true");
-
-        return idp;
-    }
-
-    @Override
-    protected String providerRealmName() {
-        return REALM_PROV_NAME;
-    }
-
-    @Override
-    protected String consumerRealmName() {
-        return REALM_CONS_NAME;
-    }
-
-    @Override
-    protected String getUserLogin() {
-        return USER_LOGIN;
-    }
-
-    @Override
-    protected String getUserPassword() {
-        return USER_PASSWORD;
-    }
-
-    @Override
-    protected String getUserEmail() {
-        return USER_EMAIL;
-    }
-
-    @Override
-    protected String getIDPAlias() {
-        return IDP_SAML_ALIAS;
+        return Lists.newArrayList(attrMapper1, attrMapper2);
     }
 }

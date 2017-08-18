@@ -22,6 +22,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.saml.EntityDescriptorDescriptionConverter;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientregistration.AbstractClientRegistrationProvider;
+import org.keycloak.services.clientregistration.DefaultClientRegistrationContext;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
@@ -44,9 +45,12 @@ public class EntityDescriptorClientRegistrationProvider extends AbstractClientRe
     @Produces(MediaType.APPLICATION_JSON)
     public Response createSaml(String descriptor) {
         ClientRepresentation client = session.getProvider(ClientDescriptionConverter.class, EntityDescriptorDescriptionConverter.ID).convertToInternal(descriptor);
-        client = create(client);
+        EntityDescriptorClientRegistrationContext context = new EntityDescriptorClientRegistrationContext(session, client, this);
+        client = create(context);
         URI uri = session.getContext().getUri().getAbsolutePathBuilder().path(client.getClientId()).build();
         return Response.created(uri).entity(client).build();
     }
+
+
 
 }

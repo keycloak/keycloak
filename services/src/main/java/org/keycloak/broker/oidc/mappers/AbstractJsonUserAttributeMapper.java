@@ -17,9 +17,6 @@
 
 package org.keycloak.broker.oidc.mappers;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
@@ -31,11 +28,14 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Abstract class for Social Provider mappers which allow mapping of JSON user profile field into Keycloak user
  * attribute. Concrete mapper classes with own ID and provider mapping must be implemented for each social provider who
  * uses {@link JsonNode} user profile.
- * 
+ *
  * @author Vlastimil Elias (velias at redhat dot com)
  */
 public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityProviderMapper {
@@ -81,8 +81,8 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 	}
 
 	/**
-	 * Store used profile JsonNode into user context for later use by this mapper. Profile data are dumped into special logger if enabled also to allow investigation of the structure. 
-	 * 
+	 * Store used profile JsonNode into user context for later use by this mapper. Profile data are dumped into special logger if enabled also to allow investigation of the structure.
+	 *
 	 * @param user context to store profile data into
 	 * @param profile to store into context
 	 * @param provider identification of social provider to be used in log dump
@@ -125,9 +125,13 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 		}
 		attribute = attribute.trim();
 
-		String value = getJsonValue(mapperModel, context);
+		Object value = getJsonValue(mapperModel, context);
 		if (value != null) {
-			context.setUserAttribute(attribute, value);
+			if (value instanceof List) {
+				context.setUserAttribute(attribute, (List<String>) value);
+			} else {
+				context.setUserAttribute(attribute, value.toString());
+			}
 		}
 	}
 
@@ -136,7 +140,7 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 		// we do not update user profile from social provider
 	}
 
-	protected static String getJsonValue(IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+	protected static Object getJsonValue(IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
 
 		String jsonField = mapperModel.getConfig().get(CONF_JSON_FIELD);
 		if (jsonField == null || jsonField.trim().isEmpty()) {
@@ -152,7 +156,7 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 
 		JsonNode profileJsonNode = (JsonNode) context.getContextData().get(CONTEXT_JSON_NODE);
 
-		String value = getJsonValue(profileJsonNode, jsonField);
+		Object value = getJsonValue(profileJsonNode, jsonField);
 
 		if (value == null) {
 			logger.debugf("User profile JSON value '%s' is not available.", jsonField);
@@ -161,7 +165,7 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 		return value;
 	}
 
-	public static String getJsonValue(JsonNode baseNode, String fieldPath) {
+	public static Object getJsonValue(JsonNode baseNode, String fieldPath) {
 		logger.debug("Going to process JsonNode path " + fieldPath + " on data " + baseNode);
 		if (baseNode != null) {
 
@@ -206,7 +210,21 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 			}
 
 			if (idx < 0) {
-				if (!currentNode.isValueNode()) {
+				if (currentNode.isArray()) {
+					List<String> values = new ArrayList<>();
+					for (JsonNode childNode : currentNode) {
+						if (childNode.isTextual()) {
+							values.add(childNode.textValue());
+						} else {
+							logger.warn("JsonNode in array is not text value " + childNode);
+						}
+					}
+					if (values.isEmpty()) {
+						return null;
+					}
+					return arrayIndex == idx? values : null;
+				}
+				if (!currentNode.isValueNode() || currentNode.isNull()) {
 					logger.debug("JsonNode is not value node for name " + currentFieldName);
 					return null;
 				}

@@ -17,15 +17,12 @@
 
 package org.keycloak.storage.jpa.entity;
 
-import org.keycloak.models.jpa.entities.UserEntity;
+import org.keycloak.storage.jpa.KeyUtils;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
@@ -74,6 +71,7 @@ public class FederatedUserRequiredActionEntity {
     }
 
     public void setUserId(String userId) {
+        KeyUtils.assertValidKey(userId);
         this.userId = userId;
     }
 

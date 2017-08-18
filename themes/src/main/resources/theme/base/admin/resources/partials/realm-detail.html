@@ -5,7 +5,7 @@
             <div class="form-group">
                 <label class="col-md-2 control-label" for="name"><span class="required">*</span> {{:: 'name' | translate}}</label>
                 <div class="col-md-6">
-                    <input class="form-control" type="text" id="name" name="name" data-ng-model="realmName" autofocus required>
+                    <input class="form-control" data-ng-disabled="disableRename" type="text" id="name" name="name" data-ng-model="realmName" autofocus required>
                 </div>
             </div>
 
@@ -34,7 +34,7 @@
             <div class="form-group">
                 <label class="col-md-2 control-label">{{:: 'endpoints' | translate}}</label>
                 <div class="col-md-6">
-                    <a class="form-control" ng-href="{{authUrl}}/realms/{{realm.id}}/.well-known/openid-configuration" target="_blank">OpenID Endpoint Configuration</a>
+                    <a class="form-control" ng-href="{{authUrl}}/realms/{{realm.realm}}/.well-known/openid-configuration" target="_blank">OpenID Endpoint Configuration</a>
                 </div>
                 <kc-tooltip>{{:: 'realm-detail.oidc-endpoints.tooltip' | translate}}</kc-tooltip>
             </div>

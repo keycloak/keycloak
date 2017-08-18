@@ -16,24 +16,25 @@
  */
 package org.keycloak.services.resources;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.AbstractOAuthClient;
-import org.keycloak.common.ClientConnection;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.services.ForbiddenException;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.util.CookieHelper;
-import org.keycloak.common.util.UriUtils;
 import org.keycloak.util.TokenUtil;
 
 import javax.ws.rs.GET;
@@ -57,7 +58,7 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public abstract class AbstractSecuredLocalService {
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(AbstractSecuredLocalService.class);
 
     private static final String KEYCLOAK_STATE_CHECKER = "KEYCLOAK_STATE_CHECKER";
 
@@ -133,7 +134,7 @@ public abstract class AbstractSecuredLocalService {
         if (cookie != null) {
             stateChecker = cookie.getValue();
         } else {
-            stateChecker = KeycloakModelUtils.generateSecret();
+            stateChecker = Base64Url.encode(KeycloakModelUtils.generateSecret());
             String cookiePath = AuthenticationManager.getRealmCookiePath(realm, uriInfo);
             boolean secureOnly = realm.getSslRequired().isRequired(clientConnection);
             CookieHelper.addCookie(KEYCLOAK_STATE_CHECKER, stateChecker, cookiePath, null, null, -1, secureOnly, true);

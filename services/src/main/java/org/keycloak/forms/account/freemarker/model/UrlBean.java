@@ -17,9 +17,9 @@
 
 package org.keycloak.forms.account.freemarker.model;
 
-import org.keycloak.theme.Theme;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.Urls;
+import org.keycloak.theme.Theme;
 
 import java.net.URI;
 

@@ -173,10 +173,15 @@ public class KeycloakServletExtension implements ServletExtension {
             }
         });
 
-        log.debug("Setting jsession cookie path to: " + deploymentInfo.getContextPath());
-        ServletSessionConfig cookieConfig = new ServletSessionConfig();
-        cookieConfig.setPath(deploymentInfo.getContextPath());
-        deploymentInfo.setServletSessionConfig(cookieConfig);
+        ServletSessionConfig cookieConfig = deploymentInfo.getServletSessionConfig();
+        if (cookieConfig == null) {
+            cookieConfig = new ServletSessionConfig();
+        }
+        if (cookieConfig.getPath() == null) {
+            log.debug("Setting jsession cookie path to: " + deploymentInfo.getContextPath());
+            cookieConfig.setPath(deploymentInfo.getContextPath());
+            deploymentInfo.setServletSessionConfig(cookieConfig);
+        }
         ChangeSessionId.turnOffChangeSessionIdOnLogin(deploymentInfo);
         deploymentInfo.addListener(new ListenerInfo(UndertowNodesRegistrationManagementWrapper.class, new InstanceFactory<UndertowNodesRegistrationManagementWrapper>() {
 

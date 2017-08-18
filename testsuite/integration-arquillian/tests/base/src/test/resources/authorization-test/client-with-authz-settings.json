@@ -1,0 +1,866 @@
+{
+    "clientId": "authz-client",
+    "enabled": true,
+    "publicClient": false,
+    "secret": "secret",
+    "directAccessGrantsEnabled": true,
+    "serviceAccountsEnabled": true,
+    "authorizationServicesEnabled": true,
+    "redirectUris": [
+        "http://localhost/authz-client/*"
+    ],
+    "webOrigins": [
+        "http://localhost"
+    ],
+    "authorizationSettings": {
+        "allowRemoteResourceManagement": true,
+        "policyEnforcementMode": "PERMISSIVE",
+        "resources": [
+            {
+                "name": "Default Resource",
+                "uri": "/*",
+                "type": "urn:authz-client:resources:default"
+            },
+            {
+                "name": "Resource 1",
+                "uri": "/protected/resource/1",
+                "scopes": [
+                    {
+                        "name": "Scope B"
+                    },
+                    {
+                        "name": "Scope A"
+                    },
+                    {
+                        "name": "Scope D"
+                    },
+                    {
+                        "name": "Scope C"
+                    },
+                    {
+                        "name": "Scope E"
+                    }
+                ]
+            },
+            {
+                "name": "Resource 2",
+                "uri": "/protected/resource/2",
+                "scopes": [
+                    {
+                        "name": "Scope B"
+                    },
+                    {
+                        "name": "Scope A"
+                    },
+                    {
+                        "name": "Scope D"
+                    },
+                    {
+                        "name": "Scope C"
+                    },
+                    {
+                        "name": "Scope E"
+                    }
+                ]
+            },
+            {
+                "name": "Resource 3",
+                "uri": "/protected/resource/3",
+                "scopes": [
+                    {
+                        "name": "Scope B"
+                    },
+                    {
+                        "name": "Scope A"
+                    },
+                    {
+                        "name": "Scope D"
+                    },
+                    {
+                        "name": "Scope C"
+                    },
+                    {
+                        "name": "Scope E"
+                    }
+                ]
+            },
+            {
+                "name": "Resource 4",
+                "uri": "/protected/resource/4",
+                "scopes": [
+                    {
+                        "name": "Scope B"
+                    },
+                    {
+                        "name": "Scope A"
+                    },
+                    {
+                        "name": "Scope D"
+                    },
+                    {
+                        "name": "Scope C"
+                    },
+                    {
+                        "name": "Scope E"
+                    }
+                ]
+            },
+            {
+                "name": "Resource 5",
+                "uri": "/protected/resource/5",
+                "scopes": [
+                    {
+                        "name": "Scope B"
+                    },
+                    {
+                        "name": "Scope A"
+                    },
+                    {
+                        "name": "Scope D"
+                    },
+                    {
+                        "name": "Scope C"
+                    },
+                    {
+                        "name": "Scope E"
+                    }
+                ]
+            },
+            {
+                "name": "Resource 6",
+                "uri": "/protected/resource/6",
+                "scopes": [
+                    {
+                        "name": "Scope B"
+                    },
+                    {
+                        "name": "Scope A"
+                    },
+                    {
+                        "name": "Scope D"
+                    },
+                    {
+                        "name": "Scope C"
+                    },
+                    {
+                        "name": "Scope E"
+                    }
+                ]
+            },
+            {
+                "name": "Resource 7",
+                "uri": "/protected/resource/7",
+                "scopes": [
+                    {
+                        "name": "Scope B"
+                    },
+                    {
+                        "name": "Scope A"
+                    },
+                    {
+                        "name": "Scope D"
+                    },
+                    {
+                        "name": "Scope C"
+                    },
+                    {
+                        "name": "Scope E"
+                    }
+                ]
+            },
+            {
+                "name": "Resource 8",
+                "uri": "/protected/resource/8",
+                "scopes": [
+                    {
+                        "name": "Scope B"
+                    },
+                    {
+                        "name": "Scope A"
+                    },
+                    {
+                        "name": "Scope D"
+                    },
+                    {
+                        "name": "Scope C"
+                    },
+                    {
+                        "name": "Scope E"
+                    }
+                ]
+            },
+            {
+                "name": "Resource 9",
+                "uri": "/protected/resource/9",
+                "scopes": [
+                    {
+                        "name": "Scope B"
+                    },
+                    {
+                        "name": "Scope A"
+                    },
+                    {
+                        "name": "Scope D"
+                    },
+                    {
+                        "name": "Scope C"
+                    },
+                    {
+                        "name": "Scope E"
+                    }
+                ]
+            },
+            {
+                "name": "Resource 10",
+                "uri": "/protected/resource/10",
+                "scopes": [
+                    {
+                        "name": "Scope B"
+                    },
+                    {
+                        "name": "Scope A"
+                    },
+                    {
+                        "name": "Scope D"
+                    },
+                    {
+                        "name": "Scope C"
+                    },
+                    {
+                        "name": "Scope E"
+                    }
+                ]
+            },
+            {
+                "name": "Resource 11",
+                "uri": "/protected/resource/11",
+                "scopes": [
+                    {
+                        "name": "Scope B"
+                    },
+                    {
+                        "name": "Scope A"
+                    },
+                    {
+                        "name": "Scope D"
+                    },
+                    {
+                        "name": "Scope C"
+                    },
+                    {
+                        "name": "Scope E"
+                    }
+                ]
+            },
+            {
+                "name": "Resource 12",
+                "uri": "/protected/resource/12",
+                "scopes": [
+                    {
+                        "name": "Scope B"
+                    },
+                    {
+                        "name": "Scope A"
+                    },
+                    {
+                        "name": "Scope D"
+                    },
+                    {
+                        "name": "Scope C"
+                    },
+                    {
+                        "name": "Scope E"
+                    }
+                ]
+            },
+            {
+                "name": "Resource 13",
+                "uri": "/protected/resource/13",
+                "scopes": [
+                    {
+                        "name": "Scope B"
+                    },
+                    {
+                        "name": "Scope A"
+                    },
+                    {
+                        "name": "Scope D"
+                    },
+                    {
+                        "name": "Scope C"
+                    },
+                    {
+                        "name": "Scope E"
+                    }
+                ]
+            },
+            {
+                "name": "Resource 14",
+                "uri": "/protected/resource/14",
+                "scopes": [
+                    {
+                        "name": "Scope B"
+                    },
+                    {
+                        "name": "Scope A"
+                    },
+                    {
+                        "name": "Scope D"
+                    },
+                    {
+                        "name": "Scope C"
+                    },
+                    {
+                        "name": "Scope E"
+                    }
+                ]
+            },
+            {
+                "name": "Resource 15",
+                "uri": "/protected/resource/15",
+                "scopes": [
+                    {
+                        "name": "Scope B"
+                    },
+                    {
+                        "name": "Scope A"
+                    },
+                    {
+                        "name": "Scope D"
+                    },
+                    {
+                        "name": "Scope C"
+                    },
+                    {
+                        "name": "Scope E"
+                    }
+                ]
+            },
+            {
+                "name": "Resource 16",
+                "uri": "/protected/resource/16",
+                "scopes": [
+                    {
+                        "name": "Scope B"
+                    },
+                    {
+                        "name": "Scope A"
+                    },
+                    {
+                        "name": "Scope D"
+                    },
+                    {
+                        "name": "Scope C"
+                    },
+                    {
+                        "name": "Scope E"
+                    }
+                ]
+            },
+            {
+                "name": "Resource 17",
+                "uri": "/protected/resource/17",
+                "scopes": [
+                    {
+                        "name": "Scope B"
+                    },
+                    {
+                        "name": "Scope A"
+                    },
+                    {
+                        "name": "Scope D"
+                    },
+                    {
+                        "name": "Scope C"
+                    },
+                    {
+                        "name": "Scope E"
+                    }
+                ]
+            },
+            {
+                "name": "Resource 18",
+                "uri": "/protected/resource/18",
+                "scopes": [
+                    {
+                        "name": "Scope B"
+                    },
+                    {
+                        "name": "Scope A"
+                    },
+                    {
+                        "name": "Scope D"
+                    },
+                    {
+                        "name": "Scope C"
+                    },
+                    {
+                        "name": "Scope E"
+                    }
+                ]
+            },
+            {
+                "name": "Resource 19",
+                "uri": "/protected/resource/19",
+                "scopes": [
+                    {
+                        "name": "Scope B"
+                    },
+                    {
+                        "name": "Scope A"
+                    },
+                    {
+                        "name": "Scope D"
+                    },
+                    {
+                        "name": "Scope C"
+                    },
+                    {
+                        "name": "Scope E"
+                    }
+                ]
+            },
+            {
+                "name": "Resource 20",
+                "uri": "/protected/resource/20",
+                "scopes": [
+                    {
+                        "name": "Scope B"
+                    },
+                    {
+                        "name": "Scope A"
+                    },
+                    {
+                        "name": "Scope D"
+                    },
+                    {
+                        "name": "Scope C"
+                    },
+                    {
+                        "name": "Scope E"
+                    }
+                ]
+            }
+        ],
+        "policies": [
+            {
+                "name": "Default Policy",
+                "description": "A policy that grants access only for users within this realm",
+                "type": "js",
+                "logic": "POSITIVE",
+                "decisionStrategy": "AFFIRMATIVE",
+                "config": {
+                    "code": "// by default, grants any permission associated with this policy\n$evaluation.grant();\n"
+                }
+            },
+            {
+                "name": "Resource 1 Policy",
+                "type": "role",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "roles": "[{\"id\":\"authz-client/uma_protection\",\"required\":false}]"
+                }
+            },
+            {
+                "name": "Resource 2 Policy",
+                "type": "role",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "roles": "[{\"id\":\"authz-client/uma_protection\",\"required\":false}]"
+                }
+            },
+            {
+                "name": "Resource 3 Policy",
+                "type": "role",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "roles": "[{\"id\":\"authz-client/uma_protection\",\"required\":false}]"
+                }
+            },
+            {
+                "name": "Resource 4 Policy",
+                "type": "role",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "roles": "[{\"id\":\"authz-client/uma_protection\",\"required\":false}]"
+                }
+            },
+            {
+                "name": "Resource 5 Policy",
+                "type": "role",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "roles": "[{\"id\":\"authz-client/uma_protection\",\"required\":false}]"
+                }
+            },
+            {
+                "name": "Resource 6 Policy",
+                "type": "role",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "roles": "[{\"id\":\"authz-client/uma_protection\",\"required\":false}]"
+                }
+            },
+            {
+                "name": "Resource 7 Policy",
+                "type": "role",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "roles": "[{\"id\":\"authz-client/uma_protection\",\"required\":false}]"
+                }
+            },
+            {
+                "name": "Resource 8 Policy",
+                "type": "role",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "roles": "[{\"id\":\"authz-client/uma_protection\",\"required\":false}]"
+                }
+            },
+            {
+                "name": "Resource 9 Policy",
+                "type": "role",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "roles": "[{\"id\":\"authz-client/uma_protection\",\"required\":false}]"
+                }
+            },
+            {
+                "name": "Resource 10 Policy",
+                "type": "role",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "roles": "[{\"id\":\"authz-client/uma_protection\",\"required\":false}]"
+                }
+            },
+            {
+                "name": "Resource 11 Policy",
+                "type": "role",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "roles": "[{\"id\":\"authz-client/uma_protection\",\"required\":false}]"
+                }
+            },
+            {
+                "name": "Resource 12 Policy",
+                "type": "role",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "roles": "[{\"id\":\"authz-client/uma_protection\",\"required\":false}]"
+                }
+            },
+            {
+                "name": "Resource 13 Policy",
+                "type": "role",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "roles": "[{\"id\":\"authz-client/uma_protection\",\"required\":false}]"
+                }
+            },
+            {
+                "name": "Resource 14 Policy",
+                "type": "role",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "roles": "[{\"id\":\"authz-client/uma_protection\",\"required\":false}]"
+                }
+            },
+            {
+                "name": "Resource 15 Policy",
+                "type": "role",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "roles": "[{\"id\":\"authz-client/uma_protection\",\"required\":false}]"
+                }
+            },
+            {
+                "name": "Resource 16 Policy",
+                "type": "role",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "roles": "[{\"id\":\"authz-client/uma_protection\",\"required\":false}]"
+                }
+            },
+            {
+                "name": "Resource 17 Policy",
+                "type": "role",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "roles": "[{\"id\":\"authz-client/uma_protection\",\"required\":false}]"
+                }
+            },
+            {
+                "name": "Resource 18 Policy",
+                "type": "role",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "roles": "[{\"id\":\"authz-client/uma_protection\",\"required\":false}]"
+                }
+            },
+            {
+                "name": "Resource 19 Policy",
+                "type": "role",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "roles": "[{\"id\":\"authz-client/uma_protection\",\"required\":false}]"
+                }
+            },
+            {
+                "name": "Resource 20 Policy",
+                "type": "role",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "roles": "[{\"id\":\"authz-client/uma_protection\",\"required\":false}]"
+                }
+            },
+            {
+                "name": "Default Permission",
+                "description": "A permission that applies to the default resource type",
+                "type": "resource",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "defaultResourceType": "urn:authz-client:resources:default",
+                    "applyPolicies": "[\"Default Policy\"]"
+                }
+            },
+            {
+                "name": "Resource 1 Permission",
+                "type": "resource",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "resources": "[\"Resource 1\"]",
+                    "applyPolicies": "[\"Resource 1 Policy\"]"
+                }
+            },
+            {
+                "name": "Resource 2 Permission",
+                "type": "resource",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "resources": "[\"Resource 2\"]",
+                    "applyPolicies": "[\"Resource 2 Policy\"]"
+                }
+            },
+            {
+                "name": "Resource 3 Permission",
+                "type": "resource",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "resources": "[\"Resource 3\"]",
+                    "applyPolicies": "[\"Resource 3 Policy\"]"
+                }
+            },
+            {
+                "name": "Resource 4 Permission",
+                "type": "resource",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "resources": "[\"Resource 4\"]",
+                    "applyPolicies": "[\"Resource 4 Policy\"]"
+                }
+            },
+            {
+                "name": "Resource 5 Permission",
+                "type": "resource",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "resources": "[\"Resource 5\"]",
+                    "applyPolicies": "[\"Resource 5 Policy\"]"
+                }
+            },
+            {
+                "name": "Resource 6 Permission",
+                "type": "resource",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "resources": "[\"Resource 6\"]",
+                    "applyPolicies": "[\"Resource 6 Policy\"]"
+                }
+            },
+            {
+                "name": "Resource 7 Permission",
+                "type": "resource",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "resources": "[\"Resource 7\"]",
+                    "applyPolicies": "[\"Resource 7 Policy\"]"
+                }
+            },
+            {
+                "name": "Resource 8 Permission",
+                "type": "resource",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "resources": "[\"Resource 8\"]",
+                    "applyPolicies": "[\"Resource 8 Policy\"]"
+                }
+            },
+            {
+                "name": "Resource 9 Permission",
+                "type": "resource",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "resources": "[\"Resource 9\"]",
+                    "applyPolicies": "[\"Resource 9 Policy\"]"
+                }
+            },
+            {
+                "name": "Resource 10 Permission",
+                "type": "resource",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "resources": "[\"Resource 10\"]",
+                    "applyPolicies": "[\"Resource 10 Policy\"]"
+                }
+            },
+            {
+                "name": "Resource 11 Permission",
+                "type": "resource",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "resources": "[\"Resource 11\"]",
+                    "applyPolicies": "[\"Resource 11 Policy\"]"
+                }
+            },
+            {
+                "name": "Resource 12 Permission",
+                "type": "resource",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "resources": "[\"Resource 12\"]",
+                    "applyPolicies": "[\"Resource 12 Policy\"]"
+                }
+            },
+            {
+                "name": "Resource 13 Permission",
+                "type": "resource",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "resources": "[\"Resource 13\"]",
+                    "applyPolicies": "[\"Resource 13 Policy\"]"
+                }
+            },
+            {
+                "name": "Resource 14 Permission",
+                "type": "resource",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "resources": "[\"Resource 14\"]",
+                    "applyPolicies": "[\"Resource 14 Policy\"]"
+                }
+            },
+            {
+                "name": "Resource 15 Permission",
+                "type": "resource",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "resources": "[\"Resource 15\"]",
+                    "applyPolicies": "[\"Resource 15 Policy\"]"
+                }
+            },
+            {
+                "name": "Resource 16 Permission",
+                "type": "resource",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "resources": "[\"Resource 16\"]",
+                    "applyPolicies": "[\"Resource 16 Policy\"]"
+                }
+            },
+            {
+                "name": "Resource 17 Permission",
+                "type": "resource",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "resources": "[\"Resource 17\"]",
+                    "applyPolicies": "[\"Resource 17 Policy\"]"
+                }
+            },
+            {
+                "name": "Resource 18 Permission",
+                "type": "resource",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "resources": "[\"Resource 18\"]",
+                    "applyPolicies": "[\"Resource 18 Policy\"]"
+                }
+            },
+            {
+                "name": "Resource 19 Permission",
+                "type": "resource",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "resources": "[\"Resource 19\"]",
+                    "applyPolicies": "[\"Resource 19 Policy\"]"
+                }
+            },
+            {
+                "name": "Resource 20 Permission",
+                "type": "resource",
+                "logic": "POSITIVE",
+                "decisionStrategy": "UNANIMOUS",
+                "config": {
+                    "resources": "[\"Resource 20\"]",
+                    "applyPolicies": "[\"Resource 20 Policy\"]"
+                }
+            }
+        ],
+        "scopes": [
+            {
+                "name": "Scope B"
+            },
+            {
+                "name": "Scope A"
+            },
+            {
+                "name": "Scope D"
+            },
+            {
+                "name": "Scope C"
+            },
+            {
+                "name": "Scope E"
+            }
+        ]
+    }
+}

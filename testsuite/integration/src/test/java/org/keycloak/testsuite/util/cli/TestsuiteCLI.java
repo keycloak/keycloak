@@ -17,6 +17,11 @@
 
 package org.keycloak.testsuite.util.cli;
 
+import org.jboss.logging.Logger;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.testsuite.KeycloakServer;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -25,11 +30,6 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.jboss.logging.Logger;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.testsuite.KeycloakServer;
 
 /**
  * See Testsuite.md (section how to create many users and offline sessions)
@@ -43,21 +43,29 @@ public class TestsuiteCLI {
     private static final Class<?>[] BUILTIN_COMMANDS = {
             ExitCommand.class,
             HelpCommand.class,
-            AbstractOfflineCacheCommand.PutCommand.class,
-            AbstractOfflineCacheCommand.GetCommand.class,
-            AbstractOfflineCacheCommand.GetMultipleCommand.class,
-            AbstractOfflineCacheCommand.GetLocalCommand.class,
-            AbstractOfflineCacheCommand.RemoveCommand.class,
-            AbstractOfflineCacheCommand.SizeCommand.class,
-            AbstractOfflineCacheCommand.ListCommand.class,
-            AbstractOfflineCacheCommand.ClearCommand.class,
+            AbstractSessionCacheCommand.PutCommand.class,
+            AbstractSessionCacheCommand.GetCommand.class,
+            AbstractSessionCacheCommand.GetMultipleCommand.class,
+            AbstractSessionCacheCommand.GetLocalCommand.class,
+            AbstractSessionCacheCommand.SizeLocalCommand.class,
+            AbstractSessionCacheCommand.RemoveCommand.class,
+            AbstractSessionCacheCommand.SizeCommand.class,
+            AbstractSessionCacheCommand.ListCommand.class,
+            AbstractSessionCacheCommand.ClearCommand.class,
+            AbstractSessionCacheCommand.CreateManySessionsCommand.class,
+            AbstractSessionCacheCommand.CreateManySessionsProviderCommand.class,
             PersistSessionsCommand.class,
             LoadPersistentSessionsCommand.class,
             UserCommands.Create.class,
             UserCommands.Remove.class,
             UserCommands.Count.class,
             UserCommands.GetUser.class,
-            SyncDummyFederationProviderCommand.class
+            SyncDummyFederationProviderCommand.class,
+            RoleCommands.CreateRoles.class,
+            CacheCommands.ListCachesCommand.class,
+            CacheCommands.GetCacheCommand.class,
+            CacheCommands.CacheRealmObjectsCommand.class,
+            ClusterProviderTaskCommand.class
     };
 
     private final KeycloakSessionFactory sessionFactory;

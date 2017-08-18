@@ -28,7 +28,6 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.CredentialValidation;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 
@@ -40,7 +39,6 @@ import javax.ws.rs.core.Response;
  * @version $Revision: 1 $
  */
 public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory {
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
     }
@@ -77,16 +75,15 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
         UserCredentialModel credentials = new UserCredentialModel();
         credentials.setType(context.getRealm().getOTPPolicy().getType());
         credentials.setValue(totpSecret);
-        context.getSession().users().updateCredential(context.getRealm(), context.getUser(), credentials);
+        context.getSession().userCredentialManager().updateCredential(context.getRealm(), context.getUser(), credentials);
 
 
         // if type is HOTP, to update counter we execute validation based on supplied token
         UserCredentialModel cred = new UserCredentialModel();
         cred.setType(context.getRealm().getOTPPolicy().getType());
         cred.setValue(totp);
-        context.getSession().users().validCredentials(context.getSession(), context.getRealm(), context.getUser(), cred);
+        context.getSession().userCredentialManager().isValid(context.getRealm(), context.getUser(), cred);
 
-        context.getUser().setOtpEnabled(true);
         context.success();
     }
 
@@ -120,5 +117,10 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
     @Override
     public String getId() {
         return UserModel.RequiredAction.CONFIGURE_TOTP.name();
+    }
+
+    @Override
+    public boolean isOneTimeAction() {
+        return true;
     }
 }

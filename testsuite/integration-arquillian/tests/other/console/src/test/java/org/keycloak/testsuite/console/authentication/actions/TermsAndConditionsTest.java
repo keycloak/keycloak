@@ -17,20 +17,20 @@
  */
 package org.keycloak.testsuite.console.authentication.actions;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.auth.page.login.Registration;
 import org.keycloak.testsuite.auth.page.login.TermsAndConditions;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.authentication.RequiredActions;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 

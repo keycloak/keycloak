@@ -28,7 +28,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -51,7 +53,7 @@ public class ResourceManagementTest extends AbstractPhotozAdminTest {
         ResourceRepresentation resource = response.readEntity(ResourceRepresentation.class);
 
         onAuthorizationSession(authorizationProvider -> {
-            Resource resourceModel = authorizationProvider.getStoreFactory().getResourceStore().findById(resource.getId());
+            Resource resourceModel = authorizationProvider.getStoreFactory().getResourceStore().findById(resource.getId(), resourceServer.getId());
 
             assertNotNull(resourceModel);
             assertEquals(resource.getId(), resourceModel.getId());
@@ -87,7 +89,7 @@ public class ResourceManagementTest extends AbstractPhotozAdminTest {
         ResourceRepresentation resource = response.readEntity(ResourceRepresentation.class);
 
         onAuthorizationSession(authorizationProvider -> {
-            Resource resourceModel = authorizationProvider.getStoreFactory().getResourceStore().findById(resource.getId());
+            Resource resourceModel = authorizationProvider.getStoreFactory().getResourceStore().findById(resource.getId(), resourceServer.getId());
 
             assertNotNull(resourceModel);
             assertEquals(resource.getId(), resourceModel.getId());
@@ -145,7 +147,7 @@ public class ResourceManagementTest extends AbstractPhotozAdminTest {
         assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
 
         onAuthorizationSession(authorizationProvider -> {
-            Resource resourceModel = authorizationProvider.getStoreFactory().getResourceStore().findById(resource.getId());
+            Resource resourceModel = authorizationProvider.getStoreFactory().getResourceStore().findById(resource.getId(), resourceServer.getId());
 
             assertNull(resourceModel);
         });

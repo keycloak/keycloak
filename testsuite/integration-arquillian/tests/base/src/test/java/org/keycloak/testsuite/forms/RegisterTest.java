@@ -17,20 +17,21 @@
 package org.keycloak.testsuite.forms;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Rule;
+import org.junit.Test;
 import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.TestRealmKeycloakTest;
-import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
-import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.pages.*;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.pages.RegisterPage;
-import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 
+import org.keycloak.testsuite.util.*;
+import javax.mail.internet.MimeMessage;
 import static org.jgroups.util.Util.assertTrue;
 import static org.junit.Assert.assertEquals;
 
@@ -38,7 +39,7 @@ import static org.junit.Assert.assertEquals;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public class RegisterTest extends TestRealmKeycloakTest {
+public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -53,19 +54,25 @@ public class RegisterTest extends TestRealmKeycloakTest {
     protected RegisterPage registerPage;
 
     @Page
+    protected VerifyEmailPage verifyEmailPage;
+
+    @Page
     protected AccountUpdateProfilePage accountPage;
+
+    @Rule
+    public GreenMailRule greenMail = new GreenMailRule();
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
     }
 
     @Test
-    public void registerExistingUser() {
+    public void registerExistingUsernameForbidden() {
         loginPage.open();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
-        registerPage.register("firstName", "lastName", "registerExistingUser@email", "test-user@localhost", "password", "password");
+        registerPage.register("firstName", "lastName", "registerExistingUser@email", "roleRichUser", "password", "password");
 
         registerPage.assertCurrent();
         assertEquals("Username already exists.", registerPage.getError());
@@ -78,9 +85,59 @@ public class RegisterTest extends TestRealmKeycloakTest {
         assertEquals("", registerPage.getPassword());
         assertEquals("", registerPage.getPasswordConfirm());
 
-        events.expectRegister("test-user@localhost", "registerExistingUser@email")
+        events.expectRegister("roleRichUser", "registerExistingUser@email")
                 .removeDetail(Details.EMAIL)
                 .user((String) null).error("username_in_use").assertEvent();
+    }
+ 
+    @Test
+    public void registerExistingEmailForbidden() {
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+
+        registerPage.register("firstName", "lastName", "test-user@localhost", "registerExistingUser", "password", "password");
+
+        registerPage.assertCurrent();
+        assertEquals("Email already exists.", registerPage.getError());
+
+        // assert form keeps form fields on error
+        assertEquals("firstName", registerPage.getFirstName());
+        assertEquals("lastName", registerPage.getLastName());
+        assertEquals("", registerPage.getEmail());
+        assertEquals("registerExistingUser", registerPage.getUsername());
+        assertEquals("", registerPage.getPassword());
+        assertEquals("", registerPage.getPasswordConfirm());
+
+        events.expectRegister("registerExistingUser", "registerExistingUser@email")
+                .removeDetail(Details.EMAIL)
+                .user((String) null).error("email_in_use").assertEvent();
+    }
+ 
+    @Test
+    public void registerExistingEmailAllowed() {
+        setDuplicateEmailsAllowed(true);
+                
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+
+        registerPage.register("firstName", "lastName", "test-user@localhost", "registerExistingEmailUser", "password", "password");
+
+        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        String userId = events.expectRegister("registerExistingEmailUser", "test-user@localhost").assertEvent().getUserId();
+        events.expectLogin().detail("username", "registerexistingemailuser").user(userId).assertEvent();
+
+        UserRepresentation user = getUser(userId);
+        Assert.assertNotNull(user);
+        assertEquals("registerexistingemailuser", user.getUsername());
+        assertEquals("test-user@localhost", user.getEmail());
+        assertEquals("firstName", user.getFirstName());
+        assertEquals("lastName", user.getLastName());
+
+        testRealm().users().get(userId).remove();
+        setDuplicateEmailsAllowed(false);
     }
 
     @Test
@@ -243,10 +300,15 @@ public class RegisterTest extends TestRealmKeycloakTest {
 
         registerPage.register("firstName", "lastName", "registerUserSuccess@email", "registerUserSuccess", "password", "password");
 
+        appPage.assertCurrent();
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         String userId = events.expectRegister("registerUserSuccess", "registerUserSuccess@email").assertEvent().getUserId();
-        events.expectLogin().detail("username", "registerusersuccess").user(userId).assertEvent();
+        assertUserRegistered(userId, "registerusersuccess", "registerusersuccess@email");
+    }
+
+    private void assertUserRegistered(String userId, String username, String email) {
+        events.expectLogin().detail("username", username.toLowerCase()).user(userId).assertEvent();
 
         UserRepresentation user = getUser(userId);
         Assert.assertNotNull(user);
@@ -254,10 +316,119 @@ public class RegisterTest extends TestRealmKeycloakTest {
         // test that timestamp is current with 10s tollerance
         Assert.assertTrue((System.currentTimeMillis() - user.getCreatedTimestamp()) < 10000);
         // test user info is set from form
-        assertEquals("registerusersuccess", user.getUsername());
-        assertEquals("registerusersuccess@email", user.getEmail());
+        assertEquals(username.toLowerCase(), user.getUsername());
+        assertEquals(email.toLowerCase(), user.getEmail());
         assertEquals("firstName", user.getFirstName());
         assertEquals("lastName", user.getLastName());
+    }
+
+    @Test
+    public void registerUserSuccessWithEmailVerification() throws Exception {
+        RealmRepresentation realm = testRealm().toRepresentation();
+        boolean origVerifyEmail = realm.isVerifyEmail();
+
+        try {
+            realm.setVerifyEmail(true);
+            testRealm().update(realm);
+
+            loginPage.open();
+            loginPage.clickRegister();
+            registerPage.assertCurrent();
+
+            registerPage.register("firstName", "lastName", "registerUserSuccessWithEmailVerification@email", "registerUserSuccessWithEmailVerification", "password", "password");
+            verifyEmailPage.assertCurrent();
+
+            String userId = events.expectRegister("registerUserSuccessWithEmailVerification", "registerUserSuccessWithEmailVerification@email").assertEvent().getUserId();
+
+            {
+                assertTrue("Expecting verify email", greenMail.waitForIncomingEmail(1000, 1));
+
+                events.expect(EventType.SEND_VERIFY_EMAIL)
+                  .detail(Details.EMAIL, "registerUserSuccessWithEmailVerification@email".toLowerCase())
+                  .user(userId)
+                  .assertEvent();
+
+                MimeMessage message = greenMail.getLastReceivedMessage();
+                String link = MailUtils.getPasswordResetEmailLink(message);
+
+                driver.navigate().to(link);
+            }
+
+            events.expectRequiredAction(EventType.VERIFY_EMAIL)
+              .detail(Details.EMAIL, "registerUserSuccessWithEmailVerification@email".toLowerCase())
+              .user(userId)
+              .assertEvent();
+
+            assertUserRegistered(userId, "registerUserSuccessWithEmailVerification", "registerUserSuccessWithEmailVerification@email");
+
+            appPage.assertCurrent();
+            assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+            // test that timestamp is current with 10s tollerance
+            // test user info is set from form
+        } finally {
+            realm.setVerifyEmail(origVerifyEmail);
+            testRealm().update(realm);
+        }
+    }
+
+    @Test
+    public void registerUserSuccessWithEmailVerificationWithResend() throws Exception {
+        RealmRepresentation realm = testRealm().toRepresentation();
+        boolean origVerifyEmail = realm.isVerifyEmail();
+        try {
+            realm.setVerifyEmail(true);
+            testRealm().update(realm);
+
+            loginPage.open();
+            loginPage.clickRegister();
+            registerPage.assertCurrent();
+
+            registerPage.register("firstName", "lastName", "registerUserSuccessWithEmailVerificationWithResend@email", "registerUserSuccessWithEmailVerificationWithResend", "password", "password");
+            verifyEmailPage.assertCurrent();
+
+            String userId = events.expectRegister("registerUserSuccessWithEmailVerificationWithResend", "registerUserSuccessWithEmailVerificationWithResend@email").assertEvent().getUserId();
+
+            {
+                assertTrue("Expecting verify email", greenMail.waitForIncomingEmail(1000, 1));
+
+                events.expect(EventType.SEND_VERIFY_EMAIL)
+                  .detail(Details.EMAIL, "registerUserSuccessWithEmailVerificationWithResend@email".toLowerCase())
+                  .user(userId)
+                  .assertEvent();
+
+                verifyEmailPage.clickResendEmail();
+                verifyEmailPage.assertCurrent();
+
+                assertTrue("Expecting second verify email", greenMail.waitForIncomingEmail(1000, 1));
+
+                events.expect(EventType.SEND_VERIFY_EMAIL)
+                  .detail(Details.EMAIL, "registerUserSuccessWithEmailVerificationWithResend@email".toLowerCase())
+                  .user(userId)
+                  .assertEvent();
+
+                MimeMessage message = greenMail.getLastReceivedMessage();
+                String link = MailUtils.getPasswordResetEmailLink(message);
+
+                driver.navigate().to(link);
+            }
+
+            events.expectRequiredAction(EventType.VERIFY_EMAIL)
+              .detail(Details.EMAIL, "registerUserSuccessWithEmailVerificationWithResend@email".toLowerCase())
+              .user(userId)
+              .assertEvent();
+
+            assertUserRegistered(userId, "registerUserSuccessWithEmailVerificationWithResend", "registerUserSuccessWithEmailVerificationWithResend@email");
+
+            appPage.assertCurrent();
+            assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+            // test that timestamp is current with 10s tollerance
+            // test user info is set from form
+        } finally {
+            realm.setVerifyEmail(origVerifyEmail);
+            testRealm().update(realm);
+        }
     }
 
     @Test
@@ -394,6 +565,12 @@ public class RegisterTest extends TestRealmKeycloakTest {
         RealmRepresentation realm = testRealm().toRepresentation();
         realm.setRegistrationEmailAsUsername(value);
         testRealm().update(realm);
+    }
+    
+    private void setDuplicateEmailsAllowed(boolean allowed) {
+        RealmRepresentation testRealm = testRealm().toRepresentation();
+        testRealm.setDuplicateEmailsAllowed(allowed);
+        testRealm().update(testRealm);
     }
 
 }

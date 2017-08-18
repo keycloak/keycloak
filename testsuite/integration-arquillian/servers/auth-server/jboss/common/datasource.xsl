@@ -32,20 +32,20 @@
                          /*[local-name()='datasource' and starts-with(namespace-uri(), $nsDS) and @pool-name='KeycloakDS']">
     </xsl:template>
     
-    <xsl:param name="jdbc.url" select="'jdbc:h2:${jboss.server.data.dir}/keycloak;AUTO_SERVER=TRUE'"/>
-    <xsl:param name="driver" select="'h2'"/>
-    
-    <xsl:param name="username" select="'sa'"/>
-    <xsl:param name="password" select="'sa'"/>
-    
+    <xsl:param name="db.jdbc_url"/>
+    <xsl:param name="driver"/>
+
     <xsl:param name="min.poolsize" select="'10'"/>
     <xsl:param name="max.poolsize" select="'50'"/>
     <xsl:param name="pool.prefill" select="'true'"/>
     
+    <xsl:param name="username"/>
+    <xsl:param name="password"/>
+    
     <xsl:variable name="newDatasourceDefinition">
-        <datasource jndi-name="java:jboss/datasources/KeycloakDS" jta="false" pool-name="KeycloakDS" use-java-context="true">
+        <datasource jndi-name="java:jboss/datasources/KeycloakDS" pool-name="KeycloakDS" use-java-context="true">
             <connection-url>
-                <xsl:value-of select="$jdbc.url"/>
+                <xsl:value-of select="$db.jdbc_url"/>
             </connection-url>
             <driver>
                 <xsl:value-of select="$driver"/>
@@ -74,7 +74,7 @@
     
     <xsl:variable name="newDriverDefinition">
         <xsl:if test="$driver != 'h2'">
-            <driver name="{$driver}" module="com.{$driver}" />
+            <driver name="{$driver}" module="test.jdbc.{$driver}" />
         </xsl:if>
     </xsl:variable>
     

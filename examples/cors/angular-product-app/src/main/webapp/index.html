@@ -92,9 +92,20 @@
         <h2><span>Realm info</span></h2>
         <button type="submit" data-ng-click="loadPublicRealmInfo()">Load public realm info</button>
 
-        <div data-ng-show="realm">
-            Realm name: {{realm.realm}} <br/>
-            Public key: {{realm.public_key}} <br/>
+        <div data-ng-show="publicKeys">
+            <b>Realm issuer</b>: {{realmOIDCInfo.issuer}} <br/>
+            <table class="table" data-ng-show="publicKeys.keys.length > 0">
+                <thead>
+                <tr>
+                    <th>Public Key KIDs</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr data-ng-repeat="pk in publicKeys.keys">
+                    <td>{{pk.kid}}</td>
+                </tr>
+                </tbody>
+            </table>
         </div>
     </div>
     <hr />

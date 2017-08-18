@@ -17,6 +17,8 @@
  */
 package org.keycloak.authorization.policy.provider.aggregated;
 
+import java.util.List;
+
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.evaluation.DecisionResultCollector;
@@ -26,20 +28,10 @@ import org.keycloak.authorization.policy.evaluation.Result;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 
-import java.util.List;
-
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class AggregatePolicyProvider implements PolicyProvider {
-
-    private final Policy policy;
-    private final AuthorizationProvider authorization;
-
-    public AggregatePolicyProvider(Policy policy, AuthorizationProvider authorization) {
-        this.policy = policy;
-        this.authorization = authorization;
-    }
 
     @Override
     public void evaluate(Evaluation evaluation) {
@@ -59,10 +51,12 @@ public class AggregatePolicyProvider implements PolicyProvider {
             }
         };
 
-        this.policy.getAssociatedPolicies().forEach(associatedPolicy -> {
-            PolicyProviderFactory providerFactory = authorization.getProviderFactory(associatedPolicy.getType());
-            PolicyProvider policyProvider = providerFactory.create(associatedPolicy, authorization);
-            policyProvider.evaluate(new DefaultEvaluation(evaluation.getPermission(), evaluation.getContext(), policy, associatedPolicy, decision));
+        Policy policy = evaluation.getPolicy();
+        AuthorizationProvider authorization = evaluation.getAuthorizationProvider();
+
+        policy.getAssociatedPolicies().forEach(associatedPolicy -> {
+            PolicyProvider policyProvider = authorization.getProvider(associatedPolicy.getType());
+            policyProvider.evaluate(new DefaultEvaluation(evaluation.getPermission(), evaluation.getContext(), policy, associatedPolicy, decision, authorization));
         });
 
         decision.onComplete();

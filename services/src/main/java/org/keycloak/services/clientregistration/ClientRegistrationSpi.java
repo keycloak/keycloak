@@ -27,7 +27,7 @@ import org.keycloak.provider.Spi;
 public class ClientRegistrationSpi implements Spi {
     @Override
     public boolean isInternal() {
-        return false;
+        return true;
     }
 
     @Override

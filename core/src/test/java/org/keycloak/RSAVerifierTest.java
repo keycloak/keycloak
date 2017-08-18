@@ -25,9 +25,9 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Time;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.common.util.Time;
 import org.keycloak.util.TokenUtil;
 
 import javax.security.auth.x500.X500Principal;
@@ -234,12 +234,15 @@ public class RSAVerifierTest {
     public void testTokenAuth() throws Exception {
         token = new AccessToken();
         token.subject("CN=Client")
-                .issuer("domain")
+                .issuer("http://localhost:8080/auth/realms/demo")
                 .addAccess("service").addRole("admin").verifyCaller(true);
+        token.setEmail("bill@jboss.org");
 
         String encoded = new JWSBuilder()
                 .jsonContent(token)
                 .rsa256(idpPair.getPrivate());
+
+        System.out.println("token size: " + encoded.length());
 
         AccessToken v = null;
         try {

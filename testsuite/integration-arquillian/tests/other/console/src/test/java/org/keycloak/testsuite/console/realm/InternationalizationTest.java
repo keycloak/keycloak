@@ -11,6 +11,7 @@ import org.keycloak.testsuite.console.page.realm.ThemeSettings;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
 import static org.junit.Assert.*;
 import static org.keycloak.testsuite.util.URLAssert.*;
 

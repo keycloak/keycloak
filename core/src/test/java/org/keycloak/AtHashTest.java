@@ -17,13 +17,13 @@
 
 package org.keycloak;
 
-import java.security.Security;
-
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.crypto.HashProvider;
+
+import java.security.Security;
 
 /**
  * See "at_hash" in OIDC specification

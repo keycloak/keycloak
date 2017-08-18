@@ -1,7 +1,6 @@
 package org.keycloak.testsuite.console.page.realm;
 
 import org.keycloak.testsuite.console.page.AdminConsoleRealm;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;

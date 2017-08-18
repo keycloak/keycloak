@@ -17,9 +17,6 @@
 
 package org.keycloak.testsuite.admin.client;
 
-import java.util.List;
-import javax.ws.rs.core.Response;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -30,11 +27,15 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
+import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.events.EventsListenerProviderFactory;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.AssertAdminEvents;
 import org.keycloak.testsuite.util.RealmBuilder;
+
+import javax.ws.rs.core.Response;
+import java.util.List;
 
 /**
  *
@@ -44,6 +45,13 @@ public abstract class AbstractClientTest extends AbstractAuthTest {
 
     @Rule
     public AssertAdminEvents assertAdminEvents = new AssertAdminEvents(this);
+
+    @Override
+    public void setDefaultPageUriParameters() {
+        super.setDefaultPageUriParameters();
+        testRealmPage.setAuthRealm("test");
+        accountPage.setAuthRealm("test");
+    }    
 
     @Before
     public void setupAdminEvents() {
@@ -65,23 +73,52 @@ public abstract class AbstractClientTest extends AbstractAuthTest {
     }
 
     protected String getRealmId() {
-        return "master";
+        return "test";
     }
 
     // returns UserRepresentation retrieved from server, with all fields, including id
     protected UserRepresentation getFullUserRep(String userName) {
+        // the search returns all users who has userName contained in their username.
         List<UserRepresentation> results = testRealmResource().users().search(userName, null, null, null, null, null);
-        if (results.size() != 1) throw new RuntimeException("Did not find single user with username " + userName);
-        return results.get(0);
+        UserRepresentation result = null;
+        for (UserRepresentation user : results) {
+            if (userName.equals(user.getUsername())) {
+                result = user;
+            }
+        }
+        Assert.assertNotNull("Did not find user with username " + userName, result);
+        return result;
     }
 
     protected String createOidcClient(String name) {
+        return createClient(createOidcClientRep(name));
+    }
+
+    protected String createOidcBearerOnlyClient(String name) {
+        ClientRepresentation clientRep = createOidcClientRep(name);
+        clientRep.setBearerOnly(Boolean.TRUE);
+        clientRep.setPublicClient(Boolean.FALSE);
+        return createClient(clientRep);
+    }
+
+    protected String createOidcBearerOnlyClientWithAuthz(String name) {
+        ClientRepresentation clientRep = createOidcClientRep(name);
+        clientRep.setBearerOnly(Boolean.TRUE);
+        clientRep.setPublicClient(Boolean.FALSE);
+        clientRep.setAuthorizationServicesEnabled(Boolean.TRUE);
+        clientRep.setServiceAccountsEnabled(Boolean.TRUE);
+        String id = createClient(clientRep);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientResourcePath(id), ResourceType.AUTHORIZATION_RESOURCE_SERVER);
+        return id;
+    }
+
+    protected ClientRepresentation createOidcClientRep(String name) {
         ClientRepresentation clientRep = new ClientRepresentation();
         clientRep.setClientId(name);
         clientRep.setName(name);
         clientRep.setRootUrl("foo");
-        clientRep.setProtocol("openid-connect");
-        return createClient(clientRep);
+        clientRep.setProtocol("openid-connect"); 
+        return clientRep;
     }
 
     protected String createSamlClient(String name) {

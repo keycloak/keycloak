@@ -17,6 +17,10 @@
 
 package org.keycloak.saml;
 
+import org.keycloak.dom.saml.v2.assertion.NameIDType;
+import org.keycloak.dom.saml.v2.protocol.StatusCodeType;
+import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
+import org.keycloak.dom.saml.v2.protocol.StatusType;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
@@ -24,23 +28,23 @@ import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.processing.api.saml.v2.response.SAML2Response;
 import org.keycloak.saml.processing.core.saml.v2.common.IDGenerator;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
-import org.keycloak.dom.saml.v2.assertion.NameIDType;
-import org.keycloak.dom.saml.v2.protocol.StatusCodeType;
-import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
-import org.keycloak.dom.saml.v2.protocol.StatusType;
 import org.w3c.dom.Document;
 
 import java.net.URI;
+import java.util.LinkedList;
+import java.util.List;
+import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class SAML2LogoutResponseBuilder {
+public class SAML2LogoutResponseBuilder implements SamlProtocolExtensionsAwareBuilder<SAML2LogoutResponseBuilder> {
 
     protected String logoutRequestID;
     protected String destination;
     protected String issuer;
+    protected final List<NodeGenerator> extensions = new LinkedList<>();
 
     public SAML2LogoutResponseBuilder logoutRequestID(String logoutRequestID) {
         this.logoutRequestID = logoutRequestID;
@@ -57,6 +61,11 @@ public class SAML2LogoutResponseBuilder {
         return this;
     }
 
+    @Override
+    public SAML2LogoutResponseBuilder addExtension(NodeGenerator extension) {
+        this.extensions.add(extension);
+        return this;
+    }
 
     public Document buildDocument() throws ProcessingException {
         Document samlResponse = null;
@@ -76,6 +85,14 @@ public class SAML2LogoutResponseBuilder {
 
             statusResponse.setIssuer(issuer);
             statusResponse.setDestination(destination);
+
+            if (! this.extensions.isEmpty()) {
+                ExtensionsType extensionsType = new ExtensionsType();
+                for (NodeGenerator extension : this.extensions) {
+                    extensionsType.addExtension(extension);
+                }
+                statusResponse.setExtensions(extensionsType);
+            }
 
             SAML2Response saml2Response = new SAML2Response();
             samlResponse = saml2Response.convert(statusResponse);

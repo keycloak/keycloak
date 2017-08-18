@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.performance.httpclient;
 
-import java.io.IOException;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpDelete;
@@ -19,6 +18,9 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.junit.After;
 import org.junit.Before;
 import org.keycloak.testsuite.performance.PerformanceTest;
+
+import java.io.IOException;
+
 import static org.keycloak.testsuite.performance.PerformanceTest.MAX_THREADS;
 
 /**

@@ -28,12 +28,11 @@ import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.RequestAuthenticator;
 
+import javax.servlet.http.HttpSession;
 import java.security.Principal;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import javax.servlet.http.HttpSession;
 
 /**
  * @author <a href="mailto:ungarida@gmail.com">Davide Ungari</a>

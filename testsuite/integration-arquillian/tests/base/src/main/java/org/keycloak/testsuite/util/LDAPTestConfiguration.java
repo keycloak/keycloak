@@ -17,24 +17,22 @@
 
 package org.keycloak.testsuite.util;
 
-import static org.keycloak.testsuite.util.IOUtil.PROJECT_BUILD_DIRECTORY;
+import org.apache.commons.configuration.PropertiesConfiguration;
+import org.jboss.logging.Logger;
+import org.keycloak.common.constants.GenericConstants;
+import org.keycloak.common.constants.KerberosConstants;
+import org.keycloak.models.LDAPConstants;
+import org.keycloak.storage.UserStorageProvider;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.jboss.logging.Logger;
-import org.keycloak.common.constants.GenericConstants;
-import org.keycloak.common.constants.KerberosConstants;
-import org.keycloak.common.util.FindFile;
-import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.UserFederationProvider;
+import static org.keycloak.testsuite.util.IOUtil.PROJECT_BUILD_DIRECTORY;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -86,12 +84,12 @@ public class LDAPTestConfiguration {
         DEFAULT_VALUES.put(LDAPConstants.BATCH_SIZE_FOR_SYNC, String.valueOf(LDAPConstants.DEFAULT_BATCH_SIZE_FOR_SYNC));
         DEFAULT_VALUES.put(LDAPConstants.USERNAME_LDAP_ATTRIBUTE, null);
         DEFAULT_VALUES.put(LDAPConstants.USER_OBJECT_CLASSES, null);
-        DEFAULT_VALUES.put(LDAPConstants.EDIT_MODE, UserFederationProvider.EditMode.READ_ONLY.toString());
+        DEFAULT_VALUES.put(LDAPConstants.EDIT_MODE, UserStorageProvider.EditMode.READ_ONLY.toString());
 
         DEFAULT_VALUES.put(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION, "false");
         DEFAULT_VALUES.put(KerberosConstants.KERBEROS_REALM, "KEYCLOAK.ORG");
         DEFAULT_VALUES.put(KerberosConstants.SERVER_PRINCIPAL, "HTTP/localhost@KEYCLOAK.ORG");
-        String keyTabPath =  getResource("http.keytab");
+        String keyTabPath =  getResource("/kerberos/http.keytab");
         DEFAULT_VALUES.put(KerberosConstants.KEYTAB, keyTabPath);
         DEFAULT_VALUES.put(KerberosConstants.DEBUG, "true");
         DEFAULT_VALUES.put(KerberosConstants.ALLOW_PASSWORD_AUTHENTICATION, "true");
@@ -105,8 +103,10 @@ public class LDAPTestConfiguration {
         return ldapTestConfiguration;
     }
     
-    public static String getResource(String resourceName) {
-        return new File(PROJECT_BUILD_DIRECTORY, "dependency/kerberos/" + resourceName).getAbsolutePath();
+    public static String getResource(String resourcePath) {
+        URL urlPath = LDAPTestConfiguration.class.getResource(resourcePath);
+        String absolutePath = new File(urlPath.getFile()).getAbsolutePath();
+        return absolutePath;
     }
 
     protected void loadConnectionProperties(String connectionPropertiesLocation) {

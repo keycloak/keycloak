@@ -22,11 +22,11 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.resources.AccountService;
 import org.keycloak.services.Urls;
 
 import javax.ws.rs.core.UriBuilder;
-
 import java.net.URI;
 import java.util.Comparator;
 import java.util.LinkedList;
@@ -70,7 +70,8 @@ public class AccountFederatedIdentityBean {
                         .queryParam("stateChecker", stateChecker)
                         .build().toString();
 
-                FederatedIdentityEntry entry = new FederatedIdentityEntry(identity, provider.getAlias(), provider.getAlias(), actionUrl,
+                String displayName = KeycloakModelUtils.getIdentityProviderDisplayName(session, provider);
+                FederatedIdentityEntry entry = new FederatedIdentityEntry(identity, displayName, provider.getAlias(), provider.getAlias(), actionUrl,
                 		  															provider.getConfig() != null ? provider.getConfig().get("guiOrder") : null);
                 orderedSet.add(entry);
             }
@@ -106,10 +107,12 @@ public class AccountFederatedIdentityBean {
 		private final String providerName;
         private final String actionUrl;
         private final String guiOrder;
+        private final String displayName;
 
-		public FederatedIdentityEntry(FederatedIdentityModel federatedIdentityModel, String providerId, String providerName, String actionUrl, String guiOrder
-				) {
+        public FederatedIdentityEntry(FederatedIdentityModel federatedIdentityModel, String displayName, String providerId,
+                                      String providerName, String actionUrl, String guiOrder) {
             this.federatedIdentityModel = federatedIdentityModel;
+            this.displayName = displayName;
             this.providerId = providerId;
             this.providerName = providerName;
             this.actionUrl = actionUrl;
@@ -143,6 +146,11 @@ public class AccountFederatedIdentityBean {
         public String getGuiOrder() {
             return guiOrder;
         }
+
+        public String getDisplayName() {
+            return displayName;
+        }
+
     }
     
 	public static class IdentityProviderComparator implements Comparator<FederatedIdentityEntry> {

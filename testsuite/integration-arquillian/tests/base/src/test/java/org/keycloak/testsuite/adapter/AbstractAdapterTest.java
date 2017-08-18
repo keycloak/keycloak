@@ -68,12 +68,32 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
             } else {
                 modifyClientRedirectUris(tr, "^(/.*/\\*)", appServerContextRootPage.toString() + "$1");
                 modifyClientUrls(tr, "^(/.*)", appServerContextRootPage.toString() + "$1");
+                modifyClientWebOrigins(tr, "8080", System.getProperty("app.server.http.port", null));
                 modifySamlMasterURLs(tr, "8080", System.getProperty("auth.server.http.port", null));
-                modifySAMLClientsAttributes(tr, "8080", System.getProperty("app.server.http.port", "8280"));
+                modifySAMLClientsAttributes(tr, "http://localhost:8080",  appServerContextRootPage.toString());
+                modifyClientJWKSUrl(tr, "^(/.*)", appServerContextRootPage.toString() + "$1");
             }
             if ("true".equals(System.getProperty("auth.server.ssl.required"))) {
                 tr.setSslRequired("all");
             }
+        }
+    }
+
+    // TODO: Fix to not require re-import
+    @Override
+    protected boolean isImportAfterEachMethod() {
+        return true;
+    }
+
+    private void modifyClientJWKSUrl(RealmRepresentation realm, String regex, String replacement) {
+        if (realm.getClients() != null) {
+            realm.getClients().stream().
+                    filter(client -> "client-jwt".equals(client.getClientAuthenticatorType()) && client.getAttributes().containsKey("jwks.url")).
+                    forEach(client -> {
+                Map<String, String> attr = client.getAttributes();
+                attr.put("jwks.url", attr.get("jwks.url").replaceFirst(regex, replacement));
+                client.setAttributes(attr);
+            });
         }
     }
 

@@ -17,11 +17,7 @@
 
 package org.keycloak.authentication.authenticators.broker;
 
-import java.util.List;
-import java.util.Map;
-
-import javax.ws.rs.core.Response;
-
+import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.broker.util.ExistingUserInfo;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
@@ -35,12 +31,16 @@ import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
 
+import javax.ws.rs.core.Response;
+import java.util.List;
+import java.util.Map;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator {
 
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static Logger logger = Logger.getLogger(IdpCreateUserIfUniqueAuthenticator.class);
 
 
     @Override
@@ -53,15 +53,15 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
         KeycloakSession session = context.getSession();
         RealmModel realm = context.getRealm();
 
-        if (context.getClientSession().getNote(EXISTING_USER_INFO) != null) {
+        if (context.getAuthenticationSession().getAuthNote(EXISTING_USER_INFO) != null) {
             context.attempted();
             return;
         }
 
         String username = getUsername(context, serializedCtx, brokerContext);
         if (username == null) {
-            logger.resetFlow(realm.isRegistrationEmailAsUsername() ? "Email" : "Username");
-            context.getClientSession().setNote(ENFORCE_UPDATE_PROFILE, "true");
+            ServicesLogger.LOGGER.resetFlow(realm.isRegistrationEmailAsUsername() ? "Email" : "Username");
+            context.getAuthenticationSession().setAuthNote(ENFORCE_UPDATE_PROFILE, "true");
             context.resetFlow();
             return;
         }
@@ -91,14 +91,14 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
             userRegisteredSuccess(context, federatedUser, serializedCtx, brokerContext);
 
             context.setUser(federatedUser);
-            context.getClientSession().setNote(BROKER_REGISTERED_NEW_USER, "true");
+            context.getAuthenticationSession().setAuthNote(BROKER_REGISTERED_NEW_USER, "true");
             context.success();
         } else {
             logger.debugf("Duplication detected. There is already existing user with %s '%s' .",
                     duplication.getDuplicateAttributeName(), duplication.getDuplicateAttributeValue());
 
             // Set duplicated user, so next authenticators can deal with it
-            context.getClientSession().setNote(EXISTING_USER_INFO, duplication.serialize());
+            context.getAuthenticationSession().setAuthNote(EXISTING_USER_INFO, duplication.serialize());
 
             Response challengeResponse = context.form()
                     .setError(Messages.FEDERATED_IDENTITY_EXISTS, duplication.getDuplicateAttributeName(), duplication.getDuplicateAttributeValue())
@@ -119,7 +119,7 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
     // Could be overriden to detect duplication based on other criterias (firstName, lastName, ...)
     protected ExistingUserInfo checkExistingUser(AuthenticationFlowContext context, String username, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
 
-        if (brokerContext.getEmail() != null) {
+        if (brokerContext.getEmail() != null && !context.getRealm().isDuplicateEmailsAllowed()) {
             UserModel existingUser = context.getSession().users().getUserByEmail(brokerContext.getEmail(), context.getRealm());
             if (existingUser != null) {
                 return new ExistingUserInfo(existingUser.getId(), UserModel.EMAIL, existingUser.getEmail());

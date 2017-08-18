@@ -17,9 +17,6 @@
 
 package org.keycloak.protocol.oidc.utils;
 
-import java.util.List;
-import java.util.Map;
-
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.ClientAuthenticator;
@@ -35,6 +32,8 @@ import org.keycloak.services.ErrorResponseException;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -53,6 +52,8 @@ public class AuthorizeClientUtil {
         if (client == null) {
             throw new ErrorResponseException("invalid_client", "Client authentication ended, but client is null", Response.Status.BAD_REQUEST);
         }
+
+        session.getContext().setClient(client);
 
         return new ClientAuthResult(client, processor.getClientAuthAttributes());
     }

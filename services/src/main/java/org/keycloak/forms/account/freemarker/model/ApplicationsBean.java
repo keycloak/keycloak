@@ -17,21 +17,24 @@
 
 package org.keycloak.forms.account.freemarker.model;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
-
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.services.managers.UserSessionManager;
-import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.services.resources.admin.permissions.AdminPermissions;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -51,10 +54,17 @@ public class ApplicationsBean {
                 continue;
             }
 
-            Set<RoleModel> availableRoles = TokenManager.getAccess(null, false, client, user);
-            // Don't show applications, which user doesn't have access into (any available roles)
-            if (availableRoles.isEmpty()) {
-                continue;
+            Set<RoleModel> availableRoles = new HashSet<>();
+            if (client.getClientId().equals(Constants.ADMIN_CLI_CLIENT_ID)
+                    || client.getClientId().equals(Constants.ADMIN_CONSOLE_CLIENT_ID)) {
+                if (!AdminPermissions.realms(session, realm, user).isAdmin()) continue;
+
+            } else {
+                availableRoles = TokenManager.getAccess(null, false, client, user);
+                // Don't show applications, which user doesn't have access into (any available roles)
+                if (availableRoles.isEmpty()) {
+                    continue;
+                }
             }
             List<RoleModel> realmRolesAvailable = new LinkedList<RoleModel>();
             MultivaluedHashMap<String, ClientRoleEntry> resourceRolesAvailable = new MultivaluedHashMap<String, ClientRoleEntry>();
@@ -64,7 +74,7 @@ public class ApplicationsBean {
             MultivaluedHashMap<String, ClientRoleEntry> resourceRolesGranted = new MultivaluedHashMap<String, ClientRoleEntry>();
             List<String> claimsGranted = new LinkedList<String>();
             if (client.isConsentRequired()) {
-                UserConsentModel consent = session.users().getConsentByClient(realm, user, client.getId());
+                UserConsentModel consent = session.users().getConsentByClient(realm, user.getId(), client.getId());
 
                 if (consent != null) {
                     processRoles(consent.getGrantedRoles(), realmRolesGranted, resourceRolesGranted);
@@ -140,7 +150,48 @@ public class ApplicationsBean {
         public MultivaluedHashMap<String, ClientRoleEntry> getResourceRolesGranted() {
             return resourceRolesGranted;
         }
-
+        
+        public String getEffectiveUrl() {
+            String rootUrl = getClient().getRootUrl();
+            String baseUrl = getClient().getBaseUrl();
+            
+            if (rootUrl == null) rootUrl = "";
+            if (baseUrl == null) baseUrl = "";
+            
+            if (rootUrl.equals("") && baseUrl.equals("")) {
+                return "";
+            }
+            
+            if (rootUrl.equals("") && !baseUrl.equals("")) {
+                return baseUrl;
+            }
+            
+            if (!rootUrl.equals("") && baseUrl.equals("")) {
+                return rootUrl;
+            }
+            
+            if (isBaseUrlRelative() && !rootUrl.equals("")) {
+                return concatUrls(rootUrl, baseUrl);
+            }
+            
+            return baseUrl;
+        }
+        
+        private String concatUrls(String u1, String u2) {
+            if (u1.endsWith("/")) u1 = u1.substring(0, u1.length() - 1);
+            if (u2.startsWith("/")) u2 = u2.substring(1);
+            return u1 + "/" + u2;
+        }
+        
+        private boolean isBaseUrlRelative() {
+            String baseUrl = getClient().getBaseUrl();
+            if (baseUrl.equals("")) return false;
+            if (baseUrl.startsWith("/")) return true;
+            if (baseUrl.startsWith("./")) return true;
+            if (baseUrl.startsWith("../")) return true;
+            return false;
+        }
+        
         public ClientModel getClient() {
             return client;
         }

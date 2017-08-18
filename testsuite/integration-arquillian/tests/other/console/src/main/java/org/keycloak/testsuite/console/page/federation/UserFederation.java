@@ -5,11 +5,8 @@ import org.keycloak.testsuite.console.page.AdminConsoleRealm;
 import org.keycloak.testsuite.console.page.fragment.DataTable;
 import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.util.UIUtils;
-import org.openqa.selenium.By;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
-
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
  * @author fkiss

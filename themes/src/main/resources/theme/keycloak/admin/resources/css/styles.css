@@ -377,6 +377,26 @@ h1 i {
 }
 
 .ace_editor {
-    height: 400px;
+    height: 600px;
     width: 100%;
+}
+
+.kc-button-input-file input {
+    float: left;
+    width: 73%;
+}
+
+.kc-button-input-file label {
+    float: left;
+    margin-left: 2%;
+    width: 25%;
+}
+
+table.kc-authz-table-expanded {
+    margin-top: 0px !important;
+}
+
+.no-gutter > [class*='col-'] {
+    padding-right:0!important;
+    padding-left:0!important;
 }

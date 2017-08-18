@@ -18,145 +18,86 @@
 package org.keycloak.models.cache.infinispan;
 
 import org.infinispan.Cache;
-import org.infinispan.notifications.Listener;
 import org.jboss.logging.Logger;
-import org.keycloak.models.cache.infinispan.entities.CachedClient;
-import org.keycloak.models.cache.infinispan.entities.CachedClientTemplate;
-import org.keycloak.models.cache.infinispan.entities.CachedGroup;
-import org.keycloak.models.cache.infinispan.entities.CachedRealm;
-import org.keycloak.models.cache.infinispan.entities.CachedRole;
+import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
-import org.keycloak.models.cache.infinispan.stream.ClientQueryPredicate;
-import org.keycloak.models.cache.infinispan.stream.ClientTemplateQueryPredicate;
-import org.keycloak.models.cache.infinispan.stream.GroupQueryPredicate;
+import org.keycloak.models.cache.infinispan.events.RealmCacheInvalidationEvent;
 import org.keycloak.models.cache.infinispan.stream.HasRolePredicate;
 import org.keycloak.models.cache.infinispan.stream.InClientPredicate;
 import org.keycloak.models.cache.infinispan.stream.InRealmPredicate;
-import org.keycloak.models.cache.infinispan.stream.RealmQueryPredicate;
 
-import java.util.Map;
 import java.util.Set;
-import java.util.function.Predicate;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@Listener
 public class RealmCacheManager extends CacheManager {
 
-    protected static final Logger logger = Logger.getLogger(RealmCacheManager.class);
+    private static final Logger logger = Logger.getLogger(RealmCacheManager.class);
+
+    @Override
+    protected Logger getLogger() {
+        return logger;
+    }
 
     public RealmCacheManager(Cache<String, Revisioned> cache, Cache<String, Long> revisions) {
         super(cache, revisions);
     }
 
 
-    public void realmInvalidation(String id, Set<String> invalidations) {
-        Predicate<Map.Entry<String, Revisioned>> predicate = getRealmInvalidationPredicate(id);
-        addInvalidations(predicate, invalidations);
+    public void realmUpdated(String id, String name, Set<String> invalidations) {
+        invalidations.add(id);
+        invalidations.add(RealmCacheSession.getRealmByNameCacheKey(name));
     }
 
-    public Predicate<Map.Entry<String, Revisioned>> getRealmInvalidationPredicate(String id) {
-        return RealmQueryPredicate.create().realm(id);
+    public void realmRemoval(String id, String name, Set<String> invalidations) {
+        realmUpdated(id, name, invalidations);
+
+        addInvalidations(InRealmPredicate.create().realm(id), invalidations);
     }
 
-    public void clientInvalidation(String id, Set<String> invalidations) {
-        addInvalidations(getClientInvalidationPredicate(id), invalidations);
+    public void roleAdded(String roleContainerId, Set<String> invalidations) {
+        invalidations.add(RealmCacheSession.getRolesCacheKey(roleContainerId));
     }
 
-    public Predicate<Map.Entry<String, Revisioned>> getClientInvalidationPredicate(String id) {
-        return ClientQueryPredicate.create().client(id);
+    public void roleUpdated(String roleContainerId, String roleName, Set<String> invalidations) {
+        invalidations.add(RealmCacheSession.getRoleByNameCacheKey(roleContainerId, roleName));
     }
 
-    public void roleInvalidation(String id, Set<String> invalidations) {
-        addInvalidations(getRoleInvalidationPredicate(id), invalidations);
+    public void roleRemoval(String id, String roleName, String roleContainerId, Set<String> invalidations) {
+        invalidations.add(RealmCacheSession.getRolesCacheKey(roleContainerId));
+        invalidations.add(RealmCacheSession.getRoleByNameCacheKey(roleContainerId, roleName));
 
+        addInvalidations(HasRolePredicate.create().role(id), invalidations);
     }
 
-    public Predicate<Map.Entry<String, Revisioned>> getRoleInvalidationPredicate(String id) {
-        return HasRolePredicate.create().role(id);
+    public void groupQueriesInvalidations(String realmId, Set<String> invalidations) {
+        invalidations.add(RealmCacheSession.getGroupsQueryCacheKey(realmId));
+        invalidations.add(RealmCacheSession.getTopGroupsQueryCacheKey(realmId)); // Just easier to always invalidate top-level too. It's not big performance penalty
     }
 
-    public void groupInvalidation(String id, Set<String> invalidations) {
-        addInvalidations(getGroupInvalidationPredicate(id), invalidations);
-
+    public void clientAdded(String realmId, String clientUUID, String clientId, Set<String> invalidations) {
+        invalidations.add(RealmCacheSession.getRealmClientsQueryCacheKey(realmId));
     }
 
-    public Predicate<Map.Entry<String, Revisioned>> getGroupInvalidationPredicate(String id) {
-        return GroupQueryPredicate.create().group(id);
+    public void clientUpdated(String realmId, String clientUuid, String clientId, Set<String> invalidations) {
+        invalidations.add(RealmCacheSession.getClientByClientIdCacheKey(clientId, realmId));
     }
 
-    public void clientTemplateInvalidation(String id, Set<String> invalidations) {
-        addInvalidations(getClientTemplateInvalidationPredicate(id), invalidations);
+    // Client roles invalidated separately
+    public void clientRemoval(String realmId, String clientUUID, String clientId, Set<String> invalidations) {
+        invalidations.add(RealmCacheSession.getRealmClientsQueryCacheKey(realmId));
+        invalidations.add(RealmCacheSession.getClientByClientIdCacheKey(clientId, realmId));
 
+        addInvalidations(InClientPredicate.create().client(clientUUID), invalidations);
     }
 
-    public Predicate<Map.Entry<String, Revisioned>> getClientTemplateInvalidationPredicate(String id) {
-        return ClientTemplateQueryPredicate.create().template(id);
-    }
-
-    public void realmRemoval(String id, Set<String> invalidations) {
-        Predicate<Map.Entry<String, Revisioned>> predicate = getRealmRemovalPredicate(id);
-        addInvalidations(predicate, invalidations);
-    }
-
-    public Predicate<Map.Entry<String, Revisioned>> getRealmRemovalPredicate(String id) {
-        Predicate<Map.Entry<String, Revisioned>> predicate = null;
-        predicate = RealmQueryPredicate.create().realm(id)
-                .or(InRealmPredicate.create().realm(id));
-        return predicate;
-    }
-
-    public void clientAdded(String realmId, String id, Set<String> invalidations) {
-        addInvalidations(getClientAddedPredicate(realmId), invalidations);
-    }
-
-    public Predicate<Map.Entry<String, Revisioned>> getClientAddedPredicate(String realmId) {
-        return ClientQueryPredicate.create().inRealm(realmId);
-    }
-
-    public void clientRemoval(String realmId, String id, Set<String> invalidations) {
-        Predicate<Map.Entry<String, Revisioned>> predicate = null;
-        predicate = getClientRemovalPredicate(realmId, id);
-        addInvalidations(predicate, invalidations);
-    }
-
-    public Predicate<Map.Entry<String, Revisioned>> getClientRemovalPredicate(String realmId, String id) {
-        Predicate<Map.Entry<String, Revisioned>> predicate;
-        predicate = ClientQueryPredicate.create().inRealm(realmId)
-                .or(ClientQueryPredicate.create().client(id))
-                .or(InClientPredicate.create().client(id));
-        return predicate;
-    }
-
-    public void roleRemoval(String id, Set<String> invalidations) {
-        addInvalidations(getRoleRemovalPredicate(id), invalidations);
-
-    }
-
-    public Predicate<Map.Entry<String, Revisioned>> getRoleRemovalPredicate(String id) {
-        return getRoleInvalidationPredicate(id);
-    }
 
     @Override
-    protected Predicate<Map.Entry<String, Revisioned>> getInvalidationPredicate(Object object) {
-        if (object instanceof CachedRealm) {
-            CachedRealm cached = (CachedRealm)object;
-            return getRealmRemovalPredicate(cached.getId());
-        } else if (object instanceof CachedClient) {
-            CachedClient cached = (CachedClient)object;
-            Predicate<Map.Entry<String, Revisioned>> predicate = getClientRemovalPredicate(cached.getRealm(), cached.getId());
-            return predicate;
-        } else if (object instanceof CachedRole) {
-            CachedRole cached = (CachedRole)object;
-            return getRoleRemovalPredicate(cached.getId());
-        } else if (object instanceof CachedGroup) {
-            CachedGroup cached = (CachedGroup)object;
-            return getGroupInvalidationPredicate(cached.getId());
-        } else if (object instanceof CachedClientTemplate) {
-            CachedClientTemplate cached = (CachedClientTemplate)object;
-            return getClientTemplateInvalidationPredicate(cached.getId());
-        }
-        return null;
+    protected void addInvalidationsFromEvent(InvalidationEvent event, Set<String> invalidations) {
+        invalidations.add(event.getId());
+
+        ((RealmCacheInvalidationEvent) event).addInvalidations(this, invalidations);
     }
+
 }

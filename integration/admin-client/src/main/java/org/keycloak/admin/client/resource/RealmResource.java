@@ -27,9 +27,18 @@ import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -148,15 +157,20 @@ public interface RealmResource {
     @Path("clients-initial-access")
     ClientInitialAccessResource clientInitialAccess();
 
-    @Path("clients-trusted-hosts")
-    public ClientRegistrationTrustedHostResource clientRegistrationTrustedHost();
+    @Path("client-registration-policy")
+    ClientRegistrationPolicyResource clientRegistrationPolicy();
 
     @Path("partialImport")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response partialImport(PartialImportRepresentation rep);
+    Response partialImport(PartialImportRepresentation rep);
 
+    @Path("partial-export")
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    RealmRepresentation partialExport(@QueryParam("exportGroupsAndRoles") Boolean exportGroupsAndRoles,
+                                             @QueryParam("exportClients") Boolean exportClients);
     @Path("authentication")
     @Consumes(MediaType.APPLICATION_JSON)
     AuthenticationManagementResource flows();
@@ -164,15 +178,18 @@ public interface RealmResource {
     @Path("attack-detection")
     AttackDetectionResource attackDetection();
 
-    @Path("user-federation")
-    UserFederationProvidersResource userFederation();
-
     @Path("testLDAPConnection")
     @GET
     @NoCache
     Response testLDAPConnection(@QueryParam("action") String action, @QueryParam("connectionUrl") String connectionUrl,
                                 @QueryParam("bindDn") String bindDn, @QueryParam("bindCredential") String bindCredential,
-                                @QueryParam("useTruststoreSpi") String useTruststoreSpi);
+                                @QueryParam("useTruststoreSpi") String useTruststoreSpi, @QueryParam("connectionTimeout") String connectionTimeout);
+
+    @Path("testSMTPConnection/{config}")
+    @POST
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    Response testSMTPConnection(final @PathParam("config") String config) throws Exception;
 
     @Path("clear-realm-cache")
     @POST
@@ -181,6 +198,10 @@ public interface RealmResource {
     @Path("clear-user-cache")
     @POST
     void clearUserCache();
+
+    @Path("clear-keys-cache")
+    @POST
+    void clearKeysCache();
 
     @Path("push-revocation")
     @POST
@@ -198,5 +219,12 @@ public interface RealmResource {
 
     @Path("components")
     ComponentsResource components();
+
+    @Path("user-storage")
+    UserStorageProviderResource userStorage();
+
+
+    @Path("keys")
+    KeyResource keys();
 
 }

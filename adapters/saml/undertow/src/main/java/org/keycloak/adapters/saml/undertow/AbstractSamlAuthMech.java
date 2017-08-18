@@ -16,6 +16,14 @@
  */
 package org.keycloak.adapters.saml.undertow;
 
+import io.undertow.security.api.AuthenticationMechanism;
+import io.undertow.security.api.NotificationReceiver;
+import io.undertow.security.api.SecurityContext;
+import io.undertow.security.api.SecurityNotification;
+import io.undertow.server.HttpServerExchange;
+import io.undertow.util.AttachmentKey;
+import io.undertow.util.Headers;
+import io.undertow.util.StatusCodes;
 import org.keycloak.adapters.saml.SamlAuthenticator;
 import org.keycloak.adapters.saml.SamlDeployment;
 import org.keycloak.adapters.saml.SamlDeploymentContext;
@@ -25,15 +33,6 @@ import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.undertow.UndertowHttpFacade;
 import org.keycloak.adapters.undertow.UndertowUserSessionManagement;
-
-import io.undertow.security.api.AuthenticationMechanism;
-import io.undertow.security.api.NotificationReceiver;
-import io.undertow.security.api.SecurityContext;
-import io.undertow.security.api.SecurityNotification;
-import io.undertow.server.HttpServerExchange;
-import io.undertow.util.AttachmentKey;
-import io.undertow.util.Headers;
-import io.undertow.util.StatusCodes;
 
 /**
  * Abstract base class for a Keycloak-enabled Undertow AuthenticationMechanism.

@@ -1,0 +1,68 @@
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <kc-tabs-realm></kc-tabs-realm>
+
+    <ul class="nav nav-tabs nav-tabs-pf">
+        <li><a href="#/realms/{{realm.realm}}/keys">{{:: 'active' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/keys/list">{{:: 'all' | translate}}</a></li>
+        <li class="active"><a href="#/realms/{{realm.realm}}/keys/providers">{{:: 'providers' | translate}}</a></li>
+    </ul>
+
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/keys/providers">{{:: 'keystores' | translate}}</a></li>
+        <li data-ng-hide="create">{{instance.id}}</li>
+        <li data-ng-show="create">{{:: 'add-keystore' | translate}}</li>
+    </ol>
+
+    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
+        <fieldset>
+            <div class="form-group clearfix" data-ng-show="!create">
+                <label class="col-md-2 control-label" for="providerId">{{:: 'provider-id' | translate}} </label>
+                <div class="col-md-6">
+                    <input class="form-control" id="providerId" type="text" ng-model="instance.id" readonly>
+                </div>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="consoleDisplayName">{{:: 'console-display-name' | translate}} </label>
+                <div class="col-md-6">
+                    <input required class="form-control" id="consoleDisplayName" type="text" ng-model="instance.name" placeholder="{{:: 'defaults-to-id' | translate}}">
+                </div>
+                <kc-tooltip>{{:: 'console-display-name.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <kc-component-config realm="realm" config="instance.config" properties="providerFactory.properties"></kc-component-config>
+        </fieldset>
+
+        <div class="form-group">
+            <div class="col-md-10 col-md-offset-2" data-ng-show="create && access.manageRealm">
+                <button kc-save data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
+                <button kc-cancel data-ng-disabled="!changed" data-ng-click="cancel()">{{:: 'cancel' | translate}}</button>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-md-10 col-md-offset-2" data-ng-show="!create && access.manageRealm">
+                <button kc-save  data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
+                <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<kc-menu></kc-menu>

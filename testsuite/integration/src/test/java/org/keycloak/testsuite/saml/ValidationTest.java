@@ -19,17 +19,13 @@ package org.keycloak.testsuite.saml;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.StreamUtil;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.SamlService;
 import org.keycloak.saml.SPMetadataDescriptor;
-import org.keycloak.services.resources.RealmsResource;
 import org.xml.sax.SAXException;
 
-import javax.ws.rs.core.UriInfo;
 import javax.xml.XMLConstants;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
@@ -37,7 +33,6 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -83,7 +78,7 @@ public class ValidationTest {
     public void testBrokerExportDescriptor() throws Exception {
         URL schemaFile = getClass().getResource("/schema/saml/v2/saml-schema-metadata-2.0.xsd");
         Source xmlFile = new StreamSource(new ByteArrayInputStream(SPMetadataDescriptor.getSPDescriptor(
-                "POST", "http://realm/assertion", "http://realm/logout", true, "test", SamlProtocol.SAML_DEFAULT_NAMEID_FORMAT, KeycloakModelUtils.generateKeyPairCertificate("test").getCertificate()
+                "POST", "http://realm/assertion", "http://realm/logout", true, false, false, "test", SamlProtocol.SAML_DEFAULT_NAMEID_FORMAT, KeycloakModelUtils.generateKeyPairCertificate("test").getCertificate(), ""
         ).getBytes()), "SP Descriptor");
         SchemaFactory schemaFactory = SchemaFactory
                 .newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);

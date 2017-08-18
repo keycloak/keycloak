@@ -22,14 +22,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
+import org.keycloak.keys.loader.PublicKeyStorageManager;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
-import org.keycloak.services.util.CertificateInfoHelper;
 import org.keycloak.util.JsonSerialization;
 
 /**
@@ -41,7 +41,7 @@ class AuthzEndpointRequestObjectParser extends AuthzEndpointRequestParser {
 
     private final Map<String, Object> requestParams;
 
-    public AuthzEndpointRequestObjectParser(String requestObject, ClientModel client) throws Exception {
+    public AuthzEndpointRequestObjectParser(KeycloakSession session, String requestObject, ClientModel client) throws Exception {
         JWSInput input = new JWSInput(requestObject);
         JWSHeader header = input.getHeader();
 
@@ -54,7 +54,11 @@ class AuthzEndpointRequestObjectParser extends AuthzEndpointRequestParser {
         if (header.getAlgorithm() == Algorithm.none) {
             this.requestParams = JsonSerialization.readValue(input.getContent(), TypedHashMap.class);
         } else if (header.getAlgorithm() == Algorithm.RS256) {
-            PublicKey clientPublicKey = CertificateInfoHelper.getSignatureValidationKey(client, JWTClientAuthenticator.ATTR_PREFIX);
+            PublicKey clientPublicKey = PublicKeyStorageManager.getClientPublicKey(session, client, input);
+            if (clientPublicKey == null) {
+                throw new RuntimeException("Client public key not found");
+            }
+
             boolean verified = RSAProvider.verify(input, clientPublicKey);
             if (!verified) {
                 throw new RuntimeException("Failed to verify signature on 'request' object");

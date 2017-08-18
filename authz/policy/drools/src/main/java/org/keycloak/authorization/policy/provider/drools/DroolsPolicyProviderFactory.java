@@ -1,5 +1,9 @@
 package org.keycloak.authorization.policy.provider.drools;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
@@ -9,28 +13,31 @@ import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.utils.PostMigrationEvent;
-import org.keycloak.provider.ProviderEvent;
-import org.keycloak.provider.ProviderEventListener;
-import org.keycloak.provider.ProviderFactory;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.representations.idm.authorization.RulePolicyRepresentation;
 import org.kie.api.KieServices;
 import org.kie.api.KieServices.Factory;
 import org.kie.api.runtime.KieContainer;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class DroolsPolicyProviderFactory implements PolicyProviderFactory {
+public class DroolsPolicyProviderFactory implements PolicyProviderFactory<RulePolicyRepresentation> {
 
     private KieServices ks;
-    private final Map<String, DroolsPolicy> containers = new HashMap<>();
+    private final Map<String, DroolsPolicy> containers = Collections.synchronizedMap(new HashMap<>());
+    private DroolsPolicyProvider provider = new DroolsPolicyProvider(policy -> {
+        if (!containers.containsKey(policy.getId())) {
+            synchronized (containers) {
+                update(policy);
+            }
+        }
+        return containers.get(policy.getId());
+    });
 
     @Override
     public String getName() {
-        return "Drools";
+        return "Rules";
     }
 
     @Override
@@ -39,22 +46,57 @@ public class DroolsPolicyProviderFactory implements PolicyProviderFactory {
     }
 
     @Override
-    public PolicyProvider create(Policy policy, AuthorizationProvider authorization) {
-        if (!this.containers.containsKey(policy.getId())) {
-            update(policy);
-        }
-
-        return new DroolsPolicyProvider(this.containers.get(policy.getId()));
+    public PolicyProvider create(AuthorizationProvider authorization) {
+        return provider;
     }
 
     @Override
-    public PolicyProviderAdminService getAdminResource(ResourceServer resourceServer) {
-        return new DroolsPolicyAdminResource(resourceServer, this);
+    public PolicyProviderAdminService getAdminResource(ResourceServer resourceServer, AuthorizationProvider authorization) {
+        return new DroolsPolicyAdminResource(this);
     }
 
     @Override
     public PolicyProvider create(KeycloakSession session) {
         return null;
+    }
+
+    @Override
+    public void onCreate(Policy policy, RulePolicyRepresentation representation, AuthorizationProvider authorization) {
+        updateConfig(policy, representation);
+        update(policy);
+    }
+
+    @Override
+    public void onUpdate(Policy policy, RulePolicyRepresentation representation, AuthorizationProvider authorization) {
+        updateConfig(policy, representation);
+        update(policy);
+    }
+
+    @Override
+    public void onImport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization) {
+        update(policy);
+    }
+
+    @Override
+    public void onRemove(Policy policy, AuthorizationProvider authorization) {
+        remove(policy);
+    }
+
+    @Override
+    public RulePolicyRepresentation toRepresentation(Policy policy, RulePolicyRepresentation representation) {
+        representation.setArtifactGroupId(policy.getConfig().get("mavenArtifactGroupId"));
+        representation.setArtifactId(policy.getConfig().get("mavenArtifactId"));
+        representation.setArtifactVersion(policy.getConfig().get("mavenArtifactVersion"));
+        representation.setScannerPeriod(policy.getConfig().get("scannerPeriod"));
+        representation.setScannerPeriodUnit(policy.getConfig().get("scannerPeriodUnit"));
+        representation.setSessionName(policy.getConfig().get("sessionName"));
+        representation.setModuleName(policy.getConfig().get("moduleName"));
+        return representation;
+    }
+
+    @Override
+    public Class<RulePolicyRepresentation> getRepresentationType() {
+        return RulePolicyRepresentation.class;
     }
 
     @Override
@@ -64,19 +106,6 @@ public class DroolsPolicyProviderFactory implements PolicyProviderFactory {
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        factory.register(new ProviderEventListener() {
-
-            @Override
-            public void onEvent(ProviderEvent event) {
-                // Ensure the initialization is done after DB upgrade is finished
-                if (event instanceof PostMigrationEvent) {
-                    ProviderFactory<AuthorizationProvider> providerFactory = factory.getProviderFactory(AuthorizationProvider.class);
-                    AuthorizationProvider authorization = providerFactory.create(factory.create());
-                    authorization.getStoreFactory().getPolicyStore().findByType(getId()).forEach(DroolsPolicyProviderFactory.this::update);
-                }
-            }
-
-        });
     }
 
     @Override
@@ -87,7 +116,19 @@ public class DroolsPolicyProviderFactory implements PolicyProviderFactory {
 
     @Override
     public String getId() {
-        return "drools";
+        return "rules";
+    }
+
+    private void updateConfig(Policy policy, RulePolicyRepresentation representation) {
+
+        policy.putConfig("mavenArtifactGroupId", representation.getArtifactGroupId());
+        policy.putConfig("mavenArtifactId", representation.getArtifactId());
+        policy.putConfig("mavenArtifactVersion", representation.getArtifactVersion());
+        policy.putConfig("scannerPeriod", representation.getScannerPeriod());
+        policy.putConfig("scannerPeriodUnit", representation.getScannerPeriodUnit());
+        policy.putConfig("sessionName", representation.getSessionName());
+        policy.putConfig("moduleName", representation.getModuleName());
+
     }
 
     void update(Policy policy) {

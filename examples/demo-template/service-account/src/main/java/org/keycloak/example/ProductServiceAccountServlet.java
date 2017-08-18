@@ -17,19 +17,6 @@
 
 package org.keycloak.example;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -40,50 +27,55 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.RSATokenVerifier;
-import org.keycloak.common.VerificationException;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.ServerRequest;
 import org.keycloak.adapters.authentication.ClientCredentialsProviderUtils;
+import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
+import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.StreamUtil;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.common.util.UriUtils;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public abstract class ProductServiceAccountServlet extends HttpServlet {
+public class ProductServiceAccountServlet extends HttpServlet {
 
     public static final String ERROR = "error";
     public static final String TOKEN = "token";
     public static final String TOKEN_PARSED = "idTokenParsed";
     public static final String REFRESH_TOKEN = "refreshToken";
     public static final String PRODUCTS = "products";
-    public static final String CLIENT_AUTH_METHOD = "clientAuthMethod";
-
-    protected abstract String getAdapterConfigLocation();
-    protected abstract String getClientAuthenticationMethod();
 
     public static String getLoginUrl(HttpServletRequest request) {
-        return "/service-account-portal/app-" + request.getAttribute(CLIENT_AUTH_METHOD) + "/login";
-    }
-
-    public static String getRefreshUrl(HttpServletRequest request) {
-        return "/service-account-portal/app-" + request.getAttribute(CLIENT_AUTH_METHOD) + "/refresh";
+        return "/service-account-portal/app/login";
     }
 
     public static String getLogoutUrl(HttpServletRequest request) {
-        return "/service-account-portal/app-" + request.getAttribute(CLIENT_AUTH_METHOD) + "/logout";
+        return "/service-account-portal/app/logout";
     }
 
     @Override
     public void init() throws ServletException {
-        String adapterConfigLocation = getAdapterConfigLocation();
+        String adapterConfigLocation = "/WEB-INF/keycloak.json";
         InputStream config = getServletContext().getResourceAsStream(adapterConfigLocation);
         KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(config);
-        getServletContext().setAttribute("deployment-" + getClientAuthenticationMethod(), deployment);
+        getServletContext().setAttribute(KeycloakDeployment.class.getName(), deployment);
 
         HttpClient client = new DefaultHttpClient();
         getServletContext().setAttribute(HttpClient.class.getName(), client);
@@ -96,13 +88,10 @@ public abstract class ProductServiceAccountServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        req.setAttribute(CLIENT_AUTH_METHOD, getClientAuthenticationMethod());
 
         String reqUri = req.getRequestURI();
         if (reqUri.endsWith("/login")) {
             serviceAccountLogin(req);
-        } else if (reqUri.endsWith("/refresh")) {
-            refreshToken(req);
         } else if (reqUri.endsWith("/logout")){
             logout(req);
         }
@@ -163,7 +152,7 @@ public abstract class ProductServiceAccountServlet extends HttpServlet {
     private void setTokens(HttpServletRequest req, KeycloakDeployment deployment, AccessTokenResponse tokenResponse) throws IOException, VerificationException {
         String token = tokenResponse.getToken();
         String refreshToken = tokenResponse.getRefreshToken();
-        AccessToken tokenParsed = RSATokenVerifier.verifyToken(token, deployment.getRealmKey(), deployment.getRealmInfoUrl());
+        AccessToken tokenParsed = AdapterRSATokenVerifier.verifyToken(token, deployment);
         req.getSession().setAttribute(TOKEN, token);
         req.getSession().setAttribute(REFRESH_TOKEN, refreshToken);
         req.getSession().setAttribute(TOKEN_PARSED, tokenParsed);
@@ -198,25 +187,6 @@ public abstract class ProductServiceAccountServlet extends HttpServlet {
         }
     }
 
-    private void refreshToken(HttpServletRequest req) {
-        KeycloakDeployment deployment = getKeycloakDeployment();
-        String refreshToken = (String) req.getSession().getAttribute(REFRESH_TOKEN);
-        if (refreshToken == null) {
-            req.setAttribute(ERROR, "No refresh token available. Please login first");
-        } else {
-            try {
-                AccessTokenResponse tokenResponse = ServerRequest.invokeRefresh(deployment, refreshToken);
-                setTokens(req, deployment, tokenResponse);
-            } catch (ServerRequest.HttpFailure hfe) {
-                hfe.printStackTrace();
-                req.setAttribute(ERROR, "Failed refresh token. See server.log for details. Status was: " + hfe.getStatus() + ", Error is: " + hfe.getError());
-            } catch (Exception ioe) {
-                ioe.printStackTrace();
-                req.setAttribute(ERROR, "Failed refresh token. See server.log for details. Message is: " + ioe.getMessage());
-            }
-        }
-    }
-
     private void logout(HttpServletRequest req) {
         KeycloakDeployment deployment = getKeycloakDeployment();
         String refreshToken = (String) req.getSession().getAttribute(REFRESH_TOKEN);
@@ -241,27 +211,11 @@ public abstract class ProductServiceAccountServlet extends HttpServlet {
     private String getContent(HttpEntity entity) throws IOException {
         if (entity == null) return null;
         InputStream is = entity.getContent();
-        try {
-            ByteArrayOutputStream os = new ByteArrayOutputStream();
-            int c;
-            while ((c = is.read()) != -1) {
-                os.write(c);
-            }
-            byte[] bytes = os.toByteArray();
-            String data = new String(bytes);
-            return data;
-        } finally {
-            try {
-                is.close();
-            } catch (IOException ignored) {
-
-            }
-        }
-
+        return StreamUtil.readString(is);
     }
 
     private KeycloakDeployment getKeycloakDeployment() {
-        return (KeycloakDeployment) getServletContext().getAttribute("deployment-" + getClientAuthenticationMethod());
+        return (KeycloakDeployment) getServletContext().getAttribute(KeycloakDeployment.class.getName());
     }
 
     private HttpClient getHttpClient() {

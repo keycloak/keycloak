@@ -17,17 +17,20 @@
 
 package org.keycloak.client.registration;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+import java.io.IOException;
+import java.io.InputStream;
+
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.HttpClients;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
-import java.io.InputStream;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -73,7 +76,7 @@ public class ClientRegistration {
 
     public ClientRepresentation create(ClientRepresentation client) throws ClientRegistrationException {
         String content = serialize(client);
-        InputStream resultStream = httpUtil.doPost(content, JSON, JSON, DEFAULT);
+        InputStream resultStream = httpUtil.doPost(content, JSON, UTF_8, JSON, DEFAULT);
         return deserialize(resultStream, ClientRepresentation.class);
     }
 
@@ -89,7 +92,7 @@ public class ClientRegistration {
 
     public ClientRepresentation update(ClientRepresentation client) throws ClientRegistrationException {
         String content = serialize(client);
-        InputStream resultStream = httpUtil.doPut(content, JSON, JSON, DEFAULT, client.getClientId());
+        InputStream resultStream = httpUtil.doPut(content, JSON, UTF_8, JSON, DEFAULT, client.getClientId());
         return resultStream != null ? deserialize(resultStream, ClientRepresentation.class) : null;
     }
 
@@ -129,7 +132,7 @@ public class ClientRegistration {
 
         public OIDCClientRepresentation create(OIDCClientRepresentation client) throws ClientRegistrationException {
             String content = serialize(client);
-            InputStream resultStream = httpUtil.doPost(content, JSON, JSON, OIDC);
+            InputStream resultStream = httpUtil.doPost(content, JSON, UTF_8, JSON, OIDC);
             return deserialize(resultStream, OIDCClientRepresentation.class);
         }
 
@@ -140,7 +143,7 @@ public class ClientRegistration {
 
         public OIDCClientRepresentation update(OIDCClientRepresentation client) throws ClientRegistrationException {
             String content = serialize(client);
-            InputStream resultStream = httpUtil.doPut(content, JSON, JSON, OIDC, client.getClientId());
+            InputStream resultStream = httpUtil.doPut(content, JSON, UTF_8, JSON, OIDC, client.getClientId());
             return resultStream != null ? deserialize(resultStream, OIDCClientRepresentation.class) : null;
         }
 
@@ -157,7 +160,7 @@ public class ClientRegistration {
     public class SAMLClientRegistration {
 
         public ClientRepresentation create(String entityDescriptor) throws ClientRegistrationException {
-            InputStream resultStream = httpUtil.doPost(entityDescriptor, XML, JSON, SAML);
+            InputStream resultStream = httpUtil.doPost(entityDescriptor, XML, UTF_8, JSON, SAML);
             return deserialize(resultStream, ClientRepresentation.class);
         }
 

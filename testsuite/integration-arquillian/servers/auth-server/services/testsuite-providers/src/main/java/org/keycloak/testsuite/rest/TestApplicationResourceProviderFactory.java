@@ -18,10 +18,8 @@
 package org.keycloak.testsuite.rest;
 
 import org.keycloak.Config.Scope;
-import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.representations.adapters.action.AdminAction;
 import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.adapters.action.TestAvailabilityAction;
@@ -29,6 +27,7 @@ import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resource.RealmResourceProviderFactory;
 
 import java.security.KeyPair;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 
@@ -70,6 +69,7 @@ public class TestApplicationResourceProviderFactory implements RealmResourceProv
 
         private KeyPair signingKeyPair;
         private String oidcRequest;
+        private List<String> sectorIdentifierRedirectUris;
 
         public KeyPair getSigningKeyPair() {
             return signingKeyPair;
@@ -85,6 +85,14 @@ public class TestApplicationResourceProviderFactory implements RealmResourceProv
 
         public void setOidcRequest(String oidcRequest) {
             this.oidcRequest = oidcRequest;
+        }
+
+        public List<String> getSectorIdentifierRedirectUris() {
+            return sectorIdentifierRedirectUris;
+        }
+
+        public void setSectorIdentifierRedirectUris(List<String> sectorIdentifierRedirectUris) {
+            this.sectorIdentifierRedirectUris = sectorIdentifierRedirectUris;
         }
     }
 }

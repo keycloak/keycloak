@@ -17,12 +17,13 @@
 
 package org.keycloak.broker.oidc;
 
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.AccessTokenResponse;
@@ -46,8 +47,8 @@ public class KeycloakOIDCIdentityProvider extends OIDCIdentityProvider {
 
     public static final String VALIDATED_ACCESS_TOKEN = "VALIDATED_ACCESS_TOKEN";
 
-    public KeycloakOIDCIdentityProvider(OIDCIdentityProviderConfig config) {
-        super(config);
+    public KeycloakOIDCIdentityProvider(KeycloakSession session, OIDCIdentityProviderConfig config) {
+        super(session, config);
     }
 
     @Override
@@ -56,8 +57,8 @@ public class KeycloakOIDCIdentityProvider extends OIDCIdentityProvider {
     }
 
     @Override
-    protected void processAccessTokenResponse(BrokeredIdentityContext context, PublicKey idpKey, AccessTokenResponse response) {
-        JsonWebToken access = validateToken(idpKey, response.getToken());
+    protected void processAccessTokenResponse(BrokeredIdentityContext context, AccessTokenResponse response) {
+        JsonWebToken access = validateToken(response.getToken());
         context.getContextData().put(VALIDATED_ACCESS_TOKEN, access);
     }
 
@@ -76,13 +77,12 @@ public class KeycloakOIDCIdentityProvider extends OIDCIdentityProvider {
                 logger.warn("Failed to verify logout request");
                 return Response.status(400).build();
             }
-            PublicKey key = getExternalIdpKey();
-            if (key != null) {
-                if (!verify(token, key)) {
-                    logger.warn("Failed to verify logout request");
-                    return Response.status(400).build();
-                }
+
+            if (!verify(token)) {
+                logger.warn("Failed to verify logout request");
+                return Response.status(400).build();
             }
+
             LogoutAction action = null;
             try {
                 action = JsonSerialization.readValue(token.getContent(), LogoutAction.class);

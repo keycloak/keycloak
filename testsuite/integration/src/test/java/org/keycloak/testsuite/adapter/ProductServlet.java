@@ -38,6 +38,9 @@ public class ProductServlet extends HttpServlet {
         pw.printf("<html><head><title>%s</title></head><body>", "Product Portal");
         pw.println("iPhone");
         pw.println("iPad");
+        String x = req.getParameter("encodeTest");
+        String encodeTest= Boolean.toString("a<b".equals(x));
+        pw.println("uriEncodeTest=" + encodeTest);
         pw.print("</body></html>");
         pw.flush();
 

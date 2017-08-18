@@ -21,7 +21,9 @@ import org.jboss.logging.Logger;
 import org.keycloak.AuthorizationContext;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OIDCHttpFacade;
+import org.keycloak.adapters.authentication.ClientCredentialsProviderUtils;
 import org.keycloak.authorization.client.AuthzClient;
+import org.keycloak.authorization.client.ClientAuthenticator;
 import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.representation.RegistrationResponse;
 import org.keycloak.authorization.client.representation.ResourceRepresentation;
@@ -33,7 +35,6 @@ import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.PathCon
 import org.keycloak.representations.idm.authorization.Permission;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -51,17 +52,24 @@ public class PolicyEnforcer {
     private final KeycloakDeployment deployment;
     private final AuthzClient authzClient;
     private final PolicyEnforcerConfig enforcerConfig;
-    private final List<PathConfig> paths;
+    private final Map<String, PathConfig> paths;
+    private final PathMatcher pathMatcher;
 
     public PolicyEnforcer(KeycloakDeployment deployment, AdapterConfig adapterConfig) {
         this.deployment = deployment;
         this.enforcerConfig = adapterConfig.getPolicyEnforcerConfig();
-        this.authzClient = AuthzClient.create(new Configuration(adapterConfig.getAuthServerUrl(), adapterConfig.getRealm(), adapterConfig.getResource(), adapterConfig.getCredentials(), deployment.getClient()));
+        this.authzClient = AuthzClient.create(new Configuration(adapterConfig.getAuthServerUrl(), adapterConfig.getRealm(), adapterConfig.getResource(), adapterConfig.getCredentials(), deployment.getClient()), new ClientAuthenticator() {
+            @Override
+            public void configureClientCredentials(HashMap<String, String> requestParams, HashMap<String, String> requestHeaders) {
+                ClientCredentialsProviderUtils.setClientCredentials(PolicyEnforcer.this.deployment, requestHeaders, requestParams);
+            }
+        });
+        this.pathMatcher = new PathMatcher(this.authzClient);
         this.paths = configurePaths(this.authzClient.protection().resource(), this.enforcerConfig);
 
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Initialization complete. Path configurations:");
-            for (PathConfig pathConfig : this.paths) {
+            for (PathConfig pathConfig : this.paths.values()) {
                 LOGGER.debug(pathConfig);
             }
         }
@@ -99,16 +107,29 @@ public class PolicyEnforcer {
         return authzClient;
     }
 
-    public List<PathConfig> getPaths() {
-        return Collections.unmodifiableList(paths);
+    public Map<String, PathConfig> getPaths() {
+        return paths;
+    }
+
+    void addPath(PathConfig pathConfig) {
+        paths.put(pathConfig.getPath(), pathConfig);
     }
 
     KeycloakDeployment getDeployment() {
         return deployment;
     }
 
-    private List<PathConfig> configurePaths(ProtectedResource protectedResource, PolicyEnforcerConfig enforcerConfig) {
-        if (enforcerConfig.getPaths().isEmpty()) {
+    private Map<String, PathConfig> configurePaths(ProtectedResource protectedResource, PolicyEnforcerConfig enforcerConfig) {
+        boolean loadPathsFromServer = true;
+
+        for (PathConfig pathConfig : enforcerConfig.getPaths()) {
+            if (!PolicyEnforcerConfig.EnforcementMode.DISABLED.equals(pathConfig.getEnforcementMode())) {
+                loadPathsFromServer = false;
+                break;
+            }
+        }
+
+        if (loadPathsFromServer) {
             LOGGER.info("No path provided in configuration.");
             return configureAllPathsForResourceServer(protectedResource);
         } else {
@@ -117,8 +138,8 @@ public class PolicyEnforcer {
         }
     }
 
-    private List<PathConfig> configureDefinedPaths(ProtectedResource protectedResource, PolicyEnforcerConfig enforcerConfig) {
-        List<PathConfig> paths = new ArrayList<>();
+    private Map<String, PathConfig> configureDefinedPaths(ProtectedResource protectedResource, PolicyEnforcerConfig enforcerConfig) {
+        Map<String, PathConfig> paths = Collections.synchronizedMap(new HashMap<String, PathConfig>());
 
         for (PathConfig pathConfig : enforcerConfig.getPaths()) {
             Set<String> search;
@@ -166,7 +187,7 @@ public class PolicyEnforcer {
 
             PathConfig existingPath = null;
 
-            for (PathConfig current : paths) {
+            for (PathConfig current : paths.values()) {
                 if (current.getId().equals(pathConfig.getId()) && current.getPath().equals(pathConfig.getPath())) {
                     existingPath = current;
                     break;
@@ -174,7 +195,7 @@ public class PolicyEnforcer {
             }
 
             if (existingPath == null) {
-                paths.add(pathConfig);
+                paths.put(pathConfig.getPath(), pathConfig);
             } else {
                 existingPath.getMethods().addAll(pathConfig.getMethods());
                 existingPath.getScopes().addAll(pathConfig.getScopes());
@@ -184,28 +205,36 @@ public class PolicyEnforcer {
         return paths;
     }
 
-    private List<PathConfig> configureAllPathsForResourceServer(ProtectedResource protectedResource) {
+    private Map<String, PathConfig> configureAllPathsForResourceServer(ProtectedResource protectedResource) {
         LOGGER.info("Querying the server for all resources associated with this application.");
-        List<PathConfig> paths = new ArrayList<>();
+        Map<String, PathConfig> paths = Collections.synchronizedMap(new HashMap<String, PathConfig>());
 
         for (String id : protectedResource.findAll()) {
             RegistrationResponse response = protectedResource.findById(id);
             ResourceRepresentation resourceDescription = response.getResourceDescription();
 
             if (resourceDescription.getUri() != null) {
-                paths.add(createPathConfig(resourceDescription));
+                PathConfig pathConfig = createPathConfig(resourceDescription);
+                paths.put(pathConfig.getPath(), pathConfig);
             }
         }
 
         return paths;
     }
 
-    private PathConfig createPathConfig(ResourceRepresentation resourceDescription) {
+    static PathConfig createPathConfig(ResourceRepresentation resourceDescription) {
         PathConfig pathConfig = new PathConfig();
 
         pathConfig.setId(resourceDescription.getId());
         pathConfig.setName(resourceDescription.getName());
-        pathConfig.setPath(resourceDescription.getUri());
+
+        String uri = resourceDescription.getUri();
+
+        if (uri == null || "".equals(uri.trim())) {
+            throw new RuntimeException("Failed to configure paths. Resource [" + resourceDescription.getName() + "] has an invalid or empty URI [" + uri + "].");
+        }
+
+        pathConfig.setPath(uri);
 
         List<String> scopeNames = new ArrayList<>();
 
@@ -217,5 +246,9 @@ public class PolicyEnforcer {
         pathConfig.setType(resourceDescription.getType());
 
         return pathConfig;
+    }
+
+    public PathMatcher getPathMatcher() {
+        return pathMatcher;
     }
 }

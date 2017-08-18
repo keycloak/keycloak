@@ -17,28 +17,27 @@
 
 package org.keycloak.example;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import org.apache.cxf.endpoint.Client;
+import org.apache.cxf.frontend.ClientProxy;
+import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
+import org.apache.cxf.message.Message;
+import org.keycloak.KeycloakSecurityContext;
+import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.constants.ServiceUrlConstants;
+import org.keycloak.example.ws.Product;
+import org.keycloak.example.ws.UnknownProductFault;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.ws.WebServiceException;
-
-import org.apache.cxf.endpoint.Client;
-import org.apache.cxf.frontend.ClientProxy;
-import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
-import org.apache.cxf.message.Message;
-import org.keycloak.KeycloakSecurityContext;
-import org.keycloak.constants.ServiceUrlConstants;
-import org.keycloak.example.ws.Product;
-import org.keycloak.example.ws.UnknownProductFault;
-import org.keycloak.common.util.KeycloakUriBuilder;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Servlet for receiving informations about products from backend JAXWS service

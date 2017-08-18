@@ -17,10 +17,23 @@
 
 package org.keycloak.testsuite.broker;
 
-import java.io.IOException;
-import java.net.URI;
-import java.util.HashMap;
-import java.util.Set;
+import org.junit.Assert;
+import org.junit.Test;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
+import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.services.Urls;
+import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.testsuite.broker.util.UserSessionStatusServlet;
+import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
+import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
@@ -31,24 +44,9 @@ import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
-
-import org.junit.Assert;
-import org.junit.Test;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
-import org.keycloak.models.FederatedIdentityModel;
-import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserFederationProviderModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.services.Urls;
-import org.keycloak.testsuite.DummyUserFederationProviderFactory;
-import org.keycloak.testsuite.broker.util.UserSessionStatusServlet;
-import org.openqa.selenium.By;
-import org.openqa.selenium.NoSuchElementException;
+import java.io.IOException;
+import java.net.URI;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -71,7 +69,7 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
     }
 
     @Test
-    public void testDisabledUser() {
+    public void testDisabledUser() throws Exception {
         KeycloakSession session = brokerServerRule.startSession();
         setUpdateProfileFirstLogin(session.realms().getRealmByName("realm-with-broker"), IdentityProviderRepresentation.UPFLM_OFF);
         brokerServerRule.stopSession(session, true);
@@ -243,7 +241,7 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
      * Test for KEYCLOAK-1053 - verify email action is not performed if email is not provided, login is normal, but action stays in set to be performed later
      */
     @Test
-    public void testSuccessfulAuthenticationWithoutUpdateProfile_emailNotProvided_emailVerifyEnabled() {
+    public void testSuccessfulAuthenticationWithoutUpdateProfile_emailNotProvided_emailVerifyEnabled() throws Exception {
         RealmModel realm = getRealm();
         realm.setVerifyEmail(true);
         setUpdateProfileFirstLogin(realm, IdentityProviderRepresentation.UPFLM_OFF);
@@ -316,8 +314,21 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
         }
     }
 
+    /**
+     * Test for KEYCLOAK-3505 - Verify the claims from the claim set returned by the OIDC UserInfo are correctly mapped
+     *  by the user attribute mapper
+     *
+     */
+    protected void verifyAttributeMapperHandlesUserInfoClaims() {
+        IdentityProviderModel identityProviderModel = getIdentityProviderModel();
+        setUpdateProfileFirstLogin(IdentityProviderRepresentation.UPFLM_ON);
+
+        UserModel user = assertSuccessfulAuthentication(identityProviderModel, "test-user", "new@email.com", true);
+        Assert.assertEquals("A00", user.getFirstAttribute("tenantid"));
+    }
+
     @Test
-    public void testSuccessfulAuthenticationWithoutUpdateProfile_newUser_emailAsUsername() {
+    public void testSuccessfulAuthenticationWithoutUpdateProfile_newUser_emailAsUsername() throws Exception {
         RealmModel realm = getRealm();
         realm.setRegistrationEmailAsUsername(true);
         setUpdateProfileFirstLogin(realm, IdentityProviderRepresentation.UPFLM_OFF);
@@ -422,6 +433,7 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
 
         // Assert I am logged immediately to account management due to previously linked "test-user" identity
         loginPage.clickSocial(identityProviderModel.getAlias());
+        this.loginPage.login("test-user", "password");
         doAfterProviderAuthentication();
         assertTrue(accountFederatedIdentityPage.isCurrent());
         assertTrue(driver.getPageSource().contains("id=\"remove-" + identityProviderModel.getAlias() + "\""));
@@ -622,7 +634,14 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
 
         // Add federationProvider to realm. It's configured with sync registrations
         RealmModel realm = getRealm();
-        UserFederationProviderModel dummyModel = realm.addUserFederationProvider(DummyUserFederationProviderFactory.PROVIDER_NAME, new HashMap<String, String>(), 1, "test-dummy", -1, -1, 0);
+        UserStorageProviderModel model = new UserStorageProviderModel();
+        model.setProviderId(DummyUserFederationProviderFactory.PROVIDER_NAME);
+        model.setPriority(1);
+        model.setName("test-sync-dummy");
+        model.setFullSyncPeriod(-1);
+        model.setChangedSyncPeriod(-1);
+        model.setLastSync(0);
+        UserStorageProviderModel dummyModel = new UserStorageProviderModel(realm.addComponentModel(model));
 
         brokerServerRule.stopSession(session, true);
         session = brokerServerRule.startSession();
@@ -670,7 +689,7 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
 
             // remove dummy federation provider for this realm
             realm = getRealm();
-            realm.removeUserFederationProvider(dummyModel);
+            realm.removeComponent(dummyModel);
 
             brokerServerRule.stopSession(session, true);
             session = brokerServerRule.startSession();

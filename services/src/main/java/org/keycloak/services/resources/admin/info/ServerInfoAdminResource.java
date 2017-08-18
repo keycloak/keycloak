@@ -17,6 +17,49 @@
 
 package org.keycloak.services.resources.admin.info;
 
+import org.keycloak.broker.provider.IdentityProvider;
+import org.keycloak.broker.provider.IdentityProviderFactory;
+import org.keycloak.broker.social.SocialIdentityProvider;
+import org.keycloak.component.ComponentFactory;
+import org.keycloak.events.EventType;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.policy.PasswordPolicyProvider;
+import org.keycloak.policy.PasswordPolicyProviderFactory;
+import org.keycloak.protocol.ClientInstallationProvider;
+import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.LoginProtocolFactory;
+import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.provider.ConfiguredProvider;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.ServerInfoAwareProviderFactory;
+import org.keycloak.provider.Spi;
+import org.keycloak.representations.idm.ComponentTypeRepresentation;
+import org.keycloak.representations.idm.ConfigPropertyRepresentation;
+import org.keycloak.representations.idm.PasswordPolicyTypeRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperTypeRepresentation;
+import org.keycloak.representations.info.ClientInstallationRepresentation;
+import org.keycloak.representations.info.MemoryInfoRepresentation;
+import org.keycloak.representations.info.ProfileInfoRepresentation;
+import org.keycloak.representations.info.ProviderRepresentation;
+import org.keycloak.representations.info.ServerInfoRepresentation;
+import org.keycloak.representations.info.SpiInfoRepresentation;
+import org.keycloak.representations.info.SystemInfoRepresentation;
+import org.keycloak.representations.info.ThemeInfoRepresentation;
+import org.keycloak.storage.user.ImportSynchronization;
+import org.keycloak.theme.Theme;
+import org.keycloak.theme.ThemeProvider;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
@@ -25,44 +68,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.ServiceLoader;
-
-import javax.ws.rs.GET;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-
-import org.keycloak.broker.provider.IdentityProvider;
-import org.keycloak.broker.provider.IdentityProviderFactory;
-import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.events.EventType;
-import org.keycloak.events.admin.OperationType;
-import org.keycloak.events.admin.ResourceType;
-import org.keycloak.models.PasswordPolicy;
-import org.keycloak.policy.PasswordPolicyProvider;
-import org.keycloak.policy.PasswordPolicyProviderFactory;
-import org.keycloak.provider.*;
-import org.keycloak.representations.idm.ComponentTypeRepresentation;
-import org.keycloak.representations.idm.PasswordPolicyTypeRepresentation;
-import org.keycloak.theme.Theme;
-import org.keycloak.theme.ThemeProvider;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.protocol.ClientInstallationProvider;
-import org.keycloak.protocol.LoginProtocol;
-import org.keycloak.protocol.LoginProtocolFactory;
-import org.keycloak.protocol.ProtocolMapper;
-import org.keycloak.representations.idm.ConfigPropertyRepresentation;
-import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.representations.idm.ProtocolMapperTypeRepresentation;
-import org.keycloak.broker.social.SocialIdentityProvider;
-import org.keycloak.representations.info.ClientInstallationRepresentation;
-import org.keycloak.representations.info.MemoryInfoRepresentation;
-import org.keycloak.representations.info.ProviderRepresentation;
-import org.keycloak.representations.info.ServerInfoRepresentation;
-import org.keycloak.representations.info.SpiInfoRepresentation;
-import org.keycloak.representations.info.SystemInfoRepresentation;
-import org.keycloak.representations.info.ThemeInfoRepresentation;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -80,10 +85,12 @@ public class ServerInfoAdminResource {
      * @return
      */
     @GET
+    @Produces(MediaType.APPLICATION_JSON)
     public ServerInfoRepresentation getInfo() {
         ServerInfoRepresentation info = new ServerInfoRepresentation();
         info.setSystemInfo(SystemInfoRepresentation.create(session.getKeycloakSessionFactory().getServerStartupTimestamp()));
         info.setMemoryInfo(MemoryInfoRepresentation.create());
+        info.setProfileInfo(ProfileInfoRepresentation.create());
 
         setSocialProviders(info);
         setIdentityProviders(info);
@@ -122,6 +129,7 @@ public class ServerInfoAdminResource {
                 for (String name : providerIds) {
                     ProviderRepresentation provider = new ProviderRepresentation();
                     ProviderFactory<?> pi = session.getKeycloakSessionFactory().getProviderFactory(spi.getProviderClass(), name);
+                    provider.setOrder(pi.order());
                     if (ServerInfoAwareProviderFactory.class.isAssignableFrom(pi.getClass())) {
                         provider.setOperationalInfo(((ServerInfoAwareProviderFactory) pi).getOperationalInfo());
                     }
@@ -133,6 +141,9 @@ public class ServerInfoAdminResource {
                         List<ProviderConfigProperty> configProperties = configured.getConfigProperties();
                         if (configProperties == null) configProperties = Collections.EMPTY_LIST;
                         rep.setProperties(ModelToRepresentation.toRepresentation(configProperties));
+                        if (pi instanceof ComponentFactory) {
+                            rep.setMetadata(((ComponentFactory)pi).getTypeMetadata());
+                        }
                         List<ComponentTypeRepresentation> reps = info.getComponentTypes().get(spi.getProviderClass().getName());
                         if (reps == null) {
                             reps = new LinkedList<>();

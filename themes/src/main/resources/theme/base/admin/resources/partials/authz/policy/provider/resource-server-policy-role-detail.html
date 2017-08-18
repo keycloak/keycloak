@@ -63,7 +63,7 @@
             <div class="form-group clearfix" style="margin-top: -15px;">
                 <label class="col-md-2 control-label"></label>
                 <div class="col-sm-4" data-ng-show="hasRealmRole()">
-                    <table class="table table-striped table-bordered">
+                    <table class="table table-striped table-bordered" id="selected-realm-roles">
                         <thead>
                         <tr>
                             <th class="col-sm-5">{{:: 'name' | translate}}</th>
@@ -114,7 +114,7 @@
             <div class="form-group clearfix" style="margin-top: -15px;">
                 <label class="col-md-2 control-label"></label>
                 <div class="col-sm-4" data-ng-show="hasClientRole()">
-                    <table class="table table-striped table-bordered">
+                    <table class="table table-striped table-bordered" id="selected-client-roles">
                         <thead>
                             <tr>
                                 <th class="col-sm-5">{{:: 'name' | translate}}</th>
@@ -140,10 +140,10 @@
                 </div>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="policy.logic">{{:: 'authz-policy-logic' | translate}}</label>
+                <label class="col-md-2 control-label" for="logic">{{:: 'authz-policy-logic' | translate}}</label>
 
                 <div class="col-sm-1">
-                    <select class="form-control" id="policy.logic"
+                    <select class="form-control" id="logic"
                             data-ng-model="policy.logic">
                         <option value="POSITIVE">{{:: 'authz-policy-logic-positive' | translate}}</option>
                         <option value="NEGATIVE">{{:: 'authz-policy-logic-negative' | translate}}</option>

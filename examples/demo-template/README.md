@@ -28,7 +28,7 @@ _This demo is meant to run on the same server instance as the Keycloak Server!_
 
 Step 1: Make sure you've set up the Keycloak Server
 --------------------------------------
-The Keycloak Appliance Distribution comes with a preconfigured Keycloak server (based on Wildfly).  You can use it out of
+The Keycloak Demo Distribution comes with a preconfigured Keycloak server (based on Wildfly).  You can use it out of
 the box to run these demos.  So, if you're using this, you can head to Step 2.
 
 Alternatively, you can install the Keycloak Server onto any EAP 6.x, or Wildfly 8.x server, but there is
@@ -157,8 +157,8 @@ are still happening, but the auth-server knows you are already logged in so the 
 
 If you click on the logout link of either of the product or customer app, you'll be logged out of all the applications.
 
-If you click on [http://localhost:8080/customer-portal-js](http://localhost:8080/customer-portal-js) you can invoke
-on the pure HTML/Javascript application.
+The example also shows different methods of client authentication. The customer-portal example is using traditional authentication with client_id and client_secret, 
+but the product-portal example is using client authentication with JWT signed by client private key, which is retrieved from the keystore file inside the product-portal WAR.
 
 Step 6: Traditional OAuth2 Example
 ----------------------------------
@@ -202,28 +202,7 @@ An Angular JS example using Keycloak to secure it.
 If you are already logged in, you will not be asked for a username and password, but you will be redirected to
 an oauth grant page.  This page asks you if you want to grant certain permissions to the third-part app.
 
-Step 10: Angular2 JS Example
-----------------------------------
-An Angular2 JS example using Keycloak to secure it. Angular2 is in beta version yet.
-
-To install angular2
-```
-$ cd keycloak/examples/demo-template/angular2-product-app/src/main/webapp/
-$ npm install
-```
-
-Transpile TypeScript to JavaScript before running the application.
-```
-$ npm run tsc
-```
-
-[http://localhost:8080/angular2-product](http://localhost:8080/angular2-product)
-
-If you are already logged in, you will not be asked for a username and password, but you will be redirected to
-an oauth grant page.  This page asks you if you want to grant certain permissions to the third-part app.
-
-
-Step 11: Pure HTML5/Javascript Example
+Step 10: Pure HTML5/Javascript Example
 ----------------------------------
 An pure HTML5/Javascript example using Keycloak to secure it.
 
@@ -232,7 +211,7 @@ An pure HTML5/Javascript example using Keycloak to secure it.
 If you are already logged in, you will not be asked for a username and password, but you will be redirected to
 an oauth grant page.  This page asks you if you want to grant certain permissions to the third-part app.
 
-Step 12: Service Account Example
+Step 11: Service Account Example
 ================================
 An example for retrieve service account dedicated to the Client Application itself (not to any user). 
 
@@ -240,10 +219,7 @@ An example for retrieve service account dedicated to the Client Application itse
 
 Client authentication is done with OAuth2 Client Credentials Grant in out-of-bound request (Not Keycloak login screen displayed) .
 
-The example also shows different methods of client authentication. There is ProductSAClientSecretServlet using traditional authentication with clientId and client_secret, 
-but there is also ProductSAClientSignedJWTServlet using client authentication with JWT signed by client private key.  
-
-Step 13: Offline Access Example
+Step 12: Offline Access Example
 ===============================
 An example for retrieve offline token, which is then saved to the database and can be used by application anytime later. Offline token
 is valid even if user is already logged out from SSO. Server restart also won't invalidate offline token. Offline token can be revoked by the user in 

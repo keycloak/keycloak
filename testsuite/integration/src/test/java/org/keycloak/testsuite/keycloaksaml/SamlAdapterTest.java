@@ -30,8 +30,6 @@ import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.Form;
 
 import static org.junit.Assert.assertEquals;
 
@@ -119,8 +117,12 @@ public class SamlAdapterTest {
         testStrategy.testSavedPostRequest();
     }
     @Test
-    public void testErrorHandling() throws Exception {
-        testStrategy.testErrorHandling();
+    public void testErrorHandlingSigned() throws Exception {
+        testStrategy.testErrorHandlingSigned();
+    }
+    @Test
+    public void testErrorHandlingUnsigned() throws Exception {
+        testStrategy.testErrorHandlingUnsigned();
     }
     @Test
     public void testMetadataPostSignedLoginLogout() throws Exception {

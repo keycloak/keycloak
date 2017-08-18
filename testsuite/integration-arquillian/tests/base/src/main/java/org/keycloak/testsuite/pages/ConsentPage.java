@@ -28,8 +28,15 @@ public class ConsentPage extends AbstractPage {
     @FindBy(id = "kc-login")
     private WebElement submitButton;
 
+    @FindBy(id = "kc-cancel")
+    private WebElement cancelButton;
+
     public void confirm() {
         submitButton.click();
+    }
+
+    public void cancel() {
+        cancelButton.click();
     }
 
     @Override

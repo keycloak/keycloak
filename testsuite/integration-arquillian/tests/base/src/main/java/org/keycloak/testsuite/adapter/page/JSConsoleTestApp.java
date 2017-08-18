@@ -48,6 +48,14 @@ public class JSConsoleTestApp extends AbstractPageWithInjectedUrl {
 
     @FindBy(xpath = "//button[text() = 'Init']")
     private WebElement initButton;
+    @FindBy(xpath = "//button[text() = 'Init with both tokens']")
+    private WebElement initWithBothTokens;
+    @FindBy(xpath = "//button[text() = 'Init with refresh token']")
+    private WebElement initWithRefreshToken;
+    @FindBy(xpath = "//button[text() = 'Init with TimeSkew']")
+    private WebElement initWithTimeSkew;
+    @FindBy(xpath = "//button[text() = 'Init with different realm name']")
+    private WebElement initWithDifferentRealmName;
     @FindBy(xpath = "//button[text() = 'Login']")
     private WebElement logInButton;
     @FindBy(xpath = "//button[text() = 'Logout']")
@@ -56,6 +64,8 @@ public class JSConsoleTestApp extends AbstractPageWithInjectedUrl {
     private WebElement refreshTokenButton;
     @FindBy(xpath = "//button[contains(text(),'Refresh Token (if <30s')]")
     private WebElement refreshTokenIfUnder30sButton;
+    @FindBy(xpath = "//button[contains(text(),'Refresh Token (if <5s')]")
+    private WebElement refreshTokenIfUnder5sButton;
     @FindBy(xpath = "//button[text() = 'Get Profile']")
     private WebElement getProfileButton;
 
@@ -73,6 +83,27 @@ public class JSConsoleTestApp extends AbstractPageWithInjectedUrl {
     private WebElement showDetailsButton;
     @FindBy(xpath = "//button[text() = 'Create Bearer Request']")
     private WebElement createBearerRequest;
+    @FindBy(xpath = "//button[text() = 'Bearer to keycloak']")
+    private WebElement createBearerRequestToKeycloakButton;
+    @FindBy(xpath = "//button[text() = 'Cert request']")
+    private WebElement certRequestButton;
+    @FindBy(xpath = "//button[text() = 'refresh timeSkew']")
+    private WebElement refreshTimeSkewButton;
+    @FindBy(xpath = "//button[text() = 'Create user']")
+    private WebElement createUserButton;
+    @FindBy(xpath = "//button[text() = 'Reentrancy callback']")
+    private WebElement reentrancyCallbackButton;
+
+    @FindBy(id = "timeSkew")
+    private WebElement timeSkewValue;
+    @FindBy(id = "inputField")
+    private WebElement generalInput;
+    @FindBy(id = "inputField2")
+    private WebElement generalInput2;
+    @FindBy(id = "inputField3")
+    private WebElement generalInput3;
+    @FindBy(xpath = "//button[text() = 'timeSkew offset']")
+    private WebElement timeSkewButton;
 
     @FindBy(id = "flowSelect")
     private Select flowSelect;
@@ -104,6 +135,10 @@ public class JSConsoleTestApp extends AbstractPageWithInjectedUrl {
         refreshTokenIfUnder30sButton.click();
     }
 
+    public void refreshTokenIfUnder5s() {
+        refreshTokenIfUnder5sButton.click();
+    }
+
     public void getProfile() {
         getProfileButton.click();
     }
@@ -120,8 +155,28 @@ public class JSConsoleTestApp extends AbstractPageWithInjectedUrl {
         initButton.click();
     }
 
+    public void initWithBothTokens() {
+        initWithBothTokens.click();
+    }
+
+    public void initWithRefreshToken() {
+        initWithRefreshToken.click();
+    }
+
+    public void initWithTimeSkew() {
+        initWithTimeSkew.click();
+    }
+
+    public void initWithDifferentRealmName() {
+        initWithDifferentRealmName.click();
+    }
+
     public void createBearerRequest() {
         createBearerRequest.click();
+    }
+
+    public void createBearerRequestToKeycloak() {
+        createBearerRequestToKeycloakButton.click();
     }
 
     public void setResponseMode(String value) {
@@ -142,5 +197,49 @@ public class JSConsoleTestApp extends AbstractPageWithInjectedUrl {
 
     public void showErrorResponse() {
         showErrorButton.click();
+    }
+
+    public WebElement getTimeSkewValue() {
+        return timeSkewValue;
+    }
+
+    public void setInput(String value) {
+        generalInput.clear();
+        generalInput.sendKeys(value);
+    }
+
+    public void setInput2(String value) {
+        generalInput2.clear();
+        generalInput2.sendKeys(value);
+    }
+
+    public void setInput3(String value) {
+        generalInput3.clear();
+        generalInput3.sendKeys(value);
+    }
+
+    public void setInput(int value) {
+        setInput(Integer.toString(value));
+    }
+
+    public void setTimeSkew(int value) {
+        setInput(value);
+        timeSkewButton.click();
+    }
+
+    public void refreshTimeSkew() {
+        refreshTimeSkewButton.click();
+    }
+
+    public void createUserRequest() {
+        createUserButton.click();
+    }
+
+    public void sendCertRequest() {
+        certRequestButton.click();
+    }
+
+    public void callReentrancyCallback() {
+        reentrancyCallbackButton.click();
     }
 }

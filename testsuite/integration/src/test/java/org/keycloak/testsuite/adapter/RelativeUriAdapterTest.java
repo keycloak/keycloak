@@ -28,12 +28,12 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.KeycloakServer;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
-import org.keycloak.testsuite.KeycloakServer;
 import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.core.UriBuilder;
@@ -53,15 +53,12 @@ import java.util.Map;
 public class RelativeUriAdapterTest {
 
     public static final String LOGIN_URL = OIDCLoginProtocolService.authUrl(UriBuilder.fromUri("http://localhost:8081/auth")).build("demo").toString();
-    public static PublicKey realmPublicKey;
     @ClassRule
     public static AbstractKeycloakRule keycloakRule = new AbstractKeycloakRule(){
         @Override
         protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
             RealmRepresentation representation = KeycloakServer.loadJson(getClass().getResourceAsStream("/adapter-test/demorealm-relative.json"), RealmRepresentation.class);
-            RealmModel realm = manager.importRealm(representation);
-
-            realmPublicKey = realm.getPublicKey();
+            manager.importRealm(representation);
 
             URL url = getClass().getResource("/adapter-test/cust-app-keycloak-relative.json");
             createApplicationDeployment()

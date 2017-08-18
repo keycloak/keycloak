@@ -30,15 +30,15 @@ import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.AssertAdminEvents;
 import org.keycloak.testsuite.util.RealmBuilder;
 
+import javax.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
-
-import javax.ws.rs.core.Response;
 
 
 /**
@@ -104,7 +104,7 @@ public abstract class AbstractAuthenticationTest extends AbstractKeycloakTest {
     }
 
     void compareExecution(AuthenticationExecutionExportRepresentation expected, AuthenticationExecutionExportRepresentation actual) {
-        Assert.assertEquals("Execution flowAlias - " + actual.getAuthenticator(), expected.getFlowAlias(), actual.getFlowAlias());
+        Assert.assertEquals("Execution flowAlias - " + actual.getFlowAlias(), expected.getFlowAlias(), actual.getFlowAlias());
         Assert.assertEquals("Execution authenticator - " + actual.getAuthenticator(), expected.getAuthenticator(), actual.getAuthenticator());
         Assert.assertEquals("Execution userSetupAllowed - " + actual.getAuthenticator(), expected.isUserSetupAllowed(), actual.isUserSetupAllowed());
         Assert.assertEquals("Execution authenticatorFlow - " + actual.getAuthenticator(), expected.isAutheticatorFlow(), actual.isAutheticatorFlow());
@@ -197,6 +197,8 @@ public abstract class AbstractAuthenticationTest extends AbstractKeycloakTest {
         Response response = authMgmtResource.createFlow(flowRep);
         org.keycloak.testsuite.Assert.assertEquals(201, response.getStatus());
         response.close();
+        String flowId = ApiUtil.getCreatedId(response);
+        getCleanup().addAuthenticationFlowId(flowId);
         assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AssertAdminEvents.isExpectedPrefixFollowedByUuid(AdminEventPaths.authFlowsPath()), flowRep, ResourceType.AUTH_FLOW);
     }
 }

@@ -19,48 +19,83 @@ package org.keycloak.models.cache.infinispan;
 
 import org.keycloak.Config;
 import org.keycloak.common.enums.SslRequired;
-import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.models.*;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.AuthenticatorConfigModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientTemplateModel;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OTPPolicy;
+import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
+import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.cache.CachedRealmModel;
 import org.keycloak.models.cache.infinispan.entities.CachedRealm;
-import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.storage.UserStorageProvider;
 
-import java.security.Key;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.cert.X509Certificate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class RealmAdapter implements RealmModel {
+public class RealmAdapter implements CachedRealmModel {
     protected CachedRealm cached;
     protected RealmCacheSession cacheSession;
-    protected RealmModel updated;
+    protected volatile RealmModel updated;
     protected RealmCache cache;
-    protected volatile transient PublicKey publicKey;
-    protected volatile transient PrivateKey privateKey;
-    protected volatile transient Key codeSecretKey;
-    protected volatile transient X509Certificate certificate;
+    protected KeycloakSession session;
 
-    public RealmAdapter(CachedRealm cached, RealmCacheSession cacheSession) {
+    public RealmAdapter(KeycloakSession session, CachedRealm cached, RealmCacheSession cacheSession) {
         this.cached = cached;
         this.cacheSession = cacheSession;
+        this.session = session;
     }
 
-    protected void getDelegateForUpdate() {
+    @Override
+    public RealmModel getDelegateForUpdate() {
         if (updated == null) {
-            cacheSession.registerRealmInvalidation(cached.getId());
+            cacheSession.registerRealmInvalidation(cached.getId(), cached.getName());
             updated = cacheSession.getDelegate().getRealm(cached.getId());
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
+        return updated;
     }
 
-    protected boolean invalidated;
+    protected volatile boolean invalidated;
+
+    protected void invalidateFlag() {
+        invalidated = true;
+
+    }
+
+    @Override
     public void invalidate() {
         invalidated = true;
+        getDelegateForUpdate();
+    }
+
+    @Override
+    public long getCacheTimestamp() {
+        return cached.getCacheTimestamp();
+    }
+
+    @Override
+    public ConcurrentHashMap getCachedWith() {
+        return cached.getCachedWith();
     }
 
     protected boolean isUpdated() {
@@ -187,6 +222,18 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public boolean isPermanentLockout() {
+        if(isUpdated()) return updated.isPermanentLockout();
+        return cached.isPermanentLockout();
+    }
+
+    @Override
+    public void setPermanentLockout(final boolean val) {
+        getDelegateForUpdate();
+        updated.setPermanentLockout(val);
+    }
+
+    @Override
     public int getMaxFailureWaitSeconds() {
         if (isUpdated()) return updated.getMaxFailureWaitSeconds();
         return cached.getMaxFailureWaitSeconds();
@@ -268,6 +315,30 @@ public class RealmAdapter implements RealmModel {
     public void setVerifyEmail(boolean verifyEmail) {
         getDelegateForUpdate();
         updated.setVerifyEmail(verifyEmail);
+    }
+
+    @Override
+    public boolean isLoginWithEmailAllowed() {
+        if (isUpdated()) return updated.isLoginWithEmailAllowed();
+        return cached.isLoginWithEmailAllowed();
+    }
+
+    @Override
+    public void setLoginWithEmailAllowed(boolean loginWithEmailAllowed) {
+        getDelegateForUpdate();
+        updated.setLoginWithEmailAllowed(loginWithEmailAllowed);
+    }
+    
+    @Override
+    public boolean isDuplicateEmailsAllowed() {
+        if (isUpdated()) return updated.isDuplicateEmailsAllowed();
+        return cached.isDuplicateEmailsAllowed();
+    }
+
+    @Override
+    public void setDuplicateEmailsAllowed(boolean duplicateEmailsAllowed) {
+        getDelegateForUpdate();
+        updated.setDuplicateEmailsAllowed(duplicateEmailsAllowed);
     }
 
     @Override
@@ -404,120 +475,27 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public String getKeyId() {
-        if (isUpdated()) return updated.getKeyId();
-        return cached.getKeyId();
+    public int getActionTokenGeneratedByAdminLifespan() {
+        if (isUpdated()) return updated.getActionTokenGeneratedByAdminLifespan();
+        return cached.getActionTokenGeneratedByAdminLifespan();
     }
 
     @Override
-    public String getPublicKeyPem() {
-        if (isUpdated()) return updated.getPublicKeyPem();
-        return cached.getPublicKeyPem();
-    }
-
-    @Override
-    public void setPublicKeyPem(String publicKeyPem) {
+    public void setActionTokenGeneratedByAdminLifespan(int seconds) {
         getDelegateForUpdate();
-        updated.setPublicKeyPem(publicKeyPem);
+        updated.setActionTokenGeneratedByAdminLifespan(seconds);
     }
 
     @Override
-    public String getPrivateKeyPem() {
-        if (isUpdated()) return updated.getPrivateKeyPem();
-        return cached.getPrivateKeyPem();
+    public int getActionTokenGeneratedByUserLifespan() {
+        if (isUpdated()) return updated.getActionTokenGeneratedByUserLifespan();
+        return cached.getActionTokenGeneratedByUserLifespan();
     }
 
     @Override
-    public void setPrivateKeyPem(String privateKeyPem) {
+    public void setActionTokenGeneratedByUserLifespan(int seconds) {
         getDelegateForUpdate();
-        updated.setPrivateKeyPem(privateKeyPem);
-    }
-
-    @Override
-    public PublicKey getPublicKey() {
-        if (isUpdated()) return updated.getPublicKey();
-        if (publicKey != null) return publicKey;
-        publicKey = cached.getPublicKey();
-        if (publicKey != null) return publicKey;
-        publicKey = KeycloakModelUtils.getPublicKey(getPublicKeyPem());
-        return publicKey;
-    }
-
-    @Override
-    public void setPublicKey(PublicKey publicKey) {
-        this.publicKey = publicKey;
-        String publicKeyPem = KeycloakModelUtils.getPemFromKey(publicKey);
-        setPublicKeyPem(publicKeyPem);
-    }
-
-    @Override
-    public X509Certificate getCertificate() {
-        if (isUpdated()) return updated.getCertificate();
-        if (certificate != null) return certificate;
-        certificate = cached.getCertificate();
-        if (certificate != null) return certificate;
-        certificate = KeycloakModelUtils.getCertificate(getCertificatePem());
-        return certificate;
-    }
-
-    @Override
-    public void setCertificate(X509Certificate certificate) {
-        this.certificate = certificate;
-        String certPem = KeycloakModelUtils.getPemFromCertificate(certificate);
-        setCertificatePem(certPem);
-    }
-
-    @Override
-    public String getCertificatePem() {
-        if (isUpdated()) return updated.getCertificatePem();
-        return cached.getCertificatePem();
-    }
-
-    @Override
-    public void setCertificatePem(String certificate) {
-        getDelegateForUpdate();
-        updated.setCertificatePem(certificate);
-
-    }
-
-    @Override
-    public PrivateKey getPrivateKey() {
-        if (isUpdated()) return updated.getPrivateKey();
-        if (privateKey != null) {
-            return privateKey;
-        }
-        privateKey = cached.getPrivateKey();
-        if (privateKey != null) {
-            return privateKey;
-        }
-        privateKey = KeycloakModelUtils.getPrivateKey(getPrivateKeyPem());
-        return privateKey;
-    }
-
-    @Override
-    public void setPrivateKey(PrivateKey privateKey) {
-        this.privateKey = privateKey;
-        String privateKeyPem = KeycloakModelUtils.getPemFromKey(privateKey);
-        setPrivateKeyPem(privateKeyPem);
-    }
-
-    @Override
-    public String getCodeSecret() {
-        return isUpdated() ? updated.getCodeSecret() : cached.getCodeSecret();
-    }
-
-    @Override
-    public Key getCodeSecretKey() {
-        if (codeSecretKey == null) {
-            codeSecretKey = KeycloakModelUtils.getSecretKey(getCodeSecret());
-        }
-        return codeSecretKey;
-    }
-
-    @Override
-    public void setCodeSecret(String codeSecret) {
-        getDelegateForUpdate();
-        updated.setCodeSecret(codeSecret);
+        updated.setActionTokenGeneratedByUserLifespan(seconds);
     }
 
     @Override
@@ -715,38 +693,6 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public List<UserFederationProviderModel> getUserFederationProviders() {
-        if (isUpdated()) return updated.getUserFederationProviders();
-        return cached.getUserFederationProviders();
-    }
-
-    @Override
-    public void setUserFederationProviders(List<UserFederationProviderModel> providers) {
-        getDelegateForUpdate();
-        updated.setUserFederationProviders(providers);
-    }
-
-    @Override
-    public UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config, int priority, String displayName, int fullSyncPeriod, int changedSyncPeriod, int lastSync) {
-        getDelegateForUpdate();
-        return updated.addUserFederationProvider(providerName, config, priority, displayName, fullSyncPeriod, changedSyncPeriod, lastSync);
-    }
-
-    @Override
-    public void removeUserFederationProvider(UserFederationProviderModel provider) {
-        getDelegateForUpdate();
-        updated.removeUserFederationProvider(provider);
-
-    }
-
-    @Override
-    public void updateUserFederationProvider(UserFederationProviderModel provider) {
-        getDelegateForUpdate();
-        updated.updateUserFederationProvider(provider);
-
-    }
-
-    @Override
     public String getLoginTheme() {
         if (isUpdated()) return updated.getLoginTheme();
         return cached.getLoginTheme();
@@ -804,13 +750,6 @@ public class RealmAdapter implements RealmModel {
     public void setNotBefore(int notBefore) {
         getDelegateForUpdate();
         updated.setNotBefore(notBefore);
-    }
-
-    @Override
-    public boolean removeRoleById(String id) {
-        cacheSession.registerRoleInvalidation(id);
-        getDelegateForUpdate();
-        return updated.removeRoleById(id);
     }
 
     @Override
@@ -898,10 +837,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public RoleModel getRole(String name) {
-        for (RoleModel role : getRoles()) {
-            if (role.getName().equals(name)) return role;
-        }
-        return null;
+        return cacheSession.getRealmRole(this, name);
     }
 
     @Override
@@ -912,18 +848,12 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public RoleModel addRole(String name) {
-        getDelegateForUpdate();
-        RoleModel role = updated.addRole(name);
-        cacheSession.registerRoleInvalidation(role.getId());
-        return role;
+        return cacheSession.addRealmRole(this, name);
     }
 
     @Override
     public RoleModel addRole(String id, String name) {
-        getDelegateForUpdate();
-        RoleModel role =  updated.addRole(id, name);
-        cacheSession.registerRoleInvalidation(role.getId());
-        return role;
+        return cacheSession.addRealmRole(this, id, name);
     }
 
     @Override
@@ -1046,63 +976,6 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public Set<UserFederationMapperModel> getUserFederationMappers() {
-        if (isUpdated()) return updated.getUserFederationMappers();
-        return cached.getUserFederationMapperSet();
-    }
-
-    @Override
-    public Set<UserFederationMapperModel> getUserFederationMappersByFederationProvider(String federationProviderId) {
-        if (isUpdated()) return updated.getUserFederationMappersByFederationProvider(federationProviderId);
-        Set<UserFederationMapperModel> mappers = new HashSet<>();
-        List<UserFederationMapperModel> list = cached.getUserFederationMappers().getList(federationProviderId);
-        for (UserFederationMapperModel entity : list) {
-            mappers.add(entity);
-        }
-        return Collections.unmodifiableSet(mappers);
-    }
-
-    @Override
-    public UserFederationMapperModel addUserFederationMapper(UserFederationMapperModel mapper) {
-        getDelegateForUpdate();
-        return updated.addUserFederationMapper(mapper);
-    }
-
-    @Override
-    public void removeUserFederationMapper(UserFederationMapperModel mapper) {
-        getDelegateForUpdate();
-        updated.removeUserFederationMapper(mapper);
-    }
-
-    @Override
-    public void updateUserFederationMapper(UserFederationMapperModel mapper) {
-        getDelegateForUpdate();
-        updated.updateUserFederationMapper(mapper);
-    }
-
-    @Override
-    public UserFederationMapperModel getUserFederationMapperById(String id) {
-        if (isUpdated()) return updated.getUserFederationMapperById(id);
-        for (List<UserFederationMapperModel> models : cached.getUserFederationMappers().values()) {
-            for (UserFederationMapperModel model : models) {
-                if (model.getId().equals(id)) return model;
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public UserFederationMapperModel getUserFederationMapperByName(String federationProviderId, String name) {
-        if (isUpdated()) return updated.getUserFederationMapperByName(federationProviderId, name);
-        List<UserFederationMapperModel> models = cached.getUserFederationMappers().getList(federationProviderId);
-        if (models == null) return null;
-        for (UserFederationMapperModel model : models) {
-            if (model.getName().equals(name)) return model;
-        }
-        return null;
-    }
-
-    @Override
     public AuthenticationFlowModel getBrowserFlow() {
         if (isUpdated()) return updated.getBrowserFlow();
         return cached.getBrowserFlow();
@@ -1163,6 +1036,18 @@ public class RealmAdapter implements RealmModel {
     public void setClientAuthenticationFlow(AuthenticationFlowModel flow) {
         getDelegateForUpdate();
         updated.setClientAuthenticationFlow(flow);
+    }
+
+    @Override
+    public AuthenticationFlowModel getDockerAuthenticationFlow() {
+        if (isUpdated()) return updated.getDockerAuthenticationFlow();
+        return cached.getDockerAuthenticationFlow();
+    }
+
+    @Override
+    public void setDockerAuthenticationFlow(final AuthenticationFlowModel flow) {
+        getDelegateForUpdate();
+        updated.setDockerAuthenticationFlow(flow);
     }
 
     @Override
@@ -1333,12 +1218,6 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public void addTopLevelGroup(GroupModel subGroup) {
-        cacheSession.addTopLevelGroup(this, subGroup);
-
-    }
-
-    @Override
     public void moveGroup(GroupModel group, GroupModel toParent) {
         cacheSession.moveGroup(this, group, toParent);
     }
@@ -1412,12 +1291,35 @@ public class RealmAdapter implements RealmModel {
     @Override
     public ComponentModel addComponentModel(ComponentModel model) {
         getDelegateForUpdate();
+        evictUsers(model);
         return updated.addComponentModel(model);
+    }
+
+    @Override
+    public ComponentModel importComponentModel(ComponentModel model) {
+        getDelegateForUpdate();
+        evictUsers(model);
+        return updated.importComponentModel(model);
+    }
+
+    public void evictUsers(ComponentModel model) {
+        String parentId = model.getParentId();
+        evictUsers(parentId);
+    }
+
+    public void evictUsers(String parentId) {
+        if (parentId != null && !parentId.equals(getId())) {
+            ComponentModel parent = getComponent(parentId);
+            if (parent != null && UserStorageProvider.class.getName().equals(parent.getProviderType())) {
+                session.userCache().evict(this);
+            }
+        }
     }
 
     @Override
     public void updateComponent(ComponentModel component) {
         getDelegateForUpdate();
+        evictUsers(component);
         updated.updateComponent(component);
 
     }
@@ -1425,6 +1327,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public void removeComponent(ComponentModel component) {
         getDelegateForUpdate();
+        evictUsers(component);
         updated.removeComponent(component);
 
     }
@@ -1432,6 +1335,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public void removeComponents(String parentId) {
         getDelegateForUpdate();
+        evictUsers(parentId);
         updated.removeComponents(parentId);
 
     }
@@ -1465,4 +1369,64 @@ public class RealmAdapter implements RealmModel {
         if (isUpdated()) return updated.getComponent(id);
         return cached.getComponents().get(id);
     }
+
+    public void setAttribute(String name, String value) {
+        getDelegateForUpdate();
+        updated.setAttribute(name, value);
+    }
+
+    @Override
+    public void setAttribute(String name, Boolean value) {
+        getDelegateForUpdate();
+        updated.setAttribute(name, value);
+    }
+
+    @Override
+    public void setAttribute(String name, Integer value) {
+        getDelegateForUpdate();
+        updated.setAttribute(name, value);
+    }
+
+    @Override
+    public void setAttribute(String name, Long value) {
+        getDelegateForUpdate();
+        updated.setAttribute(name, value);
+    }
+
+    @Override
+    public void removeAttribute(String name) {
+        getDelegateForUpdate();
+        updated.removeAttribute(name);
+    }
+
+    @Override
+    public String getAttribute(String name) {
+        if (isUpdated()) return updated.getAttribute(name);
+        return cached.getAttribute(name);
+    }
+
+    @Override
+    public Integer getAttribute(String name, Integer defaultValue) {
+        if (isUpdated()) return updated.getAttribute(name, defaultValue);
+        return cached.getAttribute(name, defaultValue);
+    }
+
+    @Override
+    public Long getAttribute(String name, Long defaultValue) {
+        if (isUpdated()) return updated.getAttribute(name, defaultValue);
+        return cached.getAttribute(name, defaultValue);
+    }
+
+    @Override
+    public Boolean getAttribute(String name, Boolean defaultValue) {
+        if (isUpdated()) return updated.getAttribute(name, defaultValue);
+        return cached.getAttribute(name, defaultValue);
+    }
+
+    @Override
+    public Map<String, String> getAttributes() {
+        if (isUpdated()) return updated.getAttributes();
+        return cached.getAttributes();
+    }
+
 }

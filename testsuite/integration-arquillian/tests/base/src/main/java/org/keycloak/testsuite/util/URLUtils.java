@@ -10,7 +10,10 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.util.regex.Pattern;
 
-import static org.openqa.selenium.support.ui.ExpectedConditions.*;
+import static org.openqa.selenium.support.ui.ExpectedConditions.not;
+import static org.openqa.selenium.support.ui.ExpectedConditions.or;
+import static org.openqa.selenium.support.ui.ExpectedConditions.urlMatches;
+import static org.openqa.selenium.support.ui.ExpectedConditions.urlToBe;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>

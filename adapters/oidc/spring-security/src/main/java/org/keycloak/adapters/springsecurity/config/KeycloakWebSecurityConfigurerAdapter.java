@@ -71,8 +71,8 @@ public abstract class KeycloakWebSecurityConfigurerAdapter extends WebSecurityCo
         return factoryBean.getObject();
     }
 
-    protected AuthenticationEntryPoint authenticationEntryPoint() {
-        return new KeycloakAuthenticationEntryPoint();
+    protected AuthenticationEntryPoint authenticationEntryPoint() throws Exception {
+        return new KeycloakAuthenticationEntryPoint(adapterDeploymentContext());
     }
 
     protected KeycloakAuthenticationProvider keycloakAuthenticationProvider() {

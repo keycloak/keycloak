@@ -19,14 +19,13 @@ package org.keycloak.broker.oidc;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
-import org.keycloak.common.ClientConnection;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
-import org.keycloak.truststore.JSSETruststoreConfigurator;
+import org.keycloak.broker.provider.util.SimpleHttp;
+import org.keycloak.common.ClientConnection;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -38,6 +37,7 @@ import org.keycloak.services.messages.Messages;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
@@ -73,8 +73,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     public static final String OAUTH2_PARAMETER_GRANT_TYPE = "grant_type";
 
 
-    public AbstractOAuth2IdentityProvider(C config) {
-        super(config);
+    public AbstractOAuth2IdentityProvider(KeycloakSession session, C config) {
+        super(session, config);
 
         if (config.getDefaultScope() == null || config.getDefaultScope().isEmpty()) {
             config.setDefaultScope(getDefaultScopes());
@@ -91,7 +91,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         try {
             URI authorizationUrl = createAuthorizationUrl(request).build();
 
-            return Response.temporaryRedirect(authorizationUrl).build();
+            return Response.seeOther(authorizationUrl).build();
         } catch (Exception e) {
             throw new IdentityBrokerException("Could not create authentication request.", e);
         }
@@ -155,7 +155,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     protected UriBuilder createAuthorizationUrl(AuthenticationRequest request) {
         return UriBuilder.fromUri(getConfig().getAuthorizationUrl())
                 .queryParam(OAUTH2_PARAMETER_SCOPE, getConfig().getDefaultScope())
-                .queryParam(OAUTH2_PARAMETER_STATE, request.getState())
+                .queryParam(OAUTH2_PARAMETER_STATE, request.getState().getEncodedState())
                 .queryParam(OAUTH2_PARAMETER_RESPONSE_TYPE, "code")
                 .queryParam(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
                 .queryParam(OAUTH2_PARAMETER_REDIRECT_URI, request.getRedirectUri());
@@ -216,8 +216,10 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             if (error != null) {
                 //logger.error("Failed " + getConfig().getAlias() + " broker login: " + error);
                 if (error.equals(ACCESS_DENIED)) {
+                    logger.error(ACCESS_DENIED + " for broker login " + getConfig().getProviderId());
                     return callback.cancelled(state);
                 } else {
+                    logger.error(error + " for broker login " + getConfig().getProviderId());
                     return callback.error(state, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
                 }
             }
@@ -233,12 +235,14 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                         federatedIdentity.setToken(response);
                     }
 
-                    federatedIdentity.setCode(state);
                     federatedIdentity.setIdpConfig(getConfig());
                     federatedIdentity.setIdp(AbstractOAuth2IdentityProvider.this);
+                    federatedIdentity.setCode(state);
 
                     return callback.authenticated(federatedIdentity);
                 }
+            } catch (WebApplicationException e) {
+                return e.getResponse();
             } catch (Exception e) {
                 logger.error("Failed to make identity provider oauth callback", e);
             }
@@ -248,15 +252,12 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         }
 
         public SimpleHttp generateTokenRequest(String authorizationCode) {
-            JSSETruststoreConfigurator configurator = new JSSETruststoreConfigurator(session);
-            return SimpleHttp.doPost(getConfig().getTokenUrl())
+            return SimpleHttp.doPost(getConfig().getTokenUrl(), session)
                     .param(OAUTH2_PARAMETER_CODE, authorizationCode)
                     .param(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
                     .param(OAUTH2_PARAMETER_CLIENT_SECRET, getConfig().getClientSecret())
                     .param(OAUTH2_PARAMETER_REDIRECT_URI, uriInfo.getAbsolutePath().toString())
-                    .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE)
-                    .sslFactory(configurator.getSSLSocketFactory())
-                    .hostnameVerifier(configurator.getHostnameVerifier());
+                    .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE);
         }
     }
 }

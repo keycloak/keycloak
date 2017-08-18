@@ -1,5 +1,13 @@
 package org.keycloak.testsuite.console.page.roles;
 
+import org.keycloak.representations.idm.RoleRepresentation.Composites;
+import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.UIUtils;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
+import org.openqa.selenium.support.ui.Select;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -8,16 +16,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.keycloak.representations.idm.RoleRepresentation.Composites;
-import org.keycloak.testsuite.page.Form;
 
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
-
-import org.keycloak.testsuite.util.UIUtils;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.FindBy;
-import org.openqa.selenium.support.ui.Select;
 
 /**
  *

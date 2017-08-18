@@ -162,6 +162,10 @@ public class ClientEntity {
     @JoinTable(name="CLIENT_DEFAULT_ROLES", joinColumns = { @JoinColumn(name="CLIENT_ID")}, inverseJoinColumns = { @JoinColumn(name="ROLE_ID")})
     Collection<RoleEntity> defaultRoles = new ArrayList<RoleEntity>();
 
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinTable(name="SCOPE_MAPPING", joinColumns = { @JoinColumn(name="CLIENT_ID")}, inverseJoinColumns = { @JoinColumn(name="ROLE_ID")})
+    protected Set<RoleEntity> scopeMapping = new HashSet<>();
+
     @ElementCollection
     @MapKeyColumn(name="NAME")
     @Column(name="VALUE")
@@ -454,6 +458,14 @@ public class ClientEntity {
 
     public void setUseTemplateMappers(boolean useTemplateMappers) {
         this.useTemplateMappers = useTemplateMappers;
+    }
+
+    public Set<RoleEntity> getScopeMapping() {
+        return scopeMapping;
+    }
+
+    public void setScopeMapping(Set<RoleEntity> scopeMapping) {
+        this.scopeMapping = scopeMapping;
     }
 
     @Override

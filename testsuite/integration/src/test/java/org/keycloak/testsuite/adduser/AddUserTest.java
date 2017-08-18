@@ -26,9 +26,13 @@ import org.junit.rules.TemporaryFolder;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.hash.Pbkdf2PasswordHashProvider;
+import org.keycloak.credential.hash.Pbkdf2Sha256PasswordHashProviderFactory;
 import org.keycloak.models.Constants;
-import org.keycloak.representations.idm.*;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.KeycloakServer;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.wildfly.adduser.AddUser;
@@ -38,7 +42,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -78,7 +85,7 @@ public class AddUserTest {
 
         CredentialRepresentation credentials = user.getCredentials().get(0);
 
-        assertEquals(Pbkdf2PasswordHashProvider.ID, credentials.getAlgorithm());
+        assertEquals(Pbkdf2Sha256PasswordHashProviderFactory.ID, credentials.getAlgorithm());
         assertEquals(new Integer(100000), credentials.getHashIterations());
 
         KeycloakServer server = new KeycloakServer();

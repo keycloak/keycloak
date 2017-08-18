@@ -17,12 +17,12 @@
 
 package org.keycloak.theme;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.Charset;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:wadahiro@gmail.com">Hiroyuki Wada</a>

@@ -16,9 +16,10 @@
  */
 package org.keycloak.saml.processing.web.util;
 
+import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.util.Base64;
-import org.keycloak.saml.processing.api.util.DeflateUtil;
 import org.keycloak.saml.common.util.StringUtil;
+import org.keycloak.saml.processing.api.util.DeflateUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,7 +44,7 @@ public class RedirectBindingUtil {
      * @throws IOException
      */
     public static String urlEncode(String str) throws IOException {
-        return URLEncoder.encode(str, "UTF-8");
+        return URLEncoder.encode(str, GeneralConstants.SAML_CHARSET_NAME);
     }
 
     /**
@@ -56,7 +57,20 @@ public class RedirectBindingUtil {
      * @throws IOException
      */
     public static String urlDecode(String str) throws IOException {
-        return URLDecoder.decode(str, "UTF-8");
+        return URLDecoder.decode(str, GeneralConstants.SAML_CHARSET_NAME);
+    }
+
+    /**
+     * On the byte array, apply base64 encoding
+     *
+     * @param stringToEncode
+     *
+     * @return
+     *
+     * @throws IOException
+     */
+    public static String base64Encode(byte[] stringToEncode) throws IOException {
+        return Base64.encodeBytes(stringToEncode, Base64.DONT_BREAK_LINES);
     }
 
     /**
@@ -97,7 +111,7 @@ public class RedirectBindingUtil {
      * @throws IOException
      */
     public static String deflateBase64URLEncode(String stringToEncode) throws IOException {
-        return deflateBase64URLEncode(stringToEncode.getBytes("UTF-8"));
+        return deflateBase64URLEncode(stringToEncode.getBytes(GeneralConstants.SAML_CHARSET));
     }
 
     /**

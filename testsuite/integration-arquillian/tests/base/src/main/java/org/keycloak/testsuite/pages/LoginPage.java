@@ -26,7 +26,7 @@ import org.openqa.selenium.support.FindBy;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class LoginPage extends AbstractPage {
+public class LoginPage extends LanguageComboboxAwarePage {
 
     @ArquillianResource
     protected OAuthClient oauth;
@@ -71,12 +71,9 @@ public class LoginPage extends AbstractPage {
     @FindBy(className = "alert-info")
     private WebElement loginInfoMessage;
 
+    @FindBy(className = "instruction")
+    private WebElement instruction;
 
-    @FindBy(id = "kc-current-locale-link")
-    private WebElement languageText;
-
-    @FindBy(id = "kc-locale-dropdown")
-    private WebElement localeDropdown;
 
     public void login(String username, String password) {
         usernameInput.clear();
@@ -128,6 +125,10 @@ public class LoginPage extends AbstractPage {
         return loginErrorMessage != null ? loginErrorMessage.getText() : null;
     }
 
+    public String getInstruction() {
+        return instruction != null ? instruction.getText() : null;
+    }
+
     public String getSuccessMessage() {
         return loginSuccessMessage != null ? loginSuccessMessage.getText() : null;
     }
@@ -137,7 +138,12 @@ public class LoginPage extends AbstractPage {
 
 
     public boolean isCurrent() {
-        return driver.getTitle().equals("Log in to test") || driver.getTitle().equals("Anmeldung bei test");
+        String realm = "test";
+        return isCurrent(realm);
+    }
+
+    public boolean isCurrent(String realm) {
+        return driver.getTitle().equals("Log in to " + realm) || driver.getTitle().equals("Anmeldung bei " + realm);
     }
 
     public void clickRegister() {
@@ -177,16 +183,6 @@ public class LoginPage extends AbstractPage {
     public void open() {
         oauth.openLoginForm();
         assertCurrent();
-    }
-
-    public String getLanguageDropdownText() {
-        return languageText.getText();
-    }
-
-    public void openLanguage(String language){
-        WebElement langLink = localeDropdown.findElement(By.xpath("//a[text()='" +language +"']"));
-        String url = langLink.getAttribute("href");
-        driver.navigate().to(url);
     }
 
 }

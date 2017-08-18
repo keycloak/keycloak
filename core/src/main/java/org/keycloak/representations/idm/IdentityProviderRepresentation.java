@@ -25,6 +25,7 @@ import java.util.Map;
 public class IdentityProviderRepresentation {
 
     protected String alias;
+    protected String displayName;
     protected String internalId;
     protected String providerId;
     protected boolean enabled = true;
@@ -52,6 +53,7 @@ public class IdentityProviderRepresentation {
     protected boolean storeToken;
     protected boolean addReadTokenRoleOnCreate;
     protected boolean authenticateByDefault;
+    protected boolean linkOnly;
     protected String firstBrokerLoginFlowAlias;
     protected String postBrokerLoginFlowAlias;
     protected Map<String, String> config = new HashMap<String, String>();
@@ -96,6 +98,14 @@ public class IdentityProviderRepresentation {
         this.enabled = enabled;
     }
 
+    public boolean isLinkOnly() {
+        return linkOnly;
+    }
+
+    public void setLinkOnly(boolean linkOnly) {
+        this.linkOnly = linkOnly;
+    }
+
     /**
      * 
      * Deprecated because replaced by {@link #updateProfileFirstLoginMode}. Kept here to allow import of old realms.
@@ -123,10 +133,15 @@ public class IdentityProviderRepresentation {
         this.updateProfileFirstLoginMode = updateProfileFirstLoginMode;
     }
 
+    /**
+     * @deprecated Replaced by configuration option in identity provider authenticator
+     */
+    @Deprecated
     public boolean isAuthenticateByDefault() {
         return authenticateByDefault;
     }
 
+    @Deprecated
     public void setAuthenticateByDefault(boolean authenticateByDefault) {
         this.authenticateByDefault = authenticateByDefault;
     }
@@ -169,6 +184,14 @@ public class IdentityProviderRepresentation {
 
     public void setTrustEmail(boolean trustEmail) {
         this.trustEmail = trustEmail;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 
 }

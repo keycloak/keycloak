@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.console.page.roles;
 
-import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;

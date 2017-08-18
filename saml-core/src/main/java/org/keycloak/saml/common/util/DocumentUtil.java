@@ -52,6 +52,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.util.Objects;
 
 /**
  * Utility dealing with DOM
@@ -97,10 +98,9 @@ public class DocumentUtil {
      * @throws ParserConfigurationException
      */
     public static Document createDocument() throws ConfigurationException {
-        DocumentBuilderFactory factory = getDocumentBuilderFactory();
         DocumentBuilder builder;
         try {
-            builder = factory.newDocumentBuilder();
+            builder = getDocumentBuilder();
         } catch (ParserConfigurationException e) {
             throw new ConfigurationException(e);
         }
@@ -118,8 +118,7 @@ public class DocumentUtil {
      */
     public static Document createDocumentWithBaseNamespace(String baseNamespace, String localPart) throws ProcessingException {
         try {
-            DocumentBuilderFactory factory = getDocumentBuilderFactory();
-            DocumentBuilder builder = factory.newDocumentBuilder();
+            DocumentBuilder builder = getDocumentBuilder();
             return builder.getDOMImplementation().createDocument(baseNamespace, localPart, null);
         } catch (DOMException e) {
             throw logger.processingError(e);
@@ -157,8 +156,7 @@ public class DocumentUtil {
      */
     public static Document getDocument(Reader reader) throws ConfigurationException, ProcessingException, ParsingException {
         try {
-            DocumentBuilderFactory factory = getDocumentBuilderFactory();
-            DocumentBuilder builder = factory.newDocumentBuilder();
+            DocumentBuilder builder = getDocumentBuilder();
             return builder.parse(new InputSource(reader));
         } catch (ParserConfigurationException e) {
             throw logger.configurationError(e);
@@ -181,9 +179,8 @@ public class DocumentUtil {
      * @throws SAXException
      */
     public static Document getDocument(File file) throws ConfigurationException, ProcessingException, ParsingException {
-        DocumentBuilderFactory factory = getDocumentBuilderFactory();
         try {
-            DocumentBuilder builder = factory.newDocumentBuilder();
+            DocumentBuilder builder = getDocumentBuilder();
             return builder.parse(file);
         } catch (ParserConfigurationException e) {
             throw logger.configurationError(e);
@@ -206,9 +203,8 @@ public class DocumentUtil {
      * @throws SAXException
      */
     public static Document getDocument(InputStream is) throws ConfigurationException, ProcessingException, ParsingException {
-        DocumentBuilderFactory factory = getDocumentBuilderFactory();
         try {
-            DocumentBuilder builder = factory.newDocumentBuilder();
+            DocumentBuilder builder = getDocumentBuilder();
             return builder.parse(is);
         } catch (ParserConfigurationException e) {
             throw logger.configurationError(e);
@@ -376,7 +372,7 @@ public class DocumentUtil {
             throw logger.processingError(e);
         }
 
-        return new String(baos.toByteArray());
+        return new String(baos.toByteArray(), GeneralConstants.SAML_CHARSET);
     }
 
     /**
@@ -502,6 +498,25 @@ public class DocumentUtil {
         }
     }
 
+    private static final ThreadLocal<DocumentBuilder> XML_DOCUMENT_BUILDER = new ThreadLocal<DocumentBuilder>() {
+        @Override
+        protected DocumentBuilder initialValue() {
+            DocumentBuilderFactory factory = getDocumentBuilderFactory();
+            try {
+                return factory.newDocumentBuilder();
+            } catch (ParserConfigurationException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+
+    };
+
+    public static DocumentBuilder getDocumentBuilder() throws ParserConfigurationException {
+        DocumentBuilder res = XML_DOCUMENT_BUILDER.get();
+        res.reset();
+        return res;
+    }
+
     /**
      * <p> Creates a namespace aware {@link DocumentBuilderFactory}. The returned instance is cached and shared between
      * different threads. </p>
@@ -539,5 +554,34 @@ public class DocumentUtil {
         }
 
         return documentBuilderFactory;
+    }
+
+    /**
+     * Get a (direct) child {@linkplain Element} from the parent {@linkplain Element}. 
+     *
+     * @param parent parent element
+     * @param targetNamespace namespace URI
+     * @param targetLocalName local name
+     * @return a child element matching the target namespace and localname, where {@linkplain Element#getParentNode()} is the parent input parameter
+     * @return
+     */
+    
+    public static Element getDirectChildElement(Element parent, String targetNamespace, String targetLocalName) {
+        Node child = parent.getFirstChild();
+        
+        while(child != null) {
+            if(child instanceof Element) {
+                Element childElement = (Element)child;
+                
+                String ns = childElement.getNamespaceURI();
+                String localName = childElement.getLocalName();
+                
+                if(Objects.equals(targetNamespace, ns) && Objects.equals(targetLocalName, localName)) {
+                    return childElement;
+                }
+            }
+            child = child.getNextSibling();
+        }
+        return null;
     }
 }

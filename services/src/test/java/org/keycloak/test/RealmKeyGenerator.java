@@ -18,11 +18,8 @@
 package org.keycloak.test;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.PEMWriter;
 import org.keycloak.common.util.PemUtils;
 
-import java.io.IOException;
-import java.io.StringWriter;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -44,21 +41,7 @@ public class RealmKeyGenerator {
             throw new RuntimeException(e);
         }
 
-        System.out.println("privateKey : " + printKey(keyPair.getPrivate()));
-        System.out.println("publicKey : " + printKey(keyPair.getPublic()));
-    }
-
-    private static String printKey(Object key){
-        StringWriter writer = new StringWriter();
-        PEMWriter pemWriter = new PEMWriter(writer);
-        try {
-            pemWriter.writeObject(key);
-            pemWriter.flush();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        String s = writer.toString();
-        return PemUtils.removeBeginEnd(s);
-
+        System.out.println("privateKey : " + PemUtils.encodeKey(keyPair.getPrivate()));
+        System.out.println("publicKey : " + PemUtils.encodeKey(keyPair.getPublic()));
     }
 }

@@ -19,7 +19,10 @@
 
 package org.keycloak.services.validation;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Properties;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -57,8 +60,11 @@ public class ValidationMessages {
     }
 
     public boolean fieldHasError(String fieldId) {
+        if (fieldId == null) {
+            return false;
+        }
         for (ValidationMessage message : messages) {
-            if (message.getFieldId().equals(fieldId)) {
+            if (fieldId.equals(message.getFieldId())) {
                 return true;
             }
         }

@@ -154,7 +154,7 @@ public class SamlServletExtension implements ServletExtension {
         servletContext.setAttribute(SamlDeploymentContext.class.getName(), deploymentContext);
         UndertowUserSessionManagement userSessionManagement = new UndertowUserSessionManagement();
         final ServletSamlAuthMech mech = createAuthMech(deploymentInfo, deploymentContext, userSessionManagement);
-
+        mech.addTokenStoreUpdaters(deploymentInfo);
 
         // setup handlers
 
@@ -182,10 +182,15 @@ public class SamlServletExtension implements ServletExtension {
             }
         });
 
-        log.debug("Setting jsession cookie path to: " + deploymentInfo.getContextPath());
-        ServletSessionConfig cookieConfig = new ServletSessionConfig();
-        cookieConfig.setPath(deploymentInfo.getContextPath());
-        deploymentInfo.setServletSessionConfig(cookieConfig);
+        ServletSessionConfig cookieConfig = deploymentInfo.getServletSessionConfig();
+        if (cookieConfig == null) {
+            cookieConfig = new ServletSessionConfig();
+        }
+        if (cookieConfig.getPath() == null) {
+            log.debug("Setting jsession cookie path to: " + deploymentInfo.getContextPath());
+            cookieConfig.setPath(deploymentInfo.getContextPath());
+            deploymentInfo.setServletSessionConfig(cookieConfig);
+        }
         addEndpointConstraint(deploymentInfo);
 
         ChangeSessionId.turnOffChangeSessionIdOnLogin(deploymentInfo);

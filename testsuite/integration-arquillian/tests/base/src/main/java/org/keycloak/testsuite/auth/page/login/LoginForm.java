@@ -18,14 +18,16 @@ package org.keycloak.testsuite.auth.page.login;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.page.Form;
-import static org.keycloak.testsuite.admin.Users.getPasswordOf;
 import org.keycloak.testsuite.auth.page.account.AccountFields;
 import org.keycloak.testsuite.auth.page.account.PasswordFields;
-import static org.keycloak.testsuite.util.WaitUtils.*;
-
+import org.keycloak.testsuite.page.Form;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import static org.keycloak.testsuite.admin.Users.getPasswordOf;
+import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElementIsNotPresent;
 
 /**
  *

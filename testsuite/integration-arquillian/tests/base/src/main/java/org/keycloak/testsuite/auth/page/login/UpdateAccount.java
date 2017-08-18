@@ -17,9 +17,9 @@
 
 package org.keycloak.testsuite.auth.page.login;
 
-import org.keycloak.testsuite.auth.page.account.AccountFields;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.auth.page.account.AccountFields;
 
 /**
  *
@@ -41,4 +41,7 @@ public class UpdateAccount extends Authenticate {
         submit();
     }
 
+    public AccountFields fields() {
+        return accountFields;
+    }
 }

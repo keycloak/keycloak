@@ -17,7 +17,7 @@
  */
 
 (function( window, undefined ) {
-    
+
     var KeycloakAuthorization = function (keycloak) {
         var _instance = this;
         this.rpt = null;
@@ -112,44 +112,55 @@
                 }
             };
 
-            /**
-             * Obtains all entitlements from a Keycloak Server based on a give resourceServerId.
-             */
-            this.entitlement = function (resourceSeververId) {
-                this.then = function (onGrant, onDeny, onError) {
-                    var request = new XMLHttpRequest();
+            return this;
+        };
 
-                    request.open('GET', keycloak.authServerUrl + '/realms/' + keycloak.realm + '/authz/entitlement/' + resourceSeververId, true);
-                    request.setRequestHeader('Authorization', 'Bearer ' + keycloak.token)
+        /**
+         * Obtains all entitlements from a Keycloak Server based on a give resourceServerId.
+         */
+        this.entitlement = function (resourceSeververId, entitlementRequest     ) {
+            this.then = function (onGrant, onDeny, onError) {
+                var request = new XMLHttpRequest();
 
-                    request.onreadystatechange = function () {
-                        if (request.readyState == 4) {
-                            var status = request.status;
 
-                            if (status >= 200 && status < 300) {
-                                var rpt = JSON.parse(request.responseText).rpt;
-                                _instance.rpt = rpt;
-                                onGrant(rpt);
-                            } else if (status == 403) {
-                                if (onDeny) {
-                                    onDeny();
-                                } else {
-                                    console.error('Authorization request was denied by the server.');
-                                }
+
+                request.onreadystatechange = function () {
+                    if (request.readyState == 4) {
+                        var status = request.status;
+
+                        if (status >= 200 && status < 300) {
+                            var rpt = JSON.parse(request.responseText).rpt;
+                            _instance.rpt = rpt;
+                            onGrant(rpt);
+                        } else if (status == 403) {
+                            if (onDeny) {
+                                onDeny();
                             } else {
-                                if (onError) {
-                                    onError();
-                                } else {
-                                    console.error('Could not obtain authorization data from server.');
-                                }
+                                console.error('Authorization request was denied by the server.');
+                            }
+                        } else {
+                            if (onError) {
+                                onError();
+                            } else {
+                                console.error('Could not obtain authorization data from server.');
                             }
                         }
-                    };
-
-                    request.send(null);
+                    }
                 };
 
-                return this;
+                var erJson = null
+
+                if(entitlementRequest) {
+                    request.open('POST', keycloak.authServerUrl + '/realms/' + keycloak.realm + '/authz/entitlement/' + resourceSeververId, true);
+                    request.setRequestHeader("Content-type", "application/json");
+                    erJson = JSON.stringify(entitlementRequest)
+                } else {
+                    request.open('GET', keycloak.authServerUrl + '/realms/' + keycloak.realm + '/authz/entitlement/' + resourceSeververId, true);
+                }
+
+                request.setRequestHeader('Authorization', 'Bearer ' + keycloak.token)
+                request.send(erJson);
+
             };
 
             return this;

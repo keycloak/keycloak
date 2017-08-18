@@ -18,7 +18,6 @@
 package org.keycloak.jose.jwk;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.keycloak.jose.jwk.JWK;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

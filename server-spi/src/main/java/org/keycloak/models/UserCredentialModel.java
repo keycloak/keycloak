@@ -17,38 +17,53 @@
 
 package org.keycloak.models;
 
+import org.keycloak.credential.CredentialInput;
+import org.keycloak.credential.CredentialModel;
+import org.keycloak.models.credential.PasswordUserCredentialModel;
+
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserCredentialModel {
-    public static final String PASSWORD = "password";
-    public static final String PASSWORD_HISTORY = "password-history";
-    public static final String PASSWORD_TOKEN = "password-token";
+public class UserCredentialModel implements CredentialInput {
+    public static final String PASSWORD = CredentialModel.PASSWORD;
+    public static final String PASSWORD_HISTORY = CredentialModel.PASSWORD_HISTORY;
+    public static final String PASSWORD_TOKEN = CredentialModel.PASSWORD_TOKEN;
 
     // Secret is same as password but it is not hashed
-    public static final String SECRET = "secret";
-    public static final String TOTP = "totp";
-    public static final String HOTP = "hotp";
-    public static final String CLIENT_CERT = "cert";
-    public static final String KERBEROS = "kerberos";
+    public static final String SECRET = CredentialModel.SECRET;
+    public static final String TOTP = CredentialModel.TOTP;
+    public static final String HOTP = CredentialModel.HOTP;
+    public static final String CLIENT_CERT = CredentialModel.CLIENT_CERT;
+    public static final String KERBEROS = CredentialModel.KERBEROS;
 
     protected String type;
     protected String value;
     protected String device;
     protected String algorithm;
 
+    // Additional context informations
+    protected Map<String, Object> notes = new HashMap<>();
+
     public UserCredentialModel() {
     }
 
-    public static UserCredentialModel password(String password) {
-        UserCredentialModel model = new UserCredentialModel();
+    public static PasswordUserCredentialModel password(String password) {
+        return password(password, false);
+    }
+
+    public static PasswordUserCredentialModel password(String password, boolean adminRequest) {
+        PasswordUserCredentialModel model = new PasswordUserCredentialModel();
         model.setType(PASSWORD);
         model.setValue(password);
+        model.setAdminRequest(adminRequest);
         return model;
     }
+
     public static UserCredentialModel passwordToken(String passwordToken) {
         UserCredentialModel model = new UserCredentialModel();
         model.setType(PASSWORD_TOKEN);
@@ -132,5 +147,17 @@ public class UserCredentialModel {
 
     public void setAlgorithm(String algorithm) {
         this.algorithm = algorithm;
+    }
+
+    public void setNote(String key, String value) {
+        this.notes.put(key, value);
+    }
+
+    public void removeNote(String key) {
+        this.notes.remove(key);
+    }
+
+    public Object getNote(String key) {
+        return this.notes.get(key);
     }
 }

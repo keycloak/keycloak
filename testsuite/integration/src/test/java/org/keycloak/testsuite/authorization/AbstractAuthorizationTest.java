@@ -18,10 +18,13 @@
 
 package org.keycloak.testsuite.authorization;
 
+import org.junit.Assume;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -51,6 +54,11 @@ public abstract class AbstractAuthorizationTest {
 
     private Keycloak adminClient;
 
+    @BeforeClass
+    public static void enabled() {
+        Assume.assumeTrue("Ignoring test as community/preview profile is not enabled", !Profile.getName().equals("product"));
+    }
+    
     @Before
     public void onBefore() {
         adminClient = Keycloak.getInstance(AUTH_SERVER_ROOT, MASTER, ADMIN, ADMIN, Constants.ADMIN_CLI_CLIENT_ID);
@@ -99,11 +107,13 @@ public abstract class AbstractAuthorizationTest {
     }
 
     protected Invocation.Builder newClient(ClientModel client, String authzRelativePath) {
+        String targetUrl = AUTH_SERVER_ROOT + "/admin/realms/" + TEST_REALM_NAME + "/clients/" + client.getId() + "/authz" + authzRelativePath;
+
         return ClientBuilder.newClient()
                 .register((ClientRequestFilter) requestContext -> {
                     AccessTokenResponse accessToken = adminClient.tokenManager().getAccessToken();
                     requestContext.getHeaders().add("Authorization", "Bearer " + accessToken.getToken());
-                }).target(AUTH_SERVER_ROOT + "/admin/realms/" + TEST_REALM_NAME + "/clients/" + client.getId() + "/authz" + authzRelativePath).request();
+                }).target(targetUrl).request();
     }
 
     protected ClientModel getClientByClientId(String clientId) {

@@ -16,6 +16,7 @@
  */
 package org.keycloak.authorization.authorization;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -24,11 +25,11 @@ import org.keycloak.authorization.authorization.representation.AuthorizationRequ
 import org.keycloak.authorization.authorization.representation.AuthorizationResponse;
 import org.keycloak.authorization.common.KeycloakEvaluationContext;
 import org.keycloak.authorization.common.KeycloakIdentity;
+import org.keycloak.authorization.entitlement.representation.EntitlementResponse;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
-import org.keycloak.authorization.policy.evaluation.DecisionResultCollector;
 import org.keycloak.authorization.policy.evaluation.Result;
 import org.keycloak.authorization.protection.permission.PermissionTicket;
 import org.keycloak.authorization.store.ResourceStore;
@@ -38,6 +39,7 @@ import org.keycloak.authorization.util.Permissions;
 import org.keycloak.authorization.util.Tokens;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
@@ -50,8 +52,6 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.Produces;
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -62,9 +62,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -72,11 +72,15 @@ import java.util.stream.Stream;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class AuthorizationTokenService {
+    protected static final Logger logger = Logger.getLogger(AuthorizationTokenService.class);
 
     private final AuthorizationProvider authorization;
 
     @Context
     private HttpRequest httpRequest;
+
+    @Context
+    private KeycloakSession session;
 
     public AuthorizationTokenService(AuthorizationProvider authorization) {
         this.authorization = authorization;
@@ -90,11 +94,11 @@ public class AuthorizationTokenService {
     @POST
     @Consumes("application/json")
     @Produces("application/json")
-    public void authorize(AuthorizationRequest authorizationRequest, @Suspended AsyncResponse asyncResponse) {
+    public Response authorize(AuthorizationRequest authorizationRequest) {
         KeycloakEvaluationContext evaluationContext = new KeycloakEvaluationContext(this.authorization.getKeycloakSession());
         KeycloakIdentity identity = (KeycloakIdentity) evaluationContext.getIdentity();
 
-        if (!identity.hasRole("uma_authorization")) {
+        if (!identity.hasRealmRole("uma_authorization")) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_SCOPE, "Requires uma_authorization scope.", Status.FORBIDDEN);
         }
 
@@ -102,46 +106,54 @@ public class AuthorizationTokenService {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Invalid authorization request.", Status.BAD_REQUEST);
         }
 
-        PermissionTicket ticket = verifyPermissionTicket(authorizationRequest);
+        try {
+            PermissionTicket ticket = verifyPermissionTicket(authorizationRequest);
+            ResourceServer resourceServer = authorization.getStoreFactory().getResourceServerStore().findById(ticket.getResourceServerId());
 
-        authorization.evaluators().from(createPermissions(ticket, authorizationRequest, authorization), evaluationContext).evaluate(new DecisionResultCollector() {
-            @Override
-            public void onComplete(List<Result> results) {
-                List<Permission> entitlements = Permissions.allPermits(results, authorization);
-
-                if (entitlements.isEmpty()) {
-                    HashMap<Object, Object> error = new HashMap<>();
-
-                    error.put(OAuth2Constants.ERROR, "not_authorized");
-
-                    asyncResponse.resume(Cors.add(httpRequest, Response.status(Status.FORBIDDEN)
-                            .entity(error))
-                            .allowedOrigins(identity.getAccessToken())
-                            .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build());
-                } else {
-                    AuthorizationResponse response = new AuthorizationResponse(createRequestingPartyToken(entitlements, identity.getAccessToken()));
-                    asyncResponse.resume(Cors.add(httpRequest, Response.status(Status.CREATED).entity(response)).allowedOrigins(identity.getAccessToken())
-                            .allowedMethods("POST")
-                            .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build());
-                }
+            if (resourceServer == null) {
+                throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client does not support permissions", Status.FORBIDDEN);
             }
 
-            @Override
-            public void onError(Throwable cause) {
-                asyncResponse.resume(cause);
+            List<Result> result = authorization.evaluators().from(createPermissions(ticket, authorizationRequest, authorization), evaluationContext).evaluate();
+
+            List<Permission> entitlements = Permissions.permits(result, authorizationRequest.getMetadata(), authorization, resourceServer);
+
+            if (!entitlements.isEmpty()) {
+                AuthorizationResponse response = new AuthorizationResponse(createRequestingPartyToken(entitlements, identity.getAccessToken()));
+                return Cors.add(httpRequest, Response.status(Status.CREATED).entity(response)).allowedOrigins(identity.getAccessToken())
+                        .allowedMethods("POST")
+                        .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
             }
-        });
+        } catch (Exception cause) {
+            logger.error(cause);
+            throw new ErrorResponseException(OAuthErrorException.SERVER_ERROR, "Error while evaluating permissions.", Status.INTERNAL_SERVER_ERROR);
+        }
+
+        HashMap<Object, Object> error = new HashMap<>();
+
+        error.put(OAuth2Constants.ERROR, "not_authorized");
+
+        return Cors.add(httpRequest, Response.status(Status.FORBIDDEN)
+                .entity(error))
+                .allowedOrigins(identity.getAccessToken())
+                .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
     }
 
     private List<ResourcePermission> createPermissions(PermissionTicket ticket, AuthorizationRequest request, AuthorizationProvider authorization) {
         StoreFactory storeFactory = authorization.getStoreFactory();
+        ResourceServer resourceServer = authorization.getStoreFactory().getResourceServerStore().findById(ticket.getResourceServerId());
+
+        if (resourceServer == null) {
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client does not support permissions", Status.FORBIDDEN);
+        }
+
         Map<String, Set<String>> permissionsToEvaluate = new HashMap<>();
 
         ticket.getResources().forEach(requestedResource -> {
             Resource resource;
 
             if (requestedResource.getId() != null) {
-                resource = storeFactory.getResourceStore().findById(requestedResource.getId());
+                resource = storeFactory.getResourceStore().findById(requestedResource.getId(), ticket.getResourceServerId());
             } else {
                 resource = storeFactory.getResourceStore().findByName(requestedResource.getName(), ticket.getResourceServerId());
             }
@@ -168,7 +180,7 @@ public class AuthorizationTokenService {
                     }
 
                     return scope.getId();
-                }).filter(s -> s != null).collect(Collectors.toList()).toArray(new String[requestedScopes.size()])));
+                }).filter(s -> s != null).collect(Collectors.toList()), ticket.getResourceServerId()));
 
                 for (Resource resource1 : resources) {
                     permissionsToEvaluate.put(resource1.getId(), collect);
@@ -181,7 +193,7 @@ public class AuthorizationTokenService {
         String rpt = request.getRpt();
 
         if (rpt != null && !"".equals(rpt)) {
-            if (!Tokens.verifySignature(rpt, getRealm().getPublicKey())) {
+            if (!Tokens.verifySignature(session, getRealm(), rpt)) {
                 throw new ErrorResponseException("invalid_rpt", "RPT signature is invalid", Status.FORBIDDEN);
             }
 
@@ -201,7 +213,7 @@ public class AuthorizationTokenService {
 
                     if (permissions != null) {
                         permissions.forEach(permission -> {
-                            Resource resourcePermission = storeFactory.getResourceStore().findById(permission.getResourceSetId());
+                            Resource resourcePermission = storeFactory.getResourceStore().findById(permission.getResourceSetId(), ticket.getResourceServerId());
 
                             if (resourcePermission != null) {
                                 Set<String> scopes = permissionsToEvaluate.get(resourcePermission.getId());
@@ -223,21 +235,16 @@ public class AuthorizationTokenService {
             }
         }
 
-        ResourceServer resourceServer = authorization.getStoreFactory().getResourceServerStore().findById(ticket.getResourceServerId());
-
         return permissionsToEvaluate.entrySet().stream()
                 .flatMap((Function<Entry<String, Set<String>>, Stream<ResourcePermission>>) entry -> {
                     String key = entry.getKey();
 
                     if ("$KC_SCOPE_PERMISSION".equals(key)) {
                         ScopeStore scopeStore = authorization.getStoreFactory().getScopeStore();
-                        List<Scope> scopes = entry.getValue().stream().map(scopeName -> {
-                            Scope byName = scopeStore.findByName(scopeName, resourceServer.getId());
-                            return byName;
-                        }).collect(Collectors.toList());
+                        List<Scope> scopes = entry.getValue().stream().map(scopeName -> scopeStore.findByName(scopeName, resourceServer.getId())).filter(scope -> Objects.nonNull(scope)).collect(Collectors.toList());
                         return Arrays.asList(new ResourcePermission(null, scopes, resourceServer)).stream();
                     } else {
-                        Resource entryResource = storeFactory.getResourceStore().findById(key);
+                        Resource entryResource = storeFactory.getResourceStore().findById(key, resourceServer.getId());
                         return Permissions.createResourcePermissions(entryResource, entry.getValue(), authorization).stream();
                     }
                 }).collect(Collectors.toList());
@@ -253,13 +260,13 @@ public class AuthorizationTokenService {
         authorization.setPermissions(permissions);
         accessToken.setAuthorization(authorization);
 
-        return new TokenManager().encodeToken(getRealm(), accessToken);
+        return new TokenManager().encodeToken(session, getRealm(), accessToken);
     }
 
     private PermissionTicket verifyPermissionTicket(AuthorizationRequest request) {
         String ticketString = request.getTicket();
 
-        if (ticketString == null || !Tokens.verifySignature(ticketString, getRealm().getPublicKey())) {
+        if (ticketString == null || !Tokens.verifySignature(session, getRealm(), ticketString)) {
             throw new ErrorResponseException("invalid_ticket", "Ticket verification failed", Status.FORBIDDEN);
         }
 

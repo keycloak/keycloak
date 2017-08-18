@@ -17,10 +17,8 @@
 package org.keycloak.adapters.undertow;
 
 import io.undertow.server.session.SessionManager;
-import io.undertow.servlet.api.DeploymentInfo;
 import org.keycloak.adapters.spi.UserSessionManagement;
 
-import java.lang.reflect.Method;
 import java.util.List;
 
 /**

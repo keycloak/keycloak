@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-app-server-karaf</artifactId>
-        <version>2.2.0-SNAPSHOT</version>
+        <version>3.3.0.CR1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -32,7 +32,7 @@
     <properties>
         <app.server.karaf>fuse63</app.server.karaf>
         <app.server.karaf.groupId>org.jboss.fuse</app.server.karaf.groupId>
-        <app.server.karaf.artifactId>jboss-fuse-full</app.server.karaf.artifactId>
+        <app.server.karaf.artifactId>jboss-fuse-karaf</app.server.karaf.artifactId>
         <app.server.karaf.version>${fuse63.version}</app.server.karaf.version>
         <app.server.karaf.unpacked.folder.name>jboss-fuse-${fuse63.version}</app.server.karaf.unpacked.folder.name>
         <app.server.karaf.client.auth>-u admin -p admin</app.server.karaf.client.auth>

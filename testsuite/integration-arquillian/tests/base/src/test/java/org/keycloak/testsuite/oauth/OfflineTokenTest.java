@@ -23,13 +23,15 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.constants.ServiceAccountConstants;
-import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
@@ -41,6 +43,11 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.account.AccountTest;
+import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
+import org.keycloak.testsuite.auth.page.AuthRealm;
+import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientManager;
@@ -53,6 +60,9 @@ import org.keycloak.util.TokenUtil;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+
+import javax.ws.rs.NotFoundException;
 
 import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
@@ -72,6 +82,10 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
 
     @Page
     protected LoginPage loginPage;
+
+    @Page
+    protected AccountApplicationsPage applicationsPage;
+
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
@@ -248,8 +262,11 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
 
         // Assert userSession expired
         testingClient.testing().removeExpired("test");
-
-        testingClient.testing().removeUserSession("test", sessionId);
+        try {
+            testingClient.testing().removeUserSession("test", sessionId);
+        } catch (NotFoundException nfe) {
+            // Ignore
+        }
 
         OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(offlineTokenString, "secret1");
         AccessToken refreshedToken = oauth.verifyToken(response.getAccessToken());
@@ -286,7 +303,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.clientId("offline-client");
         OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("secret1", "test-user@localhost", "password");
-        tokenResponse.getErrorDescription();
+        Assert.assertNull(tokenResponse.getErrorDescription());
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
         String offlineTokenString = tokenResponse.getRefreshToken();
         RefreshToken offlineToken = oauth.verifyRefreshToken(offlineTokenString);
@@ -432,5 +449,105 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         appRealm.roles().get("composite").remove();
         testUser.roles().realmLevel().add(Collections.singletonList(offlineAccess));
         
+    }
+
+    /**
+     * KEYCLOAK-4201
+     *
+     * @throws Exception
+     */
+    @Test
+    public void offlineTokenAdminRESTAccess() throws Exception {
+        // Grant "view-realm" role to user
+        RealmResource appRealm = adminClient.realm("test");
+        ClientResource realmMgmt = ApiUtil.findClientByClientId(appRealm, Constants.REALM_MANAGEMENT_CLIENT_ID);
+        String realmMgmtUuid = realmMgmt.toRepresentation().getId();
+        RoleRepresentation roleRep = realmMgmt.roles().get(AdminRoles.VIEW_REALM).toRepresentation();
+
+        UserResource testUser = findUserByUsernameId(appRealm, "test-user@localhost");
+        testUser.roles().clientLevel(realmMgmtUuid).add(Collections.singletonList(roleRep));
+
+        // Login with offline token now
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.clientId("offline-client");
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("secret1", "test-user@localhost", "password");
+
+        events.clear();
+
+        // Set the time offset, so that "normal" userSession expires
+        setTimeOffset(86400);
+
+        // Remove expired sessions. This will remove "normal" userSession
+        testingClient.testing().removeUserSessions(appRealm.toRepresentation().getId());
+
+        // Refresh with the offline token
+        tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "secret1");
+
+        // Use accessToken to admin REST request
+        Keycloak offlineTokenAdmin = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
+                AuthRealm.MASTER, Constants.ADMIN_CLI_CLIENT_ID, tokenResponse.getAccessToken());
+        RealmRepresentation testRealm = offlineTokenAdmin.realm("test").toRepresentation();
+        Assert.assertNotNull(testRealm);
+    }
+
+
+    // KEYCLOAK-4525
+    @Test
+    public void offlineTokenRemoveClientWithTokens() throws Exception {
+        // Create new client
+        RealmResource appRealm = adminClient.realm("test");
+
+        ClientRepresentation clientRep = ClientBuilder.create().clientId("offline-client-2")
+                .id(KeycloakModelUtils.generateId())
+                .directAccessGrants()
+                .secret("secret1").build();
+
+        appRealm.clients().create(clientRep);
+
+        // Direct grant login requesting offline token
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.clientId("offline-client-2");
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("secret1", "test-user@localhost", "password");
+        Assert.assertNull(tokenResponse.getErrorDescription());
+        AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
+        String offlineTokenString = tokenResponse.getRefreshToken();
+        RefreshToken offlineToken = oauth.verifyRefreshToken(offlineTokenString);
+
+        events.expectLogin()
+                .client("offline-client-2")
+                .user(userId)
+                .session(token.getSessionState())
+                .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
+                .detail(Details.TOKEN_ID, token.getId())
+                .detail(Details.REFRESH_TOKEN_ID, offlineToken.getId())
+                .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
+                .detail(Details.USERNAME, "test-user@localhost")
+                .removeDetail(Details.CODE_ID)
+                .removeDetail(Details.REDIRECT_URI)
+                .removeDetail(Details.CONSENT)
+                .assertEvent();
+
+        // Go to account mgmt applications page
+        applicationsPage.open();
+        loginPage.login("test-user@localhost", "password");
+        events.expectLogin().client("account").detail(Details.REDIRECT_URI, AccountTest.ACCOUNT_REDIRECT + "?path=applications").assertEvent();
+        Assert.assertTrue(applicationsPage.isCurrent());
+        Map<String, AccountApplicationsPage.AppEntry> apps = applicationsPage.getApplications();
+        Assert.assertTrue(apps.containsKey("offline-client-2"));
+        Assert.assertEquals("Offline Token", apps.get("offline-client-2").getAdditionalGrants().get(0));
+
+        // Now remove the client
+        ClientResource offlineTokenClient2 = ApiUtil.findClientByClientId(appRealm, "offline-client-2" );
+        offlineTokenClient2.remove();
+
+        // Go to applications page and see offline-client not anymore
+        applicationsPage.open();
+        apps = applicationsPage.getApplications();
+        Assert.assertFalse(apps.containsKey("offline-client-2"));
+
+        // Login as admin and see consents of user
+        UserResource user = ApiUtil.findUserByUsernameId(appRealm, "test-user@localhost");
+        List<Map<String, Object>> consents = user.getConsents();
+        Assert.assertTrue(consents.isEmpty());
     }
 }

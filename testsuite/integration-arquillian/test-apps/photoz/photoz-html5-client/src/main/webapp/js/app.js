@@ -62,7 +62,16 @@ module.controller('TokenCtrl', function ($scope, Identity) {
     }
 
     $scope.requestEntitlements = function () {
-        Identity.authorization.entitlement('photoz-restful-api').then(function (rpt) {});
+        Identity.authorization.entitlement('photoz-restful-api').then(function (rpt) {
+            document.getElementById("output").innerHTML = JSON.stringify(jwt_decode(rpt), null, '  ');
+        });
+    }
+    
+    $scope.requestEntitlement = function () {
+        var param={"permissions" : [{"resource_set_name" : "Album Resource"}]};
+        Identity.authorization.entitlement('photoz-restful-api', param).then(function (rpt) {
+            document.getElementById("output").innerHTML = JSON.stringify(jwt_decode(rpt), null, '  ');
+        });
     }
 
     $scope.Identity = Identity;
@@ -77,6 +86,16 @@ module.controller('AlbumCtrl', function ($scope, $http, $routeParams, $location,
         var newAlbum = new Album($scope.album);
         newAlbum.$save({}, function (data) {
             $location.path('/');
+        });
+    };
+
+    $scope.createWithInvalidUser = function () {
+        var newAlbum = new Album($scope.album);
+        newAlbum.$save({user: 'invalidUser'}, function (data) {
+            document.getElementById("output").innerHTML = 'Request was successful'
+        },
+        function (response) {
+            document.getElementById("output").innerHTML = response.data;
         });
     };
 });

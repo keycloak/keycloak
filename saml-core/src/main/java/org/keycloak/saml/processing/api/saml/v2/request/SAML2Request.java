@@ -16,8 +16,16 @@
  */
 package org.keycloak.saml.processing.api.saml.v2.request;
 
+import org.keycloak.dom.saml.v2.SAML2Object;
+import org.keycloak.dom.saml.v2.assertion.NameIDType;
+import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
+import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
+import org.keycloak.dom.saml.v2.protocol.NameIDPolicyType;
+import org.keycloak.dom.saml.v2.protocol.RequestAbstractType;
+import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
+import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
@@ -25,7 +33,6 @@ import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.common.util.StaxUtil;
-import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.saml.v2.common.IDGenerator;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
@@ -33,12 +40,7 @@ import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 import org.keycloak.saml.processing.core.saml.v2.writers.SAMLRequestWriter;
 import org.keycloak.saml.processing.core.saml.v2.writers.SAMLResponseWriter;
 import org.keycloak.saml.processing.core.util.JAXPValidationUtil;
-import org.keycloak.dom.saml.v2.assertion.NameIDType;
-import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
-import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
-import org.keycloak.dom.saml.v2.protocol.NameIDPolicyType;
-import org.keycloak.dom.saml.v2.protocol.RequestAbstractType;
-import org.keycloak.dom.saml.v2.protocol.ResponseType;
+
 import org.w3c.dom.Document;
 
 import javax.xml.datatype.XMLGregorianCalendar;
@@ -154,7 +156,7 @@ public class SAML2Request {
      * @throws IOException
      * @throws ParsingException
      */
-    public SAML2Object getSAML2ObjectFromStream(InputStream is) throws ConfigurationException, ParsingException,
+    public static SAMLDocumentHolder getSAML2ObjectFromStream(InputStream is) throws ConfigurationException, ParsingException,
             ProcessingException {
         if (is == null)
             throw logger.nullArgumentError("InputStream");
@@ -163,10 +165,9 @@ public class SAML2Request {
 
         SAMLParser samlParser = new SAMLParser();
         JAXPValidationUtil.checkSchemaValidation(samlDocument);
-        SAML2Object requestType = (SAML2Object) samlParser.parse(DocumentUtil.getNodeAsStream(samlDocument));
+        SAML2Object requestType = (SAML2Object) samlParser.parse(samlDocument);
 
-        samlDocumentHolder = new SAMLDocumentHolder(requestType, samlDocument);
-        return requestType;
+        return new SAMLDocumentHolder(requestType, samlDocument);
     }
 
     /**
@@ -190,7 +191,7 @@ public class SAML2Request {
 
         SAMLParser samlParser = new SAMLParser();
         JAXPValidationUtil.checkSchemaValidation(samlDocument);
-        RequestAbstractType requestType = (RequestAbstractType) samlParser.parse(DocumentUtil.getNodeAsStream(samlDocument));
+        RequestAbstractType requestType = (RequestAbstractType) samlParser.parse(samlDocument);
 
         samlDocumentHolder = new SAMLDocumentHolder(requestType, samlDocument);
         return requestType;
@@ -218,7 +219,7 @@ public class SAML2Request {
         SAMLParser samlParser = new SAMLParser();
         JAXPValidationUtil.checkSchemaValidation(samlDocument);
 
-        AuthnRequestType requestType = (AuthnRequestType) samlParser.parse(DocumentUtil.getNodeAsStream(samlDocument));
+        AuthnRequestType requestType = (AuthnRequestType) samlParser.parse(samlDocument);
         samlDocumentHolder = new SAMLDocumentHolder(requestType, samlDocument);
         return requestType;
     }
@@ -241,7 +242,7 @@ public class SAML2Request {
      *
      * @throws ConfigurationException
      */
-    public LogoutRequestType createLogoutRequest(String issuer) throws ConfigurationException {
+    public static LogoutRequestType createLogoutRequest(String issuer) throws ConfigurationException {
         LogoutRequestType lrt = new LogoutRequestType(IDGenerator.create("ID_"), XMLTimeUtil.getIssueInstant());
 
         // Create an issuer
@@ -264,7 +265,7 @@ public class SAML2Request {
      * @throws ParsingException
      * @throws ConfigurationException
      */
-    public Document convert(RequestAbstractType rat) throws ProcessingException, ConfigurationException, ParsingException {
+    public static Document convert(RequestAbstractType rat) throws ProcessingException, ConfigurationException, ParsingException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
 
         SAMLRequestWriter writer = new SAMLRequestWriter(StaxUtil.getXMLStreamWriter(bos));
@@ -274,7 +275,7 @@ public class SAML2Request {
             writer.write((LogoutRequestType) rat);
         }
 
-        return DocumentUtil.getDocument(new String(bos.toByteArray()));
+        return DocumentUtil.getDocument(new String(bos.toByteArray(), GeneralConstants.SAML_CHARSET));
     }
 
     /**
@@ -288,7 +289,7 @@ public class SAML2Request {
      * @throws ParsingException
      * @throws ConfigurationException
      */
-    public Document convert(ResponseType responseType) throws ProcessingException, ParsingException, ConfigurationException {
+    public static Document convert(ResponseType responseType) throws ProcessingException, ParsingException, ConfigurationException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         SAMLResponseWriter writer = new SAMLResponseWriter(StaxUtil.getXMLStreamWriter(baos));
         writer.write(responseType);
@@ -305,7 +306,7 @@ public class SAML2Request {
      *
      * @throws ProcessingException
      */
-    public void marshall(RequestAbstractType requestType, OutputStream os) throws ProcessingException {
+    public static void marshall(RequestAbstractType requestType, OutputStream os) throws ProcessingException {
         SAMLRequestWriter samlRequestWriter = new SAMLRequestWriter(StaxUtil.getXMLStreamWriter(os));
         if (requestType instanceof AuthnRequestType) {
             samlRequestWriter.write((AuthnRequestType) requestType);
@@ -323,7 +324,7 @@ public class SAML2Request {
      *
      * @throws ProcessingException
      */
-    public void marshall(RequestAbstractType requestType, Writer writer) throws ProcessingException {
+    public static void marshall(RequestAbstractType requestType, Writer writer) throws ProcessingException {
         SAMLRequestWriter samlRequestWriter = new SAMLRequestWriter(StaxUtil.getXMLStreamWriter(writer));
         if (requestType instanceof AuthnRequestType) {
             samlRequestWriter.write((AuthnRequestType) requestType);

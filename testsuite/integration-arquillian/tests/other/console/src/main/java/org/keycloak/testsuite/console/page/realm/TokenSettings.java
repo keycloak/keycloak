@@ -17,16 +17,17 @@
  */
 package org.keycloak.testsuite.console.page.realm;
 
-import java.util.concurrent.TimeUnit;
+import org.jboss.arquillian.graphene.page.Page;
+import org.keycloak.testsuite.page.Form;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
 
+import java.util.concurrent.TimeUnit;
+
 import static java.lang.String.valueOf;
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 import static org.apache.commons.lang3.text.WordUtils.capitalize;
-import org.jboss.arquillian.graphene.page.Page;
-import org.keycloak.testsuite.page.Form;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
  *

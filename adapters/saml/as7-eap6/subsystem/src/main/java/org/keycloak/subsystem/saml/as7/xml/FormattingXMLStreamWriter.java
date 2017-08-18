@@ -19,14 +19,13 @@ package org.keycloak.subsystem.saml.as7.xml;
 
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
-import java.lang.reflect.UndeclaredThrowableException;
-import java.util.ArrayDeque;
-import java.util.Iterator;
-
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
+import java.lang.reflect.UndeclaredThrowableException;
+import java.util.ArrayDeque;
+import java.util.Iterator;
 
 /**
  * An XML stream writer which nicely formats the XML for configuration files.
@@ -82,7 +81,7 @@ public final class FormattingXMLStreamWriter implements XMLExtendedStreamWriter,
     public void writeStartElement(final String localName) throws XMLStreamException {
         ArrayDeque<String> namespaces = unspecifiedNamespaces;
         String namespace = namespaces.getFirst();
-        if (namespace != NO_NAMESPACE) {
+        if (namespace == null ? NO_NAMESPACE != null : ! namespace.equals(NO_NAMESPACE)) {
             writeStartElement(namespace, localName);
             return;
         }
@@ -141,9 +140,9 @@ public final class FormattingXMLStreamWriter implements XMLExtendedStreamWriter,
         attrQueue.add(new ArgRunnable() {
             public void run(int arg) throws XMLStreamException {
                 if (arg == 0) {
-                    delegate.writeStartElement(prefix, namespaceURI, localName);
+                    delegate.writeStartElement(prefix, localName, namespaceURI);
                 } else {
-                    delegate.writeEmptyElement(prefix, namespaceURI, localName);
+                    delegate.writeEmptyElement(prefix, localName, namespaceURI);
                 }
             }
         });
@@ -166,14 +165,14 @@ public final class FormattingXMLStreamWriter implements XMLExtendedStreamWriter,
         runAttrQueue();
         nl();
         indent();
-        delegate.writeEmptyElement(prefix, namespaceURI, localName);
+        delegate.writeEmptyElement(prefix, localName, namespaceURI);
         state = END_ELEMENT;
     }
 
     @Override
     public void writeEmptyElement(final String localName) throws XMLStreamException {
         String namespace = unspecifiedNamespaces.getFirst();
-        if (namespace != NO_NAMESPACE) {
+        if (namespace == null ? NO_NAMESPACE != null : ! namespace.equals(NO_NAMESPACE)) {
             writeEmptyElement(namespace, localName);
             return;
         }

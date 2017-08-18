@@ -17,7 +17,6 @@
 
 package org.keycloak.adapters.saml.undertow;
 
-import io.undertow.server.HttpHandler;
 import org.keycloak.adapters.saml.SamlAuthenticator;
 import org.keycloak.adapters.saml.SamlDeployment;
 import org.keycloak.adapters.saml.SamlSession;

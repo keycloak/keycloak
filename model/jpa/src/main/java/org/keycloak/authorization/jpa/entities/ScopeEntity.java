@@ -31,6 +31,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 import java.util.ArrayList;
@@ -44,7 +46,14 @@ import java.util.Objects;
 @Table(name = "RESOURCE_SERVER_SCOPE", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"NAME", "RESOURCE_SERVER_ID"})
 })
-public class ScopeEntity implements Scope {
+@NamedQueries(
+        {
+                @NamedQuery(name="findScopeIdByName", query="select s.id from ScopeEntity s where s.resourceServer.id = :serverId and s.name = :name"),
+                @NamedQuery(name="findScopeIdByResourceServer", query="select s.id from ScopeEntity s where s.resourceServer.id = :serverId"),
+                @NamedQuery(name="deleteScopeByResourceServer", query="delete from ScopeEntity s where s.resourceServer.id = :serverId")
+        }
+)
+public class ScopeEntity {
 
     @Id
     @Column(name="ID", length = 36)
@@ -57,7 +66,7 @@ public class ScopeEntity implements Scope {
     @Column(name = "ICON_URI")
     private String iconUri;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "RESOURCE_SERVER_ID")
     private ResourceServerEntity resourceServer;
 
@@ -65,7 +74,6 @@ public class ScopeEntity implements Scope {
     @JoinTable(name = "SCOPE_POLICY", joinColumns = @JoinColumn(name = "SCOPE_ID"), inverseJoinColumns = @JoinColumn(name = "POLICY_ID"))
     private List<PolicyEntity> policies = new ArrayList<>();
 
-    @Override
     public String getId() {
         return id;
     }
@@ -74,33 +82,28 @@ public class ScopeEntity implements Scope {
         this.id = id;
     }
 
-    @Override
     public String getName() {
         return name;
     }
 
-    @Override
     public void setName(String name) {
         this.name = name;
     }
 
-    @Override
     public String getIconUri() {
         return iconUri;
     }
 
-    @Override
     public void setIconUri(String iconUri) {
         this.iconUri = iconUri;
     }
 
-    @Override
     public ResourceServerEntity getResourceServer() {
         return resourceServer;
     }
 
-    public List<? extends Policy> getPolicies() {
-        return this.policies;
+    public List<PolicyEntity> getPolicies() {
+        return policies;
     }
 
     public void setPolicies(List<PolicyEntity> policies) {
@@ -115,12 +118,14 @@ public class ScopeEntity implements Scope {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+
         ScopeEntity that = (ScopeEntity) o;
-        return Objects.equals(id, that.id);
+
+        return getId().equals(that.getId());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id);
+        return getId().hashCode();
     }
 }

@@ -17,10 +17,8 @@
 
 package org.keycloak.testsuite.auth.page;
 
-import java.net.URI;
 import javax.ws.rs.core.UriBuilder;
-import org.jboss.arquillian.test.api.ArquillianResource;
-import org.keycloak.admin.client.Keycloak;
+import java.net.URI;
 
 /**
  * Context path of Keycloak auth server.

@@ -30,6 +30,12 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import org.keycloak.adapters.AdapterDeploymentContext;
+import org.keycloak.adapters.spi.HttpFacade;
+import org.keycloak.adapters.springsecurity.config.KeycloakWebSecurityConfigurerAdapter;
+import org.keycloak.adapters.springsecurity.facade.SimpleHttpFacade;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 /**
  * Provides a Keycloak {@link AuthenticationEntryPoint authentication entry point}. Uses a
@@ -56,12 +62,15 @@ public class KeycloakAuthenticationEntryPoint implements AuthenticationEntryPoin
     private final RequestMatcher apiRequestMatcher;
     private String loginUri = DEFAULT_LOGIN_URI;
     private String realm = DEFAULT_REALM;
+ 
+    private AdapterDeploymentContext adapterDeploymentContext;
 
     /**
      * Creates a new Keycloak authentication entry point.
      */
-    public KeycloakAuthenticationEntryPoint() {
+    public KeycloakAuthenticationEntryPoint(AdapterDeploymentContext adapterDeploymentContext) {
         this(DEFAULT_API_REQUEST_MATCHER);
+        this.adapterDeploymentContext = adapterDeploymentContext;
     }
 
     /**
@@ -79,7 +88,8 @@ public class KeycloakAuthenticationEntryPoint implements AuthenticationEntryPoin
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException, ServletException
     {
-        if (apiRequestMatcher.matches(request)) {
+        HttpFacade facade = new SimpleHttpFacade(request, response);
+        if (apiRequestMatcher.matches(request) || adapterDeploymentContext.resolveDeployment(facade).isBearerOnly()) {
             commenceUnauthorizedResponse(request, response);
         } else {
             commenceLoginRedirect(request, response);

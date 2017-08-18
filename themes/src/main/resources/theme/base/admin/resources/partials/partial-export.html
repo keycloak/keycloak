@@ -1,0 +1,34 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+
+    <h1>
+        <span>{{:: 'partial-export' | translate}}</span>
+        <kc-tooltip>{{:: 'partial-export.tooltip' | translate}}</kc-tooltip>
+    </h1>
+
+    <form class="form-horizontal" name="partialExportForm" novalidate>
+        <fieldset class="border-top">
+
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="exportGroupsAndRoles">{{:: 'export-groups-and-roles' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="exportGroupsAndRoles" name="exportGroupsAndRoles" id="exportGroupsAndRoles" onoffswitch on-text="{{:: 'onText'| translate}}" off-text="{{:: 'offText'| translate}}"/>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="exportClients">{{:: 'export-clients' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="exportClients" name="exportClients" id="exportClients" onoffswitch on-text="{{:: 'onText'| translate}}" off-text="{{:: 'offText'| translate}}"/>
+                </div>
+            </div>
+
+            <div class="col-sm-12">
+                <button class="btn btn-primary" data-ng-click="export()" type="submit">{{:: 'export' | translate}}</button>
+            </div>
+
+        </fieldset>
+
+    </form>
+</div>
+
+<kc-menu></kc-menu>

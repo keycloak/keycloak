@@ -208,18 +208,6 @@ ol li img {
     border: 1px solid #eee;
 }
 
-ol li span {
-    padding: 15px;
-    background-color: #f5f5f5;
-    border: 1px solid #eee;
-    top: 46px;
-    left: 270px;
-    right: 50px;
-    position: absolute;
-    font-family: courier, ​monospace;
-    font-size: 25px;
-}
-
 hr + .form-horizontal {
     border: none;
     padding-top: 0;

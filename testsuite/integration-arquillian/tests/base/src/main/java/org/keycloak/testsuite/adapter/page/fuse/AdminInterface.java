@@ -17,9 +17,6 @@
 
 package org.keycloak.testsuite.adapter.page.fuse;
 
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.FindBy;
-
 /**
  *
  * @author tkyjovsk

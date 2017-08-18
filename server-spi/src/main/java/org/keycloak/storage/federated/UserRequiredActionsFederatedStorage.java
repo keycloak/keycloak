@@ -26,7 +26,7 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public interface UserRequiredActionsFederatedStorage {
-    Set<String> getRequiredActions(RealmModel realm, UserModel user);
-    void addRequiredAction(RealmModel realm,UserModel user, String action);
-    void removeRequiredAction(RealmModel realm,UserModel user, String action);
+    Set<String> getRequiredActions(RealmModel realm, String userId);
+    void addRequiredAction(RealmModel realm, String userId, String action);
+    void removeRequiredAction(RealmModel realm, String userId, String action);
 }

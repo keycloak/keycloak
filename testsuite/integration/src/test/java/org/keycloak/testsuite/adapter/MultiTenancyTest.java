@@ -16,7 +16,6 @@
  */
 package org.keycloak.testsuite.adapter;
 
-import javax.ws.rs.core.UriBuilder;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -26,12 +25,14 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.KeycloakServer;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
-import org.keycloak.testsuite.KeycloakServer;
 import org.openqa.selenium.WebDriver;
+
+import javax.ws.rs.core.UriBuilder;
 
 /**
  *

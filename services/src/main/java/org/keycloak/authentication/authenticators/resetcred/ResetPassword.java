@@ -34,13 +34,13 @@ public class ResetPassword extends AbstractSetRequiredActionAuthenticator {
         if (context.getExecution().isRequired() ||
                 (context.getExecution().isOptional() &&
                         configuredFor(context))) {
-            context.getClientSession().addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+            context.getAuthenticationSession().addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
         }
         context.success();
     }
 
     protected boolean configuredFor(AuthenticationFlowContext context) {
-        return context.getSession().users().configuredForCredentialType(UserCredentialModel.PASSWORD, context.getRealm(), context.getUser());
+        return context.getSession().userCredentialManager().isConfiguredFor(context.getRealm(), context.getUser(), UserCredentialModel.PASSWORD);
     }
 
     @Override

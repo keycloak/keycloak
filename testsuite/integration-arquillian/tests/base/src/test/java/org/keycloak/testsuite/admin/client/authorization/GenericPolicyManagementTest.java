@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -51,7 +52,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class GenericPolicyManagementTest extends AbstractAuthorizationTest {
 
-    private static final String[] EXPECTED_BUILTIN_POLICY_PROVIDERS = {"test", "user", "role", "drools", "js", "time", "aggregate", "scope", "resource"};
+    private static final String[] EXPECTED_BUILTIN_POLICY_PROVIDERS = {"test", "user", "role", "rules", "js", "time", "aggregate", "scope", "resource"};
 
     @Before
     @Override
@@ -71,7 +72,7 @@ public class GenericPolicyManagementTest extends AbstractAuthorizationTest {
         PolicyRepresentation newPolicy = createTestingPolicy().toRepresentation();
 
         assertEquals("Test Generic Policy", newPolicy.getName());
-        assertEquals("test", newPolicy.getType());
+        assertEquals("scope", newPolicy.getType());
         assertEquals(Logic.POSITIVE, newPolicy.getLogic());
         assertEquals(DecisionStrategy.UNANIMOUS, newPolicy.getDecisionStrategy());
         assertEquals("configuration for A", newPolicy.getConfig().get("configA"));
@@ -98,28 +99,28 @@ public class GenericPolicyManagementTest extends AbstractAuthorizationTest {
     @Test
     public void testUpdate() {
         PolicyResource policyResource = createTestingPolicy();
-        PolicyRepresentation resource = policyResource.toRepresentation();
+        PolicyRepresentation policy = policyResource.toRepresentation();
 
-        resource.setName("changed");
-        resource.setLogic(Logic.NEGATIVE);
-        resource.setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
-        resource.getConfig().put("configA", "changed configuration for A");
-        resource.getConfig().remove("configB");
-        resource.getConfig().put("configC", "changed configuration for C");
+        policy.setName("changed");
+        policy.setLogic(Logic.NEGATIVE);
+        policy.setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
+        policy.getConfig().put("configA", "changed configuration for A");
+        policy.getConfig().remove("configB");
+        policy.getConfig().put("configC", "changed configuration for C");
 
-        policyResource.update(resource);
+        policyResource.update(policy);
 
-        resource = policyResource.toRepresentation();
+        policy = policyResource.toRepresentation();
 
-        assertEquals("changed", resource.getName());
-        assertEquals(Logic.NEGATIVE, resource.getLogic());
+        assertEquals("changed", policy.getName());
+        assertEquals(Logic.NEGATIVE, policy.getLogic());
 
-        assertEquals(DecisionStrategy.AFFIRMATIVE, resource.getDecisionStrategy());
-        assertEquals("changed configuration for A", resource.getConfig().get("configA"));
-        assertNull(resource.getConfig().get("configB"));
-        assertEquals("changed configuration for C", resource.getConfig().get("configC"));
+        assertEquals(DecisionStrategy.AFFIRMATIVE, policy.getDecisionStrategy());
+        assertEquals("changed configuration for A", policy.getConfig().get("configA"));
+        assertNull(policy.getConfig().get("configB"));
+        assertEquals("changed configuration for C", policy.getConfig().get("configC"));
 
-        Map<String, String> config = resource.getConfig();
+        Map<String, String> config = policy.getConfig();
 
         config.put("applyPolicies", buildConfigOption(findPolicyByName("Test Associated C").getId()));
 
@@ -127,22 +128,25 @@ public class GenericPolicyManagementTest extends AbstractAuthorizationTest {
 
         config.put("scopes", buildConfigOption(findScopeByName("Test Scope A").getId()));
 
-        policyResource.update(resource);
+        policyResource.update(policy);
 
-        resource = policyResource.toRepresentation();
-        config = resource.getConfig();
+        policy = policyResource.toRepresentation();
+        config = policy.getConfig();
 
-        assertAssociatedPolicy("Test Associated C", resource);
-        assertFalse(config.get("applyPolicies").contains(findPolicyByName("Test Associated A").getId()));
-        assertFalse(config.get("applyPolicies").contains(findPolicyByName("Test Associated B").getId()));
+        assertAssociatedPolicy("Test Associated C", policy);
+        List<PolicyRepresentation> associatedPolicies = getClientResource().authorization().policies().policy(policy.getId()).associatedPolicies();
+        assertFalse(associatedPolicies.stream().filter(associated -> associated.getId().equals(findPolicyByName("Test Associated A").getId())).findFirst().isPresent());
+        assertFalse(associatedPolicies.stream().filter(associated -> associated.getId().equals(findPolicyByName("Test Associated B").getId())).findFirst().isPresent());
 
-        assertAssociatedResource("Test Resource B", resource);
-        assertFalse(config.get("resources").contains(findResourceByName("Test Resource A").getId()));
-        assertFalse(config.get("resources").contains(findResourceByName("Test Resource C").getId()));
+        assertAssociatedResource("Test Resource B", policy);
+        List<ResourceRepresentation> resources = policyResource.resources();
+        assertFalse(resources.contains(findResourceByName("Test Resource A")));
+        assertFalse(resources.contains(findResourceByName("Test Resource C")));
 
-        assertAssociatedScope("Test Scope A", resource);
-        assertFalse(config.get("scopes").contains(findScopeByName("Test Scope B").getId()));
-        assertFalse(config.get("scopes").contains(findScopeByName("Test Scope C").getId()));
+        assertAssociatedScope("Test Scope A", policy);
+        List<ScopeRepresentation> scopes = getClientResource().authorization().policies().policy(policy.getId()).scopes();
+        assertFalse(scopes.contains(findScopeByName("Test Scope B").getId()));
+        assertFalse(scopes.contains(findScopeByName("Test Scope C").getId()));
     }
 
     @Test
@@ -186,7 +190,7 @@ public class GenericPolicyManagementTest extends AbstractAuthorizationTest {
         PolicyRepresentation newPolicy = new PolicyRepresentation();
 
         newPolicy.setName(name);
-        newPolicy.setType("test");
+        newPolicy.setType("scope");
         newPolicy.setConfig(config);
 
         PoliciesResource policies = getClientResource().authorization().policies();
@@ -264,27 +268,38 @@ public class GenericPolicyManagementTest extends AbstractAuthorizationTest {
 
     private void assertAssociatedPolicy(String associatedPolicyName, PolicyRepresentation dependentPolicy) {
         PolicyRepresentation associatedPolicy = findPolicyByName(associatedPolicyName);
+        PoliciesResource policies = getClientResource().authorization().policies();
+        associatedPolicy = policies.policy(associatedPolicy.getId()).toRepresentation();
         assertNotNull(associatedPolicy);
-        assertTrue(dependentPolicy.getConfig().get("applyPolicies").contains(associatedPolicy.getId()));
-        assertEquals(1, associatedPolicy.getDependentPolicies().size());
-        assertEquals(dependentPolicy.getId(), associatedPolicy.getDependentPolicies().get(0).getId());
+        PolicyRepresentation finalAssociatedPolicy = associatedPolicy;
+        PolicyResource policyResource = policies.policy(dependentPolicy.getId());
+        List<PolicyRepresentation> associatedPolicies = policyResource.associatedPolicies();
+        assertTrue(associatedPolicies.stream().filter(associated -> associated.getId().equals(finalAssociatedPolicy.getId())).findFirst().isPresent());
+        List<PolicyRepresentation> dependentPolicies = policies.policy(associatedPolicy.getId()).dependentPolicies();
+        assertEquals(1, dependentPolicies.size());
+        assertEquals(dependentPolicy.getId(), dependentPolicies.get(0).getId());
     }
 
     private void assertAssociatedResource(String resourceName, PolicyRepresentation policy) {
         ResourceRepresentation resource = findResourceByName(resourceName);
         assertNotNull(resource);
-        assertTrue(policy.getConfig().get("resources").contains(resource.getId()));
-        assertEquals(1, resource.getPolicies().size());
-        assertTrue(resource.getPolicies().stream().map(PolicyRepresentation::getId).collect(Collectors.toList())
+        List<ResourceRepresentation> resources = getClientResource().authorization().policies().policy(policy.getId()).resources();
+        assertTrue(resources.contains(resource));
+        List<PolicyRepresentation> policies = getClientResource().authorization().resources().resource(resource.getId()).permissions();
+        assertEquals(1, policies.size());
+        assertTrue(policies.stream().map(PolicyRepresentation::getId).collect(Collectors.toList())
                 .contains(policy.getId()));
     }
 
     private void assertAssociatedScope(String scopeName, PolicyRepresentation policy) {
         ScopeRepresentation scope =  findScopeByName(scopeName);
+        scope = getClientResource().authorization().scopes().scope(scope.getId()).toRepresentation();
         assertNotNull(scope);
-        assertTrue(policy.getConfig().get("scopes").contains(scope.getId()));
-        assertEquals(1, scope.getPolicies().size());
-        assertTrue(scope.getPolicies().stream().map(PolicyRepresentation::getId).collect(Collectors.toList())
+        List<ScopeRepresentation> scopes = getClientResource().authorization().policies().policy(policy.getId()).scopes();
+        assertTrue(scopes.stream().map((Function<ScopeRepresentation, String>) rep -> rep.getId()).collect(Collectors.toList()).contains(scope.getId()));
+        List<PolicyRepresentation> permissions = getClientResource().authorization().scopes().scope(scope.getId()).permissions();
+        assertEquals(1, permissions.size());
+        assertTrue(permissions.stream().map(PolicyRepresentation::getId).collect(Collectors.toList())
                 .contains(policy.getId()));
     }
 }

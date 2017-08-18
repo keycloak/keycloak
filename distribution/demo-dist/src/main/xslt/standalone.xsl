@@ -17,10 +17,10 @@
 
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                 xmlns:xalan="http://xml.apache.org/xalan"
-                xmlns:j="urn:jboss:domain:4.0"
-                xmlns:ds="urn:jboss:domain:datasources:4.0"
+                xmlns:j="urn:jboss:domain:5.0"
+                xmlns:ds="urn:jboss:domain:datasources:5.0"
                 xmlns:k="urn:jboss:domain:keycloak:1.1"
-                xmlns:sec="urn:jboss:domain:security:1.2"
+                xmlns:sec="urn:jboss:domain:security:2.0"
                 version="2.0"
                 exclude-result-prefixes="xalan j ds k sec">
 
@@ -42,7 +42,7 @@
     <xsl:template match="//ds:datasources">
         <xsl:copy>
             <xsl:apply-templates select="node()[name(.)='datasource']"/>
-            <datasource jndi-name="java:jboss/datasources/KeycloakDS" jta="false" pool-name="KeycloakDS" use-java-context="true">
+            <datasource jndi-name="java:jboss/datasources/KeycloakDS" pool-name="KeycloakDS" use-java-context="true">
                 <connection-url>jdbc:h2:${jboss.server.data.dir}/keycloak;AUTO_SERVER=TRUE</connection-url>
                 <driver>h2</driver>
                 <security>
@@ -82,13 +82,25 @@
     <xsl:template match="//*[local-name()='subsystem' and starts-with(namespace-uri(), $inf)]">
         <xsl:copy>
             <cache-container name="keycloak" jndi-name="infinispan/Keycloak">
-                <local-cache name="realms"/>
-                <local-cache name="users"/>
+                <local-cache name="realms">
+                    <eviction max-entries="10000" strategy="LRU"/>
+                </local-cache>
+                <local-cache name="users">
+                    <eviction max-entries="10000" strategy="LRU"/>
+                </local-cache>
                 <local-cache name="sessions"/>
+                <local-cache name="authenticationSessions"/>
                 <local-cache name="offlineSessions"/>
                 <local-cache name="loginFailures"/>
-                <local-cache name="authorization"/>
+                <local-cache name="authorization">
+                    <eviction max-entries="10000" strategy="LRU"/>
+                </local-cache>
+                <local-cache name="actionTokens"/>
                 <local-cache name="work"/>
+                <local-cache name="keys">
+                    <eviction max-entries="1000" strategy="LRU"/>
+                    <expiration max-idle="3600000" />
+                </local-cache>
             </cache-container>
             <xsl:apply-templates select="node()|@*"/>
         </xsl:copy>

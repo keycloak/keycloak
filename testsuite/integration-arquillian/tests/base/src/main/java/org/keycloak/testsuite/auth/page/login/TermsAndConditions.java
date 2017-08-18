@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.auth.page.login;
 
 import org.keycloak.testsuite.util.UIUtils;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -41,9 +42,11 @@ public class TermsAndConditions extends LoginActions {
 
     public void acceptTerms() {
         acceptButton.click();
+        WaitUtils.waitForPageToLoad(driver);
     }
     public void declineTerms() {
         declineButton.click();
+        WaitUtils.waitForPageToLoad(driver);
     }
 
     public String getAcceptButtonText() {

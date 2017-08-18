@@ -51,7 +51,6 @@ public class KeycloakOIDCClientInstallation implements ClientInstallationProvide
         ClientManager.InstallationAdapterConfig rep = new ClientManager.InstallationAdapterConfig();
         rep.setAuthServerUrl(baseUri.toString());
         rep.setRealm(realm.getName());
-        rep.setRealmKey(realm.getPublicKeyPem());
         rep.setSslRequired(realm.getSslRequired().name().toLowerCase());
 
         if (client.isPublicClient() && !client.isBearerOnly()) rep.setPublicClient(true);
@@ -88,7 +87,7 @@ public class KeycloakOIDCClientInstallation implements ClientInstallationProvide
             return false;
         }
 
-        if (client.isBearerOnly() && client.getNodeReRegistrationTimeout() <= 0) {
+        if (client.isBearerOnly() && !client.isServiceAccountsEnabled() && client.getNodeReRegistrationTimeout() <= 0) {
             return false;
         }
 
@@ -152,7 +151,7 @@ public class KeycloakOIDCClientInstallation implements ClientInstallationProvide
     }
 
     private void configureAuthorizationSettings(KeycloakSession session, ClientModel client, ClientManager.InstallationAdapterConfig rep) {
-        if (new AuthorizationService(session, client, null).isEnabled()) {
+        if (new AuthorizationService(session, client, null, null).isEnabled()) {
             PolicyEnforcerConfig enforcerConfig = new PolicyEnforcerConfig();
 
             enforcerConfig.setEnforcementMode(null);

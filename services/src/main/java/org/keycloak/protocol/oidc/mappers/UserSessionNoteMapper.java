@@ -17,20 +17,17 @@
 
 package org.keycloak.protocol.oidc.mappers;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.keycloak.models.ClientSessionModel;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Mappings UserSessionModel.note to an ID Token claim.
@@ -49,7 +46,7 @@ public class UserSessionNoteMapper extends AbstractOIDCProtocolMapper implements
         property.setHelpText(ProtocolMapperUtils.USER_SESSION_MODEL_NOTE_HELP_TEXT);
         property.setType(ProviderConfigProperty.STRING_TYPE);
         configProperties.add(property);
-        OIDCAttributeMapperHelper.addAttributeConfig(configProperties);
+        OIDCAttributeMapperHelper.addAttributeConfig(configProperties, UserSessionNoteMapper.class);
     }
 
     public static final String PROVIDER_ID = "oidc-usersessionmodel-note-mapper";
@@ -79,27 +76,12 @@ public class UserSessionNoteMapper extends AbstractOIDCProtocolMapper implements
         return "Map a custom user session note to a token claim.";
     }
 
-    @Override
-    public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
-                                            UserSessionModel userSession, ClientSessionModel clientSession) {
-        if (!OIDCAttributeMapperHelper.includeInAccessToken(mappingModel)) return token;
-
-        setClaim(token, mappingModel, userSession);
-        return token;
-    }
-
     protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession) {
+
         String noteName = mappingModel.getConfig().get(ProtocolMapperUtils.USER_SESSION_NOTE);
         String noteValue = userSession.getNote(noteName);
         if (noteValue == null) return;
         OIDCAttributeMapperHelper.mapClaim(token, mappingModel, noteValue);
-    }
-
-    @Override
-    public IDToken transformIDToken(IDToken token, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession) {
-        if (!OIDCAttributeMapperHelper.includeInIDToken(mappingModel)) return token;
-        setClaim(token, mappingModel, userSession);
-        return token;
     }
 
     public static ProtocolMapperModel createClaimMapper(String name,

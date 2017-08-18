@@ -1,0 +1,1 @@
+${product.name.full} - Version ${product.version}

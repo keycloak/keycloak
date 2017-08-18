@@ -9,9 +9,15 @@ fi
 cd $JBOSS_HOME/bin
 
 RESULT=0
-./jboss-cli.sh --command="patch apply $PATCH_ZIP"
-if [ $? -ne 0 ]; then RESULT=1; fi
-   exit $RESULT
-fi
-
-exit 1
+patches=$(echo $AUTH_PATCH_ZIPS | tr "," "\n")
+for patch in $patches
+do
+    if [[ $patch == http* ]];
+    then
+       wget -O ./patch.zip $patch >/dev/null 2>&1
+       patch=./patch.zip
+    fi
+    ./jboss-cli.sh --command="patch apply $patch"
+    if [ $? -ne 0 ]; then exit 1; fi
+done
+exit 0

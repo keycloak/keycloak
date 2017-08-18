@@ -1,18 +1,18 @@
 package org.keycloak.models.cache.infinispan;
 
 import org.infinispan.Cache;
-import org.infinispan.notifications.cachelistener.annotation.CacheEntriesEvicted;
-import org.infinispan.notifications.cachelistener.annotation.CacheEntryInvalidated;
-import org.infinispan.notifications.cachelistener.event.CacheEntriesEvictedEvent;
-import org.infinispan.notifications.cachelistener.event.CacheEntryInvalidatedEvent;
 import org.jboss.logging.Logger;
-import org.keycloak.models.cache.infinispan.entities.AbstractRevisioned;
+import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 /**
@@ -54,7 +54,7 @@ import java.util.function.Predicate;
  * @version $Revision: 1 $
  */
 public abstract class CacheManager {
-    protected static final Logger logger = Logger.getLogger(CacheManager.class);
+
     protected final Cache<String, Long> revisions;
     protected final Cache<String, Revisioned> cache;
     protected final UpdateCounter counter = new UpdateCounter();
@@ -62,8 +62,9 @@ public abstract class CacheManager {
     public CacheManager(Cache<String, Revisioned> cache, Cache<String, Long> revisions) {
         this.cache = cache;
         this.revisions = revisions;
-        this.cache.addListener(this);
     }
+
+    protected abstract Logger getLogger();
 
     public Cache<String, Revisioned> getCache() {
         return cache;
@@ -78,10 +79,7 @@ public abstract class CacheManager {
         if (revision == null) {
             revision = counter.current();
         }
-        // if you do cache.remove() on node 1 and the entry doesn't exist on node 2, node 2 never receives a invalidation event
-        // so, we do this to force this.
-        String invalidationKey = "invalidation.key" + id;
-        cache.putForExternalRead(invalidationKey, new AbstractRevisioned(-1L, invalidationKey));
+
         return revision;
     }
 
@@ -100,12 +98,16 @@ public abstract class CacheManager {
         }
         Long rev = revisions.get(id);
         if (rev == null) {
-            RealmCacheManager.logger.tracev("get() missing rev");
+            if (getLogger().isTraceEnabled()) {
+                getLogger().tracev("get() missing rev {0}", id);
+            }
             return null;
         }
         long oRev = o.getRevision() == null ? -1L : o.getRevision().longValue();
         if (rev > oRev) {
-            RealmCacheManager.logger.tracev("get() rev: {0} o.rev: {1}", rev.longValue(), oRev);
+            if (getLogger().isTraceEnabled()) {
+                getLogger().tracev("get() rev: {0} o.rev: {1}", rev.longValue(), oRev);
+            }
             return null;
         }
         return o != null && type.isInstance(o) ? type.cast(o) : null;
@@ -113,9 +115,11 @@ public abstract class CacheManager {
 
     public Object invalidateObject(String id) {
         Revisioned removed = (Revisioned)cache.remove(id);
-        // if you do cache.remove() on node 1 and the entry doesn't exist on node 2, node 2 never receives a invalidation event
-        // so, we do this to force the event.
-        cache.remove("invalidation.key" + id);
+
+        if (getLogger().isTraceEnabled()) {
+            getLogger().tracef("Removed key='%s', value='%s' from cache", id, removed);
+        }
+
         bumpVersion(id);
         return removed;
     }
@@ -126,45 +130,48 @@ public abstract class CacheManager {
     }
 
     public void addRevisioned(Revisioned object, long startupRevision) {
+        addRevisioned(object, startupRevision, -1);
+    }
+
+    public void addRevisioned(Revisioned object, long startupRevision, long lifespan) {
         //startRevisionBatch();
         String id = object.getId();
         try {
             //revisions.getAdvancedCache().lock(id);
             Long rev = revisions.get(id);
             if (rev == null) {
-                if (id.endsWith("realm.clients")) RealmCacheManager.logger.trace("addRevisioned rev == null realm.clients");
                 rev = counter.current();
                 revisions.put(id, rev);
             }
             revisions.startBatch();
             if (!revisions.getAdvancedCache().lock(id)) {
-                RealmCacheManager.logger.trace("Could not obtain version lock");
+                if (getLogger().isTraceEnabled()) {
+                    getLogger().tracev("Could not obtain version lock: {0}", id);
+                }
                 return;
             }
             rev = revisions.get(id);
             if (rev == null) {
-                if (id.endsWith("realm.clients")) RealmCacheManager.logger.trace("addRevisioned rev2 == null realm.clients");
                 return;
             }
             if (rev > startupRevision) { // revision is ahead transaction start. Other transaction updated in the meantime. Don't cache
-                if (RealmCacheManager.logger.isTraceEnabled()) {
-                    RealmCacheManager.logger.tracev("Skipped cache. Current revision {0}, Transaction start revision {1}", object.getRevision(), startupRevision);
+                if (getLogger().isTraceEnabled()) {
+                    getLogger().tracev("Skipped cache. Current revision {0}, Transaction start revision {1}", object.getRevision(), startupRevision);
                 }
                 return;
             }
             if (rev.equals(object.getRevision())) {
-                if (id.endsWith("realm.clients")) RealmCacheManager.logger.tracev("adding Object.revision {0} rev {1}", object.getRevision(), rev);
                 cache.putForExternalRead(id, object);
                 return;
             }
             if (rev > object.getRevision()) { // revision is ahead, don't cache
-                if (id.endsWith("realm.clients")) RealmCacheManager.logger.trace("addRevisioned revision is ahead realm.clients");
+                if (getLogger().isTraceEnabled()) getLogger().tracev("Skipped cache. Object revision {0}, Cache revision {1}", object.getRevision(), rev);
                 return;
             }
             // revisions cache has a lower value than the object.revision, so update revision and add it to cache
-            if (id.endsWith("realm.clients")) RealmCacheManager.logger.tracev("adding Object.revision {0} rev {1}", object.getRevision(), rev);
             revisions.put(id, object.getRevision());
-            cache.putForExternalRead(id, object);
+            if (lifespan < 0) cache.putForExternalRead(id, object);
+            else cache.putForExternalRead(id, object, lifespan, TimeUnit.MILLISECONDS);
         } finally {
             endRevisionBatch();
         }
@@ -190,63 +197,29 @@ public abstract class CacheManager {
                 .filter(predicate).iterator();
     }
 
-    @CacheEntryInvalidated
-    public void cacheInvalidated(CacheEntryInvalidatedEvent<String, Object> event) {
-        if (event.isPre()) {
-            String key = event.getKey();
-            if (key.startsWith("invalidation.key")) {
-                // if you do cache.remove() on node 1 and the entry doesn't exist on node 2, node 2 never receives a invalidation event
-                // so, we do this to force this.
-                String bump = key.substring("invalidation.key".length());
-                RealmCacheManager.logger.tracev("bumping invalidation key {0}", bump);
-                bumpVersion(bump);
-                return;
-            }
 
-        } else {
-        //if (!event.isPre()) {
-            String key = event.getKey();
-            if (key.startsWith("invalidation.key")) {
-                // if you do cache.remove() on node 1 and the entry doesn't exist on node 2, node 2 never receives a invalidation event
-                // so, we do this to force this.
-                String bump = key.substring("invalidation.key".length());
-                bumpVersion(bump);
-                RealmCacheManager.logger.tracev("bumping invalidation key {0}", bump);
-                return;
-            }
-            bumpVersion(key);
-            Object object = event.getValue();
-            if (object != null) {
-                bumpVersion(key);
-                Predicate<Map.Entry<String, Revisioned>> predicate = getInvalidationPredicate(object);
-                if (predicate != null) runEvictions(predicate);
-                RealmCacheManager.logger.tracev("invalidating: {0}" + object.getClass().getName());
-            }
+    public void sendInvalidationEvents(KeycloakSession session, Collection<InvalidationEvent> invalidationEvents, String eventKey) {
+        ClusterProvider clusterProvider = session.getProvider(ClusterProvider.class);
+
+        // Maybe add InvalidationEvent, which will be collection of all invalidationEvents? That will reduce cluster traffic even more.
+        for (InvalidationEvent event : invalidationEvents) {
+            clusterProvider.notify(eventKey, event, true, ClusterProvider.DCNotify.ALL_DCS);
         }
     }
 
-    @CacheEntriesEvicted
-    public void cacheEvicted(CacheEntriesEvictedEvent<String, Object> event) {
-        if (!event.isPre())
-        for (Map.Entry<String, Object> entry : event.getEntries().entrySet()) {
-            Object object = entry.getValue();
-            bumpVersion(entry.getKey());
-            if (object == null) continue;
-            RealmCacheManager.logger.tracev("evicting: {0}" + object.getClass().getName());
-            Predicate<Map.Entry<String, Revisioned>> predicate = getInvalidationPredicate(object);
-            if (predicate != null) runEvictions(predicate);
+
+    public void invalidationEventReceived(InvalidationEvent event) {
+        Set<String> invalidations = new HashSet<>();
+
+        addInvalidationsFromEvent(event, invalidations);
+
+        getLogger().debugf("[%s] Invalidating %d cache items after received event %s", cache.getCacheManager().getAddress(), invalidations.size(), event);
+
+        for (String invalidation : invalidations) {
+            invalidateObject(invalidation);
         }
     }
 
-    public void runEvictions(Predicate<Map.Entry<String, Revisioned>> current) {
-        Set<String> evictions = new HashSet<>();
-        addInvalidations(current, evictions);
-        RealmCacheManager.logger.tracev("running evictions size: {0}", evictions.size());
-        for (String key : evictions) {
-            cache.evict(key);
-            bumpVersion(key);
-        }
-    }
+    protected abstract void addInvalidationsFromEvent(InvalidationEvent event, Set<String> invalidations);
 
-    protected abstract Predicate<Map.Entry<String, Revisioned>> getInvalidationPredicate(Object object);
 }

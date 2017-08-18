@@ -17,30 +17,32 @@
 package org.keycloak.testsuite.federation.storage;
 
 import org.keycloak.component.ComponentModel;
+import org.keycloak.credential.CredentialInput;
+import org.keycloak.credential.CredentialInputUpdater;
+import org.keycloak.credential.CredentialInputValidator;
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage;
-import org.keycloak.storage.user.UserCredentialValidatorProvider;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserMapStorage implements UserLookupProvider, UserStorageProvider, UserRegistrationProvider {
+public class UserMapStorage implements UserLookupProvider, UserStorageProvider, UserRegistrationProvider, CredentialInputUpdater, CredentialInputValidator {
 
     protected Map<String, String> userPasswords;
     protected ComponentModel model;
@@ -78,37 +80,50 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
                 throw new RuntimeException("Unsupported");
             }
 
-            @Override
-            public void updateCredential(UserCredentialModel cred) {
-                if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-                    userPasswords.put(getUsername(), cred.getValue());
-                } else {
-                    super.updateCredential(cred);
-                }
-            }
-
-            @Override
-            public List<UserCredentialValueModel> getCredentialsDirectly() {
-                UserCredentialValueModel pw = new UserCredentialValueModel();
-                pw.setId(getId());
-                pw.setType(UserCredentialModel.PASSWORD);
-                pw.setAlgorithm("text");
-                pw.setValue(userPasswords.get(getUsername()));
-                List<UserCredentialValueModel> creds = new LinkedList<>();
-                creds.addAll(super.getCredentialsDirectly());
-                creds.add(pw);
-                return creds;
-            }
-
-            @Override
-            public void updateCredentialDirectly(UserCredentialValueModel cred) {
-                if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-                    //userPasswords.put(getUsername(), cred.getValue());
-                } else {
-                    super.updateCredentialDirectly(cred);
-                }
-            }
         };
+    }
+
+    @Override
+    public boolean supportsCredentialType(String credentialType) {
+        return CredentialModel.PASSWORD.equals(credentialType);
+    }
+
+    @Override
+    public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
+        if (!(input instanceof UserCredentialModel)) return false;
+        if (input.getType().equals(UserCredentialModel.PASSWORD)) {
+            userPasswords.put(user.getUsername(), ((UserCredentialModel)input).getValue());
+            return true;
+
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public void disableCredentialType(RealmModel realm, UserModel user, String credentialType) {
+
+    }
+
+    @Override
+    public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
+        return Collections.EMPTY_SET;
+    }
+
+    @Override
+    public boolean isConfiguredFor(RealmModel realm, UserModel user, String credentialType) {
+        return CredentialModel.PASSWORD.equals(credentialType);
+    }
+
+    @Override
+    public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
+        if (!(input instanceof UserCredentialModel)) return false;
+        if (input.getType().equals(UserCredentialModel.PASSWORD)) {
+            String pw = userPasswords.get(user.getUsername());
+            return pw != null && pw.equals( ((UserCredentialModel)input).getValue());
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -132,11 +147,6 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
     @Override
     public boolean removeUser(RealmModel realm, UserModel user) {
         return userPasswords.remove(user.getUsername()) != null;
-    }
-
-    @Override
-    public void grantToAllUsers(RealmModel realm, RoleModel role) {
-
     }
 
     @Override

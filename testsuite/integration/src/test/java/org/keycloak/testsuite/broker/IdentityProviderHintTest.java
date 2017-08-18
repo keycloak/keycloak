@@ -20,19 +20,19 @@ package org.keycloak.testsuite.broker;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.KeycloakServer;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
-import org.keycloak.testsuite.KeycloakServer;
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -87,6 +87,36 @@ public class IdentityProviderHintTest {
         assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/test-app"));
         assertTrue(this.driver.getPageSource().contains("idToken"));
     }
+    
+    @Test
+    public void testSuccessfulRedirectToProviderHiddenOnLoginPage() {
+        this.driver.navigate().to("http://localhost:8081/test-app?kc_idp_hint=kc-oidc-idp-hidden");
+
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8082/auth/"));
+    }
+
+
+    // KEYCLOAK-5260
+    @Test
+    public void testSuccessfulRedirectToProviderAfterLoginPageShown() {
+        this.driver.navigate().to("http://localhost:8081/test-app");
+        String loginPageUrl = driver.getCurrentUrl();
+        assertTrue(loginPageUrl.startsWith("http://localhost:8081/auth/"));
+
+        // Manually add "kc_idp_hint" to URL . Should redirect to provider
+        loginPageUrl = loginPageUrl + "&kc_idp_hint=kc-oidc-idp-hidden";
+        this.driver.navigate().to(loginPageUrl);
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8082/auth/"));
+
+        // Redirect from the app with the "kc_idp_hint". Should redirect to provider
+        this.driver.navigate().to("http://localhost:8081/test-app?kc_idp_hint=kc-oidc-idp-hidden");
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8082/auth/"));
+
+        // Now redirect should't happen
+        this.driver.navigate().to("http://localhost:8081/test-app");
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/"));
+    }
+
 
     @Test
     public void testInvalidIdentityProviderHint() {
@@ -94,6 +124,16 @@ public class IdentityProviderHintTest {
 
         assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
 
-        assertEquals("Could not find an identity provider with the identifier.", this.driver.findElement(By.className("instruction")).getText());
+        System.out.println(driver.getPageSource());
+        assertTrue(driver.getTitle().equals("Log in to realm-with-broker"));
+    }
+
+    private AuthenticationExecutionInfoRepresentation findExecution(RealmResource realm) {
+            for (AuthenticationExecutionInfoRepresentation e : realm.flows().getExecutions("browser")) {
+                if (e.getProviderId().equals("identity-provider-redirector")) {
+                    return e;
+                }
+            }
+        return null;
     }
 }

@@ -29,8 +29,8 @@ import javax.ws.rs.core.Response;
  */
 public class CustomIdentityProvider extends AbstractIdentityProvider<IdentityProviderModel> {
 
-    public CustomIdentityProvider(IdentityProviderModel config) {
-        super(config);
+    public CustomIdentityProvider(KeycloakSession session, IdentityProviderModel config) {
+        super(session, config);
     }
 
     @Override

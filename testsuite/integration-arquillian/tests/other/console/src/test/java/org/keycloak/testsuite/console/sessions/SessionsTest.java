@@ -22,6 +22,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.sessions.RealmSessions;
+
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
 
 /**

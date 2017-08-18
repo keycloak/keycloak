@@ -17,6 +17,14 @@
 
 package org.keycloak.saml;
 
+import org.keycloak.dom.saml.v2.assertion.AssertionType;
+import org.keycloak.dom.saml.v2.assertion.AudienceRestrictionType;
+import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
+import org.keycloak.dom.saml.v2.assertion.ConditionsType;
+import org.keycloak.dom.saml.v2.assertion.OneTimeUseType;
+import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationDataType;
+import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
+import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
@@ -30,14 +38,11 @@ import org.keycloak.saml.processing.core.saml.v2.holders.IssuerInfoHolder;
 import org.keycloak.saml.processing.core.saml.v2.holders.SPInfoHolder;
 import org.keycloak.saml.processing.core.saml.v2.util.StatementUtil;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
-import org.keycloak.dom.saml.v2.assertion.AssertionType;
-import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
-import org.keycloak.dom.saml.v2.assertion.ConditionsType;
-import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationDataType;
-import org.keycloak.dom.saml.v2.assertion.AudienceRestrictionType;
-import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.w3c.dom.Document;
+
 import java.net.URI;
+import java.util.LinkedList;
+import java.util.List;
 
 import static org.keycloak.saml.common.util.StringUtil.isNotNull;
 
@@ -48,7 +53,7 @@ import static org.keycloak.saml.common.util.StringUtil.isNotNull;
  *
  * @author bburke@redhat.com
 */
-public class SAML2LoginResponseBuilder {
+public class SAML2LoginResponseBuilder implements SamlProtocolExtensionsAwareBuilder<SAML2LoginResponseBuilder> {
     protected static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
 
     protected String destination;
@@ -63,7 +68,8 @@ public class SAML2LoginResponseBuilder {
     protected String authMethod;
     protected String requestIssuer;
     protected String sessionIndex;
-
+    protected final List<NodeGenerator> extensions = new LinkedList<>();
+    protected boolean includeOneTimeUseCondition;
 
     public SAML2LoginResponseBuilder sessionIndex(String sessionIndex) {
         this.sessionIndex = sessionIndex;
@@ -105,12 +111,12 @@ public class SAML2LoginResponseBuilder {
     }
 
     public SAML2LoginResponseBuilder requestID(String requestID) {
-        this.requestID =requestID;
+        this.requestID = requestID;
         return this;
     }
 
     public SAML2LoginResponseBuilder requestIssuer(String requestIssuer) {
-        this.requestIssuer =requestIssuer;
+        this.requestIssuer = requestIssuer;
         return this;
     }
 
@@ -132,6 +138,17 @@ public class SAML2LoginResponseBuilder {
 
     public SAML2LoginResponseBuilder disableAuthnStatement(boolean disableAuthnStatement) {
         this.disableAuthnStatement = disableAuthnStatement;
+        return this;
+    }
+
+    public SAML2LoginResponseBuilder includeOneTimeUseCondition(boolean includeOneTimeUseCondition) {
+        this.includeOneTimeUseCondition = includeOneTimeUseCondition;
+        return this;
+    }
+
+    @Override
+    public SAML2LoginResponseBuilder addExtension(NodeGenerator extension) {
+        this.extensions.add(extension);
         return this;
     }
 
@@ -204,6 +221,18 @@ public class SAML2LoginResponseBuilder {
             else authnStatement.setSessionIndex(assertion.getID());
 
             assertion.addStatement(authnStatement);
+        }
+
+        if (includeOneTimeUseCondition) {
+            assertion.getConditions().addCondition(new OneTimeUseType());
+        }
+
+        if (!this.extensions.isEmpty()) {
+            ExtensionsType extensionsType = new ExtensionsType();
+            for (NodeGenerator extension : this.extensions) {
+                extensionsType.addExtension(extension);
+            }
+            responseType.setExtensions(extensionsType);
         }
 
         return responseType;

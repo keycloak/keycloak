@@ -16,11 +16,9 @@
  */
 package org.keycloak.services.resources.admin;
 
-import java.io.IOException;
-import java.util.LinkedList;
-import java.util.List;
-
+import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.admin.AdminEvent;
@@ -33,13 +31,15 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.common.util.Time;
 
 import javax.ws.rs.core.UriInfo;
+import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 
 public class AdminEventBuilder {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static final Logger logger = Logger.getLogger(AdminEventBuilder.class);
 
     private EventStoreProvider store;
     private List<EventListenerProvider> listeners;
@@ -55,7 +55,7 @@ public class AdminEventBuilder {
             if (store != null) {
                 this.store = store;
             } else {
-                logger.noEventStoreProvider();
+                ServicesLogger.LOGGER.noEventStoreProvider();
             }
         }
 
@@ -66,7 +66,7 @@ public class AdminEventBuilder {
                 if (listener != null) {
                     listeners.add(listener);
                 } else {
-                    logger.providerNotFound(id);
+                    ServicesLogger.LOGGER.providerNotFound(id);
                 }
             }
         }
@@ -215,7 +215,7 @@ public class AdminEventBuilder {
             try {
                 store.onEvent(adminEvent, includeRepresentation);
             } catch (Throwable t) {
-                logger.failedToSaveEvent(t);
+                ServicesLogger.LOGGER.failedToSaveEvent(t);
             }
         }
 
@@ -224,7 +224,7 @@ public class AdminEventBuilder {
                 try {
                     l.onEvent(adminEvent, includeRepresentation);
                 } catch (Throwable t) {
-                    logger.failedToSendType(t, l);
+                    ServicesLogger.LOGGER.failedToSendType(t, l);
                 }
             }
         }

@@ -1,18 +1,18 @@
 package org.keycloak.testsuite.console.roles;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Test;
-import org.keycloak.testsuite.console.page.roles.RealmRoles;
-
-import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Ignore;
+import org.junit.Test;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.console.page.roles.CreateRole;
+import org.keycloak.testsuite.console.page.roles.RealmRoles;
 import org.keycloak.testsuite.console.page.roles.Role;
+import org.keycloak.testsuite.util.Timer;
+
+import static org.junit.Assert.*;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
-import org.keycloak.testsuite.util.Timer;
 
 /**
  *

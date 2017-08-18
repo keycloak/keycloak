@@ -17,9 +17,10 @@
 
 package org.keycloak.authentication.authenticators.browser;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
-import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.events.Errors;
@@ -29,7 +30,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
 
 import javax.ws.rs.core.HttpHeaders;
@@ -44,7 +44,7 @@ import java.util.Map;
  */
 public class SpnegoAuthenticator extends AbstractUsernameFormAuthenticator implements Authenticator{
     public static final String KERBEROS_DISABLED = "kerberos_disabled";
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(SpnegoAuthenticator.class);
 
     @Override
     public boolean requiresUser() {
@@ -86,13 +86,18 @@ public class SpnegoAuthenticator extends AbstractUsernameFormAuthenticator imple
         String spnegoToken = tokens[1];
         UserCredentialModel spnegoCredential = UserCredentialModel.kerberos(spnegoToken);
 
-        CredentialValidationOutput output = context.getSession().users().validCredentials(context.getSession(), context.getRealm(), spnegoCredential);
+        CredentialValidationOutput output = context.getSession().userCredentialManager().authenticate(context.getSession(), context.getRealm(), spnegoCredential);
 
+        if (output == null) {
+            logger.warn("Received kerberos token, but there is no user storage provider that handles kerberos credentials.");
+            context.attempted();
+            return;
+        }
         if (output.getAuthStatus() == CredentialValidationOutput.Status.AUTHENTICATED) {
             context.setUser(output.getAuthenticatedUser());
             if (output.getState() != null && !output.getState().isEmpty()) {
                 for (Map.Entry<String, String> entry : output.getState().entrySet()) {
-                    context.getClientSession().setUserSessionNote(entry.getKey(), entry.getValue());
+                    context.getAuthenticationSession().setUserSessionNote(entry.getKey(), entry.getValue());
                 }
             }
             context.success();

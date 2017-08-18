@@ -17,8 +17,6 @@
 
 package org.keycloak.testsuite.oidc;
 
-import java.util.List;
-
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
@@ -40,7 +38,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.util.CertificateInfoHelper;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.TestRealmKeycloakTest;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
@@ -54,6 +52,8 @@ import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResou
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -63,7 +63,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class OIDCAdvancedRequestParamsTest extends TestRealmKeycloakTest {
+public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -304,6 +304,31 @@ public class OIDCAdvancedRequestParamsTest extends TestRealmKeycloakTest {
 
     }
 
+
+    @Test
+    public void promptLoginDifferentUser() throws Exception {
+        String sss = oauth.getLoginFormUrl();
+        System.out.println(sss);
+
+        // Login user
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
+
+        // Assert need to re-authenticate with prompt=login
+        driver.navigate().to(oauth.getLoginFormUrl() + "&prompt=login");
+
+        // Authenticate as different user
+        loginPage.assertCurrent();
+        loginPage.login("john-doh@localhost", "password");
+
+        errorPage.assertCurrent();
+        Assert.assertTrue(errorPage.getError().startsWith("You are already authenticated as different user"));
+    }
+
     // DISPLAY & OTHERS
 
     @Test
@@ -324,6 +349,8 @@ public class OIDCAdvancedRequestParamsTest extends TestRealmKeycloakTest {
 
     @Test
     public void requestParamUnsigned() throws Exception {
+        oauth.stateParamHardcoded("mystate2");
+
         String validRedirectUri = oauth.getRedirectUri();
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
 
@@ -344,12 +371,14 @@ public class OIDCAdvancedRequestParamsTest extends TestRealmKeycloakTest {
         oauth.request(requestStr);
         OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
         Assert.assertNotNull(response.getCode());
-        Assert.assertEquals("mystate", response.getState());
+        Assert.assertEquals("mystate2", response.getState());
         assertTrue(appPage.isCurrent());
     }
 
     @Test
     public void requestUriParamUnsigned() throws Exception {
+        oauth.stateParamHardcoded("mystate1");
+
         String validRedirectUri = oauth.getRedirectUri();
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
 
@@ -367,12 +396,14 @@ public class OIDCAdvancedRequestParamsTest extends TestRealmKeycloakTest {
 
         OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
         Assert.assertNotNull(response.getCode());
-        Assert.assertEquals("mystate", response.getState());
+        Assert.assertEquals("mystate1", response.getState());
         assertTrue(appPage.isCurrent());
     }
 
     @Test
     public void requestUriParamSigned() throws Exception {
+        oauth.stateParamHardcoded("mystate3");
+
         String validRedirectUri = oauth.getRedirectUri();
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
 
@@ -406,10 +437,13 @@ public class OIDCAdvancedRequestParamsTest extends TestRealmKeycloakTest {
         CertificateInfoHelper.updateClientRepresentationCertificateInfo(clientRep, cert, JWTClientAuthenticator.ATTR_PREFIX);
         clientResource.update(clientRep);
 
+        // set time offset, so that new keys are downloaded
+        setTimeOffset(20);
+
         // Check signed request_uri will pass
         OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
         Assert.assertNotNull(response.getCode());
-        Assert.assertEquals("mystate", response.getState());
+        Assert.assertEquals("mystate3", response.getState());
         assertTrue(appPage.isCurrent());
 
         // Revert requiring signature for client

@@ -17,7 +17,9 @@
 
 package org.keycloak.federation.kerberos.impl;
 
-import java.io.IOException;
+import org.jboss.logging.Logger;
+import org.keycloak.common.util.KerberosJdkProvider;
+import org.keycloak.federation.kerberos.CommonKerberosConfig;
 
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
@@ -26,10 +28,7 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
-
-import org.jboss.logging.Logger;
-import org.keycloak.common.util.KerberosJdkProvider;
-import org.keycloak.federation.kerberos.CommonKerberosConfig;
+import java.io.IOException;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

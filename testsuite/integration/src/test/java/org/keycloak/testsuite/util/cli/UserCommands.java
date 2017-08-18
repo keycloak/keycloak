@@ -17,20 +17,19 @@
 
 package org.keycloak.testsuite.util.cli;
 
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
-
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -49,12 +48,6 @@ public class UserCommands {
             return "createUsers";
         }
 
-        private class StateHolder {
-            int firstInThisBatch;
-            int countInThisBatch;
-            int remaining;
-        };
-
         @Override
         protected void doRunCommand(KeycloakSession session) {
             usernamePrefix = getArg(0);
@@ -65,24 +58,7 @@ public class UserCommands {
             int batchCount = getIntArg(5);
             roleNames = getArg(6);
 
-            final StateHolder state = new StateHolder();
-            state.firstInThisBatch = first;
-            state.remaining = count;
-            state.countInThisBatch = Math.min(batchCount, state.remaining);
-            while (state.remaining > 0) {
-                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), new KeycloakSessionTask() {
-
-                    @Override
-                    public void run(KeycloakSession session) {
-                        createUsersInBatch(session, state.firstInThisBatch, state.countInThisBatch);
-                    }
-                });
-
-                // update state
-                state.firstInThisBatch = state.firstInThisBatch + state.countInThisBatch;
-                state.remaining = state.remaining - state.countInThisBatch;
-                state.countInThisBatch = Math.min(batchCount, state.remaining);
-            }
+            BatchTaskRunner.runInBatches(first, count, batchCount, session.getKeycloakSessionFactory(), this::createUsersInBatch);
 
             log.infof("Command finished. All users from %s to %s created", usernamePrefix + first, usernamePrefix + (first + count - 1));
         }
@@ -103,7 +79,7 @@ public class UserCommands {
                 user.setEnabled(true);
                 user.setEmail(username + "@keycloak.org");
                 UserCredentialModel passwordCred = UserCredentialModel.password(password);
-                user.updateCredential(passwordCred);
+                session.userCredentialManager().updateCredential(realm, user, passwordCred);
 
                 for (RoleModel role : roles) {
                     user.grantRole(role);

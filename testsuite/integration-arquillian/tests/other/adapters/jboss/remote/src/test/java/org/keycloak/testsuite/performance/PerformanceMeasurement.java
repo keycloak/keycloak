@@ -1,5 +1,9 @@
 package org.keycloak.testsuite.performance;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
+import org.keycloak.testsuite.performance.statistics.SimpleStatistics;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -10,10 +14,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVPrinter;
+
 import static org.keycloak.testsuite.performance.PerformanceTest.LOG;
-import org.keycloak.testsuite.performance.statistics.SimpleStatistics;
 import static org.keycloak.testsuite.util.IOUtil.PROJECT_BUILD_DIRECTORY;
 
 /**

@@ -26,6 +26,7 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
+import org.keycloak.models.KeycloakSession;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -37,8 +38,8 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
 	public static final String PROFILE_URL = "https://api.github.com/user";
 	public static final String DEFAULT_SCOPE = "user:email";
 
-	public GitHubIdentityProvider(OAuth2IdentityProviderConfig config) {
-		super(config);
+	public GitHubIdentityProvider(KeycloakSession session, OAuth2IdentityProviderConfig config) {
+		super(session, config);
 		config.setAuthorizationUrl(AUTH_URL);
 		config.setTokenUrl(TOKEN_URL);
 		config.setUserInfoUrl(PROFILE_URL);
@@ -47,7 +48,7 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
 	@Override
 	protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
 		try {
-			JsonNode profile = JsonSimpleHttp.asJson(SimpleHttp.doGet(PROFILE_URL).header("Authorization", "Bearer " + accessToken));
+			JsonNode profile = JsonSimpleHttp.asJson(SimpleHttp.doGet(PROFILE_URL, session).header("Authorization", "Bearer " + accessToken));
 
 			BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "id"));
 

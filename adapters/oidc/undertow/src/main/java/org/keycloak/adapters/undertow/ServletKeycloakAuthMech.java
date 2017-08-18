@@ -24,10 +24,10 @@ import io.undertow.util.Headers;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AdapterTokenStore;
-import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.NodesRegistrationManagement;
 import org.keycloak.adapters.RequestAuthenticator;
+import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.enums.TokenStore;
 
 import javax.servlet.RequestDispatcher;

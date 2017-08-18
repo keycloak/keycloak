@@ -18,7 +18,7 @@
 package org.keycloak.adapters;
 
 import org.jboss.logging.Logger;
-import org.keycloak.RSATokenVerifier;
+import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
 import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.spi.HttpFacade;
@@ -84,7 +84,7 @@ public class BearerTokenRequestAuthenticator {
     
     protected AuthOutcome authenticateToken(HttpFacade exchange, String tokenString) {
         try {
-            token = RSATokenVerifier.verifyToken(tokenString, deployment.getRealmKey(), deployment.getRealmInfoUrl());
+            token = AdapterRSATokenVerifier.verifyToken(tokenString, deployment);
         } catch (VerificationException e) {
             log.error("Failed to verify token", e);
             challenge = challengeResponse(exchange, OIDCAuthenticationError.Reason.INVALID_TOKEN, "invalid_token", e.getMessage());

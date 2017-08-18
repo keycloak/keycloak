@@ -5,7 +5,7 @@
     <parent>
         <artifactId>integration-arquillian-test-apps</artifactId>
         <groupId>org.keycloak.testsuite</groupId>
-        <version>2.2.0-SNAPSHOT</version>
+        <version>3.3.0.CR1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -14,7 +14,7 @@
     <name>Test apps distribution</name>
 
     <build>
-        <finalName>${product.name}-${product.version}-test-apps</finalName>
+        <finalName>test-apps-dist</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

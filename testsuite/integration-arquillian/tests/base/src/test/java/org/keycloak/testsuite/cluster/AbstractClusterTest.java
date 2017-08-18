@@ -1,19 +1,21 @@
 package org.keycloak.testsuite.cluster;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.test.api.ArquillianResource;
-import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
@@ -41,6 +43,12 @@ public abstract class AbstractClusterTest extends AbstractKeycloakTest {
             currentFailNodeIndex = 0;
         }
         logFailoverSetup();
+    }
+
+    // Assume that route like "node6" will have corresponding backend container like "auth-server-wildfly-backend6"
+    protected void setCurrentFailNodeForRoute(String route) {
+        String routeNumber = route.substring(route.length() - 1);
+        currentFailNodeIndex = Integer.parseInt(routeNumber) - 1;
     }
 
     protected ContainerInfo getCurrentFailNode() {
@@ -109,9 +117,13 @@ public abstract class AbstractClusterTest extends AbstractKeycloakTest {
     }
 
     protected Keycloak getAdminClientFor(ContainerInfo node) {
-        return node.equals(suiteContext.getAuthServerInfo())
-                ? adminClient // frontend client
-                : backendAdminClients.get(node);
+        Keycloak adminClient = backendAdminClients.get(node);
+
+        if (adminClient == null && node.equals(suiteContext.getAuthServerInfo())) {
+            adminClient = this.adminClient;
+        }
+
+        return adminClient;
     }
 
     @Before

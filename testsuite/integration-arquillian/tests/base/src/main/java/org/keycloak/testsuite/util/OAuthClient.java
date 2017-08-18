@@ -32,48 +32,65 @@ import org.apache.http.message.BasicNameValuePair;
 import org.junit.Assert;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.RSATokenVerifier;
+import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.constants.AdapterConstants;
+import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
-import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
+import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
+import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
-
 import org.keycloak.util.TokenUtil;
+import com.google.common.base.Charsets;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.core.UriBuilder;
+
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
+import java.security.KeyStore;
 import java.security.PublicKey;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public class OAuthClient {
-    public static final String SERVER_ROOT = AuthServerTestEnricher.getAuthServerContextRoot();
-    public static final String AUTH_SERVER_ROOT = SERVER_ROOT + "/auth";
-    public static final String APP_ROOT = AUTH_SERVER_ROOT + "/realms/master/app";
+    public static String SERVER_ROOT;
+    public static String AUTH_SERVER_ROOT;
+    public static String APP_ROOT;
+    private static final boolean sslRequired = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required"));
+
+    static {
+        updateURLs(AuthServerTestEnricher.getAuthServerContextRoot());
+    }
+
+    // Workaround, but many tests directly use system properties like OAuthClient.AUTH_SERVER_ROOT instead of taking the URL from suite context
+    public static void updateURLs(String serverRoot) {
+        SERVER_ROOT = serverRoot;
+        AUTH_SERVER_ROOT = SERVER_ROOT + "/auth";
+        APP_ROOT = AUTH_SERVER_ROOT + "/realms/master/app";
+    }
+
 
     private Keycloak adminClient;
 
@@ -87,7 +104,7 @@ public class OAuthClient {
 
     private String redirectUri;
 
-    private String state;
+    private StateParamProvider state;
 
     private String scope;
 
@@ -99,7 +116,7 @@ public class OAuthClient {
 
     private String maxAge;
 
-    private String responseType = OAuth2Constants.CODE;
+    private String responseType;
 
     private String responseMode;
 
@@ -111,6 +128,47 @@ public class OAuthClient {
 
     private Map<String, PublicKey> publicKeys = new HashMap<>();
 
+    // https://tools.ietf.org/html/rfc7636#section-4
+    private String codeVerifier;
+    private String codeChallenge;
+    private String codeChallengeMethod;
+
+    public class LogoutUrlBuilder {
+        private final UriBuilder b = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(baseUrl));
+
+        public LogoutUrlBuilder idTokenHint(String idTokenHint) {
+            if (idTokenHint != null) {
+                b.queryParam("id_token_hint", idTokenHint);
+            }
+            return this;
+        }
+
+        public LogoutUrlBuilder postLogoutRedirectUri(String redirectUri) {
+            if (redirectUri != null) {
+                b.queryParam("post_logout_redirect_uri", redirectUri);
+            }
+            return this;
+        }
+
+        public LogoutUrlBuilder redirectUri(String redirectUri) {
+            if (redirectUri != null) {
+                b.queryParam(OAuth2Constants.REDIRECT_URI, redirectUri);
+            }
+            return this;
+        }
+
+        public LogoutUrlBuilder sessionState(String sessionState) {
+            if (sessionState != null) {
+                b.queryParam("session_state", sessionState);
+            }
+            return this;
+        }
+
+        public String build() {
+            return b.build(realm).toString();
+        }
+    }
+
     public void init(Keycloak adminClient, WebDriver driver) {
         this.adminClient = adminClient;
         this.driver = driver;
@@ -119,34 +177,34 @@ public class OAuthClient {
         realm = "test";
         clientId = "test-app";
         redirectUri = APP_ROOT + "/auth";
-        state = "mystate";
+        state = () -> {
+            return KeycloakModelUtils.generateId();
+        };
         scope = null;
         uiLocales = null;
         clientSessionState = null;
         clientSessionHost = null;
         maxAge = null;
+        responseType = OAuth2Constants.CODE;
+        responseMode = null;
         nonce = null;
         request = null;
         requestUri = null;
+        // https://tools.ietf.org/html/rfc7636#section-4
+        codeVerifier = null;
+        codeChallenge = null;
+        codeChallengeMethod = null;
     }
 
     public AuthorizationEndpointResponse doLogin(String username, String password) {
         openLoginForm();
-        String src = driver.getPageSource();
-        try {
-            driver.findElement(By.id("username")).sendKeys(username);
-            driver.findElement(By.id("password")).sendKeys(password);
-            driver.findElement(By.name("login")).click();
-        } catch (Throwable t) {
-            System.err.println(src);
-            throw t;
-        }
+        fillLoginForm(username, password);
 
         return new AuthorizationEndpointResponse(this);
     }
 
-    public void doLoginGrant(String username, String password) {
-        openLoginForm();
+    public void fillLoginForm(String username, String password) {
+        WaitUtils.waitForPageToLoad(driver);
         String src = driver.getPageSource();
         try {
             driver.findElement(By.id("username")).sendKeys(username);
@@ -158,9 +216,43 @@ public class OAuthClient {
         }
     }
 
+    public void doLoginGrant(String username, String password) {
+        openLoginForm();
+        fillLoginForm(username, password);
+    }
+
+    private static CloseableHttpClient newCloseableHttpClient() {
+        if (sslRequired) {
+            KeyStore keystore = null;
+            // load the keystore containing the client certificate - keystore type is probably jks or pkcs12
+            String keyStorePath = System.getProperty("client.certificate.keystore");
+            String keyStorePassword = System.getProperty("client.certificate.keystore.passphrase");
+            try {
+                keystore = KeystoreUtil.loadKeyStore(keyStorePath, keyStorePassword);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            // load the trustore
+            KeyStore truststore = null;
+            String trustStorePath = System.getProperty("client.truststore");
+            String trustStorePassword = System.getProperty("client.truststore.passphrase");
+            try {
+                truststore = KeystoreUtil.loadKeyStore(trustStorePath, trustStorePassword);
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+            return (DefaultHttpClient)new HttpClientBuilder()
+                    .keyStore(keystore, keyStorePassword)
+                    .trustStore(truststore)
+                    .hostnameVerification(HttpClientBuilder.HostnameVerificationPolicy.ANY)
+                    .build();
+        }
+        return new DefaultHttpClient();
+    }
+
     public AccessTokenResponse doAccessTokenRequest(String code, String password) {
-        CloseableHttpClient client = new DefaultHttpClient();
-        try {
+        try (CloseableHttpClient client = newCloseableHttpClient()) {
             HttpPost post = new HttpPost(getAccessTokenUrl());
 
             List<NameValuePair> parameters = new LinkedList<NameValuePair>();
@@ -187,12 +279,12 @@ public class OAuthClient {
                 parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_HOST, clientSessionHost));
             }
 
-            UrlEncodedFormEntity formEntity = null;
-            try {
-                formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
+            // https://tools.ietf.org/html/rfc7636#section-4.5
+            if (codeVerifier != null) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_VERIFIER, codeVerifier));
             }
+
+            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, Charsets.UTF_8);
             post.setEntity(formEntity);
 
             try {
@@ -200,8 +292,8 @@ public class OAuthClient {
             } catch (Exception e) {
                 throw new RuntimeException("Failed to retrieve access token", e);
             }
-        } finally {
-            closeClient(client);
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
         }
     }
 
@@ -214,8 +306,7 @@ public class OAuthClient {
     }
 
     public String introspectTokenWithClientCredential(String clientId, String clientSecret, String tokenType, String tokenToIntrospect) {
-        CloseableHttpClient client = new DefaultHttpClient();
-        try {
+        try (CloseableHttpClient client = new DefaultHttpClient()) {
             HttpPost post = new HttpPost(getTokenIntrospectionUrl());
 
             String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
@@ -236,17 +327,16 @@ public class OAuthClient {
 
             post.setEntity(formEntity);
 
-            try {
+            try (CloseableHttpResponse response = client.execute(post)) {
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
 
-                client.execute(post).getEntity().writeTo(out);
-
+                response.getEntity().writeTo(out);
                 return new String(out.toByteArray());
             } catch (Exception e) {
                 throw new RuntimeException("Failed to retrieve access token", e);
             }
-        } finally {
-            closeClient(client);
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
         }
     }
 
@@ -260,7 +350,7 @@ public class OAuthClient {
 
     public AccessTokenResponse doGrantAccessTokenRequest(String realm, String username, String password, String totp,
                                                          String clientId, String clientSecret) throws Exception {
-        CloseableHttpClient client = new DefaultHttpClient();
+        CloseableHttpClient client = newCloseableHttpClient();
         try {
             HttpPost post = new HttpPost(getResourceOwnerPasswordCredentialGrantUrl(realm));
 
@@ -304,6 +394,51 @@ public class OAuthClient {
         }
     }
 
+    public AccessTokenResponse doTokenExchange(String realm, String token, String targetAudience,
+                                                         String clientId, String clientSecret) throws Exception {
+        CloseableHttpClient client = newCloseableHttpClient();
+        try {
+            HttpPost post = new HttpPost(getResourceOwnerPasswordCredentialGrantUrl(realm));
+
+            List<NameValuePair> parameters = new LinkedList<NameValuePair>();
+            parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE));
+            parameters.add(new BasicNameValuePair(OAuth2Constants.SUBJECT_TOKEN, token));
+            parameters.add(new BasicNameValuePair(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE));
+            parameters.add(new BasicNameValuePair(OAuth2Constants.AUDIENCE, targetAudience));
+
+            if (clientSecret != null) {
+                String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
+                post.setHeader("Authorization", authorization);
+            } else {
+                parameters.add(new BasicNameValuePair("client_id", clientId));
+
+            }
+
+            if (clientSessionState != null) {
+                parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_STATE, clientSessionState));
+            }
+            if (clientSessionHost != null) {
+                parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_HOST, clientSessionHost));
+            }
+            if (scope != null) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, scope));
+            }
+
+            UrlEncodedFormEntity formEntity;
+            try {
+                formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
+            post.setEntity(formEntity);
+
+            return new AccessTokenResponse(client.execute(post));
+        } finally {
+            closeClient(client);
+        }
+    }
+
+
     public JSONWebKeySet doCertsRequest(String realm) throws Exception {
         CloseableHttpClient client = new DefaultHttpClient();
         try {
@@ -345,10 +480,10 @@ public class OAuthClient {
     }
 
 
-    public HttpResponse doLogout(String refreshToken, String clientSecret) throws IOException {
+    public CloseableHttpResponse doLogout(String refreshToken, String clientSecret) throws IOException {
         CloseableHttpClient client = new DefaultHttpClient();
         try {
-            HttpPost post = new HttpPost(getLogoutUrl(null, null));
+            HttpPost post = new HttpPost(getLogoutUrl().build());
 
             List<NameValuePair> parameters = new LinkedList<NameValuePair>();
             if (refreshToken != null) {
@@ -527,6 +662,7 @@ public class OAuthClient {
         if (redirectUri != null) {
             b.queryParam(OAuth2Constants.REDIRECT_URI, redirectUri);
         }
+        String state = this.state.getState();
         if (state != null) {
             b.queryParam(OAuth2Constants.STATE, state);
         }
@@ -549,6 +685,13 @@ public class OAuthClient {
         if (requestUri != null) {
             b.queryParam(OIDCLoginProtocol.REQUEST_URI_PARAM, requestUri);
         }
+        // https://tools.ietf.org/html/rfc7636#section-4.3
+        if (codeChallenge != null) {
+            b.queryParam(OAuth2Constants.CODE_CHALLENGE, codeChallenge);
+        }
+        if (codeChallengeMethod != null) {
+            b.queryParam(OAuth2Constants.CODE_CHALLENGE_METHOD, codeChallengeMethod);
+        }  
         return b.build(realm).toString();
     }
 
@@ -562,15 +705,8 @@ public class OAuthClient {
         return b.build(realm).toString();
     }
 
-    public String getLogoutUrl(String redirectUri, String sessionState) {
-        UriBuilder b = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(baseUrl));
-        if (redirectUri != null) {
-            b.queryParam(OAuth2Constants.REDIRECT_URI, redirectUri);
-        }
-        if (sessionState != null) {
-            b.queryParam("session_state", sessionState);
-        }
-        return b.build(realm).toString();
+    public LogoutUrlBuilder getLogoutUrl() {
+        return new LogoutUrlBuilder();
     }
 
     public String getResourceOwnerPasswordCredentialGrantUrl() {
@@ -612,8 +748,17 @@ public class OAuthClient {
         return this;
     }
 
-    public OAuthClient state(String state) {
-        this.state = state;
+    public OAuthClient stateParamHardcoded(String value) {
+        this.state = () -> {
+            return value;
+        };
+        return this;
+    }
+
+    public OAuthClient stateParamRandom() {
+        this.state = () -> {
+            return KeycloakModelUtils.generateId();
+        };
         return this;
     }
 
@@ -669,6 +814,20 @@ public class OAuthClient {
 
     public String getRealm() {
         return realm;
+    }
+
+    // https://tools.ietf.org/html/rfc7636#section-4
+    public OAuthClient codeVerifier(String codeVerifier) {
+    	this.codeVerifier = codeVerifier;
+    	return this;
+    }
+    public OAuthClient codeChallenge(String codeChallenge) {
+    	this.codeChallenge = codeChallenge;
+    	return this;
+    }
+    public OAuthClient codeChallengeMethod(String codeChallengeMethod) {
+    	this.codeChallengeMethod = codeChallengeMethod;
+    	return this;
     }
 
     public static class AuthorizationEndpointResponse {
@@ -751,28 +910,32 @@ public class OAuthClient {
         private String error;
         private String errorDescription;
 
-        public AccessTokenResponse(HttpResponse response) throws Exception {
-            statusCode = response.getStatusLine().getStatusCode();
-            if (!"application/json".equals(response.getHeaders("Content-Type")[0].getValue())) {
-                Assert.fail("Invalid content type");
-            }
-
-            String s = IOUtils.toString(response.getEntity().getContent());
-            Map responseJson = JsonSerialization.readValue(s, Map.class);
-
-            if (statusCode == 200) {
-                idToken = (String)responseJson.get("id_token");
-                accessToken = (String)responseJson.get("access_token");
-                tokenType = (String)responseJson.get("token_type");
-                expiresIn = (Integer)responseJson.get("expires_in");
-                refreshExpiresIn = (Integer)responseJson.get("refresh_expires_in");
-
-                if (responseJson.containsKey(OAuth2Constants.REFRESH_TOKEN)) {
-                    refreshToken = (String)responseJson.get(OAuth2Constants.REFRESH_TOKEN);
+        public AccessTokenResponse(CloseableHttpResponse response) throws Exception {
+            try {
+                statusCode = response.getStatusLine().getStatusCode();
+                if (!"application/json".equals(response.getHeaders("Content-Type")[0].getValue())) {
+                    Assert.fail("Invalid content type");
                 }
-            } else {
-                error = (String)responseJson.get(OAuth2Constants.ERROR);
-                errorDescription = responseJson.containsKey(OAuth2Constants.ERROR_DESCRIPTION) ? (String)responseJson.get(OAuth2Constants.ERROR_DESCRIPTION) : null;
+
+                String s = IOUtils.toString(response.getEntity().getContent());
+                Map responseJson = JsonSerialization.readValue(s, Map.class);
+
+                if (statusCode == 200) {
+                    idToken = (String) responseJson.get("id_token");
+                    accessToken = (String) responseJson.get("access_token");
+                    tokenType = (String) responseJson.get("token_type");
+                    expiresIn = (Integer) responseJson.get("expires_in");
+                    refreshExpiresIn = (Integer) responseJson.get("refresh_expires_in");
+
+                    if (responseJson.containsKey(OAuth2Constants.REFRESH_TOKEN)) {
+                        refreshToken = (String) responseJson.get(OAuth2Constants.REFRESH_TOKEN);
+                    }
+                } else {
+                    error = (String) responseJson.get(OAuth2Constants.ERROR);
+                    errorDescription = responseJson.containsKey(OAuth2Constants.ERROR_DESCRIPTION) ? (String) responseJson.get(OAuth2Constants.ERROR_DESCRIPTION) : null;
+                }
+            } finally {
+                response.close();
             }
         }
 
@@ -815,17 +978,26 @@ public class OAuthClient {
 
     public PublicKey getRealmPublicKey(String realm) {
         if (!publicKeys.containsKey(realm)) {
-            String publicKeyPem = adminClient.realms().realm(realm).toRepresentation().getPublicKey();
+            KeysMetadataRepresentation keyMetadata = adminClient.realms().realm(realm).keys().getKeyMetadata();
+            String activeKid = keyMetadata.getActive().get("RSA");
             PublicKey publicKey = null;
-            try {
-                publicKey = PemUtils.decodePublicKey(publicKeyPem);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+            for (KeysMetadataRepresentation.KeyMetadataRepresentation rep : keyMetadata.getKeys()) {
+                if (rep.getKid().equals(activeKid)) {
+                    publicKey = PemUtils.decodePublicKey(rep.getPublicKey());
+                }
             }
             publicKeys.put(realm, publicKey);
         }
 
         return publicKeys.get(realm);
     }
+
+
+    private interface StateParamProvider {
+
+        String getState();
+
+    }
+
 
 }

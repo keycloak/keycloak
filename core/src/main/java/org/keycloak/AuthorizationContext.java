@@ -18,10 +18,13 @@
 package org.keycloak;
 
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.AccessToken.Authorization;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.PathConfig;
 import org.keycloak.representations.idm.authorization.Permission;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -29,24 +32,42 @@ import java.util.List;
 public class AuthorizationContext {
 
     private final AccessToken authzToken;
-    private final List<PathConfig> paths;
+    private final PathConfig current;
+    private final Map<String, PathConfig> paths;
     private boolean granted;
 
-    public AuthorizationContext(AccessToken authzToken, List<PathConfig> paths) {
+    public AuthorizationContext(AccessToken authzToken, PathConfig current, Map<String, PathConfig> paths) {
         this.authzToken = authzToken;
+        this.current = current;
         this.paths = paths;
         this.granted = true;
     }
 
     public AuthorizationContext() {
-        this(null, null);
+        this(null, null, null);
         this.granted = false;
     }
 
     public boolean hasPermission(String resourceName, String scopeName) {
-        for (Permission permission : authzToken.getAuthorization().getPermissions()) {
-            for (PathConfig pathHolder : this.paths) {
-                if (pathHolder.getName().equals(resourceName)) {
+        if (this.authzToken == null) {
+            return false;
+        }
+
+        Authorization authorization = this.authzToken.getAuthorization();
+
+        if (authorization == null) {
+            return false;
+        }
+
+        if (current != null) {
+            if (current.getName().equals(resourceName)) {
+                return true;
+            }
+        }
+
+        if (hasResourcePermission(resourceName)) {
+            for (Permission permission : authorization.getPermissions()) {
+                for (PathConfig pathHolder : paths.values()) {
                     if (pathHolder.getId().equals(permission.getResourceSetId())) {
                         if (permission.getScopes().contains(scopeName)) {
                             return true;
@@ -60,13 +81,25 @@ public class AuthorizationContext {
     }
 
     public boolean hasResourcePermission(String resourceName) {
-        for (Permission permission : authzToken.getAuthorization().getPermissions()) {
-            for (PathConfig pathHolder : this.paths) {
-                if (pathHolder.getName().equals(resourceName)) {
-                    if (pathHolder.getId().equals(permission.getResourceSetId())) {
-                        return true;
-                    }
-                }
+        if (this.authzToken == null) {
+            return false;
+        }
+
+        Authorization authorization = this.authzToken.getAuthorization();
+
+        if (authorization == null) {
+            return false;
+        }
+
+        if (current != null) {
+            if (current.getName().equals(resourceName)) {
+                return true;
+            }
+        }
+
+        for (Permission permission : authorization.getPermissions()) {
+            if (permission.getResourceSetName().equals(resourceName) || permission.getResourceSetId().equals(resourceName)) {
+                return true;
             }
         }
 
@@ -74,7 +107,17 @@ public class AuthorizationContext {
     }
 
     public boolean hasScopePermission(String scopeName) {
-        for (Permission permission : authzToken.getAuthorization().getPermissions()) {
+        if (this.authzToken == null) {
+            return false;
+        }
+
+        Authorization authorization = this.authzToken.getAuthorization();
+
+        if (authorization == null) {
+            return false;
+        }
+
+        for (Permission permission : authorization.getPermissions()) {
             if (permission.getScopes().contains(scopeName)) {
                 return true;
             }
@@ -84,7 +127,17 @@ public class AuthorizationContext {
     }
 
     public List<Permission> getPermissions() {
-        return this.authzToken.getAuthorization().getPermissions();
+        if (this.authzToken == null) {
+            return Collections.emptyList();
+        }
+
+        Authorization authorization = this.authzToken.getAuthorization();
+
+        if (authorization == null) {
+            return Collections.emptyList();
+        }
+
+        return Collections.unmodifiableList(authorization.getPermissions());
     }
 
     public boolean isGranted() {

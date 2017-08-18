@@ -17,11 +17,11 @@
 
 package org.keycloak.jose.jws.crypto;
 
-import java.security.MessageDigest;
-import java.util.Arrays;
-
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.jose.jws.Algorithm;
+
+import java.security.MessageDigest;
+import java.util.Arrays;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

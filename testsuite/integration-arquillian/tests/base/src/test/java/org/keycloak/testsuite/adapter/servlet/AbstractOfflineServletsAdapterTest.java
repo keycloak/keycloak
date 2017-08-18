@@ -27,6 +27,7 @@ import java.util.List;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import static org.keycloak.testsuite.util.IOUtil.loadRealm;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
@@ -49,7 +50,7 @@ public abstract class AbstractOfflineServletsAdapterTest extends AbstractServlet
 
     @Deployment(name = OfflineToken.DEPLOYMENT_NAME)
     protected static WebArchive offlineClient() {
-        return servletDeployment(OfflineToken.DEPLOYMENT_NAME, AdapterActionsFilter.class, AbstractShowTokensServlet.class, OfflineTokenServlet.class, ErrorServlet.class);
+        return servletDeployment(OfflineToken.DEPLOYMENT_NAME, AdapterActionsFilter.class, AbstractShowTokensServlet.class, OfflineTokenServlet.class, ErrorServlet.class, ServletTestUtils.class);
     }
 
     @Override
@@ -85,15 +86,17 @@ public abstract class AbstractOfflineServletsAdapterTest extends AbstractServlet
         String refreshTokenId = offlineTokenPage.getRefreshToken().getId();
 
         setAdapterAndServerTimeOffset(9999);
-
+        offlineTokenPage.navigateTo();
         assertCurrentUrlStartsWith(offlineTokenPage);
         Assert.assertNotEquals(offlineTokenPage.getRefreshToken().getId(), refreshTokenId);
         Assert.assertNotEquals(offlineTokenPage.getAccessToken().getId(), accessTokenId);
 
         // Ensure that logout works for webapp (even if offline token will be still valid in Keycloak DB)
         offlineTokenPage.logout();
+        assertCurrentUrlDoesntStartWith(offlineTokenPage);
         loginPage.assertCurrent();
         offlineTokenPage.navigateTo();
+        assertCurrentUrlDoesntStartWith(offlineTokenPage);
         loginPage.assertCurrent();
 
         setAdapterAndServerTimeOffset(0);
@@ -177,6 +180,7 @@ public abstract class AbstractOfflineServletsAdapterTest extends AbstractServlet
 
         //This was necessary to be introduced, otherwise other testcases will fail
         offlineTokenPage.logout();
+        assertCurrentUrlDoesntStartWith(offlineTokenPage);
         loginPage.assertCurrent();
 
         events.clear();

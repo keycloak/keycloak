@@ -16,10 +16,6 @@
  */
 package org.keycloak.testsuite.arquillian.containers;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-
 import org.jboss.arquillian.config.descriptor.api.ArquillianDescriptor;
 import org.jboss.arquillian.config.descriptor.api.ContainerDef;
 import org.jboss.arquillian.config.descriptor.api.GroupDef;
@@ -34,6 +30,12 @@ import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.arquillian.core.spi.ServiceLoader;
 import org.jboss.arquillian.core.spi.Validate;
 import org.jboss.logging.Logger;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
+import org.mvel2.MVEL;
 import static org.keycloak.testsuite.arquillian.containers.SecurityActions.isClassPresent;
 import static org.keycloak.testsuite.arquillian.containers.SecurityActions.loadClass;
 
@@ -96,10 +98,14 @@ public class RegistryCreator {
 
     private static final String ENABLED = "enabled";
 
-    private boolean isEnabled(ContainerDef containerDef) {
+    private static boolean isEnabled(ContainerDef containerDef) {
         Map<String, String> props = containerDef.getContainerProperties();
-        return !props.containsKey(ENABLED)
-                || (props.containsKey(ENABLED) && props.get(ENABLED).equals("true"));
+        try {
+            return !props.containsKey(ENABLED)
+                    || (props.containsKey(ENABLED) && ! props.get(ENABLED).isEmpty() && MVEL.evalToBoolean(props.get(ENABLED), (Object) null));
+        } catch (Exception ex) {
+            return false;
+        }
     }
 
     @SuppressWarnings("rawtypes")
@@ -109,6 +115,8 @@ public class RegistryCreator {
             if (isClassPresent(getAdapterImplClassValue(containerDef))) {
                 return DeployableContainer.class.isAssignableFrom(
                         loadClass(getAdapterImplClassValue(containerDef)));
+            } else {
+                log.warn("Cannot load adapterImpl class for " + containerDef.getContainerName());
             }
         }
 

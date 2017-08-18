@@ -43,14 +43,14 @@
     {
       "name": "Only Owner Policy",
       "description": "Defines that only the resource owner is allowed to do something",
-      "type": "drools",
+      "type": "rules",
       "logic": "POSITIVE",
       "decisionStrategy": "UNANIMOUS",
       "config": {
-        "mavenArtifactVersion": "2.1.0-SNAPSHOT",
+        "mavenArtifactVersion": "2.5.0.Final-SNAPSHOT",
         "mavenArtifactId": "photoz-authz-policy",
         "sessionName": "MainOwnerSession",
-        "mavenArtifactGroupId": "org.keycloak",
+        "mavenArtifactGroupId": "org.keycloak.testsuite",
         "moduleName": "PhotozAuthzOwnerPolicy",
         "applyPolicies": "[]",
         "scannerPeriod": "1",

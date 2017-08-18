@@ -16,9 +16,13 @@
  */
 package org.keycloak.social.google;
 
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.social.SocialIdentityProvider;
+import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.models.KeycloakSession;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -30,8 +34,8 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
     public static final String PROFILE_URL = "https://www.googleapis.com/plus/v1/people/me/openIdConnect";
     public static final String DEFAULT_SCOPE = "openid profile email";
 
-    public GoogleIdentityProvider(OIDCIdentityProviderConfig config) {
-        super(config);
+    public GoogleIdentityProvider(KeycloakSession session, GoogleIdentityProviderConfig config) {
+        super(session, config);
         config.setAuthorizationUrl(AUTH_URL);
         config.setTokenUrl(TOKEN_URL);
         config.setUserInfoUrl(PROFILE_URL);
@@ -41,4 +45,19 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
     protected String getDefaultScopes() {
         return DEFAULT_SCOPE;
     }
+
+    @Override
+    protected String getUserInfoUrl() {
+        String uri = super.getUserInfoUrl();
+        if (((GoogleIdentityProviderConfig)getConfig()).isUserIp()) {
+            ClientConnection connection = ResteasyProviderFactory.getContextData(ClientConnection.class);
+            if (connection != null) {
+                uri = KeycloakUriBuilder.fromUri(super.getUserInfoUrl()).queryParam("userIp", connection.getRemoteAddr()).build().toString();
+            }
+
+        }
+        logger.debugv("GOOGLE userInfoUrl: {0}", uri);
+        return uri;
+    }
+
 }

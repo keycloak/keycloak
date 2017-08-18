@@ -17,26 +17,20 @@
 
 package org.keycloak.models.cache.infinispan.entities;
 
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserConsentModel;
-import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.common.util.MultivaluedHashMap;
 
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class CachedUser extends AbstractRevisioned implements InRealm  {
+public class CachedUser extends AbstractExtendableRevisioned implements InRealm  {
     private String realm;
     private String username;
     private Long createdTimestamp;
@@ -44,9 +38,7 @@ public class CachedUser extends AbstractRevisioned implements InRealm  {
     private String lastName;
     private String email;
     private boolean emailVerified;
-    private List<UserCredentialValueModel> credentials = new LinkedList<>();
     private boolean enabled;
-    private boolean totp;
     private String federationLink;
     private String serviceAccountClientLink;
     private MultivaluedHashMap<String, String> attributes = new MultivaluedHashMap<>();
@@ -66,9 +58,7 @@ public class CachedUser extends AbstractRevisioned implements InRealm  {
         this.attributes.putAll(user.getAttributes());
         this.email = user.getEmail();
         this.emailVerified = user.isEmailVerified();
-        this.credentials.addAll(user.getCredentialsDirectly());
         this.enabled = user.isEnabled();
-        this.totp = user.isOtpEnabled();
         this.federationLink = user.getFederationLink();
         this.serviceAccountClientLink = user.getServiceAccountClientLink();
         this.requiredActions.addAll(user.getRequiredActions());
@@ -111,16 +101,8 @@ public class CachedUser extends AbstractRevisioned implements InRealm  {
         return emailVerified;
     }
 
-    public List<UserCredentialValueModel> getCredentials() {
-        return credentials;
-    }
-
     public boolean isEnabled() {
         return enabled;
-    }
-
-    public boolean isTotp() {
-        return totp;
     }
 
     public MultivaluedHashMap<String, String> getAttributes() {

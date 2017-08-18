@@ -17,8 +17,7 @@
 
 package org.keycloak.social.microsoft;
 
-import java.net.URLEncoder;
-
+import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
@@ -30,6 +29,9 @@ import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.keycloak.models.KeycloakSession;
+
+import java.net.URLEncoder;
 
 /**
  * 
@@ -46,8 +48,8 @@ public class MicrosoftIdentityProvider extends AbstractOAuth2IdentityProvider im
     public static final String PROFILE_URL = "https://apis.live.net/v5.0/me";
     public static final String DEFAULT_SCOPE = "wl.basic,wl.emails";
 
-    public MicrosoftIdentityProvider(OAuth2IdentityProviderConfig config) {
-        super(config);
+    public MicrosoftIdentityProvider(KeycloakSession session, OAuth2IdentityProviderConfig config) {
+        super(session, config);
         config.setAuthorizationUrl(AUTH_URL);
         config.setTokenUrl(TOKEN_URL);
         config.setUserInfoUrl(PROFILE_URL);
@@ -60,7 +62,7 @@ public class MicrosoftIdentityProvider extends AbstractOAuth2IdentityProvider im
             if (log.isDebugEnabled()) {
                 log.debug("Microsoft Live user profile request to: " + URL);
             }
-            JsonNode profile = JsonSimpleHttp.asJson(SimpleHttp.doGet(URL));
+            JsonNode profile = JsonSimpleHttp.asJson(SimpleHttp.doGet(URL, session));
 
             String id = getJsonProperty(profile, "id");
 

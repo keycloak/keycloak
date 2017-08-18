@@ -18,11 +18,15 @@
 package org.keycloak.protocol.oidc;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
-import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.keys.KeyMetadata;
+import org.keycloak.keys.RsaKeyMetadata;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
@@ -30,11 +34,12 @@ import org.keycloak.protocol.oidc.endpoints.LoginStatusIframeEndpoint;
 import org.keycloak.protocol.oidc.endpoints.LogoutEndpoint;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
 import org.keycloak.protocol.oidc.endpoints.UserInfoEndpoint;
-import org.keycloak.jose.jwk.JSONWebKeySet;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.services.util.CacheControlUtil;
 
 import javax.ws.rs.GET;
+import javax.ws.rs.OPTIONS;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
@@ -44,6 +49,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+import java.util.List;
 
 /**
  * Resource class for the oauth/openid connect token service
@@ -52,8 +58,6 @@ import javax.ws.rs.core.UriInfo;
  * @version $Revision: 1 $
  */
 public class OIDCLoginProtocolService {
-
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     private RealmModel realm;
     private TokenManager tokenManager;
@@ -67,6 +71,9 @@ public class OIDCLoginProtocolService {
 
     @Context
     private HttpHeaders headers;
+
+    @Context
+    private HttpRequest request;
 
     public OIDCLoginProtocolService(RealmModel realm, EventBuilder event) {
         this.realm = realm;
@@ -164,19 +171,36 @@ public class OIDCLoginProtocolService {
 
     @Path("login-status-iframe.html")
     public Object getLoginStatusIframe() {
-        LoginStatusIframeEndpoint endpoint = new LoginStatusIframeEndpoint(realm);
+        LoginStatusIframeEndpoint endpoint = new LoginStatusIframeEndpoint();
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint;
+    }
+
+    @OPTIONS
+    @Path("certs")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getVersionPreflight() {
+        return Cors.add(request, Response.ok()).allowedMethods("GET").preflight().auth().build();
     }
 
     @GET
     @Path("certs")
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public JSONWebKeySet certs() {
+    public Response certs() {
+        List<RsaKeyMetadata> publicKeys = session.keys().getRsaKeys(realm, false);
+        JWK[] keys = new JWK[publicKeys.size()];
+
+        int i = 0;
+        for (RsaKeyMetadata k : publicKeys) {
+            keys[i++] = JWKBuilder.create().kid(k.getKid()).rs256(k.getPublicKey());
+        }
+
         JSONWebKeySet keySet = new JSONWebKeySet();
-        keySet.setKeys(new JWK[]{JWKBuilder.create().rs256(realm.getPublicKey())});
-        return keySet;
+        keySet.setKeys(keys);
+
+        Response.ResponseBuilder responseBuilder = Response.ok(keySet).cacheControl(CacheControlUtil.getDefaultCacheControl());
+        return Cors.add(request, responseBuilder).allowedOrigins("*").auth().build();
     }
 
     @Path("userinfo")

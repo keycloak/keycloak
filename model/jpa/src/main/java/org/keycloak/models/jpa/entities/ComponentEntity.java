@@ -17,38 +17,26 @@
 
 package org.keycloak.models.jpa.entities;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.CascadeType;
-import javax.persistence.CollectionTable;
 import javax.persistence.Column;
-import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashSet;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
  */
-@NamedQueries({
-        @NamedQuery(name="getComponents", query="select attr from ComponentEntity attr where attr.realm = :realm"),
-        @NamedQuery(name="getComponentsByParentAndType", query="select attr from ComponentEntity attr where attr.realm = :realm and attr.providerType = :providerType and attr.parentId = :parentId"),
-        @NamedQuery(name="getComponentByParent", query="select attr from ComponentEntity attr where attr.realm = :realm and attr.parentId = :parentId"),
-        @NamedQuery(name="getComponentIdsByParent", query="select attr.id from ComponentEntity attr where attr.realm = :realm and attr.parentId = :parentId"),
-        @NamedQuery(name="deleteComponentByRealm", query="delete from  ComponentEntity c where c.realm = :realm"),
-        @NamedQuery(name="deleteComponentByParent", query="delete from  ComponentEntity c where c.parentId = :parentId")
-})
 @Entity
 @Table(name="COMPONENT")
 public class ComponentEntity {
@@ -73,6 +61,12 @@ public class ComponentEntity {
 
     @Column(name="PARENT_ID")
     protected String parentId;
+
+    @Column(name="SUB_TYPE")
+    protected String subType;
+
+    @OneToMany(fetch = FetchType.LAZY, cascade ={ CascadeType.ALL}, orphanRemoval = true, mappedBy = "component")
+    Set<ComponentConfigEntity> componentConfigs = new HashSet<>();
 
     public String getId() {
         return id;
@@ -114,12 +108,28 @@ public class ComponentEntity {
         this.parentId = parentId;
     }
 
+    public String getSubType() {
+        return subType;
+    }
+
+    public void setSubType(String subType) {
+        this.subType = subType;
+    }
+
     public RealmEntity getRealm() {
         return realm;
     }
 
     public void setRealm(RealmEntity realm) {
         this.realm = realm;
+    }
+
+    public Set<ComponentConfigEntity> getComponentConfigs() {
+        return componentConfigs;
+    }
+
+    public void setComponentConfigs(Set<ComponentConfigEntity> componentConfigs) {
+        this.componentConfigs = componentConfigs;
     }
 
     @Override

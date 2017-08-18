@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.saml;
 
+import java.util.Objects;
 import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.saml.SignatureAlgorithm;
 
@@ -89,7 +90,14 @@ public class SamlClientTemplate {
 
     public void setRequiresRealmSignature(boolean val) {
         clientTemplate.setAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE, Boolean.toString(val));
+    }
 
+    public boolean addExtensionsElementWithKeyInfo() {
+        return Objects.equals("true", clientTemplate.getAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_EXT));
+    }
+
+    public void setAddExtensionsElementWithKeyInfo(boolean val) {
+        clientTemplate.setAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_EXT, Boolean.toString(val));
     }
 
     public boolean forcePostBinding() {

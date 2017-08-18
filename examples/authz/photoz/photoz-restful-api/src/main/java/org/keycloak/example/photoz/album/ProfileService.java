@@ -17,17 +17,14 @@
  */
 package org.keycloak.example.photoz.album;
 
-import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.SecurityContext;
 import java.security.Principal;
 import java.util.List;
 
@@ -46,7 +43,7 @@ public class ProfileService {
     @Produces("application/json")
     public Response view(@Context HttpServletRequest request) {
         Principal userPrincipal = request.getUserPrincipal();
-        List albums = this.entityManager.createQuery("from Album where userId = '" + userPrincipal.getName() + "'").getResultList();
+        List albums = this.entityManager.createQuery("from Album where userId = :id").setParameter("id", userPrincipal.getName()).getResultList();
         return Response.ok(new Profile(userPrincipal.getName(), albums.size())).build();
     }
 

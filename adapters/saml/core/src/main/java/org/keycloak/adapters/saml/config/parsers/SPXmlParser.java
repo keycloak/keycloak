@@ -17,16 +17,6 @@
 
 package org.keycloak.adapters.saml.config.parsers;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import javax.xml.namespace.QName;
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.events.EndElement;
-import javax.xml.stream.events.StartElement;
-import javax.xml.stream.events.XMLEvent;
-
 import org.keycloak.adapters.saml.config.IDP;
 import org.keycloak.adapters.saml.config.Key;
 import org.keycloak.adapters.saml.config.SP;
@@ -34,6 +24,15 @@ import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.parsers.AbstractParser;
 import org.keycloak.saml.common.util.StaxParserUtil;
+
+import javax.xml.namespace.QName;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.events.EndElement;
+import javax.xml.stream.events.StartElement;
+import javax.xml.stream.events.XMLEvent;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -47,6 +46,13 @@ public class SPXmlParser extends AbstractParser {
             return StringPropertyReplacer.replaceProperties(str);
         else
             return str;
+    }
+
+    public static int getIntegerAttributeValue(StartElement startElement, String tag, int defaultValue) {
+        String result = getAttributeValue(startElement, tag);
+        if (result == null)
+            return defaultValue;
+        return Integer.valueOf(result);
     }
 
     public static boolean getBooleanAttributeValue(StartElement startElement, String tag, boolean defaultValue) {
@@ -83,6 +89,7 @@ public class SPXmlParser extends AbstractParser {
         sp.setNameIDPolicyFormat(getAttributeValue(startElement, ConfigXmlConstants.NAME_ID_POLICY_FORMAT_ATTR));
         sp.setForceAuthentication(getBooleanAttributeValue(startElement, ConfigXmlConstants.FORCE_AUTHENTICATION_ATTR));
         sp.setIsPassive(getBooleanAttributeValue(startElement, ConfigXmlConstants.IS_PASSIVE_ATTR));
+        sp.setAutodetectBearerOnly(getBooleanAttributeValue(startElement, ConfigXmlConstants.AUTODETECT_BEARER_ONLY_ATTR));
         sp.setTurnOffChangeSessionIdOnLogin(getBooleanAttributeValue(startElement, ConfigXmlConstants.TURN_OFF_CHANGE_SESSSION_ID_ON_LOGIN_ATTR));
         while (xmlEventReader.hasNext()) {
             XMLEvent xmlEvent = StaxParserUtil.peek(xmlEventReader);

@@ -17,48 +17,104 @@
 
 package org.keycloak.testsuite.adapter.servlet;
 
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Test;
+
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
+import org.keycloak.admin.client.resource.RoleScopeResource;
+import org.keycloak.common.util.KeyUtils;
+import org.keycloak.common.util.PemUtils;
+import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
+import org.keycloak.keys.Attributes;
+import org.keycloak.keys.KeyProvider;
+import org.keycloak.keys.ImportedRsaKeyProviderFactory;
+import org.keycloak.protocol.saml.SamlConfigAttributes;
+import org.keycloak.protocol.saml.SamlProtocol;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
 import org.keycloak.protocol.saml.mappers.RoleListMapper;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.saml.BaseSAML2BindingBuilder;
 import org.keycloak.saml.SAML2ErrorResponseBuilder;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.util.XmlKeyInfoKeyNameTransformer;
+import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
+import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.page.*;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.login.Login;
 import org.keycloak.testsuite.auth.page.login.SAMLIDPInitiatedLogin;
 import org.keycloak.testsuite.page.AbstractPage;
-import org.keycloak.testsuite.util.IOUtil;
+import org.keycloak.testsuite.util.*;
+
+import org.keycloak.testsuite.util.SamlClient.Binding;
+import org.keycloak.testsuite.util.SamlClientBuilder;
 import org.openqa.selenium.By;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Form;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriBuilderException;
+import javax.xml.XMLConstants;
+import javax.xml.transform.Source;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
+import java.io.ByteArrayInputStream;
+import java.io.Closeable;
+import java.io.IOException;
 import java.net.URI;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.net.URL;
+import java.security.KeyPair;
+import java.security.PublicKey;
+import java.util.*;
+import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathFactory;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
+import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
+import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWithAdminClient;
+import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.auth.page.AuthRealm.SAMLSERVLETDEMO;
-import static org.keycloak.testsuite.util.IOUtil.*;
+import static org.keycloak.testsuite.util.IOUtil.loadRealm;
+import static org.keycloak.testsuite.util.IOUtil.loadXML;
+import static org.keycloak.testsuite.util.IOUtil.modifyDocElementAttribute;
+import static org.keycloak.testsuite.util.Matchers.bodyHC;
+import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
+import static org.keycloak.testsuite.util.WaitUtils.*;
 
 /**
  * @author mhajas
@@ -71,10 +127,22 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
     protected BadRealmSalesPostSigServlet badRealmSalesPostSigServletPage;
 
     @Page
+    protected EmployeeAcsServlet employeeAcsServletPage;
+
+    @Page
     protected Employee2Servlet employee2ServletPage;
 
     @Page
     protected EmployeeSigServlet employeeSigServletPage;
+
+    @Page
+    protected EmployeeSigPostNoIdpKeyServlet employeeSigPostNoIdpKeyServletPage;
+
+    @Page
+    protected EmployeeSigRedirNoIdpKeyServlet employeeSigRedirNoIdpKeyServletPage;
+
+    @Page
+    protected EmployeeSigRedirOptNoIdpKeyServlet employeeSigRedirOptNoIdpKeyServletPage;
 
     @Page
     protected EmployeeSigFrontServlet employeeSigFrontServletPage;
@@ -90,6 +158,9 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
 
     @Page
     protected SalesPostEncServlet salesPostEncServletPage;
+
+    @Page
+    protected SalesPostEncSignAssertionsOnlyServlet salesPostEncSignAssertionsOnlyServletPage;
 
     @Page
     protected SalesPostPassiveServlet salesPostPassiveServletPage;
@@ -124,10 +195,16 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
     protected EmployeeServlet employeeServletPage;
 
     @Page
+    protected DifferentCookieNameServlet differentCookieNameServletPage;
+
+    @Page
     private InputPortal inputPortalPage;
 
     @Page
     private SAMLIDPInitiatedLogin samlidpInitiatedLoginPage;
+
+    @Page
+    protected SalesPostAutodetectServlet salesPostAutodetectServletPage;
 
     public static final String FORBIDDEN_TEXT = "HTTP status code: 403";
 
@@ -141,6 +218,11 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         return samlServletDeployment(BadRealmSalesPostSigServlet.DEPLOYMENT_NAME, SendUsernameServlet.class);
     }
 
+    @Deployment(name = EmployeeAcsServlet.DEPLOYMENT_NAME)
+    protected static WebArchive employeeAssertionConsumerServiceUrlSet() {
+        return samlServletDeployment(EmployeeAcsServlet.DEPLOYMENT_NAME, SendUsernameServlet.class);
+    }
+
     @Deployment(name = Employee2Servlet.DEPLOYMENT_NAME)
     protected static WebArchive employee2() {
         return samlServletDeployment(Employee2Servlet.DEPLOYMENT_NAME, SendUsernameServlet.class);
@@ -149,6 +231,21 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
     @Deployment(name = EmployeeSigServlet.DEPLOYMENT_NAME)
     protected static WebArchive employeeSig() {
         return samlServletDeployment(EmployeeSigServlet.DEPLOYMENT_NAME, SendUsernameServlet.class);
+    }
+
+    @Deployment(name = EmployeeSigPostNoIdpKeyServlet.DEPLOYMENT_NAME)
+    protected static WebArchive employeeSigPostNoIdpKeyServlet() {
+        return samlServletDeployment(EmployeeSigPostNoIdpKeyServlet.DEPLOYMENT_NAME, SendUsernameServlet.class);
+    }
+
+    @Deployment(name = EmployeeSigRedirNoIdpKeyServlet.DEPLOYMENT_NAME)
+    protected static WebArchive employeeSigRedirNoIdpKeyServlet() {
+        return samlServletDeployment(EmployeeSigRedirNoIdpKeyServlet.DEPLOYMENT_NAME, SendUsernameServlet.class);
+    }
+
+    @Deployment(name = EmployeeSigRedirOptNoIdpKeyServlet.DEPLOYMENT_NAME)
+    protected static WebArchive employeeSigRedirOptNoIdpKeyServlet() {
+        return samlServletDeployment(EmployeeSigRedirOptNoIdpKeyServlet.DEPLOYMENT_NAME, SendUsernameServlet.class);
     }
 
     @Deployment(name = EmployeeSigFrontServlet.DEPLOYMENT_NAME)
@@ -169,6 +266,11 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
     @Deployment(name = SalesPostEncServlet.DEPLOYMENT_NAME)
     protected static WebArchive salesPostEnc() {
         return samlServletDeployment(SalesPostEncServlet.DEPLOYMENT_NAME, SendUsernameServlet.class);
+    }
+
+    @Deployment(name = SalesPostEncSignAssertionsOnlyServlet.DEPLOYMENT_NAME)
+    protected static WebArchive salesPostEncSignAssertionsOnly() {
+        return samlServletDeployment(SalesPostEncSignAssertionsOnlyServlet.DEPLOYMENT_NAME, SendUsernameServlet.class);
     }
 
     @Deployment(name = SalesPostPassiveServlet.DEPLOYMENT_NAME)
@@ -198,12 +300,17 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
 
     @Deployment(name = InputPortal.DEPLOYMENT_NAME)
     protected static WebArchive inputPortal() {
-        return samlServletDeployment(InputPortal.DEPLOYMENT_NAME, "input-portal/WEB-INF/web.xml" , InputServlet.class);
+        return samlServletDeployment(InputPortal.DEPLOYMENT_NAME, "input-portal/WEB-INF/web.xml" , InputServlet.class, ServletTestUtils.class);
     }
 
     @Deployment(name = SalesPost2Servlet.DEPLOYMENT_NAME)
     protected static WebArchive salesPost2() {
         return samlServletDeployment(SalesPost2Servlet.DEPLOYMENT_NAME, SendUsernameServlet.class);
+    }
+
+    @Deployment(name = DifferentCookieNameServlet.DEPLOYMENT_NAME)
+    protected static WebArchive differentCokieName() {
+        return samlServletDeployment(DifferentCookieNameServlet.DEPLOYMENT_NAME, "different-cookie-name/WEB-INF/web.xml", SendUsernameServlet.class);
     }
 
     @Deployment(name = SalesPostAssertionAndResponseSig.DEPLOYMENT_NAME)
@@ -223,7 +330,12 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
 
     @Deployment(name = EmployeeServlet.DEPLOYMENT_NAME)
     protected static WebArchive employeeServlet() {
-        return samlServletDeployment(EmployeeServlet.DEPLOYMENT_NAME, "employee/WEB-INF/web.xml", SamlSPFacade.class);
+        return samlServletDeployment(EmployeeServlet.DEPLOYMENT_NAME, "employee/WEB-INF/web.xml", SamlSPFacade.class, ServletTestUtils.class);
+    }
+
+    @Deployment(name = SalesPostAutodetectServlet.DEPLOYMENT_NAME)
+    protected static WebArchive salesPostAutodetect() {
+        return samlServletDeployment(SalesPostAutodetectServlet.DEPLOYMENT_NAME, SendUsernameServlet.class);
     }
 
     @Override
@@ -285,7 +397,7 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
 
     private void checkLoggedOut(AbstractPage page, Login loginPage) {
         page.navigateTo();
-        waitUntilElement(By.xpath("//body")).is().present();
+        waitForPageToLoad(driver);
         assertCurrentUrlStartsWith(loginPage);
     }
 
@@ -327,8 +439,7 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
 
         salesPostPassiveServletPage.navigateTo();
         if (forbiddenIfNotAuthenticated) {
-            waitUntilElement(By.xpath("//body")).text().not().contains("principal=");
-            assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains(FORBIDDEN_TEXT));
+            assertOnForbiddenPage();
         } else {
             waitUntilElement(By.xpath("//body")).text().contains("principal=null");
         }
@@ -363,6 +474,125 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
     }
 
     @Test
+    public void employeeAcsTest() {
+        SAMLDocumentHolder samlResponse = new SamlClientBuilder()
+          .navigateTo(employeeAcsServletPage.buildUri())
+          .getSamlResponse(Binding.POST);
+
+        assertThat(samlResponse.getSamlObject(), instanceOf(AuthnRequestType.class));
+        assertThat(((AuthnRequestType) samlResponse.getSamlObject()).getAssertionConsumerServiceURL(), notNullValue());
+        assertThat(((AuthnRequestType) samlResponse.getSamlObject()).getAssertionConsumerServiceURL().getPath(), is("/employee-acs/a/different/endpoint/for/saml"));
+
+        assertSuccessfulLogin(employeeAcsServletPage, bburkeUser, testRealmSAMLPostLoginPage, "principal=bburke");
+    }
+
+    private static final KeyPair NEW_KEY_PAIR = KeyUtils.generateRsaKeyPair(1024);
+    private static final String NEW_KEY_PRIVATE_KEY_PEM = PemUtils.encodeKey(NEW_KEY_PAIR.getPrivate());
+
+    private PublicKey createKeys(String priority) throws Exception {
+        PublicKey publicKey = NEW_KEY_PAIR.getPublic();
+
+        ComponentRepresentation rep = new ComponentRepresentation();
+        rep.setName("mycomponent");
+        rep.setParentId("demo");
+        rep.setProviderId(ImportedRsaKeyProviderFactory.ID);
+        rep.setProviderType(KeyProvider.class.getName());
+
+        org.keycloak.common.util.MultivaluedHashMap config = new org.keycloak.common.util.MultivaluedHashMap();
+        config.addFirst("priority", priority);
+        config.addFirst(Attributes.PRIVATE_KEY_KEY, NEW_KEY_PRIVATE_KEY_PEM);
+        rep.setConfig(config);
+
+        testRealmResource().components().add(rep);
+
+        return publicKey;
+    }
+
+    private void dropKeys(String priority) {
+        for (ComponentRepresentation c : testRealmResource().components().query("demo", KeyProvider.class.getName())) {
+            if (c.getConfig().getFirst("priority").equals(priority)) {
+                testRealmResource().components().component(c.getId()).remove();
+                return;
+            }
+        }
+        throw new RuntimeException("Failed to find keys");
+    }
+
+    private void testRotatedKeysPropagated(SAMLServlet servletPage, Login loginPage) throws Exception {
+        boolean keyDropped = false;
+        try {
+            log.info("Creating new key");
+            createKeys("1000");
+            testSuccessfulAndUnauthorizedLogin(servletPage, loginPage);
+            log.info("Dropping new key");
+            dropKeys("1000");
+            keyDropped = true;
+            testSuccessfulAndUnauthorizedLogin(servletPage, loginPage);
+        } finally {
+            if (! keyDropped) {
+                dropKeys("1000");
+            }
+        }
+    }
+
+    @Test
+    public void employeeSigPostNoIdpKeyTest() throws Exception {
+        testRotatedKeysPropagated(employeeSigPostNoIdpKeyServletPage, testRealmSAMLPostLoginPage);
+    }
+
+    @Test
+    public void employeeSigPostNoIdpKeyTestNoKeyNameInKeyInfo() throws Exception {
+        RealmRepresentation r = testRealmResource().toRepresentation();
+        r.getAttributes().put(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_KEY_NAME_TRANSFORMER, XmlKeyInfoKeyNameTransformer.NONE.name());
+        testRotatedKeysPropagated(employeeSigPostNoIdpKeyServletPage, testRealmSAMLPostLoginPage);
+    }
+
+    @Test
+    public void employeeSigPostNoIdpKeyTestCertSubjectAsKeyNameInKeyInfo() throws Exception {
+        RealmRepresentation r = testRealmResource().toRepresentation();
+        r.getAttributes().put(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_KEY_NAME_TRANSFORMER, XmlKeyInfoKeyNameTransformer.CERT_SUBJECT.name());
+        testRotatedKeysPropagated(employeeSigPostNoIdpKeyServletPage, testRealmSAMLPostLoginPage);
+    }
+
+    @Test
+    public void employeeSigPostNoIdpKeyTestKeyIdAsKeyNameInKeyInfo() throws Exception {
+        RealmRepresentation r = testRealmResource().toRepresentation();
+        r.getAttributes().put(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_KEY_NAME_TRANSFORMER, XmlKeyInfoKeyNameTransformer.KEY_ID.name());
+        testRotatedKeysPropagated(employeeSigPostNoIdpKeyServletPage, testRealmSAMLPostLoginPage);
+    }
+
+    @Test
+    public void employeeSigRedirNoIdpKeyTest() throws Exception {
+        testRotatedKeysPropagated(employeeSigRedirNoIdpKeyServletPage, testRealmSAMLRedirectLoginPage);
+    }
+
+    @Test
+    public void employeeSigRedirNoIdpKeyTestNoKeyNameInKeyInfo() throws Exception {
+        RealmRepresentation r = testRealmResource().toRepresentation();
+        r.getAttributes().put(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_KEY_NAME_TRANSFORMER, XmlKeyInfoKeyNameTransformer.NONE.name());
+        testRotatedKeysPropagated(employeeSigRedirNoIdpKeyServletPage, testRealmSAMLRedirectLoginPage);
+    }
+
+    @Test
+    public void employeeSigRedirNoIdpKeyTestCertSubjectAsKeyNameInKeyInfo() throws Exception {
+        RealmRepresentation r = testRealmResource().toRepresentation();
+        r.getAttributes().put(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_KEY_NAME_TRANSFORMER, XmlKeyInfoKeyNameTransformer.CERT_SUBJECT.name());
+        testRotatedKeysPropagated(employeeSigRedirNoIdpKeyServletPage, testRealmSAMLRedirectLoginPage);
+    }
+
+    @Test
+    public void employeeSigRedirNoIdpKeyTestKeyIdAsKeyNameInKeyInfo() throws Exception {
+        RealmRepresentation r = testRealmResource().toRepresentation();
+        r.getAttributes().put(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_KEY_NAME_TRANSFORMER, XmlKeyInfoKeyNameTransformer.KEY_ID.name());
+        testRotatedKeysPropagated(employeeSigRedirNoIdpKeyServletPage, testRealmSAMLRedirectLoginPage);
+    }
+
+    @Test
+    public void employeeSigRedirOptNoIdpKeyTest() throws Exception {
+        testRotatedKeysPropagated(employeeSigRedirOptNoIdpKeyServletPage, testRealmSAMLRedirectLoginPage);
+    }
+
+    @Test
     public void employeeSigFrontTest() {
         testSuccessfulAndUnauthorizedLogin(employeeSigFrontServletPage, testRealmSAMLRedirectLoginPage);
     }
@@ -393,6 +623,17 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
     }
 
     @Test
+    public void salesPostTestCompositeRoleForUser() {
+        UserRepresentation topGroupUser = createUserRepresentation("topGroupUser", "top@redhat.com", "", "", true);
+        setPasswordFor(topGroupUser, PASSWORD);
+
+        assertSuccessfulLogin(salesPostServletPage, topGroupUser, testRealmSAMLPostLoginPage, "principal=topgroupuser");
+
+        salesPostServletPage.logout();
+        checkLoggedOut(salesPostServletPage, testRealmSAMLPostLoginPage);
+    }
+
+    @Test
     public void salesPostTest() {
         testSuccessfulAndUnauthorizedLogin(salesPostServletPage, testRealmSAMLPostLoginPage);
     }
@@ -403,13 +644,73 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
     }
 
     @Test
+    public void salesPostEncSignedAssertionsOnlyTest() throws Exception {
+        testSuccessfulAndUnauthorizedLogin(salesPostEncSignAssertionsOnlyServletPage, testRealmSAMLPostLoginPage);
+    }
+
+    @Test
+    public void salesPostEncSignedAssertionsAndDocumentTest() throws Exception {
+        ClientRepresentation salesPostEncClient = testRealmResource().clients().findByClientId(SalesPostEncServlet.CLIENT_NAME).get(0);
+        try (Closeable client = new ClientAttributeUpdater(testRealmResource().clients().get(salesPostEncClient.getId()))
+          .setAttribute(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE, "true")
+          .setAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "true")
+          .update()) {
+            testSuccessfulAndUnauthorizedLogin(salesPostEncServletPage, testRealmSAMLPostLoginPage);
+        } finally {
+            salesPostEncServletPage.logout();
+        }
+    }
+
+    @Test
+    public void salesPostEncRejectConsent() throws Exception {
+        ClientRepresentation salesPostEncClient = testRealmResource().clients().findByClientId(SalesPostEncServlet.CLIENT_NAME).get(0);
+        try (Closeable client = new ClientAttributeUpdater(testRealmResource().clients().get(salesPostEncClient.getId()))
+          .setConsentRequired(true)
+          .update()) {
+            new SamlClientBuilder()
+              .navigateTo(salesPostEncServletPage.toString())
+              .processSamlResponse(Binding.POST).build()
+              .login().user(bburkeUser).build()
+              .consentRequired().approveConsent(false).build()
+              .processSamlResponse(Binding.POST).build()
+
+              .execute(r -> {
+                  assertThat(r, statusCodeIsHC(Response.Status.OK));
+                  assertThat(r, bodyHC(containsString("urn:oasis:names:tc:SAML:2.0:status:RequestDenied")));  // TODO: revisit - should the HTTP status be 403 too?
+              });
+        } finally {
+            salesPostEncServletPage.logout();
+        }
+    }
+
+    @Test
+    public void salesPostRejectConsent() throws Exception {
+        ClientRepresentation salesPostClient = testRealmResource().clients().findByClientId(SalesPostServlet.CLIENT_NAME).get(0);
+        try (Closeable client = new ClientAttributeUpdater(testRealmResource().clients().get(salesPostClient.getId()))
+          .setConsentRequired(true)
+          .update()) {
+            new SamlClientBuilder()
+              .navigateTo(salesPostServletPage.toString())
+              .processSamlResponse(Binding.POST).build()
+              .login().user(bburkeUser).build()
+              .consentRequired().approveConsent(false).build()
+              .processSamlResponse(Binding.POST).build()
+
+              .execute(r -> {
+                  assertThat(r, statusCodeIsHC(Response.Status.OK));
+                  assertThat(r, bodyHC(containsString("urn:oasis:names:tc:SAML:2.0:status:RequestDenied")));  // TODO: revisit - should the HTTP status be 403 too?
+              });
+        } finally {
+            salesPostServletPage.logout();
+        }
+    }
+
+    @Test
     public void salesPostPassiveTest() {
         salesPostPassiveServletPage.navigateTo();
 
         if (forbiddenIfNotAuthenticated) {
-            waitUntilElement(By.xpath("//body")).text().not().contains("principal=");
-            //Different 403 status page on EAP and Wildfly
-            assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains(FORBIDDEN_TEXT));
+            assertOnForbiddenPage();
         } else {
             waitUntilElement(By.xpath("//body")).text().contains("principal=null");
         }
@@ -422,9 +723,7 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         salesPostPassiveServletPage.navigateTo();
 
         if (forbiddenIfNotAuthenticated) {
-            waitUntilElement(By.xpath("//body")).text().not().contains("principal=");
-            //Different 403 status page on EAP and Wildfly
-            assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains(FORBIDDEN_TEXT));
+            assertOnForbiddenPage();
         } else {
             waitUntilElement(By.xpath("//body")).text().contains("principal=null");
         }
@@ -438,6 +737,54 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
     @Test
     public void salesPostSigTest() {
         testSuccessfulAndUnauthorizedLogin(salesPostSigServletPage, testRealmSAMLPostLoginPage);
+    }
+
+    @Test
+    // https://issues.jboss.org/browse/KEYCLOAK-3971
+    public void salesPostSigTestUnicodeCharacters() {
+        final String username = "ěščřžýáíRoàåéèíñòøöùüßÅÄÖÜ";
+        UserRepresentation user = UserBuilder
+          .edit(createUserRepresentation(username, "xyz@redhat.com", "ěščřžýáí", "RoàåéèíñòøöùüßÅÄÖÜ", true))
+          .addPassword(PASSWORD)
+          .build();
+        String userId = createUserAndResetPasswordWithAdminClient(testRealmResource(), user, PASSWORD);
+        final RoleScopeResource realmRoleRes = testRealmResource().users().get(userId).roles().realmLevel();
+        List<RoleRepresentation> availableRoles = realmRoleRes.listAvailable();
+        realmRoleRes.add(availableRoles.stream().filter(r -> r.getName().equalsIgnoreCase("manager")).collect(Collectors.toList()));
+
+        UserRepresentation storedUser = testRealmResource().users().get(userId).toRepresentation();
+
+        assertThat(storedUser, notNullValue());
+        assertThat("Database seems to be unable to store Unicode for username. Refer to KEYCLOAK-3439 and related issues.", storedUser.getUsername(), equalToIgnoringCase(username));
+
+        assertSuccessfulLogin(salesPostSigServletPage, user, testRealmSAMLPostLoginPage, "principal=" + storedUser.getUsername());
+
+        salesPostSigServletPage.logout();
+        checkLoggedOut(salesPostSigServletPage, testRealmSAMLPostLoginPage);
+    }
+
+    @Test
+    // https://issues.jboss.org/browse/KEYCLOAK-3971
+    public void employeeSigTestUnicodeCharacters() {
+        final String username = "ěščřžýáíRoàåéèíñòøöùüßÅÄÖÜ";
+        UserRepresentation user = UserBuilder
+          .edit(createUserRepresentation(username, "xyz@redhat.com", "ěščřžýáí", "RoàåéèíñòøöùüßÅÄÖÜ", true))
+          .addPassword(PASSWORD)
+          .build();
+        String userId = createUserAndResetPasswordWithAdminClient(testRealmResource(), user, PASSWORD);
+        final RoleScopeResource realmRoleRes = testRealmResource().users().get(userId).roles().realmLevel();
+        List<RoleRepresentation> availableRoles = realmRoleRes.listAvailable();
+        realmRoleRes.add(availableRoles.stream().filter(r -> r.getName().equalsIgnoreCase("manager")).collect(Collectors.toList()));
+
+        UserRepresentation storedUser = testRealmResource().users().get(userId).toRepresentation();
+
+        assertThat(storedUser, notNullValue());
+        assertThat("Database seems to be unable to store Unicode for username. Refer to KEYCLOAK-3439 and related issues.", storedUser.getUsername(), equalToIgnoringCase(username));
+
+        assertSuccessfulLogin(employeeSigServletPage, user, testRealmSAMLRedirectLoginPage, "principal=" + storedUser.getUsername());
+
+        employeeSigServletPage.logout();
+        checkLoggedOut(employeeSigServletPage, testRealmSAMLRedirectLoginPage);
     }
 
     @Test
@@ -476,7 +823,7 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
     }
 
     @Test
-    public void idpInitiatedLogin() {
+    public void idpInitiatedLoginTest() {
         samlidpInitiatedLoginPage.setAuthRealm(SAMLSERVLETDEMO);
         samlidpInitiatedLoginPage.setUrlName("employee2");
         samlidpInitiatedLoginPage.navigateTo();
@@ -561,7 +908,7 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
         testRealmSAMLPostLoginPage.form().login("bburke", "password");
 
-        waitUntilElement(By.xpath("//body")).text().contains("Error info: SamlAuthenticationError [reason=INVALID_SIGNATURE, status=null]");
+        waitUntilElement(By.xpath("//body")).text().contains("Error info: SamlAuthenticationError [reason=INVALID_SIGNATURE");
         assertEquals(driver.getCurrentUrl(), badAssertionSalesPostSigPage + "/saml");
     }
 
@@ -571,30 +918,28 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
         testRealmSAMLPostLoginPage.form().login("bburke", "password");
 
-        waitUntilElement(By.xpath("//body")).text().contains("Error info: SamlAuthenticationError [reason=INVALID_SIGNATURE, status=null]");
+        waitUntilElement(By.xpath("//body")).text().contains("Error info: SamlAuthenticationError [reason=INVALID_SIGNATURE");
         assertEquals(driver.getCurrentUrl(), missingAssertionSigPage + "/saml");
     }
 
     @Test
-    public void testErrorHandling() throws Exception {
+    public void testErrorHandlingUnsigned() throws Exception {
         Client client = ClientBuilder.newClient();
         // make sure
-        Response response = client.target(employeeSigServletPage.toString()).request().get();
+        Response response = client.target(employeeServletPage.toString()).request().get();
         response.close();
         SAML2ErrorResponseBuilder builder = new SAML2ErrorResponseBuilder()
-                .destination(employeeSigServletPage.toString() + "/saml")
+                .destination(employeeServletPage.toString() + "/saml")
                 .issuer("http://localhost:" + System.getProperty("auth.server.http.port", "8180") + "/realms/demo")
                 .status(JBossSAMLURIConstants.STATUS_REQUEST_DENIED.get());
         BaseSAML2BindingBuilder binding = new BaseSAML2BindingBuilder()
                 .relayState(null);
         Document document = builder.buildDocument();
-        URI uri = binding.redirectBinding(document).generateURI(employeeSigServletPage.toString() + "/saml", false);
+        URI uri = binding.redirectBinding(document).generateURI(employeeServletPage.toString() + "/saml", false);
         response = client.target(uri).request().get();
         String errorPage = response.readEntity(String.class);
         response.close();
-        Assert.assertTrue(errorPage.contains("Error info: SamlAuthenticationError [reason=ERROR_STATUS"));
-        Assert.assertFalse(errorPage.contains("status=null"));
-        client.close();
+        Assert.assertEquals(403, response.getStatus());
     }
 
     @Test
@@ -605,8 +950,10 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
         testRealmSAMLPostLoginPage.form().login("bburke", "password");
         assertCurrentUrlStartsWith(employeeServletPage);
-        waitUntilElement(By.xpath("//body")).text().contains("Relay state: " + SamlSPFacade.RELAY_STATE);
-        waitUntilElement(By.xpath("//body")).text().not().contains("SAML response: null");
+        waitForPageToLoad(driver);
+        String pageSource = driver.getPageSource();
+        assertThat(pageSource, containsString("Relay state: " + SamlSPFacade.RELAY_STATE));
+        assertThat(pageSource, not(containsString("SAML response: null")));
     }
 
     @Test
@@ -708,6 +1055,214 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         checkLoggedOut(employee2ServletPage, testRealmSAMLPostLoginPage);
     }
 
+    @Test
+    public void idpMetadataValidation() throws Exception {
+        driver.navigate().to(authServerPage.toString() + "/realms/" + SAMLSERVLETDEMO + "/protocol/saml/descriptor");
+        validateXMLWithSchema(driver.getPageSource(), "/adapter-test/keycloak-saml/metadata-schema/saml-schema-metadata-2.0.xsd");
+    }
+
+
+    @Test
+    public void spMetadataValidation() throws Exception {
+        ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), "http://localhost:8081/sales-post-sig/");
+        ClientRepresentation representation = clientResource.toRepresentation();
+        Client client = ClientBuilder.newClient();
+        WebTarget target = client.target(authServerPage.toString() + "/admin/realms/" + SAMLSERVLETDEMO + "/clients/" + representation.getId() + "/installation/providers/saml-sp-descriptor");
+        Response response = target.request().header(HttpHeaders.AUTHORIZATION, "Bearer " + adminClient.tokenManager().getAccessToken().getToken()).get();
+        validateXMLWithSchema(response.readEntity(String.class), "/adapter-test/keycloak-saml/metadata-schema/saml-schema-metadata-2.0.xsd");
+        response.close();
+    }
+
+    @Test
+    //KEYCLOAK-4020
+    public void testBooleanAttribute() throws Exception {
+        new SamlClientBuilder()
+          .authnRequest(getAuthServerSamlEndpoint(SAMLSERVLETDEMO), "http://localhost:8081/employee2/", getAppServerSamlEndpoint(employee2ServletPage).toString(), Binding.POST).build()
+          .login().user(bburkeUser).build()
+          .processSamlResponse(Binding.POST)
+            .transformDocument(responseDoc -> {
+                Element attribute = responseDoc.createElement("saml:Attribute");
+                attribute.setAttribute("Name", "boolean-attribute");
+                attribute.setAttribute("NameFormat", "urn:oasis:names:tc:SAML:2.0:attrname-format:basic");
+
+                Element attributeValue = responseDoc.createElement("saml:AttributeValue");
+                attributeValue.setAttribute("xmlns:xs", "http://www.w3.org/2001/XMLSchema");
+                attributeValue.setAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
+                attributeValue.setAttribute("xsi:type", "xs:boolean");
+                attributeValue.setTextContent("true");
+
+                attribute.appendChild(attributeValue);
+                IOUtil.appendChildInDocument(responseDoc, "samlp:Response/saml:Assertion/saml:AttributeStatement", attribute);
+
+                return responseDoc;
+            })
+            .build()
+
+          .navigateTo(employee2ServletPage.toString() + "/getAttributes")
+
+          .execute(r -> {
+              assertThat(r, statusCodeIsHC(Response.Status.OK));
+              assertThat(r, bodyHC(containsString("boolean-attribute: true")));
+          });
+    }
+
+    @Test
+    public void testNameIDUnset() throws Exception {
+        new SamlClientBuilder()
+          .navigateTo(employee2ServletPage.toString())
+          .processSamlResponse(Binding.POST).build()
+          .login().user(bburkeUser).build()
+          .processSamlResponse(Binding.POST)
+            .transformDocument(responseDoc -> {
+                XPathFactory xPathfactory = XPathFactory.newInstance();
+                XPath xpath = xPathfactory.newXPath();
+                XPathExpression expr = xpath.compile("//*[local-name()='NameID']");
+
+                NodeList nodeList = (NodeList) expr.evaluate(responseDoc, XPathConstants.NODESET);
+                assertThat(nodeList.getLength(), is(1));
+
+                final Node nameIdNode = nodeList.item(0);
+                nameIdNode.getParentNode().removeChild(nameIdNode);
+
+                return responseDoc;
+            })
+            .build()
+
+          .navigateTo(employee2ServletPage.toString())
+
+          .execute(r -> {
+              assertThat(r, statusCodeIsHC(Response.Status.OK));
+              assertThat(r, bodyHC(allOf(containsString("principal="), not(containsString("500")))));
+          });
+    }
+
+    // KEYCLOAK-4329
+    @Test
+    public void testEmptyKeyInfoElement() {
+        log.debug("Log in using idp initiated login");
+        SAMLDocumentHolder documentHolder = new SamlClientBuilder()
+          .idpInitiatedLogin(getAuthServerSamlEndpoint(SAMLSERVLETDEMO), "sales-post-sig-email").build()
+          .login().user(bburkeUser).build()
+          .getSamlResponse(Binding.POST);
+
+
+        log.debug("Removing KeyInfo from Keycloak response");
+        Document responseDoc = documentHolder.getSamlDocument();
+        IOUtil.removeElementFromDoc(responseDoc, "samlp:Response/dsig:Signature/dsig:KeyInfo");
+
+        CloseableHttpResponse response = null;
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            HttpClientContext context = HttpClientContext.create();
+
+            log.debug("Sending response to SP");
+            HttpUriRequest post = SamlClient.Binding.POST.createSamlUnsignedResponse(getAppServerSamlEndpoint(salesPostSigEmailServletPage), null, responseDoc);
+            response = client.execute(post, context);
+            System.out.println(EntityUtils.toString(response.getEntity()));
+            assertThat(response, statusCodeIsHC(Response.Status.FOUND));
+            response.close();
+
+            HttpGet get = new HttpGet(salesPostSigEmailServletPage.toString());
+            response = client.execute(get);
+            assertThat(response, statusCodeIsHC(Response.Status.OK));
+            assertThat(response, bodyHC(containsString("principal=bburke")));
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        } finally {
+            if (response != null) {
+                EntityUtils.consumeQuietly(response.getEntity());
+                try { response.close(); } catch (IOException ex) { }
+            }
+        }
+    }
+
+    @Test
+    // KEYCLOAK-4141
+    public void testDifferentCookieName() {
+        assertSuccessfulLogin(differentCookieNameServletPage, bburkeUser, testRealmSAMLPostLoginPage, "principal=bburke");
+
+        assertThat(driver.manage().getCookieNamed("DIFFERENT_SESSION_ID"), notNullValue());
+        assertThat(driver.manage().getCookieNamed("JSESSIONID"), nullValue());
+
+        salesPost2ServletPage.logout();
+        checkLoggedOut(differentCookieNameServletPage, testRealmSAMLPostLoginPage);
+    }
+
+    @Test
+    /* KEYCLOAK-4980 */
+    public void testAutodetectBearerOnly() throws Exception {
+        Client client = ClientBuilder.newClient();
+
+        // Do not redirect client to login page if it's an XHR
+        WebTarget target = client.target(salesPostAutodetectServletPage.toString());
+        Response response = target.request().header("X-Requested-With", "XMLHttpRequest").get();
+        Assert.assertEquals(401, response.getStatus());
+        response.close();
+
+        // Do not redirect client to login page if it's a partial Faces request
+        response = target.request().header("Faces-Request", "partial/ajax").get();
+        Assert.assertEquals(401, response.getStatus());
+        response.close();
+
+        // Do not redirect client to login page if it's a SOAP request
+        response = target.request().header("SOAPAction", "").get();
+        Assert.assertEquals(401, response.getStatus());
+        response.close();
+
+        // Do not redirect client to login page if Accept header is missing
+        response = target.request().get();
+        Assert.assertEquals(401, response.getStatus());
+        response.close();
+
+        // Do not redirect client to login page if client does not understand HTML reponses
+        response = target.request().header(HttpHeaders.ACCEPT, "application/json,text/xml").get();
+        Assert.assertEquals(401, response.getStatus());
+        response.close();
+
+        // Redirect client to login page if it's not an XHR
+        response = target.request().header("X-Requested-With", "Dont-Know").header(HttpHeaders.ACCEPT, "*/*").get();
+        Assert.assertEquals(200, response.getStatus());
+        response.close();
+
+        // Redirect client to login page if client explicitely understands HTML responses
+        response = target.request().header(HttpHeaders.ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9").get();
+        Assert.assertEquals(200, response.getStatus());
+        response.close();
+
+        // Redirect client to login page if client understands all response types
+        response = target.request().header(HttpHeaders.ACCEPT, "*/*").get();
+        Assert.assertEquals(200, response.getStatus());
+        response.close();
+        client.close();
+    }
+
+    private URI getAuthServerSamlEndpoint(String realm) throws IllegalArgumentException, UriBuilderException {
+        return RealmsResource
+                .protocolUrl(UriBuilder.fromUri(getAuthServerRoot()))
+                .build(realm, SamlProtocol.LOGIN_PROTOCOL);
+    }
+
+    private URI getAppServerSamlEndpoint(SAMLServlet page) throws IllegalArgumentException, UriBuilderException {
+        return UriBuilder.fromPath(page.toString()).path("/saml").build();
+    }
+
+    private void validateXMLWithSchema(String xml, String schemaFileName) throws SAXException, IOException {
+        URL schemaFile = getClass().getResource(schemaFileName);
+
+        Source xmlFile = new StreamSource(new ByteArrayInputStream(xml.getBytes()), xml);
+        SchemaFactory schemaFactory = SchemaFactory
+                .newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+        Schema schema = schemaFactory.newSchema(schemaFile);
+        Validator validator = schema.newValidator();
+        try {
+            validator.validate(xmlFile);
+            System.out.println(xmlFile.getSystemId() + " is valid");
+        } catch (SAXException e) {
+            System.out.println(xmlFile.getSystemId() + " is NOT valid");
+            System.out.println("Reason: " + e.getLocalizedMessage());
+            Assert.fail();
+        }
+    }
+
     private void createProtocolMapper(ProtocolMappersResource resource, String name, String protocol, String protocolMapper, Map<String, String> config) {
         ProtocolMapperRepresentation representation = new ProtocolMapperRepresentation();
         representation.setName(name);
@@ -723,5 +1278,9 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         testRealmSAMLPostLoginPage.form().login(bburkeUser);
         driver.navigate().to(employee2ServletPage.toString() + "/setCheckRoles?roles=" + roles);
         employee2ServletPage.logout();
+    }
+
+    private void assertOnForbiddenPage() {
+        waitUntilElement(By.xpath("//body")).text().contains(FORBIDDEN_TEXT);
     }
 }

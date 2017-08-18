@@ -18,11 +18,6 @@
 package org.keycloak.testsuite.util;
 
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

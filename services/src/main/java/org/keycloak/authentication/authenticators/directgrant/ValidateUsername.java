@@ -17,8 +17,8 @@
 
 package org.keycloak.authentication.authenticators.directgrant;
 
-import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -43,13 +43,11 @@ import java.util.List;
  */
 public class ValidateUsername extends AbstractDirectGrantAuthenticator {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
     public static final String PROVIDER_ID = "direct-grant-validate-username";
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
-        MultivaluedMap<String, String> inputData = context.getHttpRequest().getDecodedFormParameters();
-        String username = inputData.getFirst(AuthenticationManager.FORM_USERNAME);
+        String username = retrieveUsername(context);
         if (username == null) {
             context.getEvent().error(Errors.USER_NOT_FOUND);
             Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_request", "Missing parameter: username");
@@ -57,13 +55,13 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
             return;
         }
         context.getEvent().detail(Details.USERNAME, username);
-        context.getClientSession().setNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
+        context.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
 
         UserModel user = null;
         try {
             user = KeycloakModelUtils.findUserByNameOrEmail(context.getSession(), context.getRealm(), username);
         } catch (ModelDuplicateException mde) {
-            logger.modelDuplicateException(mde);
+            ServicesLogger.LOGGER.modelDuplicateException(mde);
             Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_request", "Invalid user credentials");
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
@@ -154,5 +152,10 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+ 
+    protected String retrieveUsername(AuthenticationFlowContext context) {
+        MultivaluedMap<String, String> inputData = context.getHttpRequest().getDecodedFormParameters();
+        return inputData.getFirst(AuthenticationManager.FORM_USERNAME);
     }
 }

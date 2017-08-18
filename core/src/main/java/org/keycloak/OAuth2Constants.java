@@ -50,6 +50,7 @@ public interface OAuth2Constants {
 
     String AUTHORIZATION_CODE = "authorization_code";
 
+
     String IMPLICIT = "implicit";
 
     String PASSWORD = "password";
@@ -80,6 +81,28 @@ public interface OAuth2Constants {
     String PROMPT = "prompt";
 
     String MAX_AGE = "max_age";
+
+    String JWT = "JWT";
+
+    // https://tools.ietf.org/html/rfc7636#section-6.1
+    String CODE_VERIFIER = "code_verifier";
+    String CODE_CHALLENGE = "code_challenge";
+    String CODE_CHALLENGE_METHOD = "code_challenge_method";
+
+    // https://tools.ietf.org/html/rfc7636#section-6.2.2
+    String PKCE_METHOD_PLAIN = "plain";
+    String PKCE_METHOD_S256 = "S256";
+
+    String TOKEN_EXCHANGE_GRANT_TYPE="urn:ietf:params:oauth:grant-type:token-exchange";
+    String AUDIENCE="audience";
+    String SUBJECT_TOKEN="subject_token";
+    String SUBJECT_TOKEN_TYPE="subject_token_type";
+    String REQUESTED_TOKEN_TYPE="requested_token_type";
+    String REQUESTED_ISSUER="requested_issuer";
+    String ACCESS_TOKEN_TYPE="urn:ietf:params:oauth:token-type:access_token";
+    String REFRESH_TOKEN_TYPE="urn:ietf:params:oauth:token-type:refresh_token";
+    String JWT_TOKEN_TYPE="urn:ietf:params:oauth:token-type:jwt";
+    String ID_TOKEN_TYPE="urn:ietf:params:oauth:token-type:id_token";
 
 
 }

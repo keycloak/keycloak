@@ -23,35 +23,44 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.BrowserSecurityHeaders;
+import org.keycloak.models.Constants;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.TestRealmKeycloakTest;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
-import org.keycloak.common.util.Time;
+import org.openqa.selenium.NoSuchElementException;
 
-import java.util.Map;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Response;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class LoginTest extends TestRealmKeycloakTest {
+public class LoginTest extends AbstractTestRealmKeycloakTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -275,16 +284,6 @@ public class LoginTest extends TestRealmKeycloakTest {
     @Test
     // KEYCLOAK-2557
     public void loginUserWithEmailAsUsername() {
-        UserRepresentation rep = UserBuilder.create()
-                                            .enabled(true)
-                                            .id("foo")
-                                            .email("foo")
-                                            .username("login@test.com")
-                                            .password("password")
-                                            .build();
-
-        adminClient.realm(userId).users().create(rep);
-
         loginPage.open();
         loginPage.login("login@test.com", "password");
 
@@ -354,16 +353,16 @@ public class LoginTest extends TestRealmKeycloakTest {
 
             events.expectRequiredAction(EventType.UPDATE_PASSWORD).user(userId).detail(Details.USERNAME, "login-test").assertEvent();
 
-            assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            String currentUrl = driver.getCurrentUrl();
+            String pageSource = driver.getPageSource();
+            assertEquals("bad expectation, on page: " + currentUrl, RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
             events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
 
         } finally {
             setPasswordPolicy(null);
             UserResource userRsc = adminClient.realm("test").users().get("login-test");
-            UserBuilder userBuilder = UserBuilder.edit(userRsc.toRepresentation())
-                                                 .password("password");
-            userRsc.update(userBuilder.build());
+            ApiUtil.resetUserPassword(userRsc, "password", false);
         }
     }
 
@@ -404,18 +403,7 @@ public class LoginTest extends TestRealmKeycloakTest {
         events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent().getSessionId();
     }
 
-    @Test
-    public void loginTimeout() {
-        loginPage.open();
 
-        setTimeOffset(1850);
-
-        loginPage.login("login-test", "password");
-
-        setTimeOffset(0);
-
-        events.expectLogin().clearDetails().detail(Details.CODE_ID, AssertEvents.isCodeId()).user((String) null).session((String) null).error("expired_code").assertEvent().getSessionId();
-    }
 
     @Test
     public void loginLoginHint() {
@@ -481,11 +469,116 @@ public class LoginTest extends TestRealmKeycloakTest {
         }
     }
 
+    //KEYCLOAK-2741
+    @Test
+    public void loginAgainWithoutRememberMe() {
+        setRememberMe(true);
+
+        try {
+            //login with remember me
+            loginPage.open();
+            assertFalse(loginPage.isRememberMeChecked());
+            loginPage.setRememberMe(true);
+            assertTrue(loginPage.isRememberMeChecked());
+            loginPage.login("login-test", "password");
+
+            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+            EventRepresentation loginEvent = events.expectLogin().user(userId)
+                                                   .detail(Details.USERNAME, "login-test")
+                                                   .detail(Details.REMEMBER_ME, "true")
+                                                   .assertEvent();
+            String sessionId = loginEvent.getSessionId();
+
+            // Expire session
+            testingClient.testing().removeUserSession("test", sessionId);
+
+            // Assert rememberMe checked and username/email prefilled
+            loginPage.open();
+            assertTrue(loginPage.isRememberMeChecked());
+            Assert.assertEquals("login-test", loginPage.getUsername());
+
+            //login without remember me
+            loginPage.setRememberMe(false);
+            loginPage.login("login-test", "password");
+            
+            // Expire session
+            loginEvent = events.expectLogin().user(userId)
+                                                   .detail(Details.USERNAME, "login-test")
+                                                   .assertEvent();
+            sessionId = loginEvent.getSessionId();
+            testingClient.testing().removeUserSession("test", sessionId);
+            
+            // Assert rememberMe not checked nor username/email prefilled
+            loginPage.open();
+            assertFalse(loginPage.isRememberMeChecked());
+            assertNotEquals("login-test", loginPage.getUsername());
+        } finally {
+            setRememberMe(false);
+        }
+    }
+    
+    @Test
+    // KEYCLOAK-3181
+    public void loginWithEmailUserAndRememberMe() {
+        setRememberMe(true);
+
+        try {
+            loginPage.open();
+            loginPage.setRememberMe(true);
+            assertTrue(loginPage.isRememberMeChecked());
+            loginPage.login("login@test.com", "password");
+
+            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+            EventRepresentation loginEvent = events.expectLogin().user(userId)
+                                                   .detail(Details.USERNAME, "login@test.com")
+                                                   .detail(Details.REMEMBER_ME, "true")
+                                                   .assertEvent();
+            String sessionId = loginEvent.getSessionId();
+
+            // Expire session
+            testingClient.testing().removeUserSession("test", sessionId);
+
+            // Assert rememberMe checked and username/email prefilled
+            loginPage.open();
+            assertTrue(loginPage.isRememberMeChecked());
+            
+            Assert.assertEquals("login@test.com", loginPage.getUsername());
+
+            loginPage.setRememberMe(false);
+        } finally {
+            setRememberMe(false);
+        }
+    }
+
+
+    // Login timeout scenarios
+
     // KEYCLOAK-1037
     @Test
     public void loginExpiredCode() {
         loginPage.open();
         setTimeOffset(5000);
+        // No explicitly call "removeExpired". Hence authSession will still exists, but will be expired
+        //testingClient.testing().removeExpired("test");
+
+        loginPage.login("login@test.com", "password");
+        loginPage.assertCurrent();
+
+        Assert.assertEquals("You took too long to login. Login process starting from beginning.", loginPage.getError());
+        setTimeOffset(0);
+
+        events.expectLogin().user((String) null).session((String) null).error(Errors.EXPIRED_CODE).clearDetails()
+                .assertEvent();
+    }
+
+    // KEYCLOAK-1037
+    @Test
+    public void loginExpiredCodeWithExplicitRemoveExpired() {
+        loginPage.open();
+        setTimeOffset(5000);
+        // Explicitly call "removeExpired". Hence authSession won't exist, but will be restarted from the KC_RESTART
         testingClient.testing().removeExpired("test");
 
         loginPage.login("login@test.com", "password");
@@ -493,13 +586,72 @@ public class LoginTest extends TestRealmKeycloakTest {
         //loginPage.assertCurrent();
         loginPage.assertCurrent();
 
-        //Assert.assertEquals("Login timeout. Please login again.", loginPage.getError());
+        Assert.assertEquals("You took too long to login. Login process starting from beginning.", loginPage.getError());
         setTimeOffset(0);
 
-        events.expectLogin().user((String) null).session((String) null).error("expired_code").clearDetails()
+        events.expectLogin().user((String) null).session((String) null).error(Errors.EXPIRED_CODE).clearDetails()
                 .detail(Details.RESTART_AFTER_TIMEOUT, "true")
                 .client((String) null)
                 .assertEvent();
+    }
+
+
+    @Test
+    public void loginExpiredCodeAndExpiredCookies() {
+        loginPage.open();
+
+        driver.manage().deleteAllCookies();
+
+        // Cookies are expired including KC_RESTART. No way to continue login. Error page must be shown with the "back to application" link
+        loginPage.login("login@test.com", "password");
+        errorPage.assertCurrent();
+        String link = errorPage.getBackToApplicationLink();
+
+        ClientRepresentation thirdParty = findClientByClientId(adminClient.realm("test"), "third-party").toRepresentation();
+        Assert.assertNotNull(link, thirdParty.getBaseUrl());
+    }
+
+
+
+    @Test
+    public void openLoginFormWithDifferentApplication() throws Exception {
+        // Login form shown after redirect from admin console
+        oauth.clientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
+        oauth.redirectUri(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth/admin/test/console");
+        oauth.openLoginForm();
+
+        // Login form shown after redirect from app
+        oauth.clientId("test-app");
+        oauth.redirectUri(OAuthClient.APP_ROOT + "/auth");
+        oauth.openLoginForm();
+
+        assertTrue(loginPage.isCurrent());
+        loginPage.login("test-user@localhost", "password");
+        appPage.assertCurrent();
+
+        events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+    }
+
+    @Test
+    public void openLoginFormAfterExpiredCode() throws Exception {
+        oauth.openLoginForm();
+
+        setTimeOffset(5000);
+
+        oauth.openLoginForm();
+
+        loginPage.assertCurrent();
+        try {
+            String loginError = loginPage.getError();
+            Assert.fail("Not expected to have error on loginForm. Error is: " + loginError);
+        } catch (NoSuchElementException nsee) {
+            // Expected
+        }
+
+        loginPage.login("test-user@localhost", "password");
+        appPage.assertCurrent();
+
+        events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
     }
 
 }

@@ -38,7 +38,7 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.keycloak.common.util.EnvUtil;
 import org.keycloak.common.util.KeystoreUtil;
-import org.keycloak.representations.adapters.config.AdapterConfig;
+import org.keycloak.representations.adapters.config.AdapterHttpClientConfig;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
@@ -170,8 +170,8 @@ public class HttpClientBuilder {
         return this;
     }
 
-    public HttpClientBuilder disableCookieCache() {
-        this.disableCookieCache = true;
+    public HttpClientBuilder disableCookieCache(boolean disable) {
+        this.disableCookieCache = disable;
         return this;
     }
 
@@ -333,8 +333,8 @@ public class HttpClientBuilder {
         }
     }
 
-    public HttpClient build(AdapterConfig adapterConfig) {
-        disableCookieCache(); // disable cookie cache as we don't want sticky sessions for load balancing
+    public HttpClient build(AdapterHttpClientConfig adapterConfig) {
+        disableCookieCache(true); // disable cookie cache as we don't want sticky sessions for load balancing
 
         String truststorePath = adapterConfig.getTruststore();
         if (truststorePath != null) {
@@ -379,13 +379,13 @@ public class HttpClientBuilder {
     /**
      * Configures a the proxy to use for auth-server requests if provided.
      * <p>
-     * If the given {@link AdapterConfig} contains the attribute {@code proxy-url} we use the
+     * If the given {@link AdapterHttpClientConfig} contains the attribute {@code proxy-url} we use the
      * given URL as a proxy server, otherwise the proxy configuration is ignored.
      * </p>
      *
      * @param adapterConfig
      */
-    private void configureProxyForAuthServerIfProvided(AdapterConfig adapterConfig) {
+    private void configureProxyForAuthServerIfProvided(AdapterHttpClientConfig adapterConfig) {
 
         if (adapterConfig == null || adapterConfig.getProxyUrl() == null || adapterConfig.getProxyUrl().trim().isEmpty()) {
             return;

@@ -1,0 +1,25 @@
+<div ng-hide="numberOfPages < 2" class="dataTables_footer">
+    <div class="dataTables_paginate paging_bootstrap_input">
+        <ul class="pagination">  
+            <li class="first" ng-class="{disabled: !hasPrevious()}" ng-click="firstPage()">
+                <span class="i fa fa-angle-double-left"></span>
+            </li>  
+            <li class="prev" ng-class="{disabled: !hasPrevious()}" ng-click="previousPage()">
+                <span class="i fa fa-angle-left"></span>
+            </li>
+        </ul>
+        <div class="pagination-input">  
+            <input ng-model="currentPageInput" kc-valid-page class="paginate_input" type="text">
+            <span class="paginate_of">of <b>{{numberOfPages}}</b></span>
+        </div>
+        <ul class="pagination">  
+            <li class="next" ng-class="{disabled: !hasNext()}" ng-click="nextPage()">
+                <span class="i fa fa-angle-right"></span>
+            </li>  
+            <li class="last" ng-class="{disabled: !hasNext()}" ng-click="lastPage()">
+                <span class="i fa fa-angle-double-right">
+                </span>
+            </li>
+        </ul>
+    </div>
+</div>

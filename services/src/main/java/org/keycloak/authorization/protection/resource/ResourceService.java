@@ -17,9 +17,29 @@
  */
 package org.keycloak.authorization.protection.resource;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.UriInfo;
+
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.admin.ResourceSetService;
 import org.keycloak.authorization.identity.Identity;
+import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.protection.resource.representation.UmaResourceRepresentation;
 import org.keycloak.authorization.protection.resource.representation.UmaScopeRepresentation;
@@ -29,21 +49,6 @@ import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentatio
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.ErrorResponseException;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -65,10 +70,10 @@ public class ResourceService {
     @POST
     @Consumes("application/json")
     @Produces("application/json")
-    public Response create(UmaResourceRepresentation umaResource) {
+    public Response create(@Context  UriInfo uriInfo, UmaResourceRepresentation umaResource) {
         checkResourceServerSettings();
         ResourceRepresentation resource = toResourceRepresentation(umaResource);
-        Response response = this.resourceManager.create(resource);
+        Response response = this.resourceManager.create(uriInfo, resource);
 
         if (response.getEntity() instanceof ResourceRepresentation) {
             return Response.status(Status.CREATED).entity(toUmaRepresentation((ResourceRepresentation) response.getEntity())).build();
@@ -77,11 +82,26 @@ public class ResourceService {
         return response;
     }
 
+    @Path("{id}")
+    @PUT
+    @Consumes("application/json")
+    @Produces("application/json")
+    public Response update(@Context UriInfo uriInfo, @PathParam("id") String id, UmaResourceRepresentation representation) {
+        ResourceRepresentation resource = toResourceRepresentation(representation);
+        Response response = this.resourceManager.update(uriInfo, id, resource);
+
+        if (response.getEntity() instanceof ResourceRepresentation) {
+            return Response.noContent().build();
+        }
+
+        return response;
+    }
+
     @Path("/{id}")
     @DELETE
-    public Response delete(@PathParam("id") String id) {
+    public Response delete(@Context UriInfo uriInfo, @PathParam("id") String id) {
         checkResourceServerSettings();
-        return this.resourceManager.delete(id);
+        return this.resourceManager.delete(uriInfo, id);
     }
 
     @Path("/{id}")
@@ -109,7 +129,7 @@ public class ResourceService {
     }
 
     private Set<String> findAll() {
-        Response response = this.resourceManager.findAll(null, null, null, null, null, -1, -1);
+        Response response = this.resourceManager.find(null, null, null, null, null, null, true, -1, -1);
         List<ResourceRepresentation> resources = (List<ResourceRepresentation>) response.getEntity();
         return resources.stream().map(ResourceRepresentation::getId).collect(Collectors.toSet());
     }
@@ -132,25 +152,27 @@ public class ResourceService {
 
 
                 if ("name".equals(filterType)) {
-                    resources.addAll(storeFactory.getResourceStore().findByResourceServer(this.resourceServer.getId()).stream().filter(description -> filterValue == null || filterValue.equals(description.getName())).collect(Collectors.toSet()).stream()
-                            .map(resource -> ModelToRepresentation.toRepresentation(resource, this.resourceServer, authorization))
-                            .collect(Collectors.toList()));
+                    Resource resource = storeFactory.getResourceStore().findByName(filterValue, this.resourceServer.getId());
+
+                    if (resource != null) {
+                        resources.add(ModelToRepresentation.toRepresentation(resource, resourceServer, authorization));
+                    }
                 } else if ("type".equals(filterType)) {
                     resources.addAll(storeFactory.getResourceStore().findByResourceServer(this.resourceServer.getId()).stream().filter(description -> filterValue == null || filterValue.equals(description.getType())).collect(Collectors.toSet()).stream()
                             .map(resource -> ModelToRepresentation.toRepresentation(resource, this.resourceServer, authorization))
                             .collect(Collectors.toList()));
                 } else if ("uri".equals(filterType)) {
-                    resources.addAll(storeFactory.getResourceStore().findByResourceServer(this.resourceServer.getId()).stream().filter(description -> filterValue == null || filterValue.equals(description.getUri())).collect(Collectors.toSet()).stream()
+                    resources.addAll(storeFactory.getResourceStore().findByUri(filterValue, this.resourceServer.getId()).stream()
                             .map(resource -> ModelToRepresentation.toRepresentation(resource, this.resourceServer, authorization))
                             .collect(Collectors.toList()));
                 } else if ("owner".equals(filterType)) {
-                    resources.addAll(storeFactory.getResourceStore().findByResourceServer(this.resourceServer.getId()).stream().filter(description -> filterValue == null || filterValue.equals(description.getOwner())).collect(Collectors.toSet()).stream()
+                    resources.addAll(storeFactory.getResourceStore().findByOwner(filterValue, this.resourceServer.getId()).stream()
                             .map(resource -> ModelToRepresentation.toRepresentation(resource, this.resourceServer, authorization))
                             .collect(Collectors.toList()));
                 }
             }
         } else {
-            resources = storeFactory.getResourceStore().findByOwner(identity.getId()).stream()
+            resources = storeFactory.getResourceStore().findByOwner(identity.getId(), resourceServer.getId()).stream()
                     .map(resource -> ModelToRepresentation.toRepresentation(resource, this.resourceServer, authorization))
                     .collect(Collectors.toSet());
         }

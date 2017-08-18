@@ -1,7 +1,9 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2" data-ng-init="initSamlProvider()">
     <ol class="breadcrumb">
         <li><a href="#/realms/{{realm.realm}}/identity-provider-settings">{{:: 'identity-providers' | translate}}</a></li>
-        <li>{{identityProvider.alias}}</li>
+        <li data-ng-show="!newIdentityProvider && identityProvider.displayName">{{identityProvider.displayName}}</li>
+        <li data-ng-show="!newIdentityProvider && !identityProvider.displayName">{{identityProvider.alias}}</li>
+        <li data-ng-show="newIdentityProvider">{{:: 'add-identity-provider' | translate}}</li>
     </ol>
 
     <kc-tabs-identity-provider></kc-tabs-identity-provider>
@@ -24,19 +26,19 @@
                 </div>
                 <kc-tooltip>{{:: 'identity-provider.alias.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="displayName"> {{:: 'display-name' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="displayName" type="text" ng-model="identityProvider.displayName">
+                </div>
+                <kc-tooltip>{{:: 'identity-provider.display-name.tooltip' | translate}}</kc-tooltip>
+            </div>
             <div class="form-group">
                 <label class="col-md-2 control-label" for="enabled">{{:: 'enabled' | translate}}</label>
                 <div class="col-md-6">
                     <input ng-model="identityProvider.enabled" id="enabled" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
                 <kc-tooltip>{{:: 'identity-provider.enabled.tooltip' | translate}}</kc-tooltip>
-            </div>
-            <div class="form-group">
-                <label class="col-md-2 control-label" for="authenticateByDefault">{{:: 'authenticate-by-default' | translate}}</label>
-                <div class="col-md-6">
-                    <input ng-model="identityProvider.authenticateByDefault" name="identityProvider.authenticateByDefault" id="authenticateByDefault" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
-                </div>
-                <kc-tooltip>{{:: 'identity-provider.authenticate-by-default.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
                 <label class="col-md-2 control-label" for="storeToken">{{:: 'store-tokens' | translate}}</label>
@@ -58,6 +60,20 @@
                     <input ng-model="identityProvider.trustEmail" name="identityProvider.trustEmail" id="trustEmail" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
                 <kc-tooltip>{{:: 'trust-email.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="linkOnly">{{:: 'link-only' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="identityProvider.linkOnly" name="identityProvider.trustEmail" id="linkOnly" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'link-only.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="hideOnLoginPage">{{:: 'hide-on-login-page' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="identityProvider.config.hideOnLoginPage" name="identityProvider.config.hideOnLoginPage" id="hideOnLoginPage" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'hide-on-login-page.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
                 <label class="col-md-2 control-label" for="guiOrder">{{:: 'gui-order' | translate}}</label>
@@ -141,11 +157,32 @@
                 <kc-tooltip>{{:: 'http-post-binding-for-authn-request.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
+                <label class="col-md-2 control-label" for="postBindingLogout">{{:: 'http-post-binding-logout' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="identityProvider.config.postBindingLogout" id="postBindingLogout" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'http-post-binding-logout.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
                 <label class="col-md-2 control-label" for="wantAuthnRequestsSigned">{{:: 'want-authn-requests-signed' | translate}}</label>
                 <div class="col-md-6">
                     <input ng-model="identityProvider.config.wantAuthnRequestsSigned" id="wantAuthnRequestsSigned" name="wantAuthnRequestsSigned" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
                 <kc-tooltip>{{:: 'want-authn-requests-signed.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="wantAssertionsSigned">{{:: 'want-assertions-signed' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="identityProvider.config.wantAssertionsSigned" id="wantAssertionsSigned" name="wantAssertionsSigned" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'want-assertions-signed.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="wantAssertionsEncrypted">{{:: 'want-assertions-encrypted' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="identityProvider.config.wantAssertionsEncrypted" id="wantAssertionsEncrypted" name="wantAssertionsEncrypted" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'want-assertions-encrypted.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group" data-ng-show="identityProvider.config.wantAuthnRequestsSigned == 'true'">
                 <label class="col-md-2 control-label" for="signatureAlgorithm">{{:: 'signature-algorithm' | translate}}</label>
@@ -158,6 +195,18 @@
                     </div>
                 </div>
                 <kc-tooltip>{{:: 'signature-algorithm.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block" data-ng-show="identityProvider.config.wantAuthnRequestsSigned == 'true'">
+                <label class="col-md-2 control-label" for="samlSigKeyNameTranformer">{{:: 'saml-signature-keyName-transformer' | translate}}</label>
+                <div class="col-md-6">
+                    <div>
+                        <select class="form-control" id="samlSigKeyNameTranformer"
+                                ng-model="identityProvider.config.xmlSigKeyInfoKeyNameTransformer"
+                                ng-options="xmlKeyNameTranformer for xmlKeyNameTranformer in xmlKeyNameTranformers">
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'saml-signature-keyName-transformer.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
                 <label class="col-md-2 control-label" for="forceAuthn">{{:: 'force-authentication' | translate}}</label>
@@ -189,8 +238,11 @@
                     <input class="form-control" id="fromUrl" type="text" ng-model="fromUrl.data">
                 </div>
                 <kc-tooltip>{{:: 'saml.import-from-url.tooltip' | translate}}</kc-tooltip>
-                <div class="col-sm-4" data-ng-show="importUrl">
-                    <button type="submit" data-ng-click="importFrom()" data-ng-show="importUrl" class="btn btn-primary">{{:: 'import' | translate}}</button>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="importFrom"></label>
+                <div class="col-md-6">
+                    <button id="importFrom" type="button" data-ng-click="importFrom()" data-ng-show="importUrl" class="btn btn-primary">{{:: 'import' | translate}}</button>
                 </div>
             </div>
             <div class="form-group" data-ng-show="newIdentityProvider">
@@ -204,8 +256,11 @@
                     {{files[0].name}}
                 </span>
                 </div>
-                <div class="col-sm-4" data-ng-show="importFile">
-                    <button type="submit" data-ng-click="uploadFile()" data-ng-show="importFile" class="btn btn-primary">{{:: 'import' | translate}}</button>
+                <div class="form-group">
+                    <label class="col-md-2 control-label" for="importFile"></label>
+                    <div class="col-sm-6" data-ng-show="importFile">
+                        <button id="importFile" type="button" data-ng-click="uploadFile()" data-ng-show="importFile" class="btn btn-primary">{{:: 'import' | translate}}</button>
+                    </div>
                 </div>
             </div>
         </fieldset>

@@ -22,8 +22,7 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.common.constants.KerberosConstants;
-import org.keycloak.federation.ldap.mappers.FullNameLDAPFederationMapper;
-import org.keycloak.federation.ldap.mappers.FullNameLDAPFederationMapperFactory;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientTemplateModel;
@@ -37,10 +36,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
-import org.keycloak.models.UserFederationMapperModel;
-import org.keycloak.models.UserFederationProvider;
-import org.keycloak.models.UserFederationProviderFactory;
-import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -49,6 +44,11 @@ import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapper;
+import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapperFactory;
+import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -277,36 +277,29 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertEquals("googleSecret", google.getConfig().get("clientSecret"));
 
         // Test federation providers
-        List<UserFederationProviderModel> fedProviders = realm.getUserFederationProviders();
-        Assert.assertTrue(fedProviders.size() == 2);
-        UserFederationProviderModel ldap1 = fedProviders.get(0);
-        Assert.assertEquals("MyLDAPProvider1", ldap1.getDisplayName());
-        Assert.assertEquals("ldap", ldap1.getProviderName());
+        List<UserStorageProviderModel> storageProviders = realm.getUserStorageProviders();
+        Assert.assertTrue(storageProviders.size() == 2);
+        UserStorageProviderModel ldap1 = storageProviders.get(0);
+        Assert.assertEquals("MyLDAPProvider1", ldap1.getName());
+        Assert.assertEquals("ldap", ldap1.getProviderId());
         Assert.assertEquals(1, ldap1.getPriority());
-        Assert.assertEquals("ldap://foo", ldap1.getConfig().get(LDAPConstants.CONNECTION_URL));
+        Assert.assertEquals("ldap://foo", ldap1.getConfig().getFirst(LDAPConstants.CONNECTION_URL));
 
-        UserFederationProviderModel ldap2 = fedProviders.get(1);
-        Assert.assertEquals("MyLDAPProvider2", ldap2.getDisplayName());
-        Assert.assertEquals("ldap://bar", ldap2.getConfig().get(LDAPConstants.CONNECTION_URL));
+        UserStorageProviderModel ldap2 = storageProviders.get(1);
+        Assert.assertEquals("MyLDAPProvider2", ldap2.getName());
+        Assert.assertEquals("ldap://bar", ldap2.getConfig().getFirst(LDAPConstants.CONNECTION_URL));
 
         // Test federation mappers
-        Set<UserFederationMapperModel> fedMappers1 = realm.getUserFederationMappersByFederationProvider(ldap1.getId());
-        Assert.assertTrue(fedMappers1.size() == 1);
-        UserFederationMapperModel fullNameMapper = fedMappers1.iterator().next();
+        List<ComponentModel> fedMappers1 = realm.getComponents(ldap1.getId());
+        ComponentModel fullNameMapper = fedMappers1.iterator().next();
         Assert.assertEquals("FullNameMapper", fullNameMapper.getName());
-        Assert.assertEquals(FullNameLDAPFederationMapperFactory.PROVIDER_ID, fullNameMapper.getFederationMapperType());
-        Assert.assertEquals(ldap1.getId(), fullNameMapper.getFederationProviderId());
-        Assert.assertEquals("cn", fullNameMapper.getConfig().get(FullNameLDAPFederationMapper.LDAP_FULL_NAME_ATTRIBUTE));
-
-        // All builtin LDAP mappers should be here
-        Set<UserFederationMapperModel> fedMappers2 = realm.getUserFederationMappersByFederationProvider(ldap2.getId());
-        Assert.assertTrue(fedMappers2.size() > 3);
-        Set<UserFederationMapperModel> allMappers = realm.getUserFederationMappers();
-        Assert.assertEquals(allMappers.size(), fedMappers1.size() + fedMappers2.size());
+        Assert.assertEquals(FullNameLDAPStorageMapperFactory.PROVIDER_ID, fullNameMapper.getProviderId());
+        Assert.assertEquals(ldap1.getId(), fullNameMapper.getParentId());
+        Assert.assertEquals("cn", fullNameMapper.getConfig().getFirst(FullNameLDAPStorageMapper.LDAP_FULL_NAME_ATTRIBUTE));
 
         // Assert that federation link wasn't created during import
-        UserFederationProviderFactory factory = (UserFederationProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(UserFederationProvider.class, "dummy");
-        Assert.assertNull(factory.getInstance(session, null).getUserByUsername(realm, "wburke"));
+        DummyUserFederationProviderFactory factory = (DummyUserFederationProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(UserStorageProvider.class, "dummy");
+        Assert.assertNull(factory.create(session, null).getUserByUsername("wburke", realm));
 
         // Test builtin authentication flows
         AuthenticationFlowModel clientFlow = realm.getClientAuthenticationFlow();
@@ -357,15 +350,15 @@ public class ImportTest extends AbstractModelTest {
 
         // Test user consents
         admin =  session.users().getUserByUsername("admin", realm);
-        Assert.assertEquals(2, session.users().getConsents(realm, admin).size());
+        Assert.assertEquals(2, session.users().getConsents(realm, admin.getId()).size());
 
-        UserConsentModel appAdminConsent = session.users().getConsentByClient(realm, admin, application.getId());
+        UserConsentModel appAdminConsent = session.users().getConsentByClient(realm, admin.getId(), application.getId());
         Assert.assertEquals(2, appAdminConsent.getGrantedRoles().size());
         Assert.assertTrue(appAdminConsent.getGrantedProtocolMappers() == null || appAdminConsent.getGrantedProtocolMappers().isEmpty());
         Assert.assertTrue(appAdminConsent.isRoleGranted(realm.getRole("admin")));
         Assert.assertTrue(appAdminConsent.isRoleGranted(application.getRole("app-admin")));
 
-        UserConsentModel otherAppAdminConsent = session.users().getConsentByClient(realm, admin, otherApp.getId());
+        UserConsentModel otherAppAdminConsent = session.users().getConsentByClient(realm, admin.getId(), otherApp.getId());
         Assert.assertEquals(1, otherAppAdminConsent.getGrantedRoles().size());
         Assert.assertEquals(1, otherAppAdminConsent.getGrantedProtocolMappers().size());
         Assert.assertTrue(otherAppAdminConsent.isRoleGranted(realm.getRole("admin")));

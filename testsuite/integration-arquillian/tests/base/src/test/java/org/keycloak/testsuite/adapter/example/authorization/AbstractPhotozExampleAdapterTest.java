@@ -22,6 +22,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -37,6 +38,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import org.keycloak.testsuite.adapter.page.PhotozClientAuthzTestApp;
 import org.keycloak.util.JsonSerialization;
@@ -57,6 +59,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.IOUtil.loadJson;
 import static org.keycloak.testsuite.util.IOUtil.loadRealm;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -79,9 +82,19 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         testRealmPage.setAuthRealm(REALM_NAME);
     }
 
+    @BeforeClass
+    public static void enabled() { ProfileAssume.assumePreview(); }
+
     @Before
-    public void beforePhotozExampleAdapterTest() {
+    public void beforePhotozExampleAdapterTest() throws FileNotFoundException {
         deleteAllCookiesForClientPage();
+
+        for (PolicyRepresentation policy : getAuthorizationResource().policies().policies()) {
+            if ("Only Owner Policy".equals(policy.getName())) {
+                policy.getConfig().put("mavenArtifactVersion", System.getProperty("project.version"));
+                getAuthorizationResource().policies().policy(policy.getId()).update(policy);
+            }
+        }
     }
 
     @Override
@@ -98,7 +111,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         return exampleDeployment(PhotozClientAuthzTestApp.DEPLOYMENT_NAME);
     }
 
-    @Deployment(name = RESOURCE_SERVER_ID, managed = false)
+    @Deployment(name = RESOURCE_SERVER_ID, managed = false, testable = false)
     public static WebArchive deploymentResourceServer() throws IOException {
         return exampleDeployment(RESOURCE_SERVER_ID);
     }
@@ -124,6 +137,22 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
             resources = getAuthorizationResource().resources().resources();
             assertTrue(resources.stream().filter(resource -> resource.getOwner().getName().equals("alice")).collect(Collectors.toList()).isEmpty());
+        } finally {
+            this.deployer.undeploy(RESOURCE_SERVER_ID);
+        }
+    }
+
+    @Test
+    public void createAlbumWithInvalidUser() throws Exception {
+        try {
+            this.deployer.deploy(RESOURCE_SERVER_ID);
+
+            loginToClientPage("alice", "alice");
+
+            clientPage.createAlbumWithInvalidUser("Alice Family Album");
+
+            waitUntilElement(clientPage.getOutput()).text().not().contains("Request was successful");
+            waitUntilElement(clientPage.getOutput()).text().contains("Could not register protected resource");
         } finally {
             this.deployer.undeploy(RESOURCE_SERVER_ID);
         }
@@ -441,6 +470,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
             this.clientPage.createAlbum(resourceName);
 
+            this.clientPage.logOut();
             loginToClientPage("admin", "admin");
 
             this.clientPage.navigateToAdminAlbum();
@@ -597,6 +627,27 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
             this.deployer.undeploy(RESOURCE_SERVER_ID);
         }
     }
+    
+    //KEYCLOAK-3777
+    @Test
+    public void testEntitlementRequest() throws Exception {
+        try {
+            this.deployer.deploy(RESOURCE_SERVER_ID);
+            
+            clientPage.navigateTo();
+            loginToClientPage("admin", "admin");
+
+            clientPage.requestEntitlements();
+            assertTrue(driver.getPageSource().contains("urn:photoz.com:scopes:album:admin:manage"));
+            
+            clientPage.requestEntitlement();
+            String pageSource = driver.getPageSource();
+            assertTrue(pageSource.contains("urn:photoz.com:scopes:album:view"));
+            assertFalse(pageSource.contains("urn:photoz.com:scopes:album:admin:manage"));
+        } finally {
+            this.deployer.undeploy(RESOURCE_SERVER_ID);
+        }
+    }
 
     private void importResourceServerSettings() throws FileNotFoundException {
         getAuthorizationResource().importSettings(loadJson(new FileInputStream(new File(TEST_APPS_HOME_DIR + "/photoz/photoz-restful-api-authz-service.json")), ResourceServerRepresentation.class));
@@ -613,13 +664,11 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
     }
 
     private void deleteAllCookiesForClientPage() {
-        clientPage.navigateTo();
         driver.manage().deleteAllCookies();
     }
-    
-    private void loginToClientPage(String username, String password, String... scopes) {
+
+    private void loginToClientPage(String username, String password, String... scopes) throws InterruptedException {
         // We need to log out by deleting cookies because the log out button sometimes doesn't work in PhantomJS
-        deleteAllCookiesForClientPage();
         deleteAllCookiesForTestRealm();
         clientPage.navigateTo();
         clientPage.login(username, password, scopes);

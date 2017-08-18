@@ -17,13 +17,13 @@
 
 package org.keycloak.testsuite.pages;
 
-import javax.ws.rs.core.UriBuilder;
-
 import org.keycloak.services.Urls;
 import org.keycloak.testsuite.Constants;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import javax.ws.rs.core.UriBuilder;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

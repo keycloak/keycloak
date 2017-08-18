@@ -20,18 +20,17 @@ package org.keycloak.events.jpa;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
-import org.keycloak.events.admin.AdminEvent;
-import org.keycloak.events.admin.AdminEventQuery;
-import org.keycloak.events.admin.AuthDetails;
-import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
+import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.events.admin.AdminEventQuery;
+import org.keycloak.events.admin.AuthDetails;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 
 import javax.persistence.EntityManager;
-
 import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;

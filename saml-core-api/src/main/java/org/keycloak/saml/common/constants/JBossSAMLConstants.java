@@ -29,7 +29,7 @@ public enum JBossSAMLConstants {
             "AssertionConsumerService"), ASSERTION_CONSUMER_SERVICE_URL("AssertionConsumerServiceURL"), ASSERTION_CONSUMER_SERVICE_INDEX(
             "AssertionConsumerServiceIndex"), ASSERTION_ID_REQUEST_SERVICE("AssertionIDRequestService"), ATTRIBUTE("Attribute"), ATTRIBUTE_QUERY(
             "AttributeQuery"), ATTRIBUTE_AUTHORITY_DESCRIPTOR("AttributeAuthorityDescriptor"), ATTRIBUTE_CONSUMING_SERVICE(
-            "AttributeConsumingService"), ATTRIBUTE_CONSUMING_SERVICE_INDEX("AttributeConsumingServiceIndex"), ATTRIBUTE_SERVICE(
+            "AttributeConsumingService"), ATTRIBUTE_CONSUMING_SERVICE_INDEX("AttributeConsumingServiceIndex"), ATTRIBUTE_PROFILE("AttributeProfile"), ATTRIBUTE_SERVICE(
             "AttributeService"), ATTRIBUTE_STATEMENT("AttributeStatement"), ATTRIBUTE_VALUE("AttributeValue"), AUDIENCE(
             "Audience"), AUDIENCE_RESTRICTION("AudienceRestriction"), AUTHN_CONTEXT("AuthnContext"), AUTHENTICATING_AUTHORITY(
             "AuthenticatingAuthority"), AUTHN_AUTHORITY_DESCRIPTOR("AuthnAuthorityDescriptor"), AUTHN_CONTEXT_CLASS_REF(
@@ -48,7 +48,8 @@ public enum JBossSAMLConstants {
             "NameFormat"), NAMEID("NameID"), NAMEID_FORMAT("NameIDFormat"), NAMEID_MAPPING_SERVICE("NameIDMappingService"), NAMEID_POLICY(
             "NameIDPolicy"), NAME_QUALIFIER("NameQualifier"), NOT_BEFORE("NotBefore"), NOT_ON_OR_AFTER("NotOnOrAfter"), ORGANIZATION(
             "Organization"), ORGANIZATION_NAME("OrganizationName"), ORGANIZATION_DISPLAY_NAME("OrganizationDisplayName"), ORGANIZATION_URL(
-            "OrganizationURL"), PDP_DESCRIPTOR("PDPDescriptor"), PROTOCOL_BINDING("ProtocolBinding"), PROTOCOL_SUPPORT_ENUMERATION(
+            "OrganizationURL"), ORGANIZATION_URL_ALT(
+            "OrganizationUrl"), PDP_DESCRIPTOR("PDPDescriptor"), PROTOCOL_BINDING("ProtocolBinding"), PROTOCOL_SUPPORT_ENUMERATION(
             "protocolSupportEnumeration"), PROVIDER_NAME("ProviderName"), REQUESTED_AUTHN_CONTEXT("RequestedAuthnContext"), REASON(
             "Reason"), RECIPIENT("Recipient"), REQUEST("Request"), REQUESTED_ATTRIBUTE("RequestedAttribute"), REQUEST_ABSTRACT(
             "RequestAbstract"), RESPONSE("Response"), RESPONSE_LOCATION("ResponseLocation"), RETURN_CONTEXT("ReturnContext"), SESSION_INDEX(

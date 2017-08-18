@@ -39,6 +39,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.models.Constants;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -55,7 +56,9 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -73,13 +76,10 @@ import javax.ws.rs.core.Form;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
-
 import java.io.IOException;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
@@ -90,15 +90,13 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
-import static org.keycloak.testsuite.admin.ApiUtil.findClientResourceByClientId;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsernameId;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
-import static org.keycloak.testsuite.util.ProtocolMapperUtil.createAddressMapper;
-import static org.keycloak.testsuite.util.ProtocolMapperUtil.createClaimMapper;
-import static org.keycloak.testsuite.util.ProtocolMapperUtil.createHardcodedClaim;
-import static org.keycloak.testsuite.util.ProtocolMapperUtil.createHardcodedRole;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createRoleNameMapper;
+
+import org.keycloak.util.TokenUtil;
+import org.openqa.selenium.By;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -140,6 +138,13 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
         testRealms.add(realm);
 
+    }
+    
+    @Test
+    public void loginFormUsernameOrEmailLabel() throws Exception {
+        oauth.openLoginForm();
+        
+        assertEquals("Username or email", driver.findElement(By.xpath("//label[@for='username']")).getText());
     }
 
     @Test
@@ -199,6 +204,26 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         assertEquals(oauth.verifyRefreshToken(response.getRefreshToken()).getId(), event.getDetails().get(Details.REFRESH_TOKEN_ID));
         assertEquals(sessionId, token.getSessionState());
 
+    }
+
+    // KEYCLOAK-3692
+    @Test
+    public void accessTokenWrongCode() throws Exception {
+        oauth.clientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
+        oauth.redirectUri(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth/admin/test/console/nosuch.html");
+        oauth.openLoginForm();
+
+        String actionURI = ActionURIUtils.getActionURIFromPageSource(driver.getPageSource());
+        String loginPageCode = ActionURIUtils.parseQueryParamsFromActionURI(actionURI).get("code");
+
+        oauth.fillLoginForm("test-user@localhost", "password");
+
+        events.expectLogin().client(Constants.ADMIN_CONSOLE_CLIENT_ID).detail(Details.REDIRECT_URI, AuthServerTestEnricher.getAuthServerContextRoot() + "/auth/admin/test/console/nosuch.html").assertEvent();
+
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(loginPageCode, null);
+
+        assertEquals(400, response.getStatusCode());
+        assertNull(response.getRefreshToken());
     }
 
     @Test
@@ -420,13 +445,14 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
         oauth.doLogin("test-user@localhost", "password");
 
-        String code = driver.getPageSource().split("code=")[1].split("&")[0].split("\"")[0];
+        String actionURI = ActionURIUtils.getActionURIFromPageSource(driver.getPageSource());
+        String code = ActionURIUtils.parseQueryParamsFromActionURI(actionURI).get("code");
 
         OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
         Assert.assertEquals(400, response.getStatusCode());
 
         EventRepresentation event = events.poll();
-        assertNotNull(event.getDetails().get(Details.CODE_ID));
+        assertNull(event.getDetails().get(Details.CODE_ID));
 
         UserManager.realm(adminClient.realm("test")).user(user).removeRequiredAction(UserModel.RequiredAction.UPDATE_PROFILE.toString());
     }
@@ -671,138 +697,6 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         }
 
         events.clear();
-
-    }
-
-    @Test
-    public void testTokenMapping() throws Exception {
-        Client client = javax.ws.rs.client.ClientBuilder.newClient();
-        UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
-        URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
-        WebTarget grantTarget = client.target(grantUri);
-        {
-            UserResource userResource = findUserByUsernameId(adminClient.realm("test"), "test-user@localhost");
-            UserRepresentation user = userResource.toRepresentation();
-
-            user.singleAttribute("street", "5 Yawkey Way");
-            user.singleAttribute("locality", "Boston");
-            user.singleAttribute("region", "MA");
-            user.singleAttribute("postal_code", "02115");
-            user.singleAttribute("country", "USA");
-            user.singleAttribute("phone", "617-777-6666");
-
-            List<String> departments = Arrays.asList("finance", "development");
-            user.getAttributes().put("departments", departments);
-            userResource.update(user);
-
-            ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");
-
-            ProtocolMapperRepresentation mapper = createAddressMapper(true, true);
-            app.getProtocolMappers().createMapper(mapper);
-
-            ProtocolMapperRepresentation hard = createHardcodedClaim("hard", "hard", "coded", "String", false, null, true, true);
-            app.getProtocolMappers().createMapper(hard);
-            app.getProtocolMappers().createMapper(createHardcodedClaim("hard-nested", "nested.hard", "coded-nested", "String", false, null, true, true));
-            app.getProtocolMappers().createMapper(createClaimMapper("custom phone", "phone", "home_phone", "String", true, "", true, true, false));
-            app.getProtocolMappers().createMapper(createClaimMapper("nested phone", "phone", "home.phone", "String", true, "", true, true, false));
-            app.getProtocolMappers().createMapper(createClaimMapper("departments", "departments", "department", "String", true, "", true, true, true));
-            app.getProtocolMappers().createMapper(createHardcodedRole("hard-realm", "hardcoded"));
-            app.getProtocolMappers().createMapper(createHardcodedRole("hard-app", "app.hardcoded"));
-            app.getProtocolMappers().createMapper(createRoleNameMapper("rename-app-role", "test-app.customer-user", "realm-user"));
-        }
-
-        {
-            Response response = executeGrantAccessTokenRequest(grantTarget);
-            assertEquals(200, response.getStatus());
-
-            org.keycloak.representations.AccessTokenResponse tokenResponse = response.readEntity(org.keycloak.representations.AccessTokenResponse.class);
-            IDToken idToken = getIdToken(tokenResponse);
-            assertNotNull(idToken.getAddress());
-            assertEquals(idToken.getName(), "Tom Brady");
-            assertEquals(idToken.getAddress().getStreetAddress(), "5 Yawkey Way");
-            assertEquals(idToken.getAddress().getLocality(), "Boston");
-            assertEquals(idToken.getAddress().getRegion(), "MA");
-            assertEquals(idToken.getAddress().getPostalCode(), "02115");
-            assertEquals(idToken.getAddress().getCountry(), "USA");
-            assertNotNull(idToken.getOtherClaims().get("home_phone"));
-            assertEquals("617-777-6666", idToken.getOtherClaims().get("home_phone"));
-            assertEquals("coded", idToken.getOtherClaims().get("hard"));
-            Map nested = (Map) idToken.getOtherClaims().get("nested");
-            assertEquals("coded-nested", nested.get("hard"));
-            nested = (Map) idToken.getOtherClaims().get("home");
-            assertEquals("617-777-6666", nested.get("phone"));
-            List<String> departments = (List<String>) idToken.getOtherClaims().get("department");
-            assertEquals(2, departments.size());
-            assertTrue(departments.contains("finance") && departments.contains("development"));
-
-            AccessToken accessToken = getAccessToken(tokenResponse);
-            assertEquals(accessToken.getName(), "Tom Brady");
-            assertNotNull(accessToken.getAddress());
-            assertEquals(accessToken.getAddress().getStreetAddress(), "5 Yawkey Way");
-            assertEquals(accessToken.getAddress().getLocality(), "Boston");
-            assertEquals(accessToken.getAddress().getRegion(), "MA");
-            assertEquals(accessToken.getAddress().getPostalCode(), "02115");
-            assertEquals(accessToken.getAddress().getCountry(), "USA");
-            assertNotNull(accessToken.getOtherClaims().get("home_phone"));
-            assertEquals("617-777-6666", accessToken.getOtherClaims().get("home_phone"));
-            assertEquals("coded", accessToken.getOtherClaims().get("hard"));
-            nested = (Map) accessToken.getOtherClaims().get("nested");
-            assertEquals("coded-nested", nested.get("hard"));
-            nested = (Map) accessToken.getOtherClaims().get("home");
-            assertEquals("617-777-6666", nested.get("phone"));
-            departments = (List<String>) idToken.getOtherClaims().get("department");
-            assertEquals(2, departments.size());
-            assertTrue(departments.contains("finance") && departments.contains("development"));
-            assertTrue(accessToken.getRealmAccess().getRoles().contains("hardcoded"));
-            assertTrue(accessToken.getRealmAccess().getRoles().contains("realm-user"));
-            Assert.assertFalse(accessToken.getResourceAccess("test-app").getRoles().contains("customer-user"));
-            assertTrue(accessToken.getResourceAccess("app").getRoles().contains("hardcoded"));
-
-
-            response.close();
-        }
-
-        // undo mappers
-        {
-            ClientResource app = findClientByClientId(adminClient.realm("test"), "test-app");
-            ClientRepresentation clientRepresentation = app.toRepresentation();
-            for (ProtocolMapperRepresentation model : clientRepresentation.getProtocolMappers()) {
-                if (model.getName().equals("address")
-                        || model.getName().equals("hard")
-                        || model.getName().equals("hard-nested")
-                        || model.getName().equals("custom phone")
-                        || model.getName().equals("departments")
-                        || model.getName().equals("nested phone")
-                        || model.getName().equals("rename-app-role")
-                        || model.getName().equals("hard-realm")
-                        || model.getName().equals("hard-app")
-                        ) {
-                    app.getProtocolMappers().delete(model.getId());
-                }
-            }
-        }
-
-        events.clear();
-
-
-        {
-            Response response = executeGrantAccessTokenRequest(grantTarget);
-            assertEquals(200, response.getStatus());
-            org.keycloak.representations.AccessTokenResponse tokenResponse = response.readEntity(org.keycloak.representations.AccessTokenResponse.class);
-            IDToken idToken = getIdToken(tokenResponse);
-            assertNull(idToken.getAddress());
-            assertNull(idToken.getOtherClaims().get("home_phone"));
-            assertNull(idToken.getOtherClaims().get("hard"));
-            assertNull(idToken.getOtherClaims().get("nested"));
-            assertNull(idToken.getOtherClaims().get("department"));
-
-            response.close();
-        }
-
-
-        events.clear();
-        client.close();
-
 
     }
 
@@ -1102,7 +996,8 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         Form form = new Form();
         form.param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD)
                 .param("username", username)
-                .param("password", password);
+                .param("password", password)
+                .param(OAuth2Constants.SCOPE, OAuth2Constants.SCOPE_OPENID);
         return grantTarget.request()
                 .header(HttpHeaders.AUTHORIZATION, header)
                 .post(Entity.form(form));

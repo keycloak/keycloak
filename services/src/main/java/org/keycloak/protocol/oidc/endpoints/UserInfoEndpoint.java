@@ -19,10 +19,9 @@ package org.keycloak.protocol.oidc.endpoints;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.common.ClientConnection;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.RSATokenVerifier;
+import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -30,8 +29,8 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -40,10 +39,11 @@ import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.UserSessionCrossDCManager;
 import org.keycloak.services.resources.Cors;
-import org.keycloak.services.Urls;
 import org.keycloak.utils.MediaType;
 
 import javax.ws.rs.GET;
@@ -54,7 +54,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-
 import java.security.PrivateKey;
 import java.util.HashMap;
 import java.util.Map;
@@ -131,35 +130,14 @@ public class UserInfoEndpoint {
 
         AccessToken token = null;
         try {
-            token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()), true, true);
+            RSATokenVerifier verifier = RSATokenVerifier.create(tokenString)
+                    .realmUrl(Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
+            String kid = verifier.getHeader().getKeyId();
+            verifier.publicKey(session.keys().getRsaPublicKey(realm, kid));
+            token = verifier.verify().getToken();
         } catch (VerificationException e) {
             event.error(Errors.INVALID_TOKEN);
             throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Token invalid: " + e.getMessage(), Response.Status.UNAUTHORIZED);
-        }
-
-        UserSessionModel userSession = session.sessions().getUserSession(realm, token.getSessionState());
-        ClientSessionModel clientSession = session.sessions().getClientSession(token.getClientSession());
-
-        if (userSession == null) {
-            event.error(Errors.USER_SESSION_NOT_FOUND);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "User session not found", Response.Status.BAD_REQUEST);
-        }
-
-        event.session(userSession);
-
-        UserModel userModel = userSession.getUser();
-        if (userModel == null) {
-            event.error(Errors.USER_NOT_FOUND);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "User not found", Response.Status.BAD_REQUEST);
-        }
-
-        event.user(userModel)
-                .detail(Details.USERNAME, userModel.getUsername());
-
-
-        if (clientSession == null || !AuthenticationManager.isSessionValid(realm, userSession)) {
-            event.error(Errors.SESSION_EXPIRED);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Session expired", Response.Status.UNAUTHORIZED);
         }
 
         ClientModel clientModel = realm.getClientByClientId(token.getIssuedFor());
@@ -175,12 +153,27 @@ public class UserInfoEndpoint {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client disabled", Response.Status.BAD_REQUEST);
         }
 
+        UserSessionModel userSession = findValidSession(token, event, clientModel);
+
+        UserModel userModel = userSession.getUser();
+        if (userModel == null) {
+            event.error(Errors.USER_NOT_FOUND);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "User not found", Response.Status.BAD_REQUEST);
+        }
+
+        event.user(userModel)
+                .detail(Details.USERNAME, userModel.getUsername());
+
+
+        // Existence of authenticatedClientSession for our client already handled before
+        AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(clientModel.getId());
+
         AccessToken userInfo = new AccessToken();
         tokenManager.transformUserInfoAccessToken(session, userInfo, realm, clientModel, userModel, userSession, clientSession);
 
         Map<String, Object> claims = new HashMap<String, Object>();
-        claims.putAll(userInfo.getOtherClaims());
         claims.put("sub", userModel.getId());
+        claims.putAll(userInfo.getOtherClaims());
 
         Response.ResponseBuilder responseBuilder;
         OIDCAdvancedConfigWrapper cfg = OIDCAdvancedConfigWrapper.fromClientModel(clientModel);
@@ -192,7 +185,7 @@ public class UserInfoEndpoint {
             claims.put("aud", audience);
 
             Algorithm signatureAlg = cfg.getUserInfoSignedResponseAlg();
-            PrivateKey privateKey = realm.getPrivateKey();
+            PrivateKey privateKey = session.keys().getActiveRsaKey(realm).getPrivateKey();
 
             String signedUserInfo = new JWSBuilder()
                     .jsonContent(claims)
@@ -211,6 +204,36 @@ public class UserInfoEndpoint {
         event.success();
 
         return Cors.add(request, responseBuilder).auth().allowedOrigins(token).build();
+    }
+
+
+    private UserSessionModel findValidSession(AccessToken token, EventBuilder event, ClientModel client) {
+        UserSessionModel userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), false, client.getId());
+        UserSessionModel offlineUserSession = null;
+        if (AuthenticationManager.isSessionValid(realm, userSession)) {
+            event.session(userSession);
+            return userSession;
+        } else {
+            offlineUserSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), true, client.getId());
+            if (AuthenticationManager.isOfflineSessionValid(realm, offlineUserSession)) {
+                event.session(offlineUserSession);
+                return offlineUserSession;
+            }
+        }
+
+        if (userSession == null && offlineUserSession == null) {
+            event.error(Errors.USER_SESSION_NOT_FOUND);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "User session not found or doesn't have client attached on it", Response.Status.UNAUTHORIZED);
+        }
+
+        if (userSession != null) {
+            event.session(userSession);
+        } else {
+            event.session(offlineUserSession);
+        }
+
+        event.error(Errors.SESSION_EXPIRED);
+        throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Session expired", Response.Status.UNAUTHORIZED);
     }
 
 }

@@ -28,7 +28,6 @@ import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
@@ -97,7 +96,7 @@ public class RegistrationPassword implements FormAction, FormActionFactory {
         credentials.setValue(password);
         UserModel user = context.getUser();
         try {
-            context.getSession().users().updateCredential(context.getRealm(), user, UserCredentialModel.password(formData.getFirst("password")));
+            context.getSession().userCredentialManager().updateCredential(context.getRealm(), user, UserCredentialModel.password(formData.getFirst("password"), false));
         } catch (Exception me) {
             user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
         }

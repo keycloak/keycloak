@@ -16,10 +16,6 @@
  */
 package org.keycloak.social.linkedin;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLDecoder;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
@@ -30,6 +26,11 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
+import org.keycloak.models.KeycloakSession;
+
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLDecoder;
 
 /**
  * LinkedIn social provider. See https://developer.linkedin.com/docs/oauth2
@@ -45,8 +46,8 @@ public class LinkedInIdentityProvider extends AbstractOAuth2IdentityProvider imp
 	public static final String PROFILE_URL = "https://api.linkedin.com/v1/people/~:(id,formatted-name,email-address,public-profile-url)?format=json";
 	public static final String DEFAULT_SCOPE = "r_basicprofile r_emailaddress";
 
-	public LinkedInIdentityProvider(OAuth2IdentityProviderConfig config) {
-		super(config);
+	public LinkedInIdentityProvider(KeycloakSession session, OAuth2IdentityProviderConfig config) {
+		super(session, config);
 		config.setAuthorizationUrl(AUTH_URL);
 		config.setTokenUrl(TOKEN_URL);
 		config.setUserInfoUrl(PROFILE_URL);
@@ -56,7 +57,7 @@ public class LinkedInIdentityProvider extends AbstractOAuth2IdentityProvider imp
 	protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
 		log.debug("doGetFederatedIdentity()");
 		try {
-			JsonNode profile = JsonSimpleHttp.asJson(SimpleHttp.doGet(PROFILE_URL).header("Authorization", "Bearer " + accessToken));
+			JsonNode profile = JsonSimpleHttp.asJson(SimpleHttp.doGet(PROFILE_URL, session).header("Authorization", "Bearer " + accessToken));
 
 			BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "id"));
 
