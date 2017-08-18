@@ -95,6 +95,29 @@ public class IdentityProviderHintTest {
         assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8082/auth/"));
     }
 
+
+    // KEYCLOAK-5260
+    @Test
+    public void testSuccessfulRedirectToProviderAfterLoginPageShown() {
+        this.driver.navigate().to("http://localhost:8081/test-app");
+        String loginPageUrl = driver.getCurrentUrl();
+        assertTrue(loginPageUrl.startsWith("http://localhost:8081/auth/"));
+
+        // Manually add "kc_idp_hint" to URL . Should redirect to provider
+        loginPageUrl = loginPageUrl + "&kc_idp_hint=kc-oidc-idp-hidden";
+        this.driver.navigate().to(loginPageUrl);
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8082/auth/"));
+
+        // Redirect from the app with the "kc_idp_hint". Should redirect to provider
+        this.driver.navigate().to("http://localhost:8081/test-app?kc_idp_hint=kc-oidc-idp-hidden");
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8082/auth/"));
+
+        // Now redirect should't happen
+        this.driver.navigate().to("http://localhost:8081/test-app");
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/"));
+    }
+
+
     @Test
     public void testInvalidIdentityProviderHint() {
         this.driver.navigate().to("http://localhost:8081/test-app?kc_idp_hint=invalid-idp-id");
