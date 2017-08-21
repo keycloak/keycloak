@@ -176,6 +176,74 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
     }
     
     @Test
+    public void conditionalOTPNoDefaultWithChecks() {
+        configureRequiredActions();
+        configureOTP();
+        //prepare config - no configuration specified
+        Map<String, String> config = new HashMap<>();
+        config.put(OTP_CONTROL_USER_ATTRIBUTE, "noSuchUserSkipAttribute");
+        config.put(SKIP_OTP_ROLE, "no_such_otp_role");
+        config.put(FORCE_OTP_ROLE, "no_such_otp_role");
+        config.put(SKIP_OTP_FOR_HTTP_HEADER, "NoSuchHost: nolocalhost:65536");
+        config.put(FORCE_OTP_FOR_HTTP_HEADER, "NoSuchHost: nolocalhost:65536");
+        setConditionalOTPForm(config);
+
+        //test OTP is required
+        testRealmAccountManagementPage.navigateTo();
+        testRealmLoginPage.form().login(testUser);
+        testRealmLoginPage.form().totpForm().waitForTotpInputFieldPresent();
+
+        //verify that the page is login page, not totp setup
+        assertCurrentUrlStartsWith(testLoginOneTimeCodePage);
+    }
+
+    @Test
+    public void conditionalOTPDefaultSkipWithChecks() {
+        //prepare config - default skip
+        Map<String, String> config = new HashMap<>();
+        config.put(OTP_CONTROL_USER_ATTRIBUTE, "noSuchUserSkipAttribute");
+        config.put(SKIP_OTP_ROLE, "no_such_otp_role");
+        config.put(FORCE_OTP_ROLE, "no_such_otp_role");
+        config.put(SKIP_OTP_FOR_HTTP_HEADER, "NoSuchHost: nolocalhost:65536");
+        config.put(FORCE_OTP_FOR_HTTP_HEADER, "NoSuchHost: nolocalhost:65536");
+        config.put(DEFAULT_OTP_OUTCOME, SKIP);
+
+        setConditionalOTPForm(config);
+
+        //test OTP is skipped
+        testRealmAccountManagementPage.navigateTo();
+        testRealmLoginPage.form().login(testUser);
+        assertCurrentUrlStartsWith(testRealmAccountManagementPage);
+    }
+    
+    @Test
+    public void conditionalOTPDefaultForceWithChecks() {
+
+        //prepare config - default force
+        Map<String, String> config = new HashMap<>();
+        config.put(OTP_CONTROL_USER_ATTRIBUTE, "noSuchUserSkipAttribute");
+        config.put(SKIP_OTP_ROLE, "no_such_otp_role");
+        config.put(FORCE_OTP_ROLE, "no_such_otp_role");
+        config.put(SKIP_OTP_FOR_HTTP_HEADER, "NoSuchHost: nolocalhost:65536");
+        config.put(FORCE_OTP_FOR_HTTP_HEADER, "NoSuchHost: nolocalhost:65536");
+        config.put(DEFAULT_OTP_OUTCOME, FORCE);
+        
+        setConditionalOTPForm(config);
+        
+        //test OTP is forced
+        testRealmAccountManagementPage.navigateTo();
+        testRealmLoginPage.form().login(testUser);
+        assertTrue(loginConfigTotpPage.isCurrent());
+
+        configureOTP();
+        testRealmLoginPage.form().login(testUser);
+        testRealmLoginPage.form().totpForm().waitForTotpInputFieldPresent();
+
+        //verify that the page is login page, not totp setup
+        assertCurrentUrlStartsWith(testLoginOneTimeCodePage);
+    }
+    
+    @Test
     public void conditionalOTPUserAttributeSkip() {
         //prepare config - user attribute, default to force
         Map<String, String> config = new HashMap<>();
