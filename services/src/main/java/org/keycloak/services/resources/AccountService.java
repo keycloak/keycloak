@@ -18,6 +18,7 @@ package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.Time;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.events.Details;
@@ -505,6 +506,11 @@ public class AccountService extends AbstractSecuredLocalService {
         csrfCheck(stateChecker);
 
         UserModel user = auth.getUser();
+
+        // Rather decrease time a bit. To avoid situation when user is immediatelly redirected to login screen, then automatically authenticated (eg. with Kerberos) and then seeing issues due the stale token
+        // as time on the token will be same like notBefore
+        session.users().setNotBeforeForUser(realm, user, Time.currentTime() - 1);
+
         List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
         for (UserSessionModel userSession : userSessions) {
             AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers, true);

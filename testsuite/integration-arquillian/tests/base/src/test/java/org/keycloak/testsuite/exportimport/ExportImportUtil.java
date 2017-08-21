@@ -154,6 +154,8 @@ public class ExportImportUtil {
 
         Assert.assertNull(realmRsc.users().get(wburke.getId()).roles().getAll().getRealmMappings());
 
+        Assert.assertEquals((Object) 159, wburke.getNotBefore());
+
         UserRepresentation loginclient = findByUsername(realmRsc, "loginclient");
         // user with creation timestamp as string in import
         Assert.assertEquals(new Long(123655), loginclient.getCreatedTimestamp());

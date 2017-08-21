@@ -126,6 +126,14 @@ public class AdapterTestStrategy extends ExternalResource {
     protected void after() {
         super.after();
         webRule.after();
+
+        // Revert notBefore
+        KeycloakSession session = keycloakRule.startSession();
+        RealmModel realm = session.realms().getRealmByName("demo");
+        UserModel user = session.users().getUserByUsername("bburke@redhat.com", realm);
+        session.users().setNotBeforeForUser(realm, user, 0);
+        session.getTransactionManager().commit();
+        session.close();
     }
 
     public void testSavedPostRequest() throws Exception {

@@ -241,7 +241,7 @@ public class UserModelTest extends AbstractModelTest {
     @Test
     public void testUpdateUserSingleAttribute() {
         Map<String, List<String>> expected = ImmutableMap.of(
-                "key1", Arrays.asList("value3"), 
+                "key1", Arrays.asList("value3"),
                 "key2", Arrays.asList("value2"));
         
         RealmModel realm = realmManager.createRealm("original");
@@ -396,6 +396,31 @@ public class UserModelTest extends AbstractModelTest {
         realm2 = realmManager.getRealmByName("realm2");
         realm2User1 = realmManager.getSession().users().getUserByUsername("user1", realm2);
         Assert.assertFalse(realm2User1.hasRole(role1));
+    }
+
+    @Test
+    public void testUserNotBefore() throws Exception {
+        RealmModel realm = realmManager.createRealm("original");
+
+        UserModel user1 = session.users().addUser(realm, "user1");
+        session.users().setNotBeforeForUser(realm, user1, 10);
+
+        commit();
+
+        realm = realmManager.getRealmByName("original");
+        user1 = session.users().getUserByUsername("user1", realm);
+        int notBefore = session.users().getNotBeforeOfUser(realm, user1);
+        Assert.assertEquals(10, notBefore);
+
+        // Try to update
+        session.users().setNotBeforeForUser(realm, user1, 20);
+
+        commit();
+
+        realm = realmManager.getRealmByName("original");
+        user1 = session.users().getUserByUsername("user1", realm);
+        notBefore = session.users().getNotBeforeOfUser(realm, user1);
+        Assert.assertEquals(20, notBefore);
     }
 
     public static void assertEquals(UserModel expected, UserModel actual) {
