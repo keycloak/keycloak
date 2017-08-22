@@ -38,6 +38,11 @@
             <plugin>
                 <groupId>com.samaxes.maven</groupId>
                 <artifactId>minify-maven-plugin</artifactId>
+                <configuration>
+                    <jsEngine>CLOSURE</jsEngine>
+                    <closureLanguageIn>ECMASCRIPT5</closureLanguageIn>
+                    <closureCreateSourceMap>true</closureCreateSourceMap>
+                </configuration>
                 <executions>
                     <execution>
                         <id>min-js</id>
