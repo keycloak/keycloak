@@ -42,7 +42,7 @@
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-cli</artifactId>
             <scope>test</scope>
-            <version>2.2.0.Final</version>
+            <version>3.0.0.Beta30</version>
         </dependency>
     </dependencies>    
 
