@@ -1,1 +1,1 @@
-org.eclipse.sisu,org.eclipse.sisu.plexus,0.3.0.M1,Eclipse Public License 1.0.txt
+org.sonatype.sisu.inject,guice-servlet,3.2.3,Eclipse Public License 1.0.txt
