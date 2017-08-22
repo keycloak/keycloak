@@ -843,6 +843,7 @@
             }
 
             iframe.setAttribute('src', src );
+            iframe.setAttribute('title', 'keycloak-session-iframe' );
             iframe.style.display = 'none';
             document.body.appendChild(iframe);
 
