@@ -18,14 +18,13 @@
 package org.keycloak.testsuite.client.resources;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.components.TestProvider;
 import org.keycloak.testsuite.rest.representation.AuthenticatorState;
-import org.keycloak.testsuite.rest.resource.TestCacheResource;
+import org.keycloak.utils.MediaType;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -35,8 +34,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import java.util.List;
 import java.util.Map;
 
@@ -259,8 +256,8 @@ public interface TestingResource {
 
     @POST
     @Path("/run-on-server")
-    @Consumes(MediaType.TEXT_PLAIN)
-    @Produces(MediaType.TEXT_PLAIN)
+    @Consumes(MediaType.TEXT_PLAIN_UTF_8)
+    @Produces(MediaType.TEXT_PLAIN_UTF_8)
     String runOnServer(String runOnServer);
 
 }

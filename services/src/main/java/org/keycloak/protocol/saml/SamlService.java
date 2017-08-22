@@ -58,6 +58,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.util.CacheControlUtil;
+import org.keycloak.utils.MediaType;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
@@ -67,7 +68,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
@@ -594,7 +594,7 @@ public class SamlService extends AuthorizationEndpointBase {
 
     @GET
     @Path("clients/{client}")
-    @Produces(MediaType.TEXT_HTML)
+    @Produces(MediaType.TEXT_HTML_UTF_8)
     public Response idpInitiatedSSO(@PathParam("client") String clientUrlName, @QueryParam("RelayState") String relayState) {
         event.event(EventType.LOGIN);
         CacheControlUtil.noBackButtonCacheControlHeader();
