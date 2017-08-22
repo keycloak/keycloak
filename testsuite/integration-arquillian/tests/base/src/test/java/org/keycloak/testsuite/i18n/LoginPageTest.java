@@ -81,6 +81,8 @@ public class LoginPageTest extends AbstractI18NTest {
 
     @Test
     public void languageDropdown() {
+        ProfileAssume.assumeCommunity();
+
         loginPage.open();
         Assert.assertEquals("English", loginPage.getLanguageDropdownText());
 
@@ -143,6 +145,8 @@ public class LoginPageTest extends AbstractI18NTest {
     // KEYCLOAK-3887
     @Test
     public void languageChangeRequiredActions() {
+        ProfileAssume.assumeCommunity();
+
         UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
         UserRepresentation userRep = user.toRepresentation();
         userRep.setRequiredActions(Arrays.asList(UserModel.RequiredAction.UPDATE_PASSWORD.toString()));
@@ -168,6 +172,8 @@ public class LoginPageTest extends AbstractI18NTest {
     // KEYCLOAK-3887
     @Test
     public void languageChangeConsentScreen() {
+        ProfileAssume.assumeCommunity();
+
         // Set client, which requires consent
         oauth.clientId("third-party");
 
