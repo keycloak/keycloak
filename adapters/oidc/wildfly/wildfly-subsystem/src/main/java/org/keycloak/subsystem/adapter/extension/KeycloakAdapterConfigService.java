@@ -23,8 +23,11 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.metadata.web.jboss.JBossWebMetaData;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
 
@@ -50,6 +53,7 @@ public final class KeycloakAdapterConfigService {
 
     // keycloak-secured deployments
     private final Map<String, ModelNode> secureDeployments = new HashMap<String, ModelNode>();
+    private final Set<String> elytronEnabledDeployments = new HashSet<>();
 
 
     private KeycloakAdapterConfigService() {
@@ -68,9 +72,13 @@ public final class KeycloakAdapterConfigService {
         this.realms.remove(realmNameFromOp(operation));
     }
 
-    public void addSecureDeployment(ModelNode operation, ModelNode model) {
+    public void addSecureDeployment(ModelNode operation, ModelNode model, boolean elytronEnabled) {
         ModelNode deployment = model.clone();
-        this.secureDeployments.put(deploymentNameFromOp(operation), deployment);
+        String name = deploymentNameFromOp(operation);
+        this.secureDeployments.put(name, deployment);
+        if (elytronEnabled) {
+            elytronEnabledDeployments.add(name);
+        }
     }
 
     public void updateSecureDeployment(ModelNode operation, String attrName, ModelNode resolvedValue) {
@@ -79,7 +87,9 @@ public final class KeycloakAdapterConfigService {
     }
 
     public void removeSecureDeployment(ModelNode operation) {
-        this.secureDeployments.remove(deploymentNameFromOp(operation));
+        String name = deploymentNameFromOp(operation);
+        this.secureDeployments.remove(name);
+        elytronEnabledDeployments.remove(name);
     }
 
     public void addCredential(ModelNode operation, ModelNode model) {
@@ -187,7 +197,19 @@ public final class KeycloakAdapterConfigService {
     }
 
     private String deploymentNameFromOp(ModelNode operation) {
-        return valueFromOpAddress(SecureDeploymentDefinition.TAG_NAME, operation);
+        String deploymentName = valueFromOpAddress(SecureDeploymentDefinition.TAG_NAME, operation);
+
+        if (deploymentName == null) {
+            deploymentName = valueFromOpAddress(KeycloakHttpServerAuthenticationMechanismFactoryDefinition.TAG_NAME, operation);
+        }
+
+        if (deploymentName == null) {
+            deploymentName = valueFromOpAddress(SecureServerDefinition.TAG_NAME, operation);
+        }
+
+        if (deploymentName == null) throw new RuntimeException("Can't find deployment name in address " + operation);
+
+        return deploymentName;
     }
 
     private String credentialNameFromOp(ModelNode operation) {
@@ -199,9 +221,7 @@ public final class KeycloakAdapterConfigService {
     }
 
     private String valueFromOpAddress(String addrElement, ModelNode operation) {
-        String deploymentName = getValueOfAddrElement(operation.get(ADDRESS), addrElement);
-        if (deploymentName == null) throw new RuntimeException("Can't find '" + addrElement + "' in address " + operation.toString());
-        return deploymentName;
+        return getValueOfAddrElement(operation.get(ADDRESS), addrElement);
     }
 
     private String getValueOfAddrElement(ModelNode address, String elementName) {
@@ -241,8 +261,22 @@ public final class KeycloakAdapterConfigService {
         return json.toJSONString(true);
     }
 
+    public String getJSON(String deploymentName) {
+        ModelNode deployment = this.secureDeployments.get(deploymentName);
+        String realmName = deployment.get(RealmDefinition.TAG_NAME).asString();
+        ModelNode realm = this.realms.get(realmName);
+
+        ModelNode json = new ModelNode();
+        json.get(RealmDefinition.TAG_NAME).set(realmName);
+
+        // Realm values set first.  Some can be overridden by deployment values.
+        if (realm != null) setJSONValues(json, realm);
+        setJSONValues(json, deployment);
+        return json.toJSONString(true);
+    }
+
     private void setJSONValues(ModelNode json, ModelNode values) {
-        for (Property prop : values.asPropertyList()) {
+        for (Property prop : new ArrayList<>(values.asPropertyList())) {
             String name = prop.getName();
             ModelNode value = prop.getValue();
             if (value.isDefined()) {
@@ -256,6 +290,10 @@ public final class KeycloakAdapterConfigService {
 
         String deploymentName = preferredDeploymentName(deploymentUnit);
         return this.secureDeployments.containsKey(deploymentName);
+    }
+
+    public boolean isElytronEnabled(DeploymentUnit deploymentUnit) {
+        return elytronEnabledDeployments.contains(preferredDeploymentName(deploymentUnit));
     }
 
     private ModelNode getSecureDeployment(DeploymentUnit deploymentUnit) {

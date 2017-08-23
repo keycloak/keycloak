@@ -38,5 +38,9 @@
         <module name="org.jboss.vfs"/>
         <module name="org.jboss.as.web-common"/>
         <module name="org.jboss.metadata"/>
+        <module name="org.keycloak.keycloak-adapter-core"/>
+        <module name="org.keycloak.keycloak-wildfly-elytron-oidc-adapter"/>
+        <module name="org.wildfly.security.elytron"/>
+        <module name="io.undertow.core"/>
     </dependencies>
 </module>

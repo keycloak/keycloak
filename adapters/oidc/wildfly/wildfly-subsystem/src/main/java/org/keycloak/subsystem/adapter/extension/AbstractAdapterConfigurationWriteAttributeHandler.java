@@ -31,14 +31,10 @@ import java.util.List;
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2013 Red Hat Inc.
  */
-public class SecureDeploymentWriteAttributeHandler extends AbstractWriteAttributeHandler<KeycloakAdapterConfigService> {
+abstract class AbstractAdapterConfigurationWriteAttributeHandler extends AbstractWriteAttributeHandler<KeycloakAdapterConfigService> {
 
-    public SecureDeploymentWriteAttributeHandler(List<SimpleAttributeDefinition> definitions) {
-        this(definitions.toArray(new AttributeDefinition[definitions.size()]));
-    }
-
-    public SecureDeploymentWriteAttributeHandler(AttributeDefinition... definitions) {
-        super(definitions);
+    AbstractAdapterConfigurationWriteAttributeHandler(List<SimpleAttributeDefinition> definitions) {
+        super(definitions.toArray(new AttributeDefinition[definitions.size()]));
     }
 
     @Override

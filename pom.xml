@@ -49,8 +49,8 @@
         <eap.build-tools.version>1.2.2.Final</eap.build-tools.version>
         <wildfly.core.version>3.0.0.Beta30</wildfly.core.version>
 
-        <version.org.wildfly.security.wildfly-elytron>1.1.0.Beta32</version.org.wildfly.security.wildfly-elytron>
-        <version.org.wildfly.security.elytron-web.undertow-server>1.0.0.Beta14</version.org.wildfly.security.elytron-web.undertow-server>
+        <version.org.wildfly.security.wildfly-elytron>1.1.0.CR4</version.org.wildfly.security.wildfly-elytron>
+        <version.org.wildfly.security.elytron-web.undertow-server>1.0.0.CR1</version.org.wildfly.security.elytron-web.undertow-server>
 
         <aesh.version>0.66.15</aesh.version>
         <apache.httpcomponents.version>4.5</apache.httpcomponents.version>
