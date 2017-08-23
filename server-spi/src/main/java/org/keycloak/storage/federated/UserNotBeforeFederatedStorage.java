@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,18 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.adapter.example.authorization;
 
-import org.jboss.arquillian.container.test.api.RunAsClient;
-import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+package org.keycloak.storage.federated;
+
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 
 /**
- *
- * @author tkyjovsk
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@RunAsClient
-@AppServerContainer("app-server-eap")
-//@AdapterLibsLocationProperty("adapter.libs.wildfly")
-public class EAPServletAuthzAdapterTest extends AbstractServletAuthzFunctionalAdapterTest {
+public interface UserNotBeforeFederatedStorage {
 
+    void setNotBeforeForUser(RealmModel realm, String userId, int notBefore);
+    int getNotBeforeOfUser(RealmModel realm, String userId);
 }

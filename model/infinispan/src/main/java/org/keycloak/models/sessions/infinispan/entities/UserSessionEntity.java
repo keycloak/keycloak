@@ -43,6 +43,8 @@ public class UserSessionEntity extends SessionEntity {
     // Metadata attribute, which contains the lastSessionRefresh available on remoteCache. Used in decide whether we need to write to remoteCache (DC) or not
     public static final String LAST_SESSION_REFRESH_REMOTE = "lsrr";
 
+    private String id;
+
     private String user;
 
     private String brokerSessionId;
@@ -61,6 +63,14 @@ public class UserSessionEntity extends SessionEntity {
     private int lastSessionRefresh;
 
     private UserSessionModel.State state;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 
     private Map<String, String> notes = new ConcurrentHashMap<>();
 
@@ -160,6 +170,23 @@ public class UserSessionEntity extends SessionEntity {
 
     public void setBrokerUserId(String brokerUserId) {
         this.brokerUserId = brokerUserId;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof UserSessionEntity)) return false;
+
+        UserSessionEntity that = (UserSessionEntity) o;
+
+        if (id != null ? !id.equals(that.id) : that.id != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return id != null ? id.hashCode() : 0;
     }
 
     @Override

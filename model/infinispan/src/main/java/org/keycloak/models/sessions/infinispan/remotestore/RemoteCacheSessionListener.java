@@ -44,12 +44,12 @@ import org.infinispan.client.hotrod.VersionedValue;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @ClientListener
-public class RemoteCacheSessionListener  {
+public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
 
     protected static final Logger logger = Logger.getLogger(RemoteCacheSessionListener.class);
 
-    private Cache<String, SessionEntityWrapper> cache;
-    private RemoteCache remoteCache;
+    private Cache<K, SessionEntityWrapper<V>> cache;
+    private RemoteCache<K, V> remoteCache;
     private boolean distributed;
     private String myAddress;
 
@@ -58,7 +58,7 @@ public class RemoteCacheSessionListener  {
     }
 
 
-    protected void init(KeycloakSession session, Cache<String, SessionEntityWrapper> cache, RemoteCache remoteCache) {
+    protected void init(KeycloakSession session, Cache<K, SessionEntityWrapper<V>> cache, RemoteCache<K, V> remoteCache) {
         this.cache = cache;
         this.remoteCache = remoteCache;
 
@@ -73,7 +73,7 @@ public class RemoteCacheSessionListener  {
 
     @ClientCacheEntryCreated
     public void created(ClientCacheEntryCreatedEvent event) {
-        String key = (String) event.getKey();
+        K key = (K) event.getKey();
 
         if (shouldUpdateLocalCache(event.getType(), key, event.isCommandRetried())) {
             // Should load it from remoteStore
@@ -84,7 +84,7 @@ public class RemoteCacheSessionListener  {
 
     @ClientCacheEntryModified
     public void updated(ClientCacheEntryModifiedEvent event) {
-        String key = (String) event.getKey();
+        K key = (K) event.getKey();
 
         if (shouldUpdateLocalCache(event.getType(), key, event.isCommandRetried())) {
 
@@ -94,7 +94,7 @@ public class RemoteCacheSessionListener  {
 
     private static final int MAXIMUM_REPLACE_RETRIES = 10;
 
-    private void replaceRemoteEntityInCache(String key, long eventVersion) {
+    private void replaceRemoteEntityInCache(K key, long eventVersion) {
         // TODO can be optimized and remoteSession sent in the event itself?
         boolean replaced = false;
         int replaceRetries = 0;
@@ -102,8 +102,8 @@ public class RemoteCacheSessionListener  {
         do {
             replaceRetries++;
             
-            SessionEntityWrapper localEntityWrapper = cache.get(key);
-            VersionedValue remoteSessionVersioned = remoteCache.getVersioned(key);
+            SessionEntityWrapper<V> localEntityWrapper = cache.get(key);
+            VersionedValue<V> remoteSessionVersioned = remoteCache.getVersioned(key);
             if (remoteSessionVersioned == null || remoteSessionVersioned.getVersion() < eventVersion) {
                 try {
                     logger.debugf("Got replace remote entity event prematurely, will try again. Event version: %d, got: %d",
@@ -120,7 +120,7 @@ public class RemoteCacheSessionListener  {
 
             logger.debugf("Read session%s. Entity read from remote cache: %s", replaceRetries > 1 ? "" : " again", remoteSession);
 
-            SessionEntityWrapper sessionWrapper = remoteSession.mergeRemoteEntityWithLocalEntity(localEntityWrapper);
+            SessionEntityWrapper<V> sessionWrapper = remoteSession.mergeRemoteEntityWithLocalEntity(localEntityWrapper);
 
             // We received event from remoteCache, so we won't update it back
             replaced = cache.getAdvancedCache().withFlags(Flag.SKIP_CACHE_STORE, Flag.SKIP_CACHE_LOAD, Flag.IGNORE_RETURN_VALUES)
@@ -135,7 +135,7 @@ public class RemoteCacheSessionListener  {
 
     @ClientCacheEntryRemoved
     public void removed(ClientCacheEntryRemovedEvent event) {
-        String key = (String) event.getKey();
+        K key = (K) event.getKey();
 
         if (shouldUpdateLocalCache(event.getType(), key, event.isCommandRetried())) {
             // We received event from remoteCache, so we won't update it back
@@ -152,7 +152,7 @@ public class RemoteCacheSessionListener  {
 
 
     // For distributed caches, ensure that local modification is executed just on owner OR if event.isCommandRetried
-    protected boolean shouldUpdateLocalCache(ClientEvent.Type type, String key, boolean commandRetried) {
+    protected boolean shouldUpdateLocalCache(ClientEvent.Type type, K key, boolean commandRetried) {
         boolean result;
 
         // Case when cache is stopping or stopped already
@@ -184,7 +184,7 @@ public class RemoteCacheSessionListener  {
     }
 
 
-    public static RemoteCacheSessionListener createListener(KeycloakSession session, Cache<String, SessionEntityWrapper> cache, RemoteCache remoteCache) {
+    public static <K, V extends SessionEntity> RemoteCacheSessionListener createListener(KeycloakSession session, Cache<K, SessionEntityWrapper<V>> cache, RemoteCache<K, V> remoteCache) {
         /*boolean isCoordinator = InfinispanUtil.isCoordinator(cache);
 
         // Just cluster coordinator will fetch userSessions from remote cache.
@@ -198,7 +198,7 @@ public class RemoteCacheSessionListener  {
             listener = new DontFetchInitialStateCacheListener();
         }*/
 
-        RemoteCacheSessionListener listener = new RemoteCacheSessionListener();
+        RemoteCacheSessionListener<K, V> listener = new RemoteCacheSessionListener<>();
         listener.init(session, cache, remoteCache);
 
         return listener;

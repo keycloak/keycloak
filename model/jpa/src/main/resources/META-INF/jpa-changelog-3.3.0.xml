@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!--
-  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ Copyright 2017 Red Hat, Inc. and/or its affiliates
   ~ and other contributors as indicated by the @author tags.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,8 +16,14 @@
   ~ limitations under the License.
   -->
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
-    <changeSet author="maria.pavlova@quest.com" id="3.3.0">
 
+    <changeSet author="keycloak" id="3.3.0">
+        <addColumn tableName="USER_ENTITY">
+            <column name="NOT_BEFORE" type="INT" defaultValueNumeric="0"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="maria.pavlova@quest.com" id="3.3.0">
         <createIndex indexName="IDX_EVENT_ENTITY_TIME" tableName="EVENT_ENTITY">
             <column name="EVENT_TIME" type="BIGINT"/>
         </createIndex>
@@ -30,5 +36,6 @@
         <createIndex indexName="IDX_EVENT_ENTITY_CLIENT_ID" tableName="EVENT_ENTITY">
             <column name="CLIENT_ID" type="VARCHAR(255)"/>
         </createIndex>
-     </changeSet>
+    </changeSet>
+
 </databaseChangeLog>

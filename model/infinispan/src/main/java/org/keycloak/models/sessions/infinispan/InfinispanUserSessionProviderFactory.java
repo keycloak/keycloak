@@ -85,7 +85,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
         Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = connections.getCache(InfinispanConnectionProvider.SESSION_CACHE_NAME);
         Cache<String, SessionEntityWrapper<UserSessionEntity>> offlineSessionsCache = connections.getCache(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME);
-        Cache<LoginFailureKey, LoginFailureEntity> loginFailures = connections.getCache(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME);
+        Cache<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> loginFailures = connections.getCache(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME);
 
         return new InfinispanUserSessionProvider(session, remoteCacheInvoker, lastSessionRefreshStore, offlineLastSessionRefreshStore, cache, offlineSessionsCache, loginFailures);
     }
@@ -224,6 +224,11 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         if (offlineSessionsRemoteCache) {
             offlineLastSessionRefreshStore = new LastSessionRefreshStoreFactory().createAndInit(session, offlineSessionsCache, true);
         }
+
+        Cache loginFailuresCache = ispn.getCache(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME);
+        boolean loginFailuresRemoteCache = checkRemoteCache(session, loginFailuresCache, (RealmModel realm) -> {
+            return realm.getMaxDeltaTimeSeconds() * 1000;
+        });
     }
 
     private boolean checkRemoteCache(KeycloakSession session, Cache ispnCache, RemoteCacheInvoker.MaxIdleTimeLoader maxIdleLoader) {

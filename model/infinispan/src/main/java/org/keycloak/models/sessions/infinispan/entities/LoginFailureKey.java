@@ -52,4 +52,9 @@ public class LoginFailureKey implements Serializable {
         return result;
     }
 
+
+    @Override
+    public String toString() {
+        return String.format("LoginFailureKey [ realm=%s. userId=%s ]", realm, userId);
+    }
 }

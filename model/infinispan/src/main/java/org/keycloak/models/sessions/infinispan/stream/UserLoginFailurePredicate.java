@@ -17,6 +17,7 @@
 
 package org.keycloak.models.sessions.infinispan.stream;
 
+import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
 
@@ -27,7 +28,7 @@ import java.util.function.Predicate;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class UserLoginFailurePredicate implements Predicate<Map.Entry<LoginFailureKey, LoginFailureEntity>>, Serializable {
+public class UserLoginFailurePredicate implements Predicate<Map.Entry<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>>>, Serializable {
 
     private String realm;
 
@@ -40,8 +41,8 @@ public class UserLoginFailurePredicate implements Predicate<Map.Entry<LoginFailu
     }
 
     @Override
-    public boolean test(Map.Entry<LoginFailureKey, LoginFailureEntity> entry) {
-        LoginFailureEntity e = entry.getValue();
+    public boolean test(Map.Entry<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> entry) {
+        LoginFailureEntity e = entry.getValue().getEntity();
         return realm.equals(e.getRealm());
     }
 

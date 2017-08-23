@@ -49,7 +49,7 @@ public interface SessionUpdateTask<S extends SessionEntity> {
 
             if (this == ADD | this == ADD_IF_ABSENT) {
                 if (other == ADD | other == ADD_IF_ABSENT) {
-                    throw new IllegalStateException("Illegal state. Task already in progress for session " + entity.getId());
+                    throw new IllegalStateException("Illegal state. Task already in progress for session " + entity.toString());
                 }
 
                 return this;

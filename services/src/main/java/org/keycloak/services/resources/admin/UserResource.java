@@ -508,6 +508,8 @@ public class UserResource {
     public void logout() {
         auth.users().requireManage(user);
 
+        session.users().setNotBeforeForUser(realm, user, Time.currentTime());
+
         List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
         for (UserSessionModel userSession : userSessions) {
             AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers, true);

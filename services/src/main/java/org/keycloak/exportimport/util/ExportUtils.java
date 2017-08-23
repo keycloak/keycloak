@@ -530,6 +530,10 @@ public class ExportUtils {
             userRep.setClientConsents(consentReps);
         }
 
+        // Not Before
+        int notBefore = session.users().getNotBeforeOfUser(realm, user);
+        userRep.setNotBefore(notBefore);
+
         // Service account
         if (user.getServiceAccountClientLink() != null) {
             String clientInternalId = user.getServiceAccountClientLink();
@@ -716,6 +720,10 @@ public class ExportUtils {
         if (consentReps.size() > 0) {
             userRep.setClientConsents(consentReps);
         }
+
+        // Not Before
+        int notBefore = session.userFederatedStorage().getNotBeforeOfUser(realm, userRep.getId());
+        userRep.setNotBefore(notBefore);
 
         if (options.isGroupsAndRolesIncluded()) {
             List<String> groups = new LinkedList<>();
