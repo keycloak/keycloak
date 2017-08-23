@@ -971,12 +971,12 @@ module.controller('ResourceServerPolicyResourceDetailCtrl', function($scope, $ro
                 $scope.applyToResourceTypeFlag = true;
             }
 
-            $scope.selectedPolicies = [];
             ResourceServerPermission.associatedPolicies({
                 realm : $route.current.params.realm,
                 client : client.id,
                 id : policy.id
             }, function(policies) {
+                $scope.selectedPolicies = [];
                 for (i = 0; i < policies.length; i++) {
                     policies[i].text = policies[i].name;
                     $scope.selectedPolicies.push(policies[i]);
