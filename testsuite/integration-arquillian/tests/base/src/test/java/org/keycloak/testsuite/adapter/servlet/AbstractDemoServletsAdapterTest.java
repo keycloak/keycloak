@@ -53,8 +53,6 @@ import org.keycloak.testsuite.util.*;
 import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.util.BasicAuthHelper;
 
-import org.openqa.selenium.By;
-
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
@@ -197,7 +195,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
         assertCurrentUrlEquals(driver, inputPortal + "/secured/post");
-        waitForPageToLoad(driver);
+        waitForPageToLoad();
         String pageSource = driver.getPageSource();
         assertThat(pageSource, containsString("parameter=hello"));
 
@@ -564,7 +562,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
 
         // Test I need to reauthenticate with prompt=login
         String appUri = tokenMinTTLPage.getUriBuilder().queryParam(OIDCLoginProtocol.PROMPT_PARAM, OIDCLoginProtocol.PROMPT_VALUE_LOGIN).build().toString();
-        URLUtils.navigateToUri(driver, appUri, true);
+        URLUtils.navigateToUri(appUri, true);
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
         AccessToken token = tokenMinTTLPage.getAccessToken();
@@ -624,7 +622,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         oAuthGrantPage.accept();
 
         String pageSource = driver.getPageSource();
-        waitForPageToLoad(driver);
+        waitForPageToLoad();
         assertThat(pageSource, containsString("Bill Burke"));
         assertThat(pageSource, containsString("Stian Thorgersen"));
 
@@ -682,7 +680,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
 
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
 
-        waitForPageToLoad(driver);
+        waitForPageToLoad();
         String pageSource = driver.getPageSource();
         assertThat(pageSource, containsString("Bill Burke"));
         assertThat(pageSource, containsString("Stian Thorgersen"));

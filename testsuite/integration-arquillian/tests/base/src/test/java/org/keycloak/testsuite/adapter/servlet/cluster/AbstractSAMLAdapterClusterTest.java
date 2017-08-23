@@ -17,7 +17,6 @@
 package org.keycloak.testsuite.adapter.servlet.cluster;
 
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.*;
 import org.keycloak.testsuite.Retry;
 import org.keycloak.testsuite.adapter.page.EmployeeServletDistributable;
@@ -57,7 +56,6 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
-import static org.keycloak.testsuite.AbstractAuthTest.createUserRepresentation;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.getNearestSuperclassWithAnnotation;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
@@ -223,7 +221,7 @@ public abstract class AbstractSAMLAdapterClusterTest extends AbstractServletsAda
 
     protected void checkLoggedOut(AbstractPage page, AuthRealm loginPage) {
         page.navigateTo();
-        WaitUtils.waitForPageToLoad(driver);
+        WaitUtils.waitForPageToLoad();
         assertCurrentUrlStartsWith(loginPage);
     }
 

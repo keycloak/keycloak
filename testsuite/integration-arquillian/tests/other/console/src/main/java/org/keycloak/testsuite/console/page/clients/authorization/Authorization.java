@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.console.page.clients.authorization;
 
+import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.fragment.Root;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.console.page.clients.Client;
@@ -23,8 +24,11 @@ import org.keycloak.testsuite.console.page.clients.authorization.permission.Perm
 import org.keycloak.testsuite.console.page.clients.authorization.policy.Policies;
 import org.keycloak.testsuite.console.page.clients.authorization.resource.Resources;
 import org.keycloak.testsuite.console.page.clients.authorization.scope.Scopes;
+import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import static org.keycloak.testsuite.util.UIUtils.navigateToLink;
 
 /**
  *
@@ -97,6 +101,9 @@ public class Authorization extends Client {
         @Root
         private WebElement root;
 
+        @Drone
+        private WebDriver driver;
+
         @FindBy(linkText = "Settings")
         private WebElement settingsLink;
 
@@ -113,23 +120,28 @@ public class Authorization extends Client {
         private WebElement policiesLink;
 
         public void settings() {
-            settingsLink.click();
+            //clickLink(settingsLink);
+            navigateToLink(settingsLink); // for some reason, GeckoDriver is currently having problems clicking on those tabs
         }
 
         public void resources() {
-            resourcesLink.click();
+            //clickLink(resourcesLink);
+            navigateToLink(resourcesLink);
         }
 
         private void scopes() {
-            scopesLink.click();
+            //clickLink(scopesLink);
+            navigateToLink(scopesLink);
         }
 
         private void permissions() {
-            permissionsLink.click();
+            //clickLink(permissionsLink);
+            navigateToLink(permissionsLink);
         }
 
         private void policies() {
-            policiesLink.click();
+            //clickLink(policiesLink);
+            navigateToLink(policiesLink);
         }
     }
 }

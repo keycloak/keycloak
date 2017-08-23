@@ -95,11 +95,11 @@ public abstract class AbstractPage {
     }
 
     public void navigateTo(boolean waitForMatch) {
-        URLUtils.navigateToUri(driver, buildUri().toASCIIString(), waitForMatch);
+        URLUtils.navigateToUri(buildUri().toASCIIString(), waitForMatch);
     }
 
     public boolean isCurrent() {
-        return URLUtils.currentUrlEqual(driver, toString());
+        return URLUtils.currentUrlEqual(toString());
     }
 
 }

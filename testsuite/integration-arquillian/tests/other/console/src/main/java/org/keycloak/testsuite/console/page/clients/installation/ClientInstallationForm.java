@@ -41,7 +41,7 @@ public class ClientInstallationForm extends Form {
 
     public void setConfigFormat(String value) {
         configFormatsSelect.selectByVisibleText(value);
-        WaitUtils.waitForPageToLoad(driver);
+        WaitUtils.waitForPageToLoad();
     }
     
     public String getTextareaContent() {
