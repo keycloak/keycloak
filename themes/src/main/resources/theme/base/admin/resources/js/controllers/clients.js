@@ -1803,7 +1803,7 @@ module.controller('ClientProtocolMapperCtrl', function($scope, realm, serverInfo
         ClientProtocolMapper.update({
             realm : realm.realm,
             client: client.id,
-            id : mapper.id
+            id : $scope.model.mapper.id
         }, $scope.model.mapper, function() {
             $scope.model.changed = false;
             mapper = angular.copy($scope.mapper);
