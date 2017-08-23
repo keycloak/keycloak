@@ -115,6 +115,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             UserResource userResource = findUserByUsernameId(adminClient.realm("test"), "test-user@localhost");
             UserRepresentation user = userResource.toRepresentation();
 
+            user.singleAttribute("empty", "");
             user.singleAttribute("street", "5 Yawkey Way");
             user.singleAttribute("locality", "Boston");
             user.singleAttribute("region_some", "MA"); // Custom name for userAttribute name, which will be mapped to region
@@ -123,6 +124,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             user.singleAttribute("formatted", "6 Foo Street");
             user.singleAttribute("phone", "617-777-6666");
 
+            user.getAttributes().put("null", null);
 
             List<String> departments = Arrays.asList("finance", "development");
             user.getAttributes().put("departments", departments);
@@ -139,6 +141,9 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             ProtocolMapperRepresentation hard = createHardcodedClaim("hard", "hard", "coded", "String", false, null, true, true);
             app.getProtocolMappers().createMapper(hard).close();
             app.getProtocolMappers().createMapper(createHardcodedClaim("hard-nested", "nested.hard", "coded-nested", "String", false, null, true, true)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("empty", "empty", "empty", "String", true, "", true, true, false)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("null", "null", "null", "String", true, "", true, true, false)).close();
+
             app.getProtocolMappers().createMapper(createClaimMapper("custom phone", "phone", "home_phone", "String", true, "", true, true, true)).close();
             app.getProtocolMappers().createMapper(createClaimMapper("nested phone", "phone", "home.phone", "String", true, "", true, true, true)).close();
             app.getProtocolMappers().createMapper(createClaimMapper("departments", "departments", "department", "String", true, "", true, true, true)).close();
@@ -154,6 +159,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             IDToken idToken = oauth.verifyIDToken(response.getIdToken());
             assertNotNull(idToken.getAddress());
             assertEquals(idToken.getName(), "Tom Brady");
+            assertNotNull(idToken.getOtherClaims().get("empty"));
+            assertNotNull(idToken.getOtherClaims().get("null"));
             assertEquals(idToken.getAddress().getStreetAddress(), "5 Yawkey Way");
             assertEquals(idToken.getAddress().getLocality(), "Boston");
             assertEquals(idToken.getAddress().getRegion(), "MA");
@@ -177,6 +184,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
             AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
             assertEquals(accessToken.getName(), "Tom Brady");
+            assertNotNull(accessToken.getOtherClaims().get("empty"));
+            assertNotNull(accessToken.getOtherClaims().get("null"));
             assertNotNull(accessToken.getAddress());
             assertEquals(accessToken.getAddress().getStreetAddress(), "5 Yawkey Way");
             assertEquals(accessToken.getAddress().getLocality(), "Boston");
