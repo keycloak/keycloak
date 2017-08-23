@@ -1454,6 +1454,11 @@ public class RepresentationToModel {
                 session.users().addConsent(newRealm, user.getId(), consentModel);
             }
         }
+
+        if (userRep.getNotBefore() != null) {
+            session.users().setNotBeforeForUser(newRealm, user, userRep.getNotBefore());
+        }
+
         if (userRep.getServiceAccountClientId() != null) {
             String clientId = userRep.getServiceAccountClientId();
             ClientModel client = newRealm.getClientByClientId(clientId);
@@ -2377,6 +2382,9 @@ public class RepresentationToModel {
                 UserConsentModel consentModel = toModel(newRealm, consentRep);
                 federatedStorage.addConsent(newRealm, userRep.getId(), consentModel);
             }
+        }
+        if (userRep.getNotBefore() != null) {
+            federatedStorage.setNotBeforeForUser(newRealm, userRep.getId(), userRep.getNotBefore());
         }
 
 

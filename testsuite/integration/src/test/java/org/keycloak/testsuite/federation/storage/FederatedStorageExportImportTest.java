@@ -137,7 +137,7 @@ public class FederatedStorageExportImportTest {
 
         Assert.assertEquals(1, session.userFederatedStorage().getStoredUsersCount(realm));
         MultivaluedHashMap<String, String> attributes = session.userFederatedStorage().getAttributes(realm, userId);
-        Assert.assertEquals(2, attributes.size());
+        Assert.assertEquals(3, attributes.size());
         Assert.assertEquals("value1", attributes.getFirst("single1"));
         Assert.assertTrue(attributes.getList("list1").contains("1"));
         Assert.assertTrue(attributes.getList("list1").contains("2"));
@@ -174,6 +174,7 @@ public class FederatedStorageExportImportTest {
         session.userFederatedStorage().createCredential(realm, userId, credential);
         session.userFederatedStorage().grantRole(realm, userId, role);
         session.userFederatedStorage().joinGroup(realm, userId, group);
+        session.userFederatedStorage().setNotBeforeForUser(realm, userId, 50);
         keycloakRule.stopSession(session, true);
 
 
@@ -203,13 +204,14 @@ public class FederatedStorageExportImportTest {
 
         Assert.assertEquals(1, session.userFederatedStorage().getStoredUsersCount(realm));
         MultivaluedHashMap<String, String> attributes = session.userFederatedStorage().getAttributes(realm, userId);
-        Assert.assertEquals(2, attributes.size());
+        Assert.assertEquals(3, attributes.size());
         Assert.assertEquals("value1", attributes.getFirst("single1"));
         Assert.assertTrue(attributes.getList("list1").contains("1"));
         Assert.assertTrue(attributes.getList("list1").contains("2"));
         Assert.assertTrue(session.userFederatedStorage().getRequiredActions(realm, userId).contains("UPDATE_PASSWORD"));
         Assert.assertTrue(session.userFederatedStorage().getRoleMappings(realm, userId).contains(role));
         Assert.assertTrue(session.userFederatedStorage().getGroups(realm, userId).contains(group));
+        Assert.assertEquals(50, session.userFederatedStorage().getNotBeforeOfUser(realm, userId));
         List<CredentialModel> creds = session.userFederatedStorage().getStoredCredentials(realm, userId);
         Assert.assertEquals(1, creds.size());
         Assert.assertTrue(getHashProvider(session, realm.getPasswordPolicy()).verify("password", creds.get(0)));

@@ -21,8 +21,11 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.events.Details;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 
@@ -208,6 +211,25 @@ public class LogoutTest extends AbstractTestRealmKeycloakTest {
 
         driver.navigate().to(logoutUrl);
         events.expectLogout(sessionId2).removeDetail(Details.REDIRECT_URI).assertEvent();
+    }
+
+    @Test
+    public void logoutUserByAdmin() {
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+        assertTrue(appPage.isCurrent());
+        String sessionId = events.expectLogin().assertEvent().getSessionId();
+
+        UserRepresentation user = ApiUtil.findUserByUsername(adminClient.realm("test"), "test-user@localhost");
+        Assert.assertEquals((Object) 0, user.getNotBefore());
+
+        adminClient.realm("test").users().get(user.getId()).logout();
+
+        user = adminClient.realm("test").users().get(user.getId()).toRepresentation();
+        Assert.assertTrue(user.getNotBefore() > 0);
+
+        loginPage.open();
+        loginPage.assertCurrent();
     }
 
 }

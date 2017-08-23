@@ -39,7 +39,6 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.jpa.entities.CredentialAttributeEntity;
 import org.keycloak.models.jpa.entities.CredentialEntity;
 import org.keycloak.models.jpa.entities.FederatedIdentityEntity;
-import org.keycloak.models.jpa.entities.UserAttributeEntity;
 import org.keycloak.models.jpa.entities.UserConsentEntity;
 import org.keycloak.models.jpa.entities.UserConsentProtocolMapperEntity;
 import org.keycloak.models.jpa.entities.UserConsentRoleEntity;
@@ -362,6 +361,18 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         em.flush();
     }
 
+
+    @Override
+    public void setNotBeforeForUser(RealmModel realm, UserModel user, int notBefore) {
+        UserEntity entity = em.getReference(UserEntity.class, user.getId());
+        entity.setNotBefore(notBefore);
+    }
+
+    @Override
+    public int getNotBeforeOfUser(RealmModel realm, UserModel user) {
+        UserEntity entity = em.getReference(UserEntity.class, user.getId());
+        return entity.getNotBefore();
+    }
 
     @Override
     public void grantToAllUsers(RealmModel realm, RoleModel role) {
