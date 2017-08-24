@@ -16,17 +16,9 @@
  */
 package org.keycloak.testsuite.adapter.servlet;
 
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
 import org.junit.Assert;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
@@ -38,15 +30,18 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.HttpHeaders;
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.UUID;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -54,42 +49,61 @@ import java.util.UUID;
  */
 @WebServlet("/client-linking")
 public class LinkAndExchangeServlet extends HttpServlet {
+
+    private String getPostDataString(HashMap<String, String> params) throws UnsupportedEncodingException{
+        StringBuilder result = new StringBuilder();
+        boolean first = true;
+        for(Map.Entry<String, String> entry : params.entrySet()){
+            if (first)
+                first = false;
+            else
+                result.append("&");
+
+            result.append(URLEncoder.encode(entry.getKey(), "UTF-8"));
+            result.append("=");
+            result.append(URLEncoder.encode(entry.getValue(), "UTF-8"));
+        }
+
+        return result.toString();
+    }
+
     public AccessTokenResponse doTokenExchange(String realm, String token, String requestedIssuer,
                                                String clientId, String clientSecret) throws Exception {
-        CloseableHttpClient client = new DefaultHttpClient();
         try {
             String exchangeUrl = KeycloakUriBuilder.fromUri(ServletTestUtils.getAuthServerUrlBase())
                     .path("/auth/realms/{realm}/protocol/openid-connect/token").build(realm).toString();
 
-            HttpPost post = new HttpPost(exchangeUrl);
-
-            List<NameValuePair> parameters = new LinkedList<NameValuePair>();
-            parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE));
-            parameters.add(new BasicNameValuePair(OAuth2Constants.SUBJECT_TOKEN, token));
-            parameters.add(new BasicNameValuePair(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE));
-            parameters.add(new BasicNameValuePair(OAuth2Constants.REQUESTED_ISSUER, requestedIssuer));
-
+            URL url = new URL(exchangeUrl);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setDoInput(true);
+            conn.setDoOutput(true);
+            HashMap<String, String> parameters = new HashMap<>();
             if (clientSecret != null) {
                 String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
-                post.setHeader("Authorization", authorization);
+                conn.setRequestProperty(HttpHeaders.AUTHORIZATION, authorization);
             } else {
-                parameters.add(new BasicNameValuePair("client_id", clientId));
+                parameters.put("client_id", clientId);
 
             }
 
-            UrlEncodedFormEntity formEntity;
-            try {
-                formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
-            }
-            post.setEntity(formEntity);
-            CloseableHttpResponse response = client.execute(post);
-            AccessTokenResponse tokenResponse = JsonSerialization.readValue(response.getEntity().getContent(), AccessTokenResponse.class);
-            response.close();
+            parameters.put(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
+            parameters.put(OAuth2Constants.SUBJECT_TOKEN, token);
+            parameters.put(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE);
+            parameters.put(OAuth2Constants.REQUESTED_ISSUER, requestedIssuer);
+
+            OutputStream os = conn.getOutputStream();
+            BufferedWriter writer = new BufferedWriter(
+                    new OutputStreamWriter(os, "UTF-8"));
+            writer.write(getPostDataString(parameters));
+
+            writer.flush();
+            writer.close();
+            os.close();
+            AccessTokenResponse tokenResponse = JsonSerialization.readValue(conn.getInputStream(), AccessTokenResponse.class);
+            conn.getInputStream().close();
             return tokenResponse;
         } finally {
-            client.close();
         }
     }
 
