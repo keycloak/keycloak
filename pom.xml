@@ -43,7 +43,7 @@
 
         <!-- WildFly -->
         <jboss.as.version>7.2.0.Final</jboss.as.version>
-        <wildfly.version>11.0.0.Beta1</wildfly.version>
+        <wildfly.version>11.0.0.CR1-SNAPSHOT</wildfly.version>
         <wildfly.build-tools.version>1.2.2.Final</wildfly.build-tools.version>
         <eap.version>7.1.0.Beta1-redhat-5</eap.version>
         <eap.build-tools.version>1.2.2.Final</eap.build-tools.version>

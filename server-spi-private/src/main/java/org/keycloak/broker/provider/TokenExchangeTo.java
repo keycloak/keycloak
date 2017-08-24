@@ -23,6 +23,7 @@ import org.keycloak.representations.AccessToken;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -38,5 +39,5 @@ public interface TokenExchangeTo {
      * @param params form parameters received for requested exchange
      * @return
      */
-    Response exchangeTo(ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject, AccessToken token, MultivaluedMap<String, String> params);
+    Response exchangeTo(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject, AccessToken token, MultivaluedMap<String, String> params);
 }
