@@ -17,11 +17,15 @@
 
 package org.keycloak.adapters.jbossweb;
 
+import org.apache.catalina.Container;
 import org.apache.catalina.LifecycleException;
+import org.apache.catalina.Valve;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
 import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.deploy.LoginConfig;
+import org.keycloak.adapters.AdapterDeploymentContext;
+import org.keycloak.adapters.tomcat.AbstractAuthenticatedActionsValve;
 import org.keycloak.adapters.tomcat.AbstractKeycloakAuthenticatorValve;
 import org.keycloak.adapters.tomcat.GenericPrincipalFactory;
 
@@ -56,7 +60,6 @@ public class KeycloakAuthenticatorValve extends AbstractKeycloakAuthenticatorVal
         super.start();
     }
 
-
     public void logout(Request request) {
         logoutInternal(request);
     }
@@ -64,5 +67,10 @@ public class KeycloakAuthenticatorValve extends AbstractKeycloakAuthenticatorVal
     @Override
     protected GenericPrincipalFactory createPrincipalFactory() {
         return new JBossWebPrincipalFactory();
+    }
+
+    @Override
+    protected AbstractAuthenticatedActionsValve createAuthenticatedActionsValve(AdapterDeploymentContext deploymentContext, Valve next, Container container) {
+        return new AuthenticatedActionsValve(deploymentContext, next, container);
     }
 }
