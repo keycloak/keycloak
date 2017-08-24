@@ -524,13 +524,11 @@ module.controller('RealmPasswordPolicyCtrl', function($scope, Realm, realm, $htt
         }
         var policyString = "";
         for (var i = 0; i < policies.length; i++) {
-            policyString += policies[i].id;
-            if (policies[i].value && policies[i].value != policies[i].defaultValue) {
-                policyString += '(' + policies[i].value + ')';
+            policyString += policies[i].id + '(' + policies[i].value + ')';
+            if (i != policies.length - 1) {
+                policyString += ' and ';
             }
-            policyString += " and ";
         }
-        policyString = policyString.substring(0, policyString.length - 5);
         return policyString;
     }
 
@@ -560,7 +558,7 @@ module.controller('RealmPasswordPolicyCtrl', function($scope, Realm, realm, $htt
 
     $scope.save = function() {
         $scope.realm.passwordPolicy = toString($scope.policy);
-        console.debug($scope.realm.passwordPolicy);
+        console.log($scope.realm.passwordPolicy);
 
         Realm.update($scope.realm, function () {
             $route.reload();
@@ -2515,6 +2513,7 @@ module.controller('ClientRegPolicyDetailCtrl', function($scope, realm, clientReg
 
     if ($scope.providerType.properties) {
         ComponentUtils.addLastEmptyValueToMultivaluedLists($scope.providerType.properties, $scope.instance.config);
+        ComponentUtils.addMvOptionsToMultivaluedLists($scope.providerType.properties);
     }
 
     var oldCopy = angular.copy($scope.instance);
@@ -2525,7 +2524,7 @@ module.controller('ClientRegPolicyDetailCtrl', function($scope, realm, clientReg
             $scope.changed = true;
         }
     }, true);
-
+    
     $scope.reset = function() {
         $route.reload();
     };

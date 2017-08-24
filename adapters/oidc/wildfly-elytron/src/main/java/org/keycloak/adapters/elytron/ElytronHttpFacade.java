@@ -50,7 +50,9 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 /**
@@ -66,6 +68,7 @@ class ElytronHttpFacade implements OIDCHttpFacade {
     private ElytronAccount account;
     private SecurityIdentity securityIdentity;
     private boolean restored;
+    private final Map<String, String> headers = new HashMap<>();
 
     public ElytronHttpFacade(HttpServerRequest request, AdapterDeploymentContext deploymentContext, CallbackHandler handler) {
         this.request = request;
@@ -261,6 +264,7 @@ class ElytronHttpFacade implements OIDCHttpFacade {
     @Override
     public Response getResponse() {
         return new Response() {
+
             @Override
             public void setStatus(final int status) {
                 responseConsumer = responseConsumer.andThen(response -> response.setStatusCode(status));
@@ -268,7 +272,17 @@ class ElytronHttpFacade implements OIDCHttpFacade {
 
             @Override
             public void addHeader(final String name, final String value) {
-                responseConsumer = responseConsumer.andThen(response -> response.addResponseHeader(name, value));
+                headers.put(name, value);
+                responseConsumer = responseConsumer.andThen(new Consumer<HttpServerResponse>() {
+                    @Override
+                    public void accept(HttpServerResponse response) {
+                        String latestValue = headers.get(name);
+
+                        if (latestValue.equals(value)) {
+                            response.addResponseHeader(name, latestValue);
+                        }
+                    }
+                });
             }
 
             @Override

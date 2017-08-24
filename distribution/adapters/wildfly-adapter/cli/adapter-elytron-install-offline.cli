@@ -38,10 +38,10 @@ else
 end-if
 
 if (outcome != success) of /subsystem=elytron/aggregate-http-server-mechanism-factory=keycloak-http-server-mechanism-factory:read-resource
-    /subsystem=elytron/aggregate-http-server-mechanism-factory=keycloak-http-server-mechanism-factory:add(http-server-factories=[keycloak-oidc-http-server-mechanism-factory, global])
+    /subsystem=elytron/aggregate-http-server-mechanism-factory=keycloak-http-server-mechanism-factory:add(http-server-mechanism-factories=[keycloak-oidc-http-server-mechanism-factory, global])
 else
     echo Keycloak HTTP Mechanism Factory already installed. Trying to install Keycloak OpenID Connect HTTP Mechanism Factory.
-    /subsystem=elytron/aggregate-http-server-mechanism-factory=keycloak-http-server-mechanism-factory:list-add(name=http-server-factories, value=keycloak-oidc-http-server-mechanism-factory)
+    /subsystem=elytron/aggregate-http-server-mechanism-factory=keycloak-http-server-mechanism-factory:list-add(name=http-server-mechanism-factories, value=keycloak-oidc-http-server-mechanism-factory)
 end-if
 
 

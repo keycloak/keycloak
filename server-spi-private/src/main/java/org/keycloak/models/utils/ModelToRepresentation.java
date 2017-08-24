@@ -185,6 +185,8 @@ public class ModelToRepresentation {
         rep.setDisableableCredentialTypes(session.userCredentialManager().getDisableableCredentialTypes(realm, user));
         rep.setFederationLink(user.getFederationLink());
 
+        rep.setNotBefore(session.users().getNotBeforeOfUser(realm, user));
+
         List<String> reqActions = new ArrayList<String>();
         Set<String> requiredActions = user.getRequiredActions();
         for (String ra : requiredActions){

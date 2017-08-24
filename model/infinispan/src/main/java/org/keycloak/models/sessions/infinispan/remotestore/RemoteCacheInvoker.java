@@ -55,13 +55,13 @@ public class RemoteCacheInvoker {
     }
 
 
-    public <S extends SessionEntity> void runTask(KeycloakSession kcSession, RealmModel realm, String cacheName, String key, SessionUpdateTask<S> task, SessionEntityWrapper<S> sessionWrapper) {
+    public <K, V extends SessionEntity> void runTask(KeycloakSession kcSession, RealmModel realm, String cacheName, K key, SessionUpdateTask<V> task, SessionEntityWrapper<V> sessionWrapper) {
         RemoteCacheContext context = remoteCaches.get(cacheName);
         if (context == null) {
             return;
         }
 
-        S session = sessionWrapper.getEntity();
+        V session = sessionWrapper.getEntity();
 
         SessionUpdateTask.CacheOperation operation = task.getOperation(session);
         SessionUpdateTask.CrossDCMessageStatus status = task.getCrossDCMessageStatus(sessionWrapper);
@@ -82,8 +82,8 @@ public class RemoteCacheInvoker {
     }
 
 
-    private <S extends SessionEntity> void runOnRemoteCache(RemoteCache remoteCache, long maxIdleMs, String key, SessionUpdateTask<S> task, SessionEntityWrapper<S> sessionWrapper) {
-        S session = sessionWrapper.getEntity();
+    private <K, V extends SessionEntity> void runOnRemoteCache(RemoteCache<K, V> remoteCache, long maxIdleMs, K key, SessionUpdateTask<V> task, SessionEntityWrapper<V> sessionWrapper) {
+        V session = sessionWrapper.getEntity();
         SessionUpdateTask.CacheOperation operation = task.getOperation(session);
 
         switch (operation) {
@@ -96,13 +96,16 @@ public class RemoteCacheInvoker {
                 break;
             case ADD_IF_ABSENT:
                 final int currentTime = Time.currentTime();
-                SessionEntity existing = (SessionEntity) remoteCache
+                SessionEntity existing = remoteCache
                         .withFlags(Flag.FORCE_RETURN_VALUE)
                         .putIfAbsent(key, session, -1, TimeUnit.MILLISECONDS, maxIdleMs, TimeUnit.MILLISECONDS);
                 if (existing != null) {
-                    throw new IllegalStateException("There is already existing value in cache for key " + key);
+                    logger.debugf("Existing entity in remote cache for key: %s . Will update it", key);
+
+                    replace(remoteCache, task.getLifespanMs(), maxIdleMs, key, task);
+                } else {
+                    sessionWrapper.putLocalMetadataNoteInt(UserSessionEntity.LAST_SESSION_REFRESH_REMOTE, currentTime);
                 }
-                sessionWrapper.putLocalMetadataNoteInt(UserSessionEntity.LAST_SESSION_REFRESH_REMOTE, currentTime);
                 break;
             case REPLACE:
                 replace(remoteCache, task.getLifespanMs(), maxIdleMs, key, task);
@@ -113,16 +116,16 @@ public class RemoteCacheInvoker {
     }
 
 
-    private <S extends SessionEntity> void replace(RemoteCache remoteCache, long lifespanMs, long maxIdleMs, String key, SessionUpdateTask<S> task) {
+    private <K, V extends SessionEntity> void replace(RemoteCache<K, V> remoteCache, long lifespanMs, long maxIdleMs, K key, SessionUpdateTask<V> task) {
         boolean replaced = false;
         while (!replaced) {
-            VersionedValue<S> versioned = remoteCache.getVersioned(key);
+            VersionedValue<V> versioned = remoteCache.getVersioned(key);
             if (versioned == null) {
                 logger.warnf("Not found entity to replace for key '%s'", key);
                 return;
             }
 
-            S session = versioned.getValue();
+            V session = versioned.getValue();
 
             // Run task on the remote session
             task.runUpdate(session);

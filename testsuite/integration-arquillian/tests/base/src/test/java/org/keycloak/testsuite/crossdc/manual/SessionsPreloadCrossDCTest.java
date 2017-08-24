@@ -23,7 +23,9 @@ import java.util.List;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.crossdc.AbstractAdminCrossDCTest;
 import org.keycloak.testsuite.crossdc.DC;
@@ -185,6 +187,52 @@ public class SessionsPreloadCrossDCTest extends AbstractAdminCrossDCTest {
             Assert.assertNotNull(newResponse.getAccessToken());
         }
     }
+
+
+    @Test
+    public void loginFailuresPreloadTest() throws Exception {
+        // Enable brute force protector
+        RealmRepresentation realmRep = getAdminClientForStartedNodeInDc(0).realms().realm("test").toRepresentation();
+        realmRep.setBruteForceProtected(true);
+        getAdminClientForStartedNodeInDc(0).realms().realm("test").update(realmRep);
+
+        String userId = ApiUtil.findUserByUsername(getAdminClientForStartedNodeInDc(0).realms().realm("test"), "test-user@localhost").getId();
+
+        int loginFailuresBefore = (Integer) getAdminClientForStartedNodeInDc(0).realm("test").attackDetection().bruteForceUserStatus(userId).get("numFailures");
+        log.infof("loginFailuresBefore: %d", loginFailuresBefore);
+
+        // Create initial brute force records
+        for (int i=0 ; i<SESSIONS_COUNT ; i++) {
+            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "bad-password");
+            Assert.assertNull(response.getAccessToken());
+            Assert.assertNotNull(response.getError());
+        }
+
+        // Start 2nd DC.
+        containerController.start(getCacheServer(DC.SECOND).getQualifier());
+        startBackendNode(DC.SECOND, 0);
+        enableLoadBalancerNode(DC.SECOND, 0);
+
+        // Ensure loginFailures are loaded in both 1st DC and 2nd DC
+        int size1 = getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME).size();
+        int size2 = getTestingClientForStartedNodeInDc(1).testing().cache(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME).size();
+        int loginFailures1 = (Integer) getAdminClientForStartedNodeInDc(0).realm("test").attackDetection().bruteForceUserStatus(userId).get("numFailures");
+        int loginFailures2 = (Integer) getAdminClientForStartedNodeInDc(1).realm("test").attackDetection().bruteForceUserStatus(userId).get("numFailures");
+        log.infof("size1: %d, size2: %d, loginFailures1: %d, loginFailures2: %d", size1, size2, loginFailures1, loginFailures2);
+        Assert.assertEquals(size1, 1);
+        Assert.assertEquals(size2, 1);
+        Assert.assertEquals(loginFailures1, loginFailuresBefore + SESSIONS_COUNT);
+        Assert.assertEquals(loginFailures2, loginFailuresBefore + SESSIONS_COUNT);
+
+        // On DC2 sessions were preloaded from from remoteCache
+        Assert.assertTrue(getTestingClientForStartedNodeInDc(1).testing().cache(InfinispanConnectionProvider.WORK_CACHE_NAME).contains("distributed::remoteCacheLoad::loginFailures"));
+
+        // Disable brute force protector
+        realmRep = getAdminClientForStartedNodeInDc(0).realms().realm("test").toRepresentation();
+        realmRep.setBruteForceProtected(true);
+        getAdminClientForStartedNodeInDc(0).realms().realm("test").update(realmRep);
+    }
+
 
 
     private List<OAuthClient.AccessTokenResponse> createInitialSessions(boolean offline) throws Exception {

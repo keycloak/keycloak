@@ -49,6 +49,8 @@ import org.keycloak.util.TokenUtil;
 import javax.ws.rs.GET;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -370,7 +372,48 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
         // If state is same, we likely have the refresh of some previous request
         String stateFromSession = authSession.getClientNote(OIDCLoginProtocol.STATE_PARAM);
-        return !stateFromRequest.equals(stateFromSession);
+        boolean stateChanged =!stateFromRequest.equals(stateFromSession);
+        if (stateChanged) {
+            return true;
+        }
+
+        return isOIDCAuthenticationRelatedParamsChanged(authSession);
+    }
+
+
+    @Override
+    protected boolean shouldRestartAuthSession(AuthenticationSessionModel authSession) {
+        return super.shouldRestartAuthSession(authSession) || isOIDCAuthenticationRelatedParamsChanged(authSession);
+    }
+
+
+    // Check if some important OIDC parameters, which have impact on authentication, changed. If yes, we need to restart auth session
+    private boolean isOIDCAuthenticationRelatedParamsChanged(AuthenticationSessionModel authSession) {
+        if (isRequestParamChanged(authSession, OIDCLoginProtocol.LOGIN_HINT_PARAM, request.getLoginHint())) {
+            return true;
+        }
+        if (isRequestParamChanged(authSession, OIDCLoginProtocol.PROMPT_PARAM, request.getPrompt())) {
+            return true;
+        }
+        if (isRequestParamChanged(authSession, AdapterConstants.KC_IDP_HINT, request.getIdpHint())) {
+            return true;
+        }
+
+        String maxAgeValue = authSession.getClientNote(OIDCLoginProtocol.MAX_AGE_PARAM);
+        if (maxAgeValue == null && request.getMaxAge() == null) {
+            return false;
+        }
+        if (maxAgeValue != null && Integer.parseInt(maxAgeValue) == request.getMaxAge()) {
+            return false;
+        }
+
+        return true;
+    }
+
+
+    private boolean isRequestParamChanged(AuthenticationSessionModel authSession, String noteName, String requestParamValue) {
+        String authSessionNoteValue = authSession.getClientNote(noteName);
+        return !Objects.equals(authSessionNoteValue, requestParamValue);
     }
 
 

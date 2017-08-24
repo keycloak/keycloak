@@ -18,6 +18,7 @@ package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.Time;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.events.Details;
@@ -59,9 +60,9 @@ import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.MediaType;
 
 import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
@@ -252,33 +253,24 @@ public class AccountService extends AbstractSecuredLocalService {
      */
     @Path("/")
     @GET
-    @Produces(MediaType.TEXT_HTML)
     public Response accountPage() {
-        return forwardToPage(null, AccountPages.ACCOUNT);
-    }
+        if (session.getContext().getRequestHeaders().getAcceptableMediaTypes().contains(MediaType.APPLICATION_JSON_TYPE)) {
+            requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
 
-    /**
-     * Get account information.
-     *
-     * @return
-     */
-    @Path("/")
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response accountPageJson() {
-        requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
-
-        UserRepresentation rep = ModelToRepresentation.toRepresentation(session, realm, auth.getUser());
-        if (rep.getAttributes() != null) {
-            Iterator<String> itr = rep.getAttributes().keySet().iterator();
-            while (itr.hasNext()) {
-                if (itr.next().startsWith("keycloak.")) {
-                    itr.remove();
+            UserRepresentation rep = ModelToRepresentation.toRepresentation(session, realm, auth.getUser());
+            if (rep.getAttributes() != null) {
+                Iterator<String> itr = rep.getAttributes().keySet().iterator();
+                while (itr.hasNext()) {
+                    if (itr.next().startsWith("keycloak.")) {
+                        itr.remove();
+                    }
                 }
             }
-        }
 
-        return Cors.add(request, Response.ok(rep)).auth().allowedOrigins(auth.getToken()).build();
+            return Cors.add(request, Response.ok(rep).type(MediaType.APPLICATION_JSON_TYPE)).auth().allowedOrigins(auth.getToken()).build();
+        } else {
+            return forwardToPage(null, AccountPages.ACCOUNT);
+        }
     }
 
     public static UriBuilder totpUrl(UriBuilder base) {
@@ -514,6 +506,11 @@ public class AccountService extends AbstractSecuredLocalService {
         csrfCheck(stateChecker);
 
         UserModel user = auth.getUser();
+
+        // Rather decrease time a bit. To avoid situation when user is immediatelly redirected to login screen, then automatically authenticated (eg. with Kerberos) and then seeing issues due the stale token
+        // as time on the token will be same like notBefore
+        session.users().setNotBeforeForUser(realm, user, Time.currentTime() - 1);
+
         List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
         for (UserSessionModel userSession : userSessions) {
             AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, clientConnection, headers, true);

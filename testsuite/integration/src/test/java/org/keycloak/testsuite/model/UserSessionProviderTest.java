@@ -462,26 +462,6 @@ public class UserSessionProviderTest {
     }
 
 
-    @Test
-    public void testFailCreateExistingSession() {
-        UserSessionModel userSession = session.sessions().createUserSession("123", realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.2", "form", true, null, null);
-
-        // commit
-        resetSession();
-
-
-        try {
-            session.sessions().createUserSession("123", realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.2", "form", true, null, null);
-            kc.stopSession(session, true);
-            Assert.fail("Not expected to successfully create duplicated userSession");
-        } catch (IllegalStateException e) {
-            // Expected
-            session = kc.startSession();
-        }
-
-    }
-
-
     private void testAuthenticatedClientSession(AuthenticatedClientSessionModel clientSession, String expectedClientId, String expectedUserSessionId, String expectedAction, int expectedTimestamp) {
         Assert.assertEquals(expectedClientId, clientSession.getClient().getClientId());
         Assert.assertEquals(expectedUserSessionId, clientSession.getUserSession().getId());
@@ -531,6 +511,15 @@ public class UserSessionProviderTest {
 
         resetSession();
 
+        // Add the failure, which already exists
+        failure1 = session.sessions().addUserLoginFailure(realm, "user1");
+        failure1.incrementFailures();
+
+        resetSession();
+
+        failure1 = session.sessions().getUserLoginFailure(realm, "user1");
+        assertEquals(2, failure1.getNumFailures());
+
         failure1 = session.sessions().getUserLoginFailure(realm, "user1");
         failure1.clearFailures();
 
@@ -556,13 +545,15 @@ public class UserSessionProviderTest {
     public void testOnUserRemoved() {
         createSessions();
 
-        session.sessions().addUserLoginFailure(realm, "user1");
-        session.sessions().addUserLoginFailure(realm, "user1@localhost");
-        session.sessions().addUserLoginFailure(realm, "user2");
+        UserModel user1 = session.users().getUserByUsername("user1", realm);
+        UserModel user2 = session.users().getUserByUsername("user2", realm);
+
+        session.sessions().addUserLoginFailure(realm, user1.getId());
+        session.sessions().addUserLoginFailure(realm, user2.getId());
 
         resetSession();
 
-        UserModel user1 = session.users().getUserByUsername("user1", realm);
+        user1 = session.users().getUserByUsername("user1", realm);
         new UserManager(session).removeUser(realm, user1);
 
         resetSession();
@@ -570,9 +561,8 @@ public class UserSessionProviderTest {
         assertTrue(session.sessions().getUserSessions(realm, user1).isEmpty());
         assertFalse(session.sessions().getUserSessions(realm, session.users().getUserByUsername("user2", realm)).isEmpty());
 
-        assertNull(session.sessions().getUserLoginFailure(realm, "user1"));
-        assertNull(session.sessions().getUserLoginFailure(realm, "user1@localhost"));
-        assertNotNull(session.sessions().getUserLoginFailure(realm, "user2"));
+        assertNull(session.sessions().getUserLoginFailure(realm, user1.getId()));
+        assertNotNull(session.sessions().getUserLoginFailure(realm, user2.getId()));
     }
 
     private AuthenticatedClientSessionModel createClientSession(ClientModel client, UserSessionModel userSession, String redirect, String state, Set<String> roles, Set<String> protocolMappers) {

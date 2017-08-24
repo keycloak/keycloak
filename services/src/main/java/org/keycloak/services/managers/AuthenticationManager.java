@@ -817,6 +817,12 @@ public class AuthenticationManager {
                 return null;
             }
 
+            int userNotBefore = session.users().getNotBeforeOfUser(realm, user);
+            if (token.getIssuedAt() < userNotBefore) {
+                logger.debug("User notBefore newer than token");
+                return null;
+            }
+
             UserSessionModel userSession = session.sessions().getUserSession(realm, token.getSessionState());
             if (!isSessionValid(realm, userSession)) {
                 // Check if accessToken was for the offline session.

@@ -180,6 +180,9 @@ public class TokenManager {
         if (oldToken.getIssuedAt() < realm.getNotBefore()) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
         }
+        if (oldToken.getIssuedAt() < session.users().getNotBeforeOfUser(realm, user)) {
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
+        }
 
 
         // recreate token.
@@ -207,9 +210,12 @@ public class TokenManager {
         if (!user.isEnabled()) {
             return false;
         }
+        if (token.getIssuedAt() < session.users().getNotBeforeOfUser(realm, user)) {
+            return false;
+        }
 
         ClientModel client = realm.getClientByClientId(token.getIssuedFor());
-        if (client == null || !client.isEnabled()) {
+        if (client == null || !client.isEnabled() || token.getIssuedAt() < client.getNotBefore()) {
             return false;
         }
 
@@ -816,9 +822,13 @@ public class TokenManager {
                     res.setRefreshExpiresIn(refreshToken.getExpiration() - Time.currentTime());
                 }
             }
+
             int notBefore = realm.getNotBefore();
             if (client.getNotBefore() > notBefore) notBefore = client.getNotBefore();
+            int userNotBefore = session.users().getNotBeforeOfUser(realm, userSession.getUser());
+            if (userNotBefore > notBefore) notBefore = userNotBefore;
             res.setNotBeforePolicy(notBefore);
+
             return res;
         }
     }
