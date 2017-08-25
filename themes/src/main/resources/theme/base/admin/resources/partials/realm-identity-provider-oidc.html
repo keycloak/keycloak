@@ -120,6 +120,13 @@
                 </div>
                 <kc-tooltip>{{:: 'authorization-url.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label" for="loginHint">{{:: 'loginHint' | translate}}</label>
+                <div class="col-sm-4">
+                    <input ng-model="identityProvider.config.loginHint" id="loginHint" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'loginHint.tooltip' | translate}}</kc-tooltip>
+            </div>
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="tokenUrl"><span class="required">*</span> {{:: 'token-url' | translate}}</label>
                 <div class="col-md-6">
