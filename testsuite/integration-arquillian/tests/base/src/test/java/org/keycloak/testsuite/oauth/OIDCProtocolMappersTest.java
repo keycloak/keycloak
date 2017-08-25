@@ -52,6 +52,8 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isEmptyOrNullString;
+import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -115,7 +117,6 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             UserResource userResource = findUserByUsernameId(adminClient.realm("test"), "test-user@localhost");
             UserRepresentation user = userResource.toRepresentation();
 
-            user.singleAttribute("empty", "");
             user.singleAttribute("street", "5 Yawkey Way");
             user.singleAttribute("locality", "Boston");
             user.singleAttribute("region_some", "MA"); // Custom name for userAttribute name, which will be mapped to region
@@ -123,8 +124,6 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             user.singleAttribute("country", "USA");
             user.singleAttribute("formatted", "6 Foo Street");
             user.singleAttribute("phone", "617-777-6666");
-
-            user.getAttributes().put("null", null);
 
             List<String> departments = Arrays.asList("finance", "development");
             user.getAttributes().put("departments", departments);
@@ -141,9 +140,6 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             ProtocolMapperRepresentation hard = createHardcodedClaim("hard", "hard", "coded", "String", false, null, true, true);
             app.getProtocolMappers().createMapper(hard).close();
             app.getProtocolMappers().createMapper(createHardcodedClaim("hard-nested", "nested.hard", "coded-nested", "String", false, null, true, true)).close();
-            app.getProtocolMappers().createMapper(createClaimMapper("empty", "empty", "empty", "String", true, "", true, true, false)).close();
-            app.getProtocolMappers().createMapper(createClaimMapper("null", "null", "null", "String", true, "", true, true, false)).close();
-
             app.getProtocolMappers().createMapper(createClaimMapper("custom phone", "phone", "home_phone", "String", true, "", true, true, true)).close();
             app.getProtocolMappers().createMapper(createClaimMapper("nested phone", "phone", "home.phone", "String", true, "", true, true, true)).close();
             app.getProtocolMappers().createMapper(createClaimMapper("departments", "departments", "department", "String", true, "", true, true, true)).close();
@@ -159,8 +155,6 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             IDToken idToken = oauth.verifyIDToken(response.getIdToken());
             assertNotNull(idToken.getAddress());
             assertEquals(idToken.getName(), "Tom Brady");
-            assertNotNull(idToken.getOtherClaims().get("empty"));
-            assertNotNull(idToken.getOtherClaims().get("null"));
             assertEquals(idToken.getAddress().getStreetAddress(), "5 Yawkey Way");
             assertEquals(idToken.getAddress().getLocality(), "Boston");
             assertEquals(idToken.getAddress().getRegion(), "MA");
@@ -184,8 +178,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
             AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
             assertEquals(accessToken.getName(), "Tom Brady");
-            assertNotNull(accessToken.getOtherClaims().get("empty"));
-            assertNotNull(accessToken.getOtherClaims().get("null"));
+            //assertThat(((String)idToken.getOtherClaims().get("empty")), isEmptyString());
+            //assertThat(((String)idToken.getOtherClaims().get("null")), isEmptyString());
             assertNotNull(accessToken.getAddress());
             assertEquals(accessToken.getAddress().getStreetAddress(), "5 Yawkey Way");
             assertEquals(accessToken.getAddress().getLocality(), "Boston");
@@ -250,6 +244,62 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         events.clear();
     }
+
+    @Test
+    public void testNullOrEmptyTokenMapping() throws Exception {
+        {
+            UserResource userResource = findUserByUsernameId(adminClient.realm("test"), "test-user@localhost");
+            UserRepresentation user = userResource.toRepresentation();
+
+            user.singleAttribute("empty", "");
+            user.singleAttribute("null", null);
+            userResource.update(user);
+
+            ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");
+            app.getProtocolMappers().createMapper(createClaimMapper("empty", "empty", "empty", "String", true, "", true, true, false)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("null", "null", "null", "String", true, "", true, true, false)).close();
+        }
+
+        {
+            OAuthClient.AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+
+            IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+            Object empty = idToken.getOtherClaims().get("empty");
+            assertThat((empty == null ? null : (String) empty), isEmptyOrNullString());
+            Object nulll = idToken.getOtherClaims().get("null");
+            assertThat((nulll == null ? null : (String) nulll), isEmptyOrNullString());
+
+            AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+            oauth.openLogout();
+        }
+
+        // undo mappers
+        {
+            ClientResource app = findClientByClientId(adminClient.realm("test"), "test-app");
+            ClientRepresentation clientRepresentation = app.toRepresentation();
+            for (ProtocolMapperRepresentation model : clientRepresentation.getProtocolMappers()) {
+                if (model.getName().equals("empty")
+                        || model.getName().equals("null")
+                        ) {
+                    app.getProtocolMappers().delete(model.getId());
+                }
+            }
+        }
+
+        events.clear();
+
+        {
+            OAuthClient.AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+            IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+            assertNull(idToken.getAddress());
+            assertNull(idToken.getOtherClaims().get("empty"));
+            assertNull(idToken.getOtherClaims().get("null"));
+
+            oauth.openLogout();
+        }
+        events.clear();
+    }
+
 
 
     @Test
