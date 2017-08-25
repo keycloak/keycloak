@@ -22,7 +22,9 @@ import static org.keycloak.testsuite.auth.page.login.Login.OIDC;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.console.clients.AbstractClientTest;
 import org.keycloak.testsuite.console.page.clients.authorization.Authorization;
 import org.keycloak.testsuite.console.page.clients.settings.ClientSettings;
@@ -40,6 +42,11 @@ public abstract class AbstractAuthorizationSettingsTest extends AbstractClientTe
     protected Authorization authorizationPage;
 
     protected ClientRepresentation newClient;
+
+    @BeforeClass
+    public static void enabled() {
+        ProfileAssume.assumePreview();
+    }
 
     @Before
     public void configureTest() {

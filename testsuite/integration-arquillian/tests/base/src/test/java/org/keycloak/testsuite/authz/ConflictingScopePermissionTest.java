@@ -59,7 +59,7 @@ import org.keycloak.util.JsonSerialization;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ConflictingScopePermissionTest extends AbstractKeycloakTest {
+public class ConflictingScopePermissionTest extends AbstractAuthzTest {
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
