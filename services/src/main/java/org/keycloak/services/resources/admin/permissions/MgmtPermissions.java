@@ -67,6 +67,7 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
     protected GroupPermissions groups;
     protected RealmPermissions realmPermissions;
     protected ClientPermissions clientPermissions;
+    protected IdentityProviderPermissions idpPermissions;
 
 
     MgmtPermissions(KeycloakSession session, RealmModel realm) {
@@ -221,6 +222,13 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
         if (clientPermissions != null) return clientPermissions;
         clientPermissions = new ClientPermissions(session, realm, authz, this);
         return clientPermissions;
+    }
+
+    @Override
+    public IdentityProviderPermissions idps() {
+        if (idpPermissions != null) return idpPermissions;
+        idpPermissions = new IdentityProviderPermissions(session, realm, authz, this);
+        return idpPermissions;
     }
 
     @Override

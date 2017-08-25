@@ -17,18 +17,26 @@
 package org.keycloak.social.twitter;
 
 import org.jboss.logging.Logger;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
+import org.keycloak.broker.provider.TokenExchangeTo;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
@@ -44,6 +52,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
@@ -52,7 +61,10 @@ import java.net.URI;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2IdentityProviderConfig> implements
-        SocialIdentityProvider<OAuth2IdentityProviderConfig> {
+        SocialIdentityProvider<OAuth2IdentityProviderConfig>, TokenExchangeTo {
+
+    String TWITTER_TOKEN_TYPE="twitter";
+
 
     protected static final Logger logger = Logger.getLogger(TwitterIdentityProvider.class);
 
@@ -89,6 +101,62 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
             throw new IdentityBrokerException("Could send authentication request to twitter.", e);
         }
     }
+
+    @Override
+    public Response exchangeTo(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject, org.keycloak.representations.AccessToken token, MultivaluedMap<String, String> params) {
+        String requestedType = params.getFirst(OAuth2Constants.REQUESTED_TOKEN_TYPE);
+        if (requestedType != null && !requestedType.equals(TWITTER_TOKEN_TYPE)) {
+            return exchangeUnsupportedRequiredType();
+        }
+        if (!getConfig().isStoreToken()) {
+            String brokerId = tokenUserSession.getNote(Details.IDENTITY_PROVIDER);
+            if (brokerId == null || !brokerId.equals(getConfig().getAlias())) {
+                return exchangeNotSupported();
+            }
+            return exchangeSessionToken(uriInfo, authorizedClient, tokenUserSession, tokenSubject, token);
+        } else {
+            return exchangeStoredToken(uriInfo, authorizedClient, tokenUserSession, tokenSubject, token);
+        }
+    }
+
+    protected Response exchangeStoredToken(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject, org.keycloak.representations.AccessToken token) {
+        FederatedIdentityModel model = session.users().getFederatedIdentity(tokenSubject, getConfig().getAlias(), authorizedClient.getRealm());
+        if (model == null || model.getToken() == null) {
+            return exchangeNotLinked(uriInfo, authorizedClient, tokenUserSession, tokenSubject, token);
+        }
+        String accessToken = model.getToken();
+        if (accessToken == null) {
+            model.setToken(null);
+            session.users().updateFederatedIdentity(authorizedClient.getRealm(), tokenSubject, model);
+            return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject, token);
+        }
+        AccessTokenResponse tokenResponse = new AccessTokenResponse();
+        tokenResponse.setToken(accessToken);
+        tokenResponse.setIdToken(null);
+        tokenResponse.setRefreshToken(null);
+        tokenResponse.setRefreshExpiresIn(0);
+        tokenResponse.getOtherClaims().clear();
+        tokenResponse.getOtherClaims().put(OAuth2Constants.ISSUED_TOKEN_TYPE, TWITTER_TOKEN_TYPE);
+        tokenResponse.getOtherClaims().put(ACCOUNT_LINK_URL, getLinkingUrl(uriInfo, authorizedClient, tokenUserSession, token));
+        return Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE).build();
+    }
+
+    protected Response exchangeSessionToken(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject, org.keycloak.representations.AccessToken token) {
+        String accessToken = tokenUserSession.getNote(AbstractOAuth2IdentityProvider.FEDERATED_ACCESS_TOKEN);
+        if (accessToken == null) {
+            return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject, token);
+        }
+        AccessTokenResponse tokenResponse = new AccessTokenResponse();
+        tokenResponse.setToken(accessToken);
+        tokenResponse.setIdToken(null);
+        tokenResponse.setRefreshToken(null);
+        tokenResponse.setRefreshExpiresIn(0);
+        tokenResponse.getOtherClaims().clear();
+        tokenResponse.getOtherClaims().put(OAuth2Constants.ISSUED_TOKEN_TYPE, TWITTER_TOKEN_TYPE);
+        tokenResponse.getOtherClaims().put(ACCOUNT_LINK_URL, getLinkingUrl(uriInfo, authorizedClient, tokenUserSession, token));
+        return Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE).build();
+    }
+
 
     protected class Endpoint {
         protected RealmModel realm;
@@ -142,6 +210,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
                 identity.setUsername(twitterUser.getScreenName());
                 identity.setName(twitterUser.getName());
 
+
                 StringBuilder tokenBuilder = new StringBuilder();
 
                 tokenBuilder.append("{");
@@ -150,8 +219,12 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
                 tokenBuilder.append("\"screen_name\":").append("\"").append(oAuthAccessToken.getScreenName()).append("\"").append(",");
                 tokenBuilder.append("\"user_id\":").append("\"").append(oAuthAccessToken.getUserId()).append("\"");
                 tokenBuilder.append("}");
+                String token = tokenBuilder.toString();
+                if (getConfig().isStoreToken()) {
+                    identity.setToken(token);
+                }
+                identity.getContextData().put(AbstractOAuth2IdentityProvider.FEDERATED_ACCESS_TOKEN, token);
 
-                identity.setToken(tokenBuilder.toString());
                 identity.setIdpConfig(getConfig());
                 identity.setCode(state);
 
@@ -178,4 +251,11 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
     public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity) {
         return Response.ok(identity.getToken()).type(MediaType.APPLICATION_JSON).build();
     }
+
+    @Override
+    public void authenticationFinished(AuthenticationSessionModel authSession, BrokeredIdentityContext context) {
+        authSession.setUserSessionNote(AbstractOAuth2IdentityProvider.FEDERATED_ACCESS_TOKEN, (String)context.getContextData().get(AbstractOAuth2IdentityProvider.FEDERATED_ACCESS_TOKEN));
+
+    }
+
 }

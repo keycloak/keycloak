@@ -16,28 +16,27 @@
  */
 package org.keycloak.services.resources.admin.permissions;
 
-import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.Resource;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.IdentityProviderModel;
+
+import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface AdminPermissionManagement {
-    public static final String MANAGE_SCOPE = "manage";
-    public static final String VIEW_SCOPE = "view";
-    public static final String EXCHANGE_TO_SCOPE="exchange-to";
+public interface IdentityProviderPermissionManagement {
+    boolean isPermissionsEnabled(IdentityProviderModel idp);
 
-    ClientModel getRealmManagementClient();
+    void setPermissionsEnabled(IdentityProviderModel idp, boolean enable);
 
-    AuthorizationProvider authz();
+    Resource resource(IdentityProviderModel idp);
 
-    RolePermissionManagement roles();
-    UserPermissionManagement users();
-    GroupPermissionManagement groups();
-    ClientPermissionManagement clients();
-    IdentityProviderPermissionManagement idps();
+    Map<String, String> getPermissions(IdentityProviderModel idp);
 
-    ResourceServer realmResourceServer();
+    boolean canExchangeTo(ClientModel authorizedClient, IdentityProviderModel to);
+
+    Policy exchangeToPermission(IdentityProviderModel idp);
 }
