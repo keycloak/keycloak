@@ -1472,7 +1472,11 @@ module.controller('ResourceServerPolicyClientDetailCtrl', function($scope, $rout
                         return;
                     }
                     Client.query({realm: $route.current.params.realm, search: query.term.trim(), max: 20}, function(response) {
-                        data.results = response;
+                        for (i = 0; i < response.length; i++) {
+                            if (response[i].clientId.indexOf(query.term) != -1) {
+                                data.results.push(response[i]);
+                            }
+                        }
                         query.callback(data);
                     });
                 },
