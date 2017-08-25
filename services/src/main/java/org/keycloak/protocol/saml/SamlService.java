@@ -359,6 +359,11 @@ public class SamlService extends AuthorizationEndpointBase {
         protected Response logoutRequest(LogoutRequestType logoutRequest, ClientModel client, String relayState) {
             SamlClient samlClient = new SamlClient(client);
             // validate destination
+            if (logoutRequest.getDestination() == null && samlClient.requiresClientSignature()) {
+                event.detail(Details.REASON, "invalid_destination");
+                event.error(Errors.INVALID_SAML_LOGOUT_REQUEST);
+                return ErrorPage.error(session, Messages.INVALID_REQUEST);
+            }
             if (! isValidDestination(logoutRequest.getDestination())) {
                 event.detail(Details.REASON, "invalid_destination");
                 event.error(Errors.INVALID_SAML_LOGOUT_REQUEST);
@@ -710,7 +715,7 @@ public class SamlService extends AuthorizationEndpointBase {
 
     private boolean isValidDestination(URI destination) {
         if (destination == null) {
-            return false;
+            return true;    // destination is optional
         }
 
         URI expected = uriInfo.getAbsolutePath();

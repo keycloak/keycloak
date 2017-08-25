@@ -280,7 +280,8 @@ public class SamlClient {
     public static AuthnRequestType createLoginRequestDocument(String issuer, String assertionConsumerURL, URI destination) {
         try {
             SAML2Request samlReq = new SAML2Request();
-            AuthnRequestType loginReq = samlReq.createAuthnRequestType(UUID.randomUUID().toString(), assertionConsumerURL, destination.toString(), issuer);
+            AuthnRequestType loginReq = samlReq.createAuthnRequestType(UUID.randomUUID().toString(), assertionConsumerURL,
+              destination == null ? null : destination.toString(), issuer);
 
             return loginReq;
         } catch (ConfigurationException ex) {
