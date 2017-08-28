@@ -20,7 +20,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
-import org.keycloak.broker.oidc.util.JsonSimpleHttp;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
@@ -137,7 +136,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         logoutUri.queryParam("id_token_hint", idToken);
         String url = logoutUri.build().toString();
         try {
-            int status = JsonSimpleHttp.doGet(url, session).asStatus();
+            int status = SimpleHttp.doGet(url, session).asStatus();
             boolean success = status >=200 && status < 400;
             if (!success) {
                 logger.warn("Failed backchannel broker logout to: " + url);
@@ -368,9 +367,8 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         if (!getConfig().isDisableUserInfoService()) {
             String userInfoUrl = getUserInfoUrl();
             if (userInfoUrl != null && !userInfoUrl.isEmpty() && (id == null || name == null || preferredUsername == null || email == null)) {
-                SimpleHttp request = JsonSimpleHttp.doGet(userInfoUrl, session)
-                        .header("Authorization", "Bearer " + accessToken);
-                JsonNode userInfo = JsonSimpleHttp.asJson(request);
+                JsonNode userInfo = SimpleHttp.doGet(userInfoUrl, session)
+                        .header("Authorization", "Bearer " + accessToken).asJson();
 
                 id = getJsonProperty(userInfo, "sub");
                 name = getJsonProperty(userInfo, "name");
