@@ -18,7 +18,7 @@ First clone the Keycloak Documentation repository:
     
 To build Keycloak Documentation run:
 
-    mvn clean install build
+    mvn clean install
     
 You can then view the documentation by opening target/frames.html or target/index.html.
 
@@ -30,7 +30,7 @@ Keycloak is the basis of [Red Hat Single Sign-On](https://access.redhat.com/prod
 
 To build the documentation for RH-SSO run:
 
-    mvn clean install build -Dproduct
+    mvn clean install -Dproduct
 
 You can then view the documentation by opening target/frames.html or target/index.html.
 
