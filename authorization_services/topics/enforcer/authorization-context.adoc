@@ -16,7 +16,7 @@ Obtaining the Authorization Context in a Servlet Container
 
 [NOTE]
 For more details about how you can obtain a `KeycloakSecurityContext` consult the adapter configuration. The example above should be sufficient
-to obtain the context when running an application using any of the servlet containers supported by {{book.project.name}}.
+to obtain the context when running an application using any of the servlet containers supported by {project_name}.
 
 The authorization context helps give you more control over the decisions made and returned by the server. For example, you can use it
 to build a dynamic menu where items are hidden or shown depending on the permissions associated with a resource or scope.
@@ -35,7 +35,7 @@ if (authzContext.hasScopePermission("urn:project.com:project:create")) {
 }
 ```
 
-The `AuthorizationContext` represents one of the main capabilities of {{book.project.name}} {{book.project.module}}. From the examples above, you can see that the protected resource is not directly associated with the policies that govern them.
+The `AuthorizationContext` represents one of the main capabilities of {project_name} Authorization Services. From the examples above, you can see that the protected resource is not directly associated with the policies that govern them.
 
 Consider some similar code using role-based access control (RBAC):
 
@@ -53,15 +53,15 @@ if (User.hasRole('project-manager')) {
 }
 ```
 
-Although both examples address the same requirements, they do so in different ways. In RBAC, roles only _implicitly_ define access for their resources. With {{book.project.name}} you gain the capability to create more manageable code that focuses directly on your resources whether you are using RBAC, attribute-based access control (ABAC), or any other BAC variant. Either you have the permission for a given resource or scope, or you don't.
+Although both examples address the same requirements, they do so in different ways. In RBAC, roles only _implicitly_ define access for their resources. With {project_name} you gain the capability to create more manageable code that focuses directly on your resources whether you are using RBAC, attribute-based access control (ABAC), or any other BAC variant. Either you have the permission for a given resource or scope, or you don't.
 
 Now, suppose your security requirements have changed and in addition to project managers, PMOs can also create new projects.
 
-Security requirements change, but with {{book.project.name}} there is no need to change your application code to address the new requirements. Once your application is based on the resource and scope identifier, you need only change the configuration of the permissions or policies associated with a particular resource in the authorization server. In this case, the permissions and policies associated with the `Project Resource` and/or the scope `urn:project.com:project:create` would be changed.
+Security requirements change, but with {project_name} there is no need to change your application code to address the new requirements. Once your application is based on the resource and scope identifier, you need only change the configuration of the permissions or policies associated with a particular resource in the authorization server. In this case, the permissions and policies associated with the `Project Resource` and/or the scope `urn:project.com:project:create` would be changed.
 
 ==== Using the AuthorizationContext to obtain an Authorization Client Instance
 
-The ```AuthorizationContext``` can also be used to obtain a reference to the <<fake/../../service/client-api.adoc#_service_client_api, Authorization Client API>> configured to your application:
+The ```AuthorizationContext``` can also be used to obtain a reference to the <<_service_client_api, Authorization Client API>> configured to your application:
 
 ```java
     ClientAuthorizationContext clientContext = ClientAuthorizationContext.class.cast(authzContext);

@@ -7,14 +7,14 @@ There are a just a few steps you have to complete to be able to login to OpenShi
 and select `Openshift` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
 
 .Add Identity Provider
-image:../../../{{book.images}}/openshift-add-identity-provider.png[]
+image:{project_images}/openshift-add-identity-provider.png[]
 
 .Registering OAuth client
 
 You can register your client using `oc` command line tool.
 
 ====
-[bash]
+[source,bash]
 ----
 $ oc create -f <(echo '
 kind: OAuthClient
@@ -33,7 +33,7 @@ grantMethod: prompt <4>
 <4> The `grantMethod` is used to determine what action to take when this client requests tokens and has not yet been granted access by the user.
 ====
 
-Use client ID and secret defined by `oc create` command to enter them back on the {{book.project.name}} `Add identity provider` page.
-Go back to {{book.project.name}} and specify those items.
+Use client ID and secret defined by `oc create` command to enter them back on the {project_name} `Add identity provider` page.
+Go back to {project_name} and specify those items.
 
 Please refer to https://docs.openshift.org/latest/architecture/additional_concepts/authentication.html#oauth[official Openshift documentation] for more detailed guides.

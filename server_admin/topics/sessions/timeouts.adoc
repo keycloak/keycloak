@@ -2,11 +2,11 @@
 
 === Session and Token Timeouts
 
-{{book.project.name}} gives you fine grain control of session, cookie, and token timeouts.  This is all done on the
+{project_name} gives you fine grain control of session, cookie, and token timeouts.  This is all done on the
 `Tokens` tab in the `Realm Settings` left menu item.
 
 .Tokens Tab
-image:../../{{book.images}}/tokens-tab.png[]
+image:{project_images}/tokens-tab.png[]
 
 Let's walk through each of the items on this page.
 
@@ -26,7 +26,7 @@ Let's walk through each of the items on this page.
  a user session can remain active, regardless of activity.
 
 |Offline Session Idle
-|For <<fake/../../sessions/offline.adoc#_offline-access, offline access>>, this is the time the session is allowed to remain idle before the offline token is revoked.
+|For <<_offline-access, offline access>>, this is the time the session is allowed to remain idle before the offline token is revoked.
 
 |Access Token Lifespan
 |When an OIDC access token is created, this value affects the expiration.

@@ -1,26 +1,26 @@
 [[_applicationclustering]]
 ==== Application Clustering
 
-{% if book.community %}
+ifeval::[{project_community}==true]
 This chapter is related to supporting clustered applications deployed to JBoss EAP, WildFly and JBoss AS.
-{% endif %}
-{% if book.product %}
+endif::[]
+ifeval::[{project_product}==true]
 This chapter is related to supporting clustered applications deployed to JBoss EAP.
-{% endif %}
+endif::[]
 
 There are a few options available depending on whether your application is:
 
 * Stateless or stateful
 * Distributable (replicated http session) or non-distributable
 * Relying on sticky sessions provided by load balancer
-* Hosted on same domain as {{book.project.name}}
+* Hosted on same domain as {project_name}
 
 Dealing with clustering is not quite as simple as for a regular application. Mainly due to the fact that both the browser and the server-side application
-sends requests to {{book.project.name}}, so it's not as simple as enabling sticky sessions on your load balancer.
+sends requests to {project_name}, so it's not as simple as enabling sticky sessions on your load balancer.
 
 ===== Stateless token store
 
-By default, the web application secured by {{book.project.name}} uses the HTTP session to store security context. This means that you either have to
+By default, the web application secured by {project_name} uses the HTTP session to store security context. This means that you either have to
 enable sticky sessions or replicate the HTTP session.
 
 As an alternative to storing the security context in the HTTP session the adapter can be configured to store this in a cookie instead. This is useful if you want
@@ -38,29 +38,29 @@ One limitation of using the cookie store is that the whole security context is p
 
 Another small limitation is limited support for Single-Sign Out. It works without issues if you init servlet logout (HttpServletRequest.logout) from the
 application itself as the adapter will delete the KEYCLOAK_ADAPTER_STATE cookie. However, back-channel logout initialized from a different application isn't
-propagated by {{book.project.name}} to applications using cookie store. Hence it's recommended to use a short value for the access token timeout (for example 1 minute).
+propagated by {project_name} to applications using cookie store. Hence it's recommended to use a short value for the access token timeout (for example 1 minute).
 
 ===== Relative URI optimization
 
-In deployment scenarios where {{book.project.name}} and the application is hosted on the same domain (through a reverse proxy or load balancer) it can be
+In deployment scenarios where {project_name} and the application is hosted on the same domain (through a reverse proxy or load balancer) it can be
 convenient to use relative URI options in your client configuration.
 
-With relative URIs the URI is resolved as relative to the URL of the URL used to access {{book.project.name}}.
+With relative URIs the URI is resolved as relative to the URL of the URL used to access {project_name}.
 
-For example if the URL to your application is `$$https://acme.org/myapp$$` and the URL to {{book.project.name}} is `$$https://acme.org/auth$$`, then you can use
+For example if the URL to your application is `$$https://acme.org/myapp$$` and the URL to {project_name} is `$$https://acme.org/auth$$`, then you can use
 the redirect-uri `/myapp` instead of `$$https://acme.org/myapp$$`.
 
 ===== Admin URL configuration
 
-Admin URL for a particular client can be configured in the {{book.project.name}} Administration Console.
-It's used by the {{book.project.name}} server to send backend requests to the application for various tasks, like logout users or push revocation policies.
+Admin URL for a particular client can be configured in the {project_name} Administration Console.
+It's used by the {project_name} server to send backend requests to the application for various tasks, like logout users or push revocation policies.
 
 For example the way backchannel logout works is:
 
 . User sends logout request from one application
-. The application sends logout request to {{book.project.name}}
-. The {{book.project.name}} server invalidates the user session
-. The {{book.project.name}} server then sends a backchannel request to application with an admin url that are associated with the session
+. The application sends logout request to {project_name}
+. The {project_name} server invalidates the user session
+. The {project_name} server then sends a backchannel request to application with an admin url that are associated with the session
 . When an application receives the logout request it invalidates the corresponding HTTP session
 
 If admin URL contains `${application.session.host}` it will be replaced with the URL to the node associated with the HTTP session.
@@ -68,17 +68,17 @@ If admin URL contains `${application.session.host}` it will be replaced with the
 [[_registration_app_nodes]]
 ===== Registration of application nodes
 
-The previous section describes how {{book.project.name}} can send logout request to node associated with a specific HTTP session.
+The previous section describes how {project_name} can send logout request to node associated with a specific HTTP session.
 However, in some cases admin may want to propagate admin tasks to all registered cluster nodes, not just one of them.
 For example to push a new not before policy to the application or to logout all users from the application.
 
-In this case {{book.project.name}} needs to be aware of all application cluster nodes, so it can send the event to all of them.
+In this case {project_name} needs to be aware of all application cluster nodes, so it can send the event to all of them.
 To achieve this, we support auto-discovery mechanism: 
 
-. When a new application node joins the cluster, it sends a registration request to the {{book.project.name}} server
-. The request may be re-sent to {{book.project.name}} in configured periodic intervals
-. If the {{book.project.name}} server doesn't receive a re-registration request within a specified timeout then it automatically unregisters the specific node
-. The node is also unregistered in {{book.project.name}} when it sends an unregistration request, which is usually during node shutdown or application undeployment.
+. When a new application node joins the cluster, it sends a registration request to the {project_name} server
+. The request may be re-sent to {project_name} in configured periodic intervals
+. If the {project_name} server doesn't receive a re-registration request within a specified timeout then it automatically unregisters the specific node
+. The node is also unregistered in {project_name} when it sends an unregistration request, which is usually during node shutdown or application undeployment.
   This may not work properly for forced shutdown when undeployment listeners are not invoked, which results in the need for automatic unregistration
 
 Sending startup registrations and periodic re-registration is disabled by default as it's only required for some clustered applications.
@@ -93,7 +93,7 @@ To enable the feature edit the `WEB-INF/keycloak.json` file for your application
 
 This means the adapter will send the registration request on startup and re-register every 10 minutes.
 
-In the {{book.project.name}} Administration Console you can specify the maximum node re-registration timeout (should be larger than _register-node-period_ from
+In the {project_name} Administration Console you can specify the maximum node re-registration timeout (should be larger than _register-node-period_ from
 the adapter configuration). You can also manually add and remove cluster nodes in through the Adminstration Console, which is useful if you don't want to rely
 on the automatic registration feature or if you want to remove stale application nodes in the event your not using the automatic unregistration feature.
 
@@ -101,7 +101,7 @@ on the automatic registration feature or if you want to remove stale application
 ===== Refresh token in each request
 
 By default the application adapter will only refresh the access token when it's expired. However, you can also configure the adapter to refresh the token on every
-request. This may have a performance impact as your application will send more requests to the {{book.project.name}} server.
+request. This may have a performance impact as your application will send more requests to the {project_name} server.
 
 To enable the feature edit the `WEB-INF/keycloak.json` file for your application and add:
 

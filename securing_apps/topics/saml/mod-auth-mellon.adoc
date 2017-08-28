@@ -6,30 +6,30 @@ The https://github.com/UNINETT/mod_auth_mellon[mod_auth_mellon] module is an Apa
 
 To configure mod_auth_mellon you'll need:
 
-* An Identity Provider (IdP) entity descriptor XML file, which describes the connection to {{book.project.name}} or another SAML IdP
+* An Identity Provider (IdP) entity descriptor XML file, which describes the connection to {project_name} or another SAML IdP
 * An SP entity descriptor XML file, which describes the SAML connections and configuration for the application you are securing.
 * A private key PEM file, which is a text file in the PEM format that defines the private key the application uses to sign documents.
 * A certificate PEM file, which is a text file that defines the certificate for your application.
 * mod_auth_mellon-specific Apache HTTPD module configuration.
 
-{% if book.community %}
-If you have already defined and registered the client application within a realm on the {{book.project.name}} application server, {{book.project.name}} can generate all the files you need except the Apache HTTPD module configuration.
+ifeval::[{project_community}==true]
+If you have already defined and registered the client application within a realm on the {project_name} application server, {project_name} can generate all the files you need except the Apache HTTPD module configuration.
 
 To generate the Apache HTTPD module configuration, complete the following steps:
 
 . Go to the Installation page of your SAML client and select the Mod Auth Mellon files option.
 +
 .mod_auth_mellon config download
-image:../../book.images/mod-auth-mellon-config-download.png[]
+image:{project_images}/mod-auth-mellon-config-download.png[]
 
 . Click *Download* to download a zip file that contains the XML descriptor and PEM files you need.
-{% endif %}
+endif::[]
 
-==== Configuring mod_auth_mellon with {{book.project.name}}
+==== Configuring mod_auth_mellon with {project_name}
 
 There are two hosts involved:
 
-* The host on which {{book.project.name}} is running, which will be referred to as $idp_host because {{book.project.name}} is a SAML identity provider (IdP). 
+* The host on which {project_name} is running, which will be referred to as $idp_host because {project_name} is a SAML identity provider (IdP).
 
 * The host on which the web application is running, which will be referred to as $sp_host. In SAML an application using an IdP is called a service provider (SP).
 
@@ -140,19 +140,19 @@ mv ${file_prefix}.key /etc/httpd/saml2/mellon.key
 mv ${file_prefix}.xml /etc/httpd/saml2/mellon_metadata.xml
 ----
 
-===== Adding the Mellon Service Provider to the {{book.project.name}} Identity Provider
+===== Adding the Mellon Service Provider to the {project_name} Identity Provider
 
-Assumption: The {{book.project.name}} IdP has already been installed on the $idp_host.
+Assumption: The {project_name} IdP has already been installed on the $idp_host.
 
-{{book.project.name}} supports multiple tenancy where all users, clients, and so on are grouped in what is called a realm. Each realm is independent of other realms. You can use an existing realm in your {{book.project.name}}, but this example shows how to create a new realm called test_realm and use that realm.
+{project_name} supports multiple tenancy where all users, clients, and so on are grouped in what is called a realm. Each realm is independent of other realms. You can use an existing realm in your {project_name}, but this example shows how to create a new realm called test_realm and use that realm.
 
-All these operations are performed using the {{book.project.name}} administration web console. You must have the admin username and password for $idp_host.
+All these operations are performed using the {project_name} administration web console. You must have the admin username and password for $idp_host.
 
 To complete the following steps:
 
 . Open the Admin Console and log on by entering the admin username and password.
 +
-After logging into the administration console there will be an existing realm. When {{book.project.name}} is first set up a root realm, master, is created by default. Any previously created realms are listed in the upper left corner of the administration console in a drop-down list. 
+After logging into the administration console there will be an existing realm. When {project_name} is first set up a root realm, master, is created by default. Any previously created realms are listed in the upper left corner of the administration console in a drop-down list.
 
 . From the realm drop-down list select *Add realm*.
 
@@ -160,7 +160,7 @@ After logging into the administration console there will be an existing realm. W
 
 ====== Adding the Mellon Service Provider as a Client of the Realm
 
-In {{book.project.name}} SAML SPs are known as clients. To add the SP we must be in the Clients section of the realm. 
+In {project_name} SAML SPs are known as clients. To add the SP we must be in the Clients section of the realm.
 
 . Click the Clients menu item on the left and click *Create* in the upper right corner to create a new client.
 
@@ -182,7 +182,7 @@ There are several client configuration parameters we suggest setting:
 . Change "postResponse" to "paosResponse". (The paosResponse URL is needed for SAML ECP.) 
 . Click *Save* at the bottom.
 
-Many SAML SPs determine authorization based on a user's membership in a group. The {{book.project.name}} IdP can manage user group information but it does not supply the user's groups unless the IdP is configured to supply it as a SAML attribute. 
+Many SAML SPs determine authorization based on a user's membership in a group. The {project_name} IdP can manage user group information but it does not supply the user's groups unless the IdP is configured to supply it as a SAML attribute.
 
 To configure the IdP to supply the user's groups as as a SAML attribute, complete the following steps:
 
@@ -225,4 +225,4 @@ NOTE: Configtest is equivalent to the -t argument to apachectl. If the configura
 systemctl restart httpd.service
 ----
 
-You have now set up both {{book.project.name}} as a SAML IdP in the test_realm and mod_auth_mellon as SAML SP protecting the URL $sp_host/protected (and everything beneath it) by authenticating against the ``$idp_host`` IdP.
+You have now set up both {project_name} as a SAML IdP in the test_realm and mod_auth_mellon as SAML SP protecting the URL $sp_host/protected (and everything beneath it) by authenticating against the ``$idp_host`` IdP.

@@ -2,7 +2,7 @@
 
 ==== General Adapter Config
 
-Each SAML client adapter supported by {{book.project.name}} can be configured by a simple XML text file.
+Each SAML client adapter supported by {project_name} can be configured by a simple XML text file.
 This is what one might look like: 
 
 [source,xml]

@@ -1,14 +1,14 @@
 
 === OTP Policies
 
-{{book.project.name}} has a number of policies you can set up for your FreeOTP or Google Authenticator One-Time Password
+{project_name} has a number of policies you can set up for your FreeOTP or Google Authenticator One-Time Password
 generator.  Click on the `Authentication` left menu item and go to the `OTP Policy` tab.
 
 .OTP Policy
-image:../../{{book.images}}/otp-policy.png[]
+image:{project_images}/otp-policy.png[]
 
 Any policies you set here will be used to validate one-time passwords.  When configuring OTP, FreeOTP and Google Authenticator
-can scan a QR code that is generated on the OTP set up page that {{book.project.name}} has.  The bar code is also
+can scan a QR code that is generated on the OTP set up page that {project_name} has.  The bar code is also
 generated from information configured on the `OTP Policy` tab.
 
 ==== TOTP vs. HOTP
@@ -21,11 +21,11 @@ change after a successful login.
 
 TOTP is considered a little more secure because the matchable OTP is only valid for a short window of time while the OTP for HOTP can
 be valid for an indeterminate amount of time.  HOTP is much more user friendly as the user won't have to hurry to enter in their
-OTP before the time interval is up.  With the way {{book.project.name}} has implemented TOTP this distinction becomes a little more
+OTP before the time interval is up.  With the way {project_name} has implemented TOTP this distinction becomes a little more
 blurry.  HOTP requires a database update every time the server wants to increment the counter.  This can be a performance drain
 on the authentication server when there is heavy load.  So, to provide a more efficient alternative, TOTP does not remember passwords
 used.  This bypasses the need to do any DB updates, but the downside is that TOTPs can be re-used in the valid time interval.  For future
-versions of {{book.project.name}} it is planned that you will be able to configure whether TOTP checks older OTPs in the time interval.
+versions of {project_name} it is planned that you will be able to configure whether TOTP checks older OTPs in the time interval.
 
 ==== TOTP Configuration Options
 

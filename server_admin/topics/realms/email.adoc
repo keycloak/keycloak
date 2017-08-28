@@ -2,14 +2,14 @@
 
 === Email Settings
 
-{{book.project.name}} sends emails to users to verify their email address, when they forget their passwords, or when an admin needs to
+{project_name} sends emails to users to verify their email address, when they forget their passwords, or when an admin needs to
 receive notifications about a server event.
-To enable {{book.project.name}} to send emails you need to provide {{book.project.name}} with your SMTP server settings.
+To enable {project_name} to send emails you need to provide {project_name} with your SMTP server settings.
 This is configured per realm.  Go to the `Realm Settings` left menu
 item and click the `Email` tab.
 
 .Email Tab
-image:../../{{book.images}}/email-tab.png[]
+image:{project_images}/email-tab.png[]
 
 Host::
   `Host` denotes the SMTP server hostname used for sending emails.

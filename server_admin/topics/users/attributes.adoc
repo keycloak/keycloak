@@ -5,7 +5,7 @@ Beyond basic user metadata like name and email, you can store arbitrary user att
 then click on the `Attributes` tab.
 
 .Users
-image:../../{{book.images}}/user-attributes.png[]
+image:{project_images}/user-attributes.png[]
 
 Enter in the attribute name and value in the empty fields and click the `Add` button next to it to add a new field.
 Note that any edits you make on this page will not be stored until you hit the `Save` button.

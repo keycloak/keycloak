@@ -2,8 +2,8 @@
 
 === LDAP and Active Directory
 
-{{book.project.name}} comes with a built-in LDAP/AD provider.  It is possible to federate multiple different LDAP servers in the same
-{{book.project.name}} realm.  You can map LDAP user attributes into the {{book.project.name}} common user model.
+{project_name} comes with a built-in LDAP/AD provider.  It is possible to federate multiple different LDAP servers in the same
+{project_name} realm.  You can map LDAP user attributes into the {project_name} common user model.
 By default, it maps username, email, first name, and last name, but you are free to configure additional <<_ldap_mappers,mappings>>.
 The LDAP provider also supports password validation via LDAP/AD protocols and different storage, edit, and synchronization modes.
 
@@ -15,41 +15,41 @@ Selecting _ldap_ will bring you to the ldap configuration page.
 
 ==== Storage Mode
 
-By default, {{book.project.name}} will import users from LDAP into the local {{book.project.name}} user database. This copy of the user
+By default, {project_name} will import users from LDAP into the local {project_name} user database. This copy of the user
 is either synchronized on demand, or through a periodic background task.
 The one exception to this is passwords.  Passwords are not imported and password validation is
-delegated to the LDAP server.  The benefits to this approach is that all {{book.project.name}} features will work as any extra
+delegated to the LDAP server.  The benefits to this approach is that all {project_name} features will work as any extra
 per-user data that is needed can be stored locally.  This approach also reduces load on the LDAP server as uncached users are loaded
-from the {{book.project.name}} database the 2nd time they are accessed.  The only load your LDAP server will have is password validation.
-The downside to this approach is that when a user is first queried, this will require a {{book.project.name}} database insert.  The import will
+from the {project_name} database the 2nd time they are accessed.  The only load your LDAP server will have is password validation.
+The downside to this approach is that when a user is first queried, this will require a {project_name} database insert.  The import will
 also have to be synchronized with your LDAP server as needed.
 
-Alternatively, you can choose not to import users into the {{book.project.name}} user database.  In this case, the common user model
-that the  {{book.project.name}} runtime uses is backed only by the LDAP server.  This means that if LDAP doesn't support
-a piece of data that a {{book.project.name}} feature needs that feature will not work.
+Alternatively, you can choose not to import users into the {project_name} user database.  In this case, the common user model
+that the  {project_name} runtime uses is backed only by the LDAP server.  This means that if LDAP doesn't support
+a piece of data that a {project_name} feature needs that feature will not work.
 The benefit to this approach is that you do not have the overhead of importing and synchronizing a copy of the LDAP user into the
-{{book.project.name}} user database.
+{project_name} user database.
 
 This storage mode is controled by the `Import Enabled` switch.  Set to `On` to import users.
 
 ==== Edit Mode
 
-Users, through the <<fake/../../account.adoc#_account-service, User Account Service>>, and admins through the Admin Console
+Users, through the <<_account-service, User Account Service>>, and admins through the Admin Console
 have the ability to modify user metadata.  Depending on your setup you may or may not have LDAP update privileges.  The
 `Edit Mode` configuration option defines the edit policy you have with your LDAP store.
 
 READONLY::
   Username, email, first name, last name, and other mapped attributes will be unchangeable.
-  {{book.project.name}} will show an error anytime anybody tries to update these fields.
+  {project_name} will show an error anytime anybody tries to update these fields.
   Also, password updates will not be supported.
 
 WRITABLE::
   Username, email, first name, last name, and other mapped attributes and passwords can all be updated and will be synchronized automatically with your LDAP store.
 
 UNSYNCED::
-  Any changes to username, email, first name, last name, and passwords will be stored in {{book.project.name}} local storage.
-  It is up to you to figure out how to synchronize back to LDAP. This allows {{book.project.name}} deployments to support
-  updates of user metadata on a read-only LDAP server.  This option only applies when you are importing users from LDAP into the local {{book.project.name}} user database.
+  Any changes to username, email, first name, last name, and passwords will be stored in {project_name} local storage.
+  It is up to you to figure out how to synchronize back to LDAP. This allows {project_name} deployments to support
+  updates of user metadata on a read-only LDAP server.  This option only applies when you are importing users from LDAP into the local {project_name} user database.
 
 ==== Other config options
 
@@ -60,12 +60,12 @@ Priority::
   The priority of this provider when looking up users or for adding registrations.
 
 Sync Registrations::
-  Does your LDAP support adding new users?  Click this switch if you want new users created by {{book.project.name}} in the admin console or the registration page
+  Does your LDAP support adding new users?  Click this switch if you want new users created by {project_name} in the admin console or the registration page
   to be added to LDAP.
 
 Allow Kerberos authentication::
   Enable Kerberos/SPNEGO authentication in realm with users data provisioned from LDAP.
-  More info in <<fake/../../authentication/kerberos.adoc#_kerberos,Kerberos section>>.
+  More info in <<_kerberos,Kerberos section>>.
 
 Other options::
   The rest of the configuration options should be self explanatory.
@@ -74,10 +74,10 @@ Other options::
 ==== Connect to LDAP over SSL
 
 When you configure a secured connection URL to your LDAP store(for example `ldaps://myhost.com:636` ),
-{{book.project.name}} will use SSL for the communication with LDAP server.
-The important thing is to properly configure a truststore on the {{book.project.name}} server side, otherwise {{book.project.name}} can't trust the SSL connection to LDAP.
+{project_name} will use SSL for the communication with LDAP server.
+The important thing is to properly configure a truststore on the {project_name} server side, otherwise {project_name} can't trust the SSL connection to LDAP.
 
-The global truststore for the {{book.project.name}} can be configured with the Truststore SPI.  Please check out the link:{{book.installguide.link}}[{{book.installguide.name}}] for more detail.
+The global truststore for the {project_name} can be configured with the Truststore SPI.  Please check out the link:{installguide_link}[{installguide_name}] for more detail.
 If you don't configure the truststore SPI, the truststore will fallback to the default mechanism provided by Java (either the file provided by system property `javax.net.ssl.trustStore`
 or the cacerts file from the JDK if the system property is not set).
 
@@ -85,20 +85,20 @@ There is a configuration property `Use Truststore SPI` in the LDAP federation pr
 By default, the value is `Only for ldaps`, which is fine for most deployments.  The Truststore SPI will only be used
 if the connection to LDAP starts with `ldaps`.
 
-==== Sync of LDAP users to {{book.project.name}}
+==== Sync of LDAP users to {project_name}
 
-If you have import enabled, the LDAP Provider will automatically take care of synchronization (import) of needed LDAP users into the {{book.project.name}} local database.
+If you have import enabled, the LDAP Provider will automatically take care of synchronization (import) of needed LDAP users into the {project_name} local database.
 As users log in, the LDAP provider will import the LDAP user
-into the {{book.project.name}} database and then authenticate against the LDAP password. This is the only time users will be imported.
+into the {project_name} database and then authenticate against the LDAP password. This is the only time users will be imported.
 If you go to the `Users` left menu item in the Admin Console and click the `View all users` button, you will only see those LDAP users that
-have been authenticated at least once by {{book.project.name}}.  It is implemented this way so that admins don't accidentally try to import a huge LDAP DB of users.
+have been authenticated at least once by {project_name}.  It is implemented this way so that admins don't accidentally try to import a huge LDAP DB of users.
 
-If you want to sync all LDAP users into the {{book.project.name}} database, you may configure and enable the `Sync Settings` of the LDAP provider you configured.
+If you want to sync all LDAP users into the {project_name} database, you may configure and enable the `Sync Settings` of the LDAP provider you configured.
 There are 2 types of synchronization:
 
 Periodic Full sync::
-  This will synchronize all LDAP users into {{book.project.name}} DB.
-  Those LDAP users, which already exist in {{book.project.name}} and were changed in LDAP directly will be updated in {{book.project.name}} DB
+  This will synchronize all LDAP users into {project_name} DB.
+  Those LDAP users, which already exist in {project_name} and were changed in LDAP directly will be updated in {project_name} DB
   (For example if user `Mary Kelly` was changed in LDAP to `Mary Smith`).
 
 Periodic Changed users sync::
@@ -112,21 +112,21 @@ then set up a periodic sync of changed users.  The configuration page for your L
 ==== LDAP Mappers
 
 LDAP mappers are `listeners`, which are triggered by the LDAP Provider at various points, provide another extension point to LDAP integration.
-They are triggered when a user logs in via LDAP and needs to be imported, during {{book.project.name}} initiated registration, or when a user is queried from the Admin Console.
-When you create an LDAP Federation provider, {{book.project.name}} will automatically provide set of built-in `mappers` for this provider.
+They are triggered when a user logs in via LDAP and needs to be imported, during {project_name} initiated registration, or when a user is queried from the Admin Console.
+When you create an LDAP Federation provider, {project_name} will automatically provide set of built-in `mappers` for this provider.
 You are free to change this set and create a new mapper or update/delete existing ones.
 
 User Attribute Mapper::
-  This allows you to specify which LDAP attribute is mapped to which attribute of {{book.project.name}} user.
-  So, for example, you can configure that LDAP attribute `mail` to the attribute `email` in the {{book.project.name}} database.
-  For this mapper implementation, there is always a one-to-one mapping (one LDAP attribute is mapped to one {{book.project.name}} attribute)
+  This allows you to specify which LDAP attribute is mapped to which attribute of {project_name} user.
+  So, for example, you can configure that LDAP attribute `mail` to the attribute `email` in the {project_name} database.
+  For this mapper implementation, there is always a one-to-one mapping (one LDAP attribute is mapped to one {project_name} attribute)
 
 FullName Mapper::
-  This allows you to specify that the full name of the user, which is saved in some LDAP attribute (usually `cn` ) will be mapped to `firstName` and `lastname` attributes in the {{book.project.name}} database.
+  This allows you to specify that the full name of the user, which is saved in some LDAP attribute (usually `cn` ) will be mapped to `firstName` and `lastname` attributes in the {project_name} database.
   Having `cn` to contain full name of user is a common case for some LDAP deployments.
 
 Role Mapper::
-  This allows you to configure role mappings from LDAP into {{book.project.name}} role mappings.
+  This allows you to configure role mappings from LDAP into {project_name} role mappings.
   One Role mapper can be used to map LDAP roles (usually groups from a particular branch of LDAP tree) into roles corresponding to either realm roles or client roles of a specified client.
   It's not a problem to configure more Role mappers for the same LDAP provider.
   So for example you can specify that role mappings from groups under
@@ -134,21 +134,21 @@ Role Mapper::
   `ou=finance,dc=example,dc=org` will be mapped to client role mappings of client `finance` .
 
 Hardcoded Role Mapper::
-  This mapper will grant a specified {{book.project.name}} role to each {{book.project.name}} user linked with LDAP.
+  This mapper will grant a specified {project_name} role to each {project_name} user linked with LDAP.
 
 Group Mapper::
-  This allows you to configure group mappings from LDAP into {{book.project.name}} group mappings.
-  Group mapper can be used to map LDAP groups from a particular branch of an LDAP tree into groups in {{book.project.name}}.
-  It will also propagate user-group mappings from LDAP into user-group mappings in {{book.project.name}}.
+  This allows you to configure group mappings from LDAP into {project_name} group mappings.
+  Group mapper can be used to map LDAP groups from a particular branch of an LDAP tree into groups in {project_name}.
+  It will also propagate user-group mappings from LDAP into user-group mappings in {project_name}.
 
 MSAD User Account Mapper::
   This mapper is specific to Microsoft Active Directory (MSAD). It's able to tightly integrate the MSAD user account state
-  into the {{book.project.name}} account state (account enabled, password is expired etc).
+  into the {project_name} account state (account enabled, password is expired etc).
   It's using the `userAccountControl` and `pwdLastSet` LDAP attributes.  (both are specific to MSAD and are not LDAP standard).
-  For example if `pwdLastSet` is `0`, the {{book.project.name}} user is required to update their password
+  For example if `pwdLastSet` is `0`, the {project_name} user is required to update their password
   and there will be an UPDATE_PASSWORD required action added to the user. If `userAccountControl` is
-  `514` (disabled account) the {{book.project.name}} user is disabled as well.
+  `514` (disabled account) the {project_name} user is disabled as well.
 
-By default, there is set of User Attribute mappers that map basic {{book.project.name}} user attributes like username, first name, lastname, and email to corresponding LDAP attributes.
+By default, there is set of User Attribute mappers that map basic {project_name} user attributes like username, first name, lastname, and email to corresponding LDAP attributes.
 You are free to extend these and provide additional attribute mappings.
 Admin console provides tooltips, which should help with configuring the corresponding mappers.

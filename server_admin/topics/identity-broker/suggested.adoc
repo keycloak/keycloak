@@ -1,12 +1,12 @@
 [[_client_suggested_idp]]
 === Client Suggested Identity Provider
 
-OIDC applications can bypass the {{book.project.name}} login page by specifying a hint on which
+OIDC applications can bypass the {project_name} login page by specifying a hint on which
 identity provider they want to use.
 
 This is done by setting the `kc_idp_hint` query parameter in the Authorization Code Flow authorization endpoint.
 
-{{book.project.name}} OIDC client adapters also allow you to specify this query parameter when you access a secured resource
+{project_name} OIDC client adapters also allow you to specify this query parameter when you access a secured resource
 at the application.
 
 For example

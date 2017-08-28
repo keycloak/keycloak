@@ -4,13 +4,13 @@
 
 In the upcoming chapters, you'll often be provided two options for applying application server configuration changes to your deployment.  You'll be
 shown how to edit the _standalone.xml_ or _domain.xml_ directly.  This must be done when the server (or servers) are offline.
-Additionally, you may be shown how to apply config changes on a running server using the app server's command line interface ({{book.appserver.name}} CLI).  This chapter discusses
+Additionally, you may be shown how to apply config changes on a running server using the app server's command line interface ({appserver_name} CLI).  This chapter discusses
 how you will do this.
 
 
-=== Start the {{book.appserver.name}} CLI
+=== Start the {appserver_name} CLI
 
-To start the {{book.appserver.name}} CLI, you need to run the `jboss-cli` script.
+To start the {appserver_name} CLI, you need to run the `jboss-cli` script.
 
 .Linux/Unix
 [source]
@@ -46,4 +46,4 @@ connect
 
 You may be thinking to yourself, "I didn't enter in any username or password!".  If you run `jboss-cli` on the same machine
 as your running standalone server or domain controller and your account has appropriate file permissions, you do not have
-to setup or enter in a admin username and password.  See the  link:{{book.appserver.admindoc.link}}[_{{book.appserver.admindoc.name}}_] for more details on how to make things more secure if you are uncomfortable with that setup.
+to setup or enter in a admin username and password.  See the  link:{appserver_admindoc_link}[_{appserver_admindoc_name}_] for more details on how to make things more secure if you are uncomfortable with that setup.

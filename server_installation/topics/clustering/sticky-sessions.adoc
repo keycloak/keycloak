@@ -1,10 +1,10 @@
 
 === Sticky sessions
 
-Typical cluster deployment consists of the load balancer (reverse proxy) and 2 or more {{book.project.name}} servers on private network. For performance purposes,
-it may be useful if load balancer forwards all requests related to particular browser session to the same {{book.project.name}} backend node.
+Typical cluster deployment consists of the load balancer (reverse proxy) and 2 or more {project_name} servers on private network. For performance purposes,
+it may be useful if load balancer forwards all requests related to particular browser session to the same {project_name} backend node.
 
-The reason is, that {{book.project.name}} is using infinispan distributed cache under the covers for save data related to current authentication session and user session.
+The reason is, that {project_name} is using infinispan distributed cache under the covers for save data related to current authentication session and user session.
 The Infinispan distributed caches are configured with one owner by default. That means that particular session is saved just on one cluster node and the other nodes need
 to lookup the session remotely if they want to access it.
 
@@ -12,17 +12,17 @@ For example if authentication session with ID `123` is saved in the infinispan c
 it needs to send the request to `node1` over the network to return the particular session entity.
 
 It is beneficial if particular session entity is always available locally, which can be done with the help of sticky sessions.
-The workflow in the cluster environment with the public frontend load balancer and two backend {{book.project.name}} nodes can be like this:
+The workflow in the cluster environment with the public frontend load balancer and two backend {project_name} nodes can be like this:
 
-* User sends initial request to see the {{book.project.name}} login screen
+* User sends initial request to see the {project_name} login screen
 * This request is served by the frontend load balancer, which forwards it to some random node (eg. node1). Strictly said, the node doesn't need to be random,
 but can be chosen according to some other criterias (client IP address etc). It all depends on the implementation and configuration of underlying load balancer (reverse proxy).
-* {{book.project.name}} creates authentication session with random ID (eg. 123) and saves it to the Infinispan cache.
+* {project_name} creates authentication session with random ID (eg. 123) and saves it to the Infinispan cache.
 * Infinispan distributed cache assigns the primary owner of the session based on the hash of session ID.
 See link:http://infinispan.org/docs/8.2.x/user_guide/user_guide.html#distribution_mode[Infinispan documentation] for more details around this.
 Let's assume that infinispan assigned `node2` to be the owner of this session.
-* {{book.project.name}} creates the cookie `AUTH_SESSION_ID` with the format like `<session-id>.<owner-node-id>` . In our example case, it will be `123.node2` .
-* Response is returned to the user with the {{book.project.name}} login screen and the AUTH_SESSION_ID cookie in the browser
+* {project_name} creates the cookie `AUTH_SESSION_ID` with the format like `<session-id>.<owner-node-id>` . In our example case, it will be `123.node2` .
+* Response is returned to the user with the {project_name} login screen and the AUTH_SESSION_ID cookie in the browser
 
 From this point, it is beneficial if load balancer forwards all the next requests to the `node2` as this is the node, who is owner of the authentication session with ID `123`
 and hence Infinispan can lookup this session locally. After authentication is finished, the authentication session is converted to user session, which will be also saved on
@@ -31,10 +31,10 @@ and hence Infinispan can lookup this session locally. After authentication is fi
 The sticky session is not mandatory for the cluster setup, however it is good for performance for the reasons mentioned above. You need to configure your loadbalancer to sticky
 over the `AUTH_SESSION_ID` cookie. How exactly do this is dependent on your loadbalancer.
 
-Some loadbalancers can be configured to add the route information by themselves instead of rely on the backend {{book.project.name}} node. However adding the route by
-the {{book.project.name}} is more clever as {{book.project.name}} knows, who is the owner of particular session entity and can route it to that node, which is not necessarily the local node.
-We plan to support the setup where the route info won't be added to AUTH_SESSION_ID cookie by the {{book.project.name}} server, but instead by the load balancer. However
-adding the cookie by {{book.project.name}} would be still the preferred option.
+Some loadbalancers can be configured to add the route information by themselves instead of rely on the backend {project_name} node. However adding the route by
+the {project_name} is more clever as {project_name} knows, who is the owner of particular session entity and can route it to that node, which is not necessarily the local node.
+We plan to support the setup where the route info won't be added to AUTH_SESSION_ID cookie by the {project_name} server, but instead by the load balancer. However
+adding the cookie by {project_name} would be still the preferred option.
 
 ==== Example cluster setup with mod_cluster
 
@@ -42,7 +42,7 @@ In the example, we will use link:http://mod-cluster.jboss.org/[Mod Cluster] as l
 configuration on the load balancer side. Instead it requires support on the backend node side. Backend nodes communicate with the load balancer through the
 dedicated protocol called MCMP and they notify loadbalancer about various events (eg. node joined or left cluster, new application was deployed etc).
 
-Example setup will consist of the one {{book.appserver.name}} {{book.appserver.version}} load balancer node and two {{book.project.name}} nodes.
+Example setup will consist of the one {appserver_name} {appserver_version} load balancer node and two {project_name} nodes.
 
 Clustering example require MULTICAST to be enabled on machine's loopback network interface. This can be done by running the following commands under root privileges (on linux):
 
@@ -55,7 +55,7 @@ ifconfig lo multicast
 
 ===== Load Balancer Configuration
 
-Unzip the {{book.appserver.name}} {{book.appserver.version}} server somewhere. Assumption is location `EAP_LB`
+Unzip the {appserver_name} {appserver_version} server somewhere. Assumption is location `EAP_LB`
 
 Edit `EAP_LB/standalone/configuration/standalone.xml` file. In the undertow subsystem add the mod_cluster configuration under filters like this:
 
@@ -101,10 +101,10 @@ cd $WILDFLY_LB/bin
 
 ===== Backend node configuration
 
-Unzip the {{book.project.name}} server distribution to some location. Assuming location is `RHSSO_NODE1` .
+Unzip the {project_name} server distribution to some location. Assuming location is `RHSSO_NODE1` .
 
 Edit `RHSSO_NODE1/standalone/configuration/standalone-ha.xml` and configure datasource against the shared database.
-See <<fake/../../database/checklist.adoc#_rdbms-setup-checklist, Database chapter >> for more details.
+See <<_rdbms-setup-checklist, Database chapter >> for more details.
 
 In the undertow subsystem, add the `session-config` under the `servlet-container` element:
 
@@ -116,12 +116,12 @@ In the undertow subsystem, add the `session-config` under the `servlet-container
 </servlet-container>
 ----
 
-Then you can configure `proxy-address-forwarding` as described in the chapter <<fake/../../clustering/load-balancer.adoc#_setting-up-a-load-balancer-or-proxy, Load Balancer >> .
+Then you can configure `proxy-address-forwarding` as described in the chapter <<_setting-up-a-load-balancer-or-proxy, Load Balancer >> .
 Note that mod_cluster uses AJP connector by default, so you need to configure that one.
 
 That's all as mod_cluster is already configured.
 
-The node name of the {{book.project.name}} can be detected automatically based on the hostname of current server. However for more fine grained control,
+The node name of the {project_name} can be detected automatically based on the hostname of current server. However for more fine grained control,
 it is recommended to use system property `jboss.node.name` to specify the node name directly. It is especially useful in case that you test with 2 backend nodes on
 same physical server etc. So you can run the startup command like this:
 

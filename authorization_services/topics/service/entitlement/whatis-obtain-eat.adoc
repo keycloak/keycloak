@@ -3,8 +3,8 @@
 
 An entitlement API token (EAT) is a special OAuth2 access token with the scope *kc_entitlement*.
 
-Client applications can obtain an EAT from {{book.project.name}} like any other OAuth2 access token. Usually, client applications obtain EATs after the user is successfully
-authenticated in {{book.project.name}}. By default the _authorizaton_code_ grant type is used to authenticate a user and issue an OAuth2 access token to the client application acting on the user's behalf.
+Client applications can obtain an EAT from {project_name} like any other OAuth2 access token. Usually, client applications obtain EATs after the user is successfully
+authenticated in {project_name}. By default the _authorizaton_code_ grant type is used to authenticate a user and issue an OAuth2 access token to the client application acting on the user's behalf.
 
 For demonstration purposes, the example below uses Resource Owner Password Credentials Grant Type to request an EAT:
 

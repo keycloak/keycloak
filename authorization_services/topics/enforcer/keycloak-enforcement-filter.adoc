@@ -1,12 +1,12 @@
 [[_enforcer_filter]]
-=== {{book.project.name}} Adapter Policy Enforcer
+=== {project_name} Adapter Policy Enforcer
 
-You can enforce authorization decisions for your applications if you are using {{book.project.name}} OIDC adapters.
+You can enforce authorization decisions for your applications if you are using {project_name} OIDC adapters.
 
-When you enable policy enforcement for your {{book.project.name}} application, the corresponding adapter intercepts all requests to your application and enforces the authorization decisions obtained from the server.
+When you enable policy enforcement for your {project_name} application, the corresponding adapter intercepts all requests to your application and enforces the authorization decisions obtained from the server.
 
-Policy enforcement is strongly linked to your application's paths and the <<fake/../../resource/overview.adoc#_resource_overview, resources>> you created for a resource server using the {{book.project.name}} Administration Console. By default,
-when you create a resource server, {{book.project.name}} creates a <<fake/../../resource-server/default-config.adoc#_resource_server_default_config, default configuration>> for your resource server so you can enable policy enforcement quickly.
+Policy enforcement is strongly linked to your application's paths and the <<_resource_overview, resources>> you created for a resource server using the {project_name} Administration Console. By default,
+when you create a resource server, {project_name} creates a <<_resource_server_default_config, default configuration>> for your resource server so you can enable policy enforcement quickly.
 
 The default configuration allows access for all resources in your application provided the authenticated user belongs to the same realm as the resource server being protected.
 
@@ -68,7 +68,7 @@ Here is a description of each configuration option:
 * *policy-enforcer*
 +
 Specifies the configuration options that define how policies are actually enforced and optionally the paths you want to protect. If not specified, the policy enforcer queries the server
-for all resources associated with the resource server being protected. In this case, you need to ensure the resources are properly configured with a <<fake/../../resource/create.adoc#_resource_create_uri, URI>> property that matches the paths you want to protect.
+for all resources associated with the resource server being protected. In this case, you need to ensure the resources are properly configured with a <<_resource_create_uri, URI>> property that matches the paths you want to protect.
 +
 ** *user-managed-access*
 +

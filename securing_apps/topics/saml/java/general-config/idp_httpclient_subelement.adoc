@@ -5,7 +5,7 @@
 The `HttpClient` optional sub element defines the properties of HTTP client used
 for automatic obtaining of certificates containing public keys for IDP signature
 verification via SAML descriptor of the IDP when
-<<fake/../../../../saml/java/general-config/idp-keys_subelement.adoc#_sp-idp-keys-automatic,enabled>>.
+<<_sp-idp-keys-automatic,enabled>>.
 
 [source,xml]
 ----
@@ -20,20 +20,20 @@ verification via SAML descriptor of the IDP when
 ----
 
 connectionPoolSize::
-  Adapters will make separate HTTP invocations to the {{book.project.name}} server to turn an access code into an access token.
-  This config option defines how many connections to the {{book.project.name}} server should be pooled.
+  Adapters will make separate HTTP invocations to the {project_name} server to turn an access code into an access token.
+  This config option defines how many connections to the {project_name} server should be pooled.
   This is _OPTIONAL_.
   The default value is `10`.
 
 disableTrustManager::
-  If the {{book.project.name}} server requires HTTPS and this config option is set to `true` you do not have to specify a truststore.
+  If the {project_name} server requires HTTPS and this config option is set to `true` you do not have to specify a truststore.
   This setting should only be used during development and *never* in production as it will disable verification of SSL certificates.
   This is _OPTIONAL_.
   The default value is `false`.
 
 allowAnyHostname::
-  If the {{book.project.name}} server requires HTTPS and this config option is set to `true`
-  the {{book.project.name}} server's certificate is validated via the truststore,
+  If the {project_name} server requires HTTPS and this config option is set to `true`
+  the {project_name} server's certificate is validated via the truststore,
   but host name validation is not done.
   This setting should only be used during development and *never* in production
   as it will partly disable verification of SSL certificates.
@@ -43,11 +43,11 @@ allowAnyHostname::
 truststore::
   The value is the file path to a keystore file.
   If you prefix the path with `classpath:`, then the truststore will be obtained from the deployment's classpath instead.
-  Used for outgoing HTTPS communications to the {{book.project.name}} server.
+  Used for outgoing HTTPS communications to the {project_name} server.
   Client making HTTPS requests need a way to verify the host of the server they are talking to.
   This is what the trustore does.
   The keystore contains one or more trusted host certificates or certificate authorities.
-  You can create this truststore by extracting the public certificate of the {{book.project.name}} server's SSL keystore. 
+  You can create this truststore by extracting the public certificate of the {project_name} server's SSL keystore.
   This is _REQUIRED_ unless `disableTrustManager` is `true`.
 
 truststorePassword::
@@ -56,7 +56,7 @@ truststorePassword::
 
 clientKeystore::
   This is the file path to a keystore file.
-  This keystore contains client certificate for two-way SSL when the adapter makes HTTPS requests to the {{book.project.name}} server.
+  This keystore contains client certificate for two-way SSL when the adapter makes HTTPS requests to the {project_name} server.
   This is _OPTIONAL_.
 
 clientKeystorePassword::

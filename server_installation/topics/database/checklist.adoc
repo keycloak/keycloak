@@ -1,7 +1,7 @@
 
 === RDBMS Setup Checklist
 
-These are the steps you will need to perform to get an RDBMS configured for {{book.project.name}}.
+These are the steps you will need to perform to get an RDBMS configured for {project_name}.
 
 . Locate and download a JDBC driver for your database
 . Package the driver JAR into a module and install this module into the server

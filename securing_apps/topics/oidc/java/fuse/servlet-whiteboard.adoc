@@ -4,9 +4,9 @@
 
 You can use this method if you have a servlet class inside your OSGI bundled project that is not deployed as a classic WAR application. Fuse uses https://ops4j1.jira.com/wiki/display/ops4j/Pax+Web+Extender+-+Whiteboard[Pax Web Whiteboard Extender] to deploy such servlets as web applications.
 
-To secure your servlet with {{book.project.name}}, complete the following steps:
+To secure your servlet with {project_name}, complete the following steps:
 
-. {{book.project.name}} provides PaxWebIntegrationService, which allows injecting jetty-web.xml and configuring security constraints for your application. You need to declare such services in the `OSGI-INF/blueprint/blueprint.xml` file inside your application. Note that your servlet needs to depend on it.
+. {project_name} provides PaxWebIntegrationService, which allows injecting jetty-web.xml and configuring security constraints for your application. You need to declare such services in the `OSGI-INF/blueprint/blueprint.xml` file inside your application. Note that your servlet needs to depend on it.
 An example configuration:
 +
 [source,xml]
@@ -59,17 +59,17 @@ An example configuration:
 </blueprint>
 ----
 
-* You might need to have the `WEB-INF` directory inside your project (even if your project is not a web application) and create the  `/WEB-INF/jetty-web.xml` and `/WEB-INF/keycloak.json` files as in the <<fake/../classic-war.adoc#_fuse_adapter_classic_war,Classic WAR application>> section.
+* You might need to have the `WEB-INF` directory inside your project (even if your project is not a web application) and create the  `/WEB-INF/jetty-web.xml` and `/WEB-INF/keycloak.json` files as in the <<_fuse_adapter_classic_war,Classic WAR application>> section.
 Note you don't need the `web.xml` file as the security-constraints are declared in the blueprint configuration file.
 
 . The `Import-Package` in `META-INF/MANIFEST.MF` must contain at least these imports:
 +
 [source, subs="attributes"]
 ----
-org.keycloak.adapters.jetty;version="{{book.project.versionMvn}}",
-org.keycloak.adapters;version="{{book.project.versionMvn}}",
-org.keycloak.constants;version="{{book.project.versionMvn}}",
-org.keycloak.util;version="{{book.project.versionMvn}}",
-org.keycloak.*;version="{{book.project.versionMvn}}",
+org.keycloak.adapters.jetty;version="{project_versionMvn}",
+org.keycloak.adapters;version="{project_versionMvn}",
+org.keycloak.constants;version="{project_versionMvn}",
+org.keycloak.util;version="{project_versionMvn}",
+org.keycloak.*;version="{project_versionMvn}",
 *;resolution:=optional
 ----

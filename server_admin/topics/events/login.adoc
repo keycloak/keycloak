@@ -7,12 +7,12 @@ or viewed in the Admin Console.  Only error events are logged to the console and
 persisting  you'll need to enable storage.  Go to the `Events` left menu item and select the `Config` tab.
 
 .Event Configuration
-image:../../{{book.images}}/login-events-config.png[]
+image:{project_images}/login-events-config.png[]
 
 To start storing events you'll need to turn the `Save Events` switch to on under the `Login Events Settings`.
 
 .Save Events
-image:../../{{book.images}}/login-events-settings.png[]
+image:{project_images}/login-events-settings.png[]
 
 The `Saved Types` field allows you to specify which event types you want to store in the event store.  The `Clear events`
 button allows you to delete all the events in the database. The `Expiration` field allows you to specify how long you want
@@ -22,13 +22,13 @@ the `Save` button on the bottom of this page.
 To view events, go to the `Login Events` tab.
 
 .Login Events
-image:../../{{book.images}}/login-events.png[]
+image:{project_images}/login-events.png[]
 
 As you can see, there's a lot of information stored and, if you are storing every event, there are a lot of events stored for
 each login action.  The `Filter` button on this page allows you to filter which events you are actually interested in.
 
 .Login Event Filter
-image:../../{{book.images}}/login-events-filter.png[]
+image:{project_images}/login-events-filter.png[]
 
 In this screenshot, we're filtering only `Login` events.  Clicking the `Update` button runs the filter.
 
@@ -61,7 +61,7 @@ For all events there is a corresponding error event.
 ==== Event Listener
 
 Event listeners listen for events and perform an action based on that event.  There are two built-in
-listeners that come with {{book.project.name}}: Logging Event Listener and Email Event Listener.
+listeners that come with {project_name}: Logging Event Listener and Email Event Listener.
 
 The Logging Event Listener writes to a log file whenever an error event occurs and is enabled by default.
 Here's an example log message:
@@ -104,5 +104,5 @@ that comes with your distribution and adding for example:
 </spi>
 ----
 
-See the link:{{book.installguide.link}}[{{book.installguide.name}}] for more details on
+See the link:{installguide_link}[{installguide_name}] for more details on
 where the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` file lives.

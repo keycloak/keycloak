@@ -11,10 +11,10 @@ User Account Link::
 . Type the username and password you created previously. You must create a permanent password after you successfully log in if you didn't toggle the Temporary switch to *Off* previously.
 +
 .Update Password
-image:../../{{book.images}}/update-password.png[]
+image:{project_images}/update-password.png[]
 
 The User Account Service page opens. Every user in a realm has access to this Account Service by default.
-You can update profile information and change or add additional credentials. For more information on this service see the link:{{book.adminguide.link}}[{{book.adminguide.name}}].
+You can update profile information and change or add additional credentials. For more information on this service see the link:{adminguide_link}[{adminguide_name}].
 
 
 

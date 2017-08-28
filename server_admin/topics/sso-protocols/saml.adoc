@@ -7,19 +7,19 @@ of WS-* specifications so it tends to be a bit more verbose than OIDC.  SAML 2.0
 that works by exchanging XML documents between the authentication server and the application.  XML signatures and encryption
 is used to verify requests and responses.
 
-There is really two types of use cases when using SAML.  The first is an application that asks the {{book.project.name}} server to authenticate
+There is really two types of use cases when using SAML.  The first is an application that asks the {project_name} server to authenticate
 a user for them.  After a successful login, the application will receive an XML document that contains
 something called a SAML assertion that specify various attributes about the user.  This XML document is digitally signed by
 the realm and contains access information (like user role mappings) that the application can use to determine what resources the user
 is allowed to access on the application.
 
-The second type of use cases is that of a client that wants to gain access to remote services.  In this case, the client asks {{book.project.name}}
+The second type of use cases is that of a client that wants to gain access to remote services.  In this case, the client asks {project_name}
 to obtain an SAML assertion it can use to invoke on other remote services on behalf of the user.
 
 ==== SAML Bindings
 
 SAML defines a few different ways to exchange XML documents when executing the authentication protocol.  The _Redirect_ and _Post_ bindings
-cover browser based applications.  The _ECP_ binding covers REST invocations.  There are other binding types but {{book.project.name}} only
+cover browser based applications.  The _ECP_ binding covers REST invocations.  There are other binding types but {project_name} only
 supports those three.
 
 ===== Redirect Binding
@@ -28,11 +28,11 @@ The _Redirect_ Binding uses a series of browser redirect URIs to exchange inform
 how it works.
 
 . The user visits the application and the application finds the user is not authenticated.  It generates an XML authentication
-  request document and encodes it as a query param in a URI that is used to redirect to the {{book.project.name}} server.
+  request document and encodes it as a query param in a URI that is used to redirect to the {project_name} server.
   Depending on your settings, the application may also digitally sign this XML document and also stuff this signature as a query
-  param in the redirect URI to {{book.project.name}}.  This signature is used to validate the client that sent this
+  param in the redirect URI to {project_name}.  This signature is used to validate the client that sent this
   request.
-. The browser is redirected to {{book.project.name}}.  The server extracts the XML auth request document and verifies
+. The browser is redirected to {project_name}.  The server extracts the XML auth request document and verifies
   the digital signature if required.  The user then has to enter in their credentials to be authenticated.
 . After authentication, the server generates an XML authentication response document.  This document contains
   a SAML assertion that holds metadata about the user like name, address, email, and any role mappings the user
@@ -47,7 +47,7 @@ how it works.
 
 The SAML _POST_ binding works almost the exact same way as the _Redirect_ binding, but instead of GET requests, XML
 documents are exchanged by POST requests.  The _POST_ Binding uses JavaScript to trick the browser into making a POST request to
-the {{book.project.name}} server or application when exchanging documents.  Basically HTTP responses contain an HTML document
+the {project_name} server or application when exchanging documents.  Basically HTTP responses contain an HTML document
 that contains an HTML form with embedded JavaScript.  When the page is loaded, the JavaScript automatically invokes the form.
 You really don't need to know about this stuff, but it is a pretty clever trick.
 
@@ -56,9 +56,9 @@ You really don't need to know about this stuff, but it is a pretty clever trick.
 ECP stands for "Enhanced Client or Proxy", a SAML v.2.0 profile which allows for the exchange of SAML attributes outside the context of a web browser.
 This is used most often for REST or SOAP-based clients.
 
-====  {{book.project.name}} Server SAML URI Endpoints
+====  {project_name} Server SAML URI Endpoints
 
-{{book.project.name}} really only has one endpoint for all SAML requests.
+{project_name} really only has one endpoint for all SAML requests.
 
 `http(s)://authserver.host/auth/realms/\{realm-name}/protocol/saml`
 

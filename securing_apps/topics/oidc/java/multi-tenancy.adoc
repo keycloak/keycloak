@@ -1,15 +1,15 @@
 
 ==== Multi Tenancy
 
-Multi Tenancy, in our context, means that a single target application (WAR) can be secured with multiple {{book.project.name}} realms. The realms can be located
-one the same {{book.project.name}} instance or on different instances.
+Multi Tenancy, in our context, means that a single target application (WAR) can be secured with multiple {project_name} realms. The realms can be located
+one the same {project_name} instance or on different instances.
 
 In practice, this means that the application needs to have multiple `keycloak.json` adapter configuration files.
 
 You could have multiple instances of your WAR with different adapter configuration files deployed to different context-paths. However, this may be inconvenient
 and you may also want to select the realm based on something else than context-path.
 
-{{book.project.name}} makes it possible to have a custom config resolver so you can choose what adapter config is used for each request.
+{project_name} makes it possible to have a custom config resolver so you can choose what adapter config is used for each request.
 
 To achieve this first you need to create an implementation of `org.keycloak.adapters.KeycloakConfigResolver`. For example:
 

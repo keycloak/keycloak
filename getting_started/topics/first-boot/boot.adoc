@@ -1,10 +1,10 @@
 
 === Booting the Server
 
-To boot the {{book.project.name}} server, go to the _bin/_ directory of the server distribution.
+To boot the {project_name} server, go to the _bin/_ directory of the server distribution.
 
 .Standalone Boot Scripts
-image:../../{{book.images}}/standalone-boot-files.png[]
+image:{project_images}/standalone-boot-files.png[]
 
 To boot the server:
 

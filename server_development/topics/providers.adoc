@@ -88,7 +88,7 @@ org.acme.provider.MyEventListenerProviderFactory
 ----
 
 You can configure your provider through `standalone.xml`, `standalone-ha.xml`, or `domain.xml`.  
-See the link:{{book.installguide.link}}[{{book.installguide.name}}] for more details on
+See the link:{installguide_link}[{installguide_name}] for more details on
 where the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` file lives.
 
 For example by adding the following to `standalone.xml`:
@@ -342,7 +342,7 @@ public class EjbExampleUserStorageProviderFactory
 === Available SPIs
 
 Here's a list of the most important available SPIs and a brief description. For more details on each SPI refer to individual sections.
-If you want to see list of all available SPIs at runtime, you can check `Server Info` page in admin console as described in <<fake/../providers.adoc#_providers_admin_console,Admin Console>> section.
+If you want to see list of all available SPIs at runtime, you can check `Server Info` page in admin console as described in <<_providers_admin_console,Admin Console>> section.
 
 
 |===

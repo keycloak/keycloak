@@ -2,12 +2,12 @@
 === JavaScript-Based Policy
 
 You can use this type of policy to define conditions for your permissions using JavaScript. It is one of the rule-based policy types
-supported by {{book.project.name}}, and provides flexibility to write any policy based on the <<fake/../evaluation-api.adoc#_policy_evaluation_api, Evaluation API>>.
+supported by {project_name}, and provides flexibility to write any policy based on the <<_policy_evaluation_api, Evaluation API>>.
 
 To create a new JavaScript-based policy, select *JavaScript* in the dropdown list in the upper right corner of the policy listing.
 
 .Add JavaScript Policy
-image:../../{{book.images}}/policy/create-js.png[alt="Add JavaScript Policy"]
+image:{project_images}/policy/create-js.png[alt="Add JavaScript Policy"]
 
 ==== Configuration
 
@@ -26,7 +26,7 @@ The JavaScript code providing the conditions for this policy.
 +
 * *Logic*
 +
-The <<fake/../logic.adoc#_policy_logic, Logic>> of this policy to apply after the other conditions have been evaluated.
+The <<_policy_logic, Logic>> of this policy to apply after the other conditions have been evaluated.
 
 ==== Examples
 
@@ -66,4 +66,4 @@ if (identity.hasRole('admin') || email.endsWith('@keycloak.org')) {
 }
 ```
 
-When writing your own rules, keep in mind that the *$evaluation* object is an object implementing *org.keycloak.authorization.policy.evaluation.Evaluation*. For more information about what you can access from this interface, see the <<fake/../evaluation-api.adoc#_policy_evaluation_api, Evaluation API>>.
+When writing your own rules, keep in mind that the *$evaluation* object is an object implementing *org.keycloak.authorization.policy.evaluation.Evaluation*. For more information about what you can access from this interface, see the <<_policy_evaluation_api, Evaluation API>>.

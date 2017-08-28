@@ -8,14 +8,14 @@ this drop down menu lists all the realms created.  The last entry of this drop d
 this to add a realm.
 
 .Add Realm Menu
-image:../../{{book.images}}/add-realm-menu.png[]
+image:{project_images}/add-realm-menu.png[]
 
 This menu option will bring you to the `Add Realm` page.  Specify the realm name you want to define and click the `Create` button.
 Alternatively you can import a JSON document that defines your new realm.  We'll go over this in more detail in the
-<<fake/../../export-import.adoc#_export_import, Export and Import>> chapter.
+<<_export_import, Export and Import>> chapter.
 
 .Create Realm
-image:../../{{book.images}}/create-realm.png[]
+image:{project_images}/create-realm.png[]
 
 After creating the realm you are brought back to the main Admin Console page. The current realm will now be set to
 the realm you just created.  You can switch between managing different realms by doing a mouse over on the

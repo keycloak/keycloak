@@ -1,10 +1,10 @@
 
 ==== Parameters Forwarding
 
-The {{book.project.name}}  initial authorization endpoint request has support for various parameters. Most of the parameters are described in
+The {project_name}  initial authorization endpoint request has support for various parameters. Most of the parameters are described in
 http://openid.net/specs/openid-connect-core-1_0.html#AuthorizationEndpoint[OIDC specification]. Some parameters are added automatically by the adapter based
 on the adapter configuration. However, there are also a few parameters that can be added on a per-invocation basis. When you open the secured application URI,
-the particular parameter will be forwarded to the {{book.project.name}} authorization endpoint.
+the particular parameter will be forwarded to the {project_name} authorization endpoint.
 
 For example, if you request an offline token, then you can open the secured application URI with the `scope` parameter like:
 
@@ -13,7 +13,7 @@ For example, if you request an offline token, then you can open the secured appl
 http://myappserver/mysecuredapp?scope=offline_access
 ----
 
-and the parameter `scope=offline_access` will be automatically forwarded to the {{book.project.name}} authorization endpoint.
+and the parameter `scope=offline_access` will be automatically forwarded to the {project_name} authorization endpoint.
 
 The supported parameters are:
 
@@ -28,5 +28,5 @@ The supported parameters are:
 * kc_idp_hint
 
 Most of the parameters are described in the http://openid.net/specs/openid-connect-core-1_0.html#AuthorizationEndpoint[OIDC specification].
-The only exception is parameter `kc_idp_hint`, which is specific to {{book.project.name}} and contains the name of the identity provider to automatically use.
-For more information see the `Identity Brokering` section in link:{{book.adminguide.link}}[{{book.adminguide.name}}].
+The only exception is parameter `kc_idp_hint`, which is specific to {project_name} and contains the name of the identity provider to automatically use.
+For more information see the `Identity Brokering` section in link:{adminguide_link}[{adminguide_name}].

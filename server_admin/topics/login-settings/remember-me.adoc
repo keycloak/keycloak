@@ -8,12 +8,12 @@ turns the login cookie from a session-only cookie to a persistence cookie.
 To enable this feature go to `Realm Settings` left menu item and click on the `Login` tab and turn on the `Remember Me` switch:
 
 .Login Tab
-image:../../{{book.images}}/login-tab.png[]
+image:{project_images}/login-tab.png[]
 
 Once you save this setting, a `remember me` checkbox will be displayed on the realm's login page.
 
 .Remember Me
-image:../../{{book.images}}/remember-me.png[]
+image:{project_images}/remember-me.png[]
 
 
 

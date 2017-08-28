@@ -15,5 +15,5 @@ Firewall could be enabled just on public access point to your network instead.
 If for some reason you still need to have firewall enabled on cluster nodes, you will need to open some ports.
 Default values are UDP port 55200 and multicast port 45688 with multicast address 230.0.0.4.
 Note that you may need more ports opened if you want to enable additional features like diagnostics for your JGroups stack.
-{{book.project.name}} delegates most of the clustering work to Infinispan/JGroups.
-For more information, see link:{{book.appserver.jgroups.link}}[JGroups] in the _{{book.appserver.jgroups.name}}_.
+{project_name} delegates most of the clustering work to Infinispan/JGroups.
+For more information, see link:{appserver_jgroups_link}[JGroups] in the _{appserver_jgroups_name}_.

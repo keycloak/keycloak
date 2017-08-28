@@ -2,13 +2,13 @@
 
 == Profiles
 
-{% if book.community %}
-{{book.project.name}} has a single profile, community, that enables all features by default, including features that
+ifeval::[{project_community}==true]
+{project_name} has a single profile, community, that enables all features by default, including features that
 are considered less mature. It is however possible to disable individual features.
-{% endif %}
+endif::[]
 
-{% if book.product %}
-{{book.project.name}} has two profiles, product and preview. The product profile is enabled by default, which disables
+ifeval::[{project_product}==true]
+{project_name} has two profiles, product and preview. The product profile is enabled by default, which disables
 some tech preview features. To enable the features you can either switch to the preview profile or enable individual
 features.
 
@@ -27,7 +27,7 @@ the file:
 ----
 profile=preview
 ----
-{% endif %}
+endif::[]
 
 The features that can be enabled and disabled are:
 
@@ -36,9 +36,9 @@ The features that can be enabled and disabled are:
 * Impersonation - ability for admins to impersonate users
 * Script - write custom authenticators using JavaScript
 
-{% if book.product %}
+ifeval::[{project_product}==true]
 The product profile disables authorization and script.
-{% endif %}
+endif::[]
 
 To disable a specific feature start the server with:
 
@@ -56,7 +56,7 @@ You can set this permanently in the `profile.properties` file by adding:
 feature.impersonation=disabled
 ----
 
-{% if book.product %}
+ifeval::[{project_product}==true]
 To enable a specific feature without enabling the full preview profile you can start the server with:
 
 [source]
@@ -72,4 +72,4 @@ You can set this permanently in the `profile.properties` file by adding:
 ----
 feature.authorization=enabled
 ----
-{% endif %}
+endif::[]

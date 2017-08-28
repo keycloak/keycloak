@@ -1,17 +1,17 @@
 [[_client_registration]]
 == Client Registration
 
-In order for an application or service to utilize {{book.project.name}} it has to register a client in {{book.project.name}}.
-An admin can do this through the admin console (or admin REST endpoints), but clients can also register themselves through the {{book.project.name}} client
+In order for an application or service to utilize {project_name} it has to register a client in {project_name}.
+An admin can do this through the admin console (or admin REST endpoints), but clients can also register themselves through the {project_name} client
 registration service.
 
-The Client Registration Service provides built-in support for {{book.project.name}} Client Representations, OpenID Connect Client Meta Data and SAML Entity Descriptors.
+The Client Registration Service provides built-in support for {project_name} Client Representations, OpenID Connect Client Meta Data and SAML Entity Descriptors.
 The Client Registration Service endpoint is `/realms/<realm>/clients-registrations/<provider>`.
 
 The built-in supported `providers` are: 
 
-* default - {{book.project.name}} Client Representation (JSON)
-* install - {{book.project.name}} Adapter Configuration (JSON)
+* default - {project_name} Client Representation (JSON)
+* install - {project_name} Adapter Configuration (JSON)
 * openid-connect - OpenID Connect Client Metadata Description (JSON)
 * saml2-entity-descriptor - SAML Entity Descriptor (XML)
 
@@ -24,13 +24,13 @@ There is an alternative to register new client without any token as well, but th
 
 ==== Bearer Token
 
-The bearer token can be issued on behalf of a user or a Service Account. The following permissions are required to invoke the endpoints (see link:{{book.adminguide.link}}[{{book.adminguide.name}}] for more details):
+The bearer token can be issued on behalf of a user or a Service Account. The following permissions are required to invoke the endpoints (see link:{adminguide_link}[{adminguide_name}] for more details):
 
 * create-client or manage-client - To create clients
 * view-client or manage-client - To view clients
 * manage-client - To update or delete client
 
-If you are using a bearer token to create clients it's recommend to use a token from a Service Account with only the `create-client` role (see link:{{book.adminguide.link}}[{{book.adminguide.name}}] for more details).
+If you are using a bearer token to create clients it's recommend to use a token from a Service Account with only the `create-client` role (see link:{adminguide_link}[{adminguide_name}] for more details).
 
 ==== Initial Access Token
 
@@ -66,10 +66,10 @@ If a client was created outside of the Client Registration Service it won't have
 You can create one through the admin console. This can also be useful if you loose the token for a particular client.
 To create a new token find the client in the admin console and click on `Credentials`. Then click on `Generate registration access token`.
 
-=== {{book.project.name}} Representations
+=== {project_name} Representations
 
 The `default` client registration provider can be used to create, retrieve, update and delete a client.
-It uses {{book.project.name}} Client Representation format which provides support for configuring clients exactly as they can be configured through the admin
+It uses {project_name} Client Representation format which provides support for configuring clients exactly as they can be configured through the admin
 console, including for example configuring protocol mappers.
 
 To create a client create a Client Representation (JSON) then do a HTTP POST to `/realms/<realm>/clients-registrations/default`.
@@ -89,7 +89,7 @@ It will also return a new registration access token.
 To delete the Client Representation then do a HTTP DELETE to:
 `/realms/<realm>/clients-registrations/default/<client id>`
 
-=== {{book.project.name}} Adapter Configuration
+=== {project_name} Adapter Configuration
 
 The `installation` client registration provider can be used to retrieve the adapter configuration for a client.
 In addition to token authentication you can also authenticate with client credentials using HTTP basic authentication.
@@ -103,13 +103,13 @@ Authorization: basic BASE64(client-id + ':' + client-secret)
 To retrieve the Adapter Configuration then do a HTTP GET to `/realms/<realm>/clients-registrations/install/<client id>`.
 
 No authentication is required for public clients.
-This means that for the JavaScript adapter you can load the client configuration directly from {{book.project.name}} using the above URL.
+This means that for the JavaScript adapter you can load the client configuration directly from {project_name} using the above URL.
 
 === OpenID Connect Dynamic Client Registration
 
-{{book.project.name}} implements https://openid.net/specs/openid-connect-registration-1_0.html[OpenID Connect Dynamic Client Registration], which extends https://tools.ietf.org/html/rfc7591[OAuth 2.0 Dynamic Client Registration Protocol] and https://tools.ietf.org/html/rfc7592[OAuth 2.0 Dynamic Client Registration Management Protocol].
+{project_name} implements https://openid.net/specs/openid-connect-registration-1_0.html[OpenID Connect Dynamic Client Registration], which extends https://tools.ietf.org/html/rfc7591[OAuth 2.0 Dynamic Client Registration Protocol] and https://tools.ietf.org/html/rfc7592[OAuth 2.0 Dynamic Client Registration Management Protocol].
 
-The endpoint to use these specifications to register clients in {{book.project.name}} is `/realms/<realm>/clients-registrations/openid-connect[/<client id>]`.
+The endpoint to use these specifications to register clients in {project_name} is `/realms/<realm>/clients-registrations/openid-connect[/<client id>]`.
 
 This endpoints can also be found in the OpenID Connect Discovery endpoint for the realm, `/realms/<realm>/.well-known/openid-configuration`.
 
@@ -117,8 +117,8 @@ This endpoints can also be found in the OpenID Connect Discovery endpoint for th
 
 The SAML Entity Descriptor endpoint only supports using SAML v2 Entity Descriptors to create clients.
 It doesn't support retrieving, updating or deleting clients.
-For those operations the {{book.project.name}} representation endpoints should be used.
-When creating a client a {{book.project.name}} Client Representation is returned with details about the created client, including a registration access token.
+For those operations the {project_name} representation endpoints should be used.
+When creating a client a {project_name} Client Representation is returned with details about the created client, including a registration access token.
 
 To create a client do a HTTP POST with the SAML Entity Descriptor to `/realms/<realm>/clients-registrations/saml2-entity-descriptor`.
 
@@ -164,7 +164,7 @@ String registrationAccessToken = client.getRegistrationAccessToken();
 
 === Client Registration Policies
 
-{{book.project.name}} currently supports 2 ways how can be new clients registered through Client Registration Service.
+{project_name} currently supports 2 ways how can be new clients registered through Client Registration Service.
 
 * Authenticated requests - Request to register new client must contain either `Initial Access Token` or `Bearer Token` as mentioned above.
 
@@ -173,7 +173,7 @@ String registrationAccessToken = client.getRegistrationAccessToken();
 Anonymous client registration requests are very interesting and powerful feature, however you usually don't want that anyone is able to register new
 client without any limitations. Hence we have `Client Registration Policy SPI`, which provide a way to limit who can register new clients and under which conditions.
 
-In {{book.project.name}} admin console, you can click to `Client Registration` tab and then `Client Registration Policies` sub-tab. Here you will see what policies
+In {project_name} admin console, you can click to `Client Registration` tab and then `Client Registration Policies` sub-tab. Here you will see what policies
 are configured by default for anonymous requests and what policies are configured for authenticated requests.
 
 NOTE: The anonymous requests (requests without any token) are allowed just for creating (registration) of new clients. So when you register

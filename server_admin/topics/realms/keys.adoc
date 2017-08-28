@@ -1,17 +1,17 @@
 [[_realm_keys]]
 === Realm Keys
 
-The authentication protocols that are used by {{book.project.name}} require cryptographic signatures and sometimes
-encryption.  {{book.project.name}} uses asymmetric key pairs, a private and public key, to accomplish this.
+The authentication protocols that are used by {project_name} require cryptographic signatures and sometimes
+encryption.  {project_name} uses asymmetric key pairs, a private and public key, to accomplish this.
 
-{{book.project.name}} has a single active keypair at a time, but can have several passive keys as well. The active keypair
+{project_name} has a single active keypair at a time, but can have several passive keys as well. The active keypair
 is used to create new signatures, while the passive keypairs can be used to verify previous signatures. This makes it
 possible to regularly rotate the keys without any downtime or interruption to users.
 
 When a realm is created a key pair and a self-signed certificate is automatically generated.
 
 To view the active keys for a realm select the realm in the admin console click on `Realm settings` then `Keys`. This
-will show the currently active keys for the realm. {{book.project.name}} currently only supports RSA signatures so there
+will show the currently active keys for the realm. {project_name} currently only supports RSA signatures so there
 is only one active keypair. In the future as more signature algorithms are added there will be more active keypairs.
 
 To view all available keys select `All`. This will show all active, passive and disabled keys. A keypair can have the
@@ -84,12 +84,12 @@ Alternatively, you can delete the provider from the `Providers` table.
 
 ==== Compromised keys
 
-{{book.project.name}} has the signing keys stored just locally and they are never shared with the client applications, users or other
+{project_name} has the signing keys stored just locally and they are never shared with the client applications, users or other
 entities. However if you think that your realm signing key was compromised, you should first generate new keypair as described above and
 then immediatelly remove the compromised keypair.
 
 Then to ensure that client applications won't accept the tokens signed by the compromised key, you should update and push not-before policy for
 the realm, which is doable from the admin console. Pushing new policy will ensure that client applications won't accept the existing
-tokens signed by the compromised key, but also the client application will be forced to download new keypair from the {{book.project.name}}, hence
+tokens signed by the compromised key, but also the client application will be forced to download new keypair from the {project_name}, hence
 the tokens signed by the compromised key won't be valid anymore. Note that your REST and confidential clients must have set `Admin URL`, so that
-{{book.project.name}} is able to send them the request about pushed not-before policy.
+{project_name} is able to send them the request about pushed not-before policy.

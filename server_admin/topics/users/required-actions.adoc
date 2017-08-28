@@ -18,7 +18,7 @@ Update Profile::
 Admins can add required actions for each individual user within the user's `Details` tab in the Admin Console.
 
 .Setting Required Action
-image:../../{{book.images}}/user-required-action.png[]
+image:{project_images}/user-required-action.png[]
 
 In the `Required User Actions` list box, select all the actions you want to add to the account.  If you want to remove one, click the `X` next to the
 action name.  Also remember to click the `Save` button after you've decided what actions to add.
@@ -26,18 +26,18 @@ action name.  Also remember to click the `Save` button after you've decided what
 ==== Default Required Actions
 
 You can also specify required actions that will be added to an account whenever a new user is created, i.e. through the `Add User` button the user
-list screen, or via the <<fake/../../users/user-registration.adoc#_user-registration, user registration>> link on the login page.  To specify
+list screen, or via the <<_user-registration, user registration>> link on the login page.  To specify
 the default required actions go to the `Authentication` left menu item and click on the `Required Actions` tab.
 
 .Default Required Actions
-image:../../{{book.images}}/default-required-actions.png[]
+image:{project_images}/default-required-actions.png[]
 
 Simply click the checkbox in the `Default Action` column of the required actions that you want to be executed when a brand new user logs in.
 
 ==== Terms and Conditions
 
 Many organizations have a requirement that when a new user logs in for the first time, they need to agree to the terms and conditions
-of the website.  {{book.project.name}} has this functionality implemented as a required action, but it requires some configuration.  For one, you
+of the website.  {project_name} has this functionality implemented as a required action, but it requires some configuration.  For one, you
 have to go to the `Required Actions` tab described earlier and enable the `Terms and Conditions` action.  You must also edit the
-_terms.ftl_ file in the _base_ login theme.  See the link:{{book.developerguide.link}}[{{book.developerguide.name}}] for more information on extending and
+_terms.ftl_ file in the _base_ login theme.  See the link:{developerguide_link}[{developerguide_name}] for more information on extending and
 creating themes.

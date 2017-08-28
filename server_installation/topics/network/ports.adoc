@@ -4,7 +4,7 @@
 === Socket Port Bindings
 
 The ports opened for each socket have a pre-defined default that can be overriden at the command line or within configuration.
-To illustrate this configuration, let's pretend you are running in <<fake/../../operating-mode/standalone.adoc#_standalone-mode,standalone mode>> and
+To illustrate this configuration, let's pretend you are running in <<_standalone-mode,standalone mode>> and
 open up the _.../standalone/configuration/standalone.xml_.  Search for `socket-binding-group`.
 
 [source,xml]
@@ -27,16 +27,16 @@ open up the _.../standalone/configuration/standalone.xml_.  Search for `socket-b
 `interface` (bind address) they use as well as what port number they will open.   The ones you will be most interested in are:
 
 http::
-   Defines the port used for {{book.project.name}} HTTP connections
+   Defines the port used for {project_name} HTTP connections
 https::
-   Defines the port used for {{book.project.name}} HTTPS connections
+   Defines the port used for {project_name} HTTPS connections
 ajp::
    This socket binding defines the port used for the AJP protocol.  This protocol is used by Apache HTTPD server
    in conjunction `mod-cluster` when you are using Apache HTTPD as a load balancer.
 management-http::
-   Defines the HTTP connection used by {{book.appserver.name}} CLI and web console.
+   Defines the HTTP connection used by {appserver_name} CLI and web console.
 
-When running in <<fake/../../operating-mode/domain.adoc#_domain-mode,domain mode>> setting the socket configurations
+When running in <<_domain-mode,domain mode>> setting the socket configurations
 is a bit trickier as the example _domain.xml_ file has multiple `socket-binding-groups` defined.  If you scroll down
 to the `server-group` definitions you can see what `socket-binding-group` is used for each `server-group`.
 
@@ -55,4 +55,4 @@ to the `server-group` definitions you can see what `socket-binding-group` is use
     </server-groups>
 ----
 
-NOTE:  There are many more options available when setting up `socket-binding-group` definitions.  For more information, see link:{{book.appserver.socket.link}}[the socket binding group] in the _{{book.appserver.socket.name}}_.
+NOTE:  There are many more options available when setting up `socket-binding-group` definitions.  For more information, see link:{appserver_socket_link}[the socket binding group] in the _{appserver_socket_name}_.

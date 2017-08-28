@@ -2,10 +2,10 @@
 
 == Manage Subsystem Configuration
 
-Low-level configuration of {{book.project.name}} is done by editing the
+Low-level configuration of {project_name} is done by editing the
  `standalone.xml`, `standalone-ha.xml`, or `domain.xml` file 
 in your distribution.  The location of this file 
-depends on your <<fake/../../operating-mode.adoc#_operating-mode, operating mode>>.
+depends on your <<_operating-mode, operating mode>>.
 
 While there are endless settings you can configure here, this section will focus on 
 configuration of the _keycloak-server_ subsystem.  No matter which configuration file
