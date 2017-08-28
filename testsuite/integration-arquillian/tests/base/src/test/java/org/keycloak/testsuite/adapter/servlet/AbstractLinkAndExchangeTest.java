@@ -570,7 +570,7 @@ public abstract class AbstractLinkAndExchangeTest extends AbstractServletsAdapte
 
         // Login to account mgmt first
         profilePage.open(CHILD_IDP);
-        WaitUtils.waitForPageToLoad(driver);
+        WaitUtils.waitForPageToLoad();
 
         Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
         loginPage.login("child", "password");
@@ -615,7 +615,7 @@ public abstract class AbstractLinkAndExchangeTest extends AbstractServletsAdapte
 
         // Login to account mgmt first
         profilePage.open(CHILD_IDP);
-        WaitUtils.waitForPageToLoad(driver);
+        WaitUtils.waitForPageToLoad();
 
         Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
         loginPage.login("child", "password");
@@ -649,7 +649,7 @@ public abstract class AbstractLinkAndExchangeTest extends AbstractServletsAdapte
 
     private void navigateTo(String uri) {
         driver.navigate().to(uri);
-        WaitUtils.waitForPageToLoad(driver);
+        WaitUtils.waitForPageToLoad();
     }
 
     
