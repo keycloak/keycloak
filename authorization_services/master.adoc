@@ -2,5 +2,5 @@
 :toclevels: 3
 :numbered:
 
-include::../document-attributes-product.adoc[]
+include::document-attributes-product.adoc[]
 include::topics.adoc[]
