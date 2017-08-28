@@ -6,7 +6,7 @@
     <parent>
         <artifactId>keycloak-misc-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.3.0.CR1-SNAPSHOT</version>
+        <version>3.4.0.CR1-SNAPSHOT</version>
     </parent>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-test-helper</artifactId>
