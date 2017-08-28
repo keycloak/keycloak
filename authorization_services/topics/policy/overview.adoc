@@ -6,7 +6,7 @@ As mentioned previously, policies define the conditions that must be satisfied b
 You can view all policies associated with a resource server by clicking the *Policy* tab when editing a resource server.
 
 .Policies
-image:../../{{book.images}}/policy/view.png[alt="Policies"]
+image:{project_images}/policy/view.png[alt="Policies"]
 
 On this tab, you can view the list of previously created policies as well as create and edit a policy.
 

@@ -12,8 +12,8 @@ When the server is using HTTPS, ensure your adapter is configured as follows:
 ```
 
 The configuration above enables TLS/HTTPS to the Authorization Client, making possible to access a
-{{book.project.name}} Server remotely using the HTTPS scheme.
+{project_name} Server remotely using the HTTPS scheme.
 
 [NOTE]
-It is strongly recommended that you enable TLS/HTTPS when accessing the {{book.project.name}} Server endpoints.
+It is strongly recommended that you enable TLS/HTTPS when accessing the {project_name} Server endpoints.
 

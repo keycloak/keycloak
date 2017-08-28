@@ -3,13 +3,13 @@
 === Authentication Flows
 
 An _authentication flow_ is a container for all authentications, screens, and actions that must happen during login, registration, and other
-{{book.project.name}} workflows.
+{project_name} workflows.
 If you go to the admin console `Authentication` left menu item and go to the `Flows` tab, you can view all the defined flows
 in the system and what actions and checks each flow requires.  This section does a walk through of the browser login flow.  In the
 left drop down list select `browser` to come to the screen shown below:
 
 .Browser Flow
-image:../../{{book.images}}/browser-flow.png[]
+image:{project_images}/browser-flow.png[]
 
 If you hover over the tooltip (the tiny question mark) to the right of the flow selection list, this will describe what the
 flow is and does.
@@ -46,7 +46,7 @@ This is better described in an example.  Let's walk through the `browser` authen
   This is marked as _optional_.  If the user has OTP set up, then this authentication type must run and be successful.  If the user doesn't
   have OTP set up, this authentication type is ignored.
 
-{% if book.community %}
+ifeval::[{project_community}==true]
 === Executions
 
 Executions can be used 
@@ -97,4 +97,4 @@ function authenticate(context) {
   context.success();
 }
 ----                        
-{% endif %}
+endif::[]

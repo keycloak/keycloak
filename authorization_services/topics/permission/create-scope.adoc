@@ -6,7 +6,7 @@ A scope-based permission defines a set of one or more scopes to protect using a 
 To create a new scope-based permission, select *Scope-based* in the dropdown list in the upper right corner of the permission listing.
 
 .Add Scope-Based Permission
-image:../../{{book.images}}/permission/create-scope.png[alt="Add Scope-Based Permission"]
+image:{project_images}/permission/create-scope.png[alt="Add Scope-Based Permission"]
 
 ==== Configuration
 
@@ -33,4 +33,4 @@ Defines a set of one or more policies to associate with a permission.
 
 * *Decision Strategy*
 +
-The <<fake/../decision-strategy.adoc#_permission_decision_strategies, Decision Strategy>> for this permission.
+The <<_permission_decision_strategies, Decision Strategy>> for this permission.

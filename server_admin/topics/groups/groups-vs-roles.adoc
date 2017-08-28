@@ -3,10 +3,10 @@
 === Groups vs. Roles
 
 In the IT world the concepts of Group and Role are often blurred and interchangeable.
-In {{book.project.name}}, Groups are just a collection of users that you can apply roles and attributes to in one place.
+In {project_name}, Groups are just a collection of users that you can apply roles and attributes to in one place.
 Roles define a type of user and applications assign permission and access control to roles
 
-Aren't <<fake/../../roles/composite.adoc#_composite-roles,Composite Roles>> also similar to Groups?
+Aren't <<_composite-roles,Composite Roles>> also similar to Groups?
 Logically they provide the same exact functionality, but the difference is conceptual.
 Composite roles should be used to apply the permission model to your set of services and applications.
 Groups should focus on collections of users and their roles in your organization.

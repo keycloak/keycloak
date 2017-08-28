@@ -1,16 +1,16 @@
 === Other OpenID Connect Libraries
 
-{{book.project.name}} can be secured by supplied adapters that are usually easier to use and provide better integration with {{book.project.name}}. However, if an adapter is not available for your programming language, framework, or platform you might opt to use a generic OpenID Connect Resource Provider (RP) library instead. This chapter describes details specific to {{book.project.name}} and does not contain specific protocol details. For more information see the http://openid.net/connect/[OpenID Connect specifications] and https://tools.ietf.org/html/rfc6749[OAuth2 specification].
+{project_name} can be secured by supplied adapters that are usually easier to use and provide better integration with {project_name}. However, if an adapter is not available for your programming language, framework, or platform you might opt to use a generic OpenID Connect Resource Provider (RP) library instead. This chapter describes details specific to {project_name} and does not contain specific protocol details. For more information see the http://openid.net/connect/[OpenID Connect specifications] and https://tools.ietf.org/html/rfc6749[OAuth2 specification].
 
 ==== Endpoints
 
-The most important endpoint to understand is the `well-known` configuration endpoint. It lists endpoints and other configuration options relevant to the OpenID Connect implementation in {{book.project.name}}. The endpoint is:
+The most important endpoint to understand is the `well-known` configuration endpoint. It lists endpoints and other configuration options relevant to the OpenID Connect implementation in {project_name}. The endpoint is:
 
 ....
 /realms/{realm-name}/.well-known/openid-configuration
 ....
 
-To obtain the full URL, add the base URL for {{book.project.name}} and replace `{realm-name}` with the name of your realm. For example:
+To obtain the full URL, add the base URL for {project_name} and replace `{realm-name}` with the name of your realm. For example:
 
 $$http://localhost:8080/auth/realms/master/.well-known/openid-configuration$$
 
@@ -60,7 +60,7 @@ The endpoint can also be invoked directly by the application. To invoke this end
 /realms/{realm-name}/protocol/openid-connect/certs
 ....
 
-The certificate endpoint returns the public keys enabled by the realm, encoded as a JSON Web Key (JWK). Depending on the realm settings there can be one or more keys enabled for verifying tokens. For more information see the link:{{book.adminguide.link}}[{{book.adminguide.name}}] and the https://tools.ietf.org/html/rfc7517[JSON Web Key specification].
+The certificate endpoint returns the public keys enabled by the realm, encoded as a JSON Web Key (JWK). Depending on the realm settings there can be one or more keys enabled for verifying tokens. For more information see the link:{adminguide_link}[{adminguide_name}] and the https://tools.ietf.org/html/rfc7517[JSON Web Key specification].
 
 ===== Introspection Endpoint
 ....
@@ -78,7 +78,7 @@ For more details see https://tools.ietf.org/html/rfc7662[OAuth 2.0 Token Introsp
 
 The dynamic client registration endpoint is used to dynamically register clients.
 
-For more details see the <<fake/../../client-registration.adoc#_client_registration,Client Registration chapter>> and the
+For more details see the <<_client_registration,Client Registration chapter>> and the
 https://openid.net/specs/openid-connect-registration-1_0.html[OpenID Connect Dynamic Client Registration specification].
 
 
@@ -86,9 +86,9 @@ https://openid.net/specs/openid-connect-registration-1_0.html[OpenID Connect Dyn
 
 ===== Authorization Code
 
-The Authorization Code flow redirects the user agent to {{book.project.name}}. Once the user has successfully authenticated with {{book.project.name}} an
+The Authorization Code flow redirects the user agent to {project_name}. Once the user has successfully authenticated with {project_name} an
 Authorization Code is created and the user agent is redirected back to the application. The application then uses the authorization code along with its
-credentials to obtain an Access Token, Refresh Token and ID Token from {{book.project.name}}.
+credentials to obtain an Access Token, Refresh Token and ID Token from {project_name}.
 
 The flow is targeted towards web applications, but is also recommended for native applications, including mobile applications, where it is possible to embed
 a user agent.
@@ -113,7 +113,7 @@ For more details refer to the http://openid.net/specs/openid-connect-core-1_0.ht
 [[_resource_owner_password_credentials_flow]]
 ===== Resource Owner Password Credentials
 
-Resource Owner Password Credentials, referred to as Direct Grant in {{book.project.name}}, allows exchanging user credentials for tokens. It's not recommended
+Resource Owner Password Credentials, referred to as Direct Grant in {project_name}, allows exchanging user credentials for tokens. It's not recommended
 to use this flow unless you absolutely need to. Examples where this could be useful are legacy applications and command-line interfaces.
 
 There are a number of limitations of using this flow, including:
@@ -152,7 +152,7 @@ curl \
 Client Credentials is used when clients (applications and services) wants to obtain access on behalf of themselves rather than on behalf of a user. This can
 for example be useful for background services that applies changes to the system in general rather than for a specific user.
 
-{{book.project.name}} provides support for clients to authenticate either with a secret or with public/private keys.
+{project_name} provides support for clients to authenticate either with a secret or with public/private keys.
 
 This flow is not included in OpenID Connect, but is a part of the OAuth 2.0 specification.
 
@@ -164,7 +164,7 @@ When using the redirect based flows it's important to use valid redirect uris fo
 especially applies to client-side (public clients) applications. Failing to do so could result in:
 
 * Open redirects - this can allow attackers to create spoof links that looks like they are coming from your domain
-* Unauthorized entry - when users are already authenticated with {{book.project.name}} an attacker can use a public client where redirect uris have not be configured correctly to gain access by redirecting the user without the users knowledge
+* Unauthorized entry - when users are already authenticated with {project_name} an attacker can use a public client where redirect uris have not be configured correctly to gain access by redirecting the user without the users knowledge
 
 In production for web applications always use `https` for all redirect URIs. Do not allow redirects to http.
 
@@ -180,6 +180,6 @@ There's also a few special redirect URIs:
 `urn:ietf:wg:oauth:2.0:oob`::
 
   If its not possible to start a web server in the client (or a browser is not available) it is possible to use the special `urn:ietf:wg:oauth:2.0:oob` redirect uri.
-  When this redirect uri is used {{book.project.name}} displays a page with the code in the title and in a box on the page.
+  When this redirect uri is used {project_name} displays a page with the code in the title and in a box on the page.
   The application can either detect that the browser title has changed, or the user can copy/paste the code manually to the application.
   With this redirect uri it is also possible for a user to use a different device to obtain a code to paste back to the application.

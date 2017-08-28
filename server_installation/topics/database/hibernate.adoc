@@ -1,7 +1,7 @@
 
 === Database Configuration
 
-The configuration for this component is found in the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` file in your distribution. The location of this file depends on your <<fake/../../operating-mode.adoc#_operating-mode, operating mode>>.
+The configuration for this component is found in the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` file in your distribution. The location of this file depends on your <<_operating-mode, operating mode>>.
 
 .Database Config
 [source,xml]
@@ -56,5 +56,5 @@ globalStatsInterval::
 schema::
   Specify the database schema to use
 
-NOTE:  These configuration switches and more are described in the link:{{book.appserver.jpa.link}}[_{{book.appserver.jpa.name}}_].
+NOTE:  These configuration switches and more are described in the link:{appserver_jpa_link}[_{appserver_jpa_name}_].
 

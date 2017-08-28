@@ -1,12 +1,12 @@
 
 === Installing Distribution Files
 
-The {{book.project.name}} Server is contained in one distribution file:
+The {project_name} Server is contained in one distribution file:
 
-* 'keycloak-{{book.project.version}}.[zip|tar.gz]'
+* 'keycloak-{project_version}.[zip|tar.gz]'
 
-The 'keycloak-{{book.project.version}}.[zip|tar.gz]' file is the server only distribution.  It contains nothing other than the scripts and binaries
-to run the {{book.project.name}} server.
+The 'keycloak-{project_version}.[zip|tar.gz]' file is the server only distribution.  It contains nothing other than the scripts and binaries
+to run the {project_name} server.
 
 To unpack these files run the `unzip` or `gunzip` and `tar` utilities.
 

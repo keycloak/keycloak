@@ -1,43 +1,43 @@
 
 === SAML Clients
 
-{{book.project.name}} supports <<fake/../../sso-protocols/saml.adoc#_saml,SAML 2.0>> for registered applications.
+{project_name} supports <<_saml,SAML 2.0>> for registered applications.
 Both POST and Redirect bindings are supported.
 You can choose to require client signature validation and can have the server sign and/or encrypt responses as well.
 
 To create a SAML client go to the `Clients` left menu item.  On this page you'll see a `Create` button on the right.
 
 .Clients
-image:../../{{book.images}}/clients.png[]
+image:{project_images}/clients.png[]
 
 This will bring you to the `Add Client` page.
 
 
 .Add Client
-image:../../{{book.images}}/add-client-saml.png[]
+image:{project_images}/add-client-saml.png[]
 
 Enter in the `Client ID` of the client.  This is often a URL and will be the expected `issuer` value in SAML requests sent
 by the application.  Next select `saml` in the `Client Protocol` drop down box.
 Ignore the `Client Template` listbox for now,
 we'll go over that later in this chapter.
 Finally enter in the `Client SAML Endpoint` URL.  Enter the
-URL you want the {{book.project.name}} server to send SAML requests and responses to.  Usually applications have only one URL for processing SAML requests.
+URL you want the {project_name} server to send SAML requests and responses to.  Usually applications have only one URL for processing SAML requests.
 If your application has different URLs for its bindings, don't worry, you can fix this in the `Settings` tab of the client.
 Click `Save`.  This will create the client and bring you to the client `Settings`
 tab.
 
 .Client Settings
-image:../../{{book.images}}/client-settings-saml.png[]
+image:{project_images}/client-settings-saml.png[]
 
 
 
 Client ID::
   This value must match the issuer value sent with AuthNRequests.
-  {{book.project.name}} will pull the issuer from the Authn SAML request and match it to a client by this value.
+  {project_name} will pull the issuer from the Authn SAML request and match it to a client by this value.
 
 Name::
-  This is the display name for the client whenever it is displayed in a {{book.project.name}} UI screen.  You can localize
-  the value of this field by setting up a replacement string value i.e. $\{myapp}.  See the link:{{book.developerguide.link}}[{{book.developerguide.name}}]
+  This is the display name for the client whenever it is displayed in a {project_name} UI screen.  You can localize
+  the value of this field by setting up a replacement string value i.e. $\{myapp}.  See the link:{developerguide_link}[{developerguide_name}]
   for more information.
 
 Description::
@@ -49,17 +49,17 @@ Enabled::
 Consent Required::
   If this is on, then users will get a consent page which asks the user if they grant access to that application.  It will also
   display the metadata that the client is interested in so that the user knows exactly what information the client is getting access to.
-  If you've ever done a social login to Google, you'll often see a similar page.  {{book.project.name}} provides the same functionality.
+  If you've ever done a social login to Google, you'll often see a similar page.  {project_name} provides the same functionality.
 
 Include AuthnStatement::
   SAML login responses may specify the authentication method used (password, etc.) as well as a timestamp of the login.
   Setting this to on will include that statement in the response document. 
 
 Sign Documents::
-  When turned on, {{book.project.name}} will sign the document using the realm's private key. 
+  When turned on, {project_name} will sign the document using the realm's private key.
 
 Optimize REDIRECT signing key lookup::
-  When turned on, the SAML protocol messages will include {{book.project.name}}
+  When turned on, the SAML protocol messages will include {project_name}
   native extension that contains a hint with signing key ID. When the SP
   understands this extension, it can use it for signature validation instead of
   attempting to validate signature with all known keys. This option only applies to
@@ -67,7 +67,7 @@ Optimize REDIRECT signing key lookup::
   there is no place with this information in the signature information
   (contrary to POST binding messages where key ID is always included in
   document signature). Currently this is relevant to situations where both
-  IDP and SP are provided by {{book.project.name}} server and adapter. This
+  IDP and SP are provided by {project_name} server and adapter. This
   option is only relevant when `Sign Documents` is switched on.
 
 Sign Assertions::
@@ -79,7 +79,7 @@ Signature Algorithm::
 
 SAML Signature Key Name::
   Signed SAML documents sent via POST binding contain identification of signing key in `KeyName`
-  element. This by default contains {{book.project.name}} key ID. However various vendors might
+  element. This by default contains {project_name} key ID. However various vendors might
   expect a different key name or no key name at all. This switch controls whether `KeyName`
   contains key ID (option `KEY_ID`), subject from certificate corresponding to the realm key
   (option `CERT_SUBJECT` - expected for instance by Microsoft Active Directory Federation
@@ -94,16 +94,16 @@ Encrypt Assertions::
 
 Client Signature Required::
   Expect that documents coming from a client are signed.
-  {{book.project.name}} will validate this signature using the client public key or cert set up in the `SAML Keys` tab.
+  {project_name} will validate this signature using the client public key or cert set up in the `SAML Keys` tab.
 
 Force POST Binding::
-  By default, {{book.project.name}} will respond using the initial SAML binding of the original request.
-  By turning on this switch, you will force {{book.project.name}} to always respond using the SAML POST Binding even if the original request was the Redirect binding.
+  By default, {project_name} will respond using the initial SAML binding of the original request.
+  By turning on this switch, you will force {project_name} to always respond using the SAML POST Binding even if the original request was the Redirect binding.
 
 Front Channel Logout::
   If true, this application requires a browser redirect to be able to perform a logout.
   For example, the application may require a cookie to be reset which could only be done via a redirect.
-  If this switch is false, then {{book.project.name}} will invoke a background SAML request to logout the application.
+  If this switch is false, then {project_name} will invoke a background SAML request to logout the application.
 
 Force Name ID Format::
   If the request has a name ID policy, ignore it and used the value configured in the admin console under Name ID Format 
@@ -114,16 +114,16 @@ Name ID Format::
   Properties used for each of the respective formats are defined below. 
 
 Root URL::
-  If {{book.project.name}} uses any configured relative URLs, this value is prepended to them.
+  If {project_name} uses any configured relative URLs, this value is prepended to them.
 
 Valid Redirect URIs::
   This is an optional field.  Enter in a URL pattern and click the + sign to add.  Click the - sign next to URLs you want to remove.
   Remember that you still have to click the `Save` button!
   Wildcards (\*) are only allowed at the end of of a URI, i.e. $$http://host.com/*$$.  This field is used when the exact SAML
-  endpoints are not registered and {{book.project.name}} is pull the Assertion Consumer URL from the request.
+  endpoints are not registered and {project_name} is pull the Assertion Consumer URL from the request.
 
 Base URL::
-  If {{book.project.name}} needs to link to the client, this URL would be used.
+  If {project_name} needs to link to the client, this URL would be used.
 
 Master SAML Processing URL::
   This URL will be used for all SAML requests and the response will be directed to the SP.

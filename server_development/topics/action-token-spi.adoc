@@ -5,7 +5,7 @@ An action token is a special instance of Json Web Token (JWT) that permits its b
 reset a password or validate e-mail address. They are usually sent to users in form of a link that points to an endpoint
 processing action tokens for a particular realm.
 
-{{book.project.name}} offers four basic token types allowing the bearer to:
+{project_name} offers four basic token types allowing the bearer to:
 
  *  Reset credentials
  *  Confirm e-mail address
@@ -33,7 +33,7 @@ In addition, an action token can contain any number of custom fields serializabl
 
 === Action Token Processing
 
-When an action token is passed to a {{book.project.name}} endpoint
+When an action token is passed to a {project_name} endpoint
 `_KEYCLOAK_ROOT_/auth/realms/master/login-actions/action-token` via `key` parameter, it is validated and a proper action
 token handler is executed. The processing always takes place in a context of an authentication session, either a fresh
 one or the action token service joins an existing authentication session (details are described below). The action token

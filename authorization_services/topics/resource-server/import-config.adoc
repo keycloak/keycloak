@@ -14,12 +14,12 @@ To export a configuration file, complete the following steps:
 . Navigate to the *Resource Server Settings* page.
 +
 .Resource Server Settings
-image:../../{{book.images}}/resource-server/authz-settings.png[alt="Resource Server Settings"]
+image:{project_images}/resource-server/authz-settings.png[alt="Resource Server Settings"]
 
 . On this page, in the Export Settings section, click *Export*.
 +
 .Export Settings
-image:../../{{book.images}}/resource-server/authz-export.png[alt="Export Settings"]
+image:{project_images}/resource-server/authz-export.png[alt="Export Settings"]
 
 The configuration file is exported in JSON format and displayed in a text area, from which you can copy and paste. You can also click *Download* to download the configuration file and save it.
 

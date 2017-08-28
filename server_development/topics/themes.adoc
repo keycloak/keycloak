@@ -1,14 +1,14 @@
 [[_themes]]
 == Themes
 
-{{book.project.name}} provides theme support for web pages and emails. This allows customizing the look and feel of end-user facing pages so they can be
+{project_name} provides theme support for web pages and emails. This allows customizing the look and feel of end-user facing pages so they can be
 integrated with your applications.
 
-image::../images/login-sunrise.png[caption="",title="Login page with sunrise example theme"]
+image::images/login-sunrise.png[caption="",title="Login page with sunrise example theme"]
 
 === Theme Types
 
-A theme can provide one or more types to customize different aspects of {{book.project.name}}. The types available are:
+A theme can provide one or more types to customize different aspects of {project_name}. The types available are:
 
 * Account - Account management
 * Admin - Admin console
@@ -25,7 +25,7 @@ NOTE: To set the theme for the `master` admin console you need to set the admin 
 refresh the page.
 
 To change the welcome theme you need to edit `standalone.xml`, `standalone-ha.xml`, or `domain.xml`.
-For more information on where the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` file resides see the link:{{book.installguide.link}}[{{book.installguide.name}}].
+For more information on where the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` file resides see the link:{installguide_link}[{installguide_name}].
 
 Add `welcomeTheme` to the theme element, for example:
 
@@ -42,7 +42,7 @@ If the server is running you need to restart the server for the changes to the w
 
 === Default Themes
 
-{{book.project.name}} comes bundled with default themes in the server's root `themes` directory. To simplify upgrading you should not edit the bundled themes
+{project_name} comes bundled with default themes in the server's root `themes` directory. To simplify upgrading you should not edit the bundled themes
 directly. Instead create your own theme that extends one of the bundle themes.
 
 === Creating a Theme
@@ -56,15 +56,15 @@ A theme consists of:
 * Scripts
 * Theme properties
 
-Unless you plan to replace every single page you should extend another theme. Most likely you will want to extend the {{book.project.name}} theme, but you could also
+Unless you plan to replace every single page you should extend another theme. Most likely you will want to extend the {project_name} theme, but you could also
 consider extending the base theme if you are significantly changing the look and feel of the pages. The base theme primarily consists of HTML templates and
-message bundles, while the {{book.project.name}} theme primarily contains images and stylesheets.
+message bundles, while the {project_name} theme primarily contains images and stylesheets.
 
 When extending a theme you can override individual resources (templates, stylesheets, etc.). If you decide to override HTML templates bear in mind that you may
 need to update your custom template when upgrading to a new release.
 
 While creating a theme it's a good idea to disable caching as this makes it possible to edit theme resources directly from the `themes` directory without
-restarting {{book.project.name}}. To do this edit `standalone.xml`. For `theme` set `staticMaxAge` to `-1` and both
+restarting {project_name}. To do this edit `standalone.xml`. For `theme` set `staticMaxAge` to `-1` and both
 `cacheTemplates` and `cacheThemes` to `false`:
 
 [source,xml]
@@ -208,7 +208,7 @@ of the realm.
 
 ==== Internationalization
 
-{{book.project.name}} supports internationalization. To enable internationalization for a realm see {{book.adminguide.link}}[{{book.adminguide.name}}]. This
+{project_name} supports internationalization. To enable internationalization for a realm see {adminguide_link}[{adminguide_name}]. This
 section describes how you can add your own language.
 
 To add a new language create the file `<THEME TYPE>/messages/messages_<LOCALE>` in the directory of your theme. Then add it to the `locales` property in
@@ -255,11 +255,11 @@ usernameOrEmail=....
 
 ==== HTML Templates
 
-{{book.project.name}} uses http://freemarker.org[Freemarker Templates] in order to generate HTML. You can override individual templates in your own theme by
+{project_name} uses http://freemarker.org[Freemarker Templates] in order to generate HTML. You can override individual templates in your own theme by
 creating `<THEME TYPE>/<TEMPLATE>.ftl`. For a list of templates used see `themes/base/<THEME TYPE>`.
 
 When creating a custom template it is a good idea to copy the template from the base theme to your own theme, then applying the modifications you need. Bear in
-mind when upgrading to a new version of {{book.project.name}} you may need to update your custom templates to apply changes to the original template if
+mind when upgrading to a new version of {project_name} you may need to update your custom templates to apply changes to the original template if
 applicable.
 
 For example to create a custom login form for the `mytheme` theme copy `themes/base/login/login.ftl` to `themes/mytheme/login` and open it in an editor.
@@ -291,9 +291,9 @@ passwordResetBodyHtml=<a href="{0}">Reset password</a>
 
 === Deploying Themes
 
-Themes can be deployed to {{book.project.name}} by copying the theme directory to `themes` or it can be deployed as an archive. During development copying the
+Themes can be deployed to {project_name} by copying the theme directory to `themes` or it can be deployed as an archive. During development copying the
 theme to the `themes` directory, but in production you may want to consider using an `archive`. An `archive` makes it simpler to have a versioned copy of
-the theme, especially when you have multiple instances of {{book.project.name}} for example with clustering.
+the theme, especially when you have multiple instances of {project_name} for example with clustering.
 
 To deploy a theme as an archive you need to create a ZIP archive with the theme resources. You also need to add a file `META-INF/keycloak-themes.json` to the
 archive that lists the available themes in the archive as well as what types each theme provides.
@@ -322,7 +322,7 @@ The contents of `META-INF/keycloak-themes.json` in this case would be:
 
 A single archive can contain multiple themes and each theme can support one or more types.
 
-The deploy the archive to {{book.project.name}} you can either manually create a module in `modules` or use the `jboss-cli` command. It's simplest to use
+The deploy the archive to {project_name} you can either manually create a module in `modules` or use the `jboss-cli` command. It's simplest to use
 `jboss-cli` as it creates the required directories and module descriptor for you.
 
 To deploy `mytheme.zip` on Linux run:
@@ -354,8 +354,8 @@ To manually create the module create the directory `modules/org/keycloak/example
 </module>
 ----
 
-You also need to register the module with {{book.project.name}}. This is done by editing `standalone.xml`, `standalone-ha.xml`, or `domain.xml`.
-For more information on where the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` file resides see the link:{{book.installguide.link}}[{{book.installguide.name}}].
+You also need to register the module with {project_name}. This is done by editing `standalone.xml`, `standalone-ha.xml`, or `domain.xml`.
+For more information on where the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` file resides see the link:{installguide_link}[{installguide_name}].
 
 Then find the `theme` tag under `keycloak-server` subsystem and add the module to `theme/modules/module`. For example:
 

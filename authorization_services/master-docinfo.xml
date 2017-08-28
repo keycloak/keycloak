@@ -1,10 +1,10 @@
-<productname>{book_project_name}</productname>
-<productnumber>{book_project_doc_info_version_url}</productnumber>
-<subtitle>For Use with {book_project_name} {book_project_doc_info_version_url}</subtitle>
-<title>{book_title}</title>
+<productname>{project_name}</productname>
+<productnumber>{project_doc_info_version_url}</productnumber>
+<subtitle>For Use with {project_name} {project_doc_info_version_url}</subtitle>
+<title>{title}</title>
 <release>{doc_info_version_url}</release>
 <abstract>
-	    <para>This guide consists of information for authorization services for {book_project_name} {book_project_doc_info_version_url}</para>
+	    <para>This guide consists of information for authorization services for {project_name} {project_doc_info_version_url}</para>
     </abstract>
 <authorgroup>
     <orgname>Red Hat Customer Content Services</orgname>

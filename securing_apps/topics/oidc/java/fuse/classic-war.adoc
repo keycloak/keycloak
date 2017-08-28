@@ -68,7 +68,7 @@ For example:
 </Configure>
 ----
 
-. Within the `/WEB-INF/` directory of your WAR, create a new file, keycloak.json. The format of this configuration file is described in the <<fake/../../java-adapter-config.adoc#_java_adapter_config,Java Adapters Config>> section. It is also possible to make this file available externally as described in xref:config_external_adapter[Configuring the External Adapter].
+. Within the `/WEB-INF/` directory of your WAR, create a new file, keycloak.json. The format of this configuration file is described in the <<_java_adapter_config,Java Adapters Config>> section. It is also possible to make this file available externally as described in xref:config_external_adapter[Configuring the External Adapter].
 
 . Ensure your WAR application imports `org.keycloak.adapters.jetty` and maybe some more packages in the `META-INF/MANIFEST.MF` file, under the `Import-Package` header. Using `maven-bundle-plugin` in your project properly generates OSGI headers in manifest.
 Note that "*" resolution for the package does not import the `org.keycloak.adapters.jetty` package, since it is not used by the application or the Blueprint or Spring descriptor, but is rather used in the `jetty-web.xml` file. 
@@ -77,11 +77,11 @@ The list of the packages to import might look like this:
 +
 [source, subs="attributes"]
 ----
-org.keycloak.adapters.jetty;version="{{book.project.versionMvn}}",
-org.keycloak.adapters;version="{{book.project.versionMvn}}",
-org.keycloak.constants;version="{{book.project.versionMvn}}",
-org.keycloak.util;version="{{book.project.versionMvn}}",
-org.keycloak.*;version="{{book.project.versionMvn}}",
+org.keycloak.adapters.jetty;version="{project_versionMvn}",
+org.keycloak.adapters;version="{project_versionMvn}",
+org.keycloak.constants;version="{project_versionMvn}",
+org.keycloak.util;version="{project_versionMvn}",
+org.keycloak.*;version="{project_versionMvn}",
 *;resolution:=optional
 ----
 

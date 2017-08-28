@@ -2,12 +2,12 @@
 ==== Java Servlet Filter Adapter
 
 If you want to use SAML with a Java servlet application that doesn't have an adapter for that servlet platform, you can
-opt to use the servlet filter adapter that {{book.project.name}} has.
+opt to use the servlet filter adapter that {project_name} has.
 This adapter works a little differently than the other adapters.
 You still have to specify a `/WEB-INF/keycloak-saml.xml` file as defined in
-the <<fake/../../../../saml/java/general-config.adoc#_saml-general-config,General Adapter Config>> section, but
+the <<_saml-general-config,General Adapter Config>> section, but
 you do not define security constraints in _web.xml_.
-Instead you define a filter mapping using the {{book.project.name}} servlet filter adapter to secure the url patterns you want to secure.
+Instead you define a filter mapping using the {project_name} servlet filter adapter to secure the url patterns you want to secure.
 
 NOTE: Backchannel logout works a bit differently than the standard adapters.
       Instead of invalidating the http session it instead marks the session ID as logged out.
@@ -35,7 +35,7 @@ WARNING: Backchannel logout does not currently work when you have a clustered ap
 </web-app>
 ----
 
-The {{book.project.name}} filter has the same configuration parameters available as the other adapters except you must
+The {project_name} filter has the same configuration parameters available as the other adapters except you must
 define them as filter init params instead of context params.
 
 You can define multiple filter mappings if you have various different secure and unsecure url patterns. 
@@ -52,6 +52,6 @@ To use this filter, include this maven artifact in your WAR poms:
 <dependency>
    <groupId>org.keycloak</groupId>
    <artifactId>keycloak-saml-servlet-filter-adapter</artifactId>
-   <version>{{book.project.versionMvn}}</version>
+   <version>{project_versionMvn}</version>
 </dependency>
 ----

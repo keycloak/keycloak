@@ -1,15 +1,15 @@
 
 === Before You Start
 
-Before you can participate in this tutorial, you need to complete the installation of {{book.project.name}} and create the
-initial admin user as shown in the <<fake/../../first-boot.adoc#_install-boot, Installing and Booting>> tutorial.  There is one
-caveat to this.  You have to run a separate {{book.appserver.name}} instance on the same machine as the
-{{book.project.name}} server.  This separate instance will run your Java Servlet application.  Because of this you will
-have to run the {{book.project.name}} under a different port so that there are no port conflicts when running on the
+Before you can participate in this tutorial, you need to complete the installation of {project_name} and create the
+initial admin user as shown in the <<_install-boot, Installing and Booting>> tutorial.  There is one
+caveat to this.  You have to run a separate {appserver_name} instance on the same machine as the
+{project_name} server.  This separate instance will run your Java Servlet application.  Because of this you will
+have to run the {project_name} under a different port so that there are no port conflicts when running on the
 same machine.  Use the `jboss.socket.binding.port-offset` system property on the command line.  The value of this property
-is a number that will be added to the base value of every port opened by the {{book.project.name}} server.
+is a number that will be added to the base value of every port opened by the {project_name} server.
 
-To boot the {{book.project.name}} server:
+To boot the {project_name} server:
 
 .Linux/Unix
 [source]
@@ -23,6 +23,6 @@ $ .../bin/standalone.sh -Djboss.socket.binding.port-offset=100
 > ...\bin\standalone.bat -Djboss.socket.binding.port-offset=100
 ----
 
-After booting up {{book.project.name}}, you can then access the admin console at http://localhost:8180/auth/admin/
+After booting up {project_name}, you can then access the admin console at http://localhost:8180/auth/admin/
 
 

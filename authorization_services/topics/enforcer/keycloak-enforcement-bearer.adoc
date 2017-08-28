@@ -41,6 +41,6 @@ HTTP/1.1 401 Unauthorized
 WWW-Authenticate: KC_ETT realm="photoz-restful-api",as_uri="http://localhost:8080/auth/realms/photoz/authz/entitlement"
 ```
 
-Once  a client receives a response from the server, it examines the status code and `WWW-Authenticate` header to obtain an RPT from the {{book.project.name}} Server.
+Once  a client receives a response from the server, it examines the status code and `WWW-Authenticate` header to obtain an RPT from the {project_name} Server.
 
 

@@ -1,7 +1,7 @@
 
 ==== Error Handling
 
-{{book.project.name}} has some error handling facilities for servlet based client adapters.
+{project_name} has some error handling facilities for servlet based client adapters.
 When an error is encountered in authentication, the client adapter will call `HttpServletResponse.sendError()`.
 You can set up an `error-page` within your `web.xml` file to handle the error however you want.
 The client adapter can throw 400, 401, 403, and 500 errors.

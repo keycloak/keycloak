@@ -2,7 +2,7 @@
 [[_java_adapter_config]]
 ==== Java Adapter Config
 
-Each Java adapter supported by {{book.project.name}} can be configured by a simple JSON file.
+Each Java adapter supported by {project_name} can be configured by a simple JSON file.
 This is what one might look like:
 
 [source,json]
@@ -42,7 +42,7 @@ This is what one might look like:
 }
 ----
 
-You can use `${...}` enclosure for system property replacement. For example `${jboss.server.config.dir}` would be replaced by `/path/to/{{book.project.name}}`.
+You can use `${...}` enclosure for system property replacement. For example `${jboss.server.config.dir}` would be replaced by `/path/to/{project_name}`.
 Replacement of environment variables is also supported via the `env` prefix, e.g. `${env.MY_ENVIRONMENT_VARIABLE}`.
 
 The initial config file can be obtained from the the admin console. This can be done by opening the admin console, select `Clients` from the menu and clicking
@@ -60,16 +60,16 @@ resource::
 
 realm-public-key::
   PEM format of the realm public key. You can obtain this from the administration console.
-  This is _OPTIONAL_ and it's not recommended to set it. If not set, the adapter will download this from {{book.project.name}} and
-  it will always re-download it when needed (eg. {{book.project.name}} rotate it's keys). However if realm-public-key is set, then adapter
-  will never download new keys from {{book.project.name}}, so when {{book.project.name}} rotate it's keys, adapter will break.
+  This is _OPTIONAL_ and it's not recommended to set it. If not set, the adapter will download this from {project_name} and
+  it will always re-download it when needed (eg. {project_name} rotate it's keys). However if realm-public-key is set, then adapter
+  will never download new keys from {project_name}, so when {project_name} rotate it's keys, adapter will break.
 
 auth-server-url::
-  The base URL of the {{book.project.name}} server. All other {{book.project.name}} pages and REST service endpoints are derived from this. It is usually of the form `$$https://host:port/auth$$`.
+  The base URL of the {project_name} server. All other {project_name} pages and REST service endpoints are derived from this. It is usually of the form `$$https://host:port/auth$$`.
   This is _REQUIRED._
 
 ssl-required::
-  Ensures that all communication to and from the {{book.project.name}} server is over HTTPS.
+  Ensures that all communication to and from the {project_name} server is over HTTPS.
   In production this should be set to `all`.
   This is _OPTIONAL_.
   The default value is _external_ meaning that HTTPS is required by default for external requests.
@@ -81,7 +81,7 @@ use-resource-role-mappings::
   The default value is _false_.
 
 public-client::
-  If set to true, the adapter will not send credentials for the client to {{book.project.name}}.
+  If set to true, the adapter will not send credentials for the client to {project_name}.
   This is _OPTIONAL_.
   The default value is _false_.
 
@@ -140,19 +140,19 @@ credentials::
   Currently password and jwt is supported. This is _REQUIRED_ only for clients with 'Confidential' access type.
 
 connection-pool-size::
-  Adapters will make separate HTTP invocations to the {{book.project.name}} server to turn an access code into an access token.
-  This config option defines how many connections to the {{book.project.name}} server should be pooled.
+  Adapters will make separate HTTP invocations to the {project_name} server to turn an access code into an access token.
+  This config option defines how many connections to the {project_name} server should be pooled.
   This is _OPTIONAL_.
   The default value is `20`.
 
 disable-trust-manager::
-  If the {{book.project.name}} server requires HTTPS and this config option is set to `true` you do not have to specify a truststore.
+  If the {project_name} server requires HTTPS and this config option is set to `true` you do not have to specify a truststore.
   This setting should only be used during development and *never* in production as it will disable verification of SSL certificates.
   This is _OPTIONAL_.
   The default value is `false`.
 
 allow-any-hostname::
-  If the {{book.project.name}} server requires HTTPS and this config option is set to `true` the {{book.project.name}} server's certificate is validated via the truststore,
+  If the {project_name} server requires HTTPS and this config option is set to `true` the {project_name} server's certificate is validated via the truststore,
   but host name validation is not done.
   This setting should only be used during development and *never* in production as it will disable verification of SSL certificates.
   This seting may be useful in test environments This is _OPTIONAL_.
@@ -164,11 +164,11 @@ proxy-url::
 truststore::
   The value is the file path to a keystore file.
   If you prefix the path with `classpath:`, then the truststore will be obtained from the deployment's classpath instead.
-  Used for outgoing HTTPS communications to the {{book.project.name}} server.
+  Used for outgoing HTTPS communications to the {project_name} server.
   Client making HTTPS requests need a way to verify the host of the server they are talking to.
   This is what the trustore does.
   The keystore contains one or more trusted host certificates or certificate authorities.
-  You can create this truststore by extracting the public certificate of the {{book.project.name}} server's SSL keystore.
+  You can create this truststore by extracting the public certificate of the {project_name} server's SSL keystore.
   This is _REQUIRED_ unless `ssl-required` is `none` or `disable-trust-manager` is `true`.
 
 truststore-password::
@@ -177,7 +177,7 @@ truststore-password::
 
 client-keystore::
   This is the file path to a keystore file.
-  This keystore contains client certificate for two-way SSL when the adapter makes HTTPS requests to the {{book.project.name}} server.
+  This keystore contains client certificate for two-way SSL when the adapter makes HTTPS requests to the {project_name} server.
   This is _OPTIONAL_.
 
 client-keystore-password::
@@ -192,20 +192,20 @@ always-refresh-token::
   If _true_, the adapter will refresh token in every request.
 
 register-node-at-startup::
-  If _true_, then adapter will send registration request to {{book.project.name}}.
+  If _true_, then adapter will send registration request to {project_name}.
   It's _false_ by default and useful only when application is clustered.
-  See <<fake/../../oid/java/application-clustering.adoc#_applicationclustering,Application Clustering>> for details
+  See <<_applicationclustering,Application Clustering>> for details
 
 register-node-period::
-  Period for re-registration adapter to {{book.project.name}}.
+  Period for re-registration adapter to {project_name}.
   Useful when application is clustered.
-  See <<fake/../../oid/java/application-clustering.adoc#_applicationclustering,Application Clustering>> for details
+  See <<_applicationclustering,Application Clustering>> for details
 
 token-store::
   Possible values are _session_ and _cookie_.
   Default is _session_, which means that adapter stores account info in HTTP Session.
   Alternative _cookie_ means storage of info in cookie.
-  See <<fake/../../oid/java/application-clustering.adoc#_applicationclustering,Application Clustering>> for details
+  See <<_applicationclustering,Application Clustering>> for details
 
 principal-attribute::
   OpenID Connection ID Token attribute to populate the UserPrincipal name with.
@@ -217,20 +217,20 @@ turn-off-change-session-id-on-login::
   The default value is _false_.
 
 token-minimum-time-to-live::
-  Amount of time, in seconds, to preemptively refresh an active access token with the {{book.project.name}} server before it expires.
+  Amount of time, in seconds, to preemptively refresh an active access token with the {project_name} server before it expires.
   This is especially useful when the access token is sent to another REST client where it could expire before being evaluated.
   This value should never exceed the realm's access token lifespan.
   This is _OPTIONAL_.  The default value is `0` seconds, so adapter will refresh access token just if it's expired.
 
 min-time-between-jwks-requests::
-  Amount of time, in seconds, specifying minimum interval between two requests to {{book.project.name}} to retrieve new public keys.
+  Amount of time, in seconds, specifying minimum interval between two requests to {project_name} to retrieve new public keys.
   It is 10 seconds by default.
   Adapter will always try to download new public key when it recognize token with unknown `kid` . However it won't try it more
   than once per 10 seconds (by default). This is to avoid DoS when attacker sends lots of tokens with bad `kid` forcing adapter
-  to send lots of requests to {{book.project.name}}.
+  to send lots of requests to {project_name}.
 
 public-key-cache-ttl::
-  Amount of time, in seconds, specifying maximum interval between two requests to {{book.project.name}} to retrieve new public keys.
+  Amount of time, in seconds, specifying maximum interval between two requests to {project_name} to retrieve new public keys.
   It is 86400 seconds (1 day) by default.
   Adapter will always try to download new public key when it recognize token with unknown `kid` . If it recognize token with known `kid`, it will
   just use the public key downloaded previously. However at least once per this configured interval (1 day by default) will be new

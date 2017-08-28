@@ -2,10 +2,10 @@
 === Client Initiated Account Linking
 
 Some applications want to integrate with social providers like Facebook, but do not want to provide an option to login via
-these social providers.  {{book.project.name}} offers a browser-based API that applications can use to link an existing
+these social providers.  {project_name} offers a browser-based API that applications can use to link an existing
 user account to a specific external IDP.  This is called client initiated account linking.
 
-The way it works is that the application forward's the user's browser to a URL on the {{book.project.name}} server requesting
+The way it works is that the application forward's the user's browser to a URL on the {project_name} server requesting
 that it wants to link the user's account to a specific external provider (i.e. Facebook).  The server
 initiates a login with the external provider.  The browser logs in at the external provider and is redirected
 back to the auth server.  The auth server establishes the link and redirects back to the application with a confirmation.

@@ -34,7 +34,7 @@ Make also sure to add the Adapter BOM dependency :
     <dependency>
       <groupId>org.keycloak.bom</groupId>
       <artifactId>keycloak-adapter-bom</artifactId>
-      <version>{{book.project.versionMvn}}</version>
+      <version>{project_versionMvn}</version>
       <type>pom</type>
       <scope>import</scope>
     </dependency>

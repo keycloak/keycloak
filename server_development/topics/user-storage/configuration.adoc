@@ -106,7 +106,7 @@ This logic is, of course, inefficient as every transaction reads the entire user
 
 Now that the configuration is enabled, you can set the `path` variable when you configure the provider in the administration console.
 
-{% if book.community %}
+ifeval::[{project_community}==true]
 .Configured Provider
-image:../../{{book.images}}/storage-provider-with-config.png[]
-{% endif %}
+image:{project_images}/storage-provider-with-config.png[]
+endif::[]

@@ -1,14 +1,14 @@
 
 [[_proxy]]
-== {{book.project.name}} Security Proxy
+== {project_name} Security Proxy
 
-{{book.project.name}} has an HTTP(S) proxy that you can put in front of web applications and services where it is not possible to install the {{book.project.name}} adapter.
+{project_name} has an HTTP(S) proxy that you can put in front of web applications and services where it is not possible to install the {project_name} adapter.
 You can set up URL filters so that certain URLs are secured either by browser login and/or bearer token authentication.
 You can also define role constraints for URL patterns within your applications. 
 
 === Proxy Install and Run
 
-Download the {{book.project.name}} proxy distribution from the {{book.project.name}} download pages and unzip it. 
+Download the {project_name} proxy distribution from the {project_name} download pages and unzip it.
 [source]
 ----
 
@@ -145,7 +145,7 @@ error-page::
 
 adapter-config::
   _REQUIRED._.
-  Same configuration as any other {{book.project.name}} adapter.
+  Same configuration as any other {project_name} adapter.
 // See <<_adapter_config,Adapter Config>>                                        
 
 ==== Constraint Config
@@ -187,7 +187,7 @@ authenticate::
 
 ==== Header Names Config
 
-Next under the list of applications you can override the defaults for the names of the header fields injected by the proxy (see {{book.project.name}} Identity Headers). This mapping is optional. 
+Next under the list of applications you can override the defaults for the names of the header fields injected by the proxy (see {project_name} Identity Headers). This mapping is optional.
 
 keycloak-subject::
   e.g.
@@ -209,13 +209,13 @@ keycloak-access-token::
   e.g.
   MYAPP_ACCESS_TOKEN             
 
-=== {{book.project.name}} Identity Headers
+=== {project_name} Identity Headers
 
-When forwarding requests to the proxied server, {{book.project.name}} Proxy will set some additional headers with values from the OIDC identity token it received for authentication. 
+When forwarding requests to the proxied server, {project_name} Proxy will set some additional headers with values from the OIDC identity token it received for authentication.
 
 KEYCLOAK_SUBJECT::
   User id.
-  Corresponds to JWT `sub` and will be the user id {{book.project.name}} uses to store this user. 
+  Corresponds to JWT `sub` and will be the user id {project_name} uses to store this user.
 
 KEYCLOAK_USERNAME::
   Username.

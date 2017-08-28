@@ -1,10 +1,10 @@
 [[_enforcer_js_adapter]]
 ==== JavaScript Integration
 
-The {{book.project.name}} Server comes with a JavaScript library you can use to interact with a resource server protected by a policy enforcer.
-This library is based on the {{book.project.name}} JavaScript adapter, which can be integrated to allow your client to obtain permissions from a {{book.project.name}} Server.
+The {project_name} Server comes with a JavaScript library you can use to interact with a resource server protected by a policy enforcer.
+This library is based on the {project_name} JavaScript adapter, which can be integrated to allow your client to obtain permissions from a {project_name} Server.
 
-You can obtain this library from a running a {{book.project.name}} Server instance by including the following `script` tag in your web page:
+You can obtain this library from a running a {project_name} Server instance by including the following `script` tag in your web page:
 
 ```html
 <script src="http://.../auth/js/keycloak-authz.js"></script>
@@ -17,18 +17,18 @@ var authorization = new KeycloakAuthorization(keycloak);
 ```
 The *keycloak-authz.js* library provides two main features:
 
-* Handle responses from a resource server protected by a <<fake/../overview.adoc#_enforcer_overview, {{book.project.name}} Policy Enforcer>> and obtain a requesting party token (RPT) with the necessary permissions to gain access to the protected resources on the resource server.
+* Handle responses from a resource server protected by a <<_enforcer_overview, {project_name} Policy Enforcer>> and obtain a requesting party token (RPT) with the necessary permissions to gain access to the protected resources on the resource server.
 
-** In this case, the library can handle whatever authorization protocol the resource server is using: <<fake/../../service/authorization/authorization-api.adoc#_service_authorization_api, UMA>> or <<fake/../../service/entitlement/entitlement-api.adoc#_service_entitlement_api, Entitlements>>.
+** In this case, the library can handle whatever authorization protocol the resource server is using: <<_service_entitlement_api, Entitlements>>.
 
-* Obtain permissions from a {{book.project.name}} Server using the <<fake/../../service/entitlement/entitlement-api.adoc#_service_entitlement_api, Entitlement API>>.
+* Obtain permissions from a {project_name} Server using the <<_service_entitlement_api, Entitlement API>>.
 
-In both cases, the library allows you to easily interact with both resource server and {{book.project.name}} {{book.project.module}} to obtain tokens with
+In both cases, the library allows you to easily interact with both resource server and {project_name} Authorization Services to obtain tokens with
 permissions your client can use as bearer tokens to access the protected resources on a resource server.
 
 ===== Handling Authorization Responses from a Resource Server
 
-If a resource server is protected by a policy enforcer, it responds to client requests based on the permissions carried along with a <<fake/../keycloak-enforcement-bearer.adoc#_enforcer_bearer, bearer token>>.
+If a resource server is protected by a policy enforcer, it responds to client requests based on the permissions carried along with a <<_enforcer_bearer, bearer token>>.
 Typically, when you try to access a resource server with a bearer token that is lacking permissions to access a protected resource, the resource server
 responds with a *401* status code and a `WWW-Authenticate` header.
 

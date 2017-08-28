@@ -1,19 +1,19 @@
 [[_client_registration_cli]]
 == Client Registration CLI
 
-{% if book.product %}
+ifeval::[{project_product}==true]
 NOTE: Client Registration CLI is a Technology Preview feature and is not fully supported.
-{% endif %}
+endif::[]
 
 `Client Registration CLI` is a command line interface tool that can be used by application developers to configure new clients
-to integrate with {book_project_name}. It is specifically designed to interact with {{book.project.name}} Client Registration REST endpoints.
+to integrate with {project_name}. It is specifically designed to interact with {project_name} Client Registration REST endpoints.
 
 It is necessary to create a new client configuration for each new application hosted on a unique hostname in order for Keycloak
 to be able to interact with the application (and vice-versa) and perform its function of providing a login page, SSO session management etc.
 
 `Client Registration CLI` allows you to configure application clients from a command line, and can be used in shell scripts as well.
 
-To allow a particular user to use `Client Registration CLI` a {book_project_name} administrator will typically use `Admin Console` to configure
+To allow a particular user to use `Client Registration CLI` a {project_name} administrator will typically use `Admin Console` to configure
  a new user, or configure a new client, and a client secret, to protect access to `Client Registration REST API`.
 
 
@@ -133,7 +133,7 @@ If you need to manage different realms, you need to configure users in different
 web interface or `Admin Client CLI` once it's available.
 
 When `kcreg` successfully logs in it receives authorization tokens and saves them into a private config file so they can be
-used for subsequent invocations. See <<fake/#_working_with_alternative_configurations, next chapter>> for more info on configuration file.
+used for subsequent invocations. See <<_working_with_alternative_configurations, next chapter>> for more info on configuration file.
 
 See built-in help for more information on using `Client Registration CLI`.
 
@@ -222,7 +222,7 @@ created client. As long as the same configuration file is used for all client op
 authenticate in order to read, update, or delete a client they created.
 
 
-You can read more about Initial Access and Registration Access Tokens in <<fake/../client-registration.adoc#_client_registration,Client Registration chapter>>.
+You can read more about Initial Access and Registration Access Tokens in <<_client_registration,Client Registration chapter>>.
 
 See `kcreg config initial-token --help` and `kcreg config registration-token --help` for more information on how to configure them with `Client Registration CLI`.
 

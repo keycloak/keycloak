@@ -1,21 +1,21 @@
 
 == Admin CLI
 
-{% if book.product %}
+ifeval::[{project_product}==true]
 NOTE: Admin CLI is a Technology Preview feature and is not fully supported.
-{% endif %}
+endif::[]
 
-In previous chapters we have described how to use the {{book.project.name}} Admin Console to perform administrative tasks.
+In previous chapters we have described how to use the {project_name} Admin Console to perform administrative tasks.
 All those tasks can also be performed from command line by using Admin CLI command line tool.
 
 
 === Installing Admin CLI
 
-Admin CLI is packaged inside {{book.project.name}} Server distribution. You can find execution scripts inside `bin` directory.
+Admin CLI is packaged inside {project_name} Server distribution. You can find execution scripts inside `bin` directory.
 
 The Linux script is called `kcadm.sh`, and the one for Windows is called `kcadm.bat`.
 
-In order to setup the client to be used from any location on the filesystem you may want to add {{book.project.name}} server directory to your PATH.
+In order to setup the client to be used from any location on the filesystem you may want to add {project_name} server directory to your PATH.
 
 On Linux:
 
@@ -51,7 +51,7 @@ Or on Windows:
     c:\> set /p CID=<clientid.txt
     c:\> kcadm get clients/%CID%/installation/providers/keycloak-oidc-keycloak-json
 
-In a production environment {{book.project.name}} has to be accessed with `https:` to avoid exposing tokens to network sniffers. If server's
+In a production environment {project_name} has to be accessed with `https:` to avoid exposing tokens to network sniffers. If server's
 certificate is not issued by one of the trusted CAs that are included in Java's default certificate truststore, then you will
 need to prepare a truststore.jks file, and instruct `Admin CLI` to use it.
 
@@ -86,7 +86,7 @@ associated refresh token, possibly other secrets as well in a private configurat
 and is located under user's home directory - it's full pathname is `$HOME/.keycloak/kcadm.config` (on Windows it's `%HOMEPATH%\.keycloak\kcadm.config`).
 The file can be named something else by using `-c, --config` option.
 
-See <<fake/#_working_with_alternative_configurations, next chapter>> for more info on configuration file.
+See <<_working_with_alternative_configurations, next chapter>> for more info on configuration file.
 
 Another approach is to authenticate with each command invocation for the duration of that invocation only. This approach results
 in more load on the server, and more time spent with round-trips obtaining tokens, but has a benefit of not needing to save any

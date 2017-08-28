@@ -75,7 +75,7 @@ tags under the keycloak subsystem.  Before migration, your keycloak subsystem sh
 </subsystem>
 ----
 
-The jboss-cli tool is discussed in detail in link:{{book.installguide.link}}[{{book.installguide.name}}].
+The jboss-cli tool is discussed in detail in link:{installguide_link}[{installguide_name}].
 
 ==== migrate-json in Standalone Mode
 
@@ -216,8 +216,8 @@ to use the more secure hashing algorithm.
 
 ===== ID Token requires scope=openid
 
-OpenID Connect specification requires that parameter `scope` with value `openid` is used in initial authorization request. So in {{book.project.name}}
-2.1.0 we changed our adapters to use `scope=openid` in the redirect URI to {{book.project.name}}. Now we changed the server part too and ID token
+OpenID Connect specification requires that parameter `scope` with value `openid` is used in initial authorization request. So in {project_name}
+2.1.0 we changed our adapters to use `scope=openid` in the redirect URI to {project_name}. Now we changed the server part too and ID token
 will be sent to the application just if `scope=openid` is really used. If it's not used, then ID token will be skipped and just Access token and Refresh token will be sent to the application.
 This also allows that you can ommit the generation of ID Token on purpose - for example for space or performance purposes.
 
@@ -253,9 +253,9 @@ Finally we added some new timeouts to the admin console. This allows you for exa
 ===== Migration of old offline tokens
 
 If you migrate from version 2.2.0 or older and you used offline tokens, then your offline tokens didn't have KID in the token header.
-We added KID to the token header in 2.3.0 together with the ability to have multiple realm keys, so {{book.project.name}} is able to find the correct key based on the token KID.
+We added KID to the token header in 2.3.0 together with the ability to have multiple realm keys, so {project_name} is able to find the correct key based on the token KID.
 
-For the offline tokens without KID, {{book.project.name}} 2.5.1 will always use the active realm key to find the proper key for the token verification. In other words, migration of old
+For the offline tokens without KID, {project_name} 2.5.1 will always use the active realm key to find the proper key for the token verification. In other words, migration of old
 offline tokens will work. So for example, your user requested offline token in 1.9.8, then you migrate from 1.9.8 to 2.5.1 and then your user will be
 still able to refresh his old offline token in 2.5.1 version.
 
@@ -285,13 +285,13 @@ APIs in keycloak-server-spi-private between minor releases.
 
 Key in SAML assertions and documents are now encrypted using RSA-OAEP encryption scheme.
 If you want to use encrypted assertions, make sure that service providers understand this encryption scheme.
-In the unlikely case that SP would not be able to handle the new scheme, {{book.project.name}}
+In the unlikely case that SP would not be able to handle the new scheme, {project_name}
 can be made to use legacy RSA-v1.5 encryption scheme when started with system property
 `keycloak.saml.key_trans.rsa_v1.5` set to `true`.
 
 ===== Infinispan caches realms and users are always local
 
-Even if you use {{book.project.name}} in cluster, the caches `realms` and `users` defined in infinispan subsystem in `standalone-ha.xml` are
+Even if you use {project_name} in cluster, the caches `realms` and `users` defined in infinispan subsystem in `standalone-ha.xml` are
 always local caches now. There is separate cache `work`, which handles sending invalidation messages between cluster nodes and informing whole cluster
 what records in underlying `realms` and `users` caches should be invalidated.
 

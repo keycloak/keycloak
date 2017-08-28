@@ -6,7 +6,7 @@ The specifics of each configuration setting is discussed elsewhere in
 context with that setting.  However, it is useful to understand the format used
 to declare settings on SPI providers. 
 
-{{book.project.name}} is a highly modular system that allows great
+{project_name} is a highly modular system that allows great
 flexibility.  There are more than 50 service provider interfaces (SPIs), and
 you are allowed to swap out implementations of each SPI.  An implementation of 
 an SPI is known as a _provider_.

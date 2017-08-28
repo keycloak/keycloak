@@ -5,7 +5,7 @@ Instead of manually registering a SAML 2.0 client, you can import it via a stand
 There is an `Import` option on the Add Client page.
 
 .Add Client
-image:../../../{{book.images}}/add-client-saml.png[]
+image:{project_images}/add-client-saml.png[]
 
 Click the `Select File` button and load your entity descriptor file.  You should review all the information there to make sure everything is set up correctly.
 

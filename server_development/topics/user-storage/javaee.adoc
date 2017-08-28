@@ -79,7 +79,7 @@ public class EjbExampleUserStorageProviderFactory
 This example also assumes that you have defined a JPA deployment in the same JAR as the provider. This means a `persistence.xml`
 file as well as any JPA `@Entity` classes.
 
-WARNING: When using JPA any additional datasource must be an XA datasource. The {{book.project.name}} datasource
+WARNING: When using JPA any additional datasource must be an XA datasource. The {project_name} datasource
          is not an XA datasource. If you interact with two or more non-XA datasources in the same transaction, the server returns
          an error message. Only one non-XA resource is permitted in a single transaction.
 

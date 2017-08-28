@@ -2,9 +2,9 @@
 [[_saml-jboss-adapter-installation]]
 ===== Adapter Installation
 
-Each adapter is a separate download on the {{book.project.name}} download site.
+Each adapter is a separate download on the {project_name} download site.
 
-{% if book.community %}
+ifeval::[{project_community}==true]
 Install on Wildfly 9 or 10, 11 or JBoss EAP 7:
 
 [source]
@@ -13,10 +13,10 @@ Install on Wildfly 9 or 10, 11 or JBoss EAP 7:
 $ cd $WILDFLY_HOME
 $ unzip keycloak-saml-wildfly-adapter-dist.zip
 ----
-{% endif %}
+endif::[]
 
 
-{% if book.community %}
+ifeval::[{project_community}==true]
 Install on JBoss EAP 6.x:
 [source]
 ----
@@ -24,9 +24,9 @@ Install on JBoss EAP 6.x:
 $ cd $JBOSS_HOME
 $ unzip keycloak-saml-eap6-adapter-dist.zip
 ----
-{% endif %}
+endif::[]
 
-{% if book.product %}
+ifeval::[{project_product}==true]
 Install on JBoss EAP 6.x:
 [source]
 ----
@@ -42,23 +42,23 @@ Install on JBoss EAP 7.x:
 $ cd $JBOSS_HOME
 $ unzip rh-sso-saml-eap7-adapter.zip
 ----
-{% endif %}
+endif::[]
 
 
 These zip files create new JBoss Modules specific to the Wildfly/JBoss EAP SAML Adapter within your Wildfly or JBoss EAP distro.
 
-After adding the modules, you must then enable the {{book.project.name}} SAML Subsystem within your app server's server configuration: `domain.xml` or `standalone.xml`.
+After adding the modules, you must then enable the {project_name} SAML Subsystem within your app server's server configuration: `domain.xml` or `standalone.xml`.
 
 There is a CLI script that will help you modify your server configuration.
 Start the server and run the script  from the server's bin directory: 
 
-{% if book.community %}
+ifeval::[{project_community}==true]
 .Wildfly 11
 [source]
 ----
 $ ./bin/jboss-cli.sh --file=adapter-elytron-install-saml.cli
 ----
-{% endif %}
+endif::[]
 
 .Any other server but Wildfly 11
 [source]

@@ -1,7 +1,7 @@
 
 === Creating and Registering the Client
 
-The next step you have to do is to define and register the client in the {{book.project.name}} Admin Console.  
+The next step you have to do is to define and register the client in the {project_name} Admin Console.
 
 . Log into
 the Admin Console with your admin account as you did in previous tutorials.  
@@ -10,26 +10,26 @@ the Admin Console with your admin account as you did in previous tutorials.
 the `demo` realm.  Click `Clients` in the left side menu.  The Clients page opens.
 +
 .Clients
-image:../../{{book.images}}/clients.png[]
+image:{project_images}/clients.png[]
 
 . On the right click *Create*.  
 
 . Complete the fields as shown below:
 +
 .Add Client
-image:../../{{book.images}}/add-client.png[]
+image:{project_images}/add-client.png[]
 
-. After clicking the `Save` button your client application entry will be created.  You now have to go back to the {{book.appserver.name}}
-instance that the application is deployed on and configure it so that this app is secured by {{book.project.name}}.  You can obtain
-a template for the configuration you need by going to the `Installation` tab in the client entry in the {{book.project.name}} Admin Console.
+. After clicking the `Save` button your client application entry will be created.  You now have to go back to the {appserver_name}
+instance that the application is deployed on and configure it so that this app is secured by {project_name}.  You can obtain
+a template for the configuration you need by going to the `Installation` tab in the client entry in the {project_name} Admin Console.
 +
 .Installation Tab
-image:../../{{book.images}}/client-installation.png[]
+image:{project_images}/client-installation.png[]
 
 . Select *Keycloak OIDC JBoss Subsystem XML*.  An XML template is generated that you'll need to cut and paste.
 +
 .Template XML
-image:../../{{book.images}}/client-install-selected.png[]
+image:{project_images}/client-install-selected.png[]
 
 
 

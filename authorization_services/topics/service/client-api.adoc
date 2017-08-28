@@ -2,7 +2,7 @@
 === Authorization Client Java API
 
 Depending on your requirements, a resource server should be able to manage resources remotely or even check for permissions programmatically.
-If you are using Java, you can access the {{book.project.name}} Authorization Services using the Authorization Client API.
+If you are using Java, you can access the {project_name} Authorization Services using the Authorization Client API.
 
 It is targeted for resource servers that want to access the different APIs provided by the server such as the Protection, Authorization and Entitlement APIs.
 
@@ -39,7 +39,7 @@ The name of the realm.
 
 * *auth-server-url* (required)
 +
-The base URL of the {{book.project.name}} server. All other {{book.project.name}} pages and REST service endpoints are derived from this. It is usually in the form https://host:port/auth.
+The base URL of the {project_name} server. All other {project_name} pages and REST service endpoints are derived from this. It is usually in the form https://host:port/auth.
 
 * *resource* (required)
 +

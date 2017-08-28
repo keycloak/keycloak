@@ -7,10 +7,10 @@ Domain mode is a way to centrally manage and publish the configuration for your 
 Running a cluster in standard mode can quickly become aggravating as the cluster grows in size.  Every time you need
 to make a configuration change, you have perform it on each node in the cluster.  Domain mode solves this problem by providing
 a central place to store and publish configuration.  It can be quite complex to set up, but it is worth it in the end.
-This capability is built into the {{book.appserver.name}} Application Server which {{book.project.name}} derives from.
+This capability is built into the {appserver_name} Application Server which {project_name} derives from.
 
 NOTE:  The guide will go over the very basics of domain mode.  Detailed steps on how to set up domain mode in a cluster should be obtained from the
-       link:{{book.appserver.admindoc.link}}[_{{book.appserver.admindoc.name}}_].
+       link:{appserver_admindoc_link}[_{appserver_admindoc_name}_].
 
 Here are some of the basic concepts of running in domain mode.
 
@@ -34,8 +34,8 @@ server group::
 
 In domain mode, a domain controller is started on a master node.  The configuration for the cluster resides in the domain controller.
 Next a host controller is started on each machine in the cluster.  Each host controller deployment configuration specifies how
-many {{book.project.name}} server instances will be started on that machine.  When the host controller boots up, it starts
-as many {{book.project.name}} server instances as it was configured to do.  These server instances pull their configuration
+many {project_name} server instances will be started on that machine.  When the host controller boots up, it starts
+as many {project_name} server instances as it was configured to do.  These server instances pull their configuration
 from the domain controller.
 
 ==== Domain Configuration
@@ -43,15 +43,15 @@ from the domain controller.
 Various other chapters in this guide walk you through configuring various aspects like databases,
 HTTP network connections, caches, and other infrastructure related things.  While standalone mode uses the _standalone.xml_ file to configure these things,
 domain mode uses the _.../domain/configuration/domain.xml_ configuration file.  This is
-where the domain profile and server group for the {{book.project.name}} server are defined.
+where the domain profile and server group for the {project_name} server are defined.
 
 
 .domain.xml
-image:../../{{book.images}}/domain-file.png[]
+image:{project_images}/domain-file.png[]
 
 WARNING: Any changes you make to this file while the domain controller is running will not take effect and may even be overwritten
-      by the server.  Instead use the the command line scripting or the web console of {{book.appserver.name}}.  See
-      the link:{{book.appserver.admindoc.link}}[_{{book.appserver.admindoc.name}}_] for more information.
+      by the server.  Instead use the the command line scripting or the web console of {appserver_name}.  See
+      the link:{appserver_admindoc_link}[_{appserver_admindoc_name}_] for more information.
 
 Let's look at some aspects of this _domain.xml_ file.  The `auth-server-standalone` and `auth-server-clustered` `profile` XML blocks are where you are going to make the bulk of your configuration decisions.
 You'll be configuring things here like network connections, caches, and database connections.
@@ -92,14 +92,14 @@ If you scroll down further, you'll see various `socket-binding-groups` defined.
 
 
 This config defines the default port mappings for various connectors that are opened with each
-{{book.project.name}} server instance.  Any value that contains `${...}` is a value that can be overriden on the command line
+{project_name} server instance.  Any value that contains `${...}` is a value that can be overriden on the command line
 with the `-D` switch, i.e.
 
 ----
 $ domain.sh -Djboss.http.port=80
 ----
 
-The definition of the server group for {{book.project.name}} resides in the `server-groups` XML block.  It specifies the domain profile
+The definition of the server group for {project_name} resides in the `server-groups` XML block.  It specifies the domain profile
 that is used (`default`) and also some default boot arguments for the Java VM when the host controller boots an instance.  It also
 binds a `socket-binding-group` to the server group.
 
@@ -127,17 +127,17 @@ binds a `socket-binding-group` to the server group.
 
 ==== Host Controller Configuration
 
-{{book.project.name}} comes with two host controller configuration files that reside in the _.../domain/configuration/_ directory:
+{project_name} comes with two host controller configuration files that reside in the _.../domain/configuration/_ directory:
 _host-master.xml_ and _host-slave.xml_.  _host-master.xml_ is configured to boot up a domain controller, a load balancer, and
-one {{book.project.name}} server instance.  _host-slave.xml_ is configured to talk to the domain controller and boot up
-one {{book.project.name}} server instance.
+one {project_name} server instance.  _host-slave.xml_ is configured to talk to the domain controller and boot up
+one {project_name} server instance.
 
 NOTE:  The load balancer is not a required service.  It exists so that you can easily test drive clustering on your development
        machine.  While usable in production, you have the option of replacing it if you have a different hardware or software
        based load balancer you want to use.
 
 .Host Controller Config
-image:../../{{book.images}}/host-files.png[]
+image:{project_images}/host-files.png[]
 
 To disable the load balancer server instance, edit _host-master.xml_ and comment out or remove the `"load-balancer"` entry.
 
@@ -167,12 +167,12 @@ the load balancer server don't conflict with the authentication server instance 
 
 ==== Server Instance Working Directories
 
-Each {{book.project.name}} server instance defined in your host files creates a working directory under _.../domain/servers/{SERVER NAME}_.
+Each {project_name} server instance defined in your host files creates a working directory under _.../domain/servers/{SERVER NAME}_.
 Additional configuration can be put there, and any temporary, log, or data files the server instance needs or creates go there too.
-The structure of these per server directories ends up looking like any other {{book.appserver.name}} booted server.
+The structure of these per server directories ends up looking like any other {appserver_name} booted server.
 
 .Working Directories
-image:../../{{book.images}}/domain-server-dir.png[]
+image:{project_images}/domain-server-dir.png[]
 
 ==== Domain Boot Script
 
@@ -180,7 +180,7 @@ When running the server in domain mode, there is a specific script you need to r
 operating system.  These scripts live in the _bin/_ directory of the server distribution.
 
 .Domain Boot Script
-image:../../{{book.images}}/domain-boot-files.png[]
+image:{project_images}/domain-boot-files.png[]
 
 To boot the server:
 
@@ -207,11 +207,11 @@ domain is meant to run on one machine and boots up:
 
 * a domain controller
 * an HTTP load balancer
-* 2 {{book.project.name}} server instances
+* 2 {project_name} server instances
 
 To simulate running a cluster on two machines, you'll run the `domain.sh` script twice to start two separate
 host controllers.  The first will be the master host controller which will start a domain controller, an HTTP load balancer, and one
-{{book.project.name}} authentication server instance.  The second will be a slave host controller that only starts
+{project_name} authentication server instance.  The second will be a slave host controller that only starts
 up an authentication server instance.
 
 ===== Setup Slave Connection to Domain Controller
@@ -255,7 +255,7 @@ $ add-user.sh
  To represent the user add the following to the server-identities definition <secret value="bWdtdDEyMyE=" />
 ----
 
-NOTE: The add-user.sh does not add user to {{book.project.name}} server but to the underlying JBoss Enterprise Application Platform. The credentials used and generated in the above script are only for example purpose. Please use the ones generated on your system.
+NOTE: The add-user.sh does not add user to {project_name} server but to the underlying JBoss Enterprise Application Platform. The credentials used and generated in the above script are only for example purpose. Please use the ones generated on your system.
 
 Now cut and paste the secret value into the _.../domain/configuration/host-slave.xml_ file as follows:
 

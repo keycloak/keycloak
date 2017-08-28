@@ -1,15 +1,15 @@
 
 === SAML v2.0 Identity Providers
 
-{{book.project.name}} can broker identity providers based on the SAML v2.0 protocol.
+{project_name} can broker identity providers based on the SAML v2.0 protocol.
 
 To begin configuring an SAML v2.0 provider, go to the `Identity Providers` left menu item
 and select `SAML v2.0` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
 
 .Add Identity Provider
-image:../../{{book.images}}/saml-add-identity-provider.png[]
+image:{project_images}/saml-add-identity-provider.png[]
 
-The initial configuration options on this page are described in <<fake/../../identity-broker/configuration.adoc#_general-idp-config, General IDP Configuration>>.
+The initial configuration options on this page are described in <<_general-idp-config, General IDP Configuration>>.
 You must define the SAML configuration options as well.  They basically describe the SAML IDP you are communicating with.
 
 .SAML Config
@@ -44,7 +44,7 @@ You must define the SAML configuration options as well.  They basically describe
 
 |SAML Signature Key Name
 |Signed SAML documents sent via POST binding contain identification of signing key in `KeyName`
- element. This by default contains {{book.project.name}} key ID. However various external SAML IDPs might
+ element. This by default contains {project_name} key ID. However various external SAML IDPs might
  expect a different key name or no key name at all. This switch controls whether `KeyName`
  contains key ID (option `KEY_ID`), subject from certificate corresponding to the realm key
  (option `CERT_SUBJECT` - expected for instance by Microsoft Active Directory Federation
@@ -62,7 +62,7 @@ You must define the SAML configuration options as well.  They basically describe
 
 
 You can also import all this configuration data by providing a URL or file that points to the SAML IDP entity descriptor of the external IDP.
-If you are connecting to a {{book.project.name}} external IDP, you can import the IDP setttings from the url `<root>/auth/realms/\{realm-name}/protocol/saml/descriptor`.
+If you are connecting to a {project_name} external IDP, you can import the IDP setttings from the url `<root>/auth/realms/\{realm-name}/protocol/saml/descriptor`.
 This link is an XML document describing metadata about the IDP.
 
 

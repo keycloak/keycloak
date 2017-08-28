@@ -78,7 +78,7 @@ The constructor for this provider class is going to store the reference to the `
 
 ----
 
-The `getUserByUsername()` method is invoked by the {{book.project.name}} login page when a user logs in. In our implementation we first check the `loadedUsers` map to see if the user has already been loaded within this transaction. If it hasn't been loaded we look in the property file for the username. If it exists we create an implementation of `UserModel`, store it in `loadedUsers` for future reference, and return this instance.
+The `getUserByUsername()` method is invoked by the {project_name} login page when a user logs in. In our implementation we first check the `loadedUsers` map to see if the user has already been loaded within this transaction. If it hasn't been loaded we look in the property file for the username. If it exists we create an implementation of `UserModel`, store it in `loadedUsers` for future reference, and return this instance.
 
 The `createAdapter()` method uses the helper class `org.keycloak.storage.adapter.AbstractUserAdapter`. This provides a base implementation for `UserModel`. It automatically generates a user id based on the required storage id format using the username of the user as the external id.
 
@@ -128,7 +128,7 @@ The `isValid()` method is responsible for validating passwords. The `CredentialI
 
 ===== CredentialInputUpdater Implementation
 
-As noted before, the only reason we implement the `CredentialInputUpdater` interface in this example is to forbid modifications of user passwords. The reason we have to do this is because otherwise the runtime would allow the password to be overriden in {{book.project.name}} local storage. We'll talk more about this later in this chapter.
+As noted before, the only reason we implement the `CredentialInputUpdater` interface in this example is to forbid modifications of user passwords. The reason we have to do this is because otherwise the runtime would allow the password to be overriden in {project_name} local storage. We'll talk more about this later in this chapter.
 
 [source,java]
 ----
@@ -204,11 +204,11 @@ The `getId()` method identifies the factory in the runtime and will also be the 
     }
 ----
 
-The `UserStorageProviderFactory` interface has an optional `init()` method you can implement. When {{book.project.name}} boots up, only one instance of each provider factory is created. Also at boot time, the `init()` method is called on each of these factory instances. There's also a `postInit()` method you can implement as well. After each factory's `init()` method is invoked, their `postInit()` methods are called.
+The `UserStorageProviderFactory` interface has an optional `init()` method you can implement. When {project_name} boots up, only one instance of each provider factory is created. Also at boot time, the `init()` method is called on each of these factory instances. There's also a `postInit()` method you can implement as well. After each factory's `init()` method is invoked, their `postInit()` methods are called.
 
 In our `init()` method implementation, we find the property file containing our user declarations from the classpath. We then load the `properties` field with the username and password combinations stored there.
 
-The `Config.Scope` parameter is factory configuration that can be set up within `standalone.xml`, `standalone-ha.xml`, or `domain.xml`. For more information on where the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` file resides see the link:{{book.installguide.link}}[{{book.installguide.name}}].
+The `Config.Scope` parameter is factory configuration that can be set up within `standalone.xml`, `standalone-ha.xml`, or `domain.xml`. For more information on where the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` file resides see the link:{installguide_link}[{installguide_name}].
 
 For example, by adding the following to `standalone.xml`:
 
@@ -263,23 +263,23 @@ Once you create the jar you can deploy it using regular JBoss/Wildfly means: cop
 
 You enable user storage providers per realm within the `User Federation` page in the administration console.
 
-{% if book.community %}
+ifeval::[{project_community}==true]
 .User Federation
-image:../../{{book.images}}/empty-user-federation-page.png[]
-{% endif %}
+image:{project_images}/empty-user-federation-page.png[]
+endif::[]
 
 Select the provider we just created from the list: `readonly-property-file`. It brings you to the configuration page for our provider.  We do not have anything to configure, so click *Save*.
 
-{% if book.community %}
+ifeval::[{project_community}==true]
 .Configured Provider
-image:../../{{book.images}}/storage-provider-created.png[]
-{% endif %}
+image:{project_images}/storage-provider-created.png[]
+endif::[]
 
 When you go back to the main `User Federation` page, you now see your provider listed.
 
-{% if book.community %}
+ifeval::[{project_community}==true]
 .User Federation
-image:../../{{book.images}}/user-federation-page.png[]
-{% endif %}
+image:{project_images}/user-federation-page.png[]
+endif::[]
 
 You will now be able to log in with a user declared in the `users.properties` file. This user will only be able to view the account page after logging in.

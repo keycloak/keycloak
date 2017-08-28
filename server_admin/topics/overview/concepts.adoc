@@ -1,7 +1,7 @@
 
 === Core Concepts and Terms
 
-There are some key concepts and terms you should be aware of before attempting to use {{book.project.name}} to secure your web applications
+There are some key concepts and terms you should be aware of before attempting to use {project_name} to secure your web applications
 and REST services.
 
 users::
@@ -12,7 +12,7 @@ authentication::
 authorization::
   The process of granting access to a user.
 credentials::
-  Credentials are pieces of data that {{book.project.name}} uses to verify the identity of a user.  Some examples are passwords,
+  Credentials are pieces of data that {project_name} uses to verify the identity of a user.  Some examples are passwords,
   one-time-passwords, digital certificates, or even fingerprints.
 roles::
   Roles identify a type or category of user.  `Admin`, `user`, `manager`, and `employee` are all typical roles that may exist
@@ -32,19 +32,19 @@ realms::
   A realm manages a set of users, credentials, roles, and groups.  A user belongs to and logs into a realm.  Realms are isolated from one another
   and can only manage and authenticate the users that they control.
 clients::
-  Clients are entities that can request {{book.project.name}} to authenticate a user.  Most often, clients are applications and services that
-  want to use {{book.project.name}} to secure themselves and provide a single sign-on solution.  Clients can also be entities that just want to request
-  identity information or an access token so that they can securely invoke other services on the network that are secured by {{book.project.name}}.
+  Clients are entities that can request {project_name} to authenticate a user.  Most often, clients are applications and services that
+  want to use {project_name} to secure themselves and provide a single sign-on solution.  Clients can also be entities that just want to request
+  identity information or an access token so that they can securely invoke other services on the network that are secured by {project_name}.
 client adapters::
-  Client adapters are plugins that you install into your application environment to be able to communicate and be secured by {{book.project.name}}.  {{book.project.name}}
+  Client adapters are plugins that you install into your application environment to be able to communicate and be secured by {project_name}.  {project_name}
   has a number of adapters for different platforms that you can download.  There are also third-party adapters you can get for environments that we don't cover.
 consent::
   Consent is when you as an admin want a user to give permission to a client before that client can participate in the authentication process.
-  After a user provides their credentials, {{book.project.name}} will pop up a screen identifying the client requesting a login and what identity
+  After a user provides their credentials, {project_name} will pop up a screen identifying the client requesting a login and what identity
   information is requested of the user.  User can decide whether or not to grant the request.
 client templates::
   When a client is registered you need to enter configuration information about that client.  It is often useful to store a template
-  to make create new clients easier.  {{book.project.name}} provides the concept of a client template for this.
+  to make create new clients easier.  {project_name} provides the concept of a client template for this.
 client role::
   Clients can define roles that are specific to them.  This is basically a role namespace dedicated to the client.
 identity token::
@@ -66,13 +66,13 @@ session::
   When a user logs in, a session is created to manage the login session.  A session contains information like when the user logged in and what
   applications have participated within single-sign on during that session.  Both admins and users can view session information.
 user federation provider::
-  {{book.project.name}} can store and manage users.  Often, companies already have LDAP or Active Directory services that store user and credential
-  information.  You can point {{book.project.name}} to validate credentials from those external stores and pull in identity information.
+  {project_name} can store and manage users.  Often, companies already have LDAP or Active Directory services that store user and credential
+  information.  You can point {project_name} to validate credentials from those external stores and pull in identity information.
 identity provider::
-  An identity provider (IDP) is a service that can authenticate a user.  {{book.project.name}} is an IDP.
+  An identity provider (IDP) is a service that can authenticate a user.  {project_name} is an IDP.
 identity provider federation::
-  {{book.project.name}} can be configured to delegate authentication to one or more IDPs.  Social login via
-  Facebook or Google+ is an example of identity provider federation.  You can also hook {{book.project.name}} to delegate
+  {project_name} can be configured to delegate authentication to one or more IDPs.  Social login via
+  Facebook or Google+ is an example of identity provider federation.  You can also hook {project_name} to delegate
   authentication to any other Open ID Connect or SAML 2.0 IDP.
 identity provider mappers::
   When doing IDP federation you can map incoming tokens and assertions to user and session attributes.  This helps you propagate identity information from the external IDP
@@ -88,4 +88,4 @@ authentication flows::
 events::
   Events are audit streams that admins can view and hook into.
 themes::
-  Every screen provided by {{book.project.name}} is backed by a theme.  Themes define HTML templates and stylesheets which you can override as needed.
+  Every screen provided by {project_name} is backed by a theme.  Themes define HTML templates and stylesheets which you can override as needed.

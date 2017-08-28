@@ -1,25 +1,25 @@
 
 == Server Initialization
 
-After performing all the installation and configuration tasks defined in the link:{{book.installguide.link}}[{{book.installguide.name}}],
+After performing all the installation and configuration tasks defined in the link:{installguide_link}[{installguide_name}],
 you will need to create an initial admin account.
-{{book.project.name}} does not have any configured admin account out of the box.
+{project_name} does not have any configured admin account out of the box.
 This account will allow you to create an admin that can log into the _master_ realm's administration console so that
-you can start creating realms, users and registering applications to be secured by {{book.project.name}}.
+you can start creating realms, users and registering applications to be secured by {project_name}.
 
 If your
 server is accessible from `localhost`, you can boot it up and create this admin user by going to the http://localhost:8080/auth URL.
 
 .Welcome Page
-image:../{{book.images}}/initial-welcome-page.png[]
+image:{project_images}/initial-welcome-page.png[]
 
 Simply specify the username and password you want for this initial admin.
 
-If you cannot access the server via a `localhost` address, or just want to provision {{book.project.name}} from the command line
+If you cannot access the server via a `localhost` address, or just want to provision {project_name} from the command line
 you can do this with the `.../bin/add-user-keycloak` script.
 
 .add-user-keycloak script
-image:../{{book.images}}/add-user-script.png[]
+image:{project_images}/add-user-script.png[]
 
 The parameters are a little different depending if you are using the standalone operation mode or domain operation mode.  For
 standalone mode, here is how you use the script.

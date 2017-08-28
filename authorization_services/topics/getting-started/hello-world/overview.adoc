@@ -1,11 +1,11 @@
 [[_getting_started_hello_world_overview]]
 === Securing a Servlet Application
 
-The purpose of this getting started guide is to get you up and running as quickly as possible so that you can experiment with and test various authorization features provided by {{book.project.name}}.
+The purpose of this getting started guide is to get you up and running as quickly as possible so that you can experiment with and test various authorization features provided by {project_name}.
 This quick tour relies heavily on the default database and server configurations and does not cover complex deployment options.
 For more information on features or configuration options, see the appropriate sections in this documentation.
 
-This guide explains key concepts about {{book.project.name}} {{book.project.module}}:
+This guide explains key concepts about {project_name} Authorization Services:
 
 * Enabling fine-grained authorization for a client application
 * Configuring a client application to be a resource server, with protected resources

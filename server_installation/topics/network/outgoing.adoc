@@ -1,10 +1,10 @@
 
 === Outgoing HTTP Requests
 
-The {{book.project.name}} server often needs to make non-browser HTTP requests to the applications and services it secures.
+The {project_name} server often needs to make non-browser HTTP requests to the applications and services it secures.
 The auth server manages these outgoing connections by maintaining an HTTP client connection pool.  There are some things
 you'll need to configure in `standalone.xml`, `standalone-ha.xml`, or `domain.xml`.  The location of this file 
-depends on your <<fake/../../operating-mode.adoc#_operating-mode, operating mode>>. 
+depends on your <<_operating-mode, operating mode>>. 
 
 .HTTP client Config example
 [source,xml]
@@ -58,9 +58,9 @@ client-key-password::
 [[_truststore]]
 ==== Outgoing HTTPS Request Truststore
 
-When {{book.project.name}} invokes on remote HTTPS endpoints, it has to validate the remote server's certificate in order to ensure it is connecting to a trusted server.
+When {project_name} invokes on remote HTTPS endpoints, it has to validate the remote server's certificate in order to ensure it is connecting to a trusted server.
 This is necessary in order to prevent man-in-the-middle attacks.  The certificates of these remote server's or the CA that signed these
-certificates must be put in a truststore.  This truststore is managed by the {{book.project.name}} server.
+certificates must be put in a truststore.  This truststore is managed by the {project_name} server.
 
 The truststore is used when connecting securely to identity brokers, LDAP identity providers, when sending emails, and for backchannel communication with client applications.
 
@@ -78,7 +78,7 @@ $ keytool -import -alias HOSTDOMAIN -keystore truststore.jks -file host-certific
 
 The truststore is configured within the `standalone.xml`, 
 `standalone-ha.xml`, or `domain.xml` file in your distribution.  The location of this file 
-depends on your <<fake/../../operating-mode.adoc#_operating-mode, operating mode>>. 
+depends on your <<_operating-mode, operating mode>>. 
 You can add your truststore configuration by using the following template:
 
 [source,xml]

@@ -1,22 +1,22 @@
 
 === OIDC Clients
 
-<<fake/../../sso-protocols/oidc.adoc#_oidc,OpenID Connect>> is the preferred protocol to secure applications.  It was designed from the ground up to be web friendly
+<<_oidc,OpenID Connect>> is the preferred protocol to secure applications.  It was designed from the ground up to be web friendly
 and work best with HTML5/JavaScript applications.
 
 To create an OIDC client go to the `Clients` left menu item.  On this page you'll see a `Create` button on the right.
 
 .Clients
-image:../../{{book.images}}/clients.png[]
+image:{project_images}/clients.png[]
 
 This will bring you to the `Add Client` page.
 
 
 .Add Client
-image:../../{{book.images}}/add-client-oidc.png[]
+image:{project_images}/add-client-oidc.png[]
 
 Enter in the `Client ID` of the client.  This should be a simple
-alpha-numeric string that will be used in requests and in the {{book.project.name}} database to identity the client.
+alpha-numeric string that will be used in requests and in the {project_name} database to identity the client.
 Next select `openid-connect` in the `Client Protocol` drop down box.
 Ignore the `Client Template` listbox for now,
 we'll go over that later in this chapter.
@@ -25,7 +25,7 @@ application in the `Root URL` field and click `Save`.  This will create the clie
 tab.
 
 .Client Settings
-image:../../{{book.images}}/client-settings-oidc.png[]
+image:{project_images}/client-settings-oidc.png[]
 
 Let's walk through each configuration item on this page.
 
@@ -35,8 +35,8 @@ This specifies an alpha-numeric string that will be used as the client identifie
 
 *Name*
 
-This is the display name for the client whenever it is displayed in a {{book.project.name}} UI screen.  You can localize
-the value of this field by setting up a replacement string value i.e. $\{myapp}.  See the link:{{book.developerguide.link}}[{{book.developerguide.name}}]
+This is the display name for the client whenever it is displayed in a {project_name} UI screen.  You can localize
+the value of this field by setting up a replacement string value i.e. $\{myapp}.  See the link:{developerguide_link}[{developerguide_name}]
 for more information.
 
 *Description*
@@ -51,7 +51,7 @@ If this is turned off, the client will not be allowed to request authentication.
 
 If this is on, then users will get a consent page which asks the user if they grant access to that application.  It will also
 display the metadata that the client is interested in so that the user knows exactly what information the client is getting access to.
-If you've ever done a social login to Google, you'll often see a similar page.  {{book.project.name}} provides the same functionality.
+If you've ever done a social login to Google, you'll often see a similar page.  {project_name} provides the same functionality.
 
 [[_access-type]]
 *Access Type*
@@ -71,7 +71,7 @@ _bearer-only_::
 
 *Root URL*
 
-If {{book.project.name}} uses any configured relative URLs, this value is prepended to them.
+If {project_name} uses any configured relative URLs, this value is prepended to them.
 
 *Valid Redirect URIs*
 
@@ -80,31 +80,31 @@ Remember that you still have to click the `Save` button!
 Wildcards (\*) are only allowed at the end of a URI, i.e. $$http://host.com/*$$
 
 You should take extra precautions when registering valid redirect URI patterns. If you make
-them too general you are vulnerable to attacks.  See <<fake/../../threat/redirect.adoc#_unspecific-redirect-uris, Threat Model Mitigation>> chapter
+them too general you are vulnerable to attacks.  See <<_unspecific-redirect-uris, Threat Model Mitigation>> chapter
 for more information.
 
 *Base URL*
 
-If {{book.project.name}} needs to link to the client, this URL is used.
+If {project_name} needs to link to the client, this URL is used.
 
 *Standard Flow Enabled*
 
-If this is on, clients are allowed to use the OIDC <<fake/../../sso-protocols/oidc.adoc#_oidc-auth-flows,Authorization Code Flow>>.
+If this is on, clients are allowed to use the OIDC <<_oidc-auth-flows,Authorization Code Flow>>.
 
 *Implicit Flow Enabled*
 
-If this is on, clients are allowed to use the OIDC <<fake/../../sso-protocols/oidc.adoc#_oidc-auth-flows,Implicit Flow>>.
+If this is on, clients are allowed to use the OIDC <<_oidc-auth-flows,Implicit Flow>>.
 
 *Direct Grants Enabled*
 
-If this is on, clients are allowed to use the OIDC <<fake/../../sso-protocols/oidc.adoc#_oidc-auth-flows,Direct Grants>>.
+If this is on, clients are allowed to use the OIDC <<_oidc-auth-flows,Direct Grants>>.
 
 *Admin URL*
 
-For {{book.project.name}} specific client adapters, this is the callback endpoint for the client.  The {{book.project.name}}
+For {project_name} specific client adapters, this is the callback endpoint for the client.  The {project_name}
 server will use this URI to make callbacks like pushing revocation policies, performing backchannel logout, and other
-administrative operations.  For {{book.project.name}} servlet adapters, this can be the root URL of the servlet application.
-For more information see link:{{book.adapterguide.link}}[{{book.adapterguide.name}}].
+administrative operations.  For {project_name} servlet adapters, this can be the root URL of the servlet application.
+For more information see link:{adapterguide_link}[{adapterguide_name}].
 
 *Web Origins*
 
@@ -114,11 +114,11 @@ JavaScript code came from, then the request must use CORS.
 The server must handle CORS requests in a special way, otherwise the browser will not display or allow the request to be processed.
 This protocol exists to protect against XSS, CSRF and other JavaScript-based attacks.
 
-{{book.project.name}} has support for validated CORS requests.  The way it works is that the domains listed in the
+{project_name} has support for validated CORS requests.  The way it works is that the domains listed in the
 `Web Origins` setting for the client are embedded within the access token sent to the client application.  The client
 application can then use this information to decide whether or not to allow a CORS request to be invoked on it.  This is
-an extension to the OIDC protocol so only {{book.project.name}} client adapters support this feature.
-See link:{{book.adapterguide.link}}[{{book.adapterguide.name}}] for more information.
+an extension to the OIDC protocol so only {project_name} client adapters support this feature.
+See link:{adapterguide_link}[{adapterguide_name}] for more information.
 
 To fill in the `Web Origins` data, enter in a base URL and click the + sign to add.  Click the - sign next to URLs you want to remove.
 Remember that you still have to click the `Save` button!
