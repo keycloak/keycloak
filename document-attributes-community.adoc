@@ -27,25 +27,25 @@
 :installguide_profile_link: {project_doc_base_url}/{project_doc_info_version_url}/html-single/server-installation-and-configuration-guide/#profiles
 :installguide_profile_name: Profiles
 
-:appserver_name: JBoss EAP
-:appserver_doc_base_url: https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform
-:appserver_version: {appserver_version}
-:appserver_socket_link: {appserver_doc_base_url}/{appserver_version}/html-single/configuration-guide/#network_and_port_configuration
-:appserver_socket_name: JBoss EAP Configuration Guide
-:appserver_jgroups_link: {appserver_doc_base_url}/{appserver_version}/html-single/configuration-guide/#cluster_communication_jgroups
-:appserver_jgroups_name: JBoss EAP Configuration Guide
-:appserver_jpa_link: {appserver_doc_base_url}/{appserver_version}/html-single/development-guide/#hibernate
+:appserver_name: WildFly
+:appserver_doc_base_url: https://docs.jboss.org/author/display/WFLY10
+:appserver_version: 10
+:appserver_socket_link: {appserver_doc_base_url}/Interfaces+and+ports
+:appserver_socket_name: {appserver_name} {appserver_version} Documentation
+:appserver_jgroups_link: {appserver_doc_base_url}/JGroups+Subsystem
+:appserver_jgroups_name: {appserver_name} {appserver_version} Documentation
+:appserver_jpa_link: {appserver_doc_base_url}/JPA+Reference+Guide#JPAReferenceGuide-Hibernateproperties
 :appserver_jpa_name: JBoss EAP Development Guide
-:appserver_network_link: {appserver_doc_base_url}/{appserver_version}/html-single/configuration-guide/#network_and_port_configuration
-:appserver_network_name: JBoss EAP Configuration Guide
-:appserver_datasource_link: {appserver_doc_base_url}/{appserver_version}/html-single/configuration-guide/#datasource_management
-:appserver_datasource_name: JBoss EAP Configuration Guide
-:appserver_caching_link: {appserver_doc_base_url}/{appserver_version}/html-single/configuration-guide/#infinispan
-:appserver_caching_name: JBoss EAP Configuration Guide
-:appserver_admindoc_link: {appserver_doc_base_url}/{appserver_version}/html-single/configuration-guide/configuration-guide
-:appserver_admindoc_name: JBoss EAP Configuration Guide
-:appserver_loadbalancer_link: {appserver_doc_base_url}/{appserver_version}/html-single/configuration-guide/#configuring_high_availability
-:appserver_loadbalancer_name: JBoss EAP Configuration Guide
+:appserver_network_link: {appserver_doc_base_url}/Interfaces+and+ports
+:appserver_network_name: {appserver_name} {appserver_version} Documentation
+:appserver_datasource_link: {appserver_doc_base_url}/DataSource+configuration
+:appserver_datasource_name: {appserver_name} {appserver_version} Documentation
+:appserver_caching_link: {appserver_doc_base_url}/Infinispan+Subsystem
+:appserver_caching_name: {appserver_name} {appserver_version} Documentation
+:appserver_admindoc_link: {appserver_doc_base_url}/Documentation
+:appserver_admindoc_name: {appserver_name} {appserver_version} Documentation
+:appserver_loadbalancer_link: {appserver_doc_base_url}/High+Availability+Guide
+:appserver_loadbalancer_name: {appserver_name} {appserver_version} Documentation
 
 :fuseVersion: JBoss Fuse 6.3.0 Rollup 1
 
