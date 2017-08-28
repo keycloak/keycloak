@@ -48,7 +48,6 @@ import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
-import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.JsonSerialization;
@@ -61,8 +60,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT_LINKS;
@@ -545,7 +542,7 @@ public abstract class AbstractClientInitiatedAccountLinkTest extends AbstractSer
 
         // Login to account mgmt first
         profilePage.open(CHILD_IDP);
-        WaitUtils.waitForPageToLoad(driver);
+        WaitUtils.waitForPageToLoad();
 
         Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
         loginPage.login("child", "password");
@@ -590,7 +587,7 @@ public abstract class AbstractClientInitiatedAccountLinkTest extends AbstractSer
 
         // Login to account mgmt first
         profilePage.open(CHILD_IDP);
-        WaitUtils.waitForPageToLoad(driver);
+        WaitUtils.waitForPageToLoad();
 
         Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
         loginPage.login("child", "password");
@@ -624,7 +621,7 @@ public abstract class AbstractClientInitiatedAccountLinkTest extends AbstractSer
 
     private void navigateTo(String uri) {
         driver.navigate().to(uri);
-        WaitUtils.waitForPageToLoad(driver);
+        WaitUtils.waitForPageToLoad();
     }
 
     

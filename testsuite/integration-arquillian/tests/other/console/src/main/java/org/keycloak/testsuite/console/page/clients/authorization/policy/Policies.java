@@ -16,8 +16,6 @@
  */
 package org.keycloak.testsuite.console.page.clients.authorization.policy;
 
-import static org.openqa.selenium.By.tagName;
-
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.AggregatePolicyRepresentation;
@@ -30,12 +28,14 @@ import org.keycloak.representations.idm.authorization.RulePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testsuite.page.Form;
-import org.keycloak.testsuite.util.URLUtils;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
+
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.keycloak.testsuite.util.UIUtils.performOperationWithPageReload;
+import static org.openqa.selenium.By.tagName;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -79,7 +79,7 @@ public class Policies extends Form {
     public <P extends PolicyTypeUI> P create(AbstractPolicyRepresentation expected) {
         String type = expected.getType();
 
-        createSelect.selectByValue(type);
+        performOperationWithPageReload(() -> createSelect.selectByValue(type));
 
         if ("role".equals(type)) {
             rolePolicy.form().populate((RolePolicyRepresentation) expected);
@@ -104,7 +104,6 @@ public class Policies extends Form {
             return (P) clientPolicy;
         } else if ("group".equals(type)) {
             groupPolicy.form().populate((GroupPolicyRepresentation) expected);
-            groupPolicy.form().save();
             return (P) groupPolicy;
         }
 
@@ -115,8 +114,7 @@ public class Policies extends Form {
         for (WebElement row : policies().rows()) {
             PolicyRepresentation actual = policies().toRepresentation(row);
             if (actual.getName().equalsIgnoreCase(name)) {
-                URLUtils.navigateToUri(driver, row.findElements(tagName("a")).get(0).getAttribute("href"), true);
-                WaitUtils.waitForPageToLoad(driver);
+                clickLink(row.findElements(tagName("a")).get(0));
                 String type = representation.getType();
 
                 if ("role".equals(type)) {
@@ -146,7 +144,7 @@ public class Policies extends Form {
         for (WebElement row : policies().rows()) {
             PolicyRepresentation actual = policies().toRepresentation(row);
             if (actual.getName().equalsIgnoreCase(name)) {
-                URLUtils.navigateToUri(driver, row.findElements(tagName("a")).get(0).getAttribute("href"), true);
+                clickLink(row.findElements(tagName("a")).get(0));
                 String type = actual.getType();
                 if ("role".equals(type)) {
                     return (P) rolePolicy;
@@ -174,7 +172,7 @@ public class Policies extends Form {
         for (WebElement row : policies().rows()) {
             PolicyRepresentation actual = policies().toRepresentation(row);
             if (actual.getName().equalsIgnoreCase(name)) {
-                URLUtils.navigateToUri(driver, row.findElements(tagName("a")).get(0).getAttribute("href"), true);
+                clickLink(row.findElements(tagName("a")).get(0));
 
                 String type = actual.getType();
 

@@ -50,29 +50,29 @@ public class AppServerWelcomePage extends AppServerContextRoot {
 
     public void navigateToConsole() {
         WaitUtils.pause(2000);
-        URLUtils.navigateToUri(driver, getInjectedUrl().toString() + "/console", true);
-        waitForPageToLoad(driver);
+        URLUtils.navigateToUri(getInjectedUrl().toString() + "/console", true);
+        waitForPageToLoad();
     }
 
     public void login(String username, String password) {
         loginPage.form().waitForLoginButtonPresent();
         loginPage.form().login(username, password);
-        waitForPageToLoad(driver);
+        waitForPageToLoad();
     }
 
     public void navigateToAccessControl() {
         accessControlLink.click();
-        waitForPageToLoad(driver);
+        waitForPageToLoad();
     }
 
     public void navigateManageProfile() {
         manageProfileLink.click();
-        waitForPageToLoad(driver);
+        waitForPageToLoad();
     }
 
     public void logout() {
         logoutLink.click();
-        waitForPageToLoad(driver);
+        waitForPageToLoad();
     }
 
     public boolean isLoginPage() {
