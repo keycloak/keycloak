@@ -21,7 +21,7 @@ import org.keycloak.common.Version;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
-import org.keycloak.services.resources.AccountService;
+import org.keycloak.services.resources.account.AccountFormService;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.RealmsResource;
@@ -41,7 +41,7 @@ public class Urls {
     }
 
     public static URI accountApplicationsPage(URI baseUri, String realmName) {
-        return accountBase(baseUri).path(AccountService.class, "applicationsPage").build(realmName);
+        return accountBase(baseUri).path(AccountFormService.class, "applicationsPage").build(realmName);
     }
 
     public static UriBuilder accountBase(URI baseUri) {
@@ -53,19 +53,19 @@ public class Urls {
     }
 
     public static UriBuilder accountPageBuilder(URI baseUri) {
-        return accountBase(baseUri).path(AccountService.class, "accountPage");
+        return accountBase(baseUri).path(AccountFormService.class, "accountPage");
     }
 
     public static URI accountPasswordPage(URI baseUri, String realmName) {
-        return accountBase(baseUri).path(AccountService.class, "passwordPage").build(realmName);
+        return accountBase(baseUri).path(AccountFormService.class, "passwordPage").build(realmName);
     }
 
     public static URI accountFederatedIdentityPage(URI baseUri, String realmName) {
-        return accountBase(baseUri).path(AccountService.class, "federatedIdentityPage").build(realmName);
+        return accountBase(baseUri).path(AccountFormService.class, "federatedIdentityPage").build(realmName);
     }
 
     public static URI accountFederatedIdentityUpdate(URI baseUri, String realmName) {
-        return accountBase(baseUri).path(AccountService.class, "processFederatedIdentityUpdate").build(realmName);
+        return accountBase(baseUri).path(AccountFormService.class, "processFederatedIdentityUpdate").build(realmName);
     }
 
     public static URI identityProviderAuthnResponse(URI baseUri, String providerId, String realmName) {
@@ -123,31 +123,31 @@ public class Urls {
     }
 
     public static URI accountTotpPage(URI baseUri, String realmName) {
-        return accountBase(baseUri).path(AccountService.class, "totpPage").build(realmName);
+        return accountBase(baseUri).path(AccountFormService.class, "totpPage").build(realmName);
     }
 
     public static URI accountTotpRemove(URI baseUri, String realmName, String stateChecker) {
-        return accountBase(baseUri).path(AccountService.class, "processTotpRemove")
+        return accountBase(baseUri).path(AccountFormService.class, "processTotpRemove")
                 .queryParam("stateChecker", stateChecker)
                 .build(realmName);
     }
 
     public static URI accountLogPage(URI baseUri, String realmName) {
-        return accountBase(baseUri).path(AccountService.class, "logPage").build(realmName);
+        return accountBase(baseUri).path(AccountFormService.class, "logPage").build(realmName);
     }
 
     public static URI accountSessionsPage(URI baseUri, String realmName) {
-        return accountBase(baseUri).path(AccountService.class, "sessionsPage").build(realmName);
+        return accountBase(baseUri).path(AccountFormService.class, "sessionsPage").build(realmName);
     }
 
     public static URI accountSessionsLogoutPage(URI baseUri, String realmName, String stateChecker) {
-        return accountBase(baseUri).path(AccountService.class, "processSessionsLogout")
+        return accountBase(baseUri).path(AccountFormService.class, "processSessionsLogout")
                 .queryParam("stateChecker", stateChecker)
                 .build(realmName);
     }
 
     public static URI accountRevokeClientPage(URI baseUri, String realmName) {
-        return accountBase(baseUri).path(AccountService.class, "processRevokeGrant")
+        return accountBase(baseUri).path(AccountFormService.class, "processRevokeGrant")
                 .build(realmName);
     }
 

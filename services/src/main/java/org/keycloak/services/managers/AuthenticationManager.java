@@ -136,6 +136,19 @@ public class AuthenticationManager {
 
     }
 
+    public static void backchannelLogout(KeycloakSession session, UserSessionModel userSession, boolean logoutBroker) {
+        backchannelLogout(
+                session,
+                session.getContext().getRealm(),
+                userSession,
+                session.getContext().getUri(),
+                session.getContext().getConnection(),
+                session.getContext().getRequestHeaders(),
+                logoutBroker
+        );
+    }
+
+
     /**
      * Do not logout broker
      *
