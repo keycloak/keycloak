@@ -18,14 +18,10 @@
 package org.keycloak.social.gitlab;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
-import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
-import org.keycloak.broker.oidc.util.JsonSimpleHttp;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
-import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.models.KeycloakSession;
@@ -68,9 +64,8 @@ public class GitLabIdentityProvider extends OIDCIdentityProvider  implements Soc
 		if (getConfig().getDefaultScope().contains(API_SCOPE)) {
 			String userInfoUrl = getUserInfoUrl();
 			if (userInfoUrl != null && !userInfoUrl.isEmpty() && (id == null || name == null || preferredUsername == null || email == null)) {
-				SimpleHttp request = JsonSimpleHttp.doGet(userInfoUrl, session)
-						.header("Authorization", "Bearer " + accessToken);
-				JsonNode userInfo = JsonSimpleHttp.asJson(request);
+				JsonNode userInfo = SimpleHttp.doGet(userInfoUrl, session)
+						.header("Authorization", "Bearer " + accessToken).asJson();
 
 				name = getJsonProperty(userInfo, "name");
 				preferredUsername = getJsonProperty(userInfo, "username");
