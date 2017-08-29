@@ -1,10 +1,10 @@
-<productname>{project_name}</productname>
-<productnumber>{project_doc_info_version_url}</productnumber>
-<subtitle>For Use with {project_name} {project_doc_info_version_url}</subtitle>
-<title>{title}</title>
-<release>{doc_info_version_url}</release>
+<productname>Red Hat Single Sign-On</productname>
+<productnumber>7.2</productnumber>
+<subtitle>For Use with Red Hat Single Sign-On 7.2</subtitle>
+<title>Server Administration Guide</title>
+<release>7.2</release>
 <abstract>
-	    <para>This guide consists of information for administrators to configure {project_name} {project_doc_info_version_url}</para>
+	    <para>This guide consists of information for administrators to configure Red Hat Single Sign-On 7.2</para>
     </abstract>
 <authorgroup>
     <orgname>Red Hat Customer Content Services</orgname>
