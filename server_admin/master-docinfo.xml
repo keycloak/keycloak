@@ -1,10 +1,10 @@
-<productname>Red Hat Single Sign-On</productname>
-<productnumber>7.2</productnumber>
-<subtitle>For Use with Red Hat Single Sign-On 7.2</subtitle>
-<title>Server Administration Guide</title>
-<release>7.2</release>
+<productname>{project_name}</productname>
+<productnumber>{project_versionDoc}</productnumber>
+<subtitle>For Use with {project_name} {project_versionDoc}</subtitle>
+<title>{adminguide_name}</title>
+<release>{project_versionDoc}</release>
 <abstract>
-	    <para>This guide consists of information for administrators to configure Red Hat Single Sign-On 7.2</para>
+	    <para>This guide consists of information for administrators to configure {project_name} {project_versionDoc}</para>
     </abstract>
 <authorgroup>
     <orgname>Red Hat Customer Content Services</orgname>

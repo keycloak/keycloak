@@ -1,0 +1,54 @@
+:project_name: Red Hat Single Sign-On
+:project_community: false
+:project_product: true
+:project_version: 7.2.0.DR4
+:project_versionMvn: 3.3.0.Final-redhat1
+:project_versionNpm: 3.3.0.Final-redhat1
+:project_versionDoc: 7.2
+:project_images: rhsso-images
+:project_doc_base_url: https://access.redhat.com/documentation/en/red-hat-single-sign-on/
+
+:quickstartRepo_name: {project_name} Quickstarts Repository
+:quickstartRepo_link: https://github.com/redhat-developer/redhat-sso-quickstarts
+:quickstartRepo_dir: redhat-sso-quickstarts
+
+:authorizationguide_name: Authorization Services Guide
+:authorizationguide_link: {project_doc_base_url}/{project_versionDoc}/html-single/authorization_services_guide/
+:adapterguide_name: Securing Applications and Services Guide
+:adapterguide_link: {project_doc_base_url}/{project_versionDoc}/html-single/securing-applications-and-services-guide/
+:adminguide_name: Server Administration Guide
+:adminguide_link: https://keycloak.gitbooks.io/documentation/content/server_admin/index.html
+:apidocs_name: API Documentation
+:apidocs_link: {project_doc_base_url}/{project_versionDoc}/html-single/api-documentation/
+:developerguide_name: Server Development Guide
+:developerguide_link: {project_doc_base_url}/{project_versionDoc}/html-single/server-developer-guide/
+:gettingstarted_name: Getting Started Guide
+:gettingstarted_link: {project_doc_base_url}/{project_versionDoc}/html/getting-started-guide/
+:installguide_name: Server Installation and Configuration Guide
+:installguide_link: {project_doc_base_url}/{project_versionDoc}/html-single/server-installation-and-configuration-guide/
+:installguide_profile_name: Profiles
+:installguide_profile_link: {project_doc_base_url}/{project_versionDoc}/html-single/server-installation-and-configuration-guide/#profiles
+
+:appserver_name: JBoss EAP
+:appserver_version: 7.0
+:appserver_doc_base_url: https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/{appserver_version}
+:appserver_socket_name: JBoss EAP Configuration Guide
+:appserver_socket_link: {appserver_doc_base_url}/html-single/configuration-guide/#network_and_port_configuration
+:appserver_jgroups_name: JBoss EAP Configuration Guide
+:appserver_jgroups_link: {appserver_doc_base_url}/html-single/configuration-guide/#cluster_communication_jgroups
+:appserver_jpa_name: JBoss EAP Development Guide
+:appserver_jpa_link: {appserver_doc_base_url}/html-single/development-guide/#hibernate
+:appserver_network_name: JBoss EAP Configuration Guide
+:appserver_network_link: {appserver_doc_base_url}/html-single/configuration-guide/#network_and_port_configuration
+:appserver_datasource_name: JBoss EAP Configuration Guide
+:appserver_datasource_link: {appserver_doc_base_url}/html-single/configuration-guide/#datasource_management
+:appserver_caching_name: JBoss EAP Configuration Guide
+:appserver_caching_link: {appserver_doc_base_url}/html-single/configuration-guide/#infinispan
+:appserver_admindoc_name: JBoss EAP Configuration Guide
+:appserver_admindoc_link: {appserver_doc_base_url}/html-single/configuration-guide/configuration-guide
+:appserver_loadbalancer_name: JBoss EAP Configuration Guide
+:appserver_loadbalancer_link: {appserver_doc_base_url}/html-single/configuration-guide/#configuring_high_availability
+
+:fuseVersion: JBoss Fuse 6.3.0 Rollup 1
+
+:subsystem_undertow_xml_urn: urn:jboss:domain:undertow:3.1

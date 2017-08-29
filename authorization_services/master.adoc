@@ -2,5 +2,10 @@
 :toclevels: 3
 :numbered:
 
-include::document-attributes-product.adoc[]
+include::topics/templates/document-attributes-product.adoc[]
+
+:authorization_services_guide:
+
+= {authorizationguide_name}
+
 include::topics.adoc[]

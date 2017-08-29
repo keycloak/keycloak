@@ -2,5 +2,10 @@
 :toclevels: 3
 :numbered:
 
-include::document-attributes-product.adoc[]
+include::topics/templates/document-attributes-product.adoc[]
+
+:server_administration_guide:
+
+= {adminguide_name}
+
 include::topics.adoc[]

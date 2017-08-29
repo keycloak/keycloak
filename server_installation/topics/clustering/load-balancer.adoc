@@ -1,4 +1,4 @@
-
+[[_setting-up-a-load-balancer-or-proxy]]
 === Setting Up a Load Balancer or Proxy
 
 This section discusses a number of things you need to configure before you can put a reverse proxy or load balancer
