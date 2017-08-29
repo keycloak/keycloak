@@ -19,8 +19,12 @@ First clone the Keycloak Documentation repository:
 To build Keycloak Documentation run:
 
     mvn clean install
+
+Or to build a specific guide run:
+
+    mvn clean install -f GUIDE_DIR
     
-You can then view the documentation by opening target/frames.html or target/index.html.
+You can then view the documentation by opening GUIDE_DIR/target/frames.html or GUIDE_DIR/target/index.html.
 
 
 Building RH-SSO Documentation
@@ -32,8 +36,19 @@ To build the documentation for RH-SSO run:
 
     mvn clean install -Dproduct
 
-You can then view the documentation by opening target/frames.html or target/index.html.
+Or to build a specific guide run:
 
+    mvn clean install -Dproduct -f GUIDE_DIR
+
+You can then view the documentation by opening GUIDE_DIR/target/frames.html or GUIDE_DIR/target/index.html.
+
+If you have ccutil installed you can build the guides with:
+
+    ./build-product.sh
+
+Or individual guides with:
+
+    ./build-product.sh GUIDE_DIR
 
 License
 -------
