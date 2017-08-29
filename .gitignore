@@ -48,9 +48,8 @@ catalog.xml
 #########
 target
 
-# Test build
-############
-build/
+build
+html
 
 # vim
 ######
