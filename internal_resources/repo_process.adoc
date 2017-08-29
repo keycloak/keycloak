@@ -1,5 +1,7 @@
 = RH-SSO GitHub and GitLab instructions
 
+TODO: This process needs updating to reflect changes for 7.2 documentation
+
 == Set up procedures
 You only need to perform the following sets of procedures one time to fork, clone, and configure the Keycloak and RH-SSO repositories.
 
