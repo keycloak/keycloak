@@ -20,7 +20,7 @@
 :adminguide_link: https://keycloak.gitbooks.io/documentation/content/server_admin/index.html
 :apidocs_name: API Documentation
 :apidocs_link: {project_doc_base_url}/{project_versionDoc}/html-single/api-documentation/
-:developerguide_name: Server Development Guide
+:developerguide_name: Server Developer Guide
 :developerguide_link: {project_doc_base_url}/{project_versionDoc}/html-single/server-developer-guide/
 :gettingstarted_name: Getting Started Guide
 :gettingstarted_link: {project_doc_base_url}/{project_versionDoc}/html/getting-started-guide/
