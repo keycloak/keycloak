@@ -24,6 +24,14 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>echo-output</id>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 </project>
