@@ -25,9 +25,9 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-testsuite-integration</artifactId>
-    <name>Keycloak Integration TestSuite</name>
-    <description />
+    <artifactId>keycloak-testsuite-integration-deprecated</artifactId>
+    <name>Keycloak Integration TestSuite - deprecated</name>
+    <description>This testsuite is deprecated. Use testsuite/integration-arquillian instead</description>
 
     <properties>
         <maven.compiler.target>1.8</maven.compiler.target>
