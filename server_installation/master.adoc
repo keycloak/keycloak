@@ -4,7 +4,7 @@
 
 include::topics/templates/document-attributes-product.adoc[]
 
-:installguide_name:
+:server_installation_and_configuration_guide:
 
 = {installguide_name}
 
