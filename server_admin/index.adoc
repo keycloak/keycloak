@@ -2,5 +2,5 @@
 :toclevels: 3
 :numbered:
 
-include::../document-attributes-community.adoc[]
+include::topics/templates/document-attributes-community.adoc[]
 include::topics.adoc[]
