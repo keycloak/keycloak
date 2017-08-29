@@ -6,7 +6,7 @@
 :project_versionNpm: 3.3.0.Final-redhat1
 :project_versionDoc: 7.2
 :project_images: rhsso-images
-:project_doc_base_url: https://access.redhat.com/documentation/en/red-hat-single-sign-on/
+:project_doc_base_url: https://doc-stage.usersys.redhat.com/documentation/en-us/red_hat_single_sign-on
 
 :quickstartRepo_name: {project_name} Quickstarts Repository
 :quickstartRepo_link: https://github.com/redhat-developer/redhat-sso-quickstarts
@@ -15,19 +15,19 @@
 :authorizationguide_name: Authorization Services Guide
 :authorizationguide_link: {project_doc_base_url}/{project_versionDoc}/html-single/authorization_services_guide/
 :adapterguide_name: Securing Applications and Services Guide
-:adapterguide_link: {project_doc_base_url}/{project_versionDoc}/html-single/securing-applications-and-services-guide/
+:adapterguide_link: {project_doc_base_url}/{project_versionDoc}/html-single/securing_applications_and_services_guide/
 :adminguide_name: Server Administration Guide
-:adminguide_link: https://keycloak.gitbooks.io/documentation/content/server_admin/index.html
+:adminguide_link: {project_doc_base_url}/{project_versionDoc}/html-single/server_administration_guide/
 :apidocs_name: API Documentation
 :apidocs_link: {project_doc_base_url}/{project_versionDoc}/html-single/api-documentation/
 :developerguide_name: Server Developer Guide
-:developerguide_link: {project_doc_base_url}/{project_versionDoc}/html-single/server-developer-guide/
+:developerguide_link: {project_doc_base_url}/{project_versionDoc}/html-single/server_developer_guide/
 :gettingstarted_name: Getting Started Guide
-:gettingstarted_link: {project_doc_base_url}/{project_versionDoc}/html/getting-started-guide/
+:gettingstarted_link: {project_doc_base_url}/{project_versionDoc}/html-single/getting_started_guide/
 :installguide_name: Server Installation and Configuration Guide
-:installguide_link: {project_doc_base_url}/{project_versionDoc}/html-single/server-installation-and-configuration-guide/
+:installguide_link: {project_doc_base_url}/{project_versionDoc}/html-single/server_installation_and_configuration_guide/
 :installguide_profile_name: Profiles
-:installguide_profile_link: {project_doc_base_url}/{project_versionDoc}/html-single/server-installation-and-configuration-guide/#profiles
+:installguide_profile_link: {installguide_link}/#profiles
 
 :appserver_name: JBoss EAP
 :appserver_version: 7.0

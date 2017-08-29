@@ -6,28 +6,28 @@
 :project_versionNpm: 3.3.0-cr.1
 :project_versionDoc: 3.3
 :project_images: keycloak-images
-:project_doc_base_url: http://www.keycloak.org/documentation.html
+:project_doc_base_url: https://keycloak-docs.github.io/
 
 :quickstartRepo_link: https://github.com/keycloak/keycloak-quickstarts
 :quickstartRepo_name: Keycloak Quickstarts Repository
 :quickstartRepo_dir: keycloak-quickstarts
 
 :authorizationguide_name: Authorization Services Guide
-:authorizationguide_link: {project_doc_base_url}/{project_versionDoc}/html-single/authorization_services_guide/
+:authorizationguide_link: {project_doc_base_url}/{project_versionDoc}/authorization_services_guide/
 :adapterguide_name: Securing Applications and Services Guide
-:adapterguide_link: {project_doc_base_url}/{project_versionDoc}/html-single/securing-applications-and-services-guide/
+:adapterguide_link: {project_doc_base_url}/{project_versionDoc}/securing_applications_and_services_guide/
 :adminguide_name: Server Administration Guide
-:adminguide_link: https://keycloak.gitbooks.io/documentation/content/server_admin/index.html
+:adminguide_link: {project_doc_base_url}/{project_versionDoc}/server_administration_guide/
 :apidocs_name: API Documentation
-:apidocs_link: {project_doc_base_url}/{project_versionDoc}/html-single/api-documentation/
-:developerguide_name: Server Development Guide
-:developerguide_link: {project_doc_base_url}/{project_versionDoc}/html-single/server-developer-guide/
+:apidocs_link: {project_doc_base_url}/{project_versionDoc}/api-documentation/
+:developerguide_name: Server Developer Guide
+:developerguide_link: {project_doc_base_url}/{project_versionDoc}/server_developer_guide/
 :gettingstarted_name: Getting Started Guide
-:gettingstarted_link: {project_doc_base_url}/{project_versionDoc}/html/getting-started-guide/
+:gettingstarted_link: {project_doc_base_url}/{project_versionDoc}/getting_started_guide/
 :installguide_name: Server Installation and Configuration Guide
-:installguide_link: {project_doc_base_url}/{project_versionDoc}/html-single/server-installation-and-configuration-guide/
+:installguide_link: {project_doc_base_url}/{project_versionDoc}/server_installation_and_configuration_guide/
 :installguide_profile_name: Profiles
-:installguide_profile_link: {project_doc_base_url}/{project_versionDoc}/html-single/server-installation-and-configuration-guide/#profiles
+:installguide_profile_link: {installguide_link}/#profiles
 
 :appserver_name: WildFly
 :appserver_doc_base_url: https://docs.jboss.org/author/display/WFLY10
