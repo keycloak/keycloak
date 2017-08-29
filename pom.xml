@@ -1308,12 +1308,12 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-testsuite-integration</artifactId>
+                <artifactId>keycloak-testsuite-integration-deprecated</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-testsuite-integration</artifactId>
+                <artifactId>keycloak-testsuite-integration-deprecated</artifactId>
                 <version>${project.version}</version>
                 <type>test-jar</type>
             </dependency>

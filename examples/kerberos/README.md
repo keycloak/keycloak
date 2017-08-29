@@ -47,7 +47,7 @@ is in your `/etc/hosts` before other records for the 127.0.0.1 host to avoid iss
 
 **5)** Configure Kerberos client (On linux it's in file `/etc/krb5.conf` ). You need to configure `KEYCLOAK.ORG` realm for host `localhost` and enable `forwardable` flag, which is needed 
 for credential delegation example, as application needs to forward Kerberos ticket and authenticate with it against LDAP server. 
-See [this file](https://github.com/keycloak/keycloak/blob/master/testsuite/integration-arquillian/tests/base/src/test/resources/kerberos/test-krb5.conf) for inspiration.
+See [this file](../../testsuite/integration-arquillian/tests/base/src/test/resources/kerberos/test-krb5.conf) for inspiration.
 On OS X the file to edit (or create) is `/Library/Preferences/edu.mit.Kerberos` with the same syntax as `krb5.conf`.
 On Windows the file to edit (or create) is `c:\Windows\krb5.ini` with the same syntax as `krb5.conf`.
 

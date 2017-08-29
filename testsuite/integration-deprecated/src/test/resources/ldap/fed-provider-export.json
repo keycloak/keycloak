@@ -97,7 +97,7 @@
         "serverPrincipal": "HTTP/localhost@KEYCLOAK.ORG",
         "debug": "true",
         "pagination": "true",
-        "keyTab": "/Users/williamburke/jboss/keycloak/p1b-repo/keycloak/testsuite/integration/target/test-classes/kerberos/http.keytab",
+        "keyTab": "/Users/williamburke/jboss/keycloak/p1b-repo/keycloak/testsuite/integration-deprecated/target/test-classes/kerberos/http.keytab",
         "connectionPooling": "true",
         "usersDn": "ou=People,dc=keycloak,dc=org",
         "useKerberosForPasswordAuthentication": "false",
