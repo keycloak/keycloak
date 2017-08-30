@@ -154,12 +154,6 @@ public class Jetty9Test {
         testStrategy.testBadUser();
     }
 
-    @Test
-    public void testVersion() throws Exception {
-        testStrategy.testVersion();
-    }
-
-
     /**
      * KEYCLOAK-732
      *

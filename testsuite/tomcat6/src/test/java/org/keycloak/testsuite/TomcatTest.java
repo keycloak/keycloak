@@ -138,12 +138,6 @@ public class TomcatTest {
         testStrategy.testBadUser();
     }
 
-    @Test
-    public void testVersion() throws Exception {
-        testStrategy.testVersion();
-    }
-
-
     /**
      * KEYCLOAK-732
      *

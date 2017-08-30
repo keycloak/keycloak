@@ -120,7 +120,6 @@ public class KeycloakApplication extends Application {
             ResteasyProviderFactory.pushContext(KeycloakApplication.class, this); // for injection
             context.setAttribute(KeycloakSessionFactory.class.getName(), this.sessionFactory);
 
-            singletons.add(new ServerVersionResource());
             singletons.add(new RobotsResource());
             singletons.add(new RealmsResource());
             singletons.add(new AdminRoot());

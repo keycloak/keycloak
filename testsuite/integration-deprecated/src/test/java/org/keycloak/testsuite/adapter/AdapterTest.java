@@ -184,11 +184,6 @@ public class AdapterTest {
     }
 
     @Test
-    public void testVersion() throws Exception {
-        testStrategy.testVersion();
-    }
-
-    @Test
     public void testAuthenticated() throws Exception {
         testStrategy.testAuthenticated();
     }

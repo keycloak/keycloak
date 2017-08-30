@@ -153,11 +153,6 @@ public class FilterAdapterTest {
         testStrategy.testBadUser();
     }
 
-    @Test
-    public void testVersion() throws Exception {
-        testStrategy.testVersion();
-    }
-
     /*
       Don't need to test this because HttpServletRequest.authenticate doesn't make sense with filter implementation
 

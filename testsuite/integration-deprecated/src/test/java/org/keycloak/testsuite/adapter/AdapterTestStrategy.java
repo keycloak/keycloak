@@ -587,28 +587,7 @@ public class AdapterTestStrategy extends ExternalResource {
         client.close();
 
     }
-
-    public void testVersion() throws Exception {
-        Client client = ClientBuilder.newClient();
-        WebTarget target = client.target(AUTH_SERVER_URL).path("version");
-        VersionRepresentation version = target.request().get(VersionRepresentation.class);
-        Assert.assertNotNull(version);
-        Assert.assertNotNull(version.getVersion());
-        Assert.assertNotNull(version.getBuildTime());
-        Assert.assertNotEquals(version.getVersion(), Version.UNKNOWN);
-        Assert.assertNotEquals(version.getBuildTime(), Version.UNKNOWN);
-
-        VersionRepresentation version2 = client.target(APP_SERVER_BASE_URL + "/secure-portal").path(AdapterConstants.K_VERSION).request().get(VersionRepresentation.class);
-        Assert.assertNotNull(version2);
-        Assert.assertNotNull(version2.getVersion());
-        Assert.assertNotNull(version2.getBuildTime());
-        Assert.assertEquals(version.getVersion(), version2.getVersion());
-        Assert.assertEquals(version.getBuildTime(), version2.getBuildTime());
-        client.close();
-
-    }
-
-
+    
     public void testAuthenticated() throws Exception {
         // test login to customer-portal which does a bearer request to customer-db
         driver.navigate().to(APP_SERVER_BASE_URL + "/secure-portal");
