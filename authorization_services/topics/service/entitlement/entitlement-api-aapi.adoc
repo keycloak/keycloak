@@ -68,7 +68,7 @@ back a RPT (if permissions were actually granted) with a set of permissions repr
 You can also use the entitlements endpoint to obtain a user's entitlements for a set of one or more resources. For example, using curl:
 
 ```bash
-curl -X POST -H "Authorization: Bearer ${access_token}" -d '{
+curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ${access_token}" -d '{
     "permissions" : [
         {
             "resource_set_name" : "Alice Bank Account"
