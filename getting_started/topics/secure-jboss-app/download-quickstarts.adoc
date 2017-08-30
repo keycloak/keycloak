@@ -8,8 +8,15 @@ installed on your machine and available in your PATH before you can continue:
 * Apache Maven 3.1.1 or higher
 * Git
 
-You can obtain the code by cloning the repository at {quickstartRepo_link}. Use the branch matching the version of Red Hat Single Sign-On in use. Follow these steps to download the code, build it,
-and deploy it. Make sure your {appserver_name} application server is started before you run these steps.
+ifeval::[{project_community}==true]
+You can obtain the code by cloning the repository at {quickstartRepo_link}. The quickstarts are designed to work with the most recent Keycloak release.
+endif::[]
+
+ifeval::[{project_product}==true]
+You can obtain the code by cloning the repository at {quickstartRepo_link}. Use the branch matching the version of {project_name} in use.
+endif::[]
+
+Follow these steps to download the code, build it, and deploy it. Make sure your {appserver_name} application server is started before you run these steps.
 
 .Clone Project
 [source, subs="attributes"]
