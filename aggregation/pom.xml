@@ -166,7 +166,8 @@
                             <resources>
                                 <resource>
                                     <directory>src</directory>
-                                    <include>*.*</include>
+                                    <include>*.html</include>
+                                    <include>*.png</include>
                                     <filtering>true</filtering>
                                 </resource>
                             </resources>
