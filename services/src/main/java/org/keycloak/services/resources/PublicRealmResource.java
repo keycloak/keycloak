@@ -93,7 +93,6 @@ public class PublicRealmResource {
         rep.setRealm(realm.getName());
         rep.setTokenServiceUrl(OIDCLoginProtocolService.tokenServiceBaseUrl(uriInfo).build(realm.getName()).toString());
         rep.setAccountServiceUrl(AccountFormService.accountServiceBaseUrl(uriInfo).build(realm.getName()).toString());
-        rep.setAdminApiUrl(uriInfo.getBaseUriBuilder().path(AdminRoot.class).build().toString());
         rep.setPublicKeyPem(PemUtils.encodeKey(session.keys().getActiveRsaKey(realm).getPublicKey()));
         rep.setNotBefore(realm.getNotBefore());
         return rep;
