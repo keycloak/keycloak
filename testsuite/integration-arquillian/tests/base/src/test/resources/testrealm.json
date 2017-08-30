@@ -457,6 +457,17 @@
             "level2Attribute": ["true"]
 
           }
+        },
+        {
+          "name": "level2group2",
+          "realmRoles": ["admin"],
+          "clientRoles": {
+            "test-app": ["customer-user"]
+          },
+          "attributes": {
+            "level2Attribute": ["true"]
+
+          }
         }
       ]
     },
@@ -477,6 +488,17 @@
           "realmRoles": ["admin"],
           "clientRoles": {
             "test-app": ["customer-user", "customer-admin-composite-role"]
+          },
+          "attributes": {
+            "level2Attribute": ["true"]
+
+          }
+        },
+        {
+          "name": "level2group2",
+          "realmRoles": ["admin"],
+          "clientRoles": {
+            "test-app": ["customer-user"]
           },
           "attributes": {
             "level2Attribute": ["true"]

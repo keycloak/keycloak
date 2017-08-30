@@ -115,7 +115,7 @@ public class JpaRealmProvider implements RealmProvider {
         TypedQuery<String> query = em.createNamedQuery("getRealmIdByName", String.class);
         query.setParameter("name", name);
         List<String> entities = query.getResultList();
-        if (entities.size() == 0) return null;
+        if (entities.isEmpty()) return null;
         if (entities.size() > 1) throw new IllegalStateException("Should not be more than one realm with same name");
         String id = query.getResultList().get(0);
 
@@ -155,6 +155,10 @@ public class JpaRealmProvider implements RealmProvider {
             removeRole(adapter, role);
         }
 
+        for (GroupModel group : adapter.getGroups()) {
+            session.realms().removeGroup(adapter, group);
+        }
+        
         num = em.createNamedQuery("removeClientInitialAccessByRealm")
                 .setParameter("realm", realm).executeUpdate();
 
@@ -208,7 +212,7 @@ public class JpaRealmProvider implements RealmProvider {
         query.setParameter("name", name);
         query.setParameter("realm", realm.getId());
         List<String> roles = query.getResultList();
-        if (roles.size() == 0) return null;
+        if (roles.isEmpty()) return null;
         return session.realms().getRoleById(roles.get(0), realm);
     }
 
@@ -237,7 +241,7 @@ public class JpaRealmProvider implements RealmProvider {
         List<String> roles = query.getResultList();
 
         if (roles.isEmpty()) return Collections.EMPTY_SET;
-        Set<RoleModel> list = new HashSet<RoleModel>();
+        Set<RoleModel> list = new HashSet<>();
         for (String id : roles) {
             list.add(session.realms().getRoleById(id, realm));
         }
@@ -250,14 +254,14 @@ public class JpaRealmProvider implements RealmProvider {
         query.setParameter("name", name);
         query.setParameter("client", client.getId());
         List<String> roles = query.getResultList();
-        if (roles.size() == 0) return null;
+        if (roles.isEmpty()) return null;
         return session.realms().getRoleById(roles.get(0), realm);
     }
 
 
     @Override
     public Set<RoleModel> getClientRoles(RealmModel realm, ClientModel client) {
-        Set<RoleModel> list = new HashSet<RoleModel>();
+        Set<RoleModel> list = new HashSet<>();
         TypedQuery<String> query = em.createNamedQuery("getClientRoleIds", String.class);
         query.setParameter("client", client.getId());
         List<String> roles = query.getResultList();
@@ -384,9 +388,8 @@ public class JpaRealmProvider implements RealmProvider {
         for (GroupModel subGroup : group.getSubGroups()) {
             session.realms().removeGroup(realm, subGroup);
         }
-        moveGroup(realm, group, null);
         GroupEntity groupEntity = em.find(GroupEntity.class, group.getId());
-        if (!groupEntity.getRealm().getId().equals(realm.getId())) {
+        if ((groupEntity == null) || (!groupEntity.getRealm().getId().equals(realm.getId()))) {
             return false;
         }
         em.createNamedQuery("deleteGroupRoleMappingsByGroup").setParameter("group", groupEntity).executeUpdate();
