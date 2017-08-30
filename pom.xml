@@ -61,7 +61,7 @@
                             </goals>
                             <configuration>
                                 <tasks>
-                                    <echo>OUTPUT: file://${project.build.directory}/generated-docs/index.html</echo>
+                                    <echo>OUTPUT: file://${project.build.directory}/generated-docs/${masterFile}.html</echo>
                                 </tasks>
                             </configuration>
                         </execution>
