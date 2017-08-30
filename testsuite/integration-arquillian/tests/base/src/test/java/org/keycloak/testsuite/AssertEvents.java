@@ -49,6 +49,8 @@ public class AssertEvents implements TestRule {
 
     public static final String DEFAULT_CLIENT_ID = "test-app";
     public static final String DEFAULT_IP_ADDRESS = "127.0.0.1";
+    public static final String DEFAULT_IP_ADDRESS_V6 = "0:0:0:0:0:0:0:1";
+    public static final String DEFAULT_IP_ADDRESS_V6_SHORT = "::1";
     public static final String DEFAULT_REALM = "test";
     public static final String DEFAULT_USERNAME = "test-user@localhost";
 
@@ -167,7 +169,7 @@ public class AssertEvents implements TestRule {
                 .realm(defaultRealmId())
                 .client(DEFAULT_CLIENT_ID)
                 .user(defaultUserId())
-                .ipAddress(DEFAULT_IP_ADDRESS)
+                .ipAddress(CoreMatchers.anyOf(is(DEFAULT_IP_ADDRESS), is(DEFAULT_IP_ADDRESS_V6), is(DEFAULT_IP_ADDRESS_V6_SHORT)))
                 .session((String) null)
                 .event(event);
     }
@@ -177,6 +179,7 @@ public class AssertEvents implements TestRule {
         private Matcher<String> realmId;
         private Matcher<String> userId;
         private Matcher<String> sessionId;
+        private Matcher<String> ipAddress;
         private HashMap<String, Matcher<? super String>> details;
 
         public ExpectedEvent realm(Matcher<String> realmId) {
@@ -229,7 +232,12 @@ public class AssertEvents implements TestRule {
         }
 
         public ExpectedEvent ipAddress(String ipAddress) {
-            expected.setIpAddress(ipAddress);
+            this.ipAddress = CoreMatchers.equalTo(ipAddress);
+            return this;
+        }
+
+        public ExpectedEvent ipAddress(Matcher<String> ipAddress) {
+            this.ipAddress = ipAddress;
             return this;
         }
 
@@ -279,7 +287,7 @@ public class AssertEvents implements TestRule {
             Assert.assertThat("realm ID", actual.getRealmId(), is(realmId));
             Assert.assertThat("client ID", actual.getClientId(), is(expected.getClientId()));
             Assert.assertThat("error", actual.getError(), is(expected.getError()));
-            Assert.assertThat("ip address", actual.getIpAddress(), is(expected.getIpAddress()));
+            Assert.assertThat("ip address", actual.getIpAddress(), ipAddress);
             Assert.assertThat("user ID", actual.getUserId(), is(userId));
             Assert.assertThat("session ID", actual.getSessionId(), is(sessionId));
 

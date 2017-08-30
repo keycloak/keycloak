@@ -36,7 +36,7 @@ public class PasswordPolicy extends Authentication {
         addPolicySelect.selectByVisibleText(policy.getName());
         if (value != null) {setPolicyValue(policy, value);}
         primaryButton.click();
-        waitForPageToLoad(driver);
+        waitForPageToLoad();
     }
 
 
@@ -53,7 +53,7 @@ public class PasswordPolicy extends Authentication {
         if (primaryButton.isEnabled()) {
             primaryButton.click();
         }
-        waitForPageToLoad(driver);
+        waitForPageToLoad();
     }
 
     public void editPolicy(Type policy, int value) {
@@ -65,7 +65,7 @@ public class PasswordPolicy extends Authentication {
         if (primaryButton.isEnabled()) {
             primaryButton.click();
         }
-        waitForPageToLoad(driver);
+        waitForPageToLoad();
     }
 
     private void setPolicyValue(Type policy, String value) {

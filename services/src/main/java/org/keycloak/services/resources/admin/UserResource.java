@@ -68,8 +68,8 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.UserSessionManager;
-import org.keycloak.services.resources.AccountService;
 import org.keycloak.services.resources.LoginActionsService;
+import org.keycloak.services.resources.account.AccountFormService;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.storage.ReadOnlyException;
@@ -282,7 +282,7 @@ public class UserResource {
         String sessionId = KeycloakModelUtils.generateId();
         UserSessionModel userSession = session.sessions().createUserSession(sessionId, realm, user, user.getUsername(), clientConnection.getRemoteAddr(), "impersonate", false, null, null);
         AuthenticationManager.createLoginCookie(session, realm, userSession.getUser(), userSession, uriInfo, clientConnection);
-        URI redirect = AccountService.accountServiceApplicationPage(uriInfo).build(realm.getName());
+        URI redirect = AccountFormService.accountServiceApplicationPage(uriInfo).build(realm.getName());
         Map<String, Object> result = new HashMap<>();
         result.put("sameRealm", sameRealm);
         result.put("redirect", redirect.toString());
@@ -507,6 +507,8 @@ public class UserResource {
     @POST
     public void logout() {
         auth.users().requireManage(user);
+
+        session.users().setNotBeforeForUser(realm, user, Time.currentTime());
 
         List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
         for (UserSessionModel userSession : userSessions) {

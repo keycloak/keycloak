@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests-other</artifactId>
-        <version>3.3.0.CR1-SNAPSHOT</version>
+        <version>3.4.0.CR1-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-console</artifactId>
@@ -33,6 +33,7 @@
 
     <properties>
         <keycloak.theme.dir>${auth.server.home}/themes</keycloak.theme.dir>
+        <supportedBrowsers>firefox|chrome|internetExplorer</supportedBrowsers>
     </properties>
 
     <build>
@@ -51,6 +52,27 @@
                             <files>
                                 <file>${testsuite.constants}</file>
                             </files>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireProperty>
+                                    <property>browser</property>
+                                    <message>Browser property must be set!</message>
+                                    <regex>${supportedBrowsers}</regex>
+                                    <regexMessage>Unsupported browser "${browser}"! Only the following are supported: ${supportedBrowsers}</regexMessage>
+                                </requireProperty>
+                            </rules>
+                            <fail>true</fail>
                         </configuration>
                     </execution>
                 </executions>

@@ -88,13 +88,6 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
     @Before
     public void beforePhotozExampleAdapterTest() throws FileNotFoundException {
         deleteAllCookiesForClientPage();
-
-        for (PolicyRepresentation policy : getAuthorizationResource().policies().policies()) {
-            if ("Only Owner Policy".equals(policy.getName())) {
-                policy.getConfig().put("mavenArtifactVersion", System.getProperty("project.version"));
-                getAuthorizationResource().policies().policy(policy.getId()).update(policy);
-            }
-        }
     }
 
     @Override
@@ -650,7 +643,13 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
     }
 
     private void importResourceServerSettings() throws FileNotFoundException {
-        getAuthorizationResource().importSettings(loadJson(new FileInputStream(new File(TEST_APPS_HOME_DIR + "/photoz/photoz-restful-api-authz-service.json")), ResourceServerRepresentation.class));
+        ResourceServerRepresentation authSettings = loadJson(new FileInputStream(new File(TEST_APPS_HOME_DIR + "/photoz/photoz-restful-api-authz-service.json")), ResourceServerRepresentation.class);
+
+        authSettings.getPolicies().stream()
+                .filter(x -> "Only Owner Policy".equals(x.getName()))
+                .forEach(x -> x.getConfig().put("mavenArtifactVersion", System.getProperty("project.version")));
+
+        getAuthorizationResource().importSettings(authSettings);
     }
 
     private AuthorizationResource getAuthorizationResource() throws FileNotFoundException {

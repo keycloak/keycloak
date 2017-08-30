@@ -22,13 +22,11 @@ import org.jboss.logging.Logger;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
-import org.keycloak.broker.oidc.util.JsonSimpleHttp;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.keycloak.models.KeycloakSession;
 
 import java.net.URLEncoder;
@@ -62,7 +60,7 @@ public class MicrosoftIdentityProvider extends AbstractOAuth2IdentityProvider im
             if (log.isDebugEnabled()) {
                 log.debug("Microsoft Live user profile request to: " + URL);
             }
-            JsonNode profile = JsonSimpleHttp.asJson(SimpleHttp.doGet(URL, session));
+            JsonNode profile = SimpleHttp.doGet(URL, session).asJson();
 
             String id = getJsonProperty(profile, "id");
 

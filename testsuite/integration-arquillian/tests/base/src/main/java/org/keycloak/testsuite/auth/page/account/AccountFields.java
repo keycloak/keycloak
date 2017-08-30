@@ -83,7 +83,7 @@ public class AccountFields extends Form {
     }
 
     public void waitForUsernameInputNotPresent() {
-        waitUntilElementIsNotPresent(driver, usernameInput);
+        waitUntilElementIsNotPresent(usernameInput);
     }
 
 }

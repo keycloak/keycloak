@@ -30,6 +30,7 @@
             <outputDirectory></outputDirectory>
             <includes>
                 <include>**/*.js</include>
+                <include>**/*.map</include>
                 <include>**/*.d.ts</include>
                 <include>**/*.html</include>
             </includes>

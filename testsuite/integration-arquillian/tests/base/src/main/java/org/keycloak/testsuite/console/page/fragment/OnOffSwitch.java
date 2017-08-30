@@ -17,12 +17,8 @@
 package org.keycloak.testsuite.console.page.fragment;
 
 import org.jboss.arquillian.graphene.fragment.Root;
-import org.jboss.arquillian.test.api.ArquillianResource;
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.interactions.Actions;
-
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
+import org.openqa.selenium.support.FindBy;
 
 /**
  *
@@ -33,26 +29,18 @@ public class OnOffSwitch {
     @Root
     private WebElement root;
 
-    @ArquillianResource
-    private Actions actions;
+    @FindBy(tagName = "input")
+    private WebElement inputTag;
 
-    public OnOffSwitch() {
-    }
-
-    public OnOffSwitch(WebElement root, Actions actions) {
-        this.root = root;
-        this.actions = actions;
-    }
+    @FindBy(tagName = "label")
+    private WebElement labelTag;
 
     public boolean isOn() {
-        waitUntilElement(root).is().present();
-        return root.findElement(By.tagName("input")).isSelected();
+        return inputTag.isSelected();
     }
 
     private void click() {
-        waitUntilElement(root).is().present();
-        actions.moveToElement(root.findElement(By.tagName("label")))
-                .click().build().perform();
+        labelTag.click();
     }
 
     public void toggle() {

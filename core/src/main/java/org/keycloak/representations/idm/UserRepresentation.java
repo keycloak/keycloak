@@ -56,6 +56,7 @@ public class UserRepresentation {
     protected List<String> realmRoles;
     protected Map<String, List<String>> clientRoles;
     protected List<UserConsentRepresentation> clientConsents;
+    protected Integer notBefore;
 
     @Deprecated
     protected Map<String, List<String>> applicationRoles;
@@ -215,6 +216,14 @@ public class UserRepresentation {
 
     public void setClientConsents(List<UserConsentRepresentation> clientConsents) {
         this.clientConsents = clientConsents;
+    }
+
+    public Integer getNotBefore() {
+        return notBefore;
+    }
+
+    public void setNotBefore(Integer notBefore) {
+        this.notBefore = notBefore;
     }
 
     @Deprecated

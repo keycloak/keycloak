@@ -53,6 +53,47 @@ public class BasicSamlTest extends AbstractSamlTest {
     }
 
     @Test
+    public void testNoDestinationPost() throws Exception {
+        AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, null);
+
+        Document doc = SAML2Request.convert(loginRep);
+        HttpUriRequest post = Binding.POST.createSamlUnsignedRequest(getAuthServerSamlEndpoint(REALM_NAME), null, doc);
+
+        try (CloseableHttpClient client = HttpClientBuilder.create().setRedirectStrategy(new RedirectStrategyWithSwitchableFollowRedirect()).build();
+          CloseableHttpResponse response = client.execute(post)) {
+            assertThat(response, statusCodeIsHC(Response.Status.OK));
+            assertThat(EntityUtils.toString(response.getEntity(), "UTF-8"), containsString("login"));
+        }
+    }
+
+    @Test
+    public void testNoDestinationRedirect() throws Exception {
+        AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, null);
+
+        Document doc = SAML2Request.convert(loginRep);
+        HttpUriRequest post = Binding.REDIRECT.createSamlUnsignedRequest(getAuthServerSamlEndpoint(REALM_NAME), null, doc);
+
+        try (CloseableHttpClient client = HttpClientBuilder.create().setRedirectStrategy(new RedirectStrategyWithSwitchableFollowRedirect()).build();
+          CloseableHttpResponse response = client.execute(post)) {
+            assertThat(response, statusCodeIsHC(Response.Status.OK));
+            assertThat(EntityUtils.toString(response.getEntity(), "UTF-8"), containsString("login"));
+        }
+    }
+
+    @Test
+    public void testNoDestinationSignedPost() throws Exception {
+        AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(SAML_CLIENT_ID_SALES_POST_SIG, SAML_ASSERTION_CONSUMER_URL_SALES_POST_SIG, null);
+
+        Document doc = SAML2Request.convert(loginRep);
+        HttpUriRequest post = Binding.POST.createSamlSignedRequest(getAuthServerSamlEndpoint(REALM_NAME), null, doc, SAML_CLIENT_ID_SALES_POST_SIG_PRIVATE_KEY, SAML_CLIENT_ID_SALES_POST_SIG_PUBLIC_KEY);
+
+        try (CloseableHttpClient client = HttpClientBuilder.create().setRedirectStrategy(new RedirectStrategyWithSwitchableFollowRedirect()).build();
+          CloseableHttpResponse response = client.execute(post)) {
+            assertThat(response, statusCodeIsHC(Response.Status.INTERNAL_SERVER_ERROR));
+        }
+    }
+
+    @Test
     public void testNoPortInDestination() throws Exception {
         // note that this test relies on settings of the login-protocol.saml.knownProtocols configuration option
         testWithOverriddenPort(-1, Response.Status.OK, containsString("login"));

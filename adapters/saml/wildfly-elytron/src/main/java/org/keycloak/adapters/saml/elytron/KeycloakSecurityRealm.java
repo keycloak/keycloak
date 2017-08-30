@@ -17,6 +17,7 @@
 package org.keycloak.adapters.saml.elytron;
 
 import java.security.Principal;
+import java.security.spec.AlgorithmParameterSpec;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,7 +54,7 @@ public class KeycloakSecurityRealm implements SecurityRealm {
             }
 
             @Override
-            public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName) throws RealmUnavailableException {
+            public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> aClass, String s, AlgorithmParameterSpec algorithmParameterSpec) throws RealmUnavailableException {
                 return SupportLevel.UNSUPPORTED;
             }
 
@@ -90,7 +91,7 @@ public class KeycloakSecurityRealm implements SecurityRealm {
     }
 
     @Override
-    public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName) throws RealmUnavailableException {
+    public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec) throws RealmUnavailableException {
         return SupportLevel.UNSUPPORTED;
     }
 

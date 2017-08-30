@@ -136,6 +136,19 @@ public class AuthenticationManager {
 
     }
 
+    public static void backchannelLogout(KeycloakSession session, UserSessionModel userSession, boolean logoutBroker) {
+        backchannelLogout(
+                session,
+                session.getContext().getRealm(),
+                userSession,
+                session.getContext().getUri(),
+                session.getContext().getConnection(),
+                session.getContext().getRequestHeaders(),
+                logoutBroker
+        );
+    }
+
+
     /**
      * Do not logout broker
      *
@@ -814,6 +827,12 @@ public class AuthenticationManager {
             UserModel user = session.users().getUserById(token.getSubject(), realm);
             if (user == null || !user.isEnabled() ) {
                 logger.debug("Unknown user in identity token");
+                return null;
+            }
+
+            int userNotBefore = session.users().getNotBeforeOfUser(realm, user);
+            if (token.getIssuedAt() < userNotBefore) {
+                logger.debug("User notBefore newer than token");
                 return null;
             }
 

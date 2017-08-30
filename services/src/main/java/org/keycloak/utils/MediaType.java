@@ -40,4 +40,8 @@ public class MediaType {
     public static final String APPLICATION_JWT = "application/jwt";
     public static final javax.ws.rs.core.MediaType APPLICATION_JWT_TYPE = new javax.ws.rs.core.MediaType("application", "jwt");
 
+    public static final String APPLICATION_XML = javax.ws.rs.core.MediaType.APPLICATION_XML;
+
+    public static final String TEXT_XML = javax.ws.rs.core.MediaType.TEXT_XML;
+
 }

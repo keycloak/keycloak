@@ -397,7 +397,7 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
 
     private void checkLoggedOut(AbstractPage page, Login loginPage) {
         page.navigateTo();
-        waitForPageToLoad(driver);
+        waitForPageToLoad();
         assertCurrentUrlStartsWith(loginPage);
     }
 
@@ -950,7 +950,7 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
         testRealmSAMLPostLoginPage.form().login("bburke", "password");
         assertCurrentUrlStartsWith(employeeServletPage);
-        waitForPageToLoad(driver);
+        waitForPageToLoad();
         String pageSource = driver.getPageSource();
         assertThat(pageSource, containsString("Relay state: " + SamlSPFacade.RELAY_STATE));
         assertThat(pageSource, not(containsString("SAML response: null")));

@@ -225,10 +225,10 @@ public class SocialLoginTest extends AbstractKeycloakTest {
 
         // Just to be sure there's no redirect in progress
         WaitUtils.pause(3000);
-        WaitUtils.waitForPageToLoad(driver);
+        WaitUtils.waitForPageToLoad();
 
         // Only when there's not active session for the social provider, i.e. login is required
-        if (URLUtils.currentUrlDoesntStartWith(driver, getAuthServerRoot().toASCIIString())) {
+        if (URLUtils.currentUrlDoesntStartWith(getAuthServerRoot().toASCIIString())) {
             log.infof("current URL: %s", driver.getCurrentUrl());
             log.infof("performing log in to '%s' ...", currentTestProvider.id());
             AbstractSocialLoginPage loginPage = Graphene.createPageFragment(currentTestProvider.pageObjectClazz(), driver.findElement(By.tagName("html")));
@@ -240,7 +240,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     }
 
     private void assertAccount() {
-        assertTrue(URLUtils.currentUrlStartWith(driver, accountPage.toString())); // Sometimes after login the URL ends with /# or similar
+        assertTrue(URLUtils.currentUrlStartWith(accountPage.toString())); // Sometimes after login the URL ends with /# or similar
 
         assertEquals(getConfig("profile.firstName"), accountPage.getFirstName());
         assertEquals(getConfig("profile.lastName"), accountPage.getLastName());
@@ -248,7 +248,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     }
 
     private void assertUpdateProfile(boolean firstName, boolean lastName, boolean email) {
-        assertTrue(URLUtils.currentUrlDoesntStartWith(driver, accountPage.toString()));
+        assertTrue(URLUtils.currentUrlDoesntStartWith(accountPage.toString()));
 
         if (firstName) {
             assertTrue(updateAccountPage.fields().getFirstName().isEmpty());

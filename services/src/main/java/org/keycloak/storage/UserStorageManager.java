@@ -231,6 +231,25 @@ public class UserStorageManager implements UserProvider, OnUserCache, OnCreateCo
         }
     }
 
+    @Override
+    public void setNotBeforeForUser(RealmModel realm, UserModel user, int notBefore) {
+        if (StorageId.isLocalStorage(user)) {
+            localStorage().setNotBeforeForUser(realm, user, notBefore);
+        } else {
+            getFederatedStorage().setNotBeforeForUser(realm, user.getId(), notBefore);
+        }
+    }
+
+    @Override
+    public int getNotBeforeOfUser(RealmModel realm, UserModel user) {
+        if (StorageId.isLocalStorage(user)) {
+            return localStorage().getNotBeforeOfUser(realm, user);
+
+        } else {
+            return getFederatedStorage().getNotBeforeOfUser(realm, user.getId());
+        }
+    }
+
     /**
      * Allows a UserStorageProvider to proxy and/or synchronize an imported user.
      *

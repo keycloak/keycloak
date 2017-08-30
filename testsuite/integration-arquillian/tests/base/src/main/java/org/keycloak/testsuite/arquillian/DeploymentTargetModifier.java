@@ -25,6 +25,7 @@ import org.jboss.logging.Logger;
 
 import java.util.List;
 
+import java.util.Objects;
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.getAppServerQualifier;
 
 /**
@@ -51,9 +52,15 @@ public class DeploymentTargetModifier extends AnnotationDeploymentScenarioGenera
 
         if (appServerQualifier != null && !appServerQualifier.isEmpty()) {
             for (DeploymentDescription deployment : deployments) {
-                if (deployment.getTarget() == null || !deployment.getTarget().getName().startsWith(appServerQualifier)) {
+                final boolean containerMatches = deployment.getTarget() != null && deployment.getTarget().getName().startsWith(appServerQualifier);
+
+                if (deployment.getTarget() == null || Objects.equals(deployment.getTarget().getName(), "_DEFAULT_")) {
                     log.debug("Setting target container for " + deployment.getName() + ": " + appServerQualifier);
                     deployment.setTarget(new TargetDescription(appServerQualifier));
+                } else if (! containerMatches) {
+                    throw new RuntimeException("Inconsistency found: target container for " + deployment.getName()
+                      + " is set to " + deployment.getTarget().getName()
+                      + " but the test class targets " + appServerQualifier);
                 }
             }
         }

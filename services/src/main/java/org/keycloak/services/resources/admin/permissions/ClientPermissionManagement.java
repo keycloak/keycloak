@@ -41,11 +41,7 @@ public interface ClientPermissionManagement {
 
     Map<String, String> getPermissions(ClientModel client);
 
-    boolean canExchangeFrom(ClientModel authorizedClient, ClientModel from);
-
     boolean canExchangeTo(ClientModel authorizedClient, ClientModel to);
-
-    Policy exchangeFromPermission(ClientModel client);
 
     Policy exchangeToPermission(ClientModel client);
 
