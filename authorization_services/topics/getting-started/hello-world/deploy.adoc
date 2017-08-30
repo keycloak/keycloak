@@ -10,7 +10,15 @@ installed on your machine and available in your PATH before you can continue:
 * Apache Maven 3.1.1 or higher
 * Git
 
-You can obtain the code by cloning the repository at {quickstartRepo_link}. The default branch corresponds to the latest release of {project_name}. Follow these steps to download the code.
+ifeval::[{project_community}==true]
+You can obtain the code by cloning the repository at {quickstartRepo_link}. The quickstarts are designed to work with the most recent Keycloak release.
+endif::[]
+
+ifeval::[{project_product}==true]
+You can obtain the code by cloning the repository at {quickstartRepo_link}. Use the branch matching the version of {project_name} in use.
+endif::[]
+
+Follow these steps to download the code.
 
 .Clone Project
 [source, subs="attributes"]
