@@ -52,3 +52,4 @@
 :fuseVersion: JBoss Fuse 6.3.0 Rollup 1
 
 :subsystem_undertow_xml_urn: urn:jboss:domain:undertow:3.1
+:saml_adapter_xsd_urn: http://www.keycloak.org/schema/keycloak_saml_adapter_1_9.xsd
