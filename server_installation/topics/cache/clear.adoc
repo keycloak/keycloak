@@ -3,4 +3,5 @@
 
 To clear the realm or user cache, go to the {project_name} admin console Realm Settings->Cache Config page.
 On this page you can clear the realm cache, the user cache or cache of external public keys.
-This will clear the caches for all realms and not only the selected realm.
+
+NOTE: The cache will be cleared for all realms!
