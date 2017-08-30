@@ -3,8 +3,33 @@
 == Profiles
 
 ifeval::[{project_community}==true]
-{project_name} has a single profile, community, that enables all features by default, including features that
+{project_name} has a single profile, community, that enables most features by default, including features that
 are considered less mature. It is however possible to disable individual features.
+
+The features that can be enabled and disabled are:
+
+[cols="3*", options="header"]
+|===
+|Name
+|Description
+|Enabled by default
+
+|authorization
+|Authorization Services
+|Yes
+
+|docker
+|Docker Registry protocol
+|No
+
+|impersonation
+|Ability for admins to impersonate users
+|Yes
+
+|script
+|Write custom authenticators using JavaScript
+|Yes
+|===
 endif::[]
 
 ifeval::[{project_product}==true]
@@ -27,18 +52,41 @@ the file:
 ----
 profile=preview
 ----
-endif::[]
 
 The features that can be enabled and disabled are:
 
-* Authorization - authorization services
-* Docker - authentication protocol for Docker Registry
-* Impersonation - ability for admins to impersonate users
-* Script - write custom authenticators using JavaScript
+[cols="3*", options="header"]
+|===
+|Name
+|Description
+|Enabled by default
 
-ifeval::[{project_product}==true]
-The product profile disables authorization and script.
+|authorization
+|Authorization Services
+|No
+
+|docker
+|Docker Registry protocol
+|No
+
+|impersonation
+|Ability for admins to impersonate users
+|Yes
+
+|script
+|Write custom authenticators using JavaScript
+|No
+|===
 endif::[]
+
+To enable a specific feature start the server with:
+
+[source]
+----
+bin/standalone.sh|bat -Dkeycloak.profile.feature.<feature name>=disabled
+----
+
+For example to enable Docker use `-Dkeycloak.profile.feature.docker=enabled`.
 
 To disable a specific feature start the server with:
 
