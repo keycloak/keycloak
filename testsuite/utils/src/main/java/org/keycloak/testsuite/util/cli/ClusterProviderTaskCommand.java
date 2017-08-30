@@ -17,14 +17,13 @@
 
 package org.keycloak.testsuite.util.cli;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.testsuite.federation.sync.SyncDummyUserFederationProviderFactory;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -60,7 +59,7 @@ public class ClusterProviderTaskCommand extends AbstractCommand {
     }
 
     private void updateConfig(MultivaluedHashMap<String, String> cfg, int waitTime) {
-        cfg.putSingle(SyncDummyUserFederationProviderFactory.WAIT_TIME, String.valueOf(waitTime));
+        cfg.putSingle("wait-time", String.valueOf(waitTime));
     }
 
 
