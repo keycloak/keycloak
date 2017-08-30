@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.adapter.example.authorization;
+package org.keycloak.testsuite.adapter.example.hal;
 
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.IOUtil.loadRealm;
@@ -40,7 +40,7 @@ import org.wildfly.extras.creaper.core.online.OnlineOptions;
  */
 @AppServerContainer("app-server-wildfly")
 //@AdapterLibsLocationProperty("adapter.libs.wildfly")
-public class WildflyManagementProtectionTest extends AbstractAdapterTest {
+public class WildflyConsoleProtectionTest extends AbstractAdapterTest {
 
     @Page
     protected AppServerWelcomePage appServerWelcomePage;
