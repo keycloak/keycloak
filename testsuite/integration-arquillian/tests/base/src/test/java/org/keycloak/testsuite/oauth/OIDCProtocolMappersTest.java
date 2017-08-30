@@ -52,8 +52,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.isEmptyOrNullString;
-import static org.hamcrest.Matchers.isEmptyOrNullString;
+import static org.hamcrest.Matchers.isEmptyString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -178,8 +177,6 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
             AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
             assertEquals(accessToken.getName(), "Tom Brady");
-            //assertThat(((String)idToken.getOtherClaims().get("empty")), isEmptyString());
-            //assertThat(((String)idToken.getOtherClaims().get("null")), isEmptyString());
             assertNotNull(accessToken.getAddress());
             assertEquals(accessToken.getAddress().getStreetAddress(), "5 Yawkey Way");
             assertEquals(accessToken.getAddress().getLocality(), "Boston");
@@ -265,9 +262,9 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
             IDToken idToken = oauth.verifyIDToken(response.getIdToken());
             Object empty = idToken.getOtherClaims().get("empty");
-            assertThat((empty == null ? null : (String) empty), isEmptyOrNullString());
+            assertThat((empty == null ? null : (String) empty), isEmptyString());
             Object nulll = idToken.getOtherClaims().get("null");
-            assertThat((nulll == null ? null : (String) nulll), isEmptyOrNullString());
+            assertNull(nulll);
 
             AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
             oauth.openLogout();
