@@ -23,7 +23,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.managers.UserStorageSyncManager;
 import org.keycloak.storage.UserStorageProviderModel;
-import org.keycloak.testsuite.federation.sync.SyncDummyUserFederationProviderFactory;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -42,7 +41,7 @@ public class SyncDummyFederationProviderCommand extends AbstractCommand {
             updateConfig(cfg, waitTime);
 
             UserStorageProviderModel model = new UserStorageProviderModel();
-            model.setProviderId(SyncDummyUserFederationProviderFactory.SYNC_PROVIDER_ID);
+            model.setProviderId("sync-dummy");
             model.setPriority(1);
             model.setName("cluster-dummy");
             model.setFullSyncPeriod(-1);
@@ -62,7 +61,7 @@ public class SyncDummyFederationProviderCommand extends AbstractCommand {
     }
 
     private void updateConfig(MultivaluedHashMap<String, String> cfg, int waitTime) {
-        cfg.putSingle(SyncDummyUserFederationProviderFactory.WAIT_TIME, String.valueOf(waitTime));
+        cfg.putSingle("wait-time", String.valueOf(waitTime));
     }
 
 

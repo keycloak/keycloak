@@ -165,11 +165,11 @@ public class KeycloakServer {
             String resources = System.getProperty("resources");
             if (resources == null || resources.equals("") || resources.equals("true")) {
                 if (System.getProperties().containsKey("maven.home")) {
-                    resources = System.getProperty("user.dir").replaceFirst("testsuite.integration-deprecated.*", "");
+                    resources = System.getProperty("user.dir").replaceFirst("testsuite.utils.*", "");
                 } else {
                     for (String c : System.getProperty("java.class.path").split(File.pathSeparator)) {
-                        if (c.contains(File.separator + "testsuite" + File.separator + "integration-deprecated")) {
-                            resources = c.replaceFirst("testsuite.integration-deprecated.*", "");
+                        if (c.contains(File.separator + "testsuite" + File.separator + "utils")) {
+                            resources = c.replaceFirst("testsuite.utils.*", "");
                         }
                     }
                 }
