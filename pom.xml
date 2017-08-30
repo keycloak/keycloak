@@ -10,6 +10,7 @@
 
     <properties>
         <masterFile>index</masterFile>
+        <imagesDir>keycloak-images</imagesDir>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <version.plugin.asciidoctor>1.5.5</version.plugin.asciidoctor>
@@ -39,6 +40,7 @@
             </activation>
             <properties>
                 <masterFile>master</masterFile>
+                <imagesDir>rhsso-images</imagesDir>
             </properties>
         </profile>
     </profiles>
@@ -97,6 +99,15 @@
                                     <idseparator>-</idseparator>
                                     <docinfo1>true</docinfo1>
                                 </attributes>
+                                <resources>
+                                    <resource>
+                                        <directory>${project.basedir}</directory>
+                                        <includes>
+                                            <include>images/**</include>
+                                            <include>${imagesDir}/**</include>
+                                        </includes>
+                                    </resource>
+                                </resources>
                             </configuration>
                         </execution>
                     </executions>
