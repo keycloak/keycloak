@@ -7,6 +7,7 @@
 :project_versionDoc: 3.3
 :project_images: keycloak-images
 :project_doc_base_url: http://www.keycloak.org/docs/{project_versionDoc}
+:project_dirref: KEYCLOAK_HOME
 
 :quickstartRepo_link: https://github.com/keycloak/keycloak-quickstarts
 :quickstartRepo_name: Keycloak Quickstarts Repository
@@ -24,12 +25,15 @@
 :developerguide_link: {project_doc_base_url}/server_development/
 :gettingstarted_name: Getting Started Guide
 :gettingstarted_link: {project_doc_base_url}/getting_started/
+:upgradingguide_name: Upgrading Guide
+:upgradingguide_link: {project_doc_base_url}/upgrading/
 :installguide_name: Server Installation and Configuration Guide
 :installguide_link: {project_doc_base_url}/server_installation/
 :installguide_profile_name: Profiles
 :installguide_profile_link: {installguide_link}/#profiles
 
 :appserver_name: WildFly
+:appserver_dirref: WILDFLY_HOME
 :appserver_doc_base_url: https://docs.jboss.org/author/display/WFLY10
 :appserver_version: 10
 :appserver_socket_link: {appserver_doc_base_url}/Interfaces+and+ports

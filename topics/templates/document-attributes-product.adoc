@@ -7,6 +7,7 @@
 :project_versionDoc: 7.2
 :project_images: rhsso-images
 :project_doc_base_url: https://doc-stage.usersys.redhat.com/documentation/en-us/red_hat_single_sign-on
+:project_dirref: RHSSO_HOME
 
 :quickstartRepo_name: {project_name} Quickstarts Repository
 :quickstartRepo_link: https://github.com/redhat-developer/redhat-sso-quickstarts
@@ -24,12 +25,15 @@
 :developerguide_link: {project_doc_base_url}/{project_versionDoc}/html-single/server_developer_guide/
 :gettingstarted_name: Getting Started Guide
 :gettingstarted_link: {project_doc_base_url}/{project_versionDoc}/html-single/getting_started_guide/
+:upgradingguide_name: Upgrading Guide
+:upgradingguide_link: {project_doc_base_url}/{project_versionDoc}/html-single/upgrading_guide/
 :installguide_name: Server Installation and Configuration Guide
 :installguide_link: {project_doc_base_url}/{project_versionDoc}/html-single/server_installation_and_configuration_guide/
 :installguide_profile_name: Profiles
 :installguide_profile_link: {installguide_link}/#profiles
 
 :appserver_name: JBoss EAP
+:appserver_dirref: EAP_HOME
 :appserver_version: 7.0
 :appserver_doc_base_url: https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/{appserver_version}
 :appserver_socket_name: JBoss EAP Configuration Guide
@@ -48,6 +52,8 @@
 :appserver_admindoc_link: {appserver_doc_base_url}/html-single/configuration-guide/configuration-guide
 :appserver_loadbalancer_name: JBoss EAP Configuration Guide
 :appserver_loadbalancer_link: {appserver_doc_base_url}/html-single/configuration-guide/#configuring_high_availability
+:appserver_managementcli_link: https://access.redhat.com/documentation/en-us/red_hat_jboss_enterprise_application_platform/7.0/html-single/configuration_guide/#management_cli_overview
+:appserver_managementconsole_link: https://access.redhat.com/documentation/en-us/red_hat_jboss_enterprise_application_platform/7.0/html-single/configuration_guide/#management_console_overview
 
 :fuseVersion: JBoss Fuse 6.3.0 Rollup 1
 

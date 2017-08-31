@@ -156,6 +156,22 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <id>copy-upgrading</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.outputDirectory}/upgrading/</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>../upgrading/target/generated-docs</directory>
+                                    <include>**/**</include>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>copy-index</id>
                         <phase>process-resources</phase>
                         <goals>
