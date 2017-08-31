@@ -201,6 +201,8 @@ public class UserResource {
         if (rep.isEnabled() != null) user.setEnabled(rep.isEnabled());
         if (rep.isEmailVerified() != null) user.setEmailVerified(rep.isEmailVerified());
 
+        if (rep.getFederationLink() != null) user.setFederationLink(rep.getFederationLink());
+
         List<String> reqActions = rep.getRequiredActions();
 
         if (reqActions != null) {
