@@ -21,6 +21,7 @@ import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
 import org.keycloak.social.facebook.FacebookIdentityProviderFactory;
 import org.keycloak.social.github.GitHubIdentityProviderFactory;
+import org.keycloak.social.paypal.PayPalIdentityProviderFactory;
 import org.keycloak.social.google.GoogleIdentityProviderFactory;
 import org.keycloak.social.linkedin.LinkedInIdentityProviderFactory;
 import org.keycloak.social.stackoverflow.StackoverflowIdentityProviderFactory;
@@ -47,6 +48,7 @@ public abstract class AbstractIdentityProviderModelTest extends AbstractModelTes
         this.expectedProviders.add(GoogleIdentityProviderFactory.PROVIDER_ID);
         this.expectedProviders.add(FacebookIdentityProviderFactory.PROVIDER_ID);
         this.expectedProviders.add(GitHubIdentityProviderFactory.PROVIDER_ID);
+        this.expectedProviders.add(PayPalIdentityProviderFactory.PROVIDER_ID);
         this.expectedProviders.add(TwitterIdentityProviderFactory.PROVIDER_ID);
         this.expectedProviders.add(LinkedInIdentityProviderFactory.PROVIDER_ID);
         this.expectedProviders.add(StackoverflowIdentityProviderFactory.PROVIDER_ID);

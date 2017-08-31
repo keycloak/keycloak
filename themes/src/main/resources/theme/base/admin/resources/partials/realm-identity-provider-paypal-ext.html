@@ -1,0 +1,7 @@
+<div class="form-group">
+  <label class="col-md-2 control-label" for="sandbox">{{:: 'sandbox' | translate}}</label>
+  <div class="col-md-6">
+      <input ng-model="identityProvider.config.sandbox" id="sandbox" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+  </div>
+  <kc-tooltip>{{:: 'identity-provider.paypal-sandbox.tooltip' | translate}}</kc-tooltip>
+</div>
