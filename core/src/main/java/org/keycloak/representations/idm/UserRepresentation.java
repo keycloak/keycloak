@@ -23,6 +23,7 @@ import org.keycloak.json.StringListMapDeserializer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 
@@ -157,7 +158,7 @@ public class UserRepresentation {
 
     public UserRepresentation singleAttribute(String name, String value) {
         if (this.attributes == null) attributes = new HashMap<>();
-        attributes.put(name, Arrays.asList(value));
+        attributes.put(name, (value == null ? new ArrayList<String>() : Arrays.asList(value)));
         return this;
     }
 
