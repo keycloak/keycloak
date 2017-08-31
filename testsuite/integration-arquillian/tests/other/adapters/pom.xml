@@ -81,8 +81,8 @@
             -Dmy.host.name=localhost
             -Djava.security.krb5.conf=${project.build.directory}/dependency/kerberos/test-krb5.conf
             -Dkie.maven.settings.custom=${settings.path}
+            -Dkie.maven.repo.local=${maven.repo.local}
             -Drepo.url=${repo.url}
-            -Dmaven.repo.local=${maven.repo.local}
         </adapter.test.props>
 
         <app.server.home>${containers.home}/app-server-${app.server}</app.server.home>
