@@ -27,6 +27,7 @@
         <module>server_admin</module>
         <module>server_development</module>
         <module>server_installation</module>
+        <module>upgrading</module>
         <module>aggregation</module>
     </modules>
 
