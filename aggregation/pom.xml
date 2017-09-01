@@ -202,10 +202,10 @@
                             <goal>run</goal>
                         </goals>
                         <configuration>
-                            <tasks>
+                            <target>
                                 <echo>OUTPUT (no-frames): file://${project.build.outputDirectory}/index.html</echo>
                                 <echo>OUTPUT (frames):    file://${project.build.outputDirectory}/frames.html</echo>
-                            </tasks>
+                            </target>
                         </configuration>
                     </execution>
                 </executions>
