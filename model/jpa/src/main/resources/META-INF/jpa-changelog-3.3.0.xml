@@ -19,7 +19,9 @@
 
     <changeSet author="keycloak" id="3.3.0">
         <addColumn tableName="USER_ENTITY">
-            <column name="NOT_BEFORE" type="INT" defaultValueNumeric="0"/>
+            <column name="NOT_BEFORE" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
         </addColumn>
     </changeSet>
 
