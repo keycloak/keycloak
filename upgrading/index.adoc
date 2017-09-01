@@ -1,0 +1,6 @@
+:toc:
+:toclevels: 3
+:numbered:
+
+include::topics/templates/document-attributes-community.adoc[]
+include::topics.adoc[]

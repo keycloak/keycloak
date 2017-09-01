@@ -1,0 +1,16 @@
+[[_upgrading]]
+
+== Upgrading {project_name} Server
+
+include::../prep_migration.adoc[leveloffset=1]
+
+include::../install_new_version.adoc[leveloffset=1]
+
+include::../migrate_db.adoc[leveloffset=1]
+
+include::../migrate_themes.adoc[leveloffset=1]
+
+
+== Upgrading {project_name} Adapters
+
+include::../upgrade_adapters.adoc[leveloffset=1]
