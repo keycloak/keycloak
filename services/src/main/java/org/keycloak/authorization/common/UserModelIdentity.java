@@ -64,14 +64,4 @@ public class UserModelIdentity implements Identity {
         if (role == null) return false;
         return user.hasRole(role);
     }
-
-    @Override
-    public boolean hasRole(String roleName) {
-        throw new RuntimeException("Should not execute");
-    }
-
-    @Override
-    public boolean hasClientRole(String roleName) {
-        throw new RuntimeException("Should not execute");
-    }
 }
