@@ -25,6 +25,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.Retry;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -225,11 +226,13 @@ public class LogoutTest extends AbstractTestRealmKeycloakTest {
 
         adminClient.realm("test").users().get(user.getId()).logout();
 
-        user = adminClient.realm("test").users().get(user.getId()).toRepresentation();
-        Assert.assertTrue(user.getNotBefore() > 0);
+        Retry.execute(() -> {
+            UserRepresentation u = adminClient.realm("test").users().get(user.getId()).toRepresentation();
+            Assert.assertTrue(u.getNotBefore() > 0);
 
-        loginPage.open();
-        loginPage.assertCurrent();
+            loginPage.open();
+            loginPage.assertCurrent();
+        }, 10, 200);
     }
 
 }

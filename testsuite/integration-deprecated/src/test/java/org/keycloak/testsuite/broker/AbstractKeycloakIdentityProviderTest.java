@@ -48,11 +48,9 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.startsWith;
+import static org.junit.Assert.*;
 
 /**
  * @author pedroigor
@@ -470,19 +468,19 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
         // Login as pedroigor to account management
         accountFederatedIdentityPage.realm("realm-with-broker");
         accountFederatedIdentityPage.open();
-        assertTrue(driver.getTitle().equals("Log in to realm-with-broker"));
+        assertThat(driver.getTitle(), is("Log in to realm-with-broker"));
         loginPage.login("pedroigor", "password");
-        assertTrue(accountFederatedIdentityPage.isCurrent());
+        accountFederatedIdentityPage.assertCurrent();
 
         // Try to link my "pedroigor" identity with "test-user" from brokered Keycloak.
         accountFederatedIdentityPage.clickAddProvider(identityProvider.getAlias());
 
-        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8082/auth/"));
+        assertThat(this.driver.getCurrentUrl(), startsWith("http://localhost:8082/auth/"));
         this.loginPage.login("test-user", "password");
         doAfterProviderAuthentication();
 
         // Error is displayed in account management because federated identity"test-user" already linked to local account "test-user"
-        assertTrue(accountFederatedIdentityPage.isCurrent());
+        accountFederatedIdentityPage.assertCurrent();
         assertEquals("Federated identity returned by " + getProviderId() + " is already linked to another user.", accountFederatedIdentityPage.getError());
     }
 

@@ -52,7 +52,17 @@ public interface UserSessionModel {
 
     void setLastSessionRefresh(int seconds);
 
+    /**
+     * Returns map where key is ID of the client (its UUID) and value is the respective {@link AuthenticatedClientSessionModel} object.
+     * @return 
+     */
     Map<String, AuthenticatedClientSessionModel> getAuthenticatedClientSessions();
+    /**
+     * Removes authenticated client sessions for all clients whose UUID is present in {@code removedClientUUIDS} parameter.
+     * @param removedClientUUIDS
+     */
+    void removeAuthenticatedClientSessions(Iterable<String> removedClientUUIDS);
+
 
     public String getNote(String name);
     public void setNote(String name, String value);

@@ -34,8 +34,16 @@ public interface ClientModel extends RoleContainerModel,  ProtocolMapperContaine
 
     void updateClient();
 
+    /**
+     * Returns client internal ID (UUID).
+     * @return
+     */
     String getId();
 
+    /**
+     * Returns client ID as defined by the user.
+     * @return
+     */
     String getClientId();
 
     void setClientId(String clientId);

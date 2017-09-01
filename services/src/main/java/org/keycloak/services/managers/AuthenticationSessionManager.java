@@ -45,7 +45,14 @@ public class AuthenticationSessionManager {
         this.session = session;
     }
 
-
+    /**
+     * Creates a fresh authentication session for the given realm and client. Optionally sets the browser
+     * authentication session cookie {@link #AUTH_SESSION_ID} with the ID of the new session.
+     * @param realm
+     * @param client
+     * @param browserCookie Set the cookie in the browser for the
+     * @return
+     */
     public AuthenticationSessionModel createAuthenticationSession(RealmModel realm, ClientModel client, boolean browserCookie) {
         AuthenticationSessionModel authSession = session.authenticationSessions().createAuthenticationSession(realm, client);
 
@@ -57,11 +64,20 @@ public class AuthenticationSessionManager {
     }
 
 
+    /**
+     * Returns ID of current authentication session if it exists, otherwise returns {@code null}.
+     * @param realm
+     * @return
+     */
     public String getCurrentAuthenticationSessionId(RealmModel realm) {
         return getAuthSessionCookieDecoded(realm);
     }
 
-
+    /**
+     * Returns current authentication session if it exists, otherwise returns {@code null}.
+     * @param realm
+     * @return
+     */
     public AuthenticationSessionModel getCurrentAuthenticationSession(RealmModel realm) {
         String authSessionId = getAuthSessionCookieDecoded(realm);
         return authSessionId==null ? null : session.authenticationSessions().getAuthenticationSession(realm, authSessionId);
