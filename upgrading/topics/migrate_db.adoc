@@ -1,0 +1,56 @@
+[[_migrate_db]]
+
+== Migrating the Database
+
+{project_name} can automatically migrate the database schema, or you can choose to do it manually. By default the
+database is automatically migrated when you start the new installation for the first time.
+
+=== Automatic Relational Database Migration
+
+To enable automatic upgrading of the database schema, set the migrationStrategy property value to "update" for the
+default connectionsJpa provider:
+
+ <spi name="connectionsJpa">
+    <provider name="default" enabled="true">
+        <properties>
+            ...
+            <property name="migrationStrategy" value="update"/>
+        </properties>
+    </provider>
+</spi>
+
+Or run this CLI command:
+
+[source,bash]
+----
+/subsystem=keycloak-server/spi=connectionsJpa/provider=default/:map-put(name=properties,key=migrationStrategy,value=update)
+----
+
+When you start the server with this setting your database is automatically migrated if the database schema has changed
+in the new version.
+
+=== Manual Relational Database Migration
+
+To enable manual upgrading of the database schema, set the migrationStrategy property value to "manual" for the default
+connectionsJpa provider:
+
+ <spi name="connectionsJpa">
+    <provider name="default" enabled="true">
+        <properties>
+            ...
+            <property name="migrationStrategy" value="manual"/>
+        </properties>
+    </provider>
+</spi>
+
+Or run this CLI command:
+
+[source,bash]
+----
+/subsystem=keycloak-server/spi=connectionsJpa/provider=default/:map-put(name=properties,key=migrationStrategy,value=manual)
+----
+
+When you start the server with this configuration it checks if the database needs to be migrated. The required changes
+are written to an SQL file that you can review and manually run against the database. For further details on how to
+apply this file to the database, see the documentation for the relational database you’re using. After the changes have
+been written to the file, the server exits.

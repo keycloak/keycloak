@@ -1,0 +1,11 @@
+:toc:
+:toclevels: 2
+:numbered:
+
+include::topics/templates/document-attributes-product.adoc[]
+
+:upgrading_guide:
+
+= {upgradingguide_name}
+
+include::topics.adoc[]

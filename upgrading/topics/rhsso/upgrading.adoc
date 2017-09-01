@@ -1,0 +1,31 @@
+[[_upgrading]]
+
+== Upgrading {project_name} Server
+
+The upgrade process for the {project_name} server is different if you are upgrading to a different
+minor release or not.
+
+If you are upgrading to a new minor release, for example from 7.0.0 to 7.1.0, follow the steps in xref:_upgrading_minor[Minor Upgrades].
+
+If you are upgrading to a new micro release, for example from 7.1.0 to 7.1.1, follow the steps in xref:_upgrading_micro[Micro Upgrades].
+
+[[_upgrading_minor]]
+=== Minor Upgrades
+
+include::../prep_migration.adoc[leveloffset=2]
+
+include::../install_new_version.adoc[leveloffset=2]
+
+include::../migrate_db.adoc[leveloffset=2]
+
+include::../migrate_themes.adoc[leveloffset=2]
+
+[[_upgrading_micro]]
+=== Micro Upgrades
+
+include::patching-zip-installation.adoc[leveloffset=3]
+include::patching-rpm-installation.adoc[leveloffset=3]
+
+== Upgrading {project_name} Adapters
+
+include::../upgrade_adapters.adoc[leveloffset=1]

@@ -1,0 +1,70 @@
+[[_install_new_version]]
+
+== Upgrading {project_name} server
+
+It is important that you upgrade {project_name} server before upgrading the adapters.
+
+To upgrade {project_name} server, complete the following steps:
+
+. Prior to applying the upgrade, handle any open transactions and delete the data/tx-object-store/ transaction directory.
+. Download the new server archive
+. Move the downloaded archive to the desired location.
+. Extract the archive. This step installs a clean instance of the latest {project_name} release.
+. For standalone installations, copy the {project_dirref}/standalone/ directory from the previous installation over the
+  directory in the new installation.
++
+For domain installations, copy the {project_dirref}/domain/ directory from the previous installation over the directory
+in the new installation.
++
+For domain installations, create the empty directory {project_dirref}/domain/deployments.
++
+NOTE: 
+Files in the bin directory should not be overwritten by the files from previous versions. Changes should be made manually.
+
+. Copy any custom modules that have been added to the modules directory.
+. Run the applicable upgrade script below.
+
+=== Running the Standalone Mode Upgrade Script
+To run the upgrade script for standalone mode, complete the following steps:
+
+. If you are using a different configuration file than the default one, edit the migration script to specify the new file name.
+. Stop the server.
+. Run the upgrade script: 
+
+ bin/jboss-cli.sh --file=bin/migrate-standalone.cli
+
+=== Running the Standalone-High Availability Mode Upgrade Script
+For standalone-high availability (HA) mode, all instances must be upgraded at the same time.
+
+To run the upgrade script for standalone-HA mode, complete the following steps:
+
+. If you are using a different configuration file than the default one, edit the migration script to specify the new file name.
+. Stop the server.
+. Run the upgrade script: 
+
+ bin/jboss-cli.sh --file=bin/migrate-standalone-ha.cli
+
+=== Running the Domain Mode Upgrade Script
+For domain mode, all instances must be upgraded at the same time.
+
+To run the upgrade script for domain mode, complete the following steps:
+
+. If you have changed the profile name, you must edit the upgrade script to change a variable near the beginning of the script.
+. Edit the domain script to include the location of the keycloak-server.json file.
+. Stop the server.
+. Run the upgrade script on the domain controller only: 
+
+ bin/jboss-cli.sh --file=bin/migrate-domain.cli
+
+=== Running the Domain-clustered Mode Upgrade Script
+For domain-clustered mode, all instances must be upgraded at the same time. 
+
+To run the upgrade script for domain-clustered mode, complete the following steps:
+
+. If you have changed the profile name, you must edit the upgrade script to change a variable near the beginning of the script. 
+. Edit the domain-clustered script to include the location of the keycloak-server.json file.
+. Stop the server.
+. Run the upgrade script on the domain controller only: 
+
+ bin/jboss-cli.sh --file=bin/migrate-domain-clustered.cli
+
