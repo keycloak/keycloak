@@ -28,12 +28,10 @@ import java.util.Set;
 public class ResourceServerUpdatedEvent extends InvalidationEvent implements AuthorizationCacheInvalidationEvent {
 
     private String id;
-    private String clientId;
 
-    public static ResourceServerUpdatedEvent create(String id, String clientId) {
+    public static ResourceServerUpdatedEvent create(String id) {
         ResourceServerUpdatedEvent event = new ResourceServerUpdatedEvent();
         event.id = id;
-        event.clientId = clientId;
         return event;
     }
 
@@ -44,11 +42,11 @@ public class ResourceServerUpdatedEvent extends InvalidationEvent implements Aut
 
     @Override
     public String toString() {
-        return String.format("ResourceServerRemovedEvent [ id=%s, clientId=%s ]", id, clientId);
+        return String.format("ResourceServerRemovedEvent [ id=%s, clientId=%s ]", id, id);
     }
 
     @Override
     public void addInvalidations(StoreFactoryCacheManager cache, Set<String> invalidations) {
-        cache.resourceServerUpdated(id, clientId, invalidations);
+        cache.resourceServerUpdated(id, invalidations);
     }
 }

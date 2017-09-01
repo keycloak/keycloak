@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ Copyright 2017 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+    <changeSet author="keycloak" id="3.4.0-res-server-pk">
+	<!-- Data migration to change the PK of RESOURCE_SERVER to use the CLIENT_ID. -->
+        <addColumn tableName="RESOURCE_SERVER_POLICY">
+            <column name="RESOURCE_SERVER_CLIENT_ID" type="VARCHAR(36)"/>
+        </addColumn>
+        <addColumn tableName="RESOURCE_SERVER_RESOURCE">
+            <column name="RESOURCE_SERVER_CLIENT_ID" type="VARCHAR(36)"/>
+        </addColumn>
+        <addColumn tableName="RESOURCE_SERVER_SCOPE">
+            <column name="RESOURCE_SERVER_CLIENT_ID" type="VARCHAR(36)"/>
+        </addColumn>
+
+        <sql>
+            UPDATE RESOURCE_SERVER_POLICY p SET RESOURCE_SERVER_CLIENT_ID=(SELECT CLIENT_ID FROM RESOURCE_SERVER s WHERE s.ID = p.RESOURCE_SERVER_ID);
+            UPDATE RESOURCE_SERVER_RESOURCE p SET RESOURCE_SERVER_CLIENT_ID=(SELECT CLIENT_ID FROM RESOURCE_SERVER s WHERE s.ID = p.RESOURCE_SERVER_ID);
+            UPDATE RESOURCE_SERVER_SCOPE p SET RESOURCE_SERVER_CLIENT_ID=(SELECT CLIENT_ID FROM RESOURCE_SERVER s WHERE s.ID = p.RESOURCE_SERVER_ID);
+        </sql>
+
+        <addNotNullConstraint tableName="RESOURCE_SERVER_POLICY" columnName="RESOURCE_SERVER_CLIENT_ID" columnDataType="VARCHAR(36)"/>
+        <addNotNullConstraint tableName="RESOURCE_SERVER_RESOURCE" columnName="RESOURCE_SERVER_CLIENT_ID" columnDataType="VARCHAR(36)"/>
+        <addNotNullConstraint tableName="RESOURCE_SERVER_SCOPE" columnName="RESOURCE_SERVER_CLIENT_ID" columnDataType="VARCHAR(36)"/>
+
+        <dropUniqueConstraint tableName="RESOURCE_SERVER_POLICY" constraintName="UK_FRSRPT700S9V50BU18WS5HA6"/>
+        <dropUniqueConstraint tableName="RESOURCE_SERVER_RESOURCE" constraintName="UK_FRSR6T700S9V50BU18WS5HA6"/>
+        <dropUniqueConstraint tableName="RESOURCE_SERVER_SCOPE" constraintName="UK_FRSRST700S9V50BU18WS5HA6"/>
+
+        <addUniqueConstraint tableName="RESOURCE_SERVER_POLICY" constraintName="UK_FRSRPT700S9V50BU18WS5HA6" 
+            columnNames="NAME, RESOURCE_SERVER_CLIENT_ID"/>
+        <addUniqueConstraint tableName="RESOURCE_SERVER_RESOURCE" constraintName="UK_FRSR6T700S9V50BU18WS5HA6" 
+            columnNames="NAME, OWNER, RESOURCE_SERVER_CLIENT_ID"/>
+        <addUniqueConstraint tableName="RESOURCE_SERVER_SCOPE" constraintName="UK_FRSRST700S9V50BU18WS5HA6" 
+            columnNames="NAME, RESOURCE_SERVER_CLIENT_ID"/>
+
+        <dropColumn tableName="RESOURCE_SERVER_POLICY" columnName="RESOURCE_SERVER_ID"/>
+        <dropColumn tableName="RESOURCE_SERVER_RESOURCE" columnName="RESOURCE_SERVER_ID"/>
+        <dropColumn tableName="RESOURCE_SERVER_SCOPE" columnName="RESOURCE_SERVER_ID"/>
+
+        <dropPrimaryKey tableName="RESOURCE_SERVER" constraintName="CONSTRAINT_FARS"/>
+        <dropUniqueConstraint tableName="RESOURCE_SERVER" constraintName="UK_AU8TT6T700S9V50BU18WS5HA6"/>
+        <addPrimaryKey tableName="RESOURCE_SERVER" constraintName="PK_RESOURCE_SERVER" columnNames="CLIENT_ID"/>
+
+        <dropColumn tableName="RESOURCE_SERVER" columnName="ID"/>
+
+        <createIndex indexName="IDX_RES_SERV_POL_RES_SERV" tableName="RESOURCE_SERVER_POLICY">
+            <column name="RESOURCE_SERVER_CLIENT_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_RES_SRV_RES_RES_SRV" tableName="RESOURCE_SERVER_RESOURCE">
+            <column name="RESOURCE_SERVER_CLIENT_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_RES_SRV_SCOPE_RES_SRV" tableName="RESOURCE_SERVER_SCOPE">
+            <column name="RESOURCE_SERVER_CLIENT_ID" type="VARCHAR(36)"/>
+        </createIndex>
+
+        <addForeignKeyConstraint constraintName="FK_FRSRPO213XCX4WNKOG82SSRFY"
+            baseTableName="RESOURCE_SERVER_POLICY" baseColumnNames="RESOURCE_SERVER_CLIENT_ID" 
+            referencedTableName="RESOURCE_SERVER" referencedColumnNames="CLIENT_ID"/> 
+        <addForeignKeyConstraint constraintName="FK_FRSRHO213XCX4WNKOG82SSRFY" 
+            baseTableName="RESOURCE_SERVER_RESOURCE" baseColumnNames="RESOURCE_SERVER_CLIENT_ID" 
+            referencedTableName="RESOURCE_SERVER" referencedColumnNames="CLIENT_ID"/> 
+        <addForeignKeyConstraint constraintName="FK_FRSRSO213XCX4WNKOG82SSRFY"
+            baseTableName="RESOURCE_SERVER_SCOPE" baseColumnNames="RESOURCE_SERVER_CLIENT_ID" 
+            referencedTableName="RESOURCE_SERVER" referencedColumnNames="CLIENT_ID"/> 
+
+        <renameColumn tableName="RESOURCE_SERVER" oldColumnName="CLIENT_ID" newColumnName="ID"/>
+
+        <renameColumn tableName="RESOURCE_SERVER_POLICY" oldColumnName="RESOURCE_SERVER_CLIENT_ID" newColumnName="RESOURCE_SERVER_ID"/>
+        <renameColumn tableName="RESOURCE_SERVER_RESOURCE" oldColumnName="RESOURCE_SERVER_CLIENT_ID" newColumnName="RESOURCE_SERVER_ID"/>
+        <renameColumn tableName="RESOURCE_SERVER_SCOPE" oldColumnName="RESOURCE_SERVER_CLIENT_ID" newColumnName="RESOURCE_SERVER_ID"/>
+    </changeSet>
+</databaseChangeLog>

@@ -53,13 +53,13 @@ public class StoreFactoryCacheManager extends CacheManager {
         }
     }
 
-    public void resourceServerUpdated(String id, String clientId, Set<String> invalidations) {
+    public void resourceServerUpdated(String id, Set<String> invalidations) {
         invalidations.add(id);
-        invalidations.add(StoreFactoryCacheSession.getResourceServerByClientCacheKey(clientId));
+        invalidations.add(StoreFactoryCacheSession.getResourceServerByClientCacheKey(id));
     }
 
-    public void resourceServerRemoval(String id, String name, Set<String> invalidations) {
-        resourceServerUpdated(id, name, invalidations);
+    public void resourceServerRemoval(String id, Set<String> invalidations) {
+        resourceServerUpdated(id, invalidations);
 
         addInvalidations(InResourceServerPredicate.create().resourceServer(id), invalidations);
     }

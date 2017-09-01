@@ -26,7 +26,6 @@ import org.keycloak.models.AdminRoles;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.services.ForbiddenException;
 
 import java.util.HashMap;
@@ -95,7 +94,7 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
         String groupResourceName = getGroupResourceName(group);
         Resource groupResource = authz.getStoreFactory().getResourceStore().findByName(groupResourceName, server.getId());
         if (groupResource == null) {
-            groupResource = authz.getStoreFactory().getResourceStore().create(groupResourceName, server, server.getClientId());
+            groupResource = authz.getStoreFactory().getResourceStore().create(groupResourceName, server, server.getId());
             Set<Scope> scopeset = new HashSet<>();
             scopeset.add(manageScope);
             scopeset.add(viewScope);
