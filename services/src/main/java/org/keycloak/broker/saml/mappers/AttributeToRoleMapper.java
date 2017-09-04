@@ -127,7 +127,7 @@ public class AttributeToRoleMapper extends AbstractIdentityProviderMapper {
             for (AttributeStatementType.ASTChoiceType choice : statement.getAttributes()) {
                 AttributeType attr = choice.getAttribute();
                 if (name != null && !name.equals(attr.getName())) continue;
-                if (friendly != null && !name.equals(attr.getFriendlyName())) continue;
+                if (friendly != null && !friendly.equals(attr.getFriendlyName())) continue;
                 for (Object val : attr.getAttributeValue()) {
                     if (val.equals(desiredValue)) return true;
                 }
