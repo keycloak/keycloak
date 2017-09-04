@@ -1,0 +1,11 @@
+:toc:
+:toclevels: 3
+:numbered:
+
+include::topics/templates/document-attributes-product.adoc[]
+
+:api_documentation:
+
+= {apidocs_name}
+
+include::topics/overview.adoc[]

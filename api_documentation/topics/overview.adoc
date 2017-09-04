@@ -1,0 +1,9 @@
+== {project_name} API Documentation
+
+=== JavaDocs Documentation
+
+https://access.redhat.com/webassets/avalon/d/red-hat-single-sign-on/version-{project_versionDoc}/javadocs/[Red Hat Single Sign-On Javadocs]
+
+=== REST API Documentation
+
+https://access.redhat.com/webassets/avalon/d/red-hat-single-sign-on/version-{project_versionDoc}/restapi/[Red Hat Single Sign-On REST API Documentation]
