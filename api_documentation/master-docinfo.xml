@@ -1,5 +1,5 @@
 <productname>{project_name}</productname>
-<productnumber>{book_project_doc_info_version_url}</productnumber>
+<productnumber>{project_versionDoc}</productnumber>
 <subtitle>For Use with {project_name} {project_versionDoc}</subtitle>
 <title>{apidocs_name}</title>
 <release>{project_versionDoc}</release>

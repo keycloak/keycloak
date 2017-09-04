@@ -1,7 +1,0 @@
-:book_product: true
-:book_title: API Documentation
-:book_community: false
-:book_project_doc_base_url: https://access.redhat.com/documentation/en/red-hat-single-sign-on/
-:book_project_doc_info_version_url: 7.1
-:book_project_version: 7.1.0
-:book_project_name: Red Hat Single Sign-On
