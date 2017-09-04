@@ -1,0 +1,36 @@
+
+==== PayPal
+
+There are a number of steps you have to complete to be able to login to PayPal.  First, go to the `Identity Providers` left menu item
+and select `PayPal` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
+
+.Add Identity Provider
+image:{project_images}/paypal-add-identity-provider.png[]
+
+You can't click save yet, as you'll need to obtain a `Client ID` and `Client Secret` from PayPal.  One piece of data you'll need from this
+page is the `Redirect URI`.  You'll have to provide that to PayPal when you register {project_name} as a client there, so
+copy this URI to your clipboard.
+
+To enable login with PayPal you first have to register an application project in
+https://developer.paypal.com/developer/applications[PayPal Developer applications].
+
+.Add a New App
+image:images/paypal-developer-applications.png[]
+
+Click the `Create App` button.
+
+.Register App
+image:images/paypal-register-app.png[]
+
+You will now be brought to the app settings page.
+
+==== Do the following changes:
+
+- Choose to configure either Sandbox or Live (choose Live if you haven't enabled the `Target Sandbox` switch on the `Add identity provider` page)
+- Copy Client ID and Secret so you can paste them into the {project_name} `Add identity provider` page.
+- Scroll down to `App Settings`
+- Copy the `Redirect URI` from the {project_name} `Add Identity Provider` page and enter it into the `Return URL` field.
+- Check the `Log In with PayPal` checkbox.
+- Check the `Full name` checkbox under the personal information section.
+- Check the `Email address` checkbox under the address information section.
+- Add both a privacy and a user agreement URL pointing to the respective pages on your domain.
