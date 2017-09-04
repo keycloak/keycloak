@@ -118,7 +118,7 @@
       "decisionStrategy": "UNANIMOUS",
       "config": {
         "applyPolicies": "[]",
-        "code": "var context = $evaluation.getContext();\nvar identity = context.getIdentity();\nvar attributes = identity.getAttributes();\nvar email = attributes.getValue('email').asString(0);\n\nif (identity.hasRole('admin') || email.endsWith('@keycloak.org')) {\n    $evaluation.grant();\n}"
+        "code": "var context = $evaluation.getContext();\nvar identity = context.getIdentity();\nvar attributes = identity.getAttributes();\nvar email = attributes.getValue('email').asString(0);\n\nif (identity.hasRealmRole('admin') || email.endsWith('@keycloak.org')) {\n    $evaluation.grant();\n}"
       }
     },
     {
