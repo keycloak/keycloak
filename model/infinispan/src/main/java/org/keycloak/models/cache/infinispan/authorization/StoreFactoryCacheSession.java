@@ -509,8 +509,9 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         @Override
         public Resource create(String name, ResourceServer resourceServer, String owner) {
             Resource resource = getResourceStoreDelegate().create(name, resourceServer, owner);
+            Resource cached = findById(resource.getId(), resourceServer.getId());
             registerResourceInvalidation(resource.getId(), resource.getName(), resource.getType(), resource.getUri(), resource.getScopes().stream().map(scope -> scope.getId()).collect(Collectors.toSet()), resourceServer.getId(), resource.getOwner());
-            return resource;
+            return cached;
         }
 
         @Override
