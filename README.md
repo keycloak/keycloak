@@ -9,13 +9,13 @@ For more information about Keycloak visit [Keycloak homepage](http://keycloak.or
 Building Keycloak Documentation
 -------------------------------
 
-Ensure you have [Maven installed](https://maven.apache.org/)
+Ensure that you have [Maven installed](https://maven.apache.org/).
 
-First clone the Keycloak Documentation repository:
-    
+First, clone the Keycloak Documentation repository:
+
     git clone https://github.com/keycloak/keycloak-documentation.git
     cd keycloak-documentation
-    
+
 To build Keycloak Documentation run:
 
     mvn clean install
@@ -23,7 +23,7 @@ To build Keycloak Documentation run:
 Or to build a specific guide run:
 
     mvn clean install -f GUIDE_DIR
-    
+
 You can then view the documentation by opening GUIDE_DIR/target/frames.html or GUIDE_DIR/target/index.html.
 
 
