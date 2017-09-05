@@ -1,0 +1,24 @@
+<div ng-class="node_class()">
+  <div class="directory-level" ng-click="wrap_node_click()">
+    <img class="icon" ng-src="{{ resolve_icon() }}">
+    <span>{{ adapter(item).text }}</span>
+    <div class="operation" ng-click="$event.stopPropagation()">
+      <a href class="add" ng-click="add_child()" ng-if="adapter(item).type==='branch'">
+        <img ng-src="{{ add_btn }}">
+      </a>
+      <a href class="remove" ng-click="remove_self()">
+        <img ng-src="{{ remove_btn }}">
+      </a>
+      <a href class="edit" ng-click="edit()">
+        <span class="glyphicon glyphicon-edit"></span>
+      </a>
+    </div>
+  </div>
+  <div class="sub-node" ng-if="open" ng-repeat="node in subNodes">
+    <tree-node item="node" adapter="adapter" icon="icon"
+               folder-open="folderOpen" folder-close="folderClose"
+               node-click="nodeClick" children-loader="childrenLoader"
+               add-item="addItem" remove-item="removeItem" edit-item="editItem">
+    </tree-node>
+  </div>
+</div>
