@@ -53,7 +53,7 @@
 :appserver_loadbalancer_link: {appserver_doc_base_url}/High+Availability+Guide
 :appserver_loadbalancer_name: {appserver_name} {appserver_version} Documentation
 
-:fuseVersion: JBoss Fuse 6.3.0 Rollup 1
+:fuseVersion: JBoss Fuse 6.3.0 Rollup 5
 
 :subsystem_undertow_xml_urn: urn:jboss:domain:undertow:3.1
 :saml_adapter_xsd_urn: http://www.keycloak.org/schema/keycloak_saml_adapter_1_9.xsd
