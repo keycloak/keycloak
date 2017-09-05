@@ -134,6 +134,10 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
 
         HttpFacade facade = new SimpleHttpFacade(request, response);
         KeycloakDeployment deployment = adapterDeploymentContext.resolveDeployment(facade);
+
+        // using Spring authenticationFailureHandler
+        deployment.setDelegateBearerErrorResponseSending(true);
+
         AdapterTokenStore tokenStore = adapterTokenStoreFactory.createAdapterTokenStore(deployment, request);
         RequestAuthenticator authenticator
                 = new SpringSecurityRequestAuthenticator(facade, request, deployment, tokenStore, -1);
