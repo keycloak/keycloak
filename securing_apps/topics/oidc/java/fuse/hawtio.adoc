@@ -10,7 +10,7 @@ To secure the Hawtio Administration Console with {project_name}, complete the fo
 ----
 hawtio.keycloakEnabled=true
 hawtio.realm=keycloak
-hawtio.keycloakClientConfig=${karaf.base}/etc/keycloak-hawtio-client.json
+hawtio.keycloakClientConfig=file://${karaf.base}/etc/keycloak-hawtio-client.json
 hawtio.rolePrincipalClasses=org.keycloak.adapters.jaas.RolePrincipal,org.apache.karaf.jaas.boot.principal.RolePrincipal
 ----
 

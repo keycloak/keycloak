@@ -55,7 +55,7 @@
 :appserver_managementcli_link: https://access.redhat.com/documentation/en-us/red_hat_jboss_enterprise_application_platform/7.0/html-single/configuration_guide/#management_cli_overview
 :appserver_managementconsole_link: https://access.redhat.com/documentation/en-us/red_hat_jboss_enterprise_application_platform/7.0/html-single/configuration_guide/#management_console_overview
 
-:fuseVersion: JBoss Fuse 6.3.0 Rollup 1
+:fuseVersion: JBoss Fuse 6.3.0 Rollup 5
 
 :subsystem_undertow_xml_urn: urn:jboss:domain:undertow:3.1
 :saml_adapter_xsd_urn: http://www.keycloak.org/schema/keycloak_saml_adapter_1_9.xsd
