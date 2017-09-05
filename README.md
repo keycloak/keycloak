@@ -11,7 +11,7 @@ Building Keycloak Documentation
 
 Ensure that you have [Maven installed](https://maven.apache.org/).
 
-First clone the Keycloak Documentation repository:
+First, clone the Keycloak Documentation repository:
 
     git clone https://github.com/keycloak/keycloak-documentation.git
     cd keycloak-documentation
