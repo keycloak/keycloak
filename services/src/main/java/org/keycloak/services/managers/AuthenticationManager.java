@@ -463,9 +463,13 @@ public class AuthenticationManager {
         }
 
         // Update userSession note with authTime. But just if flag SSO_AUTH is not set
-        if (!isSSOAuthentication(clientSession)) {
+        boolean isSSOAuthentication = "true".equals(session.getAttribute(SSO_AUTH));
+        if (isSSOAuthentication) {
+            clientSession.setNote(SSO_AUTH, "true");
+        } else {
             int authTime = Time.currentTime();
             userSession.setNote(AUTH_TIME, String.valueOf(authTime));
+            clientSession.removeNote(SSO_AUTH);
         }
 
         return protocol.authenticated(userSession, clientSession);

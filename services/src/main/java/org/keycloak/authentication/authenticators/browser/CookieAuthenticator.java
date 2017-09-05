@@ -51,7 +51,7 @@ public class CookieAuthenticator implements Authenticator {
             if (protocol.requireReauthentication(authResult.getSession(), clientSession)) {
                 context.attempted();
             } else {
-                clientSession.setClientNote(AuthenticationManager.SSO_AUTH, "true");
+                context.getSession().setAttribute(AuthenticationManager.SSO_AUTH, "true");
 
                 context.setUser(authResult.getUser());
                 context.attachUserSession(authResult.getSession());
