@@ -56,20 +56,20 @@ features:install keycloak
 +
 Note that the user needs to have the proper realm role to successfully authenticate to Hawtio. The available roles are configured in the `$FUSE_HOME/etc/system.properties` file in `hawtio.roles`.
 
-====== Securing Hawtio on {hawtioEAPVersion}
+====== Securing Hawtio on {fuseHawtioEAPVersion}
 
-To run Hawtio on the {hawtioEAPVersion} server, complete the following steps:
+To run Hawtio on the {fuseHawtioEAPVersion} server, complete the following steps:
 
 . Set up {project_name} as described in the previous section, Securing the Hawtio Administration Console. It is assumed that:
 * you have a {project_name} realm `demo` and client `hawtio-client`
 * your {project_name} is running on `localhost:8080`
-* the {hawtioEAPVersion} server with deployed Hawtio will be running on `localhost:8181`. The directory with this server is referred in next steps as `$EAP_HOME`.
+* the {fuseHawtioEAPVersion} server with deployed Hawtio will be running on `localhost:8181`. The directory with this server is referred in next steps as `$EAP_HOME`.
 
-. Copy the `{hawtioWARVersion}` archive to the `$EAP_HOME/standalone/configuration` directory. For more details about deploying Hawtio see the https://access.redhat.com/documentation/en-us/red_hat_jboss_fuse/6.3/html-single/deploying_into_a_web_server/eapcamelsubsystem#idm140313338064000[Fuse Hawtio documentation].
+. Copy the `{fuseHawtioWARVersion}` archive to the `$EAP_HOME/standalone/configuration` directory. For more details about deploying Hawtio see the https://access.redhat.com/documentation/en-us/red_hat_jboss_fuse/6.3/html-single/deploying_into_a_web_server/[Fuse Hawtio documentation].
 
 . Copy the `keycloak-hawtio.json` and `keycloak-hawtio-client.json` files with the above content to the `$EAP_HOME/standalone/configuration` directory.
 
-. Install the {project_name} adapter subsystem to your {hawtioEAPVersion} server as described in the <<_jboss_adapter,JBoss adapter documentation>>.
+. Install the {project_name} adapter subsystem to your {fuseHawtioEAPVersion} server as described in the <<_jboss_adapter,JBoss adapter documentation>>.
 
 . In the `$EAP_HOME/standalone/configuration/standalone.xml` file configure the system properties as in this example:
 +
@@ -109,11 +109,11 @@ To run Hawtio on the {hawtioEAPVersion} server, complete the following steps:
 [source,xml,options="nowrap",subs="attributes+"]
 ----
 <subsystem xmlns="urn:jboss:domain:keycloak:1.1">
-    <secure-deployment name="{hawtioWARVersion}" />
+    <secure-deployment name="{fuseHawtioWARVersion}" />
 </subsystem>
 ----
 
-. Restart the {hawtioEAPVersion} server with Hawtio:
+. Restart the {fuseHawtioEAPVersion} server with Hawtio:
 +
 [source,xml]
 ----

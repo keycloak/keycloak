@@ -1,10 +1,10 @@
 :project_name: Keycloak
 :project_community: true
 :project_product: false
-:project_version: 3.3.0.CR1
-:project_versionMvn: 3.3.0.CR1
-:project_versionNpm: 3.3.0-cr.1
-:project_versionDoc: 3.3
+:project_version: 3.4.0.CR1
+:project_versionMvn: 3.4.0.CR1
+:project_versionNpm: 3.4.0-cr.1
+:project_versionDoc: 3.4
 :project_images: keycloak-images
 :project_doc_base_url: http://www.keycloak.org/docs/{project_versionDoc}
 :project_dirref: KEYCLOAK_HOME
@@ -20,7 +20,7 @@
 :adminguide_name: Server Administration Guide
 :adminguide_link: {project_doc_base_url}/server_admin/
 :apidocs_name: API Documentation
-:apidocs_link: {project_doc_base_url}/api-documentation/
+:apidocs_link: {project_doc_base_url}/api_documentation/
 :developerguide_name: Server Developer Guide
 :developerguide_link: {project_doc_base_url}/server_development/
 :gettingstarted_name: Getting Started Guide
@@ -30,7 +30,12 @@
 :installguide_name: Server Installation and Configuration Guide
 :installguide_link: {project_doc_base_url}/server_installation/
 :installguide_profile_name: Profiles
-:installguide_profile_link: {installguide_link}/#profiles
+:installguide_profile_link: {installguide_link}#_profiles
+
+:apidocs_javadocs_name: JavaDocs Documentation
+:apidocs_javadocs_link: http://www.keycloak.org/docs-api/{project_versionDoc}/javadocs/
+:apidocs_adminrest_name: Administration REST API
+:apidocs_adminrest_link: http://www.keycloak.org/docs-api/{project_versionDoc}/rest-api/
 
 :appserver_name: WildFly
 :appserver_dirref: WILDFLY_HOME
@@ -54,6 +59,8 @@
 :appserver_loadbalancer_name: {appserver_name} {appserver_version} Documentation
 
 :fuseVersion: JBoss Fuse 6.3.0 Rollup 5
+:fuseHawtioEAPVersion: JBoss EAP 6.4
+:fuseHawtioWARVersion: hawtio-wildfly-1.4.0.redhat-630254.war
 
 :subsystem_undertow_xml_urn: urn:jboss:domain:undertow:3.1
 :saml_adapter_xsd_urn: http://www.keycloak.org/schema/keycloak_saml_adapter_1_9.xsd

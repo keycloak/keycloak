@@ -24,7 +24,7 @@ Object getResource();
 
 ----
 
-which allows you to return an object, which acts as a https://jax-rs-spec.java.net/[JAX-RS Resource]. For more details, see the Javadoc and our examples.
+which allows you to return an object, which acts as a https://github.com/jax-rs[JAX-RS Resource]. For more details, see the Javadoc and our examples.
 There is a very simple example in the example distribution in `providers/rest` and there is a more advanced example in `providers/domain-extension`,
 which shows how to add an authenticated REST endpoint and other functionalities like <<extensions.adoc#_extensions_spi,Adding your own SPI>>
 or <<extensions.adoc#_extensions_jpa,Extending datamodel with your own JPA entities>>.

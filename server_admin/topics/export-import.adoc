@@ -14,8 +14,8 @@ You can export/import your database either to:
 When importing using the directory strategy, note that the files need to follow the naming convention specified below.
 If you are importing files which were previously exported, the files already follow this convention.
 
-* {REALM_NAME}-realm.json, such as "acme-roadrunner-affairs-realm.json" for the realm named "acme-roadrunner-affairs"
-* {REALM_NAME}-users-{INDEX}.json, such as "acme-roadrunner-affairs-users-0.json" for the first users file of the realm named "acme-roadrunner-affairs"
+* <REALM_NAME>-realm.json, such as "acme-roadrunner-affairs-realm.json" for the realm named "acme-roadrunner-affairs"
+* <REALM_NAME>-users-<INDEX>.json, such as "acme-roadrunner-affairs-users-0.json" for the first users file of the realm named "acme-roadrunner-affairs"
 
 If you export to a directory, you can also specify the number of users that will be stored in each JSON file.
 

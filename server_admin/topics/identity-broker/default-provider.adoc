@@ -1,4 +1,4 @@
-[[_default_identity_provider]]
+[[default_identity_provider]]
 
 === Default Identity Provider
 

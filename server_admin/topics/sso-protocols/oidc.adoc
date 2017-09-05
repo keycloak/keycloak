@@ -80,6 +80,7 @@ the credentials of the user as well as the id of the client and the client's sec
 are sent within form parameters.  The HTTP response contains
 _identity_, _access_, and _refresh_ tokens.
 
+[[_client_credentials_grant]]
 ===== Client Credentials Grant
 
 This is also used by REST clients, but instead of obtaining a token that works on behalf
@@ -92,14 +93,14 @@ Here's a list of OIDC endpoints that the {project_name} publishes.  These URLs a
 talk OIDC with the auth server.  These are all relative URLs and the root of the URL being the HTTP(S) protocol, hostname, and usually path prefixed with
 _/auth_:  i.e. $$https://localhost:8080/auth$$
 
-/realms/\{realm-name}/protocol/openid-connect/token::
+/realms/{realm-name}/protocol/openid-connect/token::
   This is the URL endpoint for obtaining a temporary code in the Authorization Code Flow or for obtaining tokens via the
   Implicit Flow, Direct Grants, or Client Grants.
-/realms/\{realm-name}/protocol/openid-connect/auth::
+/realms/{realm-name}/protocol/openid-connect/auth::
   This is the URL endpoint for the Authorization Code Flow to turn a temporary code into a token.
 /realms/{realm-name}/protocol/openid-connect/logout::
   This is the URL endpoint for performing logouts.
-/realms/\{realm-name}/protocol/openid-connect/userinfo::
+/realms/{realm-name}/protocol/openid-connect/userinfo::
   This is the URL endpoint for the User Info service described in the OIDC specification.
 
-In all of these replace _\{realm-name}_ with the name of the realm.
+In all of these replace _{realm-name}_ with the name of the realm.

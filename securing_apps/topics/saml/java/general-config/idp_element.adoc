@@ -30,5 +30,5 @@ signatureAlgorithm::
   and defaults to `RSA_SHA256`.
 signatureCanonicalizationMethod::
   This is the signature canonicalization method that the IDP expects signed documents to use.  This setting is  _OPTIONAL_.
-  The default value is `http://www.w3.org/2001/10/xml-exc-c14n#` and should be good for most IDPs.         
+  The default value is `\http://www.w3.org/2001/10/xml-exc-c14n#` and should be good for most IDPs.
 

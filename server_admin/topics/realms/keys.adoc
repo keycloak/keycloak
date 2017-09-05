@@ -1,4 +1,4 @@
-[[_realm_keys]]
+[[realm_keys]]
 === Realm Keys
 
 The authentication protocols that are used by {project_name} require cryptographic signatures and sometimes

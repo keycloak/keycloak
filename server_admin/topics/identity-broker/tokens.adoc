@@ -12,7 +12,7 @@ To retrieve a token for a particular identity provider you need to send a reques
 ----
 GET /auth/realms/{realm}/broker/{provider_alias}/token HTTP/1.1
 Host: localhost:8080
-Authorization: Bearer {keycloak_access_token}
+Authorization: Bearer <KEYCLOAK ACCESS TOKEN>
 ----
 
 An application must have authenticated with {project_name} and have received an access token.  This access token

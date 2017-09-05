@@ -60,7 +60,7 @@ This is used most often for REST or SOAP-based clients.
 
 {project_name} really only has one endpoint for all SAML requests.
 
-`http(s)://authserver.host/auth/realms/\{realm-name}/protocol/saml`
+`http(s)://authserver.host/auth/realms/{realm-name}/protocol/saml`
 
 All bindings use this endpoint.
 

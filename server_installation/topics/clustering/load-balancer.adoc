@@ -114,8 +114,8 @@ Then add a new `socket-binding` element to the `socket-binding-group` element:
 ==== Verify Configuration
 
 You can verify the reverse proxy or load balancer configuration by opening the path `/auth/realms/master/.well-known/openid-configuration`
-through the reverse proxy. For example if the reverse proxy address is `https://acme.com/` then open the URL
-`https://acme.com/auth/realms/master/.well-known/openid-configuration`. This will show a JSON document listing a number
+through the reverse proxy. For example if the reverse proxy address is `\https://acme.com/` then open the URL
+`\https://acme.com/auth/realms/master/.well-known/openid-configuration`. This will show a JSON document listing a number
 of endpoints for {project_name}. Make sure the endpoints starts with the address (scheme, domain and port) of your
 reverse proxy or load balancer. By doing this you make sure that {project_name} is using the correct endpoint.
 

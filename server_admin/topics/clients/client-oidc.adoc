@@ -60,7 +60,7 @@ This defines the type of the OIDC client.
 
 _confidential_::
   Confidential access type is for server-side clients that need to perform a browser login and require a client secret when they turn an access code into an access token,
-  (see http://tools.ietf.org/html/rfc6749#section-4.1.3[Access Token Request] in the OAuth 2.0 spec for more details). This type should be used for server-side applications.
+  (see https://tools.ietf.org/html/rfc6749#section-4.1.3[Access Token Request] in the OAuth 2.0 spec for more details). This type should be used for server-side applications.
 
 _public_::
   Public access type is for client-side clients that need to perform a browser login. With a client-side application there is no way to keep a secret safe. Instead it is very important to restrict  access by configuring correct redirect URIs for the client.

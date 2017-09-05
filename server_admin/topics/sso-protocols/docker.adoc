@@ -21,5 +21,5 @@ NOTE: This flow assumes that a `docker login` command has already been performed
 
 {project_name} really only has one endpoint for all Docker auth v2 requests.
 
-`http(s)://authserver.host/auth/realms/\{realm-name}/protocol/docker-v2`
+`http(s)://authserver.host/auth/realms/{realm-name}/protocol/docker-v2`
 

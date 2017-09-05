@@ -773,7 +773,7 @@ For more details about {project_name} adapter and OAuth2 flows see link:{adapter
 Actually Keycloak has 2 builtin implementations of client authentication: 
 
 Traditional authentication with client_id and client_secret::
-  This is default mechanism mentioned in the http://openid.net/specs/openid-connect-core-1_0.html[OpenID Connect]                                or http://tools.ietf.org/html/rfc6749[OAuth2] specification and Keycloak supports it since it's early days.
+  This is default mechanism mentioned in the http://openid.net/specs/openid-connect-core-1_0.html[OpenID Connect]                                or https://tools.ietf.org/html/rfc6749[OAuth2] specification and Keycloak supports it since it's early days.
   The public client needs to include `client_id` parameter with it's ID in the POST request (so it's defacto not authenticated) and the confidential client needs to include `Authorization: Basic` header with the clientId and clientSecret used as username and password. 
 
 Authentication with signed JWT::

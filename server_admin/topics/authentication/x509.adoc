@@ -137,15 +137,15 @@ If set to `REQUESTED`, the server will optionally ask for a client certificate. 
 * Using the drop down, select the copied flow, and click on "Add Execution"
 * Select "X509/Validate User Form" using the drop down and click on "Save"  
 
-image:{project_images}/x509-execution.png[]
+image:images/x509-execution.png[]
 
 * Using the up/down arrows, change the order of the "X509/Validate Username Form" by moving it above the "Browser Forms" execution, and set the requirement to "ALTERNATIVE"
 
-image:{project_images}/x509-browser-flow.png[]
+image:images/x509-browser-flow.png[]
 
 #### Configuring X.509 Client Certificate Authentication
 
-image:{project_images}/x509-configuration.png[]
+image:images/x509-configuration.png[]
 
 `User Identity Source`::
 Defines how to extract the user identity from a client certificate.
@@ -190,11 +190,11 @@ If set, X.509 client certificate authentication will not prompt the user to conf
 * Delete "Validate Username" and "Password" authenticators,
 * Click on "Execution" and add "X509/Validate Username" and click on "Save" to add the execution step to the parent flow.
 
-image:{project_images}/x509-directgrant-execution.png[]
+image:images/x509-directgrant-execution.png[]
 
 * Change the `Requirement` to _REQUIRED_.
 
-image:{project_images}/x509-directgrant-flow.png[]
+image:images/x509-directgrant-flow.png[]
 
 * Set up the x509 authentication configuration by following the steps described earlier in the x.509 Browser Flow section. 
 

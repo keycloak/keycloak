@@ -188,7 +188,7 @@ These libraries are now only added to your deployment if you have Keycloak authe
 
 ==== Client Registration service endpoints moved
 
-The Client Registration service endpoints have been moved from `{realm}/clients` to `{realm}/clients-registrations`.
+The Client Registration service endpoints have been moved from `{realm-name}/clients` to `{realm-name}/clients-registrations`.
 
 ==== Session state parameter in authentication response renamed
 
@@ -225,17 +225,16 @@ Keycloak SAML SP Client Adapter now requires a specific endpoint, `/saml` to be 
 
 In previous releases we shipped with a default admin user with a default password, this has now been removed.
 If you are doing a new installation of 1.8 you will have to create an admin user as a first step.
-This can be done easily by following the steps in <<_create_admin_user,Admin User>>.
 
 ==== OAuth2 Token Introspection
 
 In order to add more compliance with OAuth2 specification, we added a new endpoint for token introspection.
-The new endpoint can reached at `/realms/{realm}/protocols/openid-connect/token/introspect` and it is solely based on `RFC-7662.`
+The new endpoint can reached at `/realms/{realm-name}/protocols/openid-connect/token/introspect` and it is solely based on `RFC-7662.`
 
-The `/realms/{realm}/protocols/openid-connect/validate` endpoint is now deprecated and we strongly recommend you to move to the new introspection endpoint as soon as possible.
+The `/realms/{realm-name}/protocols/openid-connect/validate` endpoint is now deprecated and we strongly recommend you to move to the new introspection endpoint as soon as possible.
 The reason for this change is that RFC-7662 provides a more standard and secure introspection endpoint.
 
-The new token introspection URL can now be obtained from OpenID Connect Provider's configuration at `/realms/{realm}/.well-known/openid-configuration`.
+The new token introspection URL can now be obtained from OpenID Connect Provider's configuration at `/realms/{realm-name}/.well-known/openid-configuration`.
 There you will find a claim with name `token_introspection_endpoint` within the response.
 Only `confidential clients` are allowed to invoke the new endpoint, where these clients will be usually acting as a resource server and looking for token metadata in order to perform local authorization checks.
 
@@ -370,7 +369,7 @@ There are now 3 separate adapter downloads for WildFly, JBoss EAP and JBoss AS7:
 Make sure you grab the correct one.
 
 You also need to update standalone.xml as the extension module and subsystem definition has changed.
-See <<_jboss_adapter_installation,Adapter Installation>> for details.
+See link:{adapterguide_link}[{adapterguide_name] for details.
 
 === Migrating from 1.2.0.Beta1 to 1.2.0.RC1
 
@@ -414,7 +413,7 @@ If you're using another library (or RSATokenVerifier) you need to make the corre
 
 To comply with OpenID Connect specification the authentication and token endpoints have been changed to having a single authentication endpoint and a single token endpoint.
 As per-spec `response_type` and `grant_type` parameters are used to select the required flow.
-The old endpoints (`/realms/{realm}/protocols/openid-connect/login`, `/realms/{realm}/protocols/openid-connect/grants/access`, `/realms/{realm}/protocols/openid-connect/refresh`, `/realms/{realm}/protocols/openid-connect/access/codes)` are now deprecated and will be removed in a future version.
+The old endpoints (`/realms/{realm-name}/protocols/openid-connect/login`, `/realms/{realm-name}/protocols/openid-connect/grants/access`, `/realms/{realm-name}/protocols/openid-connect/refresh`, `/realms/{realm-name}/protocols/openid-connect/access/codes)` are now deprecated and will be removed in a future version.
 
 ==== Theme changes
 
@@ -425,20 +424,19 @@ This change was done to make it easier to have group the different types for the
 
 If you deployed themes as a JAR in the past you had to create a custom theme loader which required Java code.
 This has been simplified to only requiring a plain text file (`META-INF/keycloak-themes.json`) to describe the themes included in a JAR.
-See the <<_themes,themes>> section in the docs for more information.
 
 ==== Claims changes
 
 Previously there was `Claims` tab in admin console for application and OAuth clients.
 This was used to configure which attributes should go into access token for particular application/client.
-This was removed and replaced with <<_mappers,Protocol mappers>>, which are more flexible.
+This was removed and replaced with protocol mappers which are more flexible.
 
 You don't need to care about migration of database from previous version.
 We did migration scripts for both RDBMS and Mongo, which should ensure that claims configured for particular application/client will be converted into corresponding protocol mappers (Still it's safer to backup DB before migrating to newer version though). Same applies for exported JSON representation from previous version.
 
 ==== Social migration to identity brokering
 
-We refactored social providers SPI and replaced it with <<_identity_broker,identity brokering SPI>>, which is more flexible.
+We refactored social providers SPI and replaced it with Identity Brokering SPI, which is more flexible.
 The `Social` tab in admin console is renamed to `Identity Provider` tab.
 
 Again you don't need to care about migration of database from previous version similarly like for Claims/protocol mappers.
@@ -448,12 +446,6 @@ Only required action from you would be to change allowed `Redirect URI` in the a
 You can first go to the Keycloak admin console and copy Redirect URI from the page where you configure the identity provider.
 Then you can simply paste this as allowed Redirect URI to the admin console of 3rd party provider (IE.
 Facebook admin console).
-
-=== Migrating from 1.1.0.Beta2 to 1.1.0.Final
-
-* WEB-INF/lib
-+`standalone/configuration/providers`<<_providers,+providers>>
-
 
 === Migrating from 1.1.0.Beta1 to 1.1.0.Beta2
 

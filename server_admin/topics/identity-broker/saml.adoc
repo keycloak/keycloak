@@ -62,7 +62,7 @@ You must define the SAML configuration options as well.  They basically describe
 
 
 You can also import all this configuration data by providing a URL or file that points to the SAML IDP entity descriptor of the external IDP.
-If you are connecting to a {project_name} external IDP, you can import the IDP setttings from the url `<root>/auth/realms/\{realm-name}/protocol/saml/descriptor`.
+If you are connecting to a {project_name} external IDP, you can import the IDP setttings from the url `<root>/auth/realms/{realm-name}/protocol/saml/descriptor`.
 This link is an XML document describing metadata about the IDP.
 
 

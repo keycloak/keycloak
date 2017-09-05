@@ -11,7 +11,7 @@ You can't click save yet, as you'll need to obtain a `Client ID` and `Client Sec
 page is the `Redirect URI`.  You'll have to provide that to LinkedIn when you register {project_name} as a client there, so
 copy this URI to your clipboard.
 
-To enable login with LinkedIn you first have to create an application in https://www.linkedin.com/secure/developer[LinkedIn Developer Network].
+To enable login with LinkedIn you first have to create an application in https://www.linkedin.com/developer/apps[LinkedIn Developer Network].
 
 NOTE: LinkedIn may change the look and feel of application registration, so these directions may not always be up to date.
 

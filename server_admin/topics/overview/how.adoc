@@ -2,7 +2,7 @@
 === How Does Security Work?
 
 {project_name} is a separate server that you manage on your network.  Applications are configured to point to and
-be secured by this server.  {project_name} uses open protocol standards like link:http://openid.net/connect[Open ID Connect]
+be secured by this server.  {project_name} uses open protocol standards like link:http://openid.net/connect/[Open ID Connect]
 or link:http://saml.xml.org/saml-specifications[SAML 2.0] to secure
 your applications.  Browser applications redirect a user's browser from the application to the {project_name} authentication
 server where they enter their credentials.  This is important because users are completely isolated from applications and

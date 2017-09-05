@@ -26,7 +26,7 @@ image:{project_images}/recaptcha-config.png[]
 The final step you have to do is to change some default HTTP response headers that {project_name} sets.  {project_name}
 will prevent a website from including any login page within an iframe.  This is to prevent clickjacking attacks.  You need to
 authorize Google to use the registration page within an iframe.  Go to
-the `Realm Settings` left menu item and then go to the `Security Defenses` tab.  You will need to add `https://www.google.com` to the
+the `Realm Settings` left menu item and then go to the `Security Defenses` tab.  You will need to add `\https://www.google.com` to the
 values of both the `X-Frame-Options` and `Content-Security-Policy` headers.
 
 .Authorizing Iframes
