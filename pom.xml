@@ -99,6 +99,7 @@
                                     <idprefix/>
                                     <idseparator>-</idseparator>
                                     <docinfo1>true</docinfo1>
+                                    <masterFile>${masterFile}</masterFile>
                                 </attributes>
                                 <resources>
                                     <resource>
