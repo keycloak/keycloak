@@ -37,8 +37,10 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -110,8 +112,7 @@ public class AccountRestServiceTest extends AbstractTestRealmKeycloakTest {
 
         assertEquals(1, user.getAttributes().size());
         assertEquals(2, user.getAttributes().get("attr2").size());
-        assertEquals("val2", user.getAttributes().get("attr2").get(0));
-        assertEquals("val3", user.getAttributes().get("attr2").get(1));
+        assertThat(user.getAttributes().get("attr2"), containsInAnyOrder("val2", "val3"));
 
         // Update email
         user.setEmail("bobby@localhost");
