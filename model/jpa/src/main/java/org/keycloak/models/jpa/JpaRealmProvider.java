@@ -17,6 +17,7 @@
 
 package org.keycloak.models.jpa;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.util.JpaUtils;
@@ -343,8 +344,12 @@ public class JpaRealmProvider implements RealmProvider {
     }
 
     @Override
-    public Long getGroupsCount(RealmModel realm) {
-        Long count = em.createNamedQuery("getGroupCount", Long.class)
+    public Long getGroupsCount(RealmModel realm, Boolean onlyTopGroups) {
+        String query = "getGroupCount";
+        if(Objects.equals(onlyTopGroups, Boolean.TRUE)) {
+            query = "getTopLevelGroupCount";
+        }
+        Long count = em.createNamedQuery(query, Long.class)
                 .setParameter("realm", realm.getId())
                 .getSingleResult();
 
@@ -581,7 +586,7 @@ public class JpaRealmProvider implements RealmProvider {
 
     @Override
     public List<GroupModel> searchForGroupByName(RealmModel realm, String search, Integer first, Integer max) {
-        TypedQuery<String> query = em.createNamedQuery("getGroupIdsByNameContaining", String.class)
+        TypedQuery<String> query = em.createNamedQuery("getTopLevelGroupIdsByNameContaining", String.class)
                 .setParameter("realm", realm.getId())
                 .setParameter("search", search);
         if(Objects.nonNull(first) && Objects.nonNull(max)) {

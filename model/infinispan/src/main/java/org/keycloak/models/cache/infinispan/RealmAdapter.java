@@ -1213,8 +1213,8 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
-    public Long getGroupsCount() {
-        return cacheSession.getGroupsCount(this);
+    public Long getGroupsCount(Boolean onlyTopGroups) {
+        return cacheSession.getGroupsCount(this, onlyTopGroups);
     }
 
     @Override
