@@ -17,6 +17,8 @@
 
 package org.keycloak.models.jpa;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
+import org.apache.commons.codec.binary.StringUtils;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.util.JpaUtils;

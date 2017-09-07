@@ -21,16 +21,55 @@ import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.migration.MigrationModel;
-import org.keycloak.models.*;
+import org.keycloak.models.ClientInitialAccessModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientProvider;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakTransaction;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RealmProvider;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.CachedRealmModel;
-import org.keycloak.models.cache.infinispan.entities.*;
-import org.keycloak.models.cache.infinispan.events.*;
+import org.keycloak.models.cache.infinispan.entities.CachedClient;
+import org.keycloak.models.cache.infinispan.entities.CachedClientRole;
+import org.keycloak.models.cache.infinispan.entities.CachedClientScope;
+import org.keycloak.models.cache.infinispan.entities.CachedGroup;
+import org.keycloak.models.cache.infinispan.entities.CachedRealm;
+import org.keycloak.models.cache.infinispan.entities.CachedRealmRole;
+import org.keycloak.models.cache.infinispan.entities.CachedRole;
+import org.keycloak.models.cache.infinispan.entities.ClientListQuery;
+import org.keycloak.models.cache.infinispan.entities.GroupListQuery;
+import org.keycloak.models.cache.infinispan.entities.RealmListQuery;
+import org.keycloak.models.cache.infinispan.entities.RoleListQuery;
+import org.keycloak.models.cache.infinispan.events.ClientAddedEvent;
+import org.keycloak.models.cache.infinispan.events.ClientRemovedEvent;
+import org.keycloak.models.cache.infinispan.events.ClientTemplateEvent;
+import org.keycloak.models.cache.infinispan.events.ClientUpdatedEvent;
+import org.keycloak.models.cache.infinispan.events.GroupAddedEvent;
+import org.keycloak.models.cache.infinispan.events.GroupMovedEvent;
+import org.keycloak.models.cache.infinispan.events.GroupRemovedEvent;
+import org.keycloak.models.cache.infinispan.events.GroupUpdatedEvent;
+import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
+import org.keycloak.models.cache.infinispan.events.RealmRemovedEvent;
+import org.keycloak.models.cache.infinispan.events.RealmUpdatedEvent;
+import org.keycloak.models.cache.infinispan.events.RoleAddedEvent;
+import org.keycloak.models.cache.infinispan.events.RoleRemovedEvent;
+import org.keycloak.models.cache.infinispan.events.RoleUpdatedEvent;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.client.ClientStorageProviderModel;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 
 /**
@@ -516,7 +555,11 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     static String getTopGroupsQueryCacheKey(String realm) {
-        return realm + ".top.groups";
+        return getTopGroupsQueryCacheKey(realm, null, null);
+    }
+
+    static String getTopGroupsQueryCacheKey(String realm, Integer first, Integer max) {
+        return realm + ".top.groups" + ((first!=null)?"." + first:"") + ((max!=null)?"." + max:"");
     }
 
     static String getRolesCacheKey(String container) {
@@ -910,7 +953,7 @@ public class RealmCacheSession implements CacheRealmProvider {
 
     @Override
     public List<GroupModel> getTopLevelGroups(RealmModel realm, Integer first, Integer max) {
-        String cacheKey = getTopGroupsQueryCacheKey(realm.getId() + first + max);
+        String cacheKey = getTopGroupsQueryCacheKey(realm.getId(), first, max);
         boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(realm.getId() + first + max);
         if (queryDB) {
             return getRealmDelegate().getTopLevelGroups(realm, first, max);

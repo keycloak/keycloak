@@ -515,7 +515,9 @@ module.factory('AuthenticationConfigLoader', function(Loader, AuthenticationConf
 module.factory('GroupListLoader', function(Loader, Groups, $route, $q) {
     return Loader.query(Groups, function() {
         return {
-            realm : $route.current.params.realm
+            realm : $route.current.params.realm,
+            first : 0,
+            max : 20
         }
     });
 });
