@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.apache.http.HttpStatus;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
@@ -38,6 +39,8 @@ import java.util.List;
 import java.util.Objects;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import twitter4j.JSONException;
+import twitter4j.JSONObject;
 
 /**
  * @resource Groups
@@ -111,15 +114,22 @@ public class GroupsResource {
     @GET
     @NoCache
     @Path("/count")
-    public Response getGroupCount(@QueryParam("search") String search) {
-        auth.requireView();
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getGroupCount(@QueryParam("search") String search, @QueryParam("top") String onlyTopGroups) {
         Long results;
+        JSONObject response = new JSONObject();
         if (Objects.nonNull(search)) {
             results = realm.getGroupsCountByNameContaining(search);
         } else {
-            results = realm.getGroupsCount();
+            results = realm.getGroupsCount(Objects.equals(onlyTopGroups, Boolean.TRUE.toString()));
         }
-        return Response.ok(results).build();
+        try {
+            response.put("count", results);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return ErrorResponse.error("Cannot create response object", Response.Status.INTERNAL_SERVER_ERROR);
+        }
+        return Response.ok(response.toString(), MediaType.APPLICATION_JSON).build();
     }
 
     /**

@@ -40,7 +40,7 @@ public interface RealmProvider extends Provider {
 
     List<GroupModel> getGroups(RealmModel realm);
 
-    Long getGroupsCount(RealmModel realm);
+    Long getGroupsCount(RealmModel realm, Boolean onlyTopGroups);
 
     Long getGroupsCountByNameContaining(RealmModel realm, String search);
 

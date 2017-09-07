@@ -843,8 +843,8 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     @Override
-    public Long getGroupsCount(RealmModel realm) {
-        return getDelegate().getGroupsCount(realm);
+    public Long getGroupsCount(RealmModel realm, Boolean onlyTopGroups) {
+        return getDelegate().getGroupsCount(realm, onlyTopGroups);
     }
 
     @Override

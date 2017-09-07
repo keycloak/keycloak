@@ -1687,8 +1687,8 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
-    public Long getGroupsCount() {
-        return session.realms().getGroupsCount(this);
+    public Long getGroupsCount(Boolean onlyTopGroups) {
+        return session.realms().getGroupsCount(this, onlyTopGroups);
     }
 
     @Override
