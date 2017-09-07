@@ -79,5 +79,5 @@ was compromised, it is obviously good to update your keys, but it's also good to
 |===
 
 You can also import all this configuration data by providing a URL or file that points to OpenID Provider Metadata (see OIDC Discovery specification).
-If you are connecting to a {project_name} external IDP, you can import the IDP setttings from the url `<root>/auth/realms/\{realm-name}/.well-known/openid-configuration`.
+If you are connecting to a {project_name} external IDP, you can import the IDP setttings from the url `<root>/auth/realms/{realm-name}/.well-known/openid-configuration`.
 This link is a JSON document describing metadata about the IDP.

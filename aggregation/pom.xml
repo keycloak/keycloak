@@ -16,6 +16,12 @@
     <dependencies>
         <dependency>
             <groupId>org.keycloak.documentation</groupId>
+            <artifactId>api-documentation</artifactId>
+            <version>${project.version}</version>
+            <type>pom</type>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.documentation</groupId>
             <artifactId>authorization-services</artifactId>
             <version>${project.version}</version>
             <type>pom</type>
@@ -59,6 +65,22 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
                 <executions>
+                    <execution>
+                        <id>copy-api_documentation</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.outputDirectory}/api_documentation/</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>../api_documentation/target/generated-docs</directory>
+                                    <include>**/**</include>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
                     <execution>
                         <id>copy-authorization_services</id>
                         <phase>process-resources</phase>
@@ -204,7 +226,6 @@
                         <configuration>
                             <target>
                                 <echo>OUTPUT (no-frames): file://${project.build.outputDirectory}/index.html</echo>
-                                <echo>OUTPUT (frames):    file://${project.build.outputDirectory}/frames.html</echo>
                             </target>
                         </configuration>
                     </execution>

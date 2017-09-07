@@ -27,7 +27,7 @@ The Keycloak Spring Security adapter takes advantage of Spring Security's flexib
 
 ====== Java Configuration
 
-Keycloak provides a KeycloakWebSecurityConfigurerAdapter as a convenient base class for creating a http://docs.spring.io/spring-security/site/docs/4.0.x/apidocs/org/springframework/security/config/annotation/web/WebSecurityConfigurer.html[WebSecurityConfigurer]                instance.
+Keycloak provides a KeycloakWebSecurityConfigurerAdapter as a convenient base class for creating a https://docs.spring.io/spring-security/site/docs/4.0.x/apidocs/org/springframework/security/config/annotation/web/WebSecurityConfigurer.html[WebSecurityConfigurer]                instance.
 The implementation allows customization by overriding methods.
 While its use is not required, it greatly simplifies your security context configuration.
 

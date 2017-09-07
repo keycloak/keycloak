@@ -8,7 +8,7 @@ and select `StackOverflow` from the `Add provider` drop down list.  This will br
 image:{project_images}/stack-overflow-add-identity-provider.png[]
 
 To enable login with StackOverflow you first have to register an OAuth application on https://stackapps.com/[StackApps].
-Go to http://stackapps.com/apps/oauth/register[registering your application on Stack Apps] url and login.
+Go to https://stackapps.com/apps/oauth/register[registering your application on Stack Apps] url and login.
 
 NOTE: StackOverflow often changes the look and feel of application registration, so these directions might not always be up to date and the
       configuration steps might be slightly different.

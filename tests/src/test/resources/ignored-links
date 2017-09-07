@@ -1,0 +1,10 @@
+http://localhost:8080*
+http://localhost:8180*
+http://localhost:8181*
+https://myhost.com/myapp/k_jwks
+https://myhost.com/myapp
+http://host:port*
+https://host:port*
+http://broker-keycloak:8180*
+https://expressjs.com/
+https://github.com/keycloak/keycloak/tree/*

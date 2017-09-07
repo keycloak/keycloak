@@ -2,7 +2,7 @@
 
 === Dedicated Realm Admin Consoles
 
-Each realm has a dedicated Admin Console that can be accessed by going to the url `/auth/admin/\{realm-name}/console`.
+Each realm has a dedicated Admin Console that can be accessed by going to the url `/auth/admin/{realm-name}/console`.
 Users within that realm can be granted realm management permissions by assigning specific user role mappings.
 
 Each realm has a built-in client called `realm-management`.  You can view this client by going to the

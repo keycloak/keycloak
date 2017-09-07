@@ -10,7 +10,7 @@ You can't click save yet, as you'll need to obtain a `Client ID` and `Client Sec
 page is the `Redirect URI`.  You'll have to provide that to Google when you register {project_name} as a client there, so
 copy this URI to your clipboard.
 
-To enable login with Google you first have to create a project and a client in the https://cloud.google.com/console/project[Google Developer Console].
+To enable login with Google you first have to create a project and a client in the https://console.cloud.google.com/project[Google Developer Console].
 Then you need to copy the client id and secret into the {project_name} Admin Console.
 
 NOTE: Google often changes the look and feel of the Google Developer Console, so these directions might not always be up to date and the
@@ -18,7 +18,7 @@ NOTE: Google often changes the look and feel of the Google Developer Console, so
 
 Let's see first how to create a project with Google.
 
-Log in to the link:https://cloud.google.com/console/project[Google Developer Console].
+Log in to the link:https://console.cloud.google.com/project[Google Developer Console].
 
 .Google Developer Console
 image:images/google-developer-console.png[]

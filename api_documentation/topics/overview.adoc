@@ -1,9 +1,11 @@
+include::topics/templates/document-attributes-product.adoc[]
+
 == {project_name} API Documentation
 
 === JavaDocs Documentation
 
-https://access.redhat.com/webassets/avalon/d/red-hat-single-sign-on/version-{project_versionDoc}/javadocs/[Red Hat Single Sign-On Javadocs]
+{apidocs_javadocs_link}[{apidocs_javadocs_name}]
 
-=== REST API Documentation
+=== Admin REST API Documentation
 
-https://access.redhat.com/webassets/avalon/d/red-hat-single-sign-on/version-{project_versionDoc}/restapi/[Red Hat Single Sign-On REST API Documentation]
+{apidocs_adminrest_link}[{apidocs_adminrest_name}]

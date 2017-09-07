@@ -131,7 +131,7 @@ For easier testing with Kerberos, we provided some example setups to test.
 
 ===== {project_name} and FreeIPA docker image
 
-Once you install https://www.docker.com/[docker], you can run docker image with http://www.freeipa.org/[FreeIPA]         server installed.
+Once you install https://www.docker.com/[docker], you can run docker image with http://www.freeipa.org/page/Main_Page[FreeIPA]         server installed.
 FreeIPA provides integrated security solution with MIT Kerberos and 389 LDAP server among other things . The image provides also {project_name}
 server configured with LDAP Federation provider and enabled SPNEGO/Kerberos authentication against the FreeIPA server.
 See details https://github.com/mposolda/keycloak-freeipa-docker/blob/master/README.md[here] .
@@ -140,7 +140,7 @@ See details https://github.com/mposolda/keycloak-freeipa-docker/blob/master/READ
 
 For quick testing and unit tests, we use a very simple http://directory.apache.org/apacheds/[ApacheDS] Kerberos server.
 You need to build {project_name} from sources and then run the Kerberos server with maven-exec-plugin from our testsuite.
-See details https://github.com/keycloak/keycloak/blob/master/misc/Testsuite.md#kerberos-server[here] .
+See details https://github.com/keycloak/keycloak/blob/master/misc/Testsuite.md#user-content-kerberos-server[here] .
 endif::[]
 
 ==== Credential Delegation
@@ -178,7 +178,7 @@ GSSContext context = gssManager.createContext(serviceName, krb5Oid,
 ifeval::[{project_community}==true]
 We have an example, that shows this in detail.
 It's in `examples/kerberos` in the {project_name} example distribution or demo distribution download.
-You can also check the example sources directly https://github.com/keycloak/keycloak/blob/master/examples/kerberos[here] .
+You can also check the example sources directly https://github.com/keycloak/keycloak/tree/master/examples/kerberos[here] .
 endif::[]
 
 
@@ -186,7 +186,7 @@ Note that you also need to configure `forwardable` kerberos tickets in `krb5.con
 
 WARNING: Credential delegation has some security implications so only use it if you really need it.
          It's highly recommended to use it together with HTTPS.
-         See for example http://www.microhowto.info/howto/configure_firefox_to_authenticate_using_spnego_and_kerberos.html#idp27072[this article] for more details.
+         See for example http://www.microhowto.info/howto/configure_firefox_to_authenticate_using_spnego_and_kerberos.html[this article] for more details.
 
 ==== Troubleshooting
 

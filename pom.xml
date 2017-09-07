@@ -18,9 +18,17 @@
         <version.plugin.resources>3.0.2</version.plugin.resources>
         <version.plugin.dependency>3.0.1</version.plugin.dependency>
         <version.plugin.antrun>1.8</version.plugin.antrun>
+        <version.compiler.plugin>3.6.1</version.compiler.plugin>
+        <version.jar.plugin>3.0.2</version.jar.plugin>
+        <version.install.plugin>2.5.2</version.install.plugin>
+
+
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
     </properties>
 
     <modules>
+        <module>api_documentation</module>
         <module>authorization_services</module>
         <module>getting_started</module>
         <module>securing_apps</module>
@@ -29,6 +37,7 @@
         <module>server_installation</module>
         <module>upgrading</module>
         <module>aggregation</module>
+        <module>tests</module>
     </modules>
 
     <profiles>
@@ -49,6 +58,26 @@
     <build>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${version.compiler.plugin}</version>
+                    <configuration>
+                        <source>${maven.compiler.target}</source>
+                        <target>${maven.compiler.source}</target>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>${version.jar.plugin}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-install-plugin</artifactId>
+                    <version>${version.install.plugin}</version>
+                </plugin>
+
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-antrun-plugin</artifactId>

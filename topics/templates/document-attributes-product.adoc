@@ -6,7 +6,7 @@
 :project_versionNpm: 3.3.0.Final-redhat1
 :project_versionDoc: 7.2
 :project_images: rhsso-images
-:project_doc_base_url: https://doc-stage.usersys.redhat.com/documentation/en-us/red_hat_single_sign-on
+:project_doc_base_url: https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/{project_versionDoc}/html-single
 :project_dirref: RHSSO_HOME
 
 :quickstartRepo_name: {project_name} Quickstarts Repository
@@ -14,48 +14,56 @@
 :quickstartRepo_dir: redhat-sso-quickstarts
 
 :authorizationguide_name: Authorization Services Guide
-:authorizationguide_link: {project_doc_base_url}/{project_versionDoc}/html-single/authorization_services_guide/
+:authorizationguide_link: {project_doc_base_url}/authorization_services_guide/
 :adapterguide_name: Securing Applications and Services Guide
-:adapterguide_link: {project_doc_base_url}/{project_versionDoc}/html-single/securing_applications_and_services_guide/
+:adapterguide_link: {project_doc_base_url}/securing_applications_and_services_guide/
 :adminguide_name: Server Administration Guide
-:adminguide_link: {project_doc_base_url}/{project_versionDoc}/html-single/server_administration_guide/
+:adminguide_link: {project_doc_base_url}/server_administration_guide/
 :apidocs_name: API Documentation
-:apidocs_link: {project_doc_base_url}/{project_versionDoc}/html-single/api-documentation/
+:apidocs_link: {project_doc_base_url}/api-documentation/
 :developerguide_name: Server Developer Guide
-:developerguide_link: {project_doc_base_url}/{project_versionDoc}/html-single/server_developer_guide/
+:developerguide_link: {project_doc_base_url}/server_developer_guide/
 :gettingstarted_name: Getting Started Guide
-:gettingstarted_link: {project_doc_base_url}/{project_versionDoc}/html-single/getting_started_guide/
+:gettingstarted_link: {project_doc_base_url}/getting_started_guide/
 :upgradingguide_name: Upgrading Guide
-:upgradingguide_link: {project_doc_base_url}/{project_versionDoc}/html-single/upgrading_guide/
+:upgradingguide_link: {project_doc_base_url}/upgrading_guide/
 :installguide_name: Server Installation and Configuration Guide
-:installguide_link: {project_doc_base_url}/{project_versionDoc}/html-single/server_installation_and_configuration_guide/
+:installguide_link: {project_doc_base_url}/server_installation_and_configuration_guide/
 :installguide_profile_name: Profiles
-:installguide_profile_link: {installguide_link}/#profiles
+:installguide_profile_link: {installguide_link}#_profiles
+
+:apidocs_javadocs_name: JavaDocs Documentation
+:apidocs_javadocs_link: https://access.redhat.com/webassets/avalon/d/red-hat-single-sign-on/version-{project_versionDoc}/javadocs/
+:apidocs_adminrest_name: Administration REST API
+:apidocs_adminrest_link: https://access.redhat.com/webassets/avalon/d/red-hat-single-sign-on/version-{project_versionDoc}/restapi/
 
 :appserver_name: JBoss EAP
 :appserver_dirref: EAP_HOME
 :appserver_version: 7.0
-:appserver_doc_base_url: https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/{appserver_version}
+
+:appserver_doc_base_url: https://access.redhat.com/documentation/en-us/red_hat_jboss_enterprise_application_platform/{appserver_version}
 :appserver_socket_name: JBoss EAP Configuration Guide
-:appserver_socket_link: {appserver_doc_base_url}/html-single/configuration-guide/#network_and_port_configuration
+:appserver_socket_link: {appserver_doc_base_url}/html-single/configuration_guide/#network_and_port_configuration
 :appserver_jgroups_name: JBoss EAP Configuration Guide
-:appserver_jgroups_link: {appserver_doc_base_url}/html-single/configuration-guide/#cluster_communication_jgroups
+:appserver_jgroups_link: {appserver_doc_base_url}/html-single/configuration_guide/#cluster_communication_jgroups
 :appserver_jpa_name: JBoss EAP Development Guide
-:appserver_jpa_link: {appserver_doc_base_url}/html-single/development-guide/#hibernate
+:appserver_jpa_link: {appserver_doc_base_url}/html-single/development_guide/#java_persistence_api_jpa
 :appserver_network_name: JBoss EAP Configuration Guide
-:appserver_network_link: {appserver_doc_base_url}/html-single/configuration-guide/#network_and_port_configuration
+:appserver_network_link: {appserver_doc_base_url}/html-single/configuration_guide/#network_and_port_configuration
 :appserver_datasource_name: JBoss EAP Configuration Guide
-:appserver_datasource_link: {appserver_doc_base_url}/html-single/configuration-guide/#datasource_management
+:appserver_datasource_link: {appserver_doc_base_url}/html-single/configuration_guide/#datasource_management
 :appserver_caching_name: JBoss EAP Configuration Guide
-:appserver_caching_link: {appserver_doc_base_url}/html-single/configuration-guide/#infinispan
+:appserver_caching_link: {appserver_doc_base_url}/html-single/configuration_guide/#infinispan
 :appserver_admindoc_name: JBoss EAP Configuration Guide
-:appserver_admindoc_link: {appserver_doc_base_url}/html-single/configuration-guide/configuration-guide
+:appserver_admindoc_link: {appserver_doc_base_url}/html-single/configuration_guide/
 :appserver_loadbalancer_name: JBoss EAP Configuration Guide
-:appserver_loadbalancer_link: {appserver_doc_base_url}/html-single/configuration-guide/#configuring_high_availability
+:appserver_loadbalancer_link: {appserver_doc_base_url}/html-single/configuration_guide/#configuring_high_availability
 :appserver_managementcli_link: https://access.redhat.com/documentation/en-us/red_hat_jboss_enterprise_application_platform/7.0/html-single/configuration_guide/#management_cli_overview
 :appserver_managementconsole_link: https://access.redhat.com/documentation/en-us/red_hat_jboss_enterprise_application_platform/7.0/html-single/configuration_guide/#management_console_overview
 
 :fuseVersion: JBoss Fuse 6.3.0 Rollup 5
+:fuseHawtioEAPVersion: JBoss EAP 6.4
+:fuseHawtioWARVersion: hawtio-wildfly-1.4.0.redhat-630254.war
 
 :subsystem_undertow_xml_urn: urn:jboss:domain:undertow:3.1
 :saml_adapter_xsd_urn: http://www.keycloak.org/schema/keycloak_saml_adapter_1_9.xsd

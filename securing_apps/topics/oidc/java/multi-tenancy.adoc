@@ -1,4 +1,4 @@
-
+[[_multi_tenancy]]
 ==== Multi Tenancy
 
 Multi Tenancy, in our context, means that a single target application (WAR) can be secured with multiple {project_name} realms. The realms can be located

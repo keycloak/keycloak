@@ -63,7 +63,7 @@ You should answer `What is your first and last name ?` question with the DNS nam
 For testing purposes, `localhost` should be used.
 After executing this command, the `keycloak.jks` file will be generated in the same directory as you executed the `keytool` command in.
 
-If you want a third-party signed certificate, but don't have one, you can obtain one for free at http://cacert.org[cacert.org].
+If you want a third-party signed certificate, but don't have one, you can obtain one for free at http://www.cacert.org[cacert.org].
 You'll have to do a little set up first before doing this though.
 
 The first thing to do is generate a Certificate Request:

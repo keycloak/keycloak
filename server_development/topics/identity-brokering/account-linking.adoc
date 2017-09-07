@@ -22,7 +22,7 @@ To initiate the login, the application must fabricate a URL and redirect the use
 
 [source,java]
 ----
-{auth-server-root}/auth/realms/{realm}/broker/{provider}/link?client_id={id}&redirect_uri={uri}&nonce={nonce}&hash={hash}
+/{auth-server-root}/auth/realms/{realm}/broker/{provider}/link?client_id={id}&redirect_uri={uri}&nonce={nonce}&hash={hash}
 ----
 
 Here's a description of each path and query param:

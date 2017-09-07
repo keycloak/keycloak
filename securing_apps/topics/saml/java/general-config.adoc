@@ -55,7 +55,7 @@ This is what one might look like:
 ----    
 
 Some of these configuration switches may be adapter specific and some are common across all adapters.
-For Java adapters you can use `$\{...}` enclosure as System property replacement.
-For example `$\{jboss.server.config.dir}`.
+For Java adapters you can use `${...}` enclosure as System property replacement.
+For example `${jboss.server.config.dir}`.
  
 

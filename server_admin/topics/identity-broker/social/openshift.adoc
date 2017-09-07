@@ -7,7 +7,7 @@ There are a just a few steps you have to complete to be able to login to OpenShi
 and select `Openshift` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
 
 .Add Identity Provider
-image:{project_images}/openshift-add-identity-provider.png[]
+image:images/openshift-add-identity-provider.png[]
 
 .Registering OAuth client
 

@@ -1,0 +1,7 @@
+include::topics/templates/document-attributes-community.adoc[]
+
+:api_documentation:
+
+= {apidocs_name}
+
+include::topics/overview.adoc[]

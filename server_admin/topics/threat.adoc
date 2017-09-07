@@ -3,6 +3,6 @@
 This chapter discusses possible security vulnerabilities any authentication server could have and how {project_name}
 mitigates those vulnerabilities.
 A good list of potential vulnerabilities and what security implementations should do to mitigate them can be found in
-the http://tools.ietf.org/html/rfc6819[OAuth 2.0 Threat Model] document put out by the IETF.
+the https://tools.ietf.org/html/rfc6819[OAuth 2.0 Threat Model] document put out by the IETF.
 Many of those vulnerabilities are discussed here. 
 
