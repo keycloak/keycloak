@@ -1,5 +1,3 @@
-include::topics/templates/document-attributes-product.adoc[]
-
 == {project_name} API Documentation
 
 === JavaDocs Documentation
