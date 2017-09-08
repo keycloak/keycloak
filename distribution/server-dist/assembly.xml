@@ -39,7 +39,6 @@
                 <exclude>**/resteasy-atom-provider/**</exclude>
                 <exclude>**/resteasy-crypto/**</exclude>
                 <exclude>**/resteasy-jettison-provider/**</exclude>
-                <exclude>**/resteasy-multipart-provider/**</exclude>
                 <exclude>**/resteasy-json-p-provider/**</exclude>
                 <exclude>**/resteasy-jsapi/**</exclude>
                 <exclude>**/resteasy-spring/**</exclude>
@@ -70,7 +69,6 @@
                 <exclude>**/resteasy-atom-provider/**</exclude>
                 <exclude>**/resteasy-crypto/**</exclude>
                 <exclude>**/resteasy-jettison-provider/**</exclude>
-                <exclude>**/resteasy-multipart-provider/**</exclude>
                 <exclude>**/resteasy-json-p-provider/**</exclude>
                 <exclude>**/resteasy-jsapi/**</exclude>
                 <exclude>**/resteasy-spring/**</exclude>
