@@ -41,6 +41,7 @@ public class GoogleLoginPage extends AbstractSocialLoginPage {
             firstAccount.click();
         }
         catch (NoSuchElementException e) {
+            emailInput.clear();
             emailInput.sendKeys(user);
             emailInput.sendKeys(Keys.RETURN);
         }
