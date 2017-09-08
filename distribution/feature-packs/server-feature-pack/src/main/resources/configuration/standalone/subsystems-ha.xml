@@ -29,11 +29,9 @@
         <subsystem supplement="ha">keycloak-infinispan.xml</subsystem>
         <subsystem>jaxrs.xml</subsystem>
         <subsystem>jca.xml</subsystem>
-        <subsystem>jdr.xml</subsystem>
         <subsystem supplement="default">jgroups.xml</subsystem>
         <subsystem>jmx.xml</subsystem>
         <subsystem>jpa.xml</subsystem>
-        <subsystem>jsf.xml</subsystem>
         <subsystem>mail.xml</subsystem>
         <subsystem supplement="default">mod_cluster.xml</subsystem>
         <subsystem>naming.xml</subsystem>
