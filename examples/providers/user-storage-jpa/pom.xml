@@ -23,7 +23,7 @@
         <version>3.4.0.CR1-SNAPSHOT</version>
     </parent>
 
-    <name>User Storage JPA Provider Exapmle</name>
+    <name>User Storage JPA Provider Example</name>
     <description/>
     <modelVersion>4.0.0</modelVersion>
 

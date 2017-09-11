@@ -47,7 +47,7 @@ public class SecretQuestionAuthenticator implements Authenticator {
         Cookie cookie = context.getHttpRequest().getHttpHeaders().getCookies().get("SECRET_QUESTION_ANSWERED");
         boolean result = cookie != null;
         if (result) {
-            System.out.println("Bypassing secret question because cookie as set");
+            System.out.println("Bypassing secret question because cookie is set");
         }
         return result;
     }
