@@ -292,12 +292,9 @@ public class AdminConsole {
 
             URI baseUri = uriInfo.getBaseUri();
 
-            String authUrl = baseUri.toString();
-            authUrl = authUrl.substring(0, authUrl.length() - 1);
-
-            map.put("authUrl", authUrl);
-            map.put("consoleBaseUrl", Urls.adminConsoleRoot(baseUri, realm.getName()));
-            map.put("resourceUrl", Urls.themeRoot(baseUri) + "/admin/" + theme.getName());
+            map.put("authUrl", session.getContext().getContextPath());
+            map.put("consoleBaseUrl", Urls.adminConsoleRoot(baseUri, realm.getName()).getPath());
+            map.put("resourceUrl", Urls.themeRoot(baseUri).getPath() + "/admin/" + theme.getName());
             map.put("masterRealm", Config.getAdminRealm());
             map.put("resourceVersion", Version.RESOURCES_VERSION);
             map.put("properties", theme.getProperties());
