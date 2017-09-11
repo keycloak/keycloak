@@ -276,6 +276,10 @@ public class TokenManager {
         try {
             RefreshToken refreshToken = toRefreshToken(session, realm, encodedRefreshToken);
 
+            if (!(TokenUtil.TOKEN_TYPE_REFRESH.equals(refreshToken.getType()) || TokenUtil.TOKEN_TYPE_OFFLINE.equals(refreshToken.getType()))) {
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token");
+            }
+
             if (checkExpiration) {
                 if (refreshToken.getExpiration() != 0 && refreshToken.isExpired()) {
                     throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Refresh token expired");
