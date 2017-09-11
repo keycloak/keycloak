@@ -33,6 +33,7 @@
         <subsystem>naming.xml</subsystem>
         <subsystem>remoting.xml</subsystem>
         <subsystem>request-controller.xml</subsystem>
+        <subsystem supplement="domain-wildfly">elytron.xml</subsystem>
         <subsystem>security.xml</subsystem>
         <subsystem>security-manager.xml</subsystem>
         <subsystem>transactions.xml</subsystem>
@@ -59,6 +60,7 @@
         <subsystem>naming.xml</subsystem>
         <subsystem>remoting.xml</subsystem>
         <subsystem>request-controller.xml</subsystem>
+        <subsystem supplement="domain-wildfly">elytron.xml</subsystem>
         <subsystem>security.xml</subsystem>
         <subsystem>security-manager.xml</subsystem>
         <subsystem>transactions.xml</subsystem>
