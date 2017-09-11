@@ -512,17 +512,22 @@ public class LoginActionsService {
             return ErrorPage.error(session, Messages.REGISTRATION_NOT_ALLOWED);
         }
 
-        Checks checks = new Checks();
-        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
-            return checks.response;
+        ClientSessionModel clientSession = ClientSessionCode.getClientSession(code, session, realm);
+        if (clientSession != null && code.equals(clientSession.getNote(LAST_PROCESSED_CODE))) {
+            // Allow refresh of previous page
+        } else {
+            Checks checks = new Checks();
+            if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
+                return checks.response;
+            }
+            ClientSessionCode clientSessionCode = checks.clientCode;
+            clientSession = clientSessionCode.getClientSession();
         }
         event.detail(Details.CODE_ID, code);
-        ClientSessionCode clientSessionCode = checks.clientCode;
-        ClientSessionModel clientSession = clientSessionCode.getClientSession();
-
 
         AuthenticationManager.expireIdentityCookie(realm, uriInfo, clientConnection);
 
+        clientSession.setNote(LAST_PROCESSED_CODE, code);
         return processRegistration(execution, clientSession, null);
     }
 

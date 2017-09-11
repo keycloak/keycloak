@@ -310,6 +310,22 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void registerUserRefreshPage() {
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+
+        driver.navigate().refresh();
+
+        registerPage.register("firstName", "lastName", "registerUserRefreshPage@email", "registerUserRefreshPage", "password", "password");
+
+        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        String userId = events.expectRegister("registerUserRefreshPage", "registerUserRefreshPage@email").assertEvent().getUserId();
+        events.expectLogin().detail("username", "registeruserrefreshpage").user(userId).assertEvent();
+    }
+
+    @Test
     public void registerUserUmlats() {
         loginPage.open();
 
