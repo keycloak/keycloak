@@ -31,7 +31,7 @@ import javax.servlet.ServletException;
 import java.io.IOException;
 
 /**
- * Pre-installed actions that must be authenticated
+ * Abstract base for pre-installed actions that must be authenticated
  * <p/>
  * Actions include:
  * <p/>
@@ -41,17 +41,16 @@ import java.io.IOException;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class AuthenticatedActionsValve extends ValveBase {
-    private static final Logger log = Logger.getLogger(AuthenticatedActionsValve.class);
+public abstract class AbstractAuthenticatedActionsValve extends ValveBase {
+    private static final Logger log = Logger.getLogger(AbstractAuthenticatedActionsValve.class);
     protected AdapterDeploymentContext deploymentContext;
 
-    public AuthenticatedActionsValve(AdapterDeploymentContext deploymentContext, Valve next, Container container) {
+    public AbstractAuthenticatedActionsValve(AdapterDeploymentContext deploymentContext, Valve next, Container container) {
         this.deploymentContext = deploymentContext;
         if (next == null) throw new RuntimeException("Next valve is null!!!");
         setNext(next);
         setContainer(container);
     }
-
 
     @Override
     public void invoke(Request request, Response response) throws IOException, ServletException {
