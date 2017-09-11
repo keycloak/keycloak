@@ -418,6 +418,7 @@ public class JpaRealmProvider implements RealmProvider {
         RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
         groupEntity.setRealm(realmEntity);
         em.persist(groupEntity);
+        em.flush();
         realmEntity.getGroups().add(groupEntity);
 
         GroupAdapter adapter = new GroupAdapter(realm, em, groupEntity);
