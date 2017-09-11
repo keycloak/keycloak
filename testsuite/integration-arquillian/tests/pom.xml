@@ -90,6 +90,8 @@
 
         <adapter.test.props/>
         <migration.import.properties/>
+        <kie.maven.settings/>
+        
         <examples.home>${project.build.directory}/examples</examples.home>
 
         <browser>htmlUnit</browser>
@@ -248,7 +250,8 @@
 
                             <adapter.test.props>${adapter.test.props}</adapter.test.props>
                             <migration.import.properties>${migration.import.properties}</migration.import.properties>
-
+                            <kie.maven.settings>${kie.maven.settings}</kie.maven.settings>
+                            
                             <testsuite.constants>${testsuite.constants}</testsuite.constants>
                             <cli.log.output>${cli.log.output}</cli.log.output>
                             <test.intermittent>${test.intermittent}</test.intermittent>
@@ -1253,6 +1256,25 @@
                 <auth.server.https.port>8443</auth.server.https.port>
                 <auth.server.management.port>9990</auth.server.management.port>
                 <auth.server.management.port.jmx>9999</auth.server.management.port.jmx>
+            </properties>
+        </profile>
+        
+        <profile>
+            <!--see KEYCLOAK-4793-->
+            <id>kie.maven.settings</id>
+            <activation>
+                <property>
+                    <name>repo.url</name>
+                </property>
+            </activation>
+            <properties>
+                <maven.repo.local>${user.home}/.m2/repository</maven.repo.local>
+                <settings.path>${user.home}/.m2/settings.xml</settings.path>
+                <kie.maven.settings>
+                    -Dkie.maven.settings.custom=${settings.path}
+                    -Dkie.maven.repo.local=${maven.repo.local}
+                    -Drepo.url=${repo.url}
+                </kie.maven.settings>
             </properties>
         </profile>
         

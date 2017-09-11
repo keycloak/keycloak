@@ -86,6 +86,7 @@
                 ${migration.import.properties}
                 ${auth.server.profile}
                 ${auth.server.feature}
+                ${kie.maven.settings}
             </property>
             <property name="javaVmArguments">
                 ${auth.server.jboss.jvm.debug.args}
