@@ -76,12 +76,7 @@ public class ModelToRepresentation {
             } else {
                 ClientModel client = (ClientModel)role.getContainer();
                 String clientId = client.getClientId();
-                List<String> currentClientRoles = clientRoleNames.get(clientId);
-                if (currentClientRoles == null) {
-                    currentClientRoles = new ArrayList<>();
-                    clientRoleNames.put(clientId, currentClientRoles);
-                }
-
+                List<String> currentClientRoles = clientRoleNames.computeIfAbsent(clientId, k -> new ArrayList<>());
                 currentClientRoles.add(role.getName());
             }
         }
@@ -153,9 +148,7 @@ public class ModelToRepresentation {
 
         List<String> reqActions = new ArrayList<String>();
         Set<String> requiredActions = user.getRequiredActions();
-        for (String ra : requiredActions){
-            reqActions.add(ra);
-        }
+        reqActions.addAll(requiredActions);
 
         rep.setRequiredActions(reqActions);
 
@@ -609,11 +602,7 @@ public class ModelToRepresentation {
         Map<String, List<String>> grantedProtocolMappers = new HashMap<String, List<String>>();
         for (ProtocolMapperModel protocolMapper : model.getGrantedProtocolMappers()) {
             String protocol = protocolMapper.getProtocol();
-            List<String> currentProtocolMappers = grantedProtocolMappers.get(protocol);
-            if (currentProtocolMappers == null) {
-                currentProtocolMappers = new LinkedList<String>();
-                grantedProtocolMappers.put(protocol, currentProtocolMappers);
-            }
+            List<String> currentProtocolMappers = grantedProtocolMappers.computeIfAbsent(protocol, k -> new LinkedList<String>());
             currentProtocolMappers.add(protocolMapper.getName());
         }
 
@@ -626,11 +615,7 @@ public class ModelToRepresentation {
                 ClientModel client2 = (ClientModel) role.getContainer();
 
                 String clientId2 = client2.getClientId();
-                List<String> currentClientRoles = grantedClientRoles.get(clientId2);
-                if (currentClientRoles == null) {
-                    currentClientRoles = new LinkedList<String>();
-                    grantedClientRoles.put(clientId2, currentClientRoles);
-                }
+                List<String> currentClientRoles = grantedClientRoles.computeIfAbsent(clientId2, k -> new LinkedList<String>());
                 currentClientRoles.add(role.getName());
             }
         }
