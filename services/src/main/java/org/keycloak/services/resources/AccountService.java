@@ -139,8 +139,7 @@ public class AccountService extends AbstractSecuredLocalService {
             authResult = authManager.authenticateIdentityCookie(session, realm);
             if (authResult != null) {
                 auth = new Auth(realm, authResult.getToken(), authResult.getUser(), client, authResult.getSession(), true);
-                updateCsrfChecks();
-                account.setStateChecker(stateChecker);
+                account.setStateChecker(getStateChecker());
             }
         }
 
@@ -440,15 +439,15 @@ public class AccountService extends AbstractSecuredLocalService {
     }
 
     @Path("totp-remove")
-    @GET
-    public Response processTotpRemove(@QueryParam("stateChecker") String stateChecker) {
+    @POST
+    public Response processTotpRemove(final MultivaluedMap<String, String> formData) {
         if (auth == null) {
             return login("totp");
         }
 
         require(AccountRoles.MANAGE_ACCOUNT);
 
-        csrfCheck(stateChecker);
+        csrfCheck(formData);
 
         UserModel user = auth.getUser();
         session.userCredentialManager().disableCredentialType(realm, user, CredentialModel.OTP);
@@ -461,14 +460,14 @@ public class AccountService extends AbstractSecuredLocalService {
 
 
     @Path("sessions-logout")
-    @GET
-    public Response processSessionsLogout(@QueryParam("stateChecker") String stateChecker) {
+    @POST
+    public Response processSessionsLogout(final MultivaluedMap<String, String> formData) {
         if (auth == null) {
             return login("sessions");
         }
 
         require(AccountRoles.MANAGE_ACCOUNT);
-        csrfCheck(stateChecker);
+        csrfCheck(formData);
 
         UserModel user = auth.getUser();
         List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
@@ -680,18 +679,20 @@ public class AccountService extends AbstractSecuredLocalService {
         return account.setPasswordSet(true).setSuccess(Messages.ACCOUNT_PASSWORD_UPDATED).createResponse(AccountPages.PASSWORD);
     }
 
-    @Path("federated-identity-update")
-    @GET
-    public Response processFederatedIdentityUpdate(@QueryParam("action") String action,
-                                                   @QueryParam("provider_id") String providerId,
-                                                   @QueryParam("stateChecker") String stateChecker) {
+    @Path("identity")
+    @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response processFederatedIdentityUpdate(final MultivaluedMap<String, String> formData) {
         if (auth == null) {
             return login("identity");
         }
 
         require(AccountRoles.MANAGE_ACCOUNT);
-        csrfCheck(stateChecker);
+        csrfCheck(formData);
         UserModel user = auth.getUser();
+
+        String action = formData.getFirst("action");
+        String providerId = formData.getFirst("providerId");
 
         if (Validation.isEmpty(providerId)) {
             setReferrerOnPage();
