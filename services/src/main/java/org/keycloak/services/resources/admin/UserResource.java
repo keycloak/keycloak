@@ -490,7 +490,7 @@ public class UserResource {
 
         if (revokedConsent) {
             // Logout clientSessions for this user and client
-            AuthenticationManager.backchannelUserFromClient(session, realm, user, client, uriInfo, headers);
+            AuthenticationManager.backchannelLogoutUserFromClient(session, realm, user, client, uriInfo, headers);
         }
 
         if (!revokedConsent && !revokedOfflineToken) {
