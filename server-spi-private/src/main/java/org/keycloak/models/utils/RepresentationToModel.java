@@ -380,9 +380,6 @@ public class RepresentationToModel {
 
     public static void importUserFederationProvidersAndMappers(KeycloakSession session, RealmRepresentation rep, RealmModel newRealm) {
         // providers to convert to component model
-        Set<String> convertSet = new HashSet<>();
-        convertSet.add(LDAPConstants.LDAP_PROVIDER);
-        convertSet.add("kerberos");
         Map<String, String> mapperConvertSet = new HashMap<>();
         mapperConvertSet.put(LDAPConstants.LDAP_PROVIDER, "org.keycloak.storage.ldap.mappers.LDAPStorageMapper");
 
@@ -391,10 +388,8 @@ public class RepresentationToModel {
 
         if (rep.getUserFederationProviders() != null) {
             for (UserFederationProviderRepresentation fedRep : rep.getUserFederationProviders()) {
-                if (convertSet.contains(fedRep.getProviderName())) {
-                    ComponentModel component = convertFedProviderToComponent(newRealm.getId(), fedRep);
-                    userStorageModels.put(fedRep.getDisplayName(), newRealm.importComponentModel(component));
-                }
+                ComponentModel component = convertFedProviderToComponent(newRealm.getId(), fedRep);
+                userStorageModels.put(fedRep.getDisplayName(), newRealm.importComponentModel(component));
             }
         }
 
