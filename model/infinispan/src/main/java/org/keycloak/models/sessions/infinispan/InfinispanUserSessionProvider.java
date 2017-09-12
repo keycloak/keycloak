@@ -57,6 +57,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -125,6 +126,10 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
         entity.setStarted(currentTime);
         entity.setLastSessionRefresh(currentTime);
+
+        entity.setNotes(new ConcurrentHashMap<>());
+        entity.getNotes().put(UserSessionModel.CSRF_TOKEN, KeycloakModelUtils.generateSecret(128));
+
 
         tx.put(sessionCache, id, entity);
 
