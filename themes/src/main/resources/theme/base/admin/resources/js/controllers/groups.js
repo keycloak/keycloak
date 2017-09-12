@@ -65,7 +65,7 @@ module.controller('GroupListCtrl', function($scope, $route, $q, realm, groups, g
 
     $scope.$watch('currentPage', function(newValue, oldValue) {
         if(newValue !== oldValue) {
-            refreshGroups();
+            refreshGroups($scope.searchTerms);
         }
     });
 
