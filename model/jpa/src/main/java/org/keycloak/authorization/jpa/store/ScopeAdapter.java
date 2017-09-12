@@ -16,12 +16,10 @@
  */
 package org.keycloak.authorization.jpa.store;
 
-import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.jpa.entities.ScopeEntity;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.StoreFactory;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.jpa.JpaModel;
 
 import javax.persistence.EntityManager;

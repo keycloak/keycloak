@@ -20,8 +20,6 @@ package org.keycloak.authorization.util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -70,7 +68,7 @@ public final class Permissions {
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceStore resourceStore = storeFactory.getResourceStore();
 
-        resourceStore.findByOwner(resourceServer.getClientId(), resourceServer.getId()).stream().forEach(resource -> permissions.addAll(createResourcePermissionsWithScopes(resource, new LinkedList(resource.getScopes()), authorization)));
+        resourceStore.findByOwner(resourceServer.getId(), resourceServer.getId()).stream().forEach(resource -> permissions.addAll(createResourcePermissionsWithScopes(resource, new LinkedList(resource.getScopes()), authorization)));
         resourceStore.findByOwner(identity.getId(), resourceServer.getId()).stream().forEach(resource -> permissions.addAll(createResourcePermissionsWithScopes(resource, new LinkedList(resource.getScopes()), authorization)));
 
         return permissions;
@@ -86,11 +84,11 @@ public final class Permissions {
             scopes = new LinkedList<>(resource.getScopes());
             // check if there is a typed resource whose scopes are inherited by the resource being requested. In this case, we assume that parent resource
             // is owned by the resource server itself
-            if (type != null && !resource.getOwner().equals(resourceServer.getClientId())) {
+            if (type != null && !resource.getOwner().equals(resourceServer.getId())) {
                 StoreFactory storeFactory = authorization.getStoreFactory();
                 ResourceStore resourceStore = storeFactory.getResourceStore();
                 resourceStore.findByType(type, resourceServer.getId()).forEach(resource1 -> {
-                    if (resource1.getOwner().equals(resourceServer.getClientId())) {
+                    if (resource1.getOwner().equals(resourceServer.getId())) {
                         for (Scope typeScope : resource1.getScopes()) {
                             if (!scopes.contains(typeScope)) {
                                 scopes.add(typeScope);
@@ -123,11 +121,11 @@ public final class Permissions {
 
         // check if there is a typed resource whose scopes are inherited by the resource being requested. In this case, we assume that parent resource
         // is owned by the resource server itself
-        if (type != null && !resource.getOwner().equals(resourceServer.getClientId())) {
+        if (type != null && !resource.getOwner().equals(resourceServer.getId())) {
             StoreFactory storeFactory = authorization.getStoreFactory();
             ResourceStore resourceStore = storeFactory.getResourceStore();
             resourceStore.findByType(type, resourceServer.getId()).forEach(resource1 -> {
-                if (resource1.getOwner().equals(resourceServer.getClientId())) {
+                if (resource1.getOwner().equals(resourceServer.getId())) {
                     for (Scope typeScope : resource1.getScopes()) {
                         if (!scopes.contains(typeScope)) {
                             scopes.add(typeScope);

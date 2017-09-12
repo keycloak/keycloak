@@ -32,7 +32,6 @@ import org.keycloak.models.RealmModel;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -76,7 +75,7 @@ class IdentityProviderPermissions implements  IdentityProviderPermissionManageme
         String resourceName = getResourceName(idp);
         Resource resource = authz.getStoreFactory().getResourceStore().findByName(resourceName, server.getId());
         if (resource == null) {
-            resource = authz.getStoreFactory().getResourceStore().create(resourceName, server, server.getClientId());
+            resource = authz.getStoreFactory().getResourceStore().create(resourceName, server, server.getId());
             resource.setType("IdentityProvider");
             Set<Scope> scopeset = new HashSet<>();
             scopeset.add(exchangeToScope);

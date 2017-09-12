@@ -1922,7 +1922,7 @@ public class RepresentationToModel {
     public static void toModel(ResourceServerRepresentation rep, AuthorizationProvider authorization) {
         ResourceServerStore resourceServerStore = authorization.getStoreFactory().getResourceServerStore();
         ResourceServer resourceServer;
-        ResourceServer existing = resourceServerStore.findByClient(rep.getClientId());
+        ResourceServer existing = resourceServerStore.findById(rep.getClientId());
 
         if (existing == null) {
             resourceServer = resourceServerStore.create(rep.getClientId());
@@ -1947,7 +1947,7 @@ public class RepresentationToModel {
 
             if (owner == null) {
                 owner = new ResourceOwnerRepresentation();
-                owner.setId(resourceServer.getClientId());
+                owner.setId(resourceServer.getId());
                 resource.setOwner(owner);
             } else if (owner.getName() != null) {
                 UserModel user = session.users().getUserByUsername(owner.getName(), realm);
@@ -2270,7 +2270,7 @@ public class RepresentationToModel {
 
         if (owner == null) {
             owner = new ResourceOwnerRepresentation();
-            owner.setId(resourceServer.getClientId());
+            owner.setId(resourceServer.getId());
         }
 
         String ownerId = owner.getId();
@@ -2279,7 +2279,7 @@ public class RepresentationToModel {
             throw new RuntimeException("No owner specified for resource [" + resource.getName() + "].");
         }
 
-        if (!resourceServer.getClientId().equals(ownerId)) {
+        if (!resourceServer.getId().equals(ownerId)) {
             RealmModel realm = authorization.getRealm();
             KeycloakSession keycloakSession = authorization.getKeycloakSession();
             UserProvider users = keycloakSession.users();

@@ -35,7 +35,6 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.ResourceStore;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
@@ -43,10 +42,10 @@ import org.keycloak.credential.CredentialModel;
 import org.keycloak.events.Event;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AuthDetails;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
-import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.FederatedIdentityModel;
@@ -789,7 +788,7 @@ public class ModelToRepresentation {
         ResourceServerRepresentation server = new ResourceServerRepresentation();
 
         server.setId(model.getId());
-        server.setClientId(model.getClientId());
+        server.setClientId(model.getId());
         server.setName(client.getClientId());
         server.setAllowRemoteResourceManagement(model.isAllowRemoteResourceManagement());
         server.setPolicyEnforcementMode(model.getPolicyEnforcementMode());
@@ -852,8 +851,8 @@ public class ModelToRepresentation {
         KeycloakSession keycloakSession = authorization.getKeycloakSession();
         RealmModel realm = authorization.getRealm();
 
-        if (owner.getId().equals(resourceServer.getClientId())) {
-            ClientModel clientModel = realm.getClientById(resourceServer.getClientId());
+        if (owner.getId().equals(resourceServer.getId())) {
+            ClientModel clientModel = realm.getClientById(resourceServer.getId());
             owner.setName(clientModel.getClientId());
         } else {
             UserModel userModel = keycloakSession.users().getUserById(owner.getId(), realm);
@@ -882,7 +881,7 @@ public class ModelToRepresentation {
             if (resource.getType() != null) {
                 ResourceStore resourceStore = authorization.getStoreFactory().getResourceStore();
                 for (Resource typed : resourceStore.findByType(resource.getType(), resourceServer.getId())) {
-                    if (typed.getOwner().equals(resourceServer.getClientId()) && !typed.getId().equals(resource.getId())) {
+                    if (typed.getOwner().equals(resourceServer.getId()) && !typed.getId().equals(resource.getId())) {
                         resource.setTypedScopes(typed.getScopes().stream().map(model1 -> {
                             ScopeRepresentation scope = new ScopeRepresentation();
                             scope.setId(model1.getId());

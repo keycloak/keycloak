@@ -38,7 +38,7 @@ public class ResourceServerAdapter implements ResourceServer, CachedModel<Resour
     @Override
     public ResourceServer getDelegateForUpdate() {
         if (updated == null) {
-            cacheSession.registerResourceServerInvalidation(cached.getId(), cached.getClientId());
+            cacheSession.registerResourceServerInvalidation(cached.getId());
             updated = cacheSession.getResourceServerStoreDelegate().findById(cached.getId());
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
@@ -76,12 +76,6 @@ public class ResourceServerAdapter implements ResourceServer, CachedModel<Resour
     public String getId() {
         if (isUpdated()) return updated.getId();
         return cached.getId();
-    }
-
-    @Override
-    public String getClientId() {
-        if (isUpdated()) return updated.getClientId();
-        return cached.getClientId();
     }
 
     @Override

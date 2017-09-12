@@ -36,14 +36,6 @@ public interface ResourceServer {
     String getId();
 
     /**
-     * Returns the identifier of the client application (which already exists in Keycloak) that is also acting as a resource
-     * server.
-     *
-     * @return the identifier of the client application associated with this instance.
-     */
-    String getClientId();
-
-    /**
      * Indicates if the resource server is allowed to manage its own resources remotely using the Protection API.
      *
      * {@code true} if the resource server is allowed to managed them remotely

@@ -51,13 +51,4 @@ public interface ResourceServerStore {
      * @return the resource server instance with the given identifier or null if no instance was found
      */
     ResourceServer findById(String id);
-
-    /**
-     * Returns a {@link ResourceServer} instance based on the identifier of a client application.
-     *
-     * @param id the identifier of an existing client application
-     * 
-     * @return the resource server instance, with the given client id or null if no instance was found
-     */
-    ResourceServer findByClient(String id);
 }

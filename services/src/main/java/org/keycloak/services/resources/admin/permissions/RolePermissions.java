@@ -34,7 +34,6 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.services.ForbiddenException;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -541,7 +540,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         String roleResourceName = getRoleResourceName(role);
         Resource resource = authz.getStoreFactory().getResourceStore().findByName(roleResourceName, server.getId());
         if (resource == null) {
-            resource = authz.getStoreFactory().getResourceStore().create(roleResourceName, server, server.getClientId());
+            resource = authz.getStoreFactory().getResourceStore().create(roleResourceName, server, server.getId());
             Set<Scope> scopeset = new HashSet<>();
             scopeset.add(mapClientScope);
             scopeset.add(mapCompositeScope);

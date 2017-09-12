@@ -22,16 +22,11 @@ import org.keycloak.authorization.jpa.entities.PolicyEntity;
 import org.keycloak.authorization.jpa.entities.ResourceEntity;
 import org.keycloak.authorization.jpa.entities.ResourceServerEntity;
 import org.keycloak.authorization.jpa.entities.ScopeEntity;
-import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.ResourceServerStore;
-import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
-import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.util.LinkedList;
 import java.util.List;
@@ -53,8 +48,7 @@ public class JPAResourceServerStore implements ResourceServerStore {
     public ResourceServer create(String clientId) {
         ResourceServerEntity entity = new ResourceServerEntity();
 
-        entity.setId(KeycloakModelUtils.generateId());
-        entity.setClientId(clientId);
+        entity.setId(clientId);
 
         this.entityManager.persist(entity);
 
@@ -115,18 +109,5 @@ public class JPAResourceServerStore implements ResourceServerStore {
         ResourceServerEntity entity = entityManager.find(ResourceServerEntity.class, id);
         if (entity == null) return null;
         return new ResourceServerAdapter(entity, entityManager, provider.getStoreFactory());
-    }
-
-    @Override
-    public ResourceServer findByClient(final String clientId) {
-        TypedQuery<String> query = entityManager.createNamedQuery("findResourceServerIdByClient", String.class);
-
-        query.setParameter("clientId", clientId);
-        try {
-            String id = query.getSingleResult();
-            return provider.getStoreFactory().getResourceServerStore().findById(id);
-        } catch (NoResultException ex) {
-            return null;
-        }
     }
 }

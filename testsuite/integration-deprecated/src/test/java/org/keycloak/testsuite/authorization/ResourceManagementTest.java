@@ -61,7 +61,6 @@ public class ResourceManagementTest extends AbstractPhotozAdminTest {
             assertEquals("Resource Type", resourceModel.getType());
             assertEquals("Resource Icon URI", resourceModel.getIconUri());
             assertEquals("Resource URI", resourceModel.getUri());
-            assertEquals(resourceServer.getClientId(), resourceModel.getOwner());
             assertEquals(resourceServer.getId(), resourceModel.getResourceServer().getId());
         });
     }

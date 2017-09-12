@@ -114,7 +114,7 @@ public class AbstractPermissionService {
                 }
 
                 for (Resource baseResource : authorization.getStoreFactory().getResourceStore().findByType(resource.getType(), resourceServer.getId())) {
-                    if (baseResource.getOwner().equals(resource.getResourceServer().getClientId())) {
+                    if (baseResource.getOwner().equals(resource.getResourceServer().getId())) {
                         for (Scope baseScope : baseResource.getScopes()) {
                             if (baseScope.getName().equals(scopeName)) {
                                 return new ScopeRepresentation(scopeName);
