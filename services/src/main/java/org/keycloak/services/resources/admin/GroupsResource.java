@@ -126,7 +126,6 @@ public class GroupsResource {
         try {
             response.put("count", results);
         } catch (JSONException e) {
-            e.printStackTrace();
             return ErrorResponse.error("Cannot create response object", Response.Status.INTERNAL_SERVER_ERROR);
         }
         return Response.ok(response.toString(), MediaType.APPLICATION_JSON).build();
