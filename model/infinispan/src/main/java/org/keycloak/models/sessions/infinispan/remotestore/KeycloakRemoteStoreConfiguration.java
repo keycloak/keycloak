@@ -31,18 +31,33 @@ import org.infinispan.persistence.remote.configuration.RemoteStoreConfiguration;
 public class KeycloakRemoteStoreConfiguration extends RemoteStoreConfiguration {
 
     static final AttributeDefinition<String> USE_CONFIG_TEMPLATE_FROM_CACHE = AttributeDefinition.builder("useConfigTemplateFromCache", null, String.class).immutable().build();
+    static final AttributeDefinition<String> REMOTE_SERVERS = AttributeDefinition.builder("remoteServers", null, String.class).immutable().build();
+    static final AttributeDefinition<Boolean> SESSION_CACHE = AttributeDefinition.builder("sessionCache", null, Boolean.class).immutable().build();
 
     private final Attribute<String> useConfigTemplateFromCache;
+    private final Attribute<String> remoteServers;
+    private final Attribute<Boolean> sessionCache;
 
 
     public KeycloakRemoteStoreConfiguration(RemoteStoreConfiguration other) {
         super(other.attributes(), other.async(), other.singletonStore(), other.asyncExecutorFactory(), other.connectionPool());
         useConfigTemplateFromCache = attributes.attribute(USE_CONFIG_TEMPLATE_FROM_CACHE.name());
+        remoteServers = attributes.attribute(REMOTE_SERVERS.name());
+        sessionCache = attributes.attribute(SESSION_CACHE.name());
     }
-
 
 
     public String useConfigTemplateFromCache() {
         return useConfigTemplateFromCache==null ? null : useConfigTemplateFromCache.get();
+    }
+
+
+    public String remoteServers() {
+        return remoteServers==null ? null : remoteServers.get();
+    }
+
+
+    public Boolean sessionCache() {
+        return sessionCache==null ? false : sessionCache.get();
     }
 }

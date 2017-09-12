@@ -30,7 +30,6 @@ import org.infinispan.eviction.EvictionStrategy;
 import org.infinispan.eviction.EvictionType;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
-import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
 import org.infinispan.remoting.transport.Transport;
 import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
 import org.infinispan.transaction.LockingMode;
@@ -43,6 +42,7 @@ import org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.sessions.infinispan.remotestore.KeycloakRemoteStoreConfigurationBuilder;
+import org.keycloak.models.sessions.infinispan.remotestore.KeycloakTcpTransportFactory;
 
 import javax.naming.InitialContext;
 
@@ -246,7 +246,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         if (jdgEnabled) {
             sessionConfigBuilder = new ConfigurationBuilder();
             sessionConfigBuilder.read(sessionCacheConfigurationBase);
-            configureRemoteCacheStore(sessionConfigBuilder, async, InfinispanConnectionProvider.SESSION_CACHE_NAME, KeycloakRemoteStoreConfigurationBuilder.class);
+            configureRemoteCacheStore(sessionConfigBuilder, async, InfinispanConnectionProvider.SESSION_CACHE_NAME, true);
         }
         Configuration sessionCacheConfiguration = sessionConfigBuilder.build();
         cacheManager.defineConfiguration(InfinispanConnectionProvider.SESSION_CACHE_NAME, sessionCacheConfiguration);
@@ -254,7 +254,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         if (jdgEnabled) {
             sessionConfigBuilder = new ConfigurationBuilder();
             sessionConfigBuilder.read(sessionCacheConfigurationBase);
-            configureRemoteCacheStore(sessionConfigBuilder, async, InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME, KeycloakRemoteStoreConfigurationBuilder.class);
+            configureRemoteCacheStore(sessionConfigBuilder, async, InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME, true);
         }
         sessionCacheConfiguration = sessionConfigBuilder.build();
         cacheManager.defineConfiguration(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME, sessionCacheConfiguration);
@@ -262,7 +262,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         if (jdgEnabled) {
             sessionConfigBuilder = new ConfigurationBuilder();
             sessionConfigBuilder.read(sessionCacheConfigurationBase);
-            configureRemoteCacheStore(sessionConfigBuilder, async, InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME, KeycloakRemoteStoreConfigurationBuilder.class);
+            configureRemoteCacheStore(sessionConfigBuilder, async, InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME, true);
         }
         sessionCacheConfiguration = sessionConfigBuilder.build();
         cacheManager.defineConfiguration(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME, sessionCacheConfiguration);
@@ -281,7 +281,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         }
 
         if (jdgEnabled) {
-            configureRemoteCacheStore(replicationConfigBuilder, async, InfinispanConnectionProvider.WORK_CACHE_NAME, RemoteStoreConfigurationBuilder.class);
+            configureRemoteCacheStore(replicationConfigBuilder, async, InfinispanConnectionProvider.WORK_CACHE_NAME, false);
         }
 
         Configuration replicationEvictionCacheConfiguration = replicationConfigBuilder.build();
@@ -349,13 +349,15 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     }
 
     // Used for cross-data centers scenario. Usually integration with external JDG server, which itself handles communication between DCs.
-    private void configureRemoteCacheStore(ConfigurationBuilder builder, boolean async, String cacheName, Class<? extends RemoteStoreConfigurationBuilder> configBuilderClass) {
-        String jdgServer = config.get("remoteStoreServer", "localhost");
+    private void configureRemoteCacheStore(ConfigurationBuilder builder, boolean async, String cacheName, boolean sessionCache) {
+        String jdgServer = config.get("remoteStoreHost", "localhost");
         Integer jdgPort = config.getInt("remoteStorePort", 11222);
 
         builder.persistence()
                 .passivation(false)
-                .addStore(configBuilderClass)
+                .addStore(KeycloakRemoteStoreConfigurationBuilder.class)
+                    .remoteServers(jdgServer + ":" + jdgPort)
+                    .sessionCache(sessionCache)
                     .fetchPersistentState(false)
                     .ignoreModifications(false)
                     .purgeOnStartup(false)
@@ -365,9 +367,10 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                     .rawValues(true)
                     .forceReturnValues(false)
                     .marshaller(KeycloakHotRodMarshallerFactory.class.getName())
-                    .addServer()
-                        .host(jdgServer)
-                        .port(jdgPort)
+                    .transportFactory(KeycloakTcpTransportFactory.class.getName())
+//                    .addServer()
+//                        .host(jdgServer)
+//                        .port(jdgPort)
 //                  .connectionPool()
 //                      .maxActive(100)
 //                      .exhaustedAction(ExhaustedAction.CREATE_NEW)
@@ -377,12 +380,14 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     }
 
     private void configureRemoteActionTokenCacheStore(ConfigurationBuilder builder, boolean async) {
-        String jdgServer = config.get("remoteStoreServer", "localhost");
+        String jdgServer = config.get("remoteStoreHost", "localhost");
         Integer jdgPort = config.getInt("remoteStorePort", 11222);
 
         builder.persistence()
                 .passivation(false)
-                .addStore(RemoteStoreConfigurationBuilder.class)
+                .addStore(KeycloakRemoteStoreConfigurationBuilder.class)
+                    .remoteServers(jdgServer + ":" + jdgPort)
+                    .sessionCache(false)
                     .fetchPersistentState(false)
                     .ignoreModifications(false)
                     .purgeOnStartup(false)
@@ -392,9 +397,10 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                     .rawValues(true)
                     .forceReturnValues(false)
                     .marshaller(KeycloakHotRodMarshallerFactory.class.getName())
-                    .addServer()
-                        .host(jdgServer)
-                        .port(jdgPort)
+                    .transportFactory(KeycloakTcpTransportFactory.class.getName())
+//                    .addServer()
+//                        .host(jdgServer)
+//                        .port(jdgPort)
                     .async()
                         .enabled(async);
 

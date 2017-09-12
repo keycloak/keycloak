@@ -110,32 +110,24 @@ Keycloak servers setup
                       <transport type="UDP" socket-binding="jgroups-udp" site="${jboss.site.name}"/>
 ```  
 
-3.2) Add output-socket-binding for `remote-cache` under `socket-binding-group` element:
-
-```xml
-<socket-binding-group ...>
-    ...
-    <outbound-socket-binding name="remote-cache">
-        <remote-destination host="localhost" port="${remote.cache.port}"/>
-    </outbound-socket-binding>
-    
-</socket-binding-group>    
-```
-
-3.3) Add this `module` attribute under `cache-container` element of name `keycloak` :
+3.2) Add this `module` attribute under `cache-container` element of name `keycloak` :
  
 ```xml
  <cache-container name="keycloak" jndi-name="infinispan/Keycloak" module="org.keycloak.keycloak-model-infinispan">
 ``` 
 
-3.4) Add the `remote-store` under `work` cache:
+3.3) Add the `store` under `work` cache:
 
 ```xml
 <replicated-cache name="work" mode="SYNC">
-    <remote-store passivation="false" fetch-state="false" purge="false" preload="false" shared="true" cache="work" remote-servers="remote-cache">    
-        <property name="rawValues">true</property>
+    <store class="org.keycloak.models.sessions.infinispan.remotestore.KeycloakRemoteStoreConfigurationBuilder" passivation="false" fetch-state="false" purge="false" preload="false" shared="true">   
+        <property name="rawValues">true</property>	
         <property name="marshaller">org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory</property>
-    </remote-store>
+        <property name="transportFactory">org.keycloak.models.sessions.infinispan.remotestore.KeycloakTcpTransportFactory</property>
+        <property name="remoteServers">localhost:${remote.cache.port}</property>
+        <property name="remoteCacheName">work</property> 
+        <property name="sessionCache">false</property>
+    </store>
 </replicated-cache>
 ```
 
@@ -146,17 +138,19 @@ Keycloak servers setup
     <store class="org.keycloak.models.sessions.infinispan.remotestore.KeycloakRemoteStoreConfigurationBuilder" passivation="false" fetch-state="false" purge="false" preload="false" shared="true">   
         <property name="remoteCacheName">sessions</property> 
         <property name="useConfigTemplateFromCache">work</property>
+        <property name="sessionCache">true</property>
     </store>
 </distributed-cache>
 ```
 
-3.6) Same for `offlineSessions` and `loginFailures` caches:
+3.6) Same for `offlineSessions` and `loginFailures` caches (The only difference from `sessions` cache is, that `remoteCacheName` property value are different:
 
 ```xml
 <distributed-cache name="offlineSessions" mode="SYNC" owners="1">
     <store class="org.keycloak.models.sessions.infinispan.remotestore.KeycloakRemoteStoreConfigurationBuilder" passivation="false" fetch-state="false" purge="false" preload="false" shared="true">   
         <property name="remoteCacheName">offlineSessions</property> 
         <property name="useConfigTemplateFromCache">work</property>
+        <property name="sessionCache">true</property>
     </store>
 </distributed-cache>
 
@@ -164,13 +158,28 @@ Keycloak servers setup
     <store class="org.keycloak.models.sessions.infinispan.remotestore.KeycloakRemoteStoreConfigurationBuilder" passivation="false" fetch-state="false" purge="false" preload="false" shared="true">   
         <property name="remoteCacheName">loginFailures</property> 
         <property name="useConfigTemplateFromCache">work</property>
+        <property name="sessionCache">true</property>
     </store>
 </distributed-cache>
 ```
 
-3.7) The configuration of distributed cache `authenticationSessions` and other caches is left unchanged.
+3.7) The configuration of `actionTokens` cache have different `remoteCacheName`, `sessionCache` and the `preload` attribute:
 
-3.8) Optionally enable DEBUG logging under `logging` subsystem:
+```xml
+<distributed-cache name="actionTokens" mode="SYNC" owners="2">
+    <eviction max-entries="-1" strategy="NONE"/>
+    <expiration max-idle="-1" interval="300000"/>
+    <store class="org.keycloak.models.sessions.infinispan.remotestore.KeycloakRemoteStoreConfigurationBuilder" passivation="false" fetch-state="false" purge="false" preload="true" shared="true">   
+        <property name="remoteCacheName">actionTokens</property> 
+        <property name="useConfigTemplateFromCache">work</property>
+        <property name="sessionCache">false</property>
+    </store>
+</distributed-cache>
+```            
+
+3.8) The configuration of distributed cache `authenticationSessions` and other caches is left unchanged.
+
+3.9) Optionally enable DEBUG logging under `logging` subsystem:
 
 ```xml
 <logger category="org.keycloak.cluster.infinispan">
@@ -211,7 +220,7 @@ cd NODE12/bin
 The cluster nodes should be connected. This should be in the log of both NODE11 and NODE12:
 
 ```
-Received new cluster view for channel hibernate: [node11|1] (2) [node11, node12]
+Received new cluster view for channel keycloak: [node11|1] (2) [node11, node12]
 ```
 
 7) Start `NODE21` :
@@ -226,7 +235,7 @@ cd NODE21/bin
 It shouldn't be connected to the cluster with `NODE11` and `NODE12`, but to separate one:
 
 ```
-Received new cluster view for channel hibernate: [node21|0] (1) [node21]
+Received new cluster view for channel keycloak: [node21|0] (1) [node21]
 ```
 
 8) Start `NODE22` :
@@ -241,7 +250,7 @@ cd NODE22/bin
 It should be in cluster with `NODE21` :
 
 ```
-Received new cluster view for channel server: [node21|1] (2) [node21, node22]
+Received new cluster view for channel keycloak: [node21|1] (2) [node21, node22]
 ```
 
 9) Test:
@@ -263,5 +272,5 @@ the same sessions in tab `Sessions` of particular user, client or realm on all 4
 Event 'CLIENT_CACHE_ENTRY_REMOVED', key '193489e7-e2bc-4069-afe8-f1dfa73084ea', skip 'false'
 ```
 
-This is just a starting point and the instructions are subject to change. We plan performance improvements especially around performance. If you 
+This is just a starting point and the instructions are subject to change. We plan various improvements especially around performance. If you 
 have any feedback regarding cross-dc scenario, please let us know on keycloak-user mailing list referred from [Keycloak home page](http://www.keycloak.org/community.html).

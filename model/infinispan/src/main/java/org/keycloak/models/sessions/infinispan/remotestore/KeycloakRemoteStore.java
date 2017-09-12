@@ -32,7 +32,6 @@ import org.infinispan.metadata.InternalMetadata;
 import org.infinispan.persistence.InitializationContextImpl;
 import org.infinispan.persistence.remote.RemoteStore;
 import org.infinispan.persistence.remote.configuration.RemoteStoreConfiguration;
-import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
 import org.infinispan.persistence.spi.InitializationContext;
 import org.infinispan.persistence.spi.PersistenceException;
 import org.jboss.logging.Logger;
@@ -52,6 +51,7 @@ public class KeycloakRemoteStore extends RemoteStore {
     @Override
     public void start() throws PersistenceException {
         this.remoteCacheName = getConfiguration().remoteCacheName();
+        Boolean sessionCache = getConfiguration().sessionCache();
 
         String cacheTemplateName = getConfiguration().useConfigTemplateFromCache();
 
@@ -64,7 +64,7 @@ public class KeycloakRemoteStore extends RemoteStore {
 
             Optional<StoreConfiguration> optional = cacheManager.getCacheConfiguration(cacheTemplateName).persistence().stores().stream().filter((StoreConfiguration storeConfig) -> {
 
-                return storeConfig instanceof RemoteStoreConfiguration;
+                return storeConfig instanceof KeycloakRemoteStoreConfiguration;
 
             }).findFirst();
 
@@ -72,14 +72,20 @@ public class KeycloakRemoteStore extends RemoteStore {
                 throw new CacheException("Unable to find remoteStore on cache '" + cacheTemplateName + ".");
             }
 
-            RemoteStoreConfiguration templateConfig = (RemoteStoreConfiguration) optional.get();
+            KeycloakRemoteStoreConfiguration templateConfig = (KeycloakRemoteStoreConfiguration) optional.get();
 
-            // We have template configuration, so create new configuration from it. Override just remoteCacheName
+            // We have template configuration, so create new configuration from it. Override just remoteCacheName and sessionsCache (not pretty, but works for now)
             PersistenceConfigurationBuilder readPersistenceBuilder = new ConfigurationBuilder().read(ctx.getCache().getCacheConfiguration()).persistence();
-            RemoteStoreConfigurationBuilder configBuilder = new RemoteStoreConfigurationBuilder(readPersistenceBuilder);
+            KeycloakRemoteStoreConfigurationBuilder configBuilder = new KeycloakRemoteStoreConfigurationBuilder(readPersistenceBuilder);
             configBuilder.read(templateConfig);
 
+            // Rather log this to clearly show in the log that this might be a configuration mistake (Note that it can be expected for some cases)
+            if (!this.remoteCacheName.equals(ctx.getCache().getName())) {
+                logger.warnf("Cache name and remoteCache name are different - maybe it's expected. Cache name '%s', remoteCache name '%s'.", ctx.getCache().getName(), this.remoteCacheName);
+            }
+
             configBuilder.remoteCacheName(this.remoteCacheName);
+            configBuilder.sessionCache(sessionCache);
 
             RemoteStoreConfiguration newCfg1 = configBuilder.create();
             KeycloakRemoteStoreConfiguration newCfg = new KeycloakRemoteStoreConfiguration(newCfg1);
@@ -93,6 +99,8 @@ public class KeycloakRemoteStore extends RemoteStore {
             logger.debugf("Skip overriding configuration from template for cache '%s'", ctx.getCache().getName());
         }
 
+        logger.debugf("Using configuration for remote cache '%s': %s", remoteCacheName, getConfiguration().toString());
+
         super.start();
 
         if (getRemoteCache() == null) {
@@ -103,6 +111,10 @@ public class KeycloakRemoteStore extends RemoteStore {
 
     @Override
     public MarshalledEntry load(Object key) throws PersistenceException {
+        if (!getConfiguration().sessionCache()) {
+            return super.load(key);
+        }
+
         logger.debugf("Calling load: '%s' for remote cache '%s'", key, remoteCacheName);
 
         MarshalledEntry entry = super.load(key);
@@ -125,6 +137,11 @@ public class KeycloakRemoteStore extends RemoteStore {
     // Don't do anything. Iterate over remoteCache.keySet() can have big performance impact. We handle bulk load by ourselves if needed.
     @Override
     public void process(KeyFilter filter, CacheLoaderTask task, Executor executor, boolean fetchValue, boolean fetchMetadata) {
+        if (!getConfiguration().sessionCache()) {
+            super.process(filter, task, executor, fetchValue, fetchMetadata);
+            return;
+        }
+
         logger.debugf("Skip calling process with filter '%s' on cache '%s'", filter, remoteCacheName);
         // super.process(filter, task, executor, fetchValue, fetchMetadata);
     }
@@ -133,11 +150,19 @@ public class KeycloakRemoteStore extends RemoteStore {
     // Don't do anything. Writes handled by KC itself as we need more flexibility
     @Override
     public void write(MarshalledEntry entry) throws PersistenceException {
+        if (!getConfiguration().sessionCache()) {
+            super.write(entry);
+            return;
+        }
     }
 
 
     @Override
     public boolean delete(Object key) throws PersistenceException {
+        if (!getConfiguration().sessionCache()) {
+            return super.delete(key);
+        }
+
         logger.debugf("Calling delete for key '%s' on cache '%s'", key, remoteCacheName);
 
         // Optimization - we don't need to know the previous value.
