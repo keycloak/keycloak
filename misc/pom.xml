@@ -3,7 +3,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.3.0.CR2</version>
+        <version>3.3.0.Final-SNAPSHOT</version>
     </parent>
     <name>Keycloak Misc</name>
     <description/>

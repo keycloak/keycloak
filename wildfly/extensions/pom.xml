@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-wildfly-parent</artifactId>
-        <version>3.3.0.CR2</version>
+        <version>3.3.0.Final-SNAPSHOT</version>
     </parent>
 
     <artifactId>keycloak-wildfly-extensions</artifactId>
