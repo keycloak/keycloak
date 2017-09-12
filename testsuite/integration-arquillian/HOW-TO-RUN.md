@@ -294,7 +294,7 @@ The Welcome Page tests need to be run on WildFly/EAP and with `-Dskip.add.user.j
 The social login tests require setup of all social networks including an example social user. These details can't be 
 shared as it would result in the clients and users eventually being blocked. By default these tests are skipped.
    
-To run the full test you need to configure clients in Google, Facebook, GitHub, Twitter, LinkedIn, Microsoft and 
+To run the full test you need to configure clients in Google, Facebook, GitHub, Twitter, LinkedIn, Microsoft, PayPal and 
 StackOverflow. See the server administration guide for details on how to do that. Further, you also need to create a 
 sample user that can login to the social network.
  

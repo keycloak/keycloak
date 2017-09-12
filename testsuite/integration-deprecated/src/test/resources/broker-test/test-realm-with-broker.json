@@ -52,6 +52,21 @@
             }
         },
         {
+          "alias" : "model-paypal",
+          "providerId" : "paypal",
+          "enabled": true,
+          "storeToken": false,
+          "postBrokerLoginFlowAlias" : "browser",
+          "config": {
+              "sandbox": false,
+              "authorizationUrl": "authorizationUrl",
+              "tokenUrl": "tokenUrl",
+              "userInfoUrl": "userInfoUrl",
+              "clientId": "clientId",
+              "clientSecret": "clientSecret"
+          }
+        },
+        {
             "alias" : "model-twitter",
             "providerId" : "twitter",
             "enabled": true,

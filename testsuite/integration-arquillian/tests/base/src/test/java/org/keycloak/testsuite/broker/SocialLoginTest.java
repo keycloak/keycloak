@@ -20,6 +20,7 @@ import org.keycloak.testsuite.pages.social.GitHubLoginPage;
 import org.keycloak.testsuite.pages.social.GoogleLoginPage;
 import org.keycloak.testsuite.pages.social.LinkedInLoginPage;
 import org.keycloak.testsuite.pages.social.MicrosoftLoginPage;
+import org.keycloak.testsuite.pages.social.PayPalLoginPage;
 import org.keycloak.testsuite.pages.social.StackOverflowLoginPage;
 import org.keycloak.testsuite.pages.social.TwitterLoginPage;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
@@ -42,6 +43,7 @@ import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GITHUB;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GOOGLE;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.LINKEDIN;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.MICROSOFT;
+import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.PAYPAL;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.OPENSHIFT;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.STACKOVERFLOW;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.TWITTER;
@@ -70,6 +72,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         TWITTER("twitter", TwitterLoginPage.class),
         LINKEDIN("linkedin", LinkedInLoginPage.class),
         MICROSOFT("microsoft", MicrosoftLoginPage.class),
+        PAYPAL("paypal", PayPalLoginPage.class),
         STACKOVERFLOW("stackoverflow", StackOverflowLoginPage.class),
         OPENSHIFT("openshift-v3", null);
 
@@ -191,6 +194,13 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void paypalLogin() {
+        currentTestProvider = PAYPAL;
+        performLogin();
+        assertAccount();
+    }
+
+    @Test
     public void stackoverflowLogin() {
         currentTestProvider = STACKOVERFLOW;
         performLogin();
@@ -208,6 +218,9 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         }
         if (provider == OPENSHIFT) {
             idp.getConfig().put("baseUrl", config.getProperty(provider.id() + ".baseUrl", OpenshiftV3IdentityProvider.BASE_URL));
+        }
+        if (provider == PAYPAL) {
+            idp.getConfig().put("sandbox", getConfig(provider, "sandbox"));
         }
         return idp;
     }

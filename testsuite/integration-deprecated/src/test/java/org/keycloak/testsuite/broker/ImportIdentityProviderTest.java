@@ -33,6 +33,9 @@ import org.keycloak.social.facebook.FacebookIdentityProvider;
 import org.keycloak.social.facebook.FacebookIdentityProviderFactory;
 import org.keycloak.social.github.GitHubIdentityProvider;
 import org.keycloak.social.github.GitHubIdentityProviderFactory;
+import org.keycloak.social.paypal.PayPalIdentityProvider;
+import org.keycloak.social.paypal.PayPalIdentityProviderFactory;
+import org.keycloak.social.paypal.PayPalIdentityProviderConfig;
 import org.keycloak.social.google.GoogleIdentityProvider;
 import org.keycloak.social.google.GoogleIdentityProviderFactory;
 import org.keycloak.social.linkedin.LinkedInIdentityProvider;
@@ -143,6 +146,8 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
                     assertFacebookIdentityProviderConfig(realm, identityProvider);
                 } else if (GitHubIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
                     assertGitHubIdentityProviderConfig(realm, identityProvider);
+                } else if (PayPalIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
+                    assertPayPalIdentityProviderConfig(realm, identityProvider);
                 } else if (TwitterIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
                     assertTwitterIdentityProviderConfig(identityProvider);
                 } else if (LinkedInIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
@@ -251,6 +256,26 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         assertEquals(GitHubIdentityProvider.AUTH_URL, config.getAuthorizationUrl());
         assertEquals(GitHubIdentityProvider.TOKEN_URL, config.getTokenUrl());
         assertEquals(GitHubIdentityProvider.PROFILE_URL, config.getUserInfoUrl());
+    }
+
+    private void assertPayPalIdentityProviderConfig(RealmModel realm, IdentityProviderModel identityProvider) {
+        PayPalIdentityProvider payPalIdentityProvider = new PayPalIdentityProviderFactory().create(session, identityProvider);
+        PayPalIdentityProviderConfig config = payPalIdentityProvider.getConfig();
+
+        assertEquals("model-paypal", config.getAlias());
+        assertEquals(PayPalIdentityProviderFactory.PROVIDER_ID, config.getProviderId());
+        assertEquals(true, config.isEnabled());
+        assertEquals(false, config.isTrustEmail());
+        assertEquals(false, config.isAuthenticateByDefault());
+        assertEquals(false, config.isStoreToken());
+        assertEquals("clientId", config.getClientId());
+        assertEquals("clientSecret", config.getClientSecret());
+        assertEquals(false, config.targetSandbox());
+        assertEquals(realm.getFlowByAlias(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW).getId(), identityProvider.getFirstBrokerLoginFlowId());
+        assertEquals(realm.getBrowserFlow().getId(), identityProvider.getPostBrokerLoginFlowId());
+        assertEquals(PayPalIdentityProvider.AUTH_URL, config.getAuthorizationUrl());
+        assertEquals(PayPalIdentityProvider.BASE_URL + PayPalIdentityProvider.TOKEN_RESOURCE, config.getTokenUrl());
+        assertEquals(PayPalIdentityProvider.BASE_URL + PayPalIdentityProvider.PROFILE_RESOURCE, config.getUserInfoUrl());
     }
 
     private void assertLinkedInIdentityProviderConfig(IdentityProviderModel identityProvider) {
