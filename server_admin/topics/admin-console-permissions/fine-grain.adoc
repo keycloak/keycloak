@@ -186,22 +186,10 @@ image:{project_images}/fine-grain-client-permissions-tab-on.png[]
 If you grant access to this particular parmission to an admin, that admin will be able
 map any role defined by the client.
 
-==== Managing Users of a Specific Group
-
-You can specify that an admin can only manage the members of a specific group.  If you go to a group's
-page in the Admin Console you will see a `Permissions` tab.  Clicking on that and enabling
-fine grain permissions for the group will get you to something like this:
-
-.Group Permissions Tab
-image:{project_images}/fine-grain-group-permissions-tab-on.png[]
-
-In this screenshot, the group we are defining permissions for is `sales`.  The
-`manage-members` permission allows you to define policies that allow an admin to
-manage any user that is a member of the group.
-
 ==== Full List of Permissions
 
-The chapter defines the whole list of permission types that can be described for
+You can do a lot more with fine grain permissions beyond managing a specific client or the specific roles of a client.
+This chapter defines the whole list of permission types that can be described for
 a realm.
 
 ===== Role
