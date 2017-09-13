@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.3.0.CR1-SNAPSHOT</version>
+        <version>3.4.0.CR1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -34,9 +34,9 @@
     <modules>
         <module>adapters</module>
         <module>saml-adapters</module>
+        <module>feature-packs</module>
         <module>server-dist</module>
         <module>server-overlay</module>
-        <module>feature-packs</module>
     </modules>
 
     <profiles>

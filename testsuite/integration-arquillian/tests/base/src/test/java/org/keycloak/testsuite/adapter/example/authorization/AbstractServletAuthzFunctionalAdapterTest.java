@@ -207,7 +207,7 @@ public abstract class AbstractServletAuthzFunctionalAdapterTest extends Abstract
     public void testAccessPublicResource() throws Exception {
         performTests(() -> {
             driver.navigate().to(getResourceServerUrl() + "/public-html.html");
-            WaitUtils.waitForPageToLoad(driver);
+            WaitUtils.waitForPageToLoad();
             assertTrue(hasText("This is public resource that should be accessible without login."));
         });
     }

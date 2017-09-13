@@ -52,6 +52,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isEmptyString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -122,7 +123,6 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             user.singleAttribute("country", "USA");
             user.singleAttribute("formatted", "6 Foo Street");
             user.singleAttribute("phone", "617-777-6666");
-
 
             List<String> departments = Arrays.asList("finance", "development");
             user.getAttributes().put("departments", departments);
@@ -241,6 +241,62 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         events.clear();
     }
+
+    @Test
+    public void testNullOrEmptyTokenMapping() throws Exception {
+        {
+            UserResource userResource = findUserByUsernameId(adminClient.realm("test"), "test-user@localhost");
+            UserRepresentation user = userResource.toRepresentation();
+
+            user.singleAttribute("empty", "");
+            user.singleAttribute("null", null);
+            userResource.update(user);
+
+            ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");
+            app.getProtocolMappers().createMapper(createClaimMapper("empty", "empty", "empty", "String", true, "", true, true, false)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("null", "null", "null", "String", true, "", true, true, false)).close();
+        }
+
+        {
+            OAuthClient.AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+
+            IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+            Object empty = idToken.getOtherClaims().get("empty");
+            assertThat((empty == null ? null : (String) empty), isEmptyString());
+            Object nulll = idToken.getOtherClaims().get("null");
+            assertNull(nulll);
+
+            AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+            oauth.openLogout();
+        }
+
+        // undo mappers
+        {
+            ClientResource app = findClientByClientId(adminClient.realm("test"), "test-app");
+            ClientRepresentation clientRepresentation = app.toRepresentation();
+            for (ProtocolMapperRepresentation model : clientRepresentation.getProtocolMappers()) {
+                if (model.getName().equals("empty")
+                        || model.getName().equals("null")
+                        ) {
+                    app.getProtocolMappers().delete(model.getId());
+                }
+            }
+        }
+
+        events.clear();
+
+        {
+            OAuthClient.AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+            IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+            assertNull(idToken.getAddress());
+            assertNull(idToken.getOtherClaims().get("empty"));
+            assertNull(idToken.getOtherClaims().get("null"));
+
+            oauth.openLogout();
+        }
+        events.clear();
+    }
+
 
 
     @Test

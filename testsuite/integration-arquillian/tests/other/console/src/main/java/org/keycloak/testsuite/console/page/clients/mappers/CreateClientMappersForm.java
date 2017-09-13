@@ -116,7 +116,7 @@ public class CreateClientMappersForm extends Form {
             }
             WaitUtils.pause(1000);
             selectRealmRoleButton.click();
-            WaitUtils.waitForModalFadeOut(driver);
+            WaitUtils.waitForModalFadeOut();
         }
         
         public void selectClientRole(String clientName, String roleName) {
@@ -126,7 +126,7 @@ public class CreateClientMappersForm extends Form {
             }
             WaitUtils.pause(1000);
             selectClientRoleButton.click();
-            WaitUtils.waitForModalFadeOut(driver);
+            WaitUtils.waitForModalFadeOut();
         }
     }
     

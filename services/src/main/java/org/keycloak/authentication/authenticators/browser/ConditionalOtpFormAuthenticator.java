@@ -300,8 +300,25 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
                     && configModel.getConfig().size() <= 1) {
                 return true;
             }
+            if (containsConditionalOtpConfig(configModel.getConfig())
+                && voteForUserOtpControlAttribute(user, configModel.getConfig()) == ABSTAIN
+                && voteForUserRole(realm, user, configModel.getConfig()) == ABSTAIN
+                && voteForHttpHeaderMatchesPattern(requestHeaders, configModel.getConfig()) == ABSTAIN
+                && (voteForDefaultFallback(configModel.getConfig()) == SHOW_OTP
+                    || voteForDefaultFallback(configModel.getConfig()) == ABSTAIN)) {
+                return true;
+            }
         }
         return false;
+    }
+
+    private boolean containsConditionalOtpConfig(Map config) {
+        return config.containsKey(OTP_CONTROL_USER_ATTRIBUTE)
+            || config.containsKey(SKIP_OTP_ROLE)
+            || config.containsKey(FORCE_OTP_ROLE)
+            || config.containsKey(SKIP_OTP_FOR_HTTP_HEADER)
+            || config.containsKey(FORCE_OTP_FOR_HTTP_HEADER)
+            || config.containsKey(DEFAULT_OTP_OUTCOME);
     }
 
     @Override

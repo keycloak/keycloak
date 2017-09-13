@@ -45,6 +45,7 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
+import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -67,6 +68,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.KeySpec;
 import java.util.Map;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -77,6 +79,9 @@ import static org.junit.Assert.fail;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
+
+    @Page
+    private AccountUpdateProfilePage updateProfilePage;
 
     @Deployment
     public static WebArchive deploy() {
@@ -145,6 +150,42 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
         assertEquals(1, credential.getHashIterations());
         assertEncoded(credential, "password", credential.getSalt(), "PBKDF2WithHmacSHA256", 1);
+    }
+
+    // KEYCLOAK-5282
+    @Test
+    public void testPasswordNotRehasedUnchangedIterations() throws Exception {
+        setPasswordPolicy("");
+
+        String username = "testPasswordNotRehasedUnchangedIterations";
+        createUser(username);
+
+        CredentialModel credential = fetchCredentials(username);
+        String credentialId = credential.getId();
+        byte[] salt = credential.getSalt();
+
+        setPasswordPolicy("hashIterations");
+
+        loginPage.open();
+        loginPage.login(username, "password");
+
+        credential = fetchCredentials(username);
+
+        assertEquals(credentialId, credential.getId());
+        assertArrayEquals(salt, credential.getSalt());
+
+        setPasswordPolicy("hashIterations(" + Pbkdf2Sha256PasswordHashProviderFactory.DEFAULT_ITERATIONS + ")");
+
+        updateProfilePage.open();
+        updateProfilePage.logout();
+
+        loginPage.open();
+        loginPage.login(username, "password");
+
+        credential = fetchCredentials(username);
+
+        assertEquals(credentialId, credential.getId());
+        assertArrayEquals(salt, credential.getSalt());
     }
 
     @Test

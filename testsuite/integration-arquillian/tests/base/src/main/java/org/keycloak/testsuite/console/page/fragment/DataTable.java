@@ -25,6 +25,7 @@ import org.openqa.selenium.support.FindBy;
 
 import java.util.List;
 
+import static org.keycloak.testsuite.util.WaitUtils.pause;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.openqa.selenium.By.xpath;
 
@@ -59,12 +60,12 @@ public class DataTable {
 
     public void clickHeaderButton(String buttonText) {
         header.findElement(By.xpath(".//button[text()='" + buttonText + "']")).click();
-        waitForPageToLoad(driver);
+        waitForPageToLoad();
     }
 
     public void clickHeaderLink(String linkText) {
         header.findElement(By.linkText(linkText)).click();
-        waitForPageToLoad(driver);
+        waitForPageToLoad();
     }
 
     public WebElement body() {
@@ -72,6 +73,7 @@ public class DataTable {
     }
 
     public List<WebElement> rows() {
+        pause(500); // wait a bit to ensure the table is no more changing
         return rows;
     }
 

@@ -24,10 +24,22 @@
 	
     <extension qualifier="webdriver">
         <property name="browser">${browser}</property>
+        <property name="downloadBinaries">${webdriverDownloadBinaries}</property>
+
+        <!-- htmlunit -->
         <property name="htmlUnit.version">${htmlUnitBrowserVersion}</property>
-        <property name="firefox_binary">${firefox_binary}</property>
-        <property name="chromeArguments">${chromeArguments}</property>
+        <property name="htmlUnitWebClientOptions">cssEnabled=false;historyPageCacheLimit=1</property>
+
+        <!-- phantomjs -->
         <property name="phantomjs.cli.args">${phantomjs.cli.args} --ssl-certificates-path=${client.certificate.ca.path} --ssl-client-certificate-file=${client.certificate.file} --ssl-client-key-file=${client.key.file} --ssl-client-key-passphrase=${client.key.passphrase}</property>
+
+        <!-- firefox -->
+        <property name="firefox_binary">${firefox_binary}</property>
+        <property name="firefoxLogLevel">OFF</property>
+        <property name="firefoxLegacy">${firefoxLegacyDriver}</property>
+
+        <!-- chrome -->
+        <property name="chromeArguments">${chromeArguments}</property>
     </extension>
     
     <extension qualifier="graphene">
@@ -74,6 +86,7 @@
                 ${migration.import.properties}
                 ${auth.server.profile}
                 ${auth.server.feature}
+                ${kie.maven.settings}
             </property>
             <property name="javaVmArguments">
                 ${auth.server.jboss.jvm.debug.args}

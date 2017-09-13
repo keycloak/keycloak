@@ -43,9 +43,9 @@ public class DockerRegistryConfigFileInstallationProvider implements ClientInsta
     public Response generateInstallation(final KeycloakSession session, final RealmModel realm, final ClientModel client, final URI serverBaseUri) {
         final StringBuilder responseString = new StringBuilder("auth:\n")
                 .append("  token:\n")
-                .append("    realm: ").append(serverBaseUri).append("/auth/realms/").append(realm.getName()).append("/protocol/").append(DockerAuthV2Protocol.LOGIN_PROTOCOL).append("/auth\n")
+                .append("    realm: ").append(serverBaseUri).append("/realms/").append(realm.getName()).append("/protocol/").append(DockerAuthV2Protocol.LOGIN_PROTOCOL).append("/auth\n")
                 .append("    service: ").append(client.getClientId()).append("\n")
-                .append("    issuer: ").append(serverBaseUri).append("/auth/realms/").append(realm.getName()).append("\n");
+                .append("    issuer: ").append(serverBaseUri).append("/realms/").append(realm.getName()).append("\n");
         return Response.ok(responseString.toString(), MediaType.TEXT_PLAIN_TYPE).build();
     }
 

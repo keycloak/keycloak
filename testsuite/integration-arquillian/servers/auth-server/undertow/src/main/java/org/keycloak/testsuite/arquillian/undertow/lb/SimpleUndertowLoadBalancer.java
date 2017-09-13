@@ -195,7 +195,13 @@ public class SimpleUndertowLoadBalancer {
         @Override
         protected Host selectHost(HttpServerExchange exchange) {
             Host host = super.selectHost(exchange);
-            log.debugf("Selected host: %s, host available: %b", host.getUri().toString(), host.isAvailable());
+
+            if (host != null) {
+                log.debugf("Selected host: %s, host available: %b", host.getUri().toString(), host.isAvailable());
+            } else {
+                log.warn("No host available");
+            }
+
             exchange.putAttachment(SELECTED_HOST, host);
             return host;
         }

@@ -16,15 +16,15 @@
  */
 package org.keycloak.testsuite.console.page.clients.authorization.scope;
 
-import static org.openqa.selenium.By.tagName;
-
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.testsuite.page.Form;
-import org.keycloak.testsuite.util.URLUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.openqa.selenium.By.tagName;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -53,7 +53,7 @@ public class Scopes extends Form {
         for (WebElement row : scopes().rows()) {
             ScopeRepresentation actual = scopes().toRepresentation(row);
             if (actual.getName().equalsIgnoreCase(name)) {
-                URLUtils.navigateToUri(driver, row.findElements(tagName("a")).get(0).getAttribute("href"), true);
+                clickLink(row.findElements(tagName("a")).get(0));
                 scope.form().populate(representation);
             }
         }
@@ -63,7 +63,7 @@ public class Scopes extends Form {
         for (WebElement row : scopes().rows()) {
             ScopeRepresentation actual = scopes().toRepresentation(row);
             if (actual.getName().equalsIgnoreCase(name)) {
-                URLUtils.navigateToUri(driver, row.findElements(tagName("a")).get(0).getAttribute("href"), true);
+                clickLink(row.findElements(tagName("a")).get(0));
                 scope.form().delete();
             }
         }

@@ -32,7 +32,7 @@ class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<S> {
     private CrossDCMessageStatus crossDCMessageStatus;
 
 
-    public MergedUpdate(CacheOperation operation, CrossDCMessageStatus crossDCMessageStatus) {
+    private MergedUpdate(CacheOperation operation, CrossDCMessageStatus crossDCMessageStatus) {
         this.operation = operation;
         this.crossDCMessageStatus = crossDCMessageStatus;
     }

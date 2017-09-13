@@ -143,7 +143,7 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
         config.put(POST_BINDING_AUTHN_REQUEST, "true");
         config.put(VALIDATE_SIGNATURE, "false");
         config.put(WANT_AUTHN_REQUESTS_SIGNED, "false");
-        config.put(BACKCHANNEL_SUPPORTED, "true");
+        config.put(BACKCHANNEL_SUPPORTED, "false");
 
         return idp;
     }

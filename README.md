@@ -38,7 +38,7 @@ Starting Keycloak
 
 To start Keycloak during development first build as specified above, then run:
 
-    mvn -f testsuite/integration/pom.xml exec:java -Pkeycloak-server 
+    mvn -f testsuite/utils/pom.xml exec:java -Pkeycloak-server 
 
 
 To start Keycloak from the server distribution first build the distribution it as specified above, then run:

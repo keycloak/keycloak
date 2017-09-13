@@ -6,6 +6,7 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
+import static org.keycloak.testsuite.util.URLUtils.navigateToUri;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
@@ -27,6 +28,6 @@ public class Dropdown {
     public void selectByText(String text) {
         waitUntilElement(dropDownRoot).is().present();
         WebElement element = dropDownRoot.findElement(By.xpath("./ul/li/a[text()='" + text + "']"));
-        driver.navigate().to(element.getAttribute("href"));
+        navigateToUri(element.getAttribute("href"), true); // TODO: move cursor to show the menu and then click the menu item
     }
 }

@@ -6,6 +6,8 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 import static org.keycloak.testsuite.console.page.fragment.Breadcrumb.BREADCRUMB_XPATH;
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+
 import org.openqa.selenium.NoSuchElementException;
 
 /**
@@ -44,7 +46,7 @@ public class Client extends Clients {
     private WebElement deleteIcon;
     
     public void delete() {
-        deleteIcon.click();
+        clickLink(deleteIcon);
         modalDialog.confirmDeletion();
     }
 
@@ -80,35 +82,35 @@ public class Client extends Clients {
         private WebElement authorizationLink;
 
         public void settings() {
-            settingsLink.click();
+            clickLink(settingsLink);
         }
 
         public void roles() {
-            rolesLink.click();
+            clickLink(rolesLink);
         }
 
         public void mappers() {
-            mappersLink.click();
+            clickLink(mappersLink);
         }
 
         public void scope() {
-            scopeLink.click();
+            clickLink(scopeLink);
         }
 
         public void revocation() {
-            revocationLink.click();
+            clickLink(revocationLink);
         }
 
         public void sessions() {
-            sessionsLink.click();
+            clickLink(sessionsLink);
         }
 
         public void installation() {
-            installationLink.click();
+            clickLink(installationLink);
         }
 
         public void authorization() {
-            authorizationLink.click();
+            clickLink(authorizationLink);
         }
         
         public boolean isServiceAccountRolesDisplayed() {

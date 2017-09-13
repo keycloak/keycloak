@@ -40,6 +40,10 @@
         <token-store>session</token-store>
         <principal-attribute>sub</principal-attribute>
     </realm>
+    <realm name="jboss-infra">
+        <realm-public-key>MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqKoq+a9MgXepmsPJDmo45qswuChW9pWjanX68oIBuI4hGvhQxFHryCow230A+sr7tFdMQMt8f1l/ysmV/fYAuW29WaoY4kI4Ou1yYPuwywKSsxT6PooTs83hKyZ1h4LZMj5DkLGDDDyVRHob2WmPaYg9RGVRw3iGGsD/p+Yb+L/gnBYQnZZ7lYqmN7h36p5CkzzlgXQA1Ha8sQxL+rJNH8+sZm0vBrKsoII3Of7TqHGsm1RwFV3XCuGJ7S61AbjJMXL5DQgJl9Z5scvxGAyoRLKC294UgMnQdzyBTMPw2GybxkRKmiK2KjQKmcopmrJp/Bt6fBR6ZkGSs9qUlxGHgwIDAQAB</realm-public-key>
+        <auth-server-url>http://localhost:8180/auth</auth-server-url>
+    </realm>
     <secure-deployment name="web-console">
         <realm>master</realm>
         <resource>web-console</resource>
@@ -69,4 +73,16 @@
         </credential>
         <redirect-rewrite-rule name="^/wsmaster/api/(.*)$">/api/$1/</redirect-rewrite-rule>
     </secure-deployment>
+    <secure-deployment name="wildfly-management">
+        <realm>jboss-infra</realm>
+        <resource>wildfly-management</resource>
+        <bearer-only>true</bearer-only>
+        <ssl-required>EXTERNAL</ssl-required>
+        <principal-attribute>preferred_username</principal-attribute>
+    </secure-deployment>
+    <secure-server name="wildfly-console">
+        <realm>jboss-infra</realm>
+        <resource>wildfly-console</resource>
+        <public-client>true</public-client>
+    </secure-server>
 </subsystem>

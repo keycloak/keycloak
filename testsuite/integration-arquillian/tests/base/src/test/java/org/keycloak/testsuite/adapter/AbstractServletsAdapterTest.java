@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.List;
 
+import org.junit.Assert;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 import static org.keycloak.testsuite.util.IOUtil.loadRealm;
 
@@ -74,7 +75,10 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         String webInfPath = baseSAMLPath + name + "/WEB-INF/";
 
         URL keycloakSAMLConfig = AbstractServletsAdapterTest.class.getResource(webInfPath + "keycloak-saml.xml");
+        Assert.assertNotNull("keycloak-saml.xml should be in " + webInfPath, keycloakSAMLConfig);
+
         URL webXML = AbstractServletsAdapterTest.class.getResource(baseSAMLPath + webXMLPath);
+        Assert.assertNotNull("web.xml should be in " + baseSAMLPath + webXMLPath, keycloakSAMLConfig);
 
         WebArchive deployment = ShrinkWrap.create(WebArchive.class, name + ".war")
                 .addClasses(servletClasses)

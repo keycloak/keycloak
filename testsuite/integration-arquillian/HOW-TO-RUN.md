@@ -294,7 +294,7 @@ The Welcome Page tests need to be run on WildFly/EAP and with `-Dskip.add.user.j
 The social login tests require setup of all social networks including an example social user. These details can't be 
 shared as it would result in the clients and users eventually being blocked. By default these tests are skipped.
    
-To run the full test you need to configure clients in Google, Facebook, GitHub, Twitter, LinkedIn, Microsoft and 
+To run the full test you need to configure clients in Google, Facebook, GitHub, Twitter, LinkedIn, Microsoft, PayPal and 
 StackOverflow. See the server administration guide for details on how to do that. Further, you also need to create a 
 sample user that can login to the social network.
  
@@ -336,8 +336,14 @@ To run the tests run:
  
 #### Mozilla Firefox
 * **Supported version:** [latest ESR](https://www.mozilla.org/en-US/firefox/organizations/) (Extended Support Release)
-* **Driver download required:** no
+* **Driver download required:** no (using the old legacy Firefox driver)
 * **Run with:** `-Dbrowser=firefox`; optionally you can specify `-Dfirefox_binary=path/to/firefox/binary`
+
+#### Mozilla Firefox with GeckoDriver
+You can also use Firefox automation with modern Marionette protocol and GeckoDriver. However, this is **highly experimental** and the testsuite may not work as expected.
+* **Supported version:** as latest as possible (Firefox has better support for Marionette with each version released)
+* **Driver download required:** [GeckoDriver](https://github.com/mozilla/geckodriver/releases)
+* **Run with:** `-Dbrowser=firefox -DfirefoxLegacyDriver=false -Dwebdriver.gecko.driver=path/to/geckodriver`
 
 #### Google Chrome
 * **Supported version:** latest stable
@@ -346,9 +352,12 @@ To run the tests run:
 
 #### Internet Explorer
 * **Supported version:** 11
-* **Driver download required:** [Internet Explorer Driver Server](http://www.seleniumhq.org/download/); recommended version [2.53.1 32-bit](http://selenium-release.storage.googleapis.com/2.53/IEDriverServer_Win32_2.53.1.zip)
+* **Driver download required:** [Internet Explorer Driver Server](http://www.seleniumhq.org/download/); recommended version [3.5.1 32-bit](http://selenium-release.storage.googleapis.com/3.5/IEDriverServer_Win32_3.5.1.zip)
 * **Run with:** `-Dbrowser=internetExplorer -Dwebdriver.ie.driver=path/to/IEDriverServer.exe`
- 
+
+#### Automatic driver downloads
+You can rely on automatic driver downloads which is provided by [Arquillian Drone](http://arquillian.org/arquillian-extension-drone/#_automatic_download). To do so just omit the `-Dwebdriver.{browser}.driver` CLI argument when running the tests.
+
 ## Run X.509 tests
 
 To run the X.509 client certificate authentication tests:
@@ -468,6 +477,16 @@ or
 It can be useful to add additional system property to enable logging:
   
     -Dkeycloak.infinispan.logging.level=debug
+    
+Tests from package "manual" uses manual lifecycle for all servers, so needs to be executed manually. Also needs to be executed with real DB like MySQL. You can run them with:
+
+    mvn -Pcache-server-infinispan -Dtest=*.crossdc.manual.* -Dmanual.mode=true \
+    -Dkeycloak.connectionsJpa.url.crossdc=jdbc:mysql://localhost/keycloak -Dkeycloak.connectionsJpa.driver.crossdc=com.mysql.jdbc.Driver \
+    -Dkeycloak.connectionsJpa.user=keycloak -Dkeycloak.connectionsJpa.password=keycloak \
+    -pl testsuite/integration-arquillian/tests/base test
+
+    
+    
      
   
 
@@ -511,6 +530,9 @@ connects to the remoteStore provided by infinispan server configured in previous
     -Dkeycloak.connectionsJpa.password=keycloak -Dkeycloak.connectionsInfinispan.clustered=true -Dkeycloak.connectionsInfinispan.l1Lifespan=0 
     -Dkeycloak.connectionsInfinispan.remoteStorePort=11222 -Dkeycloak.connectionsInfinispan.remoteStorePort.2=11222 -Dkeycloak.connectionsInfinispan.sessionsOwners=1 
     -Dsession.cache.owners=1 -Dkeycloak.infinispan.logging.level=debug -Dresources
+    
+NOTE: Tests from package "manual" (eg. SessionsPreloadCrossDCTest) needs to be executed with managed containers. 
+So skip steps 1,2 and add property `-Dmanual.mode=true` and change "cache.server.lifecycle.skip" to false `-Dcache.server.lifecycle.skip=false` or remove it.    
     
 7) If you want to debug and test manually, the servers are running on these ports (Note that not all backend servers are running by default and some might be also unused by loadbalancer):
 

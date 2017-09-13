@@ -40,12 +40,9 @@ import org.jboss.logging.Logger;
 import org.jgroups.JChannel;
 import org.keycloak.Config;
 import org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory;
-import org.keycloak.common.util.HostUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.sessions.infinispan.remotestore.KcRemoteStoreConfigurationBuilder;
-import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
-import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.sessions.infinispan.remotestore.KeycloakRemoteStoreConfigurationBuilder;
 
 import javax.naming.InitialContext;
 
@@ -249,7 +246,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         if (jdgEnabled) {
             sessionConfigBuilder = new ConfigurationBuilder();
             sessionConfigBuilder.read(sessionCacheConfigurationBase);
-            configureRemoteCacheStore(sessionConfigBuilder, async, InfinispanConnectionProvider.SESSION_CACHE_NAME, KcRemoteStoreConfigurationBuilder.class);
+            configureRemoteCacheStore(sessionConfigBuilder, async, InfinispanConnectionProvider.SESSION_CACHE_NAME, KeycloakRemoteStoreConfigurationBuilder.class);
         }
         Configuration sessionCacheConfiguration = sessionConfigBuilder.build();
         cacheManager.defineConfiguration(InfinispanConnectionProvider.SESSION_CACHE_NAME, sessionCacheConfiguration);
@@ -257,12 +254,19 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         if (jdgEnabled) {
             sessionConfigBuilder = new ConfigurationBuilder();
             sessionConfigBuilder.read(sessionCacheConfigurationBase);
-            configureRemoteCacheStore(sessionConfigBuilder, async, InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME, KcRemoteStoreConfigurationBuilder.class);
+            configureRemoteCacheStore(sessionConfigBuilder, async, InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME, KeycloakRemoteStoreConfigurationBuilder.class);
         }
         sessionCacheConfiguration = sessionConfigBuilder.build();
         cacheManager.defineConfiguration(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME, sessionCacheConfiguration);
 
-        cacheManager.defineConfiguration(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME, sessionCacheConfigurationBase);
+        if (jdgEnabled) {
+            sessionConfigBuilder = new ConfigurationBuilder();
+            sessionConfigBuilder.read(sessionCacheConfigurationBase);
+            configureRemoteCacheStore(sessionConfigBuilder, async, InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME, KeycloakRemoteStoreConfigurationBuilder.class);
+        }
+        sessionCacheConfiguration = sessionConfigBuilder.build();
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME, sessionCacheConfiguration);
+
         cacheManager.defineConfiguration(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME, sessionCacheConfigurationBase);
 
         // Retrieve caches to enforce rebalance

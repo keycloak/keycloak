@@ -6,7 +6,9 @@ libraries are not available in the public npm repo and are thus checked into
 GitHub.
 
 Javascript libraries under *./node_modules* directory are managed with yarn.  
-THEY SHOULD NOT BE CHECKED INTO GITHUB!
+
+THESE LIBRARIES SHOULD BE CHECKED INTO GITHUB UNTIL KEYCLOAK-5324 and KEYCLOAK-5392
+ARE RESOLVED.
 
 Adding or Removing javascript libraries
 ---------------------------------------

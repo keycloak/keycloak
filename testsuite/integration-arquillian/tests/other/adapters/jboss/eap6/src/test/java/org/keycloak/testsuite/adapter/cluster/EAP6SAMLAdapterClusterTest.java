@@ -54,8 +54,8 @@ public class EAP6SAMLAdapterClusterTest extends AbstractSAMLAdapterClusterTest {
     }
 
     @Override
-    protected void prepareWorkerNode(Integer managementPort) throws IOException, CliException, NumberFormatException {
-        log.infov("Preparing worker node ({0})", managementPort);
+    protected void prepareWorkerNode(int nodeIndex, Integer managementPort) throws IOException, CliException, NumberFormatException {
+        log.infov("Preparing worker node ({0} @ {1})", nodeIndex, managementPort);
 
         OnlineManagementClient clientWorkerNodeClient = ManagementClient.online(OnlineOptions
           .standalone()

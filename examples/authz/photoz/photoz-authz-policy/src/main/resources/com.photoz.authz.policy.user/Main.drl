@@ -7,7 +7,7 @@ rule "Authorize View User Album"
     when
         $evaluation : Evaluation(
             $identity : context.identity,
-            $identity.hasRole("user")
+            $identity.hasRealmRole("user")
        )
     then
        $evaluation.grant();

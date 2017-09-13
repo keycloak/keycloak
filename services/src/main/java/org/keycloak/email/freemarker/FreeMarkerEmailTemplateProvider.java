@@ -49,11 +49,11 @@ import java.util.Properties;
  */
 public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
 
-    private KeycloakSession session;
-    private FreeMarkerUtil freeMarker;
-    private RealmModel realm;
-    private UserModel user;
-    private final Map<String, Object> attributes = new HashMap<>();
+    protected KeycloakSession session;
+    protected FreeMarkerUtil freeMarker;
+    protected RealmModel realm;
+    protected UserModel user;
+    protected final Map<String, Object> attributes = new HashMap<>();
 
     public FreeMarkerEmailTemplateProvider(KeycloakSession session, FreeMarkerUtil freeMarker) {
         this.session = session;
@@ -78,7 +78,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         return this;
     }
 
-    private String getRealmName() {
+    protected String getRealmName() {
         if (realm.getDisplayName() != null) {
             return realm.getDisplayName();
         } else {
@@ -165,11 +165,11 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         send("emailVerificationSubject", "email-verification.ftl", attributes);
     }
 
-    private void send(String subjectKey, String template, Map<String, Object> attributes) throws EmailException {
+    protected void send(String subjectKey, String template, Map<String, Object> attributes) throws EmailException {
         send(subjectKey, Collections.emptyList(), template, attributes);
     }
 
-    private EmailTemplate processTemplate(String subjectKey, List<Object> subjectAttributes, String template, Map<String, Object> attributes) throws EmailException {
+    protected EmailTemplate processTemplate(String subjectKey, List<Object> subjectAttributes, String template, Map<String, Object> attributes) throws EmailException {
         try {
             ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
             Theme theme = themeProvider.getTheme(realm.getEmailTheme(), Theme.Type.EMAIL);
@@ -198,7 +198,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
             throw new EmailException("Failed to template email", e);
         }
     }
-    private void send(String subjectKey, List<Object> subjectAttributes, String template, Map<String, Object> attributes) throws EmailException {
+    protected void send(String subjectKey, List<Object> subjectAttributes, String template, Map<String, Object> attributes) throws EmailException {
         try {
             EmailTemplate email = processTemplate(subjectKey, subjectAttributes, template, attributes);
             send(email.getSubject(), email.getTextBody(), email.getHtmlBody());
@@ -207,11 +207,11 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         }
     }
 
-    private void send(String subject, String textBody, String htmlBody) throws EmailException {
+    protected void send(String subject, String textBody, String htmlBody) throws EmailException {
         send(realm.getSmtpConfig(), subject, textBody, htmlBody);
     }
 
-    private void send(Map<String, String> config, String subject, String textBody, String htmlBody) throws EmailException {
+    protected void send(Map<String, String> config, String subject, String textBody, String htmlBody) throws EmailException {
         EmailSenderProvider emailSender = session.getProvider(EmailSenderProvider.class);
         emailSender.send(config, user, subject, textBody, htmlBody);
     }
@@ -220,15 +220,15 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
     public void close() {
     }
 
-    private String toCamelCase(EventType event){
+    protected String toCamelCase(EventType event){
         StringBuilder sb = new StringBuilder("event");
-        for(String s : event.name().toString().toLowerCase().split("_")){
+        for(String s : event.name().toLowerCase().split("_")){
             sb.append(ObjectUtil.capitalize(s));
         }
         return sb.toString();
     }
 
-    private class EmailTemplate {
+    protected class EmailTemplate {
 
         private String subject;
         private String textBody;

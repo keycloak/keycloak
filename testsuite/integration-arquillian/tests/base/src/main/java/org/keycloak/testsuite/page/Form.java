@@ -47,7 +47,7 @@ public class Form {
     public void save() {
 //        guardAjax(save).click();
         save.click();
-        WaitUtils.waitForPageToLoad(driver);
+        WaitUtils.waitForPageToLoad();
     }
 
     public void cancel() {

@@ -84,7 +84,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
 
         Resource usersResource = authz.getStoreFactory().getResourceStore().findByName(USERS_RESOURCE, server.getId());
         if (usersResource == null) {
-            usersResource = authz.getStoreFactory().getResourceStore().create(USERS_RESOURCE, server, server.getClientId());
+            usersResource = authz.getStoreFactory().getResourceStore().create(USERS_RESOURCE, server, server.getId());
             Set<Scope> scopeset = new HashSet<>();
             scopeset.add(manageScope);
             scopeset.add(viewScope);

@@ -40,6 +40,8 @@ public final class SuiteContext {
     private List<ContainerInfo> authServerInfo = new LinkedList<>();
     private final List<List<ContainerInfo>> authServerBackendsInfo = new ArrayList<>();
 
+    private final List<ContainerInfo> cacheServersInfo = new ArrayList<>();
+
     private ContainerInfo migratedAuthServerInfo;
     private final MigrationContext migrationContext = new MigrationContext();
 
@@ -96,6 +98,13 @@ public final class SuiteContext {
         this.authServerInfo.set(dcIndex, serverInfo);
     }
 
+    public void addCacheServerInfo(int dcIndex, ContainerInfo serverInfo) {
+        while (dcIndex >= cacheServersInfo.size()) {
+            cacheServersInfo.add(null);
+        }
+        this.cacheServersInfo.set(dcIndex, serverInfo);
+    }
+
     public List<ContainerInfo> getAuthServerBackendsInfo() {
         return getAuthServerBackendsInfo(0);
     }
@@ -106,6 +115,10 @@ public final class SuiteContext {
 
     public List<List<ContainerInfo>> getDcAuthServerBackendsInfo() {
         return authServerBackendsInfo;
+    }
+
+    public List<ContainerInfo> getCacheServersInfo() {
+        return cacheServersInfo;
     }
 
     public void addAuthServerBackendsInfo(int dcIndex, ContainerInfo container) {
@@ -160,6 +173,10 @@ public final class SuiteContext {
             for (int i = 0; i < authServerBackendsInfo.size(); i ++) {
                 int dcIndex = i;
                 getDcAuthServerBackendsInfo().get(i).forEach(bInfo -> sb.append("Backend (dc=").append(dcIndex).append("): ").append(bInfo).append("\n"));
+            }
+
+            for (int dcIndex=0 ; dcIndex<cacheServersInfo.size() ; dcIndex++) {
+                sb.append("CacheServer (dc=").append(dcIndex).append("): ").append(getCacheServersInfo().get(dcIndex)).append("\n");
             }
         } else if (isAuthServerCluster()) {
             sb.append(isAuthServerCluster() ? "\nFrontend: " : "")

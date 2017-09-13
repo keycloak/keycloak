@@ -119,7 +119,7 @@ public class EntitlementService {
         }
 
         StoreFactory storeFactory = authorization.getStoreFactory();
-        ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(client.getId());
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(client.getId());
 
         if (resourceServer == null) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client does not support permissions", Status.FORBIDDEN);
@@ -152,7 +152,7 @@ public class EntitlementService {
         }
 
         StoreFactory storeFactory = authorization.getStoreFactory();
-        ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(client.getId());
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(client.getId());
 
         if (resourceServer == null) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client does not support permissions", Status.FORBIDDEN);

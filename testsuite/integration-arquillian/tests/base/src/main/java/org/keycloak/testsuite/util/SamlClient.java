@@ -51,6 +51,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
@@ -280,12 +281,25 @@ public class SamlClient {
     public static AuthnRequestType createLoginRequestDocument(String issuer, String assertionConsumerURL, URI destination) {
         try {
             SAML2Request samlReq = new SAML2Request();
-            AuthnRequestType loginReq = samlReq.createAuthnRequestType(UUID.randomUUID().toString(), assertionConsumerURL, destination.toString(), issuer);
+            AuthnRequestType loginReq = samlReq.createAuthnRequestType(UUID.randomUUID().toString(), assertionConsumerURL,
+              destination == null ? null : destination.toString(), issuer);
 
             return loginReq;
         } catch (ConfigurationException ex) {
             throw new RuntimeException(ex);
         }
+    }
+
+    public void execute(Step... steps) {
+        executeAndTransform(resp -> null, Arrays.asList(steps));
+    }
+
+    public void execute(List<Step> steps) {
+        executeAndTransform(resp -> null, steps);
+    }
+
+    public <T> T executeAndTransform(ResultExtractor<T> resultTransformer, Step... steps) {
+        return executeAndTransform(resultTransformer, Arrays.asList(steps));
     }
 
     public <T> T executeAndTransform(ResultExtractor<T> resultTransformer, List<Step> steps) {

@@ -29,13 +29,14 @@ import org.jboss.modules.ModuleLoader;
  */
 public class KeycloakDependencyProcessorWildFly extends KeycloakDependencyProcessor {
 
+    private static final ModuleIdentifier KEYCLOAK_ELYTRON_ADAPTER = ModuleIdentifier.create("org.keycloak.keycloak-wildfly-elytron-oidc-adapter");
     private static final ModuleIdentifier KEYCLOAK_WILDFLY_ADAPTER = ModuleIdentifier.create("org.keycloak.keycloak-wildfly-adapter");
     private static final ModuleIdentifier KEYCLOAK_UNDERTOW_ADAPTER = ModuleIdentifier.create("org.keycloak.keycloak-undertow-adapter");
 
     @Override
     protected void addPlatformSpecificModules(ModuleSpecification moduleSpecification, ModuleLoader moduleLoader) {
-        // ModuleDependency(ModuleLoader moduleLoader, ModuleIdentifier identifier, boolean optional, boolean export, boolean importServices, boolean userSpecified)
         moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_WILDFLY_ADAPTER, false, false, true, false));
         moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_UNDERTOW_ADAPTER, false, false, false, false));
+        moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_ELYTRON_ADAPTER, true, false, false, false));
     }
 }

@@ -50,11 +50,11 @@ public class NodejsExamplePage extends AbstractNodejsExamplePage {
 
     public boolean isOnLoginSecuredPage() {
         UriBuilder uriBuilder = createUriBuilder().path("login");
-        return URLUtils.currentUrlEqual(driver, uriBuilder.build().toASCIIString());
+        return URLUtils.currentUrlEqual(uriBuilder.build().toASCIIString());
     }
 
     @Override
     public boolean isCurrent() {
-        return URLUtils.currentUrlStartWith(driver, toString());
+        return URLUtils.currentUrlStartWith(toString());
     }
 }

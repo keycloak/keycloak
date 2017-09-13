@@ -3,7 +3,6 @@ package org.keycloak.social.openshift;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
-import org.keycloak.broker.oidc.util.JsonSimpleHttp;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.util.SimpleHttp;
@@ -59,8 +58,9 @@ public class OpenshiftV3IdentityProvider extends AbstractOAuth2IdentityProvider<
     }
 
     private JsonNode fetchProfile(String accessToken) throws IOException {
-        return JsonSimpleHttp.asJson(SimpleHttp.doGet(getConfig().getUserInfoUrl(), this.session)
-                             .header("Authorization", "Bearer " + accessToken));
+        return SimpleHttp.doGet(getConfig().getUserInfoUrl(), this.session)
+                             .header("Authorization", "Bearer " + accessToken)
+                             .asJson();
     }
 
 }

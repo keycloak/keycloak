@@ -17,11 +17,14 @@
 
 package org.keycloak.adapters.tomcat;
 
+import org.apache.catalina.Container;
+import org.apache.catalina.Valve;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
 import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.deploy.LoginConfig;
 import org.apache.catalina.realm.GenericPrincipal;
+import org.keycloak.adapters.AdapterDeploymentContext;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
@@ -67,6 +70,11 @@ public class KeycloakAuthenticatorValve extends AbstractKeycloakAuthenticatorVal
                 return new GenericPrincipal(userPrincipal.getName(), null, roles, userPrincipal, null);
             }
         };
+    }
+
+    @Override
+    protected AbstractAuthenticatedActionsValve createAuthenticatedActionsValve(AdapterDeploymentContext deploymentContext, Valve next, Container container) {
+        return new AuthenticatedActionsValve(deploymentContext, next, container);
     }
 
 }

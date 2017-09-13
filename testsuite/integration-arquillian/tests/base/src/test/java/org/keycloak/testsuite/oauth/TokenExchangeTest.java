@@ -102,15 +102,6 @@ public class TokenExchangeTest extends AbstractKeycloakTest {
         illegal.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         illegal.setFullScopeAllowed(false);
 
-        ClientModel illegalTo = realm.addClient("illegal-to");
-        illegalTo.setClientId("illegal-to");
-        illegalTo.setPublicClient(false);
-        illegalTo.setDirectAccessGrantsEnabled(true);
-        illegalTo.setEnabled(true);
-        illegalTo.setSecret("secret");
-        illegalTo.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        illegalTo.setFullScopeAllowed(false);
-
         ClientModel legal = realm.addClient("legal");
         legal.setClientId("legal");
         legal.setPublicClient(false);
@@ -130,15 +121,6 @@ public class TokenExchangeTest extends AbstractKeycloakTest {
         ResourceServer server = management.realmResourceServer();
         Policy clientPolicy = management.authz().getStoreFactory().getPolicyStore().create(clientRep, server);
         management.clients().exchangeToPermission(target).addAssociatedPolicy(clientPolicy);
-
-        management.clients().setPermissionsEnabled(clientExchanger, true);
-        ClientPolicyRepresentation client2Rep = new ClientPolicyRepresentation();
-        client2Rep.setName("from");
-        client2Rep.addClient(legal.getId());
-        client2Rep.addClient(illegalTo.getId());
-        Policy client2Policy = management.authz().getStoreFactory().getPolicyStore().create(client2Rep, server);
-        management.clients().exchangeFromPermission(clientExchanger).addAssociatedPolicy(client2Policy);
-
 
         UserModel user = session.users().addUser(realm, "user");
         user.setEnabled(true);
@@ -192,10 +174,6 @@ public class TokenExchangeTest extends AbstractKeycloakTest {
         }
         {
             response = oauth.doTokenExchange(TEST, accessToken, "target", "illegal", "secret");
-            Assert.assertEquals(403, response.getStatusCode());
-        }
-        {
-            response = oauth.doTokenExchange(TEST, accessToken, "target", "illegal-to", "secret");
             Assert.assertEquals(403, response.getStatusCode());
         }
 

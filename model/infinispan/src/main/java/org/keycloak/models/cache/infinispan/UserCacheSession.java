@@ -334,6 +334,8 @@ public class UserCacheSession implements UserCache {
     }
 
     protected UserModel cacheUser(RealmModel realm, UserModel delegate, Long revision) {
+        int notBefore = getDelegate().getNotBeforeOfUser(realm, delegate);
+
         StorageId storageId = new StorageId(delegate.getId());
         CachedUser cached = null;
         if (!storageId.isLocal()) {
@@ -343,7 +345,7 @@ public class UserCacheSession implements UserCache {
             if (policy != null && policy == UserStorageProviderModel.CachePolicy.NO_CACHE) {
                 return delegate;
             }
-            cached = new CachedUser(revision, realm, delegate);
+            cached = new CachedUser(revision, realm, delegate, notBefore);
             if (policy == null || policy == UserStorageProviderModel.CachePolicy.DEFAULT) {
                 cache.addRevisioned(cached, startupRevision);
             } else {
@@ -366,7 +368,7 @@ public class UserCacheSession implements UserCache {
                 }
             }
         } else {
-            cached = new CachedUser(revision, realm, delegate);
+            cached = new CachedUser(revision, realm, delegate, notBefore);
             cache.addRevisioned(cached, startupRevision);
         }
         UserAdapter adapter = new UserAdapter(cached, this, session, realm);
@@ -765,6 +767,32 @@ public class UserCacheSession implements UserCache {
         return consentModel;
     }
 
+    @Override
+    public void setNotBeforeForUser(RealmModel realm, UserModel user, int notBefore) {
+        if (!isRegisteredForInvalidation(realm, user.getId())) {
+            UserModel foundUser = getUserById(user.getId(), realm);
+            if (foundUser instanceof UserAdapter) {
+                ((UserAdapter) foundUser).invalidate();
+            }
+        }
+
+        getDelegate().setNotBeforeForUser(realm, user, notBefore);
+
+    }
+
+    @Override
+    public int getNotBeforeOfUser(RealmModel realm, UserModel user) {
+        if (isRegisteredForInvalidation(realm, user.getId())) {
+            return getDelegate().getNotBeforeOfUser(realm, user);
+        }
+
+        UserModel foundUser = getUserById(user.getId(), realm);
+        if (foundUser instanceof UserAdapter) {
+            return ((UserAdapter) foundUser).cached.getNotBefore();
+        } else {
+            return getDelegate().getNotBeforeOfUser(realm, user);
+        }
+    }
 
     @Override
     public UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles, boolean addDefaultRequiredActions) {

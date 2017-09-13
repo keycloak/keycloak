@@ -43,7 +43,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.account.AccountTest;
+import org.keycloak.testsuite.account.AccountFormServiceTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.auth.page.AuthRealm;
@@ -530,7 +530,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         // Go to account mgmt applications page
         applicationsPage.open();
         loginPage.login("test-user@localhost", "password");
-        events.expectLogin().client("account").detail(Details.REDIRECT_URI, AccountTest.ACCOUNT_REDIRECT + "?path=applications").assertEvent();
+        events.expectLogin().client("account").detail(Details.REDIRECT_URI, AccountFormServiceTest.ACCOUNT_REDIRECT + "?path=applications").assertEvent();
         Assert.assertTrue(applicationsPage.isCurrent());
         Map<String, AccountApplicationsPage.AppEntry> apps = applicationsPage.getApplications();
         Assert.assertTrue(apps.containsKey("offline-client-2"));
