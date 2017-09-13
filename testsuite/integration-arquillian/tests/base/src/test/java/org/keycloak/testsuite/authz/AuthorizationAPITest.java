@@ -39,13 +39,14 @@ import org.keycloak.authorization.client.representation.AuthorizationRequest;
 import org.keycloak.authorization.client.representation.AuthorizationResponse;
 import org.keycloak.authorization.client.representation.PermissionRequest;
 import org.keycloak.authorization.client.util.HttpResponseException;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
@@ -55,7 +56,7 @@ import org.keycloak.util.JsonSerialization;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class RequireUmaAuthorizationScopeTest extends AbstractAuthzTest {
+public class AuthorizationAPITest extends AbstractAuthzTest {
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -68,6 +69,11 @@ public class RequireUmaAuthorizationScopeTest extends AbstractAuthzTest {
                     .authorizationServicesEnabled(true)
                     .redirectUris("http://localhost/resource-server-test")
                     .defaultRoles("uma_protection")
+                    .directAccessGrants())
+                .client(ClientBuilder.create().clientId("test-client")
+                    .secret("secret")
+                    .authorizationServicesEnabled(true)
+                    .redirectUris("http://localhost/test-client")
                     .directAccessGrants())
                 .build());
     }
@@ -141,6 +147,22 @@ public class RequireUmaAuthorizationScopeTest extends AbstractAuthzTest {
         realm.users().get(realm.users().search("kolo").get(0).getId()).roles().clientLevel(client.toRepresentation().getId()).add(Arrays.asList(umaAuthorizationRole));
 
         failAccessTokenWithoutUmaAuthorization();
+    }
+
+    @Test
+    public void testResourceServerAsAudience() throws Exception {
+        AuthzClient authzClient = getAuthzClient();
+        PermissionRequest request = new PermissionRequest();
+
+        request.setResourceSetName("Resource A");
+
+        String accessToken = new OAuthClient().realm("authz-test").clientId("test-client").doGrantAccessTokenRequest("secret", "marta", "password").getAccessToken();
+        String ticket = authzClient.protection().permission().forResource(request).getTicket();
+        AuthorizationResponse response = authzClient.authorization(accessToken).authorize(new AuthorizationRequest(ticket));
+
+        assertNotNull(response.getRpt());
+        AccessToken rpt = toAccessToken(response.getRpt());
+        assertEquals("resource-server-test", rpt.getAudience()[0]);
     }
 
     private RealmResource getRealm() throws Exception {
