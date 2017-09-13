@@ -52,21 +52,21 @@ public class ModalDialog {
     private WebElement message;
 
     public void ok() {
-        waitForModalFadeIn(driver);
+        waitForModalFadeIn();
         okButton.click();
-        waitForModalFadeOut(driver);
+        waitForModalFadeOut();
     }
     
     public void confirmDeletion() {
-        waitForModalFadeIn(driver);
+        waitForModalFadeIn();
         deleteButton.click();
-        waitForModalFadeOut(driver);
+        waitForModalFadeOut();
     }
 
     public void cancel() {
-        waitForModalFadeIn(driver);
+        waitForModalFadeIn();
         cancelButton.click();
-        waitForModalFadeOut(driver);
+        waitForModalFadeOut();
     }
 
     public void setName(String name) {

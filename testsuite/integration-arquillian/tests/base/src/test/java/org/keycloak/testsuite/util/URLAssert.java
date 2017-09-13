@@ -53,12 +53,12 @@ public class URLAssert {
     public static void assertCurrentUrlEquals(WebDriver driver, final AbstractPage page) {
         String expected = page.toString();
         assertTrue("Expected URL: " + expected + "; actual: " + driver.getCurrentUrl(),
-                currentUrlEqual(driver, page.toString()));
+                currentUrlEqual(page.toString()));
     }
 
     public static void assertCurrentUrlEquals(WebDriver driver, final String url) {
         assertTrue("Expected URL: " + url + "; actual: " + driver.getCurrentUrl(),
-                currentUrlEqual(driver, url));
+                currentUrlEqual(url));
     }
 
     public static void assertCurrentUrlStartsWith(AbstractPage page) {
@@ -67,7 +67,7 @@ public class URLAssert {
 
     public static void assertCurrentUrlStartsWith(WebDriver driver, final String url) {
         assertTrue("URL expected to begin with:" + url + "; actual URL: " + driver.getCurrentUrl(),
-                currentUrlStartWith(driver, url));
+                currentUrlStartWith(url));
     }
 
     public static void assertCurrentUrlDoesntStartWith(AbstractPage page) {
@@ -76,7 +76,7 @@ public class URLAssert {
 
     public static void assertCurrentUrlDoesntStartWith(WebDriver driver, final String url) {
         assertTrue("URL expected NOT to begin with:" + url + "; actual URL: " + driver.getCurrentUrl(),
-                currentUrlDoesntStartWith(driver, url));
+                currentUrlDoesntStartWith(url));
     }
 
     public static void assertCurrentUrlStartsWithLoginUrlOf(PageWithLoginUrl page) {

@@ -59,6 +59,7 @@ public interface CommonClientSessionModel {
         CODE_TO_TOKEN,
         AUTHENTICATE,
         LOGGED_OUT,
+        LOGGING_OUT,
         REQUIRED_ACTIONS
     }
 

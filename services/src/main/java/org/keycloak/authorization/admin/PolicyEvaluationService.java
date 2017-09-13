@@ -229,7 +229,7 @@ public class PolicyEvaluationService {
                 String clientId = representation.getClientId();
 
                 if (clientId == null) {
-                    clientId = resourceServer.getClientId();
+                    clientId = resourceServer.getId();
                 }
 
                 if (clientId != null) {

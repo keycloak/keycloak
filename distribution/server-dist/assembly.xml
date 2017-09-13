@@ -33,6 +33,19 @@
             <includes>
                 <include>**/module.xml</include>
             </includes>
+            <!-- unused resteasy providers eat up memory, can't remove them as it my effect RH-SSO patching
+            <excludes>
+                <exclude>**/jose-jwt/**</exclude>
+                <exclude>**/resteasy-atom-provider/**</exclude>
+                <exclude>**/resteasy-crypto/**</exclude>
+                <exclude>**/resteasy-jettison-provider/**</exclude>
+                <exclude>**/resteasy-json-p-provider/**</exclude>
+                <exclude>**/resteasy-jsapi/**</exclude>
+                <exclude>**/resteasy-spring/**</exclude>
+                <exclude>**/resteasy-yaml-provider/**</exclude>
+                <exclude>**/jettison/**</exclude>
+            </excludes>
+            -->
         </fileSet>
         <fileSet>
             <directory>target/${project.build.finalName}</directory>
@@ -40,6 +53,10 @@
             <filtered>false</filtered>
             <excludes>
                 <exclude>bin/*.sh</exclude>
+                <!-- jboss-client.jar unused  Unfortunately, this may screw up our patch process so it can't be removed.
+                <exclude>bin/client/README-EJB-JMS.txt</exclude>
+                <exclude>bin/client/jboss-client.jar</exclude>
+                 -->
                 <exclude>module.xml</exclude>
                 <exclude>welcome-content/**</exclude>
                 <exclude>appclient/**</exclude>
@@ -49,8 +66,20 @@
                 <exclude>themes/**</exclude>
                 <exclude>version.txt</exclude>
                 <exclude>${profileExcludes}</exclude>
+                <!-- unused resteasy providers eat up memory can't remove them as it my effect RH-SSO patching
+                <exclude>**/jose-jwt/**</exclude>
+                <exclude>**/resteasy-atom-provider/**</exclude>
+                <exclude>**/resteasy-crypto/**</exclude>
+                <exclude>**/resteasy-jettison-provider/**</exclude>
+                <exclude>**/resteasy-json-p-provider/**</exclude>
+                <exclude>**/resteasy-jsapi/**</exclude>
+                <exclude>**/resteasy-spring/**</exclude>
+                <exclude>**/resteasy-yaml-provider/**</exclude>
+                <exclude>**/jettison/**</exclude>
+                 -->
             </excludes>
         </fileSet>
+
         <fileSet>
             <directory>target/${project.build.finalName}</directory>
             <outputDirectory/>

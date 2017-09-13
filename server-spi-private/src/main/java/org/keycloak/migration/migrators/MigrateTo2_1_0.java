@@ -67,7 +67,7 @@ public class MigrateTo2_1_0 implements Migration {
         StoreFactory storeFactory = authorizationProvider.getStoreFactory();
         PolicyStore policyStore = storeFactory.getPolicyStore();
         realm.getClients().forEach(clientModel -> {
-            ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(clientModel.getId());
+            ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(clientModel.getId());
 
             if (resourceServer != null) {
                 policyStore.findByType("role", resourceServer.getId()).forEach(policy -> {

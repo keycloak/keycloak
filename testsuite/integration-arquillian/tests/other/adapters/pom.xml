@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests-other</artifactId>
-        <version>3.3.0.CR1-SNAPSHOT</version>
+        <version>3.4.0.CR1-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-adapters</artifactId>
@@ -68,6 +68,7 @@
         <app.server.2.management.port.jmx>10399</app.server.2.management.port.jmx>
 
         <settings.path></settings.path>
+        <maven.repo.local></maven.repo.local>
         <repo.url></repo.url>
 
         <adapter.test.props>
@@ -80,6 +81,7 @@
             -Dmy.host.name=localhost
             -Djava.security.krb5.conf=${project.build.directory}/dependency/kerberos/test-krb5.conf
             -Dkie.maven.settings.custom=${settings.path}
+            -Dkie.maven.repo.local=${maven.repo.local}
             -Drepo.url=${repo.url}
         </adapter.test.props>
 
@@ -266,24 +268,6 @@
                                     <configuration>
                                         <artifactItems>
                                             <artifactItem>
-                                                <groupId>org.keycloak.example.demo</groupId>
-                                                <artifactId>product-portal-example</artifactId>
-                                                <version>${project.version}</version>
-                                                <type>war</type>
-                                            </artifactItem>
-                                            <artifactItem>
-                                                <groupId>org.keycloak.example.demo</groupId>
-                                                <artifactId>customer-portal-example</artifactId>
-                                                <version>${project.version}</version>
-                                                <type>war</type>
-                                            </artifactItem>
-                                            <artifactItem>
-                                                <groupId>org.keycloak.example.demo</groupId>
-                                                <artifactId>database-service</artifactId>
-                                                <version>${project.version}</version>
-                                                <type>war</type>
-                                            </artifactItem>
-                                            <artifactItem>
                                                 <groupId>org.keycloak.testsuite</groupId>
                                                 <artifactId>integration-arquillian-test-apps-js-console</artifactId>
                                                 <version>${project.version}</version>
@@ -292,48 +276,6 @@
                                             <artifactItem>
                                                 <groupId>org.keycloak.testsuite</groupId>
                                                 <artifactId>integration-arquillian-test-apps-js-database</artifactId>
-                                                <version>${project.version}</version>
-                                                <type>war</type>
-                                            </artifactItem>
-                                            <artifactItem>
-                                                <groupId>org.keycloak</groupId>
-                                                <artifactId>examples-multitenant</artifactId>
-                                                <version>${project.version}</version>
-                                                <type>war</type>
-                                            </artifactItem>
-                                            <artifactItem>
-                                                <groupId>org.keycloak</groupId>
-                                                <artifactId>examples-basicauth</artifactId>
-                                                <version>${project.version}</version>
-                                                <type>war</type>
-                                            </artifactItem>
-                                            <artifactItem>
-                                                <groupId>org.keycloak.example.demo</groupId>
-                                                <artifactId>cors-angular-product-example</artifactId>
-                                                <version>${project.version}</version>
-                                                <type>war</type>
-                                            </artifactItem>
-                                            <artifactItem>
-                                                <groupId>org.keycloak.example.demo</groupId>
-                                                <artifactId>cors-database-service</artifactId>
-                                                <version>${project.version}</version>
-                                                <type>war</type>
-                                            </artifactItem>
-                                            <artifactItem>
-                                                <groupId>org.keycloak</groupId>
-                                                <artifactId>sales-post-sig</artifactId>
-                                                <version>${project.version}</version>
-                                                <type>war</type>
-                                            </artifactItem>
-                                            <artifactItem>
-                                                <groupId>org.keycloak</groupId>
-                                                <artifactId>saml-post-encryption</artifactId>
-                                                <version>${project.version}</version>
-                                                <type>war</type>
-                                            </artifactItem>
-                                            <artifactItem>
-                                                <groupId>org.keycloak</groupId>
-                                                <artifactId>saml-redirect-signatures</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>war</type>
                                             </artifactItem>

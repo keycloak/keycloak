@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.crossdc;
 
+import org.apache.commons.io.FileUtils;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.models.Constants;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
@@ -24,6 +25,8 @@ import org.keycloak.testsuite.arquillian.LoadBalancerController;
 import org.keycloak.testsuite.arquillian.annotation.LoadBalancer;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -319,6 +322,45 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
         int dcIndex = dc.ordinal();
         final List<ContainerInfo> dcNodes = this.suiteContext.getDcAuthServerBackendsInfo().get(dcIndex);
         return dcNodes.stream().filter(c -> ! c.isManual());
+    }
+
+    /**
+     * Returns cache server corresponding to given DC
+     * @param dc
+     * @return
+     */
+    public ContainerInfo getCacheServer(DC dc) {
+        int dcIndex = dc.ordinal();
+        return this.suiteContext.getCacheServersInfo().get(dcIndex);
+    }
+
+
+    public void stopCacheServer(ContainerInfo cacheServer) {
+        log.infof("Stopping %s", cacheServer.getQualifier());
+
+        containerController.stop(cacheServer.getQualifier());
+
+        // Workaround for possible arquillian bug. Needs to cleanup dir manually
+        String setupCleanServerBaseDir = cacheServer.getArquillianContainer().getContainerConfiguration().getContainerProperties().get("setupCleanServerBaseDir");
+        String cleanServerBaseDir = cacheServer.getArquillianContainer().getContainerConfiguration().getContainerProperties().get("cleanServerBaseDir");
+
+        if (Boolean.parseBoolean(setupCleanServerBaseDir)) {
+            log.infof("Going to clean directory: %s", cleanServerBaseDir);
+
+            File dir = new File(cleanServerBaseDir);
+            if (dir.exists()) {
+                try {
+                    FileUtils.cleanDirectory(dir);
+
+                    File deploymentsDir = new File(dir, "deployments");
+                    deploymentsDir.mkdir();
+                } catch (IOException ioe) {
+                    throw new RuntimeException("Failed to clean directory: " + cleanServerBaseDir, ioe);
+                }
+            }
+        }
+
+        log.infof("Stopped %s", cacheServer.getQualifier());
     }
 
 

@@ -128,6 +128,7 @@ public class SamlProtocolUtils {
         String request = encodedParams.getFirst(paramKey);
         String algorithm = encodedParams.getFirst(GeneralConstants.SAML_SIG_ALG_REQUEST_KEY);
         String signature = encodedParams.getFirst(GeneralConstants.SAML_SIGNATURE_REQUEST_KEY);
+        String relayState = encodedParams.getFirst(GeneralConstants.RELAY_STATE);
         String decodedAlgorithm = uriInformation.getQueryParameters(true).getFirst(GeneralConstants.SAML_SIG_ALG_REQUEST_KEY);
 
         if (request == null) throw new VerificationException("SAM was null");
@@ -139,13 +140,12 @@ public class SamlProtocolUtils {
         // Shibboleth doesn't sign the document for redirect binding.
         // todo maybe a flag?
 
-        UriBuilder builder = UriBuilder.fromPath("/")
-                .queryParam(paramKey, request);
+        StringBuilder rawQueryBuilder = new StringBuilder().append(paramKey).append("=").append(request);
         if (encodedParams.containsKey(GeneralConstants.RELAY_STATE)) {
-            builder.queryParam(GeneralConstants.RELAY_STATE, encodedParams.getFirst(GeneralConstants.RELAY_STATE));
+            rawQueryBuilder.append("&" + GeneralConstants.RELAY_STATE + "=").append(relayState);
         }
-        builder.queryParam(GeneralConstants.SAML_SIG_ALG_REQUEST_KEY, algorithm);
-        String rawQuery = builder.build().getRawQuery();
+        rawQueryBuilder.append("&" + GeneralConstants.SAML_SIG_ALG_REQUEST_KEY + "=").append(algorithm);
+        String rawQuery = rawQueryBuilder.toString();
 
         try {
             byte[] decodedSignature = RedirectBindingUtil.urlBase64Decode(signature);

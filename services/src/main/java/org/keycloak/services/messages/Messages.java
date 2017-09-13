@@ -176,6 +176,8 @@ public class Messages {
 
     public static final String READ_ONLY_USER = "readOnlyUserMessage";
 
+    public static final String READ_ONLY_USERNAME = "readOnlyUsernameMessage";
+
     public static final String READ_ONLY_PASSWORD = "readOnlyPasswordMessage";
 
     public static final String SUCCESS_TOTP_REMOVED = "successTotpRemovedMessage";

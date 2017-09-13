@@ -58,7 +58,7 @@ import org.keycloak.util.JsonSerialization;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class EntitlementAPITest extends AbstractKeycloakTest {
+public class EntitlementAPITest extends AbstractAuthzTest {
 
     private AuthzClient authzClient;
 

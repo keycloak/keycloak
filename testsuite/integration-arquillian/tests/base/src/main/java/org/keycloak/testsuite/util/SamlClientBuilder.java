@@ -33,6 +33,10 @@ import org.keycloak.testsuite.util.saml.IdPInitiatedLoginBuilder;
 import org.keycloak.testsuite.util.saml.LoginBuilder;
 import org.keycloak.testsuite.util.saml.ModifySamlResponseStepBuilder;
 import org.keycloak.testsuite.util.saml.RequiredConsentBuilder;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpUriRequest;
+import org.hamcrest.Matcher;
+import org.junit.Assert;
 import org.w3c.dom.Document;
 
 /**
@@ -43,6 +47,19 @@ public class SamlClientBuilder {
 
     private final List<Step> steps = new LinkedList<>();
 
+    /**
+     * Execute the current steps without any work on the final response.
+     * @return Client that executed the steps
+     */
+    public SamlClient execute() {
+        return execute(resp -> {});
+    }
+
+    /**
+     * Execute the current steps and pass the final response to the {@code resultConsumer} for processing.
+     * @param resultConsumer This function is given the final response
+     * @return Client that executed the steps
+     */
     public SamlClient execute(Consumer<CloseableHttpResponse> resultConsumer) {
         final SamlClient samlClient = new SamlClient();
         samlClient.executeAndTransform(r -> {
@@ -52,6 +69,11 @@ public class SamlClientBuilder {
         return samlClient;
     }
 
+    /**
+     * Execute the current steps and pass the final response to the {@code resultTransformer} for processing.
+     * @param resultTransformer This function is given the final response and processes it into some value
+     * @return Value returned by {@code resultTransformer}
+     */
     public <T> T executeAndTransform(ResultExtractor<T> resultTransformer) {
         return new SamlClient().executeAndTransform(resultTransformer, steps);
     }
@@ -60,11 +82,48 @@ public class SamlClientBuilder {
         return steps;
     }
 
-    public <T extends Step> T addStep(T step) {
+    public <T extends Step> T addStepBuilder(T step) {
         steps.add(step);
         return step;
     }
 
+    /**
+     * Adds a single generic step
+     * @param step
+     * @return This builder
+     */
+    public SamlClientBuilder addStep(Step step) {
+        steps.add(step);
+        return this;
+    }
+
+    /**
+     * Adds a single generic step
+     * @param step
+     * @return This builder
+     */
+    public SamlClientBuilder addStep(Runnable stepWithNoParameters) {
+        addStep((client, currentURI, currentResponse, context) -> {
+            stepWithNoParameters.run();
+            return null;
+        });
+        return this;
+    }
+
+    public SamlClientBuilder assertResponse(Matcher<HttpResponse> matcher) {
+        steps.add((client, currentURI, currentResponse, context) -> {
+            Assert.assertThat(currentResponse, matcher);
+            return null;
+        });
+        return this;
+    }
+
+    /**
+     * When executing the {@link HttpUriRequest} obtained from the previous step,
+     * do not to follow HTTP redirects but pass the first response immediately
+     * to the following step.
+     * @return This builder
+     */
     public SamlClientBuilder doNotFollowRedirects() {
         this.steps.add(new DoNotFollowRedirectStep());
         return this;
@@ -80,32 +139,32 @@ public class SamlClientBuilder {
 
     /** Creates fresh and issues an AuthnRequest to the SAML endpoint */
     public CreateAuthnRequestStepBuilder authnRequest(URI authServerSamlUrl, String issuer, String assertionConsumerURL, Binding requestBinding) {
-        return addStep(new CreateAuthnRequestStepBuilder(authServerSamlUrl, issuer, assertionConsumerURL, requestBinding, this));
+        return addStepBuilder(new CreateAuthnRequestStepBuilder(authServerSamlUrl, issuer, assertionConsumerURL, requestBinding, this));
     }
 
     /** Issues the given AuthnRequest to the SAML endpoint */
     public CreateAuthnRequestStepBuilder authnRequest(URI authServerSamlUrl, Document authnRequestDocument, Binding requestBinding) {
-        return addStep(new CreateAuthnRequestStepBuilder(authServerSamlUrl, authnRequestDocument, requestBinding, this));
+        return addStepBuilder(new CreateAuthnRequestStepBuilder(authServerSamlUrl, authnRequestDocument, requestBinding, this));
     }
 
     /** Issues the given AuthnRequest to the SAML endpoint */
     public CreateLogoutRequestStepBuilder logoutRequest(URI authServerSamlUrl, String issuer, Binding requestBinding) {
-        return addStep(new CreateLogoutRequestStepBuilder(authServerSamlUrl, issuer, requestBinding, this));
+        return addStepBuilder(new CreateLogoutRequestStepBuilder(authServerSamlUrl, issuer, requestBinding, this));
     }
 
     /** Handles login page */
     public LoginBuilder login() {
-        return addStep(new LoginBuilder(this));
+        return addStepBuilder(new LoginBuilder(this));
     }
 
     /** Starts IdP-initiated flow for the given client */
     public IdPInitiatedLoginBuilder idpInitiatedLogin(URI authServerSamlUrl, String clientId) {
-        return addStep(new IdPInitiatedLoginBuilder(authServerSamlUrl, clientId, this));
+        return addStepBuilder(new IdPInitiatedLoginBuilder(authServerSamlUrl, clientId, this));
     }
 
     /** Handles "Requires consent" page */
     public RequiredConsentBuilder consentRequired() {
-        return addStep(new RequiredConsentBuilder(this));
+        return addStepBuilder(new RequiredConsentBuilder(this));
     }
 
     /** Returns SAML request or response as replied from server. Note that the redirects are disabled for this to work. */
@@ -119,20 +178,16 @@ public class SamlClientBuilder {
     public ModifySamlResponseStepBuilder processSamlResponse(Binding responseBinding) {
         return
           doNotFollowRedirects()
-          .addStep(new ModifySamlResponseStepBuilder(responseBinding, this));
+          .addStepBuilder(new ModifySamlResponseStepBuilder(responseBinding, this));
     }
 
     public SamlClientBuilder navigateTo(String httpGetUri) {
-        steps.add((client, currentURI, currentResponse, context) -> {
-            return new HttpGet(httpGetUri);
-        });
+        steps.add((client, currentURI, currentResponse, context) -> new HttpGet(httpGetUri));
         return this;
     }
 
     public SamlClientBuilder navigateTo(URI httpGetUri) {
-        steps.add((client, currentURI, currentResponse, context) -> {
-            return new HttpGet(httpGetUri);
-        });
+        steps.add((client, currentURI, currentResponse, context) -> new HttpGet(httpGetUri));
         return this;
     }
 

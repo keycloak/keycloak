@@ -37,7 +37,7 @@ public class ClientApplicationSynchronizer implements Synchronizer<ClientRemoved
         AuthorizationProvider authorizationProvider = providerFactory.create(event.getKeycloakSession());
         StoreFactory storeFactory = authorizationProvider.getStoreFactory();
         ResourceServerStore store = storeFactory.getResourceServerStore();
-        ResourceServer resourceServer = store.findByClient(event.getClient().getId());
+        ResourceServer resourceServer = store.findById(event.getClient().getId());
 
         if (resourceServer != null) {
             String id = resourceServer.getId();

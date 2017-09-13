@@ -282,11 +282,22 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
-        IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
-        int authTime = idToken.getAuthTime();
+        IDToken oldIdToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         // Set time offset
         setTimeOffset(10);
+
+        // SSO login first WITHOUT prompt=login ( Tests KEYCLOAK-5248 )
+        driver.navigate().to(oauth.getLoginFormUrl());
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        IDToken newIdToken = sendTokenRequestAndGetIDToken(loginEvent);
+
+        // Assert that authTime wasn't updated
+        Assert.assertEquals(oldIdToken.getAuthTime(), newIdToken.getAuthTime());
+
+        // Set time offset
+        setTimeOffset(20);
 
         // Assert need to re-authenticate with prompt=login
         driver.navigate().to(oauth.getLoginFormUrl() + "&prompt=login");
@@ -296,12 +307,14 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
-        idToken = sendTokenRequestAndGetIDToken(loginEvent);
-        int authTimeUpdated = idToken.getAuthTime();
+        newIdToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         // Assert that authTime was updated
-        Assert.assertTrue(authTime + 10 <= authTimeUpdated);
+        Assert.assertTrue("Expected auth time to change. old auth time: " + oldIdToken.getAuthTime() + " , new auth time: " + newIdToken.getAuthTime(),
+                oldIdToken.getAuthTime() + 20 <= newIdToken.getAuthTime());
 
+        // Assert userSession didn't change
+        Assert.assertEquals(oldIdToken.getSessionState(), newIdToken.getSessionState());
     }
 
 

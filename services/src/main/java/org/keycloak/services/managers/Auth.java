@@ -23,6 +23,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.services.ForbiddenException;
 
 /**
 * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -77,6 +78,18 @@ public class Auth {
 
     public void setClientSession(AuthenticatedClientSessionModel clientSession) {
         this.clientSession = clientSession;
+    }
+
+    public void require(String role) {
+        if (!hasClientRole(client, role)) {
+            throw new ForbiddenException();
+        }
+    }
+
+    public void requireOneOf(String... roles) {
+        if (!hasOneOfAppRole(client, roles)) {
+            throw new ForbiddenException();
+        }
     }
 
     public boolean hasRealmRole(String role) {

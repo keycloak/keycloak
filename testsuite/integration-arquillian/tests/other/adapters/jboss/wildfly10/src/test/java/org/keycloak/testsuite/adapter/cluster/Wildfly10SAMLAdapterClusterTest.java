@@ -40,21 +40,21 @@ import static org.keycloak.testsuite.adapter.AbstractServletsAdapterTest.samlSer
 @AppServerContainer("app-server-wildfly10")
 public class Wildfly10SAMLAdapterClusterTest extends AbstractSAMLAdapterClusterTest {
 
-    @TargetsContainer(value = "app-server-wildfly-" + NODE_1_NAME)
+    @TargetsContainer(value = "app-server-wildfly10-" + NODE_1_NAME)
     @Deployment(name = EmployeeServletDistributable.DEPLOYMENT_NAME, managed = false)
     protected static WebArchive employee() {
         return samlServletDeployment(EmployeeServletDistributable.DEPLOYMENT_NAME, EmployeeServletDistributable.DEPLOYMENT_NAME + "/WEB-INF/web.xml", SendUsernameServlet.class);
     }
 
-    @TargetsContainer(value = "app-server-wildfly-" + NODE_2_NAME)
+    @TargetsContainer(value = "app-server-wildfly10-" + NODE_2_NAME)
     @Deployment(name = EmployeeServletDistributable.DEPLOYMENT_NAME + "_2", managed = false)
     protected static WebArchive employee2() {
         return employee();
     }
 
     @Override
-    protected void prepareWorkerNode(Integer managementPort) throws IOException, CliException, NumberFormatException {
-        log.infov("Preparing worker node ({0})", managementPort);
+    protected void prepareWorkerNode(int nodeIndex, Integer managementPort) throws IOException, CliException, NumberFormatException {
+        log.infov("Preparing worker node ({0} @ {1})", nodeIndex, managementPort);
 
         OnlineManagementClient clientWorkerNodeClient = ManagementClient.online(OnlineOptions
           .standalone()
@@ -71,8 +71,6 @@ public class Wildfly10SAMLAdapterClusterTest extends AbstractSAMLAdapterClusterT
         b.add(tcppingStack.and("protocol", "TCPPING"));
         b.add(tcppingStack.and("protocol", "TCPPING").and("property", "initial_hosts"), Values.of("value", "localhost[" + (7600 + PORT_OFFSET_NODE_1) + "],localhost[" + (7600 + PORT_OFFSET_NODE_2) + "]"));
         b.add(tcppingStack.and("protocol", "TCPPING").and("property", "port_range"), Values.of("value", "0"));
-        b.add(tcppingStack.and("protocol", "TCPPING").and("property", "num_initial_members"), Values.of("value", "2"));
-        b.add(tcppingStack.and("protocol", "TCPPING").and("property", "timeout"), Values.of("value", "3000"));
         b.add(tcppingStack.and("protocol", "MERGE3"));
         b.add(tcppingStack.and("protocol", "FD_SOCK"), Values.of("socket-binding", "jgroups-tcp-fd"));
         b.add(tcppingStack.and("protocol", "FD"));

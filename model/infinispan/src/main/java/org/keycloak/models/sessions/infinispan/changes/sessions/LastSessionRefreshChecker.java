@@ -60,7 +60,7 @@ public class LastSessionRefreshChecker {
 
         Integer lsrr = sessionWrapper.getLocalMetadataNoteInt(UserSessionEntity.LAST_SESSION_REFRESH_REMOTE);
         if (lsrr == null) {
-            logger.warnf("Not available lsrr note on user session %s.", sessionWrapper.getEntity().getId());
+            logger.debugf("Not available lsrr note on user session %s.", sessionWrapper.getEntity().getId());
             return SessionUpdateTask.CrossDCMessageStatus.SYNC;
         }
 

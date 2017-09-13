@@ -4,7 +4,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.3.0.CR1-SNAPSHOT</version>
+        <version>3.4.0.CR1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -53,6 +53,7 @@
     
     <build>
         <plugins>
+<!-- KEYCLOAK-5391: Commented out until node_modules fetching issue is resolved.
             <plugin>
                 <artifactId>maven-clean-plugin</artifactId>
                 <configuration>
@@ -80,7 +81,8 @@
                             <goal>yarn</goal>
                         </goals>
                         <configuration>
-                            <arguments>install --production=false --frozen-lockfile</arguments>
+                                               vvv remove space    vvv remove space on uncomment
+                            <arguments>install - -production=false - -frozen-lockfile</arguments>
                         </configuration>
                     </execution>
                 </executions>
@@ -91,6 +93,7 @@
                     <installDirectory>target</installDirectory>
                 </configuration>
             </plugin>
+-->
         </plugins>
     </build>
 

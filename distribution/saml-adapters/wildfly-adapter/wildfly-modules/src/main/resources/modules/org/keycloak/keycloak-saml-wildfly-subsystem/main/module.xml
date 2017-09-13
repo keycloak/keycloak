@@ -40,5 +40,6 @@
         <module name="org.jboss.as.web-common"/>
         <module name="org.jboss.metadata"/>
         <module name="org.apache.httpcomponents"/>
+        <module name="org.infinispan.cachestore.remote"/>
     </dependencies>
 </module>

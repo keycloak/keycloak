@@ -17,7 +17,6 @@
 package org.keycloak.testsuite.adapter.servlet.cluster;
 
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.*;
 import org.keycloak.testsuite.Retry;
 import org.keycloak.testsuite.adapter.page.EmployeeServletDistributable;
@@ -38,7 +37,6 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.function.Consumer;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jboss.arquillian.container.test.api.*;
@@ -50,14 +48,21 @@ import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 
+import org.keycloak.testsuite.util.Matchers;
+import org.keycloak.testsuite.util.SamlClient;
+import org.keycloak.testsuite.util.SamlClient.Binding;
+import org.keycloak.testsuite.util.SamlClientBuilder;
+import java.net.MalformedURLException;
+import java.util.function.BiConsumer;
+import org.apache.http.client.methods.HttpGet;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.support.PageFactory;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
-import static org.keycloak.testsuite.AbstractAuthTest.createUserRepresentation;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.getNearestSuperclassWithAnnotation;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
@@ -132,15 +137,21 @@ public abstract class AbstractSAMLAdapterClusterTest extends AbstractServletsAda
     public void startServer() throws Exception {
         prepareServerDirectory("standalone-" + NODE_1_NAME);
         controller.start(NODE_1_SERVER_NAME);
-        prepareWorkerNode(Integer.valueOf(System.getProperty("app.server.1.management.port")));
+        prepareWorkerNode(0, Integer.valueOf(System.getProperty("app.server.1.management.port")));
         prepareServerDirectory("standalone-" + NODE_2_NAME);
         controller.start(NODE_2_SERVER_NAME);
-        prepareWorkerNode(Integer.valueOf(System.getProperty("app.server.2.management.port")));
+        prepareWorkerNode(1, Integer.valueOf(System.getProperty("app.server.2.management.port")));
         deployer.deploy(EmployeeServletDistributable.DEPLOYMENT_NAME);
         deployer.deploy(EmployeeServletDistributable.DEPLOYMENT_NAME + "_2");
     }
 
-    protected abstract void prepareWorkerNode(Integer managementPort) throws Exception;
+    /**
+     * Prepares a worker node
+     * @param nodeIndex Node index, counting from 0
+     * @param managementPort Port for management operations on this node
+     * @throws Exception
+     */
+    protected abstract void prepareWorkerNode(int nodeIndex, Integer managementPort) throws Exception;
 
     @After
     public void stopServer() {
@@ -157,41 +168,103 @@ public abstract class AbstractSAMLAdapterClusterTest extends AbstractServletsAda
         loginActionsPage.setAuthRealm(DEMO);
     }
 
-    protected void testLogoutViaSessionIndex(URL employeeUrl, Consumer<EmployeeServletDistributable> logoutFunction) {
-        EmployeeServletDistributable page = PageFactory.initElements(driver, EmployeeServletDistributable.class);
-        page.setUrl(employeeUrl);
-        page.getUriBuilder().port(HTTP_PORT_NODE_REVPROXY);
-
-        UserRepresentation bburkeUser = createUserRepresentation("bburke", "bburke@redhat.com", "Bill", "Burke", true);
+    protected void testLogoutViaSessionIndex(URL employeeUrl, boolean forceRefreshAtOtherNode, BiConsumer<SamlClientBuilder, String> logoutFunction) {
         setPasswordFor(bburkeUser, CredentialRepresentation.PASSWORD);
 
-        assertSuccessfulLogin(page, bburkeUser, testRealmSAMLPostLoginPage, "principal=bburke");
+        final String employeeUrlString;
+        try {
+            URL employeeUrlAtRevProxy = new URL(employeeUrl.getProtocol(), employeeUrl.getHost(), HTTP_PORT_NODE_REVPROXY, employeeUrl.getFile());
+            employeeUrlString = employeeUrlAtRevProxy.toString();
+        } catch (MalformedURLException ex) {
+            throw new RuntimeException(ex);
+        }
 
-        updateProxy(NODE_2_NAME, NODE_2_URI, NODE_1_URI);
-        logoutFunction.accept(page);
-        delayedCheckLoggedOut(page, loginActionsPage);
+        SamlClientBuilder builder = new SamlClientBuilder()
+          // Go to employee URL at reverse proxy which is set to forward to first node
+          .navigateTo(employeeUrlString)
 
+          // process redirection to login page
+          .processSamlResponse(Binding.POST).build()
+          .login().user(bburkeUser).build()
+          .processSamlResponse(Binding.POST).build()
+
+          // Returned to the page
+          .assertResponse(Matchers.bodyHC(containsString("principal=bburke")))
+
+          // Update the proxy to forward to the second node.
+          .addStep(() -> updateProxy(NODE_2_NAME, NODE_2_URI, NODE_1_URI));
+
+        if (forceRefreshAtOtherNode) {
+            // Go to employee URL at reverse proxy which is set to forward to _second_ node now
+            builder
+              .navigateTo(employeeUrlString)
+              .doNotFollowRedirects()
+              .assertResponse(Matchers.bodyHC(containsString("principal=bburke")));
+        }
+
+        // Logout at the _second_ node
+        logoutFunction.accept(builder, employeeUrlString);
+
+        SamlClient samlClient = builder.execute();
+        delayedCheckLoggedOut(samlClient, employeeUrlString);
+
+        // Update the proxy to forward to the first node.
         updateProxy(NODE_1_NAME, NODE_1_URI, NODE_2_URI);
-        delayedCheckLoggedOut(page, loginActionsPage);
+        delayedCheckLoggedOut(samlClient, employeeUrlString);
+    }
+
+    private void delayedCheckLoggedOut(SamlClient samlClient, String url) {
+        Retry.execute(() -> {
+          samlClient.execute(
+            (client, currentURI, currentResponse, context) -> new HttpGet(url),
+            (client, currentURI, currentResponse, context) -> {
+              assertThat(currentResponse, Matchers.bodyHC(not(containsString("principal=bburke"))));
+              return null;
+            }
+          );
+        }, 10, 300);
+    }
+
+    private void logoutViaAdminConsole() {
+        RealmResource demoRealm = adminClient.realm(DEMO);
+        String bburkeId = ApiUtil.findUserByUsername(demoRealm, "bburke").getId();
+        demoRealm.users().get(bburkeId).logout();
+        log.infov("Logged out via admin console");
     }
 
     @Test
-    public void testBackchannelLogout(@ArquillianResource
+    public void testAdminInitiatedBackchannelLogout(@ArquillianResource
       @OperateOnDeployment(value = EmployeeServletDistributable.DEPLOYMENT_NAME) URL employeeUrl) throws Exception {
-        testLogoutViaSessionIndex(employeeUrl, (EmployeeServletDistributable page) -> {
-            RealmResource demoRealm = adminClient.realm(DEMO);
-            String bburkeId = ApiUtil.findUserByUsername(demoRealm, "bburke").getId();
-            demoRealm.users().get(bburkeId).logout();
-            log.infov("Logged out via admin console");
+        testLogoutViaSessionIndex(employeeUrl, false, (builder, url) -> builder.addStep(this::logoutViaAdminConsole));
+    }
+
+    @Test
+    public void testAdminInitiatedBackchannelLogoutWithAssertionOfLoggedIn(@ArquillianResource
+      @OperateOnDeployment(value = EmployeeServletDistributable.DEPLOYMENT_NAME) URL employeeUrl) throws Exception {
+        testLogoutViaSessionIndex(employeeUrl, true, (builder, url) -> builder.addStep(this::logoutViaAdminConsole));
+    }
+
+    @Test
+    public void testUserInitiatedFrontchannelLogout(@ArquillianResource
+      @OperateOnDeployment(value = EmployeeServletDistributable.DEPLOYMENT_NAME) URL employeeUrl) throws Exception {
+        testLogoutViaSessionIndex(employeeUrl, false, (builder, url) -> {
+            builder
+              .navigateTo(url + "?GLO=true")
+              .processSamlResponse(Binding.POST).build()    // logout request
+              .processSamlResponse(Binding.POST).build()    // logout response
+            ;
         });
     }
 
     @Test
-    public void testFrontchannelLogout(@ArquillianResource
+    public void testUserInitiatedFrontchannelLogoutWithAssertionOfLoggedIn(@ArquillianResource
       @OperateOnDeployment(value = EmployeeServletDistributable.DEPLOYMENT_NAME) URL employeeUrl) throws Exception {
-        testLogoutViaSessionIndex(employeeUrl, (EmployeeServletDistributable page) -> {
-            page.logout();
-            log.infov("Logged out via application");
+        testLogoutViaSessionIndex(employeeUrl, true, (builder, url) -> {
+            builder
+              .navigateTo(url + "?GLO=true")
+              .processSamlResponse(Binding.POST).build()    // logout request
+              .processSamlResponse(Binding.POST).build()    // logout response
+            ;
         });
     }
 
@@ -223,7 +296,7 @@ public abstract class AbstractSAMLAdapterClusterTest extends AbstractServletsAda
 
     protected void checkLoggedOut(AbstractPage page, AuthRealm loginPage) {
         page.navigateTo();
-        WaitUtils.waitForPageToLoad(driver);
+        WaitUtils.waitForPageToLoad();
         assertCurrentUrlStartsWith(loginPage);
     }
 

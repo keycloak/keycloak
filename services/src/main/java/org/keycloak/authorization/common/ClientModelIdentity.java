@@ -70,14 +70,4 @@ public class ClientModelIdentity implements Identity {
         if (role == null) return false;
         return serviceAccount.hasRole(role);
     }
-
-    @Override
-    public boolean hasRole(String roleName) {
-        throw new RuntimeException("Should not execute");
-    }
-
-    @Override
-    public boolean hasClientRole(String roleName) {
-        throw new RuntimeException("Should not execute");
-    }
 }

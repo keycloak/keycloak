@@ -55,7 +55,6 @@ import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserProvider;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientTemplateRepresentation;
@@ -73,6 +72,7 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.util.JsonSerialization;
+
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -298,7 +298,7 @@ public class ExportUtils {
         AuthorizationProviderFactory providerFactory = (AuthorizationProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(AuthorizationProvider.class);
         AuthorizationProvider authorization = providerFactory.create(session, client.getRealm());
         StoreFactory storeFactory = authorization.getStoreFactory();
-        ResourceServer settingsModel = authorization.getStoreFactory().getResourceServerStore().findByClient(client.getId());
+        ResourceServer settingsModel = authorization.getStoreFactory().getResourceServerStore().findById(client.getId());
 
         if (settingsModel == null) {
             return null;
@@ -314,7 +314,7 @@ public class ExportUtils {
                 .stream().map(resource -> {
                     ResourceRepresentation rep = toRepresentation(resource, settingsModel, authorization);
 
-                    if (rep.getOwner().getId().equals(settingsModel.getClientId())) {
+                    if (rep.getOwner().getId().equals(settingsModel.getId())) {
                         rep.setOwner(null);
                     } else {
                         rep.getOwner().setId(null);
@@ -530,6 +530,10 @@ public class ExportUtils {
             userRep.setClientConsents(consentReps);
         }
 
+        // Not Before
+        int notBefore = session.users().getNotBeforeOfUser(realm, user);
+        userRep.setNotBefore(notBefore);
+
         // Service account
         if (user.getServiceAccountClientLink() != null) {
             String clientInternalId = user.getServiceAccountClientLink();
@@ -716,6 +720,10 @@ public class ExportUtils {
         if (consentReps.size() > 0) {
             userRep.setClientConsents(consentReps);
         }
+
+        // Not Before
+        int notBefore = session.userFederatedStorage().getNotBeforeOfUser(realm, userRep.getId());
+        userRep.setNotBefore(notBefore);
 
         if (options.isGroupsAndRolesIncluded()) {
             List<String> groups = new LinkedList<>();

@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-testsuite-pom</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.3.0.CR1-SNAPSHOT</version>
+        <version>3.4.0.CR1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -207,12 +207,12 @@
         </dependency>
        <dependency>
            <groupId>org.keycloak</groupId>
-           <artifactId>keycloak-testsuite-integration</artifactId>
+           <artifactId>keycloak-testsuite-integration-deprecated</artifactId>
            <scope>test</scope>
        </dependency>
        <dependency>
            <groupId>org.keycloak</groupId>
-           <artifactId>keycloak-testsuite-integration</artifactId>
+           <artifactId>keycloak-testsuite-integration-deprecated</artifactId>
            <type>test-jar</type>
            <scope>test</scope>
        </dependency>

@@ -49,6 +49,6 @@ public class ResourceServerRemovedEvent extends InvalidationEvent implements Aut
 
     @Override
     public void addInvalidations(StoreFactoryCacheManager cache, Set<String> invalidations) {
-        cache.resourceServerRemoval(id, clientId, invalidations);
+        cache.resourceServerRemoval(id, invalidations);
     }
 }

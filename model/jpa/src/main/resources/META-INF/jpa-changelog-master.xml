@@ -48,4 +48,6 @@
     <include file="META-INF/jpa-changelog-2.5.1.xml"/>
     <include file="META-INF/jpa-changelog-3.0.0.xml"/>
     <include file="META-INF/jpa-changelog-3.2.0.xml"/>
+    <include file="META-INF/jpa-changelog-3.3.0.xml"/>
+    <include file="META-INF/jpa-changelog-authz-3.4.0.CR1.xml"/>
 </databaseChangeLog>

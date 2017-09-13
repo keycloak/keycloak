@@ -971,12 +971,12 @@ module.controller('ResourceServerPolicyResourceDetailCtrl', function($scope, $ro
                 $scope.applyToResourceTypeFlag = true;
             }
 
-            $scope.selectedPolicies = [];
             ResourceServerPermission.associatedPolicies({
                 realm : $route.current.params.realm,
                 client : client.id,
                 id : policy.id
             }, function(policies) {
+                $scope.selectedPolicies = [];
                 for (i = 0; i < policies.length; i++) {
                     policies[i].text = policies[i].name;
                     $scope.selectedPolicies.push(policies[i]);
@@ -1472,7 +1472,11 @@ module.controller('ResourceServerPolicyClientDetailCtrl', function($scope, $rout
                         return;
                     }
                     Client.query({realm: $route.current.params.realm, search: query.term.trim(), max: 20}, function(response) {
-                        data.results = response;
+                        for (i = 0; i < response.length; i++) {
+                            if (response[i].clientId.indexOf(query.term) != -1) {
+                                data.results.push(response[i]);
+                            }
+                        }
                         query.callback(data);
                     });
                 },

@@ -53,13 +53,13 @@ public class StoreFactoryCacheManager extends CacheManager {
         }
     }
 
-    public void resourceServerUpdated(String id, String clientId, Set<String> invalidations) {
+    public void resourceServerUpdated(String id, Set<String> invalidations) {
         invalidations.add(id);
-        invalidations.add(StoreFactoryCacheSession.getResourceServerByClientCacheKey(clientId));
+        invalidations.add(StoreFactoryCacheSession.getResourceServerByClientCacheKey(id));
     }
 
-    public void resourceServerRemoval(String id, String name, Set<String> invalidations) {
-        resourceServerUpdated(id, name, invalidations);
+    public void resourceServerRemoval(String id, Set<String> invalidations) {
+        resourceServerUpdated(id, invalidations);
 
         addInvalidations(InResourceServerPredicate.create().resourceServer(id), invalidations);
     }
@@ -75,9 +75,10 @@ public class StoreFactoryCacheManager extends CacheManager {
         addInvalidations(InScopePredicate.create().scope(id), invalidations);
     }
 
-    public void resourceUpdated(String id, String name, String type, String uri, Set<String> scopes, String serverId, Set<String> invalidations) {
+    public void resourceUpdated(String id, String name, String type, String uri, Set<String> scopes, String serverId, String owner, Set<String> invalidations) {
         invalidations.add(id);
         invalidations.add(StoreFactoryCacheSession.getResourceByNameCacheKey(name, serverId));
+        invalidations.add(StoreFactoryCacheSession.getResourceByOwnerCacheKey(owner, serverId));
 
         if (type != null) {
             invalidations.add(StoreFactoryCacheSession.getResourceByTypeCacheKey(type, serverId));
@@ -97,8 +98,7 @@ public class StoreFactoryCacheManager extends CacheManager {
     }
 
     public void resourceRemoval(String id, String name, String type, String uri, String owner, Set<String> scopes, String serverId, Set<String> invalidations) {
-        resourceUpdated(id, name, type, uri, scopes, serverId, invalidations);
-        invalidations.add(StoreFactoryCacheSession.getResourceByOwnerCacheKey(owner, serverId));
+        resourceUpdated(id, name, type, uri, scopes, serverId, owner, invalidations);
         addInvalidations(InResourcePredicate.create().resource(id), invalidations);
     }
 

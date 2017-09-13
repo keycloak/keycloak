@@ -221,7 +221,7 @@
             var callbackState = {
                 state: state,
                 nonce: nonce,
-                redirectUri: encodeURIComponent(redirectUri),
+                redirectUri: encodeURIComponent(redirectUri)
             }
 
             if (options && options.prompt) {
@@ -843,6 +843,7 @@
             }
 
             iframe.setAttribute('src', src );
+            iframe.setAttribute('title', 'keycloak-session-iframe' );
             iframe.style.display = 'none';
             document.body.appendChild(iframe);
 

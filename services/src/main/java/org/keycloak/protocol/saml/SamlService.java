@@ -58,6 +58,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.util.CacheControlUtil;
+import org.keycloak.utils.MediaType;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
@@ -67,7 +68,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
@@ -257,6 +257,11 @@ public class SamlService extends AuthorizationEndpointBase {
         protected Response loginRequest(String relayState, AuthnRequestType requestAbstractType, ClientModel client) {
             SamlClient samlClient = new SamlClient(client);
             // validate destination
+            if (requestAbstractType.getDestination() == null && samlClient.requiresClientSignature()) {
+                event.detail(Details.REASON, "invalid_destination");
+                event.error(Errors.INVALID_SAML_AUTHN_REQUEST);
+                return ErrorPage.error(session, Messages.INVALID_REQUEST);
+            }
             if (! isValidDestination(requestAbstractType.getDestination())) {
                 event.detail(Details.REASON, "invalid_destination");
                 event.error(Errors.INVALID_SAML_AUTHN_REQUEST);
@@ -359,6 +364,11 @@ public class SamlService extends AuthorizationEndpointBase {
         protected Response logoutRequest(LogoutRequestType logoutRequest, ClientModel client, String relayState) {
             SamlClient samlClient = new SamlClient(client);
             // validate destination
+            if (logoutRequest.getDestination() == null && samlClient.requiresClientSignature()) {
+                event.detail(Details.REASON, "invalid_destination");
+                event.error(Errors.INVALID_SAML_LOGOUT_REQUEST);
+                return ErrorPage.error(session, Messages.INVALID_REQUEST);
+            }
             if (! isValidDestination(logoutRequest.getDestination())) {
                 event.detail(Details.REASON, "invalid_destination");
                 event.error(Errors.INVALID_SAML_LOGOUT_REQUEST);
@@ -594,7 +604,7 @@ public class SamlService extends AuthorizationEndpointBase {
 
     @GET
     @Path("clients/{client}")
-    @Produces(MediaType.TEXT_HTML)
+    @Produces(MediaType.TEXT_HTML_UTF_8)
     public Response idpInitiatedSSO(@PathParam("client") String clientUrlName, @QueryParam("RelayState") String relayState) {
         event.event(EventType.LOGIN);
         CacheControlUtil.noBackButtonCacheControlHeader();
@@ -710,7 +720,7 @@ public class SamlService extends AuthorizationEndpointBase {
 
     private boolean isValidDestination(URI destination) {
         if (destination == null) {
-            return false;
+            return true;    // destination is optional
         }
 
         URI expected = uriInfo.getAbsolutePath();

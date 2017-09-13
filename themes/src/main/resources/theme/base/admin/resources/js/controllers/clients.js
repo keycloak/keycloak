@@ -730,12 +730,17 @@ module.controller('ClientImportCtrl', function($scope, $location, $upload, realm
 
 module.controller('ClientListCtrl', function($scope, realm, Client, serverInfo, $route, Dialog, Notifications, filterFilter) {
     $scope.realm = realm;
-    $scope.clients = Client.query({realm: realm.realm, viewableOnly: true});
+    $scope.clients = [];
     $scope.currentPage = 1;
     $scope.currentPageInput = 1;
+    $scope.numberOfPages = 1;
     $scope.pageSize = 20;
-    $scope.numberOfPages = Math.ceil($scope.clients.length/$scope.pageSize);
-
+    
+    Client.query({realm: realm.realm, viewableOnly: true}).$promise.then(function(clients) {
+        $scope.numberOfPages = Math.ceil(clients.length/$scope.pageSize);
+        $scope.clients = clients;
+    });
+    
     $scope.$watch('search', function (newVal, oldVal) {
         $scope.filtered = filterFilter($scope.clients, newVal);
         $scope.totalItems = $scope.filtered.length;
@@ -743,7 +748,7 @@ module.controller('ClientListCtrl', function($scope, realm, Client, serverInfo, 
         $scope.currentPage = 1;
         $scope.currentPageInput = 1;
   }, true);
-
+  
     $scope.removeClient = function(client) {
         Dialog.confirmDelete(client.clientId, 'client', function() {
             Client.remove({
@@ -1798,7 +1803,7 @@ module.controller('ClientProtocolMapperCtrl', function($scope, realm, serverInfo
         ClientProtocolMapper.update({
             realm : realm.realm,
             client: client.id,
-            id : mapper.id
+            id : $scope.model.mapper.id
         }, $scope.model.mapper, function() {
             $scope.model.changed = false;
             mapper = angular.copy($scope.mapper);

@@ -16,8 +16,6 @@
  */
 package org.keycloak.testsuite.console.page.clients.authorization.permission;
 
-import static org.openqa.selenium.By.tagName;
-
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
@@ -25,12 +23,14 @@ import org.keycloak.representations.idm.authorization.ResourcePermissionRepresen
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.testsuite.console.page.clients.authorization.policy.PolicyTypeUI;
 import org.keycloak.testsuite.page.Form;
-import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
+
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.openqa.selenium.By.tagName;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -73,8 +73,8 @@ public class Permissions extends Form {
         for (WebElement row : permissions().rows()) {
             PolicyRepresentation actual = permissions().toRepresentation(row);
             if (actual.getName().equalsIgnoreCase(name)) {
-                URLUtils.navigateToUri(driver, row.findElements(tagName("a")).get(0).getAttribute("href"), true);
-                WaitUtils.waitForPageToLoad(driver);
+                clickLink(row.findElements(tagName("a")).get(0));
+                WaitUtils.waitForPageToLoad();
                 String type = representation.getType();
 
                 if ("resource".equals(type)) {
@@ -92,8 +92,8 @@ public class Permissions extends Form {
         for (WebElement row : permissions().rows()) {
             PolicyRepresentation actual = permissions().toRepresentation(row);
             if (actual.getName().equalsIgnoreCase(name)) {
-                URLUtils.navigateToUri(driver, row.findElements(tagName("a")).get(0).getAttribute("href"), true);
-                WaitUtils.waitForPageToLoad(driver);
+                clickLink(row.findElements(tagName("a")).get(0));
+                WaitUtils.waitForPageToLoad();
                 String type = actual.getType();
                 if ("resource".equals(type)) {
                     return (P) resourcePermission;
@@ -109,8 +109,8 @@ public class Permissions extends Form {
         for (WebElement row : permissions().rows()) {
             PolicyRepresentation actual = permissions().toRepresentation(row);
             if (actual.getName().equalsIgnoreCase(name)) {
-                URLUtils.navigateToUri(driver, row.findElements(tagName("a")).get(0).getAttribute("href"), true);
-                WaitUtils.waitForPageToLoad(driver);
+                clickLink(row.findElements(tagName("a")).get(0));
+                WaitUtils.waitForPageToLoad();
 
                 String type = actual.getType();
 

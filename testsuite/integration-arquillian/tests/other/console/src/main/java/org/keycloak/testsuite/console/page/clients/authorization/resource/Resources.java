@@ -16,16 +16,16 @@
  */
 package org.keycloak.testsuite.console.page.clients.authorization.resource;
 
-import static org.openqa.selenium.By.tagName;
-
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.testsuite.page.Form;
-import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.openqa.selenium.By.tagName;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -54,8 +54,8 @@ public class Resources extends Form {
         for (WebElement row : resources().rows()) {
             ResourceRepresentation actual = resources().toRepresentation(row);
             if (actual.getName().equalsIgnoreCase(name)) {
-                URLUtils.navigateToUri(driver, row.findElements(tagName("a")).get(0).getAttribute("href"), true);
-                WaitUtils.waitForPageToLoad(driver);
+                clickLink(row.findElements(tagName("a")).get(0));
+                WaitUtils.waitForPageToLoad();
                 resource.form().populate(representation);
                 return;
             }
@@ -66,8 +66,8 @@ public class Resources extends Form {
         for (WebElement row : resources().rows()) {
             ResourceRepresentation actual = resources().toRepresentation(row);
             if (actual.getName().equalsIgnoreCase(name)) {
-                URLUtils.navigateToUri(driver, row.findElements(tagName("a")).get(0).getAttribute("href"), true);
-                WaitUtils.waitForPageToLoad(driver);
+                clickLink(row.findElements(tagName("a")).get(0));
+                WaitUtils.waitForPageToLoad();
                 resource.form().delete();
                 return;
             }
@@ -89,8 +89,8 @@ public class Resources extends Form {
         for (WebElement row : resources().rows()) {
             ResourceRepresentation actual = resources().toRepresentation(row);
             if (actual.getName().equalsIgnoreCase(name)) {
-                URLUtils.navigateToUri(driver, row.findElements(tagName("a")).get(0).getAttribute("href"), true);
-                WaitUtils.waitForPageToLoad(driver);
+                clickLink(row.findElements(tagName("a")).get(0));
+                WaitUtils.waitForPageToLoad();
                 return resource;
             }
         }

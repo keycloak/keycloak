@@ -16,12 +16,6 @@
  */
 package org.keycloak.testsuite.migration;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-import javax.ws.rs.NotFoundException;
-
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.TargetsContainer;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
@@ -59,6 +53,12 @@ import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.OAuthClient;
 
+import javax.ws.rs.NotFoundException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
@@ -94,35 +94,30 @@ public class MigrationTest extends AbstractKeycloakTest {
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         log.info("Adding no test realms for migration test. Test realm should be migrated from previous vesrion.");
     }
-    
     @Before
     public void beforeMigrationTest() {
         migrationRealm = adminClient.realms().realm(MIGRATION);
         migrationRealm2 = adminClient.realms().realm(MIGRATION2);
         migrationRealm3 = adminClient.realms().realm("authorization");
-        
         masterRealm = adminClient.realms().realm(MASTER);
-        
         //add migration realms to testRealmReps to make them removed after test
         addTestRealmToTestRealmReps(migrationRealm);
         addTestRealmToTestRealmReps(migrationRealm2);
         addTestRealmToTestRealmReps(migrationRealm3);
     }
-    
     private void addTestRealmToTestRealmReps(RealmResource realm) {
         try {
             testRealmReps.add(realm.toRepresentation());
         } catch (NotFoundException ex) {
         }
     }
-    
     @Test
     @Migration(versionFrom = "2.5.5.Final")
     public void migration2_5_5Test() {
         testMigratedData();
         testMigrationTo3_0_0();
+        testMigrationTo3_3_0();
     }
-    
     @Test
     @Migration(versionFrom = "1.9.8.Final")
     public void migration1_9_8Test() throws Exception {
@@ -135,8 +130,8 @@ public class MigrationTest extends AbstractKeycloakTest {
         testMigrationTo2_5_1();
         testMigrationTo3_0_0();
         testMigrationTo3_2_0();
+        testMigrationTo3_3_0();
     }
-    
     @Test
     @Migration(versionFrom = "2.2.1.Final")
     public void migrationInAuthorizationServicesTest() {
@@ -153,7 +148,6 @@ public class MigrationTest extends AbstractKeycloakTest {
         assertNames(masterRealm.clients().get(id).roles().list(), "master-test-client-role");
         assertNames(masterRealm.users().search("", 0, 5), "admin", "master-test-user");
         assertNames(masterRealm.groups().groups(), "master-test-group");
-        
         //migrationRealm
         assertNames(migrationRealm.roles().list(), "offline_access", "uma_authorization", "migration-test-realm-role");
         assertNames(migrationRealm.clients().findAll(), "account", "admin-cli", "broker", "migration-test-client", "realm-management", "security-admin-console");
@@ -162,21 +156,18 @@ public class MigrationTest extends AbstractKeycloakTest {
         assertNames(migrationRealm.users().search("", 0, 5), "migration-test-user");
         assertNames(migrationRealm.groups().groups(), "migration-test-group");
     }
-    
     /**
      * @see org.keycloak.migration.migrators.MigrateTo2_0_0
      */
     private void testMigrationTo2_0_0() {
         testAuthorizationServices(masterRealm, migrationRealm);
     }
-    
     /**
      * @see org.keycloak.migration.migrators.MigrateTo2_1_0
      */
     private void testMigrationTo2_1_0() {
         testNameOfOTPRequiredAction(masterRealm, migrationRealm);
     }
-    
     /**
      * @see org.keycloak.migration.migrators.MigrateTo2_2_0
      */
@@ -184,7 +175,6 @@ public class MigrationTest extends AbstractKeycloakTest {
         testIdentityProviderAuthenticator(masterRealm, migrationRealm);
         //MigrateTo2_2_0#migrateRolePolicies is not relevant any more
     }
-    
     /**
      * @see org.keycloak.migration.migrators.MigrateTo2_3_0
      */
@@ -192,13 +182,11 @@ public class MigrationTest extends AbstractKeycloakTest {
         testUpdateProtocolMappers(masterRealm, migrationRealm);
         testExtractRealmKeys(masterRealm, migrationRealm);
     }
-
     /**
      * @see org.keycloak.migration.migrators.MigrateTo2_5_0
      */
     private void testMigrationTo2_5_0() {
         testLdapKerberosMigration_2_5_0();
-        
         //https://github.com/keycloak/keycloak/pull/3630
         testDuplicateEmailSupport(masterRealm, migrationRealm);
     }
@@ -206,7 +194,6 @@ public class MigrationTest extends AbstractKeycloakTest {
     private void testMigrationTo2_5_1() throws Exception {
         testOfflineTokenLogin();
     }
-    
     /**
      * @see org.keycloak.migration.migrators.MigrateTo3_0_0
      */
@@ -219,6 +206,16 @@ public class MigrationTest extends AbstractKeycloakTest {
         assertNull(migrationRealm.toRepresentation().getPasswordPolicy());
 
         testDockerAuthenticationFlow(masterRealm, migrationRealm);
+    }
+
+    private void testMigrationTo3_3_0() {
+        Map<String, String> securityHeaders = masterRealm.toRepresentation().getBrowserSecurityHeaders();
+        if (securityHeaders != null) {
+            assertEquals("frame-src 'self'; frame-ancestors 'self'; object-src 'none';",
+                    securityHeaders.get("contentSecurityPolicy"));
+        } else {
+            fail("Browser security headers not found");
+        }
     }
 
     private void testDockerAuthenticationFlow(RealmResource... realms) {
@@ -255,7 +252,6 @@ public class MigrationTest extends AbstractKeycloakTest {
             }
         }
     }
-        
     private void testExtractRealmKeys(RealmResource masterRealm, RealmResource migrationRealm) {
         log.info("testing extract realm keys");
         String expectedMasterRealmKey = "MIIEowIBAAKCAQEAiU54OXoCbHy0L0gHn1yasctcnKHRU1pHFIJnWvaI7rClJydet9dDJaiYXOxMKseiBm3eYznfN3cPyU8udYmRnMuKjiocZ77LT2IEttAjXb6Ggazx7loriFHRy0IOJeX4KxXhAPWmxqa3mkFNfLBEvFqVaBgUDHQ60cmnPvNSHYudBTW9K80s8nvmP2pso7HTwWJ1+Xatj1Ey/gTmB3CXlyqBegGWC9TeuErEYpYhdh+11TVWasgMBZyUCtL3NRPaBuhaPg1LpW8lWGk05nS+YM6dvTk3Mppv+z2RygEpxyO09oT3b4G+Zfwit1STqn0AvDTGzINdoKcNtFScV0j8TwIDAQABAoIBAHcbPKsPLZ8SJfOF1iblW8OzFulAbaaSf2pJHIMJrQrw7LKkMkPjVXoLX+/rgr7xYZmWIP2OLBWfEHCeYTzQUyHiZpSf7vgHx7Fa45/5uVQOe/ttHIiYa37bCtP4vvEdJkOpvP7qGPvljwsebqsk9Ns28LfVez66bHOjK5Mt2yOIulbTeEs7ch//h39YwKJv96vc+CHbV2O6qoOxZessO6y+287cOBvbFXmS2GaGle5Nx/EwncBNS4b7czoetmm70+9ht3yX+kxaP311YUT31KQjuaJt275kOiKsrXr27PvgO++bsIyGuSzqyS7G7fmxF2zUyphEqEpalyDGMKMnrAECgYEA1fCgFox03rPDjm0MhW/ThoS2Ld27sbWQ6reS+PBMdUTJZVZIU1D2//h6VXDnlddhk6avKjA4smdy1aDKzmjz3pt9AKn+kgkXqtTC2fD3wp+fC9hND0z+rQPGe/Gk7ZUnTdsqnfyowxr+woIgzdnRukOUrG+xQiP3RUUT7tt6NQECgYEApEz2xvgqMm+9/f/YxjLdsFUfLqc4WlafB863stYEVqlCYy5ujyo0VQ0ahKSKJkLDnf52+aMUqPOpwaGePpu3O6VkvpcKfPY2MUlZW7/6Sa9et9hxNkdTS7Gui2d1ELpaCBe1Bc62sk8EA01iHXE1PpvyUqDWrhNh+NrDICA9oU8CgYBgGDYACtTP11TmW2r9YK5VRLUDww30k4ZlN1GnyV++aMhBYVEZQ0u+y+A/EnijIFwu0vbo70H4OGknNZMCxbeMbLDoJHM5KyZbUDe5ZvgSjloFGwH59m6KTiDQOUkIgi9mVCQ/VGaFRFHcElEjxUvj60kTbxPijn8ZuR5r8l9hAQKBgQCQ9jL5pHWeoIayN20smi6M6N2lTPbkhe60dcgQatHTIG2pkosLl8IqlHAkPgSB84AiwyR351JQKwRJCm7TcJI/dxMnMZ6YWKfB3qSP1hdfsfJRJQ/mQxIUBAYrizF3e+P5peka4aLCOgMhYsJBlePThMZN7wja99EGPwXQL4IQ8wKBgB8Nis1lQK6Z30GCp9u4dYleGfEP71Lwqvk/eJb89/uz0fjF9CTpJMULFc+nA5u4yHP3LFnRg3zCU6aEwfwUyk4GH9lWGV/qIAisQtgrCEraVe4qxz0DVE59C7qjO26IhU2U66TEzPAqvQ3zqey+woDn/cz/JMWK1vpcSk+TKn3K";
@@ -335,7 +331,6 @@ public class MigrationTest extends AbstractKeycloakTest {
 
         assertEquals(1, migratedRulesPolicies.size());
     }
-    
     private void testAuthorizationServices(RealmResource... realms) {
         log.info("testing authorization services");
         for (RealmResource realm : realms) {
@@ -348,14 +343,12 @@ public class MigrationTest extends AbstractKeycloakTest {
 
                 assertTrue("role should be added to default roles for new users", realm.toRepresentation().getDefaultRoles().contains(roleName));
             }
-
             //test admin roles - master admin client
             List<ClientRepresentation> clients = realm.clients().findByClientId(realm.toRepresentation().getRealm() + "-realm");
             if (!clients.isEmpty()) {
                 ClientResource masterAdminClient = realm.clients().get(clients.get(0).getId());
                 masterAdminClient.roles().get(AdminRoles.VIEW_AUTHORIZATION).toRepresentation();
                 masterAdminClient.roles().get(AdminRoles.MANAGE_AUTHORIZATION).toRepresentation();
-            
                 //test admin roles - admin role composite
                 Set<String> roleNames = new HashSet<>();
                 for (RoleRepresentation role : realm.roles().get(AdminRoles.ADMIN).getRoleComposites()) {
@@ -366,7 +359,6 @@ public class MigrationTest extends AbstractKeycloakTest {
             }
         }
     }
-    
     private void testNameOfOTPRequiredAction(RealmResource... realms) {
         log.info("testing OTP Required Action");
         for (RealmResource realm : realms) {
@@ -375,7 +367,6 @@ public class MigrationTest extends AbstractKeycloakTest {
             assertEquals("The name of CONFIGURE_TOTP required action should be 'Configure OTP'.", "Configure OTP", otpAction.getName());
         }
     }
-    
     private void testIdentityProviderAuthenticator(RealmResource... realms) {
         log.info("testing identity provider authenticator");
         for (RealmResource realm : realms) {
@@ -396,7 +387,6 @@ public class MigrationTest extends AbstractKeycloakTest {
             }
         }
     }
-
     private void testUpdateProtocolMappers(RealmResource... realms) {
         log.info("testing updated protocol mappers");
         for (RealmResource realm : realms) {
@@ -412,14 +402,12 @@ public class MigrationTest extends AbstractKeycloakTest {
             }
         }
     }
-    
     private void testUpdateProtocolMapper(ProtocolMapperRepresentation protocolMapper) {
         if (protocolMapper.getConfig().get("id.token.claim") != null) {
             assertEquals("ProtocolMapper's config should contain key 'userinfo.token.claim'.", 
                     protocolMapper.getConfig().get("id.token.claim"), protocolMapper.getConfig().get("userinfo.token.claim"));
         }
     }
-    
     private void testDuplicateEmailSupport(RealmResource... realms) {
         log.info("testing duplicate email");
         for (RealmResource realm : realms) {

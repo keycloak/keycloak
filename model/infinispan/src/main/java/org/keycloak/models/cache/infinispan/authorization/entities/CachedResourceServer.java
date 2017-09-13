@@ -22,27 +22,18 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.models.cache.infinispan.entities.AbstractRevisioned;
 import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 
-import java.io.Serializable;
-
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class CachedResourceServer extends AbstractRevisioned {
 
-    private String clientId;
     private boolean allowRemoteResourceManagement;
     private PolicyEnforcementMode policyEnforcementMode;
 
     public CachedResourceServer(Long revision, ResourceServer resourceServer) {
         super(revision, resourceServer.getId());
-        this.clientId = resourceServer.getClientId();
         this.allowRemoteResourceManagement = resourceServer.isAllowRemoteResourceManagement();
         this.policyEnforcementMode = resourceServer.getPolicyEnforcementMode();
-    }
-
-
-    public String getClientId() {
-        return this.clientId;
     }
 
     public boolean isAllowRemoteResourceManagement() {

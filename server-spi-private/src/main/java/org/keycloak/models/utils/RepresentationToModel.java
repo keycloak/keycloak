@@ -1454,6 +1454,11 @@ public class RepresentationToModel {
                 session.users().addConsent(newRealm, user.getId(), consentModel);
             }
         }
+
+        if (userRep.getNotBefore() != null) {
+            session.users().setNotBeforeForUser(newRealm, user, userRep.getNotBefore());
+        }
+
         if (userRep.getServiceAccountClientId() != null) {
             String clientId = userRep.getServiceAccountClientId();
             ClientModel client = newRealm.getClientByClientId(clientId);
@@ -1917,7 +1922,7 @@ public class RepresentationToModel {
     public static void toModel(ResourceServerRepresentation rep, AuthorizationProvider authorization) {
         ResourceServerStore resourceServerStore = authorization.getStoreFactory().getResourceServerStore();
         ResourceServer resourceServer;
-        ResourceServer existing = resourceServerStore.findByClient(rep.getClientId());
+        ResourceServer existing = resourceServerStore.findById(rep.getClientId());
 
         if (existing == null) {
             resourceServer = resourceServerStore.create(rep.getClientId());
@@ -1942,7 +1947,7 @@ public class RepresentationToModel {
 
             if (owner == null) {
                 owner = new ResourceOwnerRepresentation();
-                owner.setId(resourceServer.getClientId());
+                owner.setId(resourceServer.getId());
                 resource.setOwner(owner);
             } else if (owner.getName() != null) {
                 UserModel user = session.users().getUserByUsername(owner.getName(), realm);
@@ -2265,7 +2270,7 @@ public class RepresentationToModel {
 
         if (owner == null) {
             owner = new ResourceOwnerRepresentation();
-            owner.setId(resourceServer.getClientId());
+            owner.setId(resourceServer.getId());
         }
 
         String ownerId = owner.getId();
@@ -2274,7 +2279,7 @@ public class RepresentationToModel {
             throw new RuntimeException("No owner specified for resource [" + resource.getName() + "].");
         }
 
-        if (!resourceServer.getClientId().equals(ownerId)) {
+        if (!resourceServer.getId().equals(ownerId)) {
             RealmModel realm = authorization.getRealm();
             KeycloakSession keycloakSession = authorization.getKeycloakSession();
             UserProvider users = keycloakSession.users();
@@ -2377,6 +2382,9 @@ public class RepresentationToModel {
                 UserConsentModel consentModel = toModel(newRealm, consentRep);
                 federatedStorage.addConsent(newRealm, userRep.getId(), consentModel);
             }
+        }
+        if (userRep.getNotBefore() != null) {
+            federatedStorage.setNotBeforeForUser(newRealm, userRep.getId(), userRep.getNotBefore());
         }
 
 
