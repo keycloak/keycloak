@@ -64,7 +64,7 @@ import org.keycloak.testsuite.util.UserBuilder;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class AuthzClientCredentialsTest extends AbstractKeycloakTest {
+public class AuthzClientCredentialsTest extends AbstractAuthzTest {
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {

@@ -58,6 +58,10 @@ public class AppAuthManager extends AuthenticationManager {
         return authenticateBearerToken(session, realm, ctx.getUri(), ctx.getConnection(), ctx.getRequestHeaders());
     }
 
+    public AuthResult authenticateBearerToken(KeycloakSession session) {
+        return authenticateBearerToken(session, session.getContext().getRealm(), session.getContext().getUri(), session.getContext().getConnection(), session.getContext().getRequestHeaders());
+    }
+
     public AuthResult authenticateBearerToken(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, HttpHeaders headers) {
         String tokenString = extractAuthorizationHeaderToken(headers);
         if (tokenString == null) return null;

@@ -180,9 +180,10 @@ public abstract class AuthorizationEndpointBase {
                 return new AuthorizationEndpointChecks(authSession);
 
             } else if (isNewRequest(authSession, client, requestState)) {
-                // Check if we have lastProcessedExecution and restart the session just if yes. Otherwise update just client information from the AuthorizationEndpoint request.
+                // Check if we have lastProcessedExecution note or if some request parameter beside state (eg. prompt, kc_idp_hint) changed. Restart the session just if yes.
+                // Otherwise update just client information from the AuthorizationEndpoint request.
                 // This difference is needed, because of logout from JS applications in multiple browser tabs.
-                if (hasProcessedExecution(authSession)) {
+                if (shouldRestartAuthSession(authSession)) {
                     logger.debug("New request from application received, but authentication session already exists. Restart existing authentication session");
                     authSession.restartSession(realm, client);
                 } else {
@@ -223,10 +224,17 @@ public abstract class AuthorizationEndpointBase {
 
     }
 
+
+    protected boolean shouldRestartAuthSession(AuthenticationSessionModel authSession) {
+        return hasProcessedExecution(authSession);
+    }
+
+
     private boolean hasProcessedExecution(AuthenticationSessionModel authSession) {
         String lastProcessedExecution = authSession.getAuthNote(AuthenticationProcessor.LAST_PROCESSED_EXECUTION);
         return (lastProcessedExecution != null);
     }
+
 
     // See if we have lastProcessedExecution note. If yes, we are expired. Also if we are in different flow than initial one. Otherwise it is browser refresh of initial username/password form
     private boolean shouldShowExpirePage(AuthenticationSessionModel authSession) {

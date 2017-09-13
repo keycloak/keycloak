@@ -62,6 +62,9 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
             else if (reader.getLocalName().equals(SecureDeploymentDefinition.TAG_NAME)) {
                 readDeployment(reader, list);
             }
+            else if (reader.getLocalName().equals(SecureServerDefinition.TAG_NAME)) {
+                readSecureServer(reader, list);
+            }
         }
     }
 
@@ -89,27 +92,35 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
     }
 
     private void readDeployment(XMLExtendedStreamReader reader, List<ModelNode> resourcesToAdd) throws XMLStreamException {
+        readSecureResource(KeycloakExtension.SECURE_DEPLOYMENT_DEFINITION.TAG_NAME, KeycloakExtension.SECURE_DEPLOYMENT_DEFINITION, reader, resourcesToAdd);
+    }
+
+    private void readSecureServer(XMLExtendedStreamReader reader, List<ModelNode> resourcesToAdd) throws XMLStreamException {
+        readSecureResource(KeycloakExtension.SECURE_SERVER_DEFINITION.TAG_NAME, KeycloakExtension.SECURE_SERVER_DEFINITION, reader, resourcesToAdd);
+    }
+
+    private void readSecureResource(String tagName, AbstractAdapterConfigurationDefinition resource, XMLExtendedStreamReader reader, List<ModelNode> resourcesToAdd) throws XMLStreamException {
         String name = readNameAttribute(reader);
         ModelNode addSecureDeployment = new ModelNode();
         addSecureDeployment.get(ModelDescriptionConstants.OP).set(ModelDescriptionConstants.ADD);
         PathAddress addr = PathAddress.pathAddress(PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, KeycloakExtension.SUBSYSTEM_NAME),
-                PathElement.pathElement(SecureDeploymentDefinition.TAG_NAME, name));
+                PathElement.pathElement(tagName, name));
         addSecureDeployment.get(ModelDescriptionConstants.OP_ADDR).set(addr.toModelNode());
         List<ModelNode> credentialsToAdd = new ArrayList<ModelNode>();
         List<ModelNode> redirectRulesToAdd = new ArrayList<ModelNode>();
         while (reader.hasNext() && nextTag(reader) != END_ELEMENT) {
-            String tagName = reader.getLocalName();
-            if (tagName.equals(CredentialDefinition.TAG_NAME)) {
+            String localName = reader.getLocalName();
+            if (localName.equals(CredentialDefinition.TAG_NAME)) {
                 readCredential(reader, addr, credentialsToAdd);
                 continue;
             }
-            if (tagName.equals(RedirecRewritetRuleDefinition.TAG_NAME)) {
+            if (localName.equals(RedirecRewritetRuleDefinition.TAG_NAME)) {
                 readRewriteRule(reader, addr, redirectRulesToAdd);
                 continue;
             }
 
-            SimpleAttributeDefinition def = SecureDeploymentDefinition.lookup(tagName);
-            if (def == null) throw new XMLStreamException("Unknown secure-deployment tag " + tagName);
+            SimpleAttributeDefinition def = resource.lookup(localName);
+            if (def == null) throw new XMLStreamException("Unknown secure-deployment tag " + localName);
             def.parseAndSetParameter(reader.getElementText(), addSecureDeployment, reader);
         }
 
@@ -236,6 +247,7 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
         context.startSubsystemElement(KeycloakExtension.NAMESPACE, false);
         writeRealms(writer, context);
         writeSecureDeployments(writer, context);
+        writeSecureServers(writer, context);
         writer.writeEndElement();
     }
 
@@ -256,14 +268,22 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
     }
 
     private void writeSecureDeployments(XMLExtendedStreamWriter writer, SubsystemMarshallingContext context) throws XMLStreamException {
-        if (!context.getModelNode().get(SecureDeploymentDefinition.TAG_NAME).isDefined()) {
+        writeSecureResource(SecureDeploymentDefinition.TAG_NAME, SecureDeploymentDefinition.ALL_ATTRIBUTES, writer, context);
+    }
+
+    private void writeSecureServers(XMLExtendedStreamWriter writer, SubsystemMarshallingContext context) throws XMLStreamException {
+        writeSecureResource(SecureServerDefinition.TAG_NAME, SecureServerDefinition.ALL_ATTRIBUTES, writer, context);
+    }
+
+    private void writeSecureResource(String tagName, List<SimpleAttributeDefinition> attributes, XMLExtendedStreamWriter writer, SubsystemMarshallingContext context) throws XMLStreamException {
+        if (!context.getModelNode().get(tagName).isDefined()) {
             return;
         }
-        for (Property deployment : context.getModelNode().get(SecureDeploymentDefinition.TAG_NAME).asPropertyList()) {
-            writer.writeStartElement(SecureDeploymentDefinition.TAG_NAME);
+        for (Property deployment : context.getModelNode().get(tagName).asPropertyList()) {
+            writer.writeStartElement(tagName);
             writer.writeAttribute("name", deployment.getName());
             ModelNode deploymentElements = deployment.getValue();
-            for (AttributeDefinition element : SecureDeploymentDefinition.ALL_ATTRIBUTES) {
+            for (AttributeDefinition element : attributes) {
                 element.marshallAsElement(deploymentElements, writer);
             }
 
@@ -271,7 +291,7 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
             if (credentials.isDefined()) {
                 writeCredentials(writer, credentials);
             }
-            
+
             ModelNode redirectRewriteRule = deploymentElements.get(RedirecRewritetRuleDefinition.TAG_NAME);
             if (redirectRewriteRule.isDefined()) {
                 writeRedirectRules(writer, redirectRewriteRule);

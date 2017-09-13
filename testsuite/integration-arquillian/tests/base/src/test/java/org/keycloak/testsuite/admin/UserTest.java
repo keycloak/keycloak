@@ -40,6 +40,7 @@ import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
@@ -50,7 +51,10 @@ import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.federation.DummyUserFederationProvider;
+import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.keycloak.testsuite.page.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
@@ -120,11 +124,12 @@ public class UserTest extends AbstractAdminTest {
     @Deployment
     public static WebArchive deploy() {
         return RunOnServerDeployment.create(
-                AbstractAdminTest.class, 
-                AbstractTestRealmKeycloakTest.class, 
+                AbstractAdminTest.class,
+                AbstractTestRealmKeycloakTest.class,
+                DummyUserFederationProviderFactory.class, DummyUserFederationProvider.class,
                 UserResource.class);
     }
-    
+
     public String createUser() {
         return createUser("user1", "user1@localhost");
     }
@@ -189,13 +194,13 @@ public class UserTest extends AbstractAdminTest {
         assertEquals(409, response.getStatus());
         response.close();
     }
-    
+
     @Test
     public void createUserWithHashedCredentials() {
         UserRepresentation user = new UserRepresentation();
         user.setUsername("user_creds");
         user.setEmail("email@localhost");
-        
+
         CredentialRepresentation hashedPassword = new CredentialRepresentation();
         hashedPassword.setAlgorithm("my-algorithm");
         hashedPassword.setCounter(11);
@@ -207,11 +212,11 @@ public class UserTest extends AbstractAdminTest {
         hashedPassword.setPeriod(99);
         hashedPassword.setSalt(Base64.encodeBytes("theSalt".getBytes()));
         hashedPassword.setType(CredentialRepresentation.PASSWORD);
-        
+
         user.setCredentials(Arrays.asList(hashedPassword));
-        
+
         createUser(user);
-        
+
         CredentialModel credentialHashed = fetchCredentials("user_creds");
         assertNotNull("Expecting credential", credentialHashed);
         assertEquals("my-algorithm", credentialHashed.getAlgorithm());
@@ -225,7 +230,7 @@ public class UserTest extends AbstractAdminTest {
         assertEquals("theSalt", new String(credentialHashed.getSalt()));
         assertEquals(CredentialRepresentation.PASSWORD, credentialHashed.getType());
     }
-    
+
     @Test
     public void createUserWithRawCredentials() {
         UserRepresentation user = new UserRepresentation();
@@ -236,7 +241,7 @@ public class UserTest extends AbstractAdminTest {
         rawPassword.setValue("ABCD");
         rawPassword.setType(CredentialRepresentation.PASSWORD);
         user.setCredentials(Arrays.asList(rawPassword));
-        
+
         createUser(user);
 
         CredentialModel credential = fetchCredentials("user_rawpw");
@@ -246,7 +251,7 @@ public class UserTest extends AbstractAdminTest {
         assertNotEquals("ABCD", credential.getValue());
         assertEquals(CredentialRepresentation.PASSWORD, credential.getType());
     }
-    
+
     private CredentialModel fetchCredentials(String username) {
         return getTestingClient().server(REALM_NAME).fetch(session -> {
             RealmModel realm = session.getContext().getRealm();
@@ -256,7 +261,7 @@ public class UserTest extends AbstractAdminTest {
             return storedCredentialsByType.get(0);
         }, CredentialModel.class);
     }
-    
+
     @Test
     public void createDuplicatedUser3() {
         createUser();
@@ -267,7 +272,7 @@ public class UserTest extends AbstractAdminTest {
         assertEquals(409, response.getStatus());
         response.close();
     }
-    
+
     @Test
     public void createDuplicatedUser4() {
         createUser();
@@ -290,7 +295,7 @@ public class UserTest extends AbstractAdminTest {
         assertEquals(409, response.getStatus());
         response.close();
     }
-    
+
     @Test
     public void createDuplicatedUser6() {
         createUser();
@@ -317,7 +322,33 @@ public class UserTest extends AbstractAdminTest {
         assertAdminEvents.assertEmpty();
 
     }
-    
+
+    @Test
+    public void createUserWithFederationLink() {
+
+        // add a dummy federation provider
+        ComponentRepresentation dummyFederationProvider = new ComponentRepresentation();
+        dummyFederationProvider.setId(DummyUserFederationProviderFactory.PROVIDER_NAME);
+        dummyFederationProvider.setName(DummyUserFederationProviderFactory.PROVIDER_NAME);
+        dummyFederationProvider.setProviderId(DummyUserFederationProviderFactory.PROVIDER_NAME);
+        dummyFederationProvider.setProviderType(UserStorageProvider.class.getName());
+        adminClient.realms().realm(REALM_NAME).components().add(dummyFederationProvider);
+
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.componentPath(DummyUserFederationProviderFactory.PROVIDER_NAME), dummyFederationProvider, ResourceType.COMPONENT);
+
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("user1");
+        user.setEmail("user1@localhost");
+        user.setFederationLink(DummyUserFederationProviderFactory.PROVIDER_NAME);
+
+        String userId = createUser(user);
+
+        // fetch user again and see federation link filled in
+        UserRepresentation createdUser = realm.users().get(userId).toRepresentation();
+        assertNotNull(createdUser);
+        assertEquals(user.getFederationLink(), createdUser.getFederationLink());
+    }
+
     private void createUsers() {
         for (int i = 1; i < 10; i++) {
             UserRepresentation user = new UserRepresentation();

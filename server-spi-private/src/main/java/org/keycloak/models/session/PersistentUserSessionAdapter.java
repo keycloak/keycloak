@@ -161,6 +161,15 @@ public class PersistentUserSessionAdapter implements UserSessionModel {
     }
 
     @Override
+    public void removeAuthenticatedClientSessions(Iterable<String> removedClientUUIDS) {
+        if (removedClientUUIDS == null || ! removedClientUUIDS.iterator().hasNext()) {
+            return;
+        }
+
+        removedClientUUIDS.forEach(authenticatedClientSessions::remove);
+    }
+
+    @Override
     public String getNote(String name) {
         return getData().getNotes()==null ? null : getData().getNotes().get(name);
     }

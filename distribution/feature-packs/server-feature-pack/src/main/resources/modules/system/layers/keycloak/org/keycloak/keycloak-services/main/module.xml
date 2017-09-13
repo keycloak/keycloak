@@ -49,7 +49,6 @@
         <module name="javax.mail.api"/>
         <module name="javax.xml.soap.api"/>
         <module name="org.jboss.resteasy.resteasy-jaxrs"/>
-        <module name="org.jboss.resteasy.resteasy-crypto"/>
         <module name="org.jboss.resteasy.resteasy-multipart-provider"/>
         <module name="org.jboss.dmr"/>
         <module name="javax.servlet.api"/>

@@ -187,7 +187,7 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
         final StatusResponseType statusResponse = (StatusResponseType) holder.getSamlObject();
         // validate destination
         if (!requestUri.equals(statusResponse.getDestination())) {
-            log.error("Request URI does not match SAML request destination");
+            log.error("Request URI '" + requestUri + "' does not match SAML request destination '" + statusResponse.getDestination() + "'");
             return AuthOutcome.FAILED;
         }
 

@@ -86,7 +86,7 @@ public class OIDCAttributeMapperHelper {
     }
 
     private static Object convertToType(String type, Object attributeValue) {
-        if (type == null) return attributeValue;
+        if (type == null || attributeValue == null) return attributeValue;
         switch (type) {
             case "boolean":
                 Boolean booleanObject = getBoolean(attributeValue);

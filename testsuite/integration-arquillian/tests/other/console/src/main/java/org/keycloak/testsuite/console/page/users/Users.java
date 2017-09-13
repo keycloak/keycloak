@@ -79,18 +79,18 @@ public class Users extends AdminConsoleRealm {
         }
 
         public void clickUser(String username) {
-            URLUtils.navigateToUri(driver, getRowByUsername(username).findElement(By.xpath("./td[position()=1]/a")).getAttribute("href"), true);
-            waitForPageToLoad(driver);
+            URLUtils.navigateToUri(getRowByUsername(username).findElement(By.xpath("./td[position()=1]/a")).getAttribute("href"), true);
+            waitForPageToLoad();
         }
 
         public void editUser(String username) {
             clickRowActionButton(getRowByUsername(username), EDIT);
-            waitForPageToLoad(driver);
+            waitForPageToLoad();
         }
 
         public void impersonateUser(String username) {
             clickRowActionButton(getRowByUsername(username), IMPERSONATE);
-            waitForPageToLoad(driver);
+            waitForPageToLoad();
         }
 
         public void deleteUser(String username) {

@@ -94,6 +94,8 @@ public class KeycloakDeployment {
     
     protected Map<String, String> redirectRewriteRules;
 
+    protected boolean delegateBearerErrorResponseSending = false;
+
     public KeycloakDeployment() {
     }
 
@@ -456,6 +458,12 @@ public class KeycloakDeployment {
     public void setRewriteRedirectRules(Map<String, String> redirectRewriteRules) {
         this.redirectRewriteRules = redirectRewriteRules;
     }
-    
-    
+
+    public boolean isDelegateBearerErrorResponseSending() {
+        return delegateBearerErrorResponseSending;
+    }
+
+    public void setDelegateBearerErrorResponseSending(boolean delegateBearerErrorResponseSending) {
+        this.delegateBearerErrorResponseSending = delegateBearerErrorResponseSending;
+    }
 }

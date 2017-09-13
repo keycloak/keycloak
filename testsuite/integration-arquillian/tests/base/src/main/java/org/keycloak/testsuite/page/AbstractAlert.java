@@ -51,7 +51,7 @@ public abstract class AbstractAlert {
     }
 
     protected boolean checkAlertType(String type) {
-        WaitUtils.waitForPageToLoad(driver);
+        WaitUtils.waitForPageToLoad();
         try {
             (new WebDriverWait(driver, 1)).until(ExpectedConditions.attributeContains(root, "class", "alert-" + type));
         }

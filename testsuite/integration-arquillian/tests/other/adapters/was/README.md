@@ -13,7 +13,7 @@
 ## How to run tests
 
 1. start IBM WebSphere container with ibmjdk8 (tests expects that app-server runs on port 8280)
-2. add the [repository](https://repository.jboss.org/nexus/content/repositories/jboss_releases_staging_profile-11801) to settings.xml 
+2. add the [repository](https://repository.jboss.org/nexus/content/repositories/jboss_releases_staging_profile-12222) to settings.xml 
 3. mvn -f keycloak/pom.xml -Pdistribution -DskipTests clean install
 4. mvn -f keycloak/testsuite/integration-arquillian/pom.xml -Pauth-server-wildfly -DskipTests clean install
 5. mvn -f keycloak/testsuite/integration-arquillian/tests/other/adapters/was/pom.xml -Pauth-server-wildfly,app-server-was clean install

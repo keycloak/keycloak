@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-saml-eap-integration-pom</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.3.0.CR1-SNAPSHOT</version>
+        <version>3.4.0.CR1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -77,6 +77,18 @@
             <artifactId>jboss-as-web</artifactId>
             <version>7.1.2.Final</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-core</artifactId>
+            <scope>provided</scope>
+            <version>5.2.20.Final</version> <!-- override version to match EAP's -->
+        </dependency>
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-cachestore-remote</artifactId>
+            <scope>provided</scope>
+            <version>5.2.20.Final</version> <!-- override version to match EAP's -->
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>

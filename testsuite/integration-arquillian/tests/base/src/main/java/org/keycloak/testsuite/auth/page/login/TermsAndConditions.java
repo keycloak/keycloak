@@ -37,16 +37,16 @@ public class TermsAndConditions extends LoginActions {
     
     @Override
     public boolean isCurrent() {
-        return UIUtils.currentTitleEquals(driver, "Terms and Conditions");
+        return UIUtils.currentTitleEquals("Terms and Conditions");
     }
 
     public void acceptTerms() {
         acceptButton.click();
-        WaitUtils.waitForPageToLoad(driver);
+        WaitUtils.waitForPageToLoad();
     }
     public void declineTerms() {
         declineButton.click();
-        WaitUtils.waitForPageToLoad(driver);
+        WaitUtils.waitForPageToLoad();
     }
 
     public String getAcceptButtonText() {

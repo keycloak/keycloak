@@ -89,7 +89,7 @@ class PathMatcher {
                     pathString = "/";
                 }
 
-                if (matchingUri.equals(targetUri)) {
+                if (matchingUri.equals(targetUri) || pathString.equals(targetUri)) {
                     cache.put(targetUri, entry);
                     return entry;
                 }

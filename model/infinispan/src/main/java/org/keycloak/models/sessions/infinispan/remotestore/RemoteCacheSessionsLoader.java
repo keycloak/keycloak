@@ -18,10 +18,12 @@
 package org.keycloak.models.sessions.infinispan.remotestore;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.commons.marshall.Marshaller;
 import org.infinispan.context.Flag;
 import org.jboss.logging.Logger;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -40,8 +42,33 @@ public class RemoteCacheSessionsLoader implements SessionLoader {
 
     private static final Logger log = Logger.getLogger(RemoteCacheSessionsLoader.class);
 
-    // Hardcoded limit for now. See if needs to be configurable (or if preloading can be enabled/disabled in configuration)
-    public static final int LIMIT = 100000;
+
+    // Javascript to be executed on remote infinispan server (Flag CACHE_MODE_LOCAL assumes that remoteCache is replicated)
+    private static final String REMOTE_SCRIPT_FOR_LOAD_SESSIONS =
+            "function loadSessions() {" +
+            "  var flagClazz = cache.getClass().getClassLoader().loadClass(\"org.infinispan.context.Flag\"); \n" +
+            "  var localFlag = java.lang.Enum.valueOf(flagClazz, \"CACHE_MODE_LOCAL\"); \n" +
+            "  var cacheStream = cache.getAdvancedCache().withFlags([ localFlag ]).entrySet().stream();\n" +
+            "  var result = cacheStream.skip(first).limit(max).collect(java.util.stream.Collectors.toMap(\n" +
+            "    new java.util.function.Function() {\n" +
+            "      apply: function(entry) {\n" +
+            "        return entry.getKey();\n" +
+            "      }\n" +
+            "    },\n" +
+            "    new java.util.function.Function() {\n" +
+            "      apply: function(entry) {\n" +
+            "        return entry.getValue();\n" +
+            "      }\n" +
+            "    }\n" +
+            "  ));\n" +
+            "\n" +
+            "  cacheStream.close();\n" +
+            "  return result;\n" +
+            "};\n" +
+            "\n" +
+            "loadSessions();";
+
+
 
     private final String cacheName;
 
@@ -51,7 +78,15 @@ public class RemoteCacheSessionsLoader implements SessionLoader {
 
     @Override
     public void init(KeycloakSession session) {
+        RemoteCache remoteCache = InfinispanUtil.getRemoteCache(getCache(session));
 
+        RemoteCache<String, String> scriptCache = remoteCache.getRemoteCacheManager().getCache("___script_cache");
+
+        if (!scriptCache.containsKey("load-sessions.js")) {
+            scriptCache.put("load-sessions.js",
+                    "// mode=local,language=javascript\n" +
+                            REMOTE_SCRIPT_FOR_LOAD_SESSIONS);
+        }
     }
 
     @Override
@@ -67,21 +102,28 @@ public class RemoteCacheSessionsLoader implements SessionLoader {
 
         RemoteCache<?, ?> remoteCache = InfinispanUtil.getRemoteCache(cache);
 
-        int size = remoteCache.size();
+        log.debugf("Will do bulk load of sessions from remote cache '%s' . First: %d, max: %d", cache.getName(), first, max);
 
-        if (size > LIMIT) {
-            log.infof("Skip bulk load of '%d' sessions from remote cache '%s'. Sessions will be retrieved lazily", size, cache.getName());
-            return true;
-        } else {
-            log.infof("Will do bulk load of '%d' sessions from remote cache '%s'", size, cache.getName());
-        }
+        Map<String, Integer> remoteParams = new HashMap<>();
+        remoteParams.put("first", first);
+        remoteParams.put("max", max);
+        Map<byte[], byte[]> remoteObjects = remoteCache.execute("load-sessions.js", remoteParams);
 
+        log.debugf("Successfully finished loading sessions '%s' . First: %d, max: %d", cache.getName(), first, max);
 
-        for (Map.Entry<?, ?> entry : remoteCache.getBulk().entrySet()) {
-            SessionEntity entity = (SessionEntity) entry.getValue();
-            SessionEntityWrapper entityWrapper = new SessionEntityWrapper(entity);
+        Marshaller marshaller = remoteCache.getRemoteCacheManager().getMarshaller();
 
-            decoratedCache.putAsync(entry.getKey(), entityWrapper);
+        for (Map.Entry<byte[], byte[]> entry : remoteObjects.entrySet()) {
+            try {
+                Object key = marshaller.objectFromByteBuffer(entry.getKey());
+                SessionEntity entity = (SessionEntity) marshaller.objectFromByteBuffer(entry.getValue());
+
+                SessionEntityWrapper entityWrapper = new SessionEntityWrapper(entity);
+
+                decoratedCache.putAsync(key, entityWrapper);
+            } catch (Exception e) {
+                log.warn("Error loading session from remote cache", e);
+            }
         }
 
         return true;

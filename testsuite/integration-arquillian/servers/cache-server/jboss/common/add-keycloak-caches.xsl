@@ -39,6 +39,8 @@
             <local-cache name="loginFailures" configuration="sessions-cfg" />
             <local-cache name="actionTokens" configuration="sessions-cfg" />
             <local-cache name="work" configuration="sessions-cfg" />
+            <local-cache name="employee-distributable-cache.ssoCache" configuration="sessions-cfg"/>
+            <local-cache name="employee-distributable-cache" configuration="sessions-cfg"/>
         </xsl:copy>
     </xsl:template>
 
@@ -57,6 +59,8 @@
             <replicated-cache name="loginFailures" configuration="sessions-cfg" />
             <replicated-cache name="actionTokens" configuration="sessions-cfg" />
             <replicated-cache name="work" configuration="sessions-cfg" />
+            <replicated-cache name="employee-distributable-cache.ssoCache" configuration="sessions-cfg"/>
+            <replicated-cache name="employee-distributable-cache" configuration="sessions-cfg"/>
         </xsl:copy>
     </xsl:template>
 

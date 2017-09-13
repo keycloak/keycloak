@@ -19,6 +19,7 @@ package org.keycloak.testsuite.authz;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.AuthorizationProvider;
@@ -42,6 +43,7 @@ import org.keycloak.representations.idm.authorization.PolicyEvaluationResponse;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 
 import java.util.HashMap;
@@ -54,7 +56,8 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class PolicyEvaluationCompositeRoleTest extends AbstractKeycloakTest {
+public class PolicyEvaluationCompositeRoleTest extends AbstractAuthzTest {
+
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation testRealmRep = new RealmRepresentation();
@@ -63,10 +66,10 @@ public class PolicyEvaluationCompositeRoleTest extends AbstractKeycloakTest {
         testRealmRep.setEnabled(true);
         testRealms.add(testRealmRep);
     }
-    
+
     @Deployment
     public static WebArchive deploy() {
-        return RunOnServerDeployment.create();
+        return RunOnServerDeployment.create(AbstractAuthzTest.class);
     }
 
     public static void setup(KeycloakSession session) {
@@ -84,7 +87,7 @@ public class PolicyEvaluationCompositeRoleTest extends AbstractKeycloakTest {
         Policy policy = createRolePolicy(authz, resourceServer, role1);
 
         Scope scope = authz.getStoreFactory().getScopeStore().create("myscope", resourceServer);
-        Resource resource = authz.getStoreFactory().getResourceStore().create("myresource", resourceServer, resourceServer.getClientId());
+        Resource resource = authz.getStoreFactory().getResourceStore().create("myresource", resourceServer, resourceServer.getId());
         addScopePermission(authz, resourceServer, "mypermission", resource, scope, policy);
 
         RoleModel composite = realm.addRole("composite");

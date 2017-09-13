@@ -33,8 +33,9 @@ public class ResourceUpdatedEvent extends InvalidationEvent implements Authoriza
     private String type;
     private String uri;
     private Set<String> scopes;
+    private String owner;
 
-    public static ResourceUpdatedEvent create(String id, String name, String type, String uri, Set<String> scopes, String serverId) {
+    public static ResourceUpdatedEvent create(String id, String name, String type, String uri, Set<String> scopes, String serverId, String owner) {
         ResourceUpdatedEvent event = new ResourceUpdatedEvent();
         event.id = id;
         event.name = name;
@@ -42,6 +43,7 @@ public class ResourceUpdatedEvent extends InvalidationEvent implements Authoriza
         event.uri = uri;
         event.scopes = scopes;
         event.serverId = serverId;
+        event.owner = owner;
         return event;
     }
 
@@ -57,6 +59,6 @@ public class ResourceUpdatedEvent extends InvalidationEvent implements Authoriza
 
     @Override
     public void addInvalidations(StoreFactoryCacheManager cache, Set<String> invalidations) {
-        cache.resourceUpdated(id, name, type, uri, scopes, serverId, invalidations);
+        cache.resourceUpdated(id, name, type, uri, scopes, serverId, owner, invalidations);
     }
 }

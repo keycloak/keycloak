@@ -18,8 +18,8 @@ package org.keycloak.broker.oidc;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
-import org.keycloak.broker.oidc.util.JsonSimpleHttp;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
@@ -32,9 +32,13 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.keys.loader.PublicKeyStorageManager;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
@@ -50,6 +54,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
@@ -59,7 +64,7 @@ import java.security.PublicKey;
 /**
  * @author Pedro Igor
  */
-public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIdentityProviderConfig> {
+public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIdentityProviderConfig>  {
     protected static final Logger logger = Logger.getLogger(OIDCIdentityProvider.class);
 
     public static final String OAUTH2_PARAMETER_PROMPT = "prompt";
@@ -68,6 +73,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     public static final String USER_INFO = "UserInfo";
     public static final String FEDERATED_ACCESS_TOKEN_RESPONSE = "FEDERATED_ACCESS_TOKEN_RESPONSE";
     public static final String VALIDATED_ID_TOKEN = "VALIDATED_ID_TOKEN";
+    public static final String ACCESS_TOKEN_EXPIRATION = "accessTokenExpiration";
 
     public OIDCIdentityProvider(KeycloakSession session, OIDCIdentityProviderConfig config) {
         super(session, config);
@@ -130,7 +136,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         logoutUri.queryParam("id_token_hint", idToken);
         String url = logoutUri.build().toString();
         try {
-            int status = JsonSimpleHttp.doGet(url, session).asStatus();
+            int status = SimpleHttp.doGet(url, session).asStatus();
             boolean success = status >=200 && status < 400;
             if (!success) {
                 logger.warn("Failed backchannel broker logout to: " + url);
@@ -170,7 +176,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
      * @param userSession
      * @return
      */
-    public String refreshToken(KeycloakSession session, UserSessionModel userSession) {
+    public String refreshTokenForLogout(KeycloakSession session, UserSessionModel userSession) {
         String refreshToken = userSession.getNote(FEDERATED_REFRESH_TOKEN);
         try {
             return SimpleHttp.doPost(getConfig().getTokenUrl(), session)
@@ -187,7 +193,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         long exp = Long.parseLong(userSession.getNote(FEDERATED_TOKEN_EXPIRATION));
         int currentTime = Time.currentTime();
         if (exp > 0 && currentTime > exp) {
-            String response = refreshToken(session, userSession);
+            String response = refreshTokenForLogout(session, userSession);
             AccessTokenResponse tokenResponse = null;
             try {
                 tokenResponse = JsonSerialization.readValue(response, AccessTokenResponse.class);
@@ -215,7 +221,107 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
     protected void processAccessTokenResponse(BrokeredIdentityContext context, AccessTokenResponse response) {
 
+
     }
+
+
+    protected Response exchangeStoredToken(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject, AccessToken token) {
+        FederatedIdentityModel model = session.users().getFederatedIdentity(tokenSubject, getConfig().getAlias(), authorizedClient.getRealm());
+        if (model == null || model.getToken() == null) {
+            return exchangeNotLinked(uriInfo, authorizedClient, tokenUserSession, tokenSubject, token);
+        }
+        try {
+            AccessTokenResponse tokenResponse = JsonSerialization.readValue(model.getToken(), AccessTokenResponse.class);
+            Long exp = (Long)tokenResponse.getOtherClaims().get(ACCESS_TOKEN_EXPIRATION);
+            if (exp != null && (long)exp < Time.currentTime()) {
+                if (tokenResponse.getRefreshToken() == null) {
+                    return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject, token);
+                }
+                String response = SimpleHttp.doPost(getConfig().getTokenUrl(), session)
+                        .param("refresh_token", tokenResponse.getRefreshToken())
+                        .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_REFRESH_TOKEN)
+                        .param(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
+                        .param(OAUTH2_PARAMETER_CLIENT_SECRET, getConfig().getClientSecret()).asString();
+                if (response.contains("error")) {
+                    model.setToken(null);
+                    session.users().updateFederatedIdentity(authorizedClient.getRealm(), tokenSubject, model);
+                    return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject, token);
+                }
+                AccessTokenResponse newResponse = JsonSerialization.readValue(response, AccessTokenResponse.class);
+                if (newResponse.getExpiresIn() > 0) {
+                    long accessTokenExpiration = Time.currentTime() + newResponse.getExpiresIn();
+                    newResponse.getOtherClaims().put(ACCESS_TOKEN_EXPIRATION, accessTokenExpiration);
+                    response = JsonSerialization.writeValueAsString(newResponse);
+                }
+                String oldToken = tokenUserSession.getNote(FEDERATED_ACCESS_TOKEN);
+                if (oldToken != null && oldToken.equals(tokenResponse.getToken())) {
+                    long accessTokenExpiration = newResponse.getExpiresIn() > 0 ? Time.currentTime() + newResponse.getExpiresIn() : 0;
+                    tokenUserSession.setNote(FEDERATED_TOKEN_EXPIRATION, Long.toString(accessTokenExpiration));
+                    tokenUserSession.setNote(FEDERATED_REFRESH_TOKEN, newResponse.getRefreshToken());
+                    tokenUserSession.setNote(FEDERATED_ACCESS_TOKEN, newResponse.getToken());
+                    tokenUserSession.setNote(FEDERATED_ID_TOKEN, newResponse.getIdToken());
+
+                }
+                model.setToken(response);
+                tokenResponse = newResponse;
+            } else if (exp != null) {
+                tokenResponse.setExpiresIn(exp - Time.currentTime());
+            }
+            tokenResponse.setIdToken(null);
+            tokenResponse.setRefreshToken(null);
+            tokenResponse.setRefreshExpiresIn(0);
+            tokenResponse.getOtherClaims().clear();
+            tokenResponse.getOtherClaims().put(OAuth2Constants.ISSUED_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE);
+            tokenResponse.getOtherClaims().put(ACCOUNT_LINK_URL, getLinkingUrl(uriInfo, authorizedClient, tokenUserSession, token));
+            return Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE).build();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected Response exchangeSessionToken(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject, AccessToken token) {
+        try {
+            long expiration = Long.parseLong(tokenUserSession.getNote(FEDERATED_TOKEN_EXPIRATION));
+            String refreshToken = tokenUserSession.getNote(FEDERATED_REFRESH_TOKEN);
+            String accessToken = tokenUserSession.getNote(FEDERATED_ACCESS_TOKEN);
+            String idToken = tokenUserSession.getNote(FEDERATED_ID_TOKEN);
+            if (expiration == 0 || expiration > Time.currentTime()) {
+                AccessTokenResponse tokenResponse = new AccessTokenResponse();
+                tokenResponse.setExpiresIn(expiration);
+                tokenResponse.setToken(accessToken);
+                tokenResponse.setIdToken(null);
+                tokenResponse.setRefreshToken(null);
+                tokenResponse.setRefreshExpiresIn(0);
+                tokenResponse.getOtherClaims().put(OAuth2Constants.ISSUED_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE);
+                tokenResponse.getOtherClaims().put(ACCOUNT_LINK_URL, getLinkingUrl(uriInfo, authorizedClient, tokenUserSession, token));
+                return Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE).build();
+            }
+            String response = SimpleHttp.doPost(getConfig().getTokenUrl(), session)
+                    .param("refresh_token", refreshToken)
+                    .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_REFRESH_TOKEN)
+                    .param(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
+                    .param(OAUTH2_PARAMETER_CLIENT_SECRET, getConfig().getClientSecret()).asString();
+            if (response.contains("error")) {
+                return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject, token);
+            }
+            AccessTokenResponse newResponse = JsonSerialization.readValue(response, AccessTokenResponse.class);
+            long accessTokenExpiration = newResponse.getExpiresIn() > 0 ? Time.currentTime() + newResponse.getExpiresIn() : 0;
+            tokenUserSession.setNote(FEDERATED_TOKEN_EXPIRATION, Long.toString(accessTokenExpiration));
+            tokenUserSession.setNote(FEDERATED_REFRESH_TOKEN, newResponse.getRefreshToken());
+            tokenUserSession.setNote(FEDERATED_ACCESS_TOKEN, newResponse.getToken());
+            tokenUserSession.setNote(FEDERATED_ID_TOKEN, newResponse.getIdToken());
+            newResponse.setIdToken(null);
+            newResponse.setRefreshToken(null);
+            newResponse.setRefreshExpiresIn(0);
+            newResponse.getOtherClaims().clear();
+            newResponse.getOtherClaims().put(OAuth2Constants.ISSUED_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE);
+            newResponse.getOtherClaims().put(ACCOUNT_LINK_URL, getLinkingUrl(uriInfo, authorizedClient, tokenUserSession, token));
+            return Response.ok(newResponse).type(MediaType.APPLICATION_JSON_TYPE).build();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 
     @Override
     public BrokeredIdentityContext getFederatedIdentity(String response) {
@@ -235,6 +341,13 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             BrokeredIdentityContext identity = extractIdentity(tokenResponse, accessToken, idToken);
 
             if (getConfig().isStoreToken()) {
+                String response1 = response;
+                if (tokenResponse.getExpiresIn() > 0) {
+                    long accessTokenExpiration = Time.currentTime() + tokenResponse.getExpiresIn();
+                    tokenResponse.getOtherClaims().put(ACCESS_TOKEN_EXPIRATION, accessTokenExpiration);
+                    response1 = JsonSerialization.writeValueAsString(tokenResponse);
+                }
+                response = response1;
                 identity.setToken(response);
             }
 
@@ -254,9 +367,8 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         if (!getConfig().isDisableUserInfoService()) {
             String userInfoUrl = getUserInfoUrl();
             if (userInfoUrl != null && !userInfoUrl.isEmpty() && (id == null || name == null || preferredUsername == null || email == null)) {
-                SimpleHttp request = JsonSimpleHttp.doGet(userInfoUrl, session)
-                        .header("Authorization", "Bearer " + accessToken);
-                JsonNode userInfo = JsonSimpleHttp.asJson(request);
+                JsonNode userInfo = SimpleHttp.doGet(userInfoUrl, session)
+                        .header("Authorization", "Bearer " + accessToken).asJson();
 
                 id = getJsonProperty(userInfo, "sub");
                 name = getJsonProperty(userInfo, "name");

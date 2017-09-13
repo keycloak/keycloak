@@ -46,7 +46,7 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
     @Override
     public Resource getDelegateForUpdate() {
         if (updated == null) {
-            cacheSession.registerResourceInvalidation(cached.getId(), cached.getName(), cached.getType(), cached.getUri(), cached.getScopesIds(), cached.getResourceServerId());
+            cacheSession.registerResourceInvalidation(cached.getId(), cached.getName(), cached.getType(), cached.getUri(), cached.getScopesIds(), cached.getResourceServerId(), cached.getOwner());
             updated = cacheSession.getResourceStoreDelegate().findById(cached.getId(), cached.getResourceServerId());
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
@@ -95,7 +95,7 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
     @Override
     public void setName(String name) {
         getDelegateForUpdate();
-        cacheSession.registerResourceInvalidation(cached.getId(), name, cached.getType(), cached.getUri(), cached.getScopesIds(), cached.getResourceServerId());
+        cacheSession.registerResourceInvalidation(cached.getId(), name, cached.getType(), cached.getUri(), cached.getScopesIds(), cached.getResourceServerId(), cached.getOwner());
         updated.setName(name);
 
     }
@@ -127,7 +127,7 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
     @Override
     public void setUri(String uri) {
         getDelegateForUpdate();
-        cacheSession.registerResourceInvalidation(cached.getId(), cached.getName(), cached.getType(), uri, cached.getScopesIds(), cached.getResourceServerId());
+        cacheSession.registerResourceInvalidation(cached.getId(), cached.getName(), cached.getType(), uri, cached.getScopesIds(), cached.getResourceServerId(), cached.getOwner());
         updated.setUri(uri);
     }
 
@@ -140,7 +140,7 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
     @Override
     public void setType(String type) {
         getDelegateForUpdate();
-        cacheSession.registerResourceInvalidation(cached.getId(), cached.getName(), type, cached.getUri(), cached.getScopesIds(), cached.getResourceServerId());
+        cacheSession.registerResourceInvalidation(cached.getId(), cached.getName(), type, cached.getUri(), cached.getScopesIds(), cached.getResourceServerId(), cached.getOwner());
         updated.setType(type);
 
     }
@@ -168,7 +168,7 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
     @Override
     public void updateScopes(Set<Scope> scopes) {
         getDelegateForUpdate();
-        cacheSession.registerResourceInvalidation(cached.getId(), cached.getName(), cached.getType(), cached.getUri(), scopes.stream().map(scope1 -> scope1.getId()).collect(Collectors.toSet()), cached.getResourceServerId());
+        cacheSession.registerResourceInvalidation(cached.getId(), cached.getName(), cached.getType(), cached.getUri(), scopes.stream().map(scope1 -> scope1.getId()).collect(Collectors.toSet()), cached.getResourceServerId(), cached.getOwner());
         updated.updateScopes(scopes);
     }
 
