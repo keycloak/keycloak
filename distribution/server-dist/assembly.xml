@@ -47,7 +47,15 @@
                 <exclude>copyright.txt</exclude>
                 <exclude>README.txt</exclude>
                 <exclude>themes/**</exclude>
+                <exclude>docs/licenses-rh-sso/**</exclude>
             </excludes>
+        </fileSet>
+        <fileSet>
+            <directory>target/licenses/content</directory>
+            <outputDirectory/>
+            <includes>
+                <include>docs/licenses-rh-sso/**</include>
+            </includes>
         </fileSet>
         <fileSet>
             <directory>target/${project.build.finalName}</directory>
