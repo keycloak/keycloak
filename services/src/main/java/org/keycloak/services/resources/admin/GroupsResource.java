@@ -35,7 +35,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
@@ -113,22 +115,19 @@ public class GroupsResource {
      */
     @GET
     @NoCache
-    @Path("/count")
+    @Path("count")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getGroupCount(@QueryParam("search") String search, @QueryParam("top") String onlyTopGroups) {
+    public Map<String, Long> getGroupCount(@QueryParam("search") String search,
+                                           @QueryParam("top") @DefaultValue("false") boolean onlyTopGroups) {
         Long results;
-        JSONObject response = new JSONObject();
+        Map<String, Long> map = new HashMap<>();
         if (Objects.nonNull(search)) {
             results = realm.getGroupsCountByNameContaining(search);
         } else {
-            results = realm.getGroupsCount(Objects.equals(onlyTopGroups, Boolean.TRUE.toString()));
+            results = realm.getGroupsCount(onlyTopGroups);
         }
-        try {
-            response.put("count", results);
-        } catch (JSONException e) {
-            return ErrorResponse.error("Cannot create response object", Response.Status.INTERNAL_SERVER_ERROR);
-        }
-        return Response.ok(response.toString(), MediaType.APPLICATION_JSON).build();
+        map.put("count", results);
+        return map;
     }
 
     /**

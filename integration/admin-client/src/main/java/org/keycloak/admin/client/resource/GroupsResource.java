@@ -24,6 +24,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -69,39 +70,38 @@ public interface GroupsResource {
 
     /**
      * Counts all groups.
-     * @return The number of groups.
+     * @return A map containing key "count" with number of groups as value.
      */
     @GET
     @NoCache
-    @Path("/count")
+    @Path("count")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    Response count();
+    Map<String, Long> count();
 
     /**
      * Counts groups by name search.
      * @param search max number of occurrences
-     * @return The number of group containing search therm.
+     * @return A map containing key "count" with number of groups as value which matching with search.
      */
     @GET
     @NoCache
-    @Path("/count")
+    @Path("count")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    Response count(@QueryParam("search") String search);
+    Map<String, Long> count(@QueryParam("search") String search);
 
     /**
      * Counts groups by name search.
-     * @param search max number of occurrences
      * @param onlyTopGroups <code>true</code> or <code>false</code> for filter only top level groups count
-     * @return The number of group containing search therm.
+     * @return A map containing key "count" with number of top level groups.
      */
     @GET
     @NoCache
-    @Path("/count")
+    @Path("count")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    Response count(@QueryParam("search") String search, @QueryParam("top") String onlyTopGroups);
+    Map<String, Long> count(@QueryParam("top") @DefaultValue("true") boolean onlyTopGroups);
 
     /**
      * create or add a top level realm groupSet or create child.  This will update the group and set the parent if it exists.  Create it and set the parent

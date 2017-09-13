@@ -36,7 +36,7 @@ module.controller('GroupListCtrl', function($scope, $route, $q, realm, groups, g
         Groups.query(queryParams, function(entry) {
             promiseGetGroups.resolve(entry);
         }, function() {
-            promiseGetGroups.reject('Unable to fetch ' + i);
+            promiseGetGroups.reject('Unable to fetch ' + queryParams);
         });
         var promiseGetGroupsChain   = promiseGetGroups.promise.then(function(entry) {
             groups = entry;
@@ -53,14 +53,12 @@ module.controller('GroupListCtrl', function($scope, $route, $q, realm, groups, g
         GroupsCount.query(countParams, function(entry) {
             promiseCount.resolve(entry);
         }, function() {
-            promiseCount.reject('Unable to fetch ' + i);
+            promiseCount.reject('Unable to fetch ' + countParams);
         });
         var promiseCountChain   = promiseCount.promise.then(function(entry) {
             groupsCount = entry;
             $scope.numberOfPages = Math.ceil(groupsCount.count/$scope.pageSize);
         });
-
-        $q.all([promiseGetGroupsChain, promiseCountChain]);
     };
 
     $scope.$watch('currentPage', function(newValue, oldValue) {

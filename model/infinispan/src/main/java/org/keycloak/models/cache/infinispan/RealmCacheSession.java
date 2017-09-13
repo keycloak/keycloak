@@ -94,7 +94,6 @@ public class RealmCacheSession implements CacheRealmProvider {
     protected static final Logger logger = Logger.getLogger(RealmCacheSession.class);
     public static final String REALM_CLIENTS_QUERY_SUFFIX = ".realm.clients";
     public static final String ROLES_QUERY_SUFFIX = ".roles";
-    public static final String ROLE_BY_NAME_QUERY_SUFFIX = ".role.by-name";
     protected RealmCacheManager cache;
     protected KeycloakSession session;
     protected RealmProvider delegate;
@@ -839,6 +838,9 @@ public class RealmCacheSession implements CacheRealmProvider {
             }
             list.add(group);
         }
+
+        list.sort(Comparator.comparing(GroupModel::getName));
+
         return list;
     }
 
@@ -885,6 +887,9 @@ public class RealmCacheSession implements CacheRealmProvider {
             }
             list.add(group);
         }
+
+        list.sort(Comparator.comparing(GroupModel::getName));
+
         return list;
     }
 
@@ -921,6 +926,9 @@ public class RealmCacheSession implements CacheRealmProvider {
             }
             list.add(group);
         }
+
+        list.sort(Comparator.comparing(GroupModel::getName));
+
         return list;
     }
 
@@ -980,11 +988,9 @@ public class RealmCacheSession implements CacheRealmProvider {
         String groupId = eventToAdd.getId();
 
         // Check if we have existing event with bigger priority
-        boolean eventAlreadyExists = invalidationEvents.stream().filter((InvalidationEvent event) -> {
-
-            return (event.getId().equals(groupId)) && (event instanceof GroupAddedEvent || event instanceof GroupMovedEvent || event instanceof GroupRemovedEvent);
-
-        }).findFirst().isPresent();
+        boolean eventAlreadyExists = invalidationEvents.stream()
+                .anyMatch((InvalidationEvent event) -> (event.getId().equals(groupId)) &&
+                        (event instanceof GroupAddedEvent || event instanceof GroupMovedEvent || event instanceof GroupRemovedEvent));
 
         if (!eventAlreadyExists) {
             invalidationEvents.add(eventToAdd);
