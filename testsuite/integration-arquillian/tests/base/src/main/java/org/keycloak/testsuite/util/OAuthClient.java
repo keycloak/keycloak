@@ -23,6 +23,7 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpOptions;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -246,6 +247,17 @@ public class OAuthClient {
                     .build();
         }
         return new DefaultHttpClient();
+    }
+
+    public CloseableHttpResponse doPreflightRequest() {
+        try (CloseableHttpClient client = newCloseableHttpClient()) {
+            HttpOptions options = new HttpOptions(getAccessTokenUrl());
+            options.setHeader("Origin", "http://example.com");
+
+            return client.execute(options);
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
     }
 
     public AccessTokenResponse doAccessTokenRequest(String code, String password) {

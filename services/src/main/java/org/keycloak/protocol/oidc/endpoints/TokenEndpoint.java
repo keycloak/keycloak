@@ -163,7 +163,7 @@ public class TokenEndpoint {
         if (logger.isDebugEnabled()) {
             logger.debugv("CORS preflight from: {0}", headers.getRequestHeaders().getFirst("Origin"));
         }
-        return Cors.add(request, Response.ok()).auth().preflight().build();
+        return Cors.add(request, Response.ok()).auth().preflight().allowedMethods("POST", "OPTIONS").build();
     }
 
     private void checkSsl() {
