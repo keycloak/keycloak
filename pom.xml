@@ -81,6 +81,7 @@
         <elytron.undertow-server.version>1.0.0.Final</elytron.undertow-server.version>
         <woodstox.version>5.0.3</woodstox.version>
         <xmlsec.version>2.0.5</xmlsec.version>
+        <glassfish.json.version>1.0.4</glassfish.json.version>
 
         <!-- Authorization Drools Policy Provider -->
         <version.org.drools>6.4.0.Final</version.org.drools>
@@ -413,6 +414,11 @@
                 <artifactId>wildfly-dist</artifactId>
                 <version>${wildfly.version}</version>
                 <type>zip</type>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish</groupId>
+                <artifactId>javax.json</artifactId>
+                <version>${glassfish.json.version}</version>
             </dependency>
 
             <!-- Twitter -->
