@@ -102,6 +102,20 @@
                             </artifactItems>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>unpack-server-feature-pack-licenses</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>unpack-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <includeGroupIds>org.keycloak</includeGroupIds>
+                            <includeArtifactIds>keycloak-server-feature-pack</includeArtifactIds>
+                            <includeTypes>zip</includeTypes>
+                            <includes>content/docs/licenses-rh-sso/**</includes>
+                            <outputDirectory>${project.build.directory}/licenses</outputDirectory>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
         </plugins>
