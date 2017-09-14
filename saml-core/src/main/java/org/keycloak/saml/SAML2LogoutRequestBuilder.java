@@ -85,18 +85,20 @@ public class SAML2LogoutRequestBuilder implements SamlProtocolExtensionsAwareBui
     }
 
     public Document buildDocument() throws ProcessingException, ConfigurationException, ParsingException {
-        Document document = new SAML2Request().convert(createLogoutRequest());
+        Document document = SAML2Request.convert(createLogoutRequest());
         return document;
     }
 
     private LogoutRequestType createLogoutRequest() throws ConfigurationException {
-        LogoutRequestType lort = new SAML2Request().createLogoutRequest(issuer);
+        LogoutRequestType lort = SAML2Request.createLogoutRequest(issuer);
 
         NameIDType nameID = new NameIDType();
         nameID.setValue(userPrincipal);
         //Deal with NameID Format
         String nameIDFormat = userPrincipalFormat;
-        nameID.setFormat(URI.create(nameIDFormat));
+        if (nameIDFormat != null) {
+            nameID.setFormat(URI.create(nameIDFormat));
+        }
         lort.setNameID(nameID);
 
         if (issuer != null) {
