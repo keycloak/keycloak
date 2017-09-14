@@ -123,7 +123,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
         exe = KcAdmExec.execute("set-password");
         assertExitCodeAndStdErrSize(exe, 1, 0);
         Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
-        Assert.assertEquals("help message", "Usage: " + CMD + " set-password (--username USERNAME | --userid ID) [--password PASSWORD] [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assert.assertEquals("help message", "Usage: " + CMD + " set-password (--username USERNAME | --userid ID) [--new-password PASSWORD] [ARGUMENTS]", exe.stdoutLines().get(0));
         //Assert.assertEquals("error message", "CLIENT not specified", exe.stderrLines().get(0));
 
         exe = KcAdmExec.execute("help");
@@ -174,7 +174,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
 
         exe = KcAdmExec.execute("set-password --help");
         assertExitCodeAndStdErrSize(exe, 0, 0);
-        Assert.assertEquals("stdout first line", "Usage: " + CMD + " set-password (--username USERNAME | --userid ID) [--password PASSWORD] [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assert.assertEquals("stdout first line", "Usage: " + CMD + " set-password (--username USERNAME | --userid ID) [--new-password PASSWORD] [ARGUMENTS]", exe.stdoutLines().get(0));
 
         exe = KcAdmExec.execute("config --help");
         assertExitCodeAndStdErrSize(exe, 0, 0);
