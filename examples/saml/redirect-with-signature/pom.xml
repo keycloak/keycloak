@@ -22,7 +22,7 @@
     <parent>
         <artifactId>keycloak-examples-saml-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>2.5.11.Final</version>
+        <version>2.5.12.Final-SNAPSHOT</version>
     </parent>
 
     <artifactId>saml-redirect-signatures</artifactId>
