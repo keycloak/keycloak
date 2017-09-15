@@ -27,9 +27,25 @@
     <changeSet author="keycloak" id="3.2.0-fix">
         <preConditions onFail="MARK_RAN">
             <changeSetExecuted id="3.2.0" author="keycloak" changeLogFile="META-INF/jpa-changelog-3.2.0.xml"/>
+            <not>
+                <dbms type="mssql"/>
+            </not>
         </preConditions>
         
         <addNotNullConstraint tableName="CLIENT_INITIAL_ACCESS" columnName="REALM_ID" columnDataType="VARCHAR(36)" />
+    </changeSet>
+
+    <changeSet author="keycloak" id="3.2.0-fix-with-keycloak-5416">
+        <preConditions onFail="MARK_RAN">
+            <changeSetExecuted id="3.2.0" author="keycloak" changeLogFile="META-INF/jpa-changelog-3.2.0.xml"/>
+            <dbms type="mssql"/>
+        </preConditions>
+
+        <dropIndex indexName="IDX_CLIENT_INIT_ACC_REALM" tableName="CLIENT_INITIAL_ACCESS"/>
+        <addNotNullConstraint tableName="CLIENT_INITIAL_ACCESS" columnName="REALM_ID" columnDataType="VARCHAR(36)" />
+        <createIndex indexName="IDX_CLIENT_INIT_ACC_REALM" tableName="CLIENT_INITIAL_ACCESS">
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+        </createIndex>
     </changeSet>
     
     <changeSet author="keycloak" id="3.2.0-fixed">
