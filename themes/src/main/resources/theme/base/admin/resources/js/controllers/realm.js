@@ -1001,7 +1001,7 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
         } else {
             IdentityProvider.update({
                 realm: $scope.realm.realm,
-                id: $scope.identityProvider.internalId
+                alias: $scope.identityProvider.alias
             }, $scope.identityProvider, function () {
                 $route.reload();
                 Notifications.success("The " + $scope.identityProvider.alias + " provider has been updated.");

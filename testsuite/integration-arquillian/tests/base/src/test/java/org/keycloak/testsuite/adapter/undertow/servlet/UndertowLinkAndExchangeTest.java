@@ -39,4 +39,10 @@ public class UndertowLinkAndExchangeTest extends AbstractLinkAndExchangeTest {
     public void testAccountLink() throws Exception {
         super.testAccountLink();
     }
+
+    @Override
+    @Test
+    public void testAccountLinkNoTokenStore() throws Exception {
+        super.testAccountLinkNoTokenStore();
+    }
 }

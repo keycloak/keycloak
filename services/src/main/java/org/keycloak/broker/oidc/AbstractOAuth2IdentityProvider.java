@@ -24,7 +24,7 @@ import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
-import org.keycloak.broker.provider.TokenExchangeTo;
+import org.keycloak.broker.provider.ExchangeTokenToIdentityProviderToken;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.Details;
@@ -62,7 +62,7 @@ import java.util.regex.Pattern;
 /**
  * @author Pedro Igor
  */
-public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityProviderConfig> extends AbstractIdentityProvider<C> implements TokenExchangeTo {
+public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityProviderConfig> extends AbstractIdentityProvider<C> implements ExchangeTokenToIdentityProviderToken {
     protected static final Logger logger = Logger.getLogger(AbstractOAuth2IdentityProvider.class);
 
     public static final String OAUTH2_GRANT_TYPE_REFRESH_TOKEN = "refresh_token";
@@ -148,7 +148,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     @Override
-    public Response exchangeTo(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject, AccessToken token, MultivaluedMap<String, String> params) {
+    public Response exchangeFromToken(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject, AccessToken token, MultivaluedMap<String, String> params) {
         String requestedType = params.getFirst(OAuth2Constants.REQUESTED_TOKEN_TYPE);
         if (requestedType != null && !requestedType.equals(OAuth2Constants.ACCESS_TOKEN_TYPE)) {
             return exchangeUnsupportedRequiredType();
@@ -156,7 +156,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         if (!getConfig().isStoreToken()) {
             String brokerId = tokenUserSession.getNote(Details.IDENTITY_PROVIDER);
             if (brokerId == null || !brokerId.equals(getConfig().getAlias())) {
-                return exchangeNotSupported();
+                return exchangeNotLinkedNoStore(uriInfo, authorizedClient, tokenUserSession, tokenSubject, token);
             }
             return exchangeSessionToken(uriInfo, authorizedClient, tokenUserSession, tokenSubject, token);
         } else {
@@ -317,7 +317,9 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                     BrokeredIdentityContext federatedIdentity = getFederatedIdentity(response);
 
                     if (getConfig().isStoreToken()) {
-                        federatedIdentity.setToken(response);
+                        // make sure that token wasn't already set by getFederatedIdentity();
+                        // want to be able to allow provider to set the token itself.
+                        if (federatedIdentity.getToken() == null)federatedIdentity.setToken(response);
                     }
 
                     federatedIdentity.setIdpConfig(getConfig());

@@ -231,9 +231,10 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             return exchangeNotLinked(uriInfo, authorizedClient, tokenUserSession, tokenSubject, token);
         }
         try {
-            AccessTokenResponse tokenResponse = JsonSerialization.readValue(model.getToken(), AccessTokenResponse.class);
-            Long exp = (Long)tokenResponse.getOtherClaims().get(ACCESS_TOKEN_EXPIRATION);
-            if (exp != null && (long)exp < Time.currentTime()) {
+            String modelTokenString = model.getToken();
+            AccessTokenResponse tokenResponse = JsonSerialization.readValue(modelTokenString, AccessTokenResponse.class);
+            Integer exp = (Integer)tokenResponse.getOtherClaims().get(ACCESS_TOKEN_EXPIRATION);
+            if (exp != null && exp < Time.currentTime()) {
                 if (tokenResponse.getRefreshToken() == null) {
                     return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject, token);
                 }
@@ -243,19 +244,20 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                         .param(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
                         .param(OAUTH2_PARAMETER_CLIENT_SECRET, getConfig().getClientSecret()).asString();
                 if (response.contains("error")) {
+                    logger.debugv("Error refreshing token, refresh token expiration?: {0}", response);
                     model.setToken(null);
                     session.users().updateFederatedIdentity(authorizedClient.getRealm(), tokenSubject, model);
                     return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject, token);
                 }
                 AccessTokenResponse newResponse = JsonSerialization.readValue(response, AccessTokenResponse.class);
                 if (newResponse.getExpiresIn() > 0) {
-                    long accessTokenExpiration = Time.currentTime() + newResponse.getExpiresIn();
+                    int accessTokenExpiration = Time.currentTime() + (int)newResponse.getExpiresIn();
                     newResponse.getOtherClaims().put(ACCESS_TOKEN_EXPIRATION, accessTokenExpiration);
                     response = JsonSerialization.writeValueAsString(newResponse);
                 }
                 String oldToken = tokenUserSession.getNote(FEDERATED_ACCESS_TOKEN);
                 if (oldToken != null && oldToken.equals(tokenResponse.getToken())) {
-                    long accessTokenExpiration = newResponse.getExpiresIn() > 0 ? Time.currentTime() + newResponse.getExpiresIn() : 0;
+                    int accessTokenExpiration = newResponse.getExpiresIn() > 0 ? Time.currentTime() + (int)newResponse.getExpiresIn() : 0;
                     tokenUserSession.setNote(FEDERATED_TOKEN_EXPIRATION, Long.toString(accessTokenExpiration));
                     tokenUserSession.setNote(FEDERATED_REFRESH_TOKEN, newResponse.getRefreshToken());
                     tokenUserSession.setNote(FEDERATED_ACCESS_TOKEN, newResponse.getToken());
@@ -302,6 +304,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                     .param(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
                     .param(OAUTH2_PARAMETER_CLIENT_SECRET, getConfig().getClientSecret()).asString();
             if (response.contains("error")) {
+                logger.debugv("Error refreshing token, refresh token expiration?: {0}", response);
                 return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject, token);
             }
             AccessTokenResponse newResponse = JsonSerialization.readValue(response, AccessTokenResponse.class);
@@ -341,13 +344,11 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             BrokeredIdentityContext identity = extractIdentity(tokenResponse, accessToken, idToken);
 
             if (getConfig().isStoreToken()) {
-                String response1 = response;
                 if (tokenResponse.getExpiresIn() > 0) {
                     long accessTokenExpiration = Time.currentTime() + tokenResponse.getExpiresIn();
                     tokenResponse.getOtherClaims().put(ACCESS_TOKEN_EXPIRATION, accessTokenExpiration);
-                    response1 = JsonSerialization.writeValueAsString(tokenResponse);
+                    response = JsonSerialization.writeValueAsString(tokenResponse);
                 }
-                response = response1;
                 identity.setToken(response);
             }
 

@@ -94,7 +94,11 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
     }
 
     public Response exchangeNotLinked(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject, AccessToken token) {
-        return exchangeErrorResponse(uriInfo, authorizedClient, tokenUserSession, token, "invalid_target");
+        return exchangeErrorResponse(uriInfo, authorizedClient, tokenUserSession, token, "identity provider is not linked");
+    }
+
+    public Response exchangeNotLinkedNoStore(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject, AccessToken token) {
+        return exchangeErrorResponse(uriInfo, authorizedClient, tokenUserSession, token, "identity provider is not linked, can only link to current user session");
     }
 
     protected Response exchangeErrorResponse(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, AccessToken token, String reason) {
