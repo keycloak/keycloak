@@ -18,6 +18,8 @@
 package org.keycloak.testsuite.client;
 
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,9 +46,11 @@ import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserInfoClientUtil;
 import org.keycloak.testsuite.util.UserManager;
+import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
@@ -405,6 +409,22 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         // its azp Claim Value MUST be the same as in the ID Token issued when the original authentication occurred; if
         // no azp Claim was present in the original ID Token, one MUST NOT be present in the new ID Token
         Assert.assertEquals(idToken.getIssuedFor(), refreshedIdToken.getIssuedFor());
+    }
+
+    @Test
+    public void introspectPairwiseAccessToken() throws Exception {
+        // Create a pairwise client
+        OIDCClientRepresentation pairwiseClient = createPairwise();
+
+        // Login to pairwise client
+        OAuthClient.AccessTokenResponse accessTokenResponse = login(pairwiseClient, "test-user@localhost", "password");
+
+        String introspectionResponse = oauth.introspectAccessTokenWithClientCredential(pairwiseClient.getClientId(), pairwiseClient.getClientSecret(), accessTokenResponse.getAccessToken());
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonNode = objectMapper.readTree(introspectionResponse);
+        Assert.assertEquals(true, jsonNode.get("active").asBoolean());
+        Assert.assertEquals("test-user@localhost", jsonNode.get("email").asText());
     }
 
     @Test

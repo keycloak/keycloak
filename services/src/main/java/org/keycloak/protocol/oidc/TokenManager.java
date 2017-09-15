@@ -203,17 +203,6 @@ public class TokenManager {
             return false;
         }
 
-        UserModel user = session.users().getUserById(token.getSubject(), realm);
-        if (user == null) {
-            return false;
-        }
-        if (!user.isEnabled()) {
-            return false;
-        }
-        if (token.getIssuedAt() < session.users().getNotBeforeOfUser(realm, user)) {
-            return false;
-        }
-
         ClientModel client = realm.getClientByClientId(token.getIssuedFor());
         if (client == null || !client.isEnabled() || token.getIssuedAt() < client.getNotBefore()) {
             return false;
@@ -224,6 +213,16 @@ public class TokenManager {
             return true;
         }
 
+        UserModel user = userSession.getUser();
+        if (user == null) {
+            return false;
+        }
+        if (!user.isEnabled()) {
+            return false;
+        }
+        if (token.getIssuedAt() < session.users().getNotBeforeOfUser(realm, user)) {
+            return false;
+        }
 
         userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), true, client.getId());
         if (AuthenticationManager.isOfflineSessionValid(realm, userSession)) {
