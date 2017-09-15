@@ -40,7 +40,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static org.keycloak.services.resources.admin.permissions.AdminPermissionManagement.EXCHANGE_TO_SCOPE;
+import static org.keycloak.services.resources.admin.permissions.AdminPermissionManagement.TOKEN_EXCHANGE;
 
 /**
  * Manages default policies for all users.
@@ -87,7 +87,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
     }
 
     private String getExchangeToPermissionName(ClientModel client) {
-        return EXCHANGE_TO_SCOPE + ".permission.client." + client.getId();
+        return TOKEN_EXCHANGE + ".permission.client." + client.getId();
     }
 
      private void initialize(ClientModel client) {
@@ -107,7 +107,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
         Scope mapRoleClientScope = root.initializeScope(MAP_ROLES_CLIENT_SCOPE, server);
         Scope mapRoleCompositeScope = root.initializeScope(MAP_ROLES_COMPOSITE_SCOPE, server);
         Scope configureScope = root.initializeScope(CONFIGURE_SCOPE, server);
-        Scope exchangeToScope = root.initializeScope(EXCHANGE_TO_SCOPE, server);
+        Scope exchangeToScope = root.initializeScope(TOKEN_EXCHANGE, server);
 
         String resourceName = getResourceName(client);
         Resource resource = authz.getStoreFactory().getResourceStore().findByName(resourceName, server.getId());
@@ -207,7 +207,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
     }
 
     private Scope exchangeToScope(ResourceServer server) {
-        return authz.getStoreFactory().getScopeStore().findByName(EXCHANGE_TO_SCOPE, server.getId());
+        return authz.getStoreFactory().getScopeStore().findByName(TOKEN_EXCHANGE, server.getId());
     }
 
     private Scope configureScope(ResourceServer server) {
@@ -293,7 +293,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
         scopes.put(MAP_ROLES_SCOPE,  mapRolesPermission(client).getId());
         scopes.put(MAP_ROLES_CLIENT_SCOPE, mapRolesClientScopePermission(client).getId());
         scopes.put(MAP_ROLES_COMPOSITE_SCOPE, mapRolesCompositePermission(client).getId());
-        scopes.put(EXCHANGE_TO_SCOPE, exchangeToPermission(client).getId());
+        scopes.put(TOKEN_EXCHANGE, exchangeToPermission(client).getId());
         return scopes;
     }
 
@@ -328,7 +328,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
 
             Scope scope = exchangeToScope(server);
             if (scope == null) {
-                logger.debug(EXCHANGE_TO_SCOPE + " not initialized");
+                logger.debug(TOKEN_EXCHANGE + " not initialized");
                 return false;
             }
             ClientModelIdentity identity = new ClientModelIdentity(session, authorizedClient);

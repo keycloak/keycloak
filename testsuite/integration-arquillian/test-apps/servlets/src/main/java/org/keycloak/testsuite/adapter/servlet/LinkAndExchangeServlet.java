@@ -47,7 +47,7 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@WebServlet("/client-linking")
+@WebServlet("/exchange-linking")
 public class LinkAndExchangeServlet extends HttpServlet {
 
     private String getPostDataString(HashMap<String, String> params) throws UnsupportedEncodingException{
@@ -100,9 +100,18 @@ public class LinkAndExchangeServlet extends HttpServlet {
             writer.flush();
             writer.close();
             os.close();
-            AccessTokenResponse tokenResponse = JsonSerialization.readValue(conn.getInputStream(), AccessTokenResponse.class);
-            conn.getInputStream().close();
-            return tokenResponse;
+            if (conn.getResponseCode() == 200) {
+                AccessTokenResponse tokenResponse = JsonSerialization.readValue(conn.getInputStream(), AccessTokenResponse.class);
+                conn.getInputStream().close();
+                return tokenResponse;
+            } else if (conn.getResponseCode() == 400) {
+                AccessTokenResponse tokenResponse = JsonSerialization.readValue(conn.getErrorStream(), AccessTokenResponse.class);
+                conn.getErrorStream().close();
+                return tokenResponse;
+
+            } else {
+                throw new RuntimeException("Unknown error!");
+            }
         } finally {
         }
     }
@@ -143,7 +152,9 @@ public class LinkAndExchangeServlet extends HttpServlet {
 
             String redirectUri = KeycloakUriBuilder.fromUri(request.getRequestURL().toString())
                     .replaceQuery(null)
-                    .queryParam("response", "true").build().toString();
+                    .queryParam("response", "true")
+                    .queryParam("realm", realm)
+                    .queryParam("provider", provider).build().toString();
             String accountLinkUrl = KeycloakUriBuilder.fromUri(linkUrl)
                     .queryParam("redirect_uri", redirectUri).build().toString();
             resp.setStatus(302);
@@ -158,6 +169,24 @@ public class LinkAndExchangeServlet extends HttpServlet {
                 pw.println("Link error: " + error);
             } else {
                 pw.println("Account Linked");
+            }
+            pw.println("trying exchange");
+            try {
+                String provider = request.getParameter("provider");
+                String realm = request.getParameter("realm");
+                KeycloakSecurityContext session = (KeycloakSecurityContext) request.getAttribute(KeycloakSecurityContext.class.getName());
+                AccessToken token = session.getToken();
+                String clientId = token.getAudience()[0];
+                String tokenString = session.getTokenString();
+                AccessTokenResponse response = doTokenExchange(realm, tokenString, provider,  clientId, "password");
+                error = (String)response.getOtherClaims().get("error");
+                if (error == null) {
+                    if (response.getToken() != null) pw.println("Exchange token received");
+                } else {
+                    pw.print("Error with exchange: " + error);
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
             pw.print("</body></html>");
             pw.flush();

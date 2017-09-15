@@ -24,7 +24,7 @@ import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
-import org.keycloak.broker.provider.TokenExchangeTo;
+import org.keycloak.broker.provider.ExchangeTokenToIdentityProviderToken;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.Details;
@@ -61,7 +61,7 @@ import java.net.URI;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2IdentityProviderConfig> implements
-        SocialIdentityProvider<OAuth2IdentityProviderConfig>, TokenExchangeTo {
+        SocialIdentityProvider<OAuth2IdentityProviderConfig>, ExchangeTokenToIdentityProviderToken {
 
     String TWITTER_TOKEN_TYPE="twitter";
 
@@ -103,7 +103,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
     }
 
     @Override
-    public Response exchangeTo(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject, org.keycloak.representations.AccessToken token, MultivaluedMap<String, String> params) {
+    public Response exchangeFromToken(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject, org.keycloak.representations.AccessToken token, MultivaluedMap<String, String> params) {
         String requestedType = params.getFirst(OAuth2Constants.REQUESTED_TOKEN_TYPE);
         if (requestedType != null && !requestedType.equals(TWITTER_TOKEN_TYPE)) {
             return exchangeUnsupportedRequiredType();
@@ -111,7 +111,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
         if (!getConfig().isStoreToken()) {
             String brokerId = tokenUserSession.getNote(Details.IDENTITY_PROVIDER);
             if (brokerId == null || !brokerId.equals(getConfig().getAlias())) {
-                return exchangeNotSupported();
+                return exchangeNotLinkedNoStore(uriInfo, authorizedClient, tokenUserSession, tokenSubject, token);
             }
             return exchangeSessionToken(uriInfo, authorizedClient, tokenUserSession, tokenSubject, token);
         } else {

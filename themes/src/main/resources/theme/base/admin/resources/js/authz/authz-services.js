@@ -178,6 +178,17 @@ module.factory('ClientManagementPermissions', function($resource) {
     });
 });
 
+module.factory('IdentityProviderManagementPermissions', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/identity-provider/instances/:alias/management/permissions', {
+        realm : '@realm',
+        alias : '@alias'
+    }, {
+        update: {
+            method: 'PUT'
+        }
+    });
+});
+
 module.factory('GroupManagementPermissions', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/groups/:group/management/permissions', {
         realm : '@realm',

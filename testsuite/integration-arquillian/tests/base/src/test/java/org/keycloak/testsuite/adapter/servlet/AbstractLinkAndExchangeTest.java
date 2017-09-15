@@ -59,10 +59,16 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Form;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.net.URL;
 import java.util.LinkedList;
@@ -98,7 +104,7 @@ public abstract class AbstractLinkAndExchangeTest extends AbstractServletsAdapte
 
     public static class ClientApp extends AbstractPageWithInjectedUrl {
 
-        public static final String DEPLOYMENT_NAME = "client-linking";
+        public static final String DEPLOYMENT_NAME = "exchange-linking";
 
         @ArquillianResource
         @OperateOnDeployment(DEPLOYMENT_NAME)
@@ -124,9 +130,9 @@ public abstract class AbstractLinkAndExchangeTest extends AbstractServletsAdapte
         realm.setRealm(CHILD_IDP);
         realm.setEnabled(true);
         ClientRepresentation servlet = new ClientRepresentation();
-        servlet.setClientId("client-linking");
+        servlet.setClientId(ClientApp.DEPLOYMENT_NAME);
         servlet.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        String uri = "/client-linking";
+        String uri = "/" + ClientApp.DEPLOYMENT_NAME;
         if (!isRelative()) {
             uri = appServerContextRootPage.toString() + uri;
         }
@@ -199,7 +205,7 @@ public abstract class AbstractLinkAndExchangeTest extends AbstractServletsAdapte
 
     public static void setupRealm(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName(CHILD_IDP);
-        ClientModel client = realm.getClientByClientId("client-linking");
+        ClientModel client = realm.getClientByClientId(ClientApp.DEPLOYMENT_NAME);
         IdentityProviderModel idp = realm.getIdentityProviderByAlias(PARENT_IDP);
         Assert.assertNotNull(idp);
 
@@ -213,6 +219,19 @@ public abstract class AbstractLinkAndExchangeTest extends AbstractServletsAdapte
         management.idps().exchangeToPermission(idp).addAssociatedPolicy(clientPolicy);
 
     }
+    public static void turnOffTokenStore(KeycloakSession session) {
+        RealmModel realm = session.realms().getRealmByName(CHILD_IDP);
+        IdentityProviderModel idp = realm.getIdentityProviderByAlias(PARENT_IDP);
+        idp.setStoreToken(false);
+        realm.updateIdentityProvider(idp);
+
+    }
+    public static void turnOnTokenStore(KeycloakSession session) {
+        RealmModel realm = session.realms().getRealmByName(CHILD_IDP);
+        IdentityProviderModel idp = realm.getIdentityProviderByAlias(PARENT_IDP);
+        idp.setStoreToken(true);
+        realm.updateIdentityProvider(idp);
+    }
     @Before
     public void createBroker() {
         createParentChild();
@@ -225,186 +244,101 @@ public abstract class AbstractLinkAndExchangeTest extends AbstractServletsAdapte
 
 
     @Test
-    public void testErrorConditions() throws Exception {
+    public void testAccountLink() throws Exception {
+        testingClient.server().run(AbstractLinkAndExchangeTest::turnOnTokenStore);
 
         RealmResource realm = adminClient.realms().realm(CHILD_IDP);
         List<FederatedIdentityRepresentation> links = realm.users().get(childUserId).getFederatedIdentity();
         Assert.assertTrue(links.isEmpty());
 
-        ClientRepresentation client = adminClient.realms().realm(CHILD_IDP).clients().findByClientId("client-linking").get(0);
-
-        UriBuilder redirectUri = UriBuilder.fromUri(appPage.getInjectedUrl().toString())
-                .path("link")
-                .queryParam("response", "true");
-
-        UriBuilder directLinking = UriBuilder.fromUri(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth")
-                .path("realms/child/broker/{provider}/link")
-                .queryParam("client_id", "client-linking")
-                .queryParam("redirect_uri", redirectUri.build())
-                .queryParam("hash", Base64Url.encode("crap".getBytes()))
-                .queryParam("nonce", UUID.randomUUID().toString());
-
-        String linkUrl = directLinking
-                .build(PARENT_IDP).toString();
-
-        // test not logged in
-
-        navigateTo(linkUrl);
-        Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
-        loginPage.login("child", "password");
-
-        Assert.assertTrue(driver.getCurrentUrl().contains("link_error=not_logged_in"));
-
-        logoutAll();
-
-        // now log in
-
-        navigateTo( appPage.getInjectedUrl() + "/hello");
-        Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
-        loginPage.login("child", "password");
-        Assert.assertTrue(driver.getCurrentUrl().startsWith(appPage.getInjectedUrl() + "/hello"));
-        Assert.assertTrue(driver.getPageSource().contains("Unknown request:"));
-
-        // now test CSRF with bad hash.
-
-        navigateTo(linkUrl);
-
-        Assert.assertTrue(driver.getPageSource().contains("We're sorry..."));
-
-        logoutAll();
-
-        // now log in again with client that does not have scope
-
-        String accountId = adminClient.realms().realm(CHILD_IDP).clients().findByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID).get(0).getId();
-        RoleRepresentation manageAccount = adminClient.realms().realm(CHILD_IDP).clients().get(accountId).roles().get(MANAGE_ACCOUNT).toRepresentation();
-        RoleRepresentation manageLinks = adminClient.realms().realm(CHILD_IDP).clients().get(accountId).roles().get(MANAGE_ACCOUNT_LINKS).toRepresentation();
-        RoleRepresentation userRole = adminClient.realms().realm(CHILD_IDP).roles().get("user").toRepresentation();
-
-        client.setFullScopeAllowed(false);
-        ClientResource clientResource = adminClient.realms().realm(CHILD_IDP).clients().get(client.getId());
-        clientResource.update(client);
-
-        List<RoleRepresentation> roles = new LinkedList<>();
-        roles.add(userRole);
-        clientResource.getScopeMappings().realmLevel().add(roles);
-
-        navigateTo( appPage.getInjectedUrl() + "/hello");
-        Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
-        loginPage.login("child", "password");
-        Assert.assertTrue(driver.getCurrentUrl().startsWith(appPage.getInjectedUrl() + "/hello"));
-        Assert.assertTrue(driver.getPageSource().contains("Unknown request:"));
-
-
-        UriBuilder linkBuilder = UriBuilder.fromUri(appPage.getInjectedUrl().toString())
+        String servletUri = appPage.getInjectedUrl().toString();
+        UriBuilder linkBuilder = UriBuilder.fromUri(servletUri)
                 .path("link");
-        String clientLinkUrl = linkBuilder.clone()
+        String linkUrl = linkBuilder.clone()
                 .queryParam("realm", CHILD_IDP)
                 .queryParam("provider", PARENT_IDP).build().toString();
-
-
-        navigateTo(clientLinkUrl);
-
-        Assert.assertTrue(driver.getCurrentUrl().contains("error=not_allowed"));
-
-        logoutAll();
-
-        // add MANAGE_ACCOUNT_LINKS scope should pass.
-
-        links = realm.users().get(childUserId).getFederatedIdentity();
-        Assert.assertTrue(links.isEmpty());
-
-
-        roles = new LinkedList<>();
-        roles.add(manageLinks);
-        clientResource.getScopeMappings().clientLevel(accountId).add(roles);
-
-        navigateTo(clientLinkUrl);
+        System.out.println("linkUrl: " + linkUrl);
+        navigateTo(linkUrl);
         Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
+        Assert.assertTrue(driver.getPageSource().contains(PARENT_IDP));
         loginPage.login("child", "password");
         Assert.assertTrue(loginPage.isCurrent(PARENT_IDP));
         loginPage.login(PARENT_USERNAME, "password");
-
+        System.out.println("After linking: " + driver.getCurrentUrl());
+        System.out.println(driver.getPageSource());
         Assert.assertTrue(driver.getCurrentUrl().startsWith(linkBuilder.toTemplate()));
         Assert.assertTrue(driver.getPageSource().contains("Account Linked"));
+        Assert.assertTrue(driver.getPageSource().contains("Exchange token received"));
 
         links = realm.users().get(childUserId).getFederatedIdentity();
         Assert.assertFalse(links.isEmpty());
 
+
+
+        // do exchange
+
+        String accessToken = oauth.doGrantAccessTokenRequest(CHILD_IDP, "child", "password", null, ClientApp.DEPLOYMENT_NAME, "password").getAccessToken();
+        Client httpClient = ClientBuilder.newClient();
+
+        WebTarget exchangeUrl = httpClient.target(OAuthClient.AUTH_SERVER_ROOT)
+                .path("/realms")
+                .path(CHILD_IDP)
+                .path("protocol/openid-connect/token");
+        System.out.println("Exchange url: " + exchangeUrl.getUri().toString());
+
+        Response response = exchangeUrl.request()
+                .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader(ClientApp.DEPLOYMENT_NAME, "password"))
+                .post(Entity.form(
+                        new Form()
+                        .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
+                        .param(OAuth2Constants.SUBJECT_TOKEN, accessToken)
+                        .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE)
+                        .param(OAuth2Constants.REQUESTED_ISSUER, PARENT_IDP)
+
+                ));
+        Assert.assertEquals(200, response.getStatus());
+        AccessTokenResponse tokenResponse = response.readEntity(AccessTokenResponse.class);
+        response.close();
+        String externalToken = tokenResponse.getToken();
+        Assert.assertNotNull(externalToken);
+        Assert.assertTrue(tokenResponse.getExpiresIn() > 0);
+        setTimeOffset((int)tokenResponse.getExpiresIn() + 1);
+
+        // test that token refresh happens
+
+        // get access token again because we may have timed out
+        accessToken = oauth.doGrantAccessTokenRequest(CHILD_IDP, "child", "password", null, ClientApp.DEPLOYMENT_NAME, "password").getAccessToken();
+        response = exchangeUrl.request()
+                .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader(ClientApp.DEPLOYMENT_NAME, "password"))
+                .post(Entity.form(
+                        new Form()
+                                .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
+                                .param(OAuth2Constants.SUBJECT_TOKEN, accessToken)
+                                .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE)
+                                .param(OAuth2Constants.REQUESTED_ISSUER, PARENT_IDP)
+
+                ));
+        Assert.assertEquals(200, response.getStatus());
+        tokenResponse = response.readEntity(AccessTokenResponse.class);
+        response.close();
+        Assert.assertNotEquals(externalToken, tokenResponse.getToken());
+
+
+        logoutAll();
+
+
         realm.users().get(childUserId).removeFederatedIdentity(PARENT_IDP);
         links = realm.users().get(childUserId).getFederatedIdentity();
         Assert.assertTrue(links.isEmpty());
-
-        clientResource.getScopeMappings().clientLevel(accountId).remove(roles);
-
-        logoutAll();
-
-        navigateTo(clientLinkUrl);
-        Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
-        loginPage.login("child", "password");
-
-        Assert.assertTrue(driver.getCurrentUrl().contains("link_error=not_allowed"));
-
-        logoutAll();
-
-        // add MANAGE_ACCOUNT scope should pass
-
-        links = realm.users().get(childUserId).getFederatedIdentity();
-        Assert.assertTrue(links.isEmpty());
-
-
-        roles = new LinkedList<>();
-        roles.add(manageAccount);
-        clientResource.getScopeMappings().clientLevel(accountId).add(roles);
-
-        navigateTo(clientLinkUrl);
-        Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
-        loginPage.login("child", "password");
-        Assert.assertTrue(loginPage.isCurrent(PARENT_IDP));
-        loginPage.login(PARENT_USERNAME, "password");
-
-        Assert.assertTrue(driver.getCurrentUrl().startsWith(linkBuilder.toTemplate()));
-        Assert.assertTrue(driver.getPageSource().contains("Account Linked"));
-
-        links = realm.users().get(childUserId).getFederatedIdentity();
-        Assert.assertFalse(links.isEmpty());
-
-        realm.users().get(childUserId).removeFederatedIdentity(PARENT_IDP);
-        links = realm.users().get(childUserId).getFederatedIdentity();
-        Assert.assertTrue(links.isEmpty());
-
-        clientResource.getScopeMappings().clientLevel(accountId).remove(roles);
-
-        logoutAll();
-
-        navigateTo(clientLinkUrl);
-        Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
-        loginPage.login("child", "password");
-
-        Assert.assertTrue(driver.getCurrentUrl().contains("link_error=not_allowed"));
-
-        logoutAll();
-
-
-        // undo fullScopeAllowed
-
-        client = adminClient.realms().realm(CHILD_IDP).clients().findByClientId("client-linking").get(0);
-        client.setFullScopeAllowed(true);
-        clientResource.update(client);
-
-        links = realm.users().get(childUserId).getFederatedIdentity();
-        Assert.assertTrue(links.isEmpty());
-
-        logoutAll();
-
-
-
 
 
 
     }
 
     @Test
-    public void testAccountLink() throws Exception {
+    public void testAccountLinkNoTokenStore() throws Exception {
+        testingClient.server().run(AbstractLinkAndExchangeTest::turnOffTokenStore);
+
         RealmResource realm = adminClient.realms().realm(CHILD_IDP);
         List<FederatedIdentityRepresentation> links = realm.users().get(childUserId).getFederatedIdentity();
         Assert.assertTrue(links.isEmpty());
@@ -425,226 +359,30 @@ public abstract class AbstractLinkAndExchangeTest extends AbstractServletsAdapte
         System.out.println(driver.getPageSource());
         Assert.assertTrue(driver.getCurrentUrl().startsWith(linkBuilder.toTemplate()));
         Assert.assertTrue(driver.getPageSource().contains("Account Linked"));
-
-        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest(CHILD_IDP, "child", "password", null, "client-linking", "password");
-        Assert.assertNotNull(response.getAccessToken());
-        Assert.assertNull(response.getError());
-        Client httpClient = ClientBuilder.newClient();
-        String firstToken = getToken(response, httpClient);
-        Assert.assertNotNull(firstToken);
-
-
-        navigateTo(linkUrl);
-        Assert.assertTrue(driver.getPageSource().contains("Account Linked"));
-        String nextToken = getToken(response, httpClient);
-        Assert.assertNotNull(nextToken);
-        Assert.assertNotEquals(firstToken, nextToken);
-
-
-
-
-
+        Assert.assertTrue(driver.getPageSource().contains("Exchange token received"));
 
         links = realm.users().get(childUserId).getFederatedIdentity();
         Assert.assertFalse(links.isEmpty());
+
+
+
+        logoutAll();
+
 
         realm.users().get(childUserId).removeFederatedIdentity(PARENT_IDP);
         links = realm.users().get(childUserId).getFederatedIdentity();
         Assert.assertTrue(links.isEmpty());
 
-        logoutAll();
 
 
     }
 
-    private String getToken(OAuthClient.AccessTokenResponse response, Client httpClient) throws Exception {
-        String idpToken =  httpClient.target(OAuthClient.AUTH_SERVER_ROOT)
-                .path("realms")
-                .path("child/broker")
-                .path(PARENT_IDP)
-                .path("token")
-                .request()
-                .header("Authorization", "Bearer " + response.getAccessToken())
-                .get(String.class);
-        AccessTokenResponse res = JsonSerialization.readValue(idpToken, AccessTokenResponse.class);
-        return res.getToken();
-    }
 
     public void logoutAll() {
         String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder()).build(CHILD_IDP).toString();
         navigateTo(logoutUri);
         logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder()).build(PARENT_IDP).toString();
         navigateTo(logoutUri);
-    }
-
-    @Test
-    public void testLinkOnlyProvider() throws Exception {
-        RealmResource realm = adminClient.realms().realm(CHILD_IDP);
-        IdentityProviderRepresentation rep = realm.identityProviders().get(PARENT_IDP).toRepresentation();
-        rep.setLinkOnly(true);
-        realm.identityProviders().get(PARENT_IDP).update(rep);
-        try {
-
-            List<FederatedIdentityRepresentation> links = realm.users().get(childUserId).getFederatedIdentity();
-            Assert.assertTrue(links.isEmpty());
-
-            UriBuilder linkBuilder = UriBuilder.fromUri(appPage.getInjectedUrl().toString())
-                    .path("link");
-            String linkUrl = linkBuilder.clone()
-                    .queryParam("realm", CHILD_IDP)
-                    .queryParam("provider", PARENT_IDP).build().toString();
-            navigateTo(linkUrl);
-            Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
-
-            // should not be on login page.  This is what we are testing
-            Assert.assertFalse(driver.getPageSource().contains(PARENT_IDP));
-
-            // now test that we can still link.
-            loginPage.login("child", "password");
-            Assert.assertTrue(loginPage.isCurrent(PARENT_IDP));
-            loginPage.login(PARENT_USERNAME, "password");
-            System.out.println("After linking: " + driver.getCurrentUrl());
-            System.out.println(driver.getPageSource());
-            Assert.assertTrue(driver.getCurrentUrl().startsWith(linkBuilder.toTemplate()));
-            Assert.assertTrue(driver.getPageSource().contains("Account Linked"));
-
-            links = realm.users().get(childUserId).getFederatedIdentity();
-            Assert.assertFalse(links.isEmpty());
-
-            realm.users().get(childUserId).removeFederatedIdentity(PARENT_IDP);
-            links = realm.users().get(childUserId).getFederatedIdentity();
-            Assert.assertTrue(links.isEmpty());
-
-            logoutAll();
-
-            System.out.println("testing link-only attack");
-
-            navigateTo(linkUrl);
-            Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
-
-            System.out.println("login page uri is: " + driver.getCurrentUrl());
-
-            // ok, now scrape the code from page
-            String pageSource = driver.getPageSource();
-            String action = ActionURIUtils.getActionURIFromPageSource(pageSource);
-            System.out.println("action uri: " + action);
-
-            Map<String, String> queryParams = ActionURIUtils.parseQueryParamsFromActionURI(action);
-            System.out.println("query params: " + queryParams);
-
-            // now try and use the code to login to remote link-only idp
-
-            String uri = "/auth/realms/child/broker/parent-idp/login";
-
-            uri = UriBuilder.fromUri(AuthServerTestEnricher.getAuthServerContextRoot())
-                    .path(uri)
-                    .queryParam(OAuth2Constants.CODE, queryParams.get(OAuth2Constants.CODE))
-                    .queryParam(Constants.CLIENT_ID, queryParams.get(Constants.CLIENT_ID))
-                    .build().toString();
-
-            System.out.println("hack uri: " + uri);
-
-            navigateTo(uri);
-
-            Assert.assertTrue(driver.getPageSource().contains("Could not send authentication request to identity provider."));
-
-
-
-
-
-        } finally {
-
-            rep.setLinkOnly(false);
-            realm.identityProviders().get(PARENT_IDP).update(rep);
-        }
-
-
-    }
-
-
-    @Test
-    public void testAccountNotLinkedAutomatically() throws Exception {
-        RealmResource realm = adminClient.realms().realm(CHILD_IDP);
-        List<FederatedIdentityRepresentation> links = realm.users().get(childUserId).getFederatedIdentity();
-        Assert.assertTrue(links.isEmpty());
-
-        // Login to account mgmt first
-        profilePage.open(CHILD_IDP);
-        WaitUtils.waitForPageToLoad();
-
-        Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
-        loginPage.login("child", "password");
-        profilePage.assertCurrent();
-
-        // Now in another tab, open login screen with "prompt=login" . Login screen will be displayed even if I have SSO cookie
-        UriBuilder linkBuilder = UriBuilder.fromUri(appPage.getInjectedUrl().toString())
-                .path("nosuch");
-        String linkUrl = linkBuilder.clone()
-                .queryParam(OIDCLoginProtocol.PROMPT_PARAM, OIDCLoginProtocol.PROMPT_VALUE_LOGIN)
-                .build().toString();
-
-        navigateTo(linkUrl);
-        Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
-        loginPage.clickSocial(PARENT_IDP);
-        Assert.assertTrue(loginPage.isCurrent(PARENT_IDP));
-        loginPage.login(PARENT_USERNAME, "password");
-
-        // Test I was not automatically linked.
-        links = realm.users().get(childUserId).getFederatedIdentity();
-        Assert.assertTrue(links.isEmpty());
-
-        loginUpdateProfilePage.assertCurrent();
-        loginUpdateProfilePage.update("Joe", "Doe", "joe@parent.com");
-
-        errorPage.assertCurrent();
-        Assert.assertEquals("You are already authenticated as different user 'child' in this session. Please logout first.", errorPage.getError());
-
-        logoutAll();
-
-        // Remove newly created user
-        String newUserId = ApiUtil.findUserByUsername(realm, "parent").getId();
-        getCleanup("child").addUserId(newUserId);
-    }
-
-
-    @Test
-    public void testAccountLinkingExpired() throws Exception {
-        RealmResource realm = adminClient.realms().realm(CHILD_IDP);
-        List<FederatedIdentityRepresentation> links = realm.users().get(childUserId).getFederatedIdentity();
-        Assert.assertTrue(links.isEmpty());
-
-        // Login to account mgmt first
-        profilePage.open(CHILD_IDP);
-        WaitUtils.waitForPageToLoad();
-
-        Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
-        loginPage.login("child", "password");
-        profilePage.assertCurrent();
-
-        // Now in another tab, request account linking
-        UriBuilder linkBuilder = UriBuilder.fromUri(appPage.getInjectedUrl().toString())
-                .path("link");
-        String linkUrl = linkBuilder.clone()
-                .queryParam("realm", CHILD_IDP)
-                .queryParam("provider", PARENT_IDP).build().toString();
-        navigateTo(linkUrl);
-
-        Assert.assertTrue(loginPage.isCurrent(PARENT_IDP));
-
-        // Logout "child" userSession in the meantime (for example through admin request)
-        realm.logoutAll();
-
-        // Finish login on parent.
-        loginPage.login(PARENT_USERNAME, "password");
-
-        // Test I was not automatically linked
-        links = realm.users().get(childUserId).getFederatedIdentity();
-        Assert.assertTrue(links.isEmpty());
-
-        errorPage.assertCurrent();
-        Assert.assertEquals("Requested broker account linking, but current session is no longer valid.", errorPage.getError());
-
-        logoutAll();
     }
 
     private void navigateTo(String uri) {

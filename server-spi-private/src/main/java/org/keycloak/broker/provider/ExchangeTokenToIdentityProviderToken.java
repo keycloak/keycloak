@@ -29,7 +29,7 @@ import javax.ws.rs.core.UriInfo;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface TokenExchangeTo {
+public interface ExchangeTokenToIdentityProviderToken {
     /**
      *
      * @param authorizedClient client requesting exchange
@@ -39,5 +39,5 @@ public interface TokenExchangeTo {
      * @param params form parameters received for requested exchange
      * @return
      */
-    Response exchangeTo(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject, AccessToken token, MultivaluedMap<String, String> params);
+    Response exchangeFromToken(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject, AccessToken token, MultivaluedMap<String, String> params);
 }

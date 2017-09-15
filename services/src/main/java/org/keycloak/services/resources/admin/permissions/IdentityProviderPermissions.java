@@ -37,10 +37,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static org.keycloak.services.resources.admin.permissions.AdminPermissionManagement.EXCHANGE_TO_SCOPE;
+import static org.keycloak.services.resources.admin.permissions.AdminPermissionManagement.TOKEN_EXCHANGE;
 
 /**
- * Manages default policies for all users.
+ * Manages default policies for identity providers.
  *
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -65,12 +65,12 @@ class IdentityProviderPermissions implements  IdentityProviderPermissionManageme
     }
 
     private String getExchangeToPermissionName(IdentityProviderModel idp) {
-        return EXCHANGE_TO_SCOPE + ".permission.idp." + idp.getInternalId();
+        return TOKEN_EXCHANGE + ".permission.idp." + idp.getInternalId();
     }
 
     private void initialize(IdentityProviderModel idp) {
         ResourceServer server = root.initializeRealmResourceServer();
-        Scope exchangeToScope = root.initializeScope(EXCHANGE_TO_SCOPE, server);
+        Scope exchangeToScope = root.initializeScope(TOKEN_EXCHANGE, server);
 
         String resourceName = getResourceName(idp);
         Resource resource = authz.getStoreFactory().getResourceStore().findByName(resourceName, server.getId());
@@ -124,7 +124,7 @@ class IdentityProviderPermissions implements  IdentityProviderPermissionManageme
 
 
     private Scope exchangeToScope(ResourceServer server) {
-        return authz.getStoreFactory().getScopeStore().findByName(EXCHANGE_TO_SCOPE, server.getId());
+        return authz.getStoreFactory().getScopeStore().findByName(TOKEN_EXCHANGE, server.getId());
     }
 
     @Override
@@ -141,7 +141,7 @@ class IdentityProviderPermissions implements  IdentityProviderPermissionManageme
     public Map<String, String> getPermissions(IdentityProviderModel idp) {
         initialize(idp);
         Map<String, String> scopes = new LinkedHashMap<>();
-        scopes.put(EXCHANGE_TO_SCOPE, exchangeToPermission(idp).getId());
+        scopes.put(TOKEN_EXCHANGE, exchangeToPermission(idp).getId());
         return scopes;
     }
 
@@ -176,7 +176,7 @@ class IdentityProviderPermissions implements  IdentityProviderPermissionManageme
 
             Scope scope = exchangeToScope(server);
             if (scope == null) {
-                logger.debug(EXCHANGE_TO_SCOPE + " not initialized");
+                logger.debug(TOKEN_EXCHANGE + " not initialized");
                 return false;
             }
             ClientModelIdentity identity = new ClientModelIdentity(session, authorizedClient);
