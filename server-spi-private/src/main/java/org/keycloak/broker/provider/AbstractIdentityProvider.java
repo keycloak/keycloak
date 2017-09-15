@@ -93,50 +93,47 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
         return  Response.status(400).entity(error).type(MediaType.APPLICATION_JSON_TYPE).build();
     }
 
-    public Response exchangeNotLinked(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject, AccessToken token) {
-        return exchangeErrorResponse(uriInfo, authorizedClient, tokenUserSession, token, "identity provider is not linked");
+    public Response exchangeNotLinked(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
+        return exchangeErrorResponse(uriInfo, authorizedClient, tokenUserSession, "identity provider is not linked");
     }
 
-    public Response exchangeNotLinkedNoStore(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject, AccessToken token) {
-        return exchangeErrorResponse(uriInfo, authorizedClient, tokenUserSession, token, "identity provider is not linked, can only link to current user session");
+    public Response exchangeNotLinkedNoStore(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
+        return exchangeErrorResponse(uriInfo, authorizedClient, tokenUserSession, "identity provider is not linked, can only link to current user session");
     }
 
-    protected Response exchangeErrorResponse(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, AccessToken token, String reason) {
+    protected Response exchangeErrorResponse(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, String reason) {
         Map<String, String> error = new HashMap<>();
         error.put("error", "invalid_target");
         error.put("error_description", reason);
-        String accountLinkUrl = getLinkingUrl(uriInfo, authorizedClient, tokenUserSession, token);
+        String accountLinkUrl = getLinkingUrl(uriInfo, authorizedClient, tokenUserSession);
         if (accountLinkUrl != null) error.put(ACCOUNT_LINK_URL, accountLinkUrl);
         return Response.status(400).entity(error).type(MediaType.APPLICATION_JSON_TYPE).build();
     }
 
-    protected String getLinkingUrl(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, AccessToken token) {
-        if (authorizedClient.getClientId().equals(token.getIssuedFor())) {
-            String provider = getConfig().getAlias();
-            String clientId = authorizedClient.getClientId();
-            String nonce = UUID.randomUUID().toString();
-            MessageDigest md = null;
-            try {
-                md = MessageDigest.getInstance("SHA-256");
-            } catch (NoSuchAlgorithmException e) {
-                throw new RuntimeException(e);
-            }
-            String input = nonce + tokenUserSession.getId() + clientId + provider;
-            byte[] check = md.digest(input.getBytes(StandardCharsets.UTF_8));
-            String hash = Base64Url.encode(check);
-            return KeycloakUriBuilder.fromUri(uriInfo.getBaseUri())
-                    .path("/realms/{realm}/broker/{provider}/link")
-                    .queryParam("nonce", nonce)
-                    .queryParam("hash", hash)
-                    .queryParam("client_id", clientId)
-                    .build(authorizedClient.getRealm().getName(), provider)
-                    .toString();
+    protected String getLinkingUrl(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession) {
+        String provider = getConfig().getAlias();
+        String clientId = authorizedClient.getClientId();
+        String nonce = UUID.randomUUID().toString();
+        MessageDigest md = null;
+        try {
+            md = MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
         }
-        return null;
+        String input = nonce + tokenUserSession.getId() + clientId + provider;
+        byte[] check = md.digest(input.getBytes(StandardCharsets.UTF_8));
+        String hash = Base64Url.encode(check);
+        return KeycloakUriBuilder.fromUri(uriInfo.getBaseUri())
+                .path("/realms/{realm}/broker/{provider}/link")
+                .queryParam("nonce", nonce)
+                .queryParam("hash", hash)
+                .queryParam("client_id", clientId)
+                .build(authorizedClient.getRealm().getName(), provider)
+                .toString();
     }
 
-    public Response exchangeTokenExpired(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject, AccessToken token) {
-        return exchangeErrorResponse(uriInfo, authorizedClient, tokenUserSession, token, "token_expired");
+    public Response exchangeTokenExpired(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
+        return exchangeErrorResponse(uriInfo, authorizedClient, tokenUserSession, "token_expired");
     }
 
     public Response exchangeUnsupportedRequiredType() {

@@ -404,7 +404,7 @@ public class OAuthClient {
     }
 
     public AccessTokenResponse doTokenExchange(String realm, String token, String targetAudience,
-                                                         String clientId, String clientSecret) throws Exception {
+                                               String clientId, String clientSecret) throws Exception {
         CloseableHttpClient client = newCloseableHttpClient();
         try {
             HttpPost post = new HttpPost(getResourceOwnerPasswordCredentialGrantUrl(realm));
@@ -434,6 +434,40 @@ public class OAuthClient {
             }
 
             UrlEncodedFormEntity formEntity;
+            try {
+                formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
+            post.setEntity(formEntity);
+
+            return new AccessTokenResponse(client.execute(post));
+        } finally {
+            closeClient(client);
+        }
+    }
+
+    public AccessTokenResponse doTokenExchange(String realm, String clientId, String clientSecret, Map<String, String> params) throws Exception {
+        CloseableHttpClient client = newCloseableHttpClient();
+        try {
+            HttpPost post = new HttpPost(getResourceOwnerPasswordCredentialGrantUrl(realm));
+
+            List<NameValuePair> parameters = new LinkedList<NameValuePair>();
+            parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE));
+            for (Map.Entry<String, String> entry : params.entrySet()) {
+                parameters.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
+
+            }
+
+            if (clientSecret != null) {
+                String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
+                post.setHeader("Authorization", authorization);
+            } else {
+                parameters.add(new BasicNameValuePair("client_id", clientId));
+
+            }
+
+           UrlEncodedFormEntity formEntity;
             try {
                 formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
             } catch (UnsupportedEncodingException e) {

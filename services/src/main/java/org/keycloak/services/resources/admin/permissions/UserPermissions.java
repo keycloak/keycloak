@@ -18,13 +18,17 @@ package org.keycloak.services.resources.admin.permissions;
 
 import org.jboss.logging.Logger;
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.common.ClientModelIdentity;
+import org.keycloak.authorization.common.DefaultEvaluationContext;
 import org.keycloak.authorization.common.UserModelIdentity;
 import org.keycloak.authorization.identity.Identity;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.models.AdminRoles;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
@@ -32,6 +36,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ForbiddenException;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -473,15 +479,33 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
     }
 
     @Override
+    public boolean canClientImpersonate(ClientModel client, UserModel user) {
+        ClientModelIdentity identity = new ClientModelIdentity(session, client);
+        EvaluationContext context = new DefaultEvaluationContext(identity, session) {
+            @Override
+            public Map<String, Collection<String>> getBaseAttributes() {
+                Map<String, Collection<String>> attributes = super.getBaseAttributes();
+                attributes.put("kc.client.id", Arrays.asList(client.getClientId()));
+                return attributes;
+            }
+
+        };
+        return canImpersonate(context) && isImpersonatable(user);
+
+    }
+
+    @Override
     public boolean canImpersonate(UserModel user) {
         if (!canImpersonate()) {
             return false;
         }
 
+        return isImpersonatable(user);
+    }
+
+    @Override
+    public boolean isImpersonatable(UserModel user) {
         Identity userIdentity = new UserModelIdentity(root.realm, user);
-        if (!root.isAdminSameRealm()) {
-            return true;
-        }
 
         ResourceServer server = root.realmResourceServer();
         if (server == null) return true;
@@ -502,16 +526,23 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
 
         Scope scope = root.realmScope(USER_IMPERSONATED_SCOPE);
         return root.evaluatePermission(resource, scope, server, userIdentity);
-
     }
 
     @Override
     public boolean canImpersonate() {
         if (root.hasOneAdminRole(ImpersonationConstants.IMPERSONATION_ROLE)) return true;
 
+        Identity identity = root.identity;
+
         if (!root.isAdminSameRealm()) {
             return false;
         }
+
+        EvaluationContext context = new DefaultEvaluationContext(identity, session);
+        return canImpersonate(context);
+    }
+
+    protected boolean canImpersonate(EvaluationContext context) {
 
         ResourceServer server = root.realmResourceServer();
         if (server == null) return false;
@@ -531,7 +562,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
         }
 
         Scope scope = root.realmScope(IMPERSONATE_SCOPE);
-        return root.evaluatePermission(resource, scope, server);
+        return root.evaluatePermission(resource, scope, server, context);
     }
 
     @Override
