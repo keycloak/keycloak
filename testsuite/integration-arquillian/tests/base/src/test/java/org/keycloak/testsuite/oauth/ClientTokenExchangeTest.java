@@ -98,7 +98,6 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
 
 
         RoleModel impersonateRole = management.getRealmManagementClient().getRole(ImpersonationConstants.IMPERSONATION_ROLE);
-        Assert.assertNotNull(impersonateRole);
 
         ClientModel clientExchanger = realm.addClient("client-exchanger");
         clientExchanger.setClientId("client-exchanger");
