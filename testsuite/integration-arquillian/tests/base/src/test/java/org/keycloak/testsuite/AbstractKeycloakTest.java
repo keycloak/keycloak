@@ -18,11 +18,13 @@ package org.keycloak.testsuite;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
+import org.junit.BeforeClass;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.Time;
 import org.keycloak.testsuite.arquillian.KcArquillian;
 import org.keycloak.testsuite.arquillian.TestContext;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -30,6 +32,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 import javax.ws.rs.NotFoundException;
 import org.jboss.arquillian.container.test.api.RunAsClient;
@@ -65,6 +68,16 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.TestCleanup;
 import org.keycloak.testsuite.util.TestEventsLogger;
 import org.openqa.selenium.WebDriver;
+import org.wildfly.extras.creaper.commands.undertow.AddUndertowListener;
+import org.wildfly.extras.creaper.commands.undertow.RemoveUndertowListener;
+import org.wildfly.extras.creaper.commands.undertow.UndertowListenerType;
+import org.wildfly.extras.creaper.core.CommandFailedException;
+import org.wildfly.extras.creaper.core.online.CliException;
+import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
+import org.wildfly.extras.creaper.core.online.operations.Address;
+import org.wildfly.extras.creaper.core.online.operations.OperationException;
+import org.wildfly.extras.creaper.core.online.operations.Operations;
+import org.wildfly.extras.creaper.core.online.operations.admin.Administration;
 
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
@@ -77,6 +90,8 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 @RunWith(KcArquillian.class)
 @RunAsClient
 public abstract class AbstractKeycloakTest {
+
+    protected static final boolean AUTH_SERVER_SSL_REQUIRED = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required", "false"));
 
     protected Logger log = Logger.getLogger(this.getClass());
 
@@ -122,6 +137,13 @@ public abstract class AbstractKeycloakTest {
 
     private boolean resetTimeOffset;
 
+    @BeforeClass
+    public static void setUpAuthServer() throws Exception {
+        if (AUTH_SERVER_SSL_REQUIRED) {
+            enableHTTPSForAuthServer();
+        }
+    }
+
     @Before
     public void beforeAbstractKeycloakTest() throws Exception {
         adminClient = testContext.getAdminClient();
@@ -155,6 +177,7 @@ public abstract class AbstractKeycloakTest {
         }
 
         oauth.init(adminClient, driver);
+
     }
 
     protected void beforeAbstractKeycloakTestRealmImport() throws Exception {
@@ -307,20 +330,21 @@ public abstract class AbstractKeycloakTest {
         } catch (NotFoundException e) {
         }
     }
-    
+
     public RealmsResource realmsResouce() {
         return adminClient.realms();
     }
 
     /**
      * Creates a user in the given realm and returns its ID.
-     * @param realm Realm name
-     * @param username Username
-     * @param password Password
+     *
+     * @param realm           Realm name
+     * @param username        Username
+     * @param password        Password
      * @param requiredActions
      * @return ID of the newly created user
      */
-    public String createUser(String realm, String username, String password, String ... requiredActions) {
+    public String createUser(String realm, String username, String password, String... requiredActions) {
         List<String> requiredUserActions = Arrays.asList(requiredActions);
 
         UserRepresentation homer = new UserRepresentation();
@@ -359,6 +383,7 @@ public abstract class AbstractKeycloakTest {
 
     /**
      * Sets time offset in seconds that will be added to Time.currentTime() and Time.currentTimeMillis() both for client and server.
+     *
      * @param offset
      */
     public void setTimeOffset(int offset) {
@@ -402,5 +427,28 @@ public abstract class AbstractKeycloakTest {
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static void enableHTTPSForAuthServer() throws IOException, CommandFailedException, TimeoutException, InterruptedException, CliException, OperationException {
+        OnlineManagementClient client = AuthServerTestEnricher.getManagementClient();
+        Administration administration = new Administration(client);
+        Operations operations = new Operations(client);
+
+        if(!operations.exists(Address.coreService("management").and("security-realm", "UndertowRealm"))) {
+            client.execute("/core-service=management/security-realm=UndertowRealm:add()");
+            client.execute("/core-service=management/security-realm=UndertowRealm/server-identity=ssl:add(keystore-relative-to=jboss.server.config.dir,keystore-password=secret,keystore-path=keycloak.jks");
+        }
+
+        client.apply(new RemoveUndertowListener.Builder(UndertowListenerType.HTTPS_LISTENER, "https")
+                .forDefaultServer());
+
+        administration.reloadIfRequired();
+
+        client.apply(new AddUndertowListener.HttpsBuilder("https", "default-server", "https")
+                .securityRealm("UndertowRealm")
+                .build());
+
+        administration.reloadIfRequired();
+        client.close();
     }
 }

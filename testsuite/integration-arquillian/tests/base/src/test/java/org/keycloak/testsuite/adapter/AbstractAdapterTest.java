@@ -21,17 +21,32 @@ import org.apache.commons.io.IOUtils;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
+import org.junit.BeforeClass;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.adapter.page.AppServerContextRoot;
+import org.keycloak.testsuite.arquillian.AppServerTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.wildfly.extras.creaper.commands.undertow.AddUndertowListener;
+import org.wildfly.extras.creaper.commands.undertow.RemoveUndertowListener;
+import org.wildfly.extras.creaper.commands.undertow.UndertowListenerType;
+import org.wildfly.extras.creaper.commands.web.AddConnector;
+import org.wildfly.extras.creaper.commands.web.AddConnectorSslConfig;
+import org.wildfly.extras.creaper.core.CommandFailedException;
+import org.wildfly.extras.creaper.core.online.CliException;
+import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
+import org.wildfly.extras.creaper.core.online.operations.Address;
+import org.wildfly.extras.creaper.core.online.operations.OperationException;
+import org.wildfly.extras.creaper.core.online.operations.Operations;
+import org.wildfly.extras.creaper.core.online.operations.admin.Administration;
 
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 /**
  *
@@ -43,12 +58,22 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
     @Page
     protected AppServerContextRoot appServerContextRootPage;
 
+    protected static final boolean APP_SERVER_SSL_REQUIRED = Boolean.parseBoolean(System.getProperty("app.server.ssl.required", "false"));
+    protected static final String APP_SERVER_CONTAINER = System.getProperty("app.server", "");
+
     public static final String JBOSS_DEPLOYMENT_STRUCTURE_XML = "jboss-deployment-structure.xml";
     public static final URL jbossDeploymentStructure = AbstractServletsAdapterTest.class
             .getResource("/adapter-test/" + JBOSS_DEPLOYMENT_STRUCTURE_XML);
     public static final String TOMCAT_CONTEXT_XML = "context.xml";
     public static final URL tomcatContext = AbstractServletsAdapterTest.class
             .getResource("/adapter-test/" + TOMCAT_CONTEXT_XML);
+
+    @BeforeClass
+    public static void setUpAppServer() throws Exception {
+        if (APP_SERVER_SSL_REQUIRED && (APP_SERVER_CONTAINER.contains("eap") || APP_SERVER_CONTAINER.contains("wildfly"))) { // Other containers need some external configuraiton to run SSL tests
+            enableHTTPSForAppServer();
+        }
+    }
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -214,6 +239,48 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
+    }
+
+    private static void enableHTTPSForAppServer() throws CommandFailedException, InterruptedException, TimeoutException, IOException, CliException, OperationException {
+        OnlineManagementClient client = AppServerTestEnricher.getManagementClient();
+        Administration administration = new Administration(client);
+        Operations operations = new Operations(client);
+
+        if(!operations.exists(Address.coreService("management").and("security-realm", "UndertowRealm"))) {
+            client.execute("/core-service=management/security-realm=UndertowRealm:add()");
+            client.execute("/core-service=management/security-realm=UndertowRealm/server-identity=ssl:add(keystore-relative-to=jboss.server.config.dir,keystore-password=secret,keystore-path=adapter.jks");
+        }
+
+        client.execute("/system-property=javax.net.ssl.trustStore:add(value=${jboss.server.config.dir}/keycloak.truststore)");
+        client.execute("/system-property=javax.net.ssl.trustStorePassword:add(value=secret)");
+
+        if (APP_SERVER_CONTAINER.contains("eap6")) {
+            if(!operations.exists(Address.subsystem("web").and("connector", "https"))) {
+                client.apply(new AddConnector.Builder("https")
+                        .protocol("HTTP/1.1")
+                        .scheme("https")
+                        .socketBinding("https")
+                        .secure(true)
+                        .build());
+
+                client.apply(new AddConnectorSslConfig.Builder("https")
+                        .password("secret")
+                        .certificateKeyFile("${jboss.server.config.dir}/adapter.jks")
+                        .build());
+            }
+        } else {
+            client.apply(new RemoveUndertowListener.Builder(UndertowListenerType.HTTPS_LISTENER, "https")
+                    .forDefaultServer());
+
+            administration.reloadIfRequired();
+
+            client.apply(new AddUndertowListener.HttpsBuilder("https", "default-server", "https")
+                    .securityRealm("UndertowRealm")
+                    .build());
+        }
+
+        administration.reloadIfRequired();
+        client.close();
     }
 
 }

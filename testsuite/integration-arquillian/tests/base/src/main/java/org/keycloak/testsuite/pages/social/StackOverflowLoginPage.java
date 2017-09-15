@@ -48,6 +48,7 @@ public class StackOverflowLoginPage extends AbstractSocialLoginPage {
 
         driver.switchTo().frame(loginFrame);
 
+        usernameInput.clear();
         usernameInput.sendKeys(user);
         passwordInput.sendKeys(password);
 

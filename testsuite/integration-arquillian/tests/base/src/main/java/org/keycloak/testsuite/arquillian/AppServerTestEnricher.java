@@ -9,6 +9,10 @@ import org.jboss.arquillian.test.spi.annotation.ClassScoped;
 import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 import org.jboss.logging.Logger;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.wildfly.extras.creaper.core.ManagementClient;
+import org.wildfly.extras.creaper.core.online.ManagementProtocol;
+import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
+import org.wildfly.extras.creaper.core.online.OnlineOptions;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -89,6 +93,22 @@ public class AppServerTestEnricher {
             throw new IllegalArgumentException(ex);
         }
         return appServerInfo;
+    }
+
+    public static OnlineManagementClient getManagementClient() {
+        OnlineManagementClient managementClient;
+        try {
+            managementClient = ManagementClient.online(OnlineOptions
+                    .standalone()
+                    .hostAndPort(System.getProperty("app.server.host"), System.getProperty("app.server","").startsWith("eap6") ? 10199 : 10190)
+                    .protocol(System.getProperty("app.server","").startsWith("eap6") ? ManagementProtocol.REMOTE : ManagementProtocol.HTTP_REMOTING)
+                    .build()
+            );
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return managementClient;
     }
 
     @Inject

@@ -974,6 +974,21 @@
                     <groupId>junit</groupId>
                     <artifactId>junit</artifactId>
                 </dependency>
+
+                <!--Dependencies for creaper:-->
+
+                <dependency>
+                    <groupId>org.wildfly.extras.creaper</groupId>
+                    <artifactId>creaper-commands</artifactId>
+                    <version>${version.org.wildfly.extras.creaper}</version>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>com.google.guava</groupId>
+                            <artifactId>guava</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
+
                 <dependency>
                     <groupId>org.jboss.arquillian.junit</groupId>
                     <artifactId>arquillian-junit-container</artifactId>
