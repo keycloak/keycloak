@@ -1,0 +1,54 @@
+
+
+<div class="cards-pf">
+    <toolbar #toolbar [filterProps]="propLabels" [sortProps]="propLabels" [actionButtons]="actionButtons"></toolbar>
+    <div *ngIf="toolbar.activeView === 'LargeCards'" class="container-fluid container-cards-pf">
+        <div class="row row-cards-pf">
+            <large-app-card *ngFor="let app of (applications | filterby:toolbar.filterBy.prop:toolbar.filterText | orderby:toolbar.sortBy.prop:toolbar.isSortAscending )"
+                            class="col-xs-12 col-sm-6 col-md-4 col-lg-3"
+                            [app]="app"
+                            [sessions]="sessions">
+            </large-app-card>
+        </div>
+    </div>
+    
+    <div *ngIf="toolbar.activeView === 'SmallCards'" class="container-fluid container-cards-pf">
+        <div class="row row-cards-pf">
+            <small-app-card *ngFor="let app of (applications | filterby:toolbar.filterBy.prop:toolbar.filterText | orderby:toolbar.sortBy.prop:toolbar.isSortAscending )"
+                            class="col-xs-12 col-sm-3 col-md-2"
+                            [app]="app"
+                            [sessions]="sessions">
+            </small-app-card>
+        </div>
+    </div>
+    
+    <div *ngIf="toolbar.activeView === 'List'" class="container-fluid">
+        <div class="list-group list-view-pf list-view-pf-view">
+            <row-app-card *ngFor="let app of (applications | filterby:toolbar.filterBy.prop:toolbar.filterText | orderby:toolbar.sortBy.prop:toolbar.isSortAscending )"
+                            class="list-group-item"
+                            [app]="app"
+                            [sessions]="sessions">
+            </row-app-card>
+        </div>
+    </div>
+</div>
+    
+        <script>
+            $(function () {
+                // matchHeight the contents of each .card-pf and then the .card-pf itself
+                $(".row-cards-pf > [class*='col'] > .card-pf > .card-pf-body").matchHeight();
+            });
+            $(document).ready(function () {
+                // Card Single Select
+                $('.card-pf-view-single-select').click(function () {
+                    if ($(this).hasClass('active'))
+                    {
+                        $(this).removeClass('active');
+                    } else
+                    {
+                        $('.card-pf-view-single-select').removeClass('active');
+                        $(this).addClass('active');
+                    }
+                });
+            });
+        </script>
