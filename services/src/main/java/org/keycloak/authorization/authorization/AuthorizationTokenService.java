@@ -25,7 +25,6 @@ import org.keycloak.authorization.authorization.representation.AuthorizationRequ
 import org.keycloak.authorization.authorization.representation.AuthorizationResponse;
 import org.keycloak.authorization.common.KeycloakEvaluationContext;
 import org.keycloak.authorization.common.KeycloakIdentity;
-import org.keycloak.authorization.entitlement.representation.EntitlementResponse;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
@@ -39,6 +38,7 @@ import org.keycloak.authorization.util.Permissions;
 import org.keycloak.authorization.util.Tokens;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.TokenManager;
@@ -119,7 +119,7 @@ public class AuthorizationTokenService {
             List<Permission> entitlements = Permissions.permits(result, authorizationRequest.getMetadata(), authorization, resourceServer);
 
             if (!entitlements.isEmpty()) {
-                AuthorizationResponse response = new AuthorizationResponse(createRequestingPartyToken(entitlements, identity.getAccessToken()));
+                AuthorizationResponse response = new AuthorizationResponse(createRequestingPartyToken(entitlements, identity.getAccessToken(), resourceServer));
                 return Cors.add(httpRequest, Response.status(Status.CREATED).entity(response)).allowedOrigins(identity.getAccessToken())
                         .allowedMethods("POST")
                         .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
@@ -254,11 +254,17 @@ public class AuthorizationTokenService {
         return this.authorization.getKeycloakSession().getContext().getRealm();
     }
 
-    private String createRequestingPartyToken(List<Permission> permissions, AccessToken accessToken) {
+    private String createRequestingPartyToken(List<Permission> permissions, AccessToken accessToken, ResourceServer resourceServer) {
         AccessToken.Authorization authorization = new AccessToken.Authorization();
 
         authorization.setPermissions(permissions);
         accessToken.setAuthorization(authorization);
+
+        ClientModel clientModel = this.authorization.getRealm().getClientById(resourceServer.getId());
+
+        if (!accessToken.hasAudience(clientModel.getClientId())) {
+            accessToken.audience(clientModel.getClientId());
+        }
 
         return new TokenManager().encodeToken(session, getRealm(), accessToken);
     }
