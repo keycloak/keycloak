@@ -203,7 +203,26 @@ public class TokenManager {
             return false;
         }
 
-        UserModel user = session.users().getUserById(token.getSubject(), realm);
+        ClientModel client = realm.getClientByClientId(token.getIssuedFor());
+        if (client == null || !client.isEnabled() || token.getIssuedAt() < client.getNotBefore()) {
+            return false;
+        }
+
+        UserSessionModel userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), false, client.getId());
+        if (AuthenticationManager.isSessionValid(realm, userSession)) {
+            return isUserValid(session, realm, token, userSession);
+        }
+
+        userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), true, client.getId());
+        if (AuthenticationManager.isOfflineSessionValid(realm, userSession)) {
+            return isUserValid(session, realm, token, userSession);
+        }
+
+        return false;
+    }
+
+    private boolean isUserValid(KeycloakSession session, RealmModel realm, AccessToken token, UserSessionModel userSession) {
+        UserModel user = userSession.getUser();
         if (user == null) {
             return false;
         }
@@ -213,25 +232,9 @@ public class TokenManager {
         if (token.getIssuedAt() < session.users().getNotBeforeOfUser(realm, user)) {
             return false;
         }
-
-        ClientModel client = realm.getClientByClientId(token.getIssuedFor());
-        if (client == null || !client.isEnabled() || token.getIssuedAt() < client.getNotBefore()) {
-            return false;
-        }
-
-        UserSessionModel userSession =  new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), false, client.getId());
-        if (AuthenticationManager.isSessionValid(realm, userSession)) {
-            return true;
-        }
-
-
-        userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), true, client.getId());
-        if (AuthenticationManager.isOfflineSessionValid(realm, userSession)) {
-            return true;
-        }
-
-        return false;
+        return true;
     }
+
 
     public RefreshResult refreshAccessToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm, ClientModel authorizedClient,
                                             String encodedRefreshToken, EventBuilder event, HttpHeaders headers) throws OAuthErrorException {
