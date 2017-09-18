@@ -149,6 +149,6 @@ MSAD User Account Mapper::
   and there will be an UPDATE_PASSWORD required action added to the user. If `userAccountControl` is
   `514` (disabled account) the {project_name} user is disabled as well.
 
-By default, there is set of User Attribute mappers that map basic {project_name} user attributes like username, first name, lastname, and email to corresponding LDAP attributes.
+By default, there are User Attribute mappers that map basic {project_name} user attributes like username, firstname, lastname, and email to corresponding LDAP attributes.
 You are free to extend these and provide additional attribute mappings.
 Admin console provides tooltips, which should help with configuring the corresponding mappers.
