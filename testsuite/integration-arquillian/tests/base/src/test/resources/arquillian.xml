@@ -25,6 +25,9 @@
     <extension qualifier="webdriver">
         <property name="browser">${browser}</property>
         <property name="downloadBinaries">${webdriverDownloadBinaries}</property>
+        <property name="githubUsername">${github.username}</property>
+        <property name="githubToken">${github.secretToken}</property>
+        <property name="ieDriverArch">${ieDriverArch}</property>
 
         <!-- htmlunit -->
         <property name="htmlUnit.version">${htmlUnitBrowserVersion}</property>

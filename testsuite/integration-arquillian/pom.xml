@@ -42,8 +42,8 @@
 
         <!--component versions-->
         <arquillian-core.version>1.1.13.Final</arquillian-core.version>
-        <selenium.version>3.5.1</selenium.version>
-        <arquillian-drone.version>2.4.0</arquillian-drone.version>
+        <selenium.version>3.5.3</selenium.version>
+        <arquillian-drone.version>2.4.2</arquillian-drone.version>
         <arquillian-graphene.version>2.3.1</arquillian-graphene.version>
         <arquillian-wildfly-container.version>2.1.0.Beta1</arquillian-wildfly-container.version>
         <arquillian-wls-container.version>1.0.1.Final</arquillian-wls-container.version>

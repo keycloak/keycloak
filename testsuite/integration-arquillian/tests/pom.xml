@@ -96,6 +96,9 @@
 
         <browser>htmlUnit</browser>
         <webdriverDownloadBinaries>true</webdriverDownloadBinaries>
+        <github.username/>
+        <github.secretToken/>
+        <ieDriverArch/>
         <htmlUnitBrowserVersion>chrome</htmlUnitBrowserVersion>
         <phantomjs.cli.args>--ignore-ssl-errors=true --web-security=false</phantomjs.cli.args>
         <firefox_binary>/usr/bin/firefox</firefox_binary>
@@ -259,6 +262,10 @@
                             <browser>${browser}</browser>
                             <htmlUnitBrowserVersion>${htmlUnitBrowserVersion}</htmlUnitBrowserVersion>
                             <webdriverDownloadBinaries>${webdriverDownloadBinaries}</webdriverDownloadBinaries>
+
+                            <github.username>${github.username}</github.username>
+                            <github.secretToken>${github.secretToken}</github.secretToken>
+                            <ieDriverArch>${ieDriverArch}</ieDriverArch>
 
                             <firefox_binary>${firefox_binary}</firefox_binary>
                             <phantomjs.cli.args>${phantomjs.cli.args}</phantomjs.cli.args>
