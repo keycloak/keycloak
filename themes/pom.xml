@@ -59,6 +59,18 @@
                         <artifactId>frontend-maven-plugin</artifactId>
                         <executions>
                             <execution>
+                                <id>install node and yarn</id>
+                                <goals>
+                                    <goal>install-node-and-yarn</goal>
+                                </goals>
+                                <phase>generate-resources</phase>
+                                <configuration>
+                                    <workingDirectory>src/main/resources/theme/keycloak-preview/account/resources</workingDirectory>
+                                    <nodeVersion>v6.9.1</nodeVersion>
+                                    <yarnVersion>v0.28.4</yarnVersion>
+                                </configuration>
+                            </execution>
+                            <execution>
                                 <id>yarn install keycloak preview</id>
                                 <goals>
                                     <goal>yarn</goal>
@@ -98,6 +110,9 @@
                             <filesets>
                                 <fileset>
                                     <directory>src/main/resources/theme/keycloak-preview/account/resources/node_modules</directory>
+                                </fileset>
+                                <fileset>
+                                    <directory>src/main/resources/theme/keycloak-preview/account/resources/node</directory>
                                 </fileset>
                             </filesets>
                         </configuration>
