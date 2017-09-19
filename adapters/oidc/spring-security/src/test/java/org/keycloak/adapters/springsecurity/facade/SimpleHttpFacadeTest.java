@@ -28,7 +28,7 @@ public class SimpleHttpFacadeTest {
         Principal principal = mock(Principal.class);
         RefreshableKeycloakSecurityContext keycloakSecurityContext = mock(RefreshableKeycloakSecurityContext.class);
         KeycloakAccount account = new SimpleKeycloakAccount(principal, roles, keycloakSecurityContext);
-        KeycloakAuthenticationToken token = new KeycloakAuthenticationToken(account);
+        KeycloakAuthenticationToken token = new KeycloakAuthenticationToken(account, false);
         springSecurityContext.setAuthentication(token);
     }
 

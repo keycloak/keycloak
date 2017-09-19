@@ -105,7 +105,7 @@ public class SpringSecurityTokenStore implements AdapterTokenStore {
         }
 
         logger.debug("Saving account info {}", account);
-        SecurityContextHolder.getContext().setAuthentication(new KeycloakAuthenticationToken(account));
+        SecurityContextHolder.getContext().setAuthentication(new KeycloakAuthenticationToken(account, true));
     }
 
     @Override
