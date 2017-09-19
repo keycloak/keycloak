@@ -45,6 +45,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.testsuite.ActionURIUtils;
@@ -209,14 +210,37 @@ public abstract class AbstractLinkAndExchangeTest extends AbstractServletsAdapte
         IdentityProviderModel idp = realm.getIdentityProviderByAlias(PARENT_IDP);
         Assert.assertNotNull(idp);
 
+        ClientModel directExchanger = realm.addClient("direct-exchanger");
+        directExchanger.setClientId("direct-exchanger");
+        directExchanger.setPublicClient(false);
+        directExchanger.setDirectAccessGrantsEnabled(true);
+        directExchanger.setEnabled(true);
+        directExchanger.setSecret("secret");
+        directExchanger.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        directExchanger.setFullScopeAllowed(false);
+
+
         AdminPermissionManagement management = AdminPermissions.management(session, realm);
         management.idps().setPermissionsEnabled(idp, true);
         ClientPolicyRepresentation clientRep = new ClientPolicyRepresentation();
         clientRep.setName("toIdp");
         clientRep.addClient(client.getId());
+        clientRep.addClient(directExchanger.getId());
         ResourceServer server = management.realmResourceServer();
         Policy clientPolicy = management.authz().getStoreFactory().getPolicyStore().create(clientRep, server);
         management.idps().exchangeToPermission(idp).addAssociatedPolicy(clientPolicy);
+
+
+        // permission for user impersonation for a client
+
+        ClientPolicyRepresentation clientImpersonateRep = new ClientPolicyRepresentation();
+        clientImpersonateRep.setName("clientImpersonators");
+        clientImpersonateRep.addClient(directExchanger.getId());
+        server = management.realmResourceServer();
+        Policy clientImpersonatePolicy = management.authz().getStoreFactory().getPolicyStore().create(clientImpersonateRep, server);
+        management.users().setPermissionsEnabled(true);
+        management.users().adminImpersonatingPermission().addAssociatedPolicy(clientImpersonatePolicy);
+        management.users().adminImpersonatingPermission().setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
 
     }
     public static void turnOffTokenStore(KeycloakSession session) {
@@ -315,6 +339,21 @@ public abstract class AbstractLinkAndExchangeTest extends AbstractServletsAdapte
                                 .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
                                 .param(OAuth2Constants.SUBJECT_TOKEN, accessToken)
                                 .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE)
+                                .param(OAuth2Constants.REQUESTED_ISSUER, PARENT_IDP)
+
+                ));
+        Assert.assertEquals(200, response.getStatus());
+        tokenResponse = response.readEntity(AccessTokenResponse.class);
+        response.close();
+        Assert.assertNotEquals(externalToken, tokenResponse.getToken());
+
+        // test direct exchange
+        response = exchangeUrl.request()
+                .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader("direct-exchanger", "secret"))
+                .post(Entity.form(
+                        new Form()
+                                .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
+                                .param(OAuth2Constants.REQUESTED_SUBJECT, "child")
                                 .param(OAuth2Constants.REQUESTED_ISSUER, PARENT_IDP)
 
                 ));

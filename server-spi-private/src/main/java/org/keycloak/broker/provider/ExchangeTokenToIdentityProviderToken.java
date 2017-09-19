@@ -35,9 +35,8 @@ public interface ExchangeTokenToIdentityProviderToken {
      * @param authorizedClient client requesting exchange
      * @param tokenUserSession UserSessionModel of token exchanging from
      * @param tokenSubject UserModel of token exchanging from
-     * @param token access token representation of token exchanging from
      * @param params form parameters received for requested exchange
      * @return
      */
-    Response exchangeFromToken(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject, AccessToken token, MultivaluedMap<String, String> params);
+    Response exchangeFromToken(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject, MultivaluedMap<String, String> params);
 }

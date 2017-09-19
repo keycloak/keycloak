@@ -225,10 +225,10 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     }
 
 
-    protected Response exchangeStoredToken(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject, AccessToken token) {
+    protected Response exchangeStoredToken(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
         FederatedIdentityModel model = session.users().getFederatedIdentity(tokenSubject, getConfig().getAlias(), authorizedClient.getRealm());
         if (model == null || model.getToken() == null) {
-            return exchangeNotLinked(uriInfo, authorizedClient, tokenUserSession, tokenSubject, token);
+            return exchangeNotLinked(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
         }
         try {
             String modelTokenString = model.getToken();
@@ -236,7 +236,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             Integer exp = (Integer)tokenResponse.getOtherClaims().get(ACCESS_TOKEN_EXPIRATION);
             if (exp != null && exp < Time.currentTime()) {
                 if (tokenResponse.getRefreshToken() == null) {
-                    return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject, token);
+                    return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
                 }
                 String response = SimpleHttp.doPost(getConfig().getTokenUrl(), session)
                         .param("refresh_token", tokenResponse.getRefreshToken())
@@ -247,7 +247,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                     logger.debugv("Error refreshing token, refresh token expiration?: {0}", response);
                     model.setToken(null);
                     session.users().updateFederatedIdentity(authorizedClient.getRealm(), tokenSubject, model);
-                    return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject, token);
+                    return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
                 }
                 AccessTokenResponse newResponse = JsonSerialization.readValue(response, AccessTokenResponse.class);
                 if (newResponse.getExpiresIn() > 0) {
@@ -274,14 +274,14 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             tokenResponse.setRefreshExpiresIn(0);
             tokenResponse.getOtherClaims().clear();
             tokenResponse.getOtherClaims().put(OAuth2Constants.ISSUED_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE);
-            tokenResponse.getOtherClaims().put(ACCOUNT_LINK_URL, getLinkingUrl(uriInfo, authorizedClient, tokenUserSession, token));
+            tokenResponse.getOtherClaims().put(ACCOUNT_LINK_URL, getLinkingUrl(uriInfo, authorizedClient, tokenUserSession));
             return Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE).build();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    protected Response exchangeSessionToken(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject, AccessToken token) {
+    protected Response exchangeSessionToken(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
         try {
             long expiration = Long.parseLong(tokenUserSession.getNote(FEDERATED_TOKEN_EXPIRATION));
             String refreshToken = tokenUserSession.getNote(FEDERATED_REFRESH_TOKEN);
@@ -295,7 +295,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 tokenResponse.setRefreshToken(null);
                 tokenResponse.setRefreshExpiresIn(0);
                 tokenResponse.getOtherClaims().put(OAuth2Constants.ISSUED_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE);
-                tokenResponse.getOtherClaims().put(ACCOUNT_LINK_URL, getLinkingUrl(uriInfo, authorizedClient, tokenUserSession, token));
+                tokenResponse.getOtherClaims().put(ACCOUNT_LINK_URL, getLinkingUrl(uriInfo, authorizedClient, tokenUserSession));
                 return Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE).build();
             }
             String response = SimpleHttp.doPost(getConfig().getTokenUrl(), session)
@@ -305,7 +305,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                     .param(OAUTH2_PARAMETER_CLIENT_SECRET, getConfig().getClientSecret()).asString();
             if (response.contains("error")) {
                 logger.debugv("Error refreshing token, refresh token expiration?: {0}", response);
-                return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject, token);
+                return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
             }
             AccessTokenResponse newResponse = JsonSerialization.readValue(response, AccessTokenResponse.class);
             long accessTokenExpiration = newResponse.getExpiresIn() > 0 ? Time.currentTime() + newResponse.getExpiresIn() : 0;
@@ -318,7 +318,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             newResponse.setRefreshExpiresIn(0);
             newResponse.getOtherClaims().clear();
             newResponse.getOtherClaims().put(OAuth2Constants.ISSUED_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE);
-            newResponse.getOtherClaims().put(ACCOUNT_LINK_URL, getLinkingUrl(uriInfo, authorizedClient, tokenUserSession, token));
+            newResponse.getOtherClaims().put(ACCOUNT_LINK_URL, getLinkingUrl(uriInfo, authorizedClient, tokenUserSession));
             return Response.ok(newResponse).type(MediaType.APPLICATION_JSON_TYPE).build();
         } catch (IOException e) {
             throw new RuntimeException(e);

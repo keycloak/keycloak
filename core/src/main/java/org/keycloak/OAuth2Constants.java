@@ -95,6 +95,7 @@ public interface OAuth2Constants {
 
     String TOKEN_EXCHANGE_GRANT_TYPE="urn:ietf:params:oauth:grant-type:token-exchange";
     String AUDIENCE="audience";
+    String REQUESTED_SUBJECT="requested_subject";
     String SUBJECT_TOKEN="subject_token";
     String SUBJECT_TOKEN_TYPE="subject_token_type";
     String REQUESTED_TOKEN_TYPE="requested_token_type";
