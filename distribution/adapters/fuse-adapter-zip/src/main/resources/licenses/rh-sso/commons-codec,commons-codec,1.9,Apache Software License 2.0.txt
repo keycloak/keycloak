@@ -1,0 +1,1 @@
+org.jboss.logging,jboss-logging,3.3.0.Final-redhat-1,Apache Software License 2.0.txt

@@ -1,0 +1,1 @@
+com.fasterxml.jackson.jaxrs,jackson-jaxrs-json-provider,2.5.4.redhat-1,Apache Software License 2.0.txt
