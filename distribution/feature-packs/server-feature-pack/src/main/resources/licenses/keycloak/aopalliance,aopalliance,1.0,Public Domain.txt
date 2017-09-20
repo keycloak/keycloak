@@ -1,0 +1,76 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>AOP Alliance</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+    <meta name="lang" content="en">
+    <link rel="stylesheet" type="text/css" href="basic.css"
+      title="basic style" media="all">
+  </head>
+
+  <body>
+
+    <div class=title>AOP Alliance (Java/J2EE AOP standards)</div>
+
+    <h1>AOP Alliance, presentation</h1>
+
+    <p>The AOP Alliance project is a joint open-source project between
+    several software engineering people who are interested in AOP and
+    Java.
+
+	<p><b>LICENCE</b>: all the source code provided by AOP Alliance is <b>Public Domain</b>.
+
+    <p style="text-align:right"><a href="members.html">view the members' list...</a>.</p>
+
+    <p>We believe that Aspect-Oriented Programming (AOP) offers a
+    better solution to many problems than do existing technologies
+    such as EJB. AOP Alliance intends to facilitate and standardize
+    the use of AOP to enhance existing middleware environments (such
+    as J2EE), or development environements (e.g. JBuilder, Eclipse).
+    The AOP Alliance also aims to ensure interoperability between
+    Java/J2EE AOP implementations to build a larger AOP community.
+
+    <p style="text-align:right"><a href="motivations.html">read more details...</a></p>
+
+<!--
+    <h1>Work in progress</h1>
+
+-->
+    <h1>Materials</h1>
+
+    <ul>
+      <li><a
+      href="http://sourceforge.net/projects/aopalliance">Sourceforge
+      site</a></li>
+      <li>White paper draft (The AOP Alliance: Why Did We Get In?): (<a
+      href="white_paper/white_paper.pdf">pdf</a>) (<a
+      href="white_paper/white_paper.ps">ps</a>) (<a
+      href="white_paper">html online version</a>)</li>
+      <li>Online Sourceforge <a
+	  href="http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/aopalliance/">CVS
+	  Repository</a></li>
+      <li>
+	<a href="doc/index.html">Online Javadoc-generated AOP Alliance
+specifications preview (this is unstable work in progress)</a>.
+      </li>
+      <li>
+	Mailing list:
+	<ul>
+	  <li>
+	    <a
+	      href="mailto:aopalliance-discuss@lists.sourceforge.net">mailto:aopalliance-discuss@lists.sourceforge.net</a>
+	  </li>
+	  <li>
+	    <a
+	      href="http://sourceforge.net/mailarchive/forum.php?forum=aopalliance-discuss">archive</a>
+	  </li>
+	  <li>
+	    <a
+	      href="https://lists.sourceforge.net/lists/listinfo/aopalliance-discuss">(un)subscribe</a>
+	  </li>
+	</ul>
+    </ul>
+    
+    <hr>
+  </body>
+</html>
