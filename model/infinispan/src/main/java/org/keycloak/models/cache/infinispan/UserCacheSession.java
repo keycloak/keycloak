@@ -512,6 +512,17 @@ public class UserCacheSession implements UserCache {
     }
 
     @Override
+    public List<UserModel> getRoleMembers(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
+        return getDelegate().getRoleMembers(realm, role, firstResult, maxResults);
+    }
+
+    @Override
+    public List<UserModel> getRoleMembers(RealmModel realm, RoleModel role) {
+        return getDelegate().getRoleMembers(realm, role);
+    }    
+    
+
+    @Override
     public UserModel getServiceAccount(ClientModel client) {
         // Just an attempt to find the user from cache by default serviceAccount username
         UserModel user = findServiceAccount(client);
