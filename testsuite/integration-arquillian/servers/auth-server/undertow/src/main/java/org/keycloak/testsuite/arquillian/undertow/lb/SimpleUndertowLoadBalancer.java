@@ -94,7 +94,7 @@ public class SimpleUndertowLoadBalancer {
                     .build();
             undertow.start();
 
-            log.infof("Loadbalancer started and ready to serve requests on http://%s:%d", host, port);
+            log.infof("#### Loadbalancer started and ready to serve requests on http://%s:%d ####", host, port);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -26,9 +26,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <packaging>pom</packaging>
-    
+
     <artifactId>integration-arquillian-servers-auth-server-wildfly</artifactId>
-    
+
     <name>Auth Server - JBoss - Wildfly</name>
 
     <dependencies>
@@ -38,9 +38,20 @@
             <type>zip</type>
         </dependency>
     </dependencies>
-    
+
     <properties>
         <auth.server.jboss>wildfly</auth.server.jboss>
     </properties>
-    
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <configuration>
+                    <skip>false</skip>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
 </project>

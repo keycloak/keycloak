@@ -27,6 +27,7 @@ import org.jboss.arquillian.core.api.annotation.ApplicationScoped;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.arquillian.test.spi.event.suite.BeforeSuite;
+import org.jboss.logging.Logger;
 
 /**
  *
@@ -34,6 +35,8 @@ import org.jboss.arquillian.test.spi.event.suite.BeforeSuite;
  */
 public class JmxConnectorRegistryCreator {
 
+    private final Logger log = Logger.getLogger(JmxConnectorRegistryCreator.class);
+            
     @Inject
     @ApplicationScoped
     private InstanceProducer<JmxConnectorRegistry> connectorRegistry;
@@ -46,6 +49,7 @@ public class JmxConnectorRegistryCreator {
 
                 @Override
                 public JMXConnector getConnection(JMXServiceURL url) {
+                    
                     JMXConnector res = connectors.get(url);
                     if (res == null) {
                         try {
@@ -55,7 +59,10 @@ public class JmxConnectorRegistryCreator {
                                 res = conn;
                             }
                             res.connect();
+                            log.infof("Connected to JMX Service URL: %s", url);
                         } catch (IOException ex) {
+                            //remove conn from connectors in case something goes wrong. The connection will be established on-demand
+                            connectors.remove(url, res);
                             throw new RuntimeException("Could not instantiate JMX connector for " + url, ex);
                         }
                     }
