@@ -1143,7 +1143,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         throw new IdentityBrokerException("Identity Provider [" + alias + "] not found.");
     }
 
-    private static IdentityProviderFactory getIdentityProviderFactory(KeycloakSession session, IdentityProviderModel model) {
+    public static IdentityProviderFactory getIdentityProviderFactory(KeycloakSession session, IdentityProviderModel model) {
         Map<String, IdentityProviderFactory> availableProviders = new HashMap<String, IdentityProviderFactory>();
         List<ProviderFactory> allProviders = new ArrayList<ProviderFactory>();
 

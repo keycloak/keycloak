@@ -149,11 +149,18 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
     @Override
     public Response exchangeFromToken(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject, MultivaluedMap<String, String> params) {
+        // check to see if we have a token exchange in session
+        // in other words check to see if this session was created by an external exchange
+        Response tokenResponse = hasExternalExchangeToken(tokenUserSession, params);
+        if (tokenResponse != null) return tokenResponse;
+
+        // going further we only support access token type?  Why?
         String requestedType = params.getFirst(OAuth2Constants.REQUESTED_TOKEN_TYPE);
         if (requestedType != null && !requestedType.equals(OAuth2Constants.ACCESS_TOKEN_TYPE)) {
             return exchangeUnsupportedRequiredType();
         }
         if (!getConfig().isStoreToken()) {
+            // if token isn't stored, we need to see if this session has been linked
             String brokerId = tokenUserSession.getNote(Details.IDENTITY_PROVIDER);
             if (brokerId == null || !brokerId.equals(getConfig().getAlias())) {
                 return exchangeNotLinkedNoStore(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
@@ -162,6 +169,50 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         } else {
             return exchangeStoredToken(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
         }
+    }
+
+    /**
+     * check to see if we have a token exchange in session
+     * in other words check to see if this session was created by an external exchange
+     * @param tokenUserSession
+     * @param params
+     * @return
+     */
+    protected Response hasExternalExchangeToken(UserSessionModel tokenUserSession, MultivaluedMap<String, String> params) {
+        if (getConfig().getAlias().equals(tokenUserSession.getNote(OIDCIdentityProvider.EXCHANGE_PROVIDER))) {
+
+            String requestedType = params.getFirst(OAuth2Constants.REQUESTED_TOKEN_TYPE);
+            if ((requestedType == null || requestedType.equals(OAuth2Constants.ACCESS_TOKEN_TYPE))) {
+                String accessToken = tokenUserSession.getNote(FEDERATED_ACCESS_TOKEN);
+                if (accessToken != null) {
+                    AccessTokenResponse tokenResponse = new AccessTokenResponse();
+                    tokenResponse.setToken(accessToken);
+                    tokenResponse.setIdToken(null);
+                    tokenResponse.setRefreshToken(null);
+                    tokenResponse.setRefreshExpiresIn(0);
+                    tokenResponse.setExpiresIn(0);
+                    tokenResponse.getOtherClaims().clear();
+                    tokenResponse.getOtherClaims().put(OAuth2Constants.ISSUED_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE);
+                    return Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE).build();
+                }
+            } else if (OAuth2Constants.ID_TOKEN_TYPE.equals(requestedType)) {
+                String idToken = tokenUserSession.getNote(OIDCIdentityProvider.FEDERATED_ID_TOKEN);
+                if (idToken != null) {
+                    AccessTokenResponse tokenResponse = new AccessTokenResponse();
+                    tokenResponse.setToken(null);
+                    tokenResponse.setIdToken(idToken);
+                    tokenResponse.setRefreshToken(null);
+                    tokenResponse.setRefreshExpiresIn(0);
+                    tokenResponse.setExpiresIn(0);
+                    tokenResponse.getOtherClaims().clear();
+                    tokenResponse.getOtherClaims().put(OAuth2Constants.ISSUED_TOKEN_TYPE, OAuth2Constants.ID_TOKEN_TYPE);
+                    return Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE).build();
+                }
+
+            }
+
+        }
+        return null;
     }
 
     protected Response exchangeStoredToken(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {

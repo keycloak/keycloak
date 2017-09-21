@@ -23,9 +23,16 @@ import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
+import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
+import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
+import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.broker.provider.ExchangeExternalToken;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.ExchangeTokenToIdentityProviderToken;
+import org.keycloak.broker.provider.IdentityProviderFactory;
+import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.constants.AdapterConstants;
@@ -36,8 +43,12 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
+import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -47,20 +58,26 @@ import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
+import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.IdentityBrokerService;
+import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
+import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
+import org.keycloak.utils.ProfileHelper;
 
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
@@ -71,8 +88,11 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.net.URI;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.security.MessageDigest;
@@ -567,7 +587,9 @@ public class TokenEndpoint {
     }
 
     public Response tokenExchange() {
-        event.detail(Details.AUTH_METHOD, "oauth_credentials");
+        ProfileHelper.requireFeature(Profile.Feature.TOKEN_EXCHANGE);
+
+        event.detail(Details.AUTH_METHOD, "token_exchange");
         event.client(client);
 
         UserModel tokenUser = null;
@@ -576,13 +598,20 @@ public class TokenEndpoint {
 
         String subjectToken = formParams.getFirst(OAuth2Constants.SUBJECT_TOKEN);
         if (subjectToken != null) {
+            String subjectIssuer = formParams.getFirst(OAuth2Constants.SUBJECT_ISSUER);
+            String realmIssuerUrl = Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName());
+            if (subjectIssuer != null && !realmIssuerUrl.equals(subjectIssuer)) {
+                event.detail(OAuth2Constants.SUBJECT_ISSUER, subjectIssuer);
+                return exchangeExternalToken();
+
+            }
+
             String subjectTokenType = formParams.getFirst(OAuth2Constants.SUBJECT_TOKEN_TYPE);
             if (subjectTokenType != null && !subjectTokenType.equals(OAuth2Constants.ACCESS_TOKEN_TYPE)) {
                 event.error(Errors.INVALID_TOKEN);
                 throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Invalid token type, must be access token", Response.Status.BAD_REQUEST);
 
             }
-
 
             AuthenticationManager.AuthResult authResult = AuthenticationManager.verifyIdentityToken(session, realm, uriInfo, clientConnection, true, true, false, subjectToken, headers);
             if (authResult == null) {
@@ -688,7 +717,8 @@ public class TokenEndpoint {
         if (audience != null) {
             targetClient = realm.getClientByClientId(audience);
         }
-       if (targetClient.isConsentRequired()) {
+
+        if (targetClient.isConsentRequired()) {
             event.error(Errors.CONSENT_DENIED);
             throw new ErrorResponseException(OAuthErrorException.INVALID_CLIENT, "Client requires user consent", Response.Status.BAD_REQUEST);
         }
@@ -734,6 +764,143 @@ public class TokenEndpoint {
         event.success();
 
         return Cors.add(request, Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).auth().allowedOrigins(uriInfo, client).allowedMethods("POST").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
+    }
+
+    public Response exchangeExternalToken() {
+        BrokeredIdentityContext context = null;
+
+        for (IdentityProviderModel idpModel : realm.getIdentityProviders()) {
+            IdentityProviderFactory factory = IdentityBrokerService.getIdentityProviderFactory(session, idpModel);
+            IdentityProvider idp = factory.create(session, idpModel);
+            if (idp instanceof ExchangeExternalToken) {
+                context = ((ExchangeExternalToken)idp).exchangeExternal(event, formParams);
+                break;
+            }
+        }
+        if (context == null) {
+            event.error(Errors.INVALID_ISSUER);
+            throw new ErrorResponseException(Errors.INVALID_ISSUER, "Invalid " + OAuth2Constants.SUBJECT_ISSUER + " parameter", Response.Status.BAD_REQUEST);
+        }
+        if (!AdminPermissions.management(session, realm).idps().canExchangeTo(client, context.getIdpConfig())) {
+            logger.debug("Client not allowed to exchange for linked token");
+            event.error(Errors.NOT_ALLOWED);
+            throw new ErrorResponseException(OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);
+        }
+
+        UserModel user = importUserFromExternalIdentity(context);
+
+        String sessionId = KeycloakModelUtils.generateId();
+        UserSessionModel userSession = session.sessions().createUserSession(sessionId, realm, user, user.getUsername(), clientConnection.getRemoteAddr(), "external-exchange", false, null, null);
+        ((ExchangeExternalToken)context.getIdp()).exchangeExternalComplete(userSession, context, formParams);
+        return exchangeClientToClient(user, userSession);
+
+
+    }
+
+    protected UserModel importUserFromExternalIdentity(BrokeredIdentityContext context) {
+        IdentityProviderModel identityProviderConfig = context.getIdpConfig();
+
+        String providerId = identityProviderConfig.getAlias();
+
+        // do we need this?
+        //AuthenticationSessionModel authenticationSession = clientCode.getClientSession();
+        //context.setAuthenticationSession(authenticationSession);
+        //session.getContext().setClient(authenticationSession.getClient());
+
+        context.getIdp().preprocessFederatedIdentity(session, realm, context);
+        Set<IdentityProviderMapperModel> mappers = realm.getIdentityProviderMappersByAlias(context.getIdpConfig().getAlias());
+        if (mappers != null) {
+            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+            for (IdentityProviderMapperModel mapper : mappers) {
+                IdentityProviderMapper target = (IdentityProviderMapper)sessionFactory.getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
+                target.preprocessFederatedIdentity(session, realm, mapper, context);
+            }
+        }
+
+        FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(providerId, context.getId(),
+                context.getUsername(), context.getToken());
+
+        UserModel user = this.session.users().getUserByFederatedIdentity(federatedIdentityModel, realm);
+
+        if (user == null) {
+
+            logger.debugf("Federated user not found for provider '%s' and broker username '%s'.", providerId, context.getUsername());
+
+            String username = context.getModelUsername();
+            if (username == null) {
+                if (this.realm.isRegistrationEmailAsUsername() && !Validation.isBlank(context.getEmail())) {
+                    username = context.getEmail();
+                } else if (context.getUsername() == null) {
+                    username = context.getIdpConfig().getAlias() + "." + context.getId();
+                } else {
+                    username = context.getUsername();
+                }
+            }
+            username = username.trim();
+            context.setModelUsername(username);
+            if (context.getEmail() != null && !realm.isDuplicateEmailsAllowed()) {
+                UserModel existingUser = session.users().getUserByEmail(context.getEmail(), realm);
+                if (existingUser != null) {
+                    event.error(Errors.FEDERATED_IDENTITY_EXISTS);
+                    throw new ErrorResponseException(Errors.INVALID_TOKEN, "User already exists", Response.Status.BAD_REQUEST);
+                }
+            }
+
+            UserModel existingUser = session.users().getUserByUsername(username, realm);
+            if (existingUser != null) {
+                event.error(Errors.FEDERATED_IDENTITY_EXISTS);
+                throw new ErrorResponseException(Errors.INVALID_TOKEN, "User already exists", Response.Status.BAD_REQUEST);
+            }
+
+            // don't allow user that already exists
+            // firstBroker login
+
+            user = session.users().addUser(realm, username);
+            user.setEnabled(true);
+            user.setEmail(context.getEmail());
+            user.setFirstName(context.getFirstName());
+            user.setLastName(context.getLastName());
+
+
+            federatedIdentityModel = new FederatedIdentityModel(context.getIdpConfig().getAlias(), context.getId(),
+                    context.getUsername(), context.getToken());
+            session.users().addFederatedIdentity(realm, user, federatedIdentityModel);
+
+            context.getIdp().importNewUser(session, realm, user, context);
+            if (mappers != null) {
+                KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+                for (IdentityProviderMapperModel mapper : mappers) {
+                    IdentityProviderMapper target = (IdentityProviderMapper)sessionFactory.getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
+                    target.importNewUser(session, realm, user, mapper, context);
+                }
+            }
+
+            if (context.getIdpConfig().isTrustEmail() && !Validation.isBlank(user.getEmail())) {
+                logger.debugf("Email verified automatically after registration of user '%s' through Identity provider '%s' ", user.getUsername(), context.getIdpConfig().getAlias());
+                user.setEmailVerified(true);
+            }
+        } else {
+            if (!user.isEnabled()) {
+                event.error(Errors.USER_DISABLED);
+                throw new ErrorResponseException(Errors.INVALID_TOKEN, "Invalid Token", Response.Status.BAD_REQUEST);
+            }
+            if (realm.isBruteForceProtected()) {
+                if (session.getProvider(BruteForceProtector.class).isTemporarilyDisabled(session, realm, user)) {
+                    event.error(Errors.USER_TEMPORARILY_DISABLED);
+                    throw new ErrorResponseException(Errors.INVALID_TOKEN, "Invalid Token", Response.Status.BAD_REQUEST);
+                }
+            }
+
+            context.getIdp().updateBrokeredUser(session, realm, user, context);
+            if (mappers != null) {
+                KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+                for (IdentityProviderMapperModel mapper : mappers) {
+                    IdentityProviderMapper target = (IdentityProviderMapper)sessionFactory.getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
+                    target.updateBrokeredUser(session, realm, user, mapper, context);
+                }
+            }
+        }
+        return user;
     }
 
 
