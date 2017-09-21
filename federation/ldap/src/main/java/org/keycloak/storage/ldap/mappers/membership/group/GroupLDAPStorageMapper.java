@@ -175,7 +175,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         // Now we have list of LDAP groups. Let's form the tree (if needed)
         if (config.isPreserveGroupsInheritance()) {
             try {
-                List<GroupTreeResolver.GroupTreeEntry> groupTrees = new GroupTreeResolver().resolveGroupTree(ldapGroupsRep);
+                List<GroupTreeResolver.GroupTreeEntry> groupTrees = new GroupTreeResolver().resolveGroupTree(ldapGroupsRep, config.isIgnoreMissingGroups());
 
                 updateKeycloakGroupTree(realm, groupTrees, ldapGroupsMap, syncResult);
             } catch (GroupTreeResolver.GroupTreeResolveException gre) {

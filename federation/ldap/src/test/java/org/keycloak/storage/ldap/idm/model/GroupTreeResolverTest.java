@@ -41,7 +41,7 @@ public class GroupTreeResolverTest {
         List<GroupTreeResolver.Group> groups = Arrays.asList(group1, group2, group3, group4, group5, group6, group7);
 
         GroupTreeResolver resolver = new GroupTreeResolver();
-        List<GroupTreeResolver.GroupTreeEntry> groupTree = resolver.resolveGroupTree(groups);
+        List<GroupTreeResolver.GroupTreeEntry> groupTree = resolver.resolveGroupTree(groups, false);
         Assert.assertEquals(1, groupTree.size());
         Assert.assertEquals("{ group1 -> [ { group2 -> [ { group4 -> [  ]}{ group5 -> [  ]} ]}{ group3 -> [ { group6 -> [ { group7 -> [  ]} ]} ]} ]}", groupTree.get(0).toString());
     }
@@ -60,7 +60,7 @@ public class GroupTreeResolverTest {
         List<GroupTreeResolver.Group> groups = Arrays.asList(group1, group2, group3, group4, group5, group6, group7, group8, group9);
 
         GroupTreeResolver resolver = new GroupTreeResolver();
-        List<GroupTreeResolver.GroupTreeEntry> groupTree = resolver.resolveGroupTree(groups);
+        List<GroupTreeResolver.GroupTreeEntry> groupTree = resolver.resolveGroupTree(groups, false);
 
         Assert.assertEquals(2, groupTree.size());
         Assert.assertEquals("{ group3 -> [ { group2 -> [  ]} ]}", groupTree.get(0).toString());
@@ -81,7 +81,7 @@ public class GroupTreeResolverTest {
 
         GroupTreeResolver resolver = new GroupTreeResolver();
         try {
-            resolver.resolveGroupTree(groups);
+            resolver.resolveGroupTree(groups, false);
             Assert.fail("Exception expected because of recursion");
         } catch (GroupTreeResolver.GroupTreeResolveException gre) {
             Assert.assertTrue(gre.getMessage().startsWith("Recursion detected"));
@@ -99,7 +99,7 @@ public class GroupTreeResolverTest {
 
         GroupTreeResolver resolver = new GroupTreeResolver();
         try {
-            resolver.resolveGroupTree(groups);
+            resolver.resolveGroupTree(groups, false);
             Assert.fail("Exception expected because of some groups have multiple parents");
         } catch (GroupTreeResolver.GroupTreeResolveException gre) {
             Assert.assertTrue(gre.getMessage().contains("detected to have multiple parents"));
@@ -108,7 +108,7 @@ public class GroupTreeResolverTest {
 
 
     @Test
-    public void testGroupResolvingMissingGroup() {
+    public void testGroupResolvingMissingGroup() throws GroupTreeResolver.GroupTreeResolveException {
         GroupTreeResolver.Group group1 = new GroupTreeResolver.Group("group1", "group2");
         GroupTreeResolver.Group group2 = new GroupTreeResolver.Group("group2", "group3");
         GroupTreeResolver.Group group4 = new GroupTreeResolver.Group("group4");
@@ -116,10 +116,16 @@ public class GroupTreeResolverTest {
 
         GroupTreeResolver resolver = new GroupTreeResolver();
         try {
-            resolver.resolveGroupTree(groups);
+            resolver.resolveGroupTree(groups, false);
             Assert.fail("Exception expected because of missing referenced group");
         } catch (GroupTreeResolver.GroupTreeResolveException gre) {
             Assert.assertEquals("Group 'group3' referenced as member of group 'group2' doesn't exists", gre.getMessage());
         }
+
+        List<GroupTreeResolver.GroupTreeEntry> groupTree = resolver.resolveGroupTree(groups, true);
+
+        Assert.assertEquals(2, groupTree.size());
+        Assert.assertEquals("{ group1 -> [ { group2 -> [  ]} ]}", groupTree.get(0).toString());
+        Assert.assertEquals("{ group4 -> [  ]}", groupTree.get(1).toString());
     }
 }

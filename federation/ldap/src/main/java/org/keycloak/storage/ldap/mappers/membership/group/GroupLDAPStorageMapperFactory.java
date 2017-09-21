@@ -114,6 +114,12 @@ public class GroupLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFact
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
                 .defaultValue("true")
                 .add()
+                .property().name(GroupMapperConfig.IGNORE_MISSING_GROUPS)
+                .label("Ignore Missing Groups")
+                .helpText("Ignore missing groups in the group hierarchy")
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .defaultValue("false")
+                .add()
                 .property().name(GroupMapperConfig.MEMBERSHIP_LDAP_ATTRIBUTE)
                 .label("Membership LDAP Attribute")
                 .helpText("Name of LDAP attribute on group, which is used for membership mappings. Usually it will be 'member' ." +
