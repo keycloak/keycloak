@@ -35,11 +35,11 @@ import java.util.Set;
 public class Profile {
 
     public enum Feature {
-        AUTHORIZATION, IMPERSONATION, SCRIPTS, DOCKER, ACCOUNT2
+        AUTHORIZATION, IMPERSONATION, SCRIPTS, DOCKER, ACCOUNT2, TOKEN_EXCHANGE
     }
 
     private enum ProfileValue {
-        PRODUCT(Feature.AUTHORIZATION, Feature.SCRIPTS, Feature.DOCKER, Feature.ACCOUNT2),
+        PRODUCT(Feature.AUTHORIZATION, Feature.SCRIPTS, Feature.DOCKER, Feature.ACCOUNT2, Feature.TOKEN_EXCHANGE),
         PREVIEW(Feature.ACCOUNT2),
         COMMUNITY(Feature.DOCKER, Feature.ACCOUNT2);
 

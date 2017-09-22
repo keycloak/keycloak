@@ -17,8 +17,7 @@
 package org.keycloak.testsuite.adapter.undertow.servlet;
 
 import org.junit.Test;
-import org.keycloak.testsuite.adapter.servlet.AbstractClientInitiatedAccountLinkTest;
-import org.keycloak.testsuite.adapter.servlet.AbstractLinkAndExchangeTest;
+import org.keycloak.testsuite.adapter.servlet.AbstractBrokerLinkAndTokenExchangeTest;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 
 /**
@@ -26,7 +25,7 @@ import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
  */
 @AppServerContainer("auth-server-undertow")
-public class UndertowLinkAndExchangeTest extends AbstractLinkAndExchangeTest {
+public class UndertowBrokerLinkAndTokenExchangeTest extends AbstractBrokerLinkAndTokenExchangeTest {
 
     //@Test
     public void testUi() throws Exception {
