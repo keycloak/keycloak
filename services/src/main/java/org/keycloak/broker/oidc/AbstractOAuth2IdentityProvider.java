@@ -148,26 +148,30 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     @Override
-    public Response exchangeFromToken(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject, MultivaluedMap<String, String> params) {
+    public Response exchangeFromToken(UriInfo uriInfo, EventBuilder event, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject, MultivaluedMap<String, String> params) {
         // check to see if we have a token exchange in session
         // in other words check to see if this session was created by an external exchange
-        Response tokenResponse = hasExternalExchangeToken(tokenUserSession, params);
+        Response tokenResponse = hasExternalExchangeToken(event, tokenUserSession, params);
         if (tokenResponse != null) return tokenResponse;
 
         // going further we only support access token type?  Why?
         String requestedType = params.getFirst(OAuth2Constants.REQUESTED_TOKEN_TYPE);
         if (requestedType != null && !requestedType.equals(OAuth2Constants.ACCESS_TOKEN_TYPE)) {
+            event.detail(Details.REASON, "requested_token_type unsupported");
+            event.error(Errors.INVALID_REQUEST);
             return exchangeUnsupportedRequiredType();
         }
         if (!getConfig().isStoreToken()) {
             // if token isn't stored, we need to see if this session has been linked
             String brokerId = tokenUserSession.getNote(Details.IDENTITY_PROVIDER);
             if (brokerId == null || !brokerId.equals(getConfig().getAlias())) {
+                event.detail(Details.REASON, "requested_issuer has not linked");
+                event.error(Errors.INVALID_REQUEST);
                 return exchangeNotLinkedNoStore(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
             }
-            return exchangeSessionToken(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
+            return exchangeSessionToken(uriInfo, event, authorizedClient, tokenUserSession, tokenSubject);
         } else {
-            return exchangeStoredToken(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
+            return exchangeStoredToken(uriInfo, event, authorizedClient, tokenUserSession, tokenSubject);
         }
     }
 
@@ -178,7 +182,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
      * @param params
      * @return
      */
-    protected Response hasExternalExchangeToken(UserSessionModel tokenUserSession, MultivaluedMap<String, String> params) {
+    protected Response hasExternalExchangeToken(EventBuilder event, UserSessionModel tokenUserSession, MultivaluedMap<String, String> params) {
         if (getConfig().getAlias().equals(tokenUserSession.getNote(OIDCIdentityProvider.EXCHANGE_PROVIDER))) {
 
             String requestedType = params.getFirst(OAuth2Constants.REQUESTED_TOKEN_TYPE);
@@ -193,6 +197,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                     tokenResponse.setExpiresIn(0);
                     tokenResponse.getOtherClaims().clear();
                     tokenResponse.getOtherClaims().put(OAuth2Constants.ISSUED_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE);
+                    event.success();
                     return Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE).build();
                 }
             } else if (OAuth2Constants.ID_TOKEN_TYPE.equals(requestedType)) {
@@ -206,6 +211,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                     tokenResponse.setExpiresIn(0);
                     tokenResponse.getOtherClaims().clear();
                     tokenResponse.getOtherClaims().put(OAuth2Constants.ISSUED_TOKEN_TYPE, OAuth2Constants.ID_TOKEN_TYPE);
+                    event.success();
                     return Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE).build();
                 }
 
@@ -215,15 +221,19 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         return null;
     }
 
-    protected Response exchangeStoredToken(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
+    protected Response exchangeStoredToken(UriInfo uriInfo, EventBuilder event, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
         FederatedIdentityModel model = session.users().getFederatedIdentity(tokenSubject, getConfig().getAlias(), authorizedClient.getRealm());
         if (model == null || model.getToken() == null) {
+            event.detail(Details.REASON, "requested_issuer is not linked");
+            event.error(Errors.INVALID_TOKEN);
             return exchangeNotLinked(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
         }
         String accessToken = extractTokenFromResponse(model.getToken(), getAccessTokenResponseParameter());
         if (accessToken == null) {
             model.setToken(null);
             session.users().updateFederatedIdentity(authorizedClient.getRealm(), tokenSubject, model);
+            event.detail(Details.REASON, "requested_issuer token expired");
+            event.error(Errors.INVALID_TOKEN);
             return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
         }
         AccessTokenResponse tokenResponse = new AccessTokenResponse();
@@ -234,12 +244,15 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         tokenResponse.getOtherClaims().clear();
         tokenResponse.getOtherClaims().put(OAuth2Constants.ISSUED_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE);
         tokenResponse.getOtherClaims().put(ACCOUNT_LINK_URL, getLinkingUrl(uriInfo, authorizedClient, tokenUserSession));
+        event.success();
         return Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE).build();
     }
 
-    protected Response exchangeSessionToken(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
+    protected Response exchangeSessionToken(UriInfo uriInfo, EventBuilder event, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
         String accessToken = tokenUserSession.getNote(FEDERATED_ACCESS_TOKEN);
         if (accessToken == null) {
+            event.detail(Details.REASON, "requested_issuer is not linked");
+            event.error(Errors.INVALID_TOKEN);
             return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
         }
         AccessTokenResponse tokenResponse = new AccessTokenResponse();
@@ -250,6 +263,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         tokenResponse.getOtherClaims().clear();
         tokenResponse.getOtherClaims().put(OAuth2Constants.ISSUED_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE);
         tokenResponse.getOtherClaims().put(ACCOUNT_LINK_URL, getLinkingUrl(uriInfo, authorizedClient, tokenUserSession));
+        event.success();
         return Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE).build();
     }
 

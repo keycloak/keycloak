@@ -451,6 +451,8 @@ public abstract class AbstractBrokerLinkAndTokenExchangeTest extends AbstractSer
     @Test
     public void testExternalExchange() throws Exception {
 
+        RealmResource childRealm = adminClient.realms().realm(CHILD_IDP);
+
         String accessToken = oauth.doGrantAccessTokenRequest(PARENT_IDP, PARENT2_USERNAME, "password", null, PARENT_CLIENT, "password").getAccessToken();
         Assert.assertEquals(0, adminClient.realm(CHILD_IDP).getClientSessionStats().size());
 
@@ -483,6 +485,10 @@ public abstract class AbstractBrokerLinkAndTokenExchangeTest extends AbstractSer
         rep.getConfig().put(OIDCIdentityProviderConfig.USE_JWKS_URL, String.valueOf(true));
         rep.getConfig().put(OIDCIdentityProviderConfig.JWKS_URL, parentJwksUrl());
         adminClient.realm(CHILD_IDP).identityProviders().get(PARENT_IDP).update(rep);
+
+        String exchangedUserId = null;
+        String exchangedUsername = null;
+
         {
             // valid exchange
             Response response = exchangeUrl.request()
@@ -502,11 +508,11 @@ public abstract class AbstractBrokerLinkAndTokenExchangeTest extends AbstractSer
             AccessToken token = jws.readJsonContent(AccessToken.class);
             response.close();
 
-            String childUserId = token.getSubject();
-            String username = token.getPreferredUsername();
+            exchangedUserId = token.getSubject();
+            exchangedUsername = token.getPreferredUsername();
 
-            System.out.println("childUserId: " + childUserId);
-            System.out.println("username: " + username);
+            System.out.println("exchangedUserId: " + exchangedUserId);
+            System.out.println("exchangedUsername: " + exchangedUsername);
 
 
             // test that we can exchange back to external token
@@ -537,13 +543,54 @@ public abstract class AbstractBrokerLinkAndTokenExchangeTest extends AbstractSer
             Assert.assertEquals(0, adminClient.realm(CHILD_IDP).getClientSessionStats().size());
 
 
-            RealmResource realm = adminClient.realms().realm(CHILD_IDP);
-            List<FederatedIdentityRepresentation> links = realm.users().get(childUserId).getFederatedIdentity();
+            List<FederatedIdentityRepresentation> links = childRealm.users().get(exchangedUserId).getFederatedIdentity();
             Assert.assertEquals(1, links.size());
-            realm.users().get(childUserId).remove();
         }
         {
-            // unauthorized client
+            // check that we can request an exchange again and that the previously linked user is obtained
+            Response response = exchangeUrl.request()
+                    .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader(ClientApp.DEPLOYMENT_NAME, "password"))
+                    .post(Entity.form(
+                            new Form()
+                                    .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
+                                    .param(OAuth2Constants.SUBJECT_TOKEN, accessToken)
+                                    .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.JWT_ACCESS_TOKEN_TYPE)
+                                    .param(OAuth2Constants.SUBJECT_ISSUER, PARENT_IDP)
+
+                    ));
+            Assert.assertEquals(200, response.getStatus());
+            AccessTokenResponse tokenResponse = response.readEntity(AccessTokenResponse.class);
+            String exchangedAccessToken = tokenResponse.getToken();
+            JWSInput jws = new JWSInput(tokenResponse.getToken());
+            AccessToken token = jws.readJsonContent(AccessToken.class);
+            response.close();
+
+            String exchanged2UserId = token.getSubject();
+            String exchanged2Username = token.getPreferredUsername();
+
+            // assert that we get the same linked account as was previously imported
+
+            Assert.assertEquals(exchangedUserId, exchanged2UserId);
+            Assert.assertEquals(exchangedUsername, exchanged2Username);
+
+            // test logout
+            response = childLogoutWebTarget(httpClient)
+                    .queryParam("id_token_hint", exchangedAccessToken)
+                    .request()
+                    .get();
+            response.close();
+
+            Assert.assertEquals(0, adminClient.realm(CHILD_IDP).getClientSessionStats().size());
+
+
+            List<FederatedIdentityRepresentation> links = childRealm.users().get(exchangedUserId).getFederatedIdentity();
+            Assert.assertEquals(1, links.size());
+        }
+        // cleanup  remove the user
+        childRealm.users().get(exchangedUserId).remove();
+
+        {
+            // test unauthorized client gets 403
             Response response = exchangeUrl.request()
                     .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader(UNAUTHORIZED_CHILD_CLIENT, "password"))
                     .post(Entity.form(
