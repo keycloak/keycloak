@@ -67,6 +67,7 @@ import static org.keycloak.testsuite.util.ProtocolMapperUtil.createClaimMapper;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createHardcodedClaim;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createHardcodedRole;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createRoleNameMapper;
+import static org.keycloak.testsuite.util.ProtocolMapperUtil.createScriptMapper;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -146,6 +147,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             app.getProtocolMappers().createMapper(createHardcodedRole("hard-realm", "hardcoded")).close();
             app.getProtocolMappers().createMapper(createHardcodedRole("hard-app", "app.hardcoded")).close();
             app.getProtocolMappers().createMapper(createRoleNameMapper("rename-app-role", "test-app.customer-user", "realm-user")).close();
+            app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper","computed-via-script", "computed-via-script", "String", true, true, "'hello_' + user.username")).close();
         }
 
         {
@@ -199,6 +201,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             Assert.assertFalse(accessToken.getResourceAccess("test-app").getRoles().contains("customer-user"));
             assertTrue(accessToken.getResourceAccess("app").getRoles().contains("hardcoded"));
 
+            assertEquals("hello_test-user@localhost", accessToken.getOtherClaims().get("computed-via-script"));
             oauth.openLogout();
         }
 
@@ -217,6 +220,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
                         || model.getName().equals("rename-app-role")
                         || model.getName().equals("hard-realm")
                         || model.getName().equals("hard-app")
+                        || model.getName().equals("test-script-mapper")
                         ) {
                     app.getProtocolMappers().delete(model.getId());
                 }
