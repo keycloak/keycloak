@@ -26,6 +26,7 @@ import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.storage.StorageId;
@@ -190,6 +191,19 @@ public class PropertyFileUserStorageProvider implements
         // runtime automatically handles querying UserFederatedStorage
         return Collections.EMPTY_LIST;
     }
+    
+    @Override
+    public List<UserModel> getRoleMembers(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
+        // Not supported in federated storage
+        return Collections.EMPTY_LIST;
+    }
+
+    @Override
+    public List<UserModel> getRoleMembers(RealmModel realm, RoleModel role) {
+        // Not supported in federated storage
+        return Collections.EMPTY_LIST;
+    }
+
 
     @Override
     public List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm) {

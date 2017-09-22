@@ -1684,6 +1684,13 @@ module.factory('GroupMembership', function($resource) {
     });
 });
 
+module.factory('RoleMembership', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/roles/:role/users', {
+        realm : '@realm',
+        role : '@role'
+    });
+});
+
 
 module.factory('UserGroupMembership', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/users/:userId/groups', {

@@ -19,11 +19,15 @@ package org.keycloak.testsuite.admin.realm;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.RolesResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -33,6 +37,8 @@ import org.keycloak.testsuite.util.RoleBuilder;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
+
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -44,6 +50,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.keycloak.testsuite.Assert.assertNames;
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -59,9 +67,15 @@ public class RealmRolesTest extends AbstractAdminTest {
     public void before() {
         RoleRepresentation roleA = RoleBuilder.create().name("role-a").description("Role A").build();
         RoleRepresentation roleB = RoleBuilder.create().name("role-b").description("Role B").build();
+        //KEYCLOAK-2035
+        RoleRepresentation roleWithUsers = RoleBuilder.create().name("role-with-users").description("Role with users").build();
+        RoleRepresentation roleWithoutUsers = RoleBuilder.create().name("role-without-users").description("role-without-users").build();
         adminClient.realm(REALM_NAME).roles().create(roleA);
         adminClient.realm(REALM_NAME).roles().create(roleB);
+        adminClient.realm(REALM_NAME).roles().create(roleWithUsers);
+        adminClient.realm(REALM_NAME).roles().create(roleWithoutUsers);
 
+        
         ClientRepresentation clientRep = ClientBuilder.create().clientId("client-a").build();
         Response response = adminClient.realm(REALM_NAME).clients().create(clientRep);
         clientUuid = ApiUtil.getCreatedId(response);
@@ -78,18 +92,35 @@ public class RealmRolesTest extends AbstractAdminTest {
         for (RoleRepresentation r : adminClient.realm(REALM_NAME).clients().get(clientUuid).roles().list()) {
             ids.put(r.getName(), r.getId());
         }
+        
+        UserRepresentation userRep = new UserRepresentation();
+        userRep.setUsername("test-role-member");
+        userRep.setEmail("test-role-member@test-role-member.com");
+        userRep.setRequiredActions(Collections.<String>emptyList());
+        userRep.setEnabled(true);        
+        adminClient.realm(REALM_NAME).users().create(userRep);
 
         getCleanup().addRoleId(ids.get("role-a"));
         getCleanup().addRoleId(ids.get("role-b"));
         getCleanup().addRoleId(ids.get("role-c"));
+        getCleanup().addRoleId(ids.get("role-with-users"));
+        getCleanup().addRoleId(ids.get("role-without-users"));
+        getCleanup().addUserId(adminClient.realm(REALM_NAME).users().search(userRep.getUsername()).get(0).getId());
+        
 
         resource = adminClient.realm(REALM_NAME).roles();
 
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath("role-a"), roleA, ResourceType.REALM_ROLE);
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath("role-b"), roleB, ResourceType.REALM_ROLE);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath("role-with-users"), roleWithUsers, ResourceType.REALM_ROLE);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath("role-without-users"), roleWithoutUsers, ResourceType.REALM_ROLE);
 
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientResourcePath(clientUuid), clientRep, ResourceType.CLIENT);
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientUuid, "role-c"), roleC, ResourceType.CLIENT_ROLE);
+        
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userResourcePath(adminClient.realm(REALM_NAME).users().search(userRep.getUsername()).get(0).getId()), userRep, ResourceType.USER);
+        
+        
     }
 
     @Test
@@ -163,4 +194,68 @@ public class RealmRolesTest extends AbstractAdminTest {
         assertEquals(0, resource.get("role-a").getRoleComposites().size());
     }
 
+    /**
+     * KEYCLOAK-2035 Verifies that Users assigned to Role are being properly retrieved as members in API endpoint for role membership
+     */
+    @Test
+    public void testUsersInRole() {   
+        RoleResource role = resource.get("role-with-users");
+
+        List<UserRepresentation> users = adminClient.realm(REALM_NAME).users().search("test-role-member", null, null, null, null, null);
+        assertEquals(1, users.size());
+        UserResource user = adminClient.realm(REALM_NAME).users().get(users.get(0).getId());
+        UserRepresentation userRep = user.toRepresentation();
+
+        RoleResource roleResource = adminClient.realm(REALM_NAME).roles().get(role.toRepresentation().getName());        
+        List<RoleRepresentation> rolesToAdd = new LinkedList<>();
+        rolesToAdd.add(roleResource.toRepresentation());
+        adminClient.realm(REALM_NAME).users().get(userRep.getId()).roles().realmLevel().add(rolesToAdd);
+
+        roleResource = adminClient.realm(REALM_NAME).roles().get(role.toRepresentation().getName());  
+        roleResource.getRoleUserMembers();
+        //roleResource.getRoleUserMembers().stream().forEach((member) -> log.infof("Found user {}", member.getUsername()));
+        assertEquals(1, roleResource.getRoleUserMembers().size());
+
+    }
+    
+    /**
+     * KEYCLOAK-2035  Verifies that Role with no users assigned is being properly retrieved without members in API endpoint for role membership
+     */
+    @Test
+    public void testUsersNotInRole() {
+        RoleResource role = resource.get("role-without-users");                
+        
+        role = adminClient.realm(REALM_NAME).roles().get(role.toRepresentation().getName());
+        role.getRoleUserMembers();
+        assertEquals(0, role.getRoleUserMembers().size());
+        
+    }
+    
+    /**
+     * KEYCLOAK-2035 Verifies that Role Membership is ok after user removal
+     */
+    @Test
+    public void roleMembershipAfterUserRemoval() {    
+        RoleResource role = resource.get("role-with-users");
+
+        List<UserRepresentation> users = adminClient.realm(REALM_NAME).users().search("test-role-member", null, null, null, null, null);
+        assertEquals(1, users.size());
+        UserResource user = adminClient.realm(REALM_NAME).users().get(users.get(0).getId());
+        UserRepresentation userRep = user.toRepresentation();
+
+        RoleResource roleResource = adminClient.realm(REALM_NAME).roles().get(role.toRepresentation().getName());        
+        List<RoleRepresentation> rolesToAdd = new LinkedList<>();
+        rolesToAdd.add(roleResource.toRepresentation());
+        adminClient.realm(REALM_NAME).users().get(userRep.getId()).roles().realmLevel().add(rolesToAdd);
+
+        roleResource = adminClient.realm(REALM_NAME).roles().get(role.toRepresentation().getName());  
+        roleResource.getRoleUserMembers();
+        assertEquals(1, roleResource.getRoleUserMembers().size());
+
+        adminClient.realm(REALM_NAME).users().delete(userRep.getId());
+        roleResource.getRoleUserMembers();
+        assertEquals(0, roleResource.getRoleUserMembers().size());
+
+    }
+    
 }

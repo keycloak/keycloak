@@ -9,5 +9,7 @@
             <a href="#/realms/{{realm.realm}}/roles/{{role.id}}/permissions">{{:: 'authz-permissions' | translate}}</a>
             <kc-tooltip>{{:: 'manage-permissions-role.tooltip' | translate}}</kc-tooltip>
         </li>
+        <li ng-class="{active: path[4] == 'users'}" data-ng-show="access.manageRealm && access.manageAuthorization">
+        <a href="#/realms/{{realm.realm}}/roles/{{role.id}}/users">{{:: 'authz-users' | translate}}</a></li>
     </ul>
 </div>
