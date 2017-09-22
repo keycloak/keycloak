@@ -18,17 +18,19 @@
 package org.keycloak.protocol.oidc.mappers;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.Profile;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.ScriptModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.representations.IDToken;
+import org.keycloak.scripting.EvaluatableScriptAdapter;
+import org.keycloak.scripting.ScriptingProvider;
 
-import javax.script.Bindings;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
 import java.util.List;
 
 /**
@@ -59,7 +61,8 @@ public class ScriptBasedOIDCProtocolMapper extends AbstractOIDCProtocolMapper im
           " 'user' - the current user.\n" + //
           " 'realm' - the current realm.\n" + //
           " 'token' - the current token.\n" + //
-          " 'userSession' - the current userSession.\n" //
+          " 'userSession' - the current userSession.\n" + //
+          " 'keycloakSession' - the current keycloakSession.\n" //
       )
       .defaultValue("/**\n" + //
         " * Available variables: \n" + //
@@ -67,6 +70,7 @@ public class ScriptBasedOIDCProtocolMapper extends AbstractOIDCProtocolMapper im
         " * realm - the current realm\n" + //
         " * token - the current token\n" + //
         " * userSession - the current userSession\n" + //
+        " * keycloakSession - the current userSession\n" + //
         " */\n\n\n//insert your code here..." //
       )
       .add()
@@ -96,27 +100,33 @@ public class ScriptBasedOIDCProtocolMapper extends AbstractOIDCProtocolMapper im
 
   @Override
   public String getHelpText() {
-    return "Evaluates a javascript function to produce a token claim based on context information.";
+    return "Evaluates a JavaScript function to produce a token claim based on context information.";
   }
 
-  protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession) {
+  public boolean isSupported() {
+    return Profile.isFeatureEnabled(Profile.Feature.SCRIPTS);
+  }
+
+  protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession, KeycloakSession keycloakSession) {
 
     UserModel user = userSession.getUser();
-    String script = mappingModel.getConfig().get(SCRIPT);
+    String scriptSource = mappingModel.getConfig().get(SCRIPT);
     RealmModel realm = userSession.getRealm();
 
-    ScriptEngineManager engineManager = new ScriptEngineManager();
-    ScriptEngine scriptEngine = engineManager.getEngineByName("javascript");
+    ScriptingProvider scripting = keycloakSession.getProvider(ScriptingProvider.class);
+    ScriptModel scriptModel = scripting.createScript(realm.getId(), ScriptModel.TEXT_JAVASCRIPT, "token-mapper-script_" + mappingModel.getName(), scriptSource, null);
 
-    Bindings bindings = scriptEngine.createBindings();
-    bindings.put("user", user);
-    bindings.put("realm", realm);
-    bindings.put("token", token);
-    bindings.put("userSession", userSession);
+    EvaluatableScriptAdapter script = scripting.prepareEvaluatableScript(scriptModel);
 
     Object claimValue;
     try {
-      claimValue = scriptEngine.eval(script, bindings);
+      claimValue = script.eval((bindings) -> {
+        bindings.put("user", user);
+        bindings.put("realm", realm);
+        bindings.put("token", token);
+        bindings.put("userSession", userSession);
+        bindings.put("keycloakSession", keycloakSession);
+      });
     } catch (Exception ex) {
       LOGGER.error("Error during execution of ProtocolMapper script", ex);
       claimValue = null;
