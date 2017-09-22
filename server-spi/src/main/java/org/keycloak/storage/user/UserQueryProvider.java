@@ -21,6 +21,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -129,7 +130,7 @@ public interface UserQueryProvider {
      */
     default List<UserModel> getRoleMembers(RealmModel realm, RoleModel role)
     {
-        throw new UnsupportedOperationException();
+        return Collections.EMPTY_LIST;
     }
 
     /**
@@ -144,7 +145,7 @@ public interface UserQueryProvider {
      */
     default List<UserModel> getRoleMembers(RealmModel realm, RoleModel role, int firstResult, int maxResults)
     {
-        throw new UnsupportedOperationException();
+        return Collections.EMPTY_LIST;
     }
 
     /**

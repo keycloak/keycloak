@@ -206,7 +206,6 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
         return Collections.EMPTY_LIST;
     }
 
-
     @Override
     public List<UserModel> searchForUser(String search, RealmModel realm) {
         return getUsers(realm, 0, Integer.MAX_VALUE - 1);
