@@ -608,6 +608,7 @@ public class TokenEndpoint {
 
             String subjectTokenType = formParams.getFirst(OAuth2Constants.SUBJECT_TOKEN_TYPE);
             if (subjectTokenType != null && !subjectTokenType.equals(OAuth2Constants.ACCESS_TOKEN_TYPE)) {
+                event.detail(Details.REASON, "subject_token supports access tokens only");
                 event.error(Errors.INVALID_TOKEN);
                 throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Invalid token type, must be access token", Response.Status.BAD_REQUEST);
 
@@ -615,6 +616,7 @@ public class TokenEndpoint {
 
             AuthenticationManager.AuthResult authResult = AuthenticationManager.verifyIdentityToken(session, realm, uriInfo, clientConnection, true, true, false, subjectToken, headers);
             if (authResult == null) {
+                event.detail(Details.REASON, "subject_token validation failure");
                 event.error(Errors.INVALID_TOKEN);
                 throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Invalid token", Response.Status.BAD_REQUEST);
             }
@@ -634,7 +636,7 @@ public class TokenEndpoint {
 
             if (requestedUser == null) {
                 // We always returned access denied to avoid username fishing
-                logger.debug("Requested subject not found");
+                event.detail(Details.REASON, "requested_subject not found");
                 event.error(Errors.NOT_ALLOWED);
                 throw new ErrorResponseException(OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);
 
@@ -645,7 +647,7 @@ public class TokenEndpoint {
                 // for this case, the user represented by the token, must have permission to impersonate.
                 AdminAuth auth = new AdminAuth(realm, token, tokenUser, client);
                 if (!AdminPermissions.evaluator(session, realm, auth).users().canImpersonate(requestedUser)) {
-                    logger.debug("Token user not allowed to exchange for requested subject");
+                    event.detail(Details.REASON, "subject not allowed to impersonate");
                     event.error(Errors.NOT_ALLOWED);
                     throw new ErrorResponseException(OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);
                 }
@@ -654,13 +656,13 @@ public class TokenEndpoint {
                 // no token is being exchanged, this is a direct exchange.  Client must be authenticated, not public, and must be allowed
                 // to impersonate
                 if (client.isPublicClient()) {
-                    logger.debug("Public clients cannot exchange tokens");
+                    event.detail(Details.REASON, "public clients not allowed");
                     event.error(Errors.NOT_ALLOWED);
                     throw new ErrorResponseException(OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);
 
                 }
                 if (!AdminPermissions.management(session, realm).users().canClientImpersonate(client, requestedUser)) {
-                    logger.debug("Client not allowed to exchange for requested subject");
+                    event.detail(Details.REASON, "client not allowed to impersonate");
                     event.error(Errors.NOT_ALLOWED);
                     throw new ErrorResponseException(OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);
                 }
@@ -684,21 +686,23 @@ public class TokenEndpoint {
         event.detail(Details.REQUESTED_ISSUER, requestedIssuer);
         IdentityProviderModel providerModel = realm.getIdentityProviderByAlias(requestedIssuer);
         if (providerModel == null) {
+            event.detail(Details.REASON, "unknown requested_issuer");
             event.error(Errors.UNKNOWN_IDENTITY_PROVIDER);
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Invalid issuer", Response.Status.BAD_REQUEST);
         }
 
         IdentityProvider provider = IdentityBrokerService.getIdentityProvider(session, realm, requestedIssuer);
         if (!(provider instanceof ExchangeTokenToIdentityProviderToken)) {
+            event.detail(Details.REASON, "exchange unsupported by requested_issuer");
             event.error(Errors.UNKNOWN_IDENTITY_PROVIDER);
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Issuer does not support token exchange", Response.Status.BAD_REQUEST);
         }
         if (!AdminPermissions.management(session, realm).idps().canExchangeTo(client, providerModel)) {
-            logger.debug("Client not allowed to exchange for linked token");
+            event.detail(Details.REASON, "client not allowed to exchange for requested_issuer");
             event.error(Errors.NOT_ALLOWED);
             throw new ErrorResponseException(OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);
         }
-        Response response = ((ExchangeTokenToIdentityProviderToken)provider).exchangeFromToken(uriInfo, client, targetUserSession, targetUser, formParams);
+        Response response = ((ExchangeTokenToIdentityProviderToken)provider).exchangeFromToken(uriInfo, event, client, targetUserSession, targetUser, formParams);
         return Cors.add(request, Response.fromResponse(response)).auth().allowedOrigins(uriInfo, client).allowedMethods("POST").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
 
     }
@@ -708,8 +712,9 @@ public class TokenEndpoint {
         if (requestedTokenType == null) {
             requestedTokenType = OAuth2Constants.REFRESH_TOKEN_TYPE;
         } else if (!requestedTokenType.equals(OAuth2Constants.ACCESS_TOKEN_TYPE) && !requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)) {
+            event.detail(Details.REASON, "requested_token_type unsupported");
             event.error(Errors.INVALID_REQUEST);
-            throw new ErrorResponseException("unsupported_requested_token_type", "Unsupported requested token type", Response.Status.BAD_REQUEST);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "requested_token_type unsupported", Response.Status.BAD_REQUEST);
 
         }
         ClientModel targetClient = client;
@@ -719,12 +724,13 @@ public class TokenEndpoint {
         }
 
         if (targetClient.isConsentRequired()) {
+            event.detail(Details.REASON, "audience requires consent");
             event.error(Errors.CONSENT_DENIED);
             throw new ErrorResponseException(OAuthErrorException.INVALID_CLIENT, "Client requires user consent", Response.Status.BAD_REQUEST);
         }
 
         if (!targetClient.equals(client) && !AdminPermissions.management(session, realm).clients().canExchangeTo(client, targetClient)) {
-            logger.debug("Client does not have exchange rights for target audience");
+            event.detail(Details.REASON, "client not allowed to exchange to audience");
             event.error(Errors.NOT_ALLOWED);
             throw new ErrorResponseException(OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);
         }
@@ -782,7 +788,7 @@ public class TokenEndpoint {
             throw new ErrorResponseException(Errors.INVALID_ISSUER, "Invalid " + OAuth2Constants.SUBJECT_ISSUER + " parameter", Response.Status.BAD_REQUEST);
         }
         if (!AdminPermissions.management(session, realm).idps().canExchangeTo(client, context.getIdpConfig())) {
-            logger.debug("Client not allowed to exchange for linked token");
+            event.detail(Details.REASON, "client not allowed to exchange subject_issuer");
             event.error(Errors.NOT_ALLOWED);
             throw new ErrorResponseException(OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);
         }
@@ -852,8 +858,6 @@ public class TokenEndpoint {
                 throw new ErrorResponseException(Errors.INVALID_TOKEN, "User already exists", Response.Status.BAD_REQUEST);
             }
 
-            // don't allow user that already exists
-            // firstBroker login
 
             user = session.users().addUser(realm, username);
             user.setEnabled(true);
