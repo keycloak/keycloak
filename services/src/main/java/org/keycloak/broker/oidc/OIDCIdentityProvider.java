@@ -591,7 +591,8 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
             BrokeredIdentityContext context = extractIdentity(null, idTokenType ? null : subjectToken, parsedToken);
             if (context == null) {
-                logger.debug("Failed to extractIdentity() from id token.  Disabling User Info service might fix this");
+                event.detail(Details.REASON, "Failed to extract identity from token");
+                event.error(Errors.INVALID_TOKEN);
                 throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid token", Response.Status.BAD_REQUEST);
 
             }
