@@ -51,6 +51,10 @@ include::topics/policy/aggregated-policy.adoc[]
 
 include::topics/policy/client-policy.adoc[]
 
+include::topics/policy/group-policy.adoc[]
+
+include::topics/policy/group-policy-extend-children.adoc[]
+
 include::topics/policy/logic.adoc[]
 
 include::topics/policy/evaluation-api.adoc[]
