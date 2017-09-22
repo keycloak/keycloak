@@ -48,16 +48,16 @@ public class KeycloakRemoteStoreConfiguration extends RemoteStoreConfiguration {
 
 
     public String useConfigTemplateFromCache() {
-        return useConfigTemplateFromCache==null ? null : useConfigTemplateFromCache.get();
+        return useConfigTemplateFromCache.get();
     }
 
 
     public String remoteServers() {
-        return remoteServers==null ? null : remoteServers.get();
+        return remoteServers.get();
     }
 
 
     public Boolean sessionCache() {
-        return sessionCache==null ? false : sessionCache.get();
+        return sessionCache.get()==null ? false : sessionCache.get();
     }
 }
