@@ -24,11 +24,13 @@ import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
+import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 
+import javax.ws.rs.core.MultivaluedMap;
 import java.io.IOException;
 
 /**
@@ -97,6 +99,12 @@ public class GitLabIdentityProvider extends OIDCIdentityProvider  implements Soc
 		identity.setUsername(preferredUsername);
 		return identity;
 	}
+
+	@Override
+	public BrokeredIdentityContext exchangeExternal(EventBuilder event, MultivaluedMap<String, String> params) {
+		return null;
+	}
+
 
 
 
