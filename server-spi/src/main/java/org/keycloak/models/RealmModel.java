@@ -23,11 +23,7 @@ import org.keycloak.provider.ProviderEvent;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -147,11 +143,11 @@ public interface RealmModel extends RoleContainerModel {
     boolean isVerifyEmail();
 
     void setVerifyEmail(boolean verifyEmail);
-    
+
     boolean isLoginWithEmailAllowed();
 
     void setLoginWithEmailAllowed(boolean loginWithEmailAllowed);
-    
+
     boolean isDuplicateEmailsAllowed();
 
     void setDuplicateEmailsAllowed(boolean duplicateEmailsAllowed);
@@ -404,7 +400,11 @@ public interface RealmModel extends RoleContainerModel {
 
     GroupModel getGroupById(String id);
     List<GroupModel> getGroups();
+    Long getGroupsCount(Boolean onlyTopGroups);
+    Long getGroupsCountByNameContaining(String search);
     List<GroupModel> getTopLevelGroups();
+    List<GroupModel> getTopLevelGroups(Integer first, Integer max);
+    List<GroupModel> searchForGroupByName(String search, Integer first, Integer max);
     boolean removeGroup(GroupModel group);
     void moveGroup(GroupModel group, GroupModel toParent);
 

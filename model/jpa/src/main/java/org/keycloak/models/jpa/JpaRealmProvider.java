@@ -17,6 +17,8 @@
 
 package org.keycloak.models.jpa;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
+import org.apache.commons.codec.binary.StringUtils;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.util.JpaUtils;
@@ -40,12 +42,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -343,8 +340,27 @@ public class JpaRealmProvider implements RealmProvider {
 
         return ref.getGroups().stream()
                 .map(g -> session.realms().getGroupById(g.getId(), realm))
+                .sorted(Comparator.comparing(GroupModel::getName))
                 .collect(Collectors.collectingAndThen(
                         Collectors.toList(), Collections::unmodifiableList));
+    }
+
+    @Override
+    public Long getGroupsCount(RealmModel realm, Boolean onlyTopGroups) {
+        String query = "getGroupCount";
+        if(Objects.equals(onlyTopGroups, Boolean.TRUE)) {
+            query = "getTopLevelGroupCount";
+        }
+        Long count = em.createNamedQuery(query, Long.class)
+                .setParameter("realm", realm.getId())
+                .getSingleResult();
+
+        return count;
+    }
+
+    @Override
+    public Long getGroupsCountByNameContaining(RealmModel realm, String search) {
+        return (long) searchForGroupByName(realm, search, null, null).size();
     }
 
     @Override
@@ -354,8 +370,29 @@ public class JpaRealmProvider implements RealmProvider {
         return ref.getGroups().stream()
                 .filter(g -> g.getParent() == null)
                 .map(g -> session.realms().getGroupById(g.getId(), realm))
+                .sorted(Comparator.comparing(GroupModel::getName))
                 .collect(Collectors.collectingAndThen(
                         Collectors.toList(), Collections::unmodifiableList));
+    }
+
+    @Override
+    public List<GroupModel> getTopLevelGroups(RealmModel realm, Integer first, Integer max) {
+        List<String> groupIds =  em.createNamedQuery("getTopLevelGroupIds", String.class)
+                .setParameter("realm", realm.getId())
+                .setFirstResult(first)
+                    .setMaxResults(max)
+                    .getResultList();
+        List<GroupModel> list = new ArrayList<>();
+        if(Objects.nonNull(groupIds) && !groupIds.isEmpty()) {
+            for (String id : groupIds) {
+                GroupModel group = getGroupById(id, realm);
+                list.add(group);
+            }
+        }
+
+        list.sort(Comparator.comparing(GroupModel::getName));
+
+        return Collections.unmodifiableList(list);
     }
 
     @Override
@@ -548,6 +585,31 @@ public class JpaRealmProvider implements RealmProvider {
     }
 
     @Override
+    public List<GroupModel> searchForGroupByName(RealmModel realm, String search, Integer first, Integer max) {
+        TypedQuery<String> query = em.createNamedQuery("getGroupIdsByNameContaining", String.class)
+                .setParameter("realm", realm.getId())
+                .setParameter("search", search);
+        if(Objects.nonNull(first) && Objects.nonNull(max)) {
+            query= query.setFirstResult(first).setMaxResults(max);
+        }
+        List<String> groups =  query.getResultList();
+        if (Objects.isNull(groups)) return Collections.EMPTY_LIST;
+        List<GroupModel> list = new ArrayList<>();
+        for (String id : groups) {
+            GroupModel groupById = session.realms().getGroupById(id, realm);
+            while(Objects.nonNull(groupById.getParentId())) {
+                groupById = session.realms().getGroupById(groupById.getParentId(), realm);
+            }
+            if(!list.contains(groupById)) {
+                list.add(groupById);
+            }
+        }
+        list.sort(Comparator.comparing(GroupModel::getName));
+
+        return Collections.unmodifiableList(list);
+    }
+
+    @Override
     public ClientInitialAccessModel createClientInitialAccessModel(RealmModel realm, int expiration, int count) {
         RealmEntity realmEntity = em.find(RealmEntity.class, realm.getId());
 
@@ -595,7 +657,7 @@ public class JpaRealmProvider implements RealmProvider {
         List<ClientInitialAccessEntity> entities = query.getResultList();
 
         return entities.stream()
-                .map(entity -> entityToModel(entity))
+                .map(this::entityToModel)
                 .collect(Collectors.toList());
     }
 

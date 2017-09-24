@@ -15,7 +15,7 @@ module.factory('Loader', function($q) {
 			});
 			return delay.promise;
 		};
-	}
+	};
 	loader.query = function(service, id) {
 		return function() {
 			var i = id && id();
@@ -27,7 +27,7 @@ module.factory('Loader', function($q) {
 			});
 			return delay.promise;
 		};
-	}
+	};
 	return loader;
 });
 
@@ -490,7 +490,18 @@ module.factory('AuthenticationConfigLoader', function(Loader, AuthenticationConf
 module.factory('GroupListLoader', function(Loader, Groups, $route, $q) {
     return Loader.query(Groups, function() {
         return {
-            realm : $route.current.params.realm
+            realm : $route.current.params.realm,
+            first : 0,
+            max : 20
+        }
+    });
+});
+
+module.factory('GroupCountLoader', function(Loader, GroupsCount, $route, $q) {
+    return Loader.query(GroupsCount, function() {
+        return {
+            realm : $route.current.params.realm,
+            top : true
         }
     });
 });

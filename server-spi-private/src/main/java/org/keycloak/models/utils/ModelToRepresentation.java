@@ -17,17 +17,6 @@
 
 package org.keycloak.models.utils;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
@@ -42,59 +31,14 @@ import org.keycloak.credential.CredentialModel;
 import org.keycloak.events.Event;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AuthDetails;
-import org.keycloak.models.AuthenticatedClientSessionModel;
-import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.AuthenticationFlowModel;
-import org.keycloak.models.AuthenticatorConfigModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientTemplateModel;
-import org.keycloak.models.FederatedIdentityModel;
-import org.keycloak.models.GroupModel;
-import org.keycloak.models.IdentityProviderMapperModel;
-import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelException;
-import org.keycloak.models.OTPPolicy;
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RequiredActionProviderModel;
-import org.keycloak.models.RequiredCredentialModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserConsentModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.*;
 import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.representations.idm.AdminEventRepresentation;
-import org.keycloak.representations.idm.AuthDetailsRepresentation;
-import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
-import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
-import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ClientTemplateRepresentation;
-import org.keycloak.representations.idm.ComponentRepresentation;
-import org.keycloak.representations.idm.ConfigPropertyRepresentation;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.representations.idm.FederatedIdentityRepresentation;
-import org.keycloak.representations.idm.GroupRepresentation;
-import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.UserConsentRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.representations.idm.UserSessionRepresentation;
-import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
-import org.keycloak.representations.idm.authorization.PolicyRepresentation;
-import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
-import org.keycloak.representations.idm.authorization.ResourceRepresentation;
-import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
-import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.representations.idm.*;
+import org.keycloak.representations.idm.authorization.*;
 import org.keycloak.storage.StorageId;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -131,12 +75,7 @@ public class ModelToRepresentation {
             } else {
                 ClientModel client = (ClientModel)role.getContainer();
                 String clientId = client.getClientId();
-                List<String> currentClientRoles = clientRoleNames.get(clientId);
-                if (currentClientRoles == null) {
-                    currentClientRoles = new ArrayList<>();
-                    clientRoleNames.put(clientId, currentClientRoles);
-                }
-
+                List<String> currentClientRoles = clientRoleNames.computeIfAbsent(clientId, k -> new ArrayList<>());
                 currentClientRoles.add(role.getName());
             }
         }
@@ -147,10 +86,32 @@ public class ModelToRepresentation {
         return rep;
     }
 
+    public static List<GroupRepresentation> searchForGroupByName(RealmModel realm, String search, Integer first, Integer max) {
+        List<GroupRepresentation> result = new LinkedList<>();
+        List<GroupModel> groups = realm.searchForGroupByName(search, first, max);
+        if (Objects.isNull(groups)) return result;
+        for (GroupModel group : groups) {
+            GroupRepresentation rep = toGroupHierarchy(group, false);
+            result.add(rep);
+        }
+        return result;
+    }
+
+    public static List<GroupRepresentation> toGroupHierarchy(RealmModel realm, boolean full, Integer first, Integer max) {
+        List<GroupRepresentation> hierarchy = new LinkedList<>();
+        List<GroupModel> groups = realm.getTopLevelGroups(first, max);
+        if (Objects.isNull(groups)) return hierarchy;
+        for (GroupModel group : groups) {
+            GroupRepresentation rep = toGroupHierarchy(group, full);
+            hierarchy.add(rep);
+        }
+        return hierarchy;
+    }
+
     public static List<GroupRepresentation> toGroupHierarchy(RealmModel realm, boolean full) {
         List<GroupRepresentation> hierarchy = new LinkedList<>();
         List<GroupModel> groups = realm.getTopLevelGroups();
-        if (groups == null) return hierarchy;
+        if (Objects.isNull(groups)) return hierarchy;
         for (GroupModel group : groups) {
             GroupRepresentation rep = toGroupHierarchy(group, full);
             hierarchy.add(rep);
@@ -188,9 +149,7 @@ public class ModelToRepresentation {
 
         List<String> reqActions = new ArrayList<String>();
         Set<String> requiredActions = user.getRequiredActions();
-        for (String ra : requiredActions){
-            reqActions.add(ra);
-        }
+        reqActions.addAll(requiredActions);
 
         rep.setRequiredActions(reqActions);
 
@@ -644,11 +603,7 @@ public class ModelToRepresentation {
         Map<String, List<String>> grantedProtocolMappers = new HashMap<String, List<String>>();
         for (ProtocolMapperModel protocolMapper : model.getGrantedProtocolMappers()) {
             String protocol = protocolMapper.getProtocol();
-            List<String> currentProtocolMappers = grantedProtocolMappers.get(protocol);
-            if (currentProtocolMappers == null) {
-                currentProtocolMappers = new LinkedList<String>();
-                grantedProtocolMappers.put(protocol, currentProtocolMappers);
-            }
+            List<String> currentProtocolMappers = grantedProtocolMappers.computeIfAbsent(protocol, k -> new LinkedList<String>());
             currentProtocolMappers.add(protocolMapper.getName());
         }
 
@@ -661,11 +616,7 @@ public class ModelToRepresentation {
                 ClientModel client2 = (ClientModel) role.getContainer();
 
                 String clientId2 = client2.getClientId();
-                List<String> currentClientRoles = grantedClientRoles.get(clientId2);
-                if (currentClientRoles == null) {
-                    currentClientRoles = new LinkedList<String>();
-                    grantedClientRoles.put(clientId2, currentClientRoles);
-                }
+                List<String> currentClientRoles = grantedClientRoles.computeIfAbsent(clientId2, k -> new LinkedList<String>());
                 currentClientRoles.add(role.getName());
             }
         }
