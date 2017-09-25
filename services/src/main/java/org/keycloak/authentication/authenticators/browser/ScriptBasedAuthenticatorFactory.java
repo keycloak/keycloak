@@ -20,7 +20,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
-import org.keycloak.common.Profile;
+import org.keycloak.Feature;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
@@ -153,6 +153,6 @@ public class ScriptBasedAuthenticatorFactory implements AuthenticatorFactory, En
 
     @Override
     public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.SCRIPTS);
+        return Feature.isFeatureEnabled(Feature.SCRIPTS);
     }
 }

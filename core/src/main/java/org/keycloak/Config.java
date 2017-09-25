@@ -42,7 +42,7 @@ public class Config {
     }
 
     public static Scope scope(String... scope) {
-         return configProvider.scope(scope);
+        return configProvider.scope(scope);
     }
 
     public static interface ConfigProvider {

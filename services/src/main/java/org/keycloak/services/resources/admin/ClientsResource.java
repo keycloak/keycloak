@@ -22,11 +22,10 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authorization.admin.AuthorizationService;
-import org.keycloak.common.Profile;
+import org.keycloak.Feature;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
@@ -106,7 +105,7 @@ public class ClientsResource {
                 if (view || auth.clients().canView(clientModel)) {
                     ClientRepresentation representation = ModelToRepresentation.toRepresentation(clientModel);
 
-                    if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
+                    if (Feature.isFeatureEnabled(Feature.AUTHORIZATION)) {
                         AuthorizationService authorizationService = getAuthorizationService(clientModel);
 
                         if (authorizationService.isEnabled()) {
@@ -187,7 +186,7 @@ public class ClientsResource {
 
             adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, clientModel.getId()).representation(rep).success();
 
-            if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
+            if (Feature.isFeatureEnabled(Feature.AUTHORIZATION)) {
                 if (TRUE.equals(rep.getAuthorizationServicesEnabled())) {
                     AuthorizationService authorizationService = getAuthorizationService(clientModel);
 

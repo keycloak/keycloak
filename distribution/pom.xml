@@ -37,6 +37,7 @@
         <module>feature-packs</module>
         <module>server-dist</module>
         <module>server-overlay</module>
+        <module>distribution-tests</module>
     </modules>
 
     <profiles>

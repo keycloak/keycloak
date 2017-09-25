@@ -88,7 +88,7 @@ public class JsonConfigProvider implements Config.ConfigProvider {
             if (n == null) {
                 return defaultValue;
             }
-            return replaceProperties(n.textValue());
+            return replaceProperties(n.asText());
         }
 
         @Override

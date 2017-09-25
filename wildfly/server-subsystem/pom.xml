@@ -29,8 +29,21 @@
     <description/>
     <packaging>jar</packaging>
 
+    <properties>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
+    </properties>
+
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -42,12 +55,16 @@
                             <name>jboss.home</name>
                             <value>${jboss.home}</value>
                         </property>
+                        <property>
+                            <name>product.build</name>
+                            <value>${product.build}</value>
+                        </property>
                     </systemProperties>
                     <includes>
                         <include>**/*TestCase.java</include>
                     </includes>
                 </configuration>
-            </plugin>        
+            </plugin>
         </plugins>
         <filters>
             <filter>src/main/config/default-server-subsys-config.properties</filter>
@@ -123,4 +140,5 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
 </project>

@@ -32,7 +32,7 @@ import org.keycloak.broker.provider.ExchangeTokenToIdentityProviderToken;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.common.ClientConnection;
-import org.keycloak.common.Profile;
+import org.keycloak.Feature;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.constants.AdapterConstants;
@@ -587,7 +587,7 @@ public class TokenEndpoint {
     }
 
     public Response tokenExchange() {
-        ProfileHelper.requireFeature(Profile.Feature.TOKEN_EXCHANGE);
+        ProfileHelper.requireFeature(Feature.TOKEN_EXCHANGE);
 
         event.detail(Details.AUTH_METHOD, "token_exchange");
         event.client(client);

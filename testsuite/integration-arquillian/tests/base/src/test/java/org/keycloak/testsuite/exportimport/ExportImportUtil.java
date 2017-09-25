@@ -24,6 +24,7 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientTemplateResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.Feature;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.models.Constants;
 import org.keycloak.models.LDAPConstants;
@@ -63,7 +64,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
-import org.keycloak.common.Profile;
 
 /**
  *
@@ -381,7 +381,7 @@ public class ExportImportUtil {
         Assert.assertNotNull(linked);
         Assert.assertEquals("my-service-user", linked.getUsername());
         
-        if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
+        if (Feature.isFeatureEnabled(Feature.AUTHORIZATION)) {
             assertAuthorizationSettings(realmRsc);
         }
     }

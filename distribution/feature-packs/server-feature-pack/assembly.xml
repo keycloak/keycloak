@@ -28,10 +28,21 @@
         <fileSet>
             <directory>target/${project.build.finalName}</directory>
             <outputDirectory/>
+            <excludes>
+                <exclude>content/bin/migrate-*.cli</exclude>
+            </excludes>
         </fileSet>
         <fileSet>
             <directory>target/unpacked-themes/theme</directory>
             <outputDirectory>content/themes</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>src/main/resources/content/bin</directory>
+            <includes>
+                <include>migrate-*.cli</include>
+            </includes>
+            <outputDirectory>content/bin</outputDirectory>
+            <filtered>true</filtered>
         </fileSet>
         <fileSet>
             <directory>src/main/resources/identity/module</directory>

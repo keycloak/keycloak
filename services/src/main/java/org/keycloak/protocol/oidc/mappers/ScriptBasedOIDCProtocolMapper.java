@@ -18,7 +18,7 @@
 package org.keycloak.protocol.oidc.mappers;
 
 import org.jboss.logging.Logger;
-import org.keycloak.common.Profile;
+import org.keycloak.Feature;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -104,7 +104,7 @@ public class ScriptBasedOIDCProtocolMapper extends AbstractOIDCProtocolMapper im
   }
 
   public boolean isSupported() {
-    return Profile.isFeatureEnabled(Profile.Feature.SCRIPTS);
+    return Feature.isFeatureEnabled(Feature.SCRIPTS);
   }
 
   protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession, KeycloakSession keycloakSession) {

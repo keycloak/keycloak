@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,22 +15,16 @@
  * limitations under the License.
  */
 
-package org.keycloak.utils;
+package org.keycloak.subsystem.server.extension;
 
-import org.keycloak.Feature;
-
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
+import org.jboss.as.controller.AbstractRemoveStepHandler;
 
 /**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-public class ProfileHelper {
+public class FeatureResourceRemoveHandler extends AbstractRemoveStepHandler {
 
-    public static void requireFeature(Feature feature) {
-        if (!Feature.isFeatureEnabled(feature)) {
-            throw new WebApplicationException("Feature not enabled", Response.Status.NOT_IMPLEMENTED);
-        }
-    }
+    public static FeatureResourceRemoveHandler INSTANCE = new FeatureResourceRemoveHandler();
 
+    private FeatureResourceRemoveHandler() {}
 }

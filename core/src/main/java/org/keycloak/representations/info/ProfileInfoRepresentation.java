@@ -17,7 +17,7 @@
 
 package org.keycloak.representations.info;
 
-import org.keycloak.common.Profile;
+import org.keycloak.Feature;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -27,23 +27,17 @@ import java.util.List;
  */
 public class ProfileInfoRepresentation {
 
-    private String name;
     private List<String> disabledFeatures;
 
     public static ProfileInfoRepresentation create() {
         ProfileInfoRepresentation info = new ProfileInfoRepresentation();
 
-        info.name = Profile.getName();
         info.disabledFeatures = new LinkedList<>();
-        for (Profile.Feature f : Profile.getDisabledFeatures()) {
-            info.disabledFeatures.add(f.name());
+        for (Feature f : Feature.getDisabledFeatures()) {
+            info.disabledFeatures.add(f.caption());
         }
 
         return info;
-    }
-
-    public String getName() {
-        return name;
     }
 
     public List<String> getDisabledFeatures() {

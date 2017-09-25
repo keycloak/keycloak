@@ -19,8 +19,10 @@ package org.keycloak.testsuite.oauth;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.Feature;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.authorization.model.Policy;
@@ -43,6 +45,7 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.util.BasicAuthHelper;
@@ -70,6 +73,11 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
     @Deployment
     public static WebArchive deploy() {
         return RunOnServerDeployment.create(ClientTokenExchangeTest.class);
+    }
+
+    @BeforeClass
+    public static void verifyEnvironment() {
+        ProfileAssume.assumeFeatureEnabled(Feature.TOKEN_EXCHANGE);
     }
 
     @Override

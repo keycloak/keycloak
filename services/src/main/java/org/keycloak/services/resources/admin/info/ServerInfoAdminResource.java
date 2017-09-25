@@ -17,10 +17,10 @@
 
 package org.keycloak.services.resources.admin.info;
 
+import org.keycloak.Feature;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProvider;
-import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
@@ -170,7 +170,7 @@ public class ServerInfoAdminResource {
             List<String> themeNames = new LinkedList<>(themeProvider.nameSet(type));
             Collections.sort(themeNames);
 
-            if (!Profile.isFeatureEnabled(Profile.Feature.ACCOUNT2)) {
+            if (!Feature.isFeatureEnabled(Feature.ACCOUNT2)) {
                 themeNames.remove("keycloak-preview");
             }
 

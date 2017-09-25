@@ -18,26 +18,27 @@
 package org.keycloak.testsuite;
 
 import org.junit.Assume;
-import org.keycloak.common.Profile;
+import org.keycloak.Feature;
+import org.keycloak.common.Version;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class ProfileAssume {
 
-    public static void assumeFeatureEnabled(Profile.Feature feature) {
-        Assume.assumeTrue("Ignoring test as " + feature.name() + " is not enabled", Profile.isFeatureEnabled(feature));
+    public static void assumeFeatureEnabled(Feature feature) {
+        Assume.assumeTrue("Ignoring test as " + feature.caption() + " is not enabled", Feature.isFeatureEnabled(feature));
     }
 
     public static void assumePreview() {
-        Assume.assumeTrue("Ignoring test as community/preview profile is not enabled", !Profile.getName().equals("product"));
+        Assume.assumeTrue("Ignoring test as community/preview profile is not enabled", Version.NAME.equals("Keycloak"));
     }
 
     public static void assumePreviewDisabled() {
-        Assume.assumeFalse("Ignoring test as community/preview profile is enabled", !Profile.getName().equals("product"));
+        Assume.assumeFalse("Ignoring test as community/preview profile is enabled", Version.NAME.equals("Keycloak"));
     }
 
     public static void assumeCommunity() {
-        Assume.assumeTrue("Ignoring test as community profile is not enabled", Profile.getName().equals("community"));
+        Assume.assumeTrue("Ignoring test as community profile is not enabled", Version.NAME.equals("Keycloak"));
     }
 }

@@ -1,5 +1,11 @@
 /subsystem=keycloak-server:add(web-context=auth,master-realm-name=master,scheduled-task-interval=900)
 /subsystem=keycloak-server/theme=defaults/:add(dir=${jboss.home.dir}/themes,staticMaxAge=2592000,cacheTemplates=true,cacheThemes=true)
+/subsystem=keycloak-server/feature=authorization-preview/:add(enabled="@feature.authorization-preview@")
+/subsystem=keycloak-server/feature=impersonation/:add(enabled="@feature.impersonation@")
+/subsystem=keycloak-server/feature=scripts-preview/:add(enabled="@feature.scripts-preview@")
+/subsystem=keycloak-server/feature=docker/:add(enabled="@feature.docker@")
+/subsystem=keycloak-server/feature=account2-preview/:add(enabled="@feature.account2-preview@")
+/subsystem=keycloak-server/feature=token-exchange/:add(enabled="@feature.token-exchange@")
 /subsystem=keycloak-server/spi=eventsStore/:add
 /subsystem=keycloak-server/spi=eventsStore/provider=jpa/:add(properties={exclude-events => "[\"REFRESH_TOKEN\"]"},enabled=true)
 /subsystem=keycloak-server/spi=userCache/:add

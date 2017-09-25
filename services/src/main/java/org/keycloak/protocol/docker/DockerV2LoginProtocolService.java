@@ -1,7 +1,7 @@
 package org.keycloak.protocol.docker;
 
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.common.Profile;
+import org.keycloak.Feature;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
@@ -61,7 +61,7 @@ public class DockerV2LoginProtocolService {
      */
     @Path("auth")
     public Object auth() {
-        ProfileHelper.requireFeature(Profile.Feature.DOCKER);
+        ProfileHelper.requireFeature(Feature.DOCKER);
 
         final DockerEndpoint endpoint = new DockerEndpoint(realm, event, EventType.LOGIN);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);

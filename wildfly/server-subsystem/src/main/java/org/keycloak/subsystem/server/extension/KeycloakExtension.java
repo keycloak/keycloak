@@ -49,6 +49,7 @@ public class KeycloakExtension implements Extension {
     static final ThemeResourceDefinition THEME_DEFINITION = new ThemeResourceDefinition();
     static final SpiResourceDefinition SPI_DEFINITION = new SpiResourceDefinition();
     static final ProviderResourceDefinition PROVIDER_DEFINITION = new ProviderResourceDefinition();
+    static final FeatureResourceDefinition FEATURE_DEFINITION = new FeatureResourceDefinition();
 
     static StandardResourceDescriptionResolver getResourceDescriptionResolver(final String... keyPrefix) {
         StringBuilder prefix = new StringBuilder(SUBSYSTEM_NAME);
@@ -78,7 +79,8 @@ public class KeycloakExtension implements Extension {
         subsystemRegistration.registerSubModel(THEME_DEFINITION);
         ManagementResourceRegistration spiRegistration = subsystemRegistration.registerSubModel(SPI_DEFINITION);
         spiRegistration.registerSubModel(PROVIDER_DEFINITION);
-        
+        subsystemRegistration.registerSubModel(FEATURE_DEFINITION);
+
         subsystem.registerXMLElementWriter(PARSER);
     }
 }

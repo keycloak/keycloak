@@ -21,7 +21,7 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authorization.admin.AuthorizationService;
-import org.keycloak.common.Profile;
+import org.keycloak.Feature;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -32,7 +32,6 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -171,7 +170,7 @@ public class ClientResource {
 
         ClientRepresentation representation = ModelToRepresentation.toRepresentation(client);
 
-        if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
+        if (Feature.isFeatureEnabled(Feature.AUTHORIZATION)) {
             representation.setAuthorizationServicesEnabled(authorization().isEnabled());
         }
         representation.setAccess(auth.clients().getAccess(client));
@@ -512,7 +511,7 @@ public class ClientResource {
 
     @Path("/authz")
     public AuthorizationService authorization() {
-        ProfileHelper.requireFeature(Profile.Feature.AUTHORIZATION);
+        ProfileHelper.requireFeature(Feature.AUTHORIZATION);
 
         AuthorizationService resource = new AuthorizationService(this.session, this.client, this.auth, adminEvent);
 
@@ -613,7 +612,7 @@ public class ClientResource {
     }
 
     private void updateAuthorizationSettings(ClientRepresentation rep) {
-        if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
+        if (Feature.isFeatureEnabled(Feature.AUTHORIZATION)) {
             if (TRUE.equals(rep.getAuthorizationServicesEnabled())) {
                 authorization().enable(false);
             } else {

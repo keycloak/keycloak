@@ -19,7 +19,7 @@ package org.keycloak.testsuite.admin.authentication;
 
 import org.junit.Test;
 import org.keycloak.authentication.authenticators.broker.IdpCreateUserIfUniqueAuthenticatorFactory;
-import org.keycloak.common.Profile;
+import org.keycloak.Feature;
 import org.keycloak.representations.idm.AuthenticatorConfigInfoRepresentation;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.testsuite.Assert;
@@ -136,7 +136,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Validates a OTP on a separate OTP form. Only shown if required based on the configured conditions.");
         addProviderInfo(result, "auth-cookie", "Cookie", "Validates the SSO cookie set by the auth server.");
         addProviderInfo(result, "auth-otp-form", "OTP Form", "Validates a OTP on a separate OTP form.");
-        if (Profile.isFeatureEnabled(Profile.Feature.SCRIPTS)) {
+        if (Feature.isFeatureEnabled(Feature.SCRIPTS)) {
             addProviderInfo(result, "auth-script-based", "Script", "Script based authentication. Allows to define custom authentication logic via JavaScript.");
         }
         addProviderInfo(result, "auth-spnego", "Kerberos", "Initiates the SPNEGO protocol.  Most often used with Kerberos.");

@@ -125,6 +125,7 @@
                 <includes>
                     <include>migration-test/*</include>
                     <include>authorization-test/*</include>
+                    <include>META-INF/keycloak-server.json</include>
                 </includes>
             </testResource>
             <testResource>

@@ -42,6 +42,7 @@
         <module name="org.jboss.as.web-common" optional="true"/>
         <module name="org.jboss.as.web" optional="true"/>
         <module name="org.jboss.as.version" optional="true"/>
+        <module name="org.keycloak.keycloak-core"/>
         <module name="org.keycloak.keycloak-services"/>
         <module name="org.keycloak.keycloak-wildfly-adapter" optional="true"/>
         <module name="org.jboss.metadata"/>

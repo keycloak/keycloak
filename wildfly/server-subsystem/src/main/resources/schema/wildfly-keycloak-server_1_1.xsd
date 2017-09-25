@@ -42,6 +42,7 @@
             <xs:element name="scheduled-task-interval" type="xs:long" minOccurs="0" maxOccurs="1"/>
             <xs:element name="theme" type="themeDefaultsType" minOccurs="0" maxOccurs="1"/>
             <xs:element name="spi" type="spiType" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="features" type="featuresType" minOccurs="0" maxOccurs="1"/>
         </xs:choice>
         
     </xs:complexType>
@@ -97,7 +98,18 @@
         <xs:attribute name="name" use="required"/>
         <xs:attribute name="value" use="optional"/>
     </xs:complexType>
-    
+
+    <xs:complexType name="featuresType">
+        <xs:sequence>
+            <xs:element name="feature" type="featureType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="featureType">
+        <xs:attribute name="name" use="required"/>
+        <xs:attribute name="enabled" use="optional"/>
+    </xs:complexType>
+
     <xs:complexType name="listType">
         <xs:sequence>
             <xs:element name="value" minOccurs="0" maxOccurs="unbounded"/>

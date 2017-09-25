@@ -1543,6 +1543,14 @@
                 <product.name-html>\u003Cdiv class="kc-logo-text"\u003E\u003Cspan\u003EKeycloak\u003C\u002Fspan\u003E\u003C\u002Fdiv\u003E</product.name-html>
                 <product.version>${project.version}</product.version>
                 <product.default-profile>community</product.default-profile>
+
+                <!-- Features configuration - note that values are supposed to appear in keycloak-server.xml and *.cli files unexpanded -->
+                <feature.authorization-preview>${feature.authorization-preview:true}</feature.authorization-preview>
+                <feature.impersonation>${feature.impersonation:true}</feature.impersonation>
+                <feature.scripts-preview>${feature.scripts-preview:true}</feature.scripts-preview>
+                <feature.docker>${feature.docker:false}</feature.docker>
+                <feature.account2-preview>${feature.account2-preview:false}</feature.account2-preview>
+                <feature.token-exchange>${feature.token-exchange:true}</feature.token-exchange>
             </properties>
             <modules>
                 <module>proxy</module>
@@ -1565,6 +1573,16 @@
                 <product.version>${product.rhsso.version}</product.version>
                 <product.default-profile>product</product.default-profile>
                 <product.filename.version>7.2</product.filename.version>
+
+                <product.build>true</product.build>
+
+                <!-- Features configuration for product - note that values are supposed to appear in keycloak-server.xml and *.cli files unexpanded -->
+                <feature.authorization-preview>${feature.authorization-preview:false}</feature.authorization-preview>
+                <feature.impersonation>${feature.impersonation:true}</feature.impersonation>
+                <feature.scripts-preview>${feature.scripts-preview:false}</feature.scripts-preview>
+                <feature.docker>${feature.docker:false}</feature.docker>
+                <feature.account2-preview>${feature.account2-preview:false}</feature.account2-preview>
+                <feature.token-exchange>${feature.token-exchange:false}</feature.token-exchange>
             </properties>
         </profile>
 

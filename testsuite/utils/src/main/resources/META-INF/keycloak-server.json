@@ -107,5 +107,26 @@
             "enabled": true
         }
 
+    },
+
+    "feature": {
+        "authorization-preview": {
+            "enabled": "@feature.authorization-preview@"
+        },
+        "impersonation": {
+            "enabled": "@feature.impersonation@"
+        },
+        "scripts-preview": {
+            "enabled": "@feature.scripts-preview@"
+        },
+        "docker": {
+            "enabled": "@feature.docker@"
+        },
+        "account2-preview": {
+            "enabled": "@feature.account2-preview@"
+        },
+        "token-exchange": {
+            "enabled": "@feature.token-exchange@"
+        }
     }
 }

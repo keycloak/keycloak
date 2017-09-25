@@ -24,6 +24,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.core.Dispatcher;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.Config;
+import org.keycloak.Feature;
 import org.keycloak.common.util.SystemEnvProperties;
 import org.keycloak.exportimport.ExportImportManager;
 import org.keycloak.migration.MigrationModelManager;
@@ -110,7 +111,9 @@ public class KeycloakApplication extends Application {
                 embedded = true;
             }
 
+            beforeLoadConfig();
             loadConfig(context);
+            afterLoadConfig();
 
             this.contextPath = context.getContextPath();
             this.sessionFactory = createSessionFactory();
@@ -176,6 +179,15 @@ public class KeycloakApplication extends Application {
             }
             throw t;
         }
+    }
+
+    protected void beforeLoadConfig() {
+        Feature.applyBackwardsCompatibilityOptions();
+    }
+
+    protected void afterLoadConfig() {
+        Feature.validate();
+        Feature.printFeatureConfiguration();
     }
 
     // Migrate model, bootstrap master realm, import realms and create admin user. This is done with acquired dbLock

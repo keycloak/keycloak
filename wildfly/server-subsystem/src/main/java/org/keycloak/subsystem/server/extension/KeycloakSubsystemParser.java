@@ -31,9 +31,12 @@ import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLElementWriter;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
+import org.keycloak.Feature;
 
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 
 import static org.keycloak.subsystem.server.extension.KeycloakExtension.PATH_SUBSYSTEM;
@@ -50,6 +53,8 @@ import static org.keycloak.subsystem.server.extension.ThemeResourceDefinition.MO
  * The subsystem parser, which uses stax to read and write to and from xml
  */
 class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<List<ModelNode>>, XMLElementWriter<SubsystemMarshallingContext> {
+
+    private HashSet<String> features = new HashSet<>();
 
     /**
      * {@inheritDoc}
@@ -74,12 +79,65 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
                 readTheme(list, reader);
             } else if (reader.getLocalName().equals(SpiResourceDefinition.TAG_NAME)) {
                 readSpi(list, reader);
+            } else if (reader.getLocalName().equals(FeatureResourceDefinition.WRAPPER_TAG_NAME)) {
+                readFeatures(list, reader);
             } else {
                 throw new XMLStreamException("Unknown keycloak-server subsystem tag: " + reader.getLocalName());
             }
         }
+
+        ensureAllFeaturesDeclared(list);
     }
-    
+
+    private void readFeatures(final List<ModelNode> list, final XMLExtendedStreamReader reader) throws XMLStreamException {
+        while (reader.hasNext() && nextTag(reader) != END_ELEMENT) {
+            if (!reader.getLocalName().equals(FeatureResourceDefinition.TAG_NAME)) {
+                throw new XMLStreamException("Unknown features tag: " + reader.getLocalName());
+            }
+            String feature = readFeature(list, reader);
+            features.add(feature);
+            nextTag(reader);
+        }
+    }
+
+    private void ensureAllFeaturesDeclared(List<ModelNode> list) {
+        for (Feature f: Feature.values()) {
+            String key = f.caption();
+            if (!features.contains(key)) {
+                ModelNode node = newAddFeatureNode(key);
+                node.get(FeatureResourceDefinition.ENABLED.getName()).set("${feature." + key + ":" + f.isEnabledByDefault() + "}");
+                list.add(node);
+            }
+        }
+    }
+
+    private String readFeature(final List<ModelNode> list, final XMLExtendedStreamReader reader) throws XMLStreamException {
+
+        String[] attrs = ParseUtils.requireAttributes(reader, "name", FeatureResourceDefinition.ENABLED.getXmlName());
+        String name = attrs[0];
+        String enabled = attrs[1];
+        try {
+            Feature.fromCaption(name);
+        } catch (Exception e) {
+            throw new RuntimeException("No such feature: [" + name + "]. Valid names are: " + Feature.validCaptions());
+        }
+
+        ModelNode node = newAddFeatureNode(name);
+        list.add(node);
+
+        FeatureResourceDefinition.ENABLED.parseAndSetParameter(enabled, node, reader);
+        return name;
+    }
+
+    private ModelNode newAddFeatureNode(String name) {
+        ModelNode node = new ModelNode();
+        node.get(ModelDescriptionConstants.OP).set(ModelDescriptionConstants.ADD);
+        PathAddress addr = PathAddress.pathAddress(PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, KeycloakExtension.SUBSYSTEM_NAME),
+                PathElement.pathElement(FeatureResourceDefinition.TAG_NAME, name));
+        node.get(ModelDescriptionConstants.OP_ADDR).set(addr.toModelNode());
+        return node;
+    }
+
     private void readProviders(final XMLExtendedStreamReader reader, ModelNode addKeycloakSub) throws XMLStreamException {
         while (reader.hasNext() && nextTag(reader) != END_ELEMENT) {
             PROVIDERS.parseAndAddParameterElement(reader.getElementText(),addKeycloakSub, reader);
@@ -190,6 +248,7 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
         writeAdmin(writer, context);
         writeScheduledTaskInterval(writer, context);
         writeThemeDefaults(writer, context);
+        writeFeatures(writer, context);
         writeSpis(writer, context);
         writer.writeEndElement();
     }
@@ -227,6 +286,22 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
             writeProviders(writer, spiElements);
             writer.writeEndElement();
         }
+    }
+
+    private void writeFeatures(XMLExtendedStreamWriter writer, SubsystemMarshallingContext context) throws XMLStreamException {
+        if (!context.getModelNode().get(FeatureResourceDefinition.TAG_NAME).isDefined()) {
+            return;
+        }
+
+        writer.writeStartElement(FeatureResourceDefinition.WRAPPER_TAG_NAME);
+        for (Property feature : context.getModelNode().get(FeatureResourceDefinition.TAG_NAME).asPropertyList()) {
+
+            writer.writeStartElement(FeatureResourceDefinition.TAG_NAME);
+            writer.writeAttribute("name", feature.getName());
+            writer.writeAttribute("enabled", feature.getValue().get("enabled").asString());
+            writer.writeEndElement();
+        }
+        writer.writeEndElement();
     }
     
     private void writeProviders(XMLExtendedStreamWriter writer, ModelNode spiElements) throws XMLStreamException {

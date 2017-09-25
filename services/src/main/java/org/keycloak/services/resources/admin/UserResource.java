@@ -24,7 +24,7 @@ import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.execactions.ExecuteActionsActionToken;
 import org.keycloak.common.ClientConnection;
-import org.keycloak.common.Profile;
+import org.keycloak.Feature;
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.email.EmailException;
@@ -266,7 +266,7 @@ public class UserResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, Object> impersonate() {
-        ProfileHelper.requireFeature(Profile.Feature.IMPERSONATION);
+        ProfileHelper.requireFeature(Feature.IMPERSONATION);
 
         auth.users().requireImpersonate(user);
         RealmModel authenticatedRealm = auth.adminAuth().getRealm();
