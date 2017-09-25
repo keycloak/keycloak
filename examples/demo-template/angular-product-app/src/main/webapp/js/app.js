@@ -61,16 +61,14 @@ module.factory('authInterceptor', function($q, Auth) {
     return {
         request: function (config) {
             var deferred = $q.defer();
-            if (Auth.authz.token) {
-                Auth.authz.updateToken(5).success(function() {
-                    config.headers = config.headers || {};
-                    config.headers.Authorization = 'Bearer ' + Auth.authz.token;
+            Auth.authz.updateToken(5).success(function() {
+                config.headers = config.headers || {};
+                config.headers.Authorization = 'Bearer ' + Auth.authz.token;
 
-                    deferred.resolve(config);
-                }).error(function() {
-                        deferred.reject('Failed to refresh token');
-                    });
-            }
+                deferred.resolve(config);
+            }).error(function() {
+                    deferred.reject('Failed to refresh token');
+            });
             return deferred.promise;
         }
     };
