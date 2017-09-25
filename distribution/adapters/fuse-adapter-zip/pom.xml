@@ -124,6 +124,10 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-jetty92-adapter</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-jetty93-adapter</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
