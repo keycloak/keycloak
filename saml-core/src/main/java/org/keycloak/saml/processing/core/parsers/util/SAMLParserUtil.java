@@ -49,10 +49,13 @@ import org.w3c.dom.Element;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.XMLEventWriter;
+import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.events.Attribute;
 import javax.xml.stream.events.EndElement;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
+import java.io.StringWriter;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -294,7 +297,22 @@ public class SAMLParserUtil {
         StartElement startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
         StaxParserUtil.validate(startElement, JBossSAMLConstants.ATTRIBUTE_VALUE.get());
 
-        Attribute type = startElement.getAttributeByName(new QName(JBossSAMLURIConstants.XSI_NSURI.get(), "type", "xsi"));
+        Attribute type = startElement.getAttributeByName(new QName(JBossSAMLURIConstants.XSI_NSURI.get(), JBossSAMLConstants.TYPE.get(), JBossSAMLURIConstants.XSI_PREFIX.get()));
+        Attribute nil = startElement.getAttributeByName(new QName(JBossSAMLURIConstants.XSI_NSURI.get(), "nil", JBossSAMLURIConstants.XSI_PREFIX.get()));
+        if (nil != null) {
+            String nilValue = StaxParserUtil.getAttributeValue(nil);
+            if (nilValue != null
+                    && (nilValue.equalsIgnoreCase("true") || nilValue.equals("1"))) {
+                String elementText = StaxParserUtil.getElementText(xmlEventReader);
+                if  (elementText == null || elementText.isEmpty()) {
+                    return null;
+                } else {
+                    throw logger.nullValueError("nil attribute is not in SAML20 format");
+                }
+            } else {
+                throw logger.parserRequiredAttribute(JBossSAMLURIConstants.XSI_PREFIX.get() + ":nil");
+            }
+        }
         if (type == null) {
             if (StaxParserUtil.hasTextAhead(xmlEventReader)) {
                 return StaxParserUtil.getElementText(xmlEventReader);
@@ -316,23 +334,52 @@ public class SAMLParserUtil {
                 return "";
             }
 
-            throw logger.unsupportedType(StaxParserUtil.getStartElementName(startElement));
+            // when no type attribute assigned -> assume anyType
+            return parseAnyTypeAsString(xmlEventReader);
         }
         //      RK Added an additional type check for base64Binary type as calheers is passing this type
         String typeValue = StaxParserUtil.getAttributeValue(type);
         if (typeValue.contains(":string")) {
             return StaxParserUtil.getElementText(xmlEventReader);
         } else if (typeValue.contains(":anyType")) {
-            // TODO: for now assume that it is a text value that can be parsed and set as the attribute value
-            return StaxParserUtil.getElementText(xmlEventReader);
+            return parseAnyTypeAsString(xmlEventReader);
         } else if(typeValue.contains(":base64Binary")){
             return StaxParserUtil.getElementText(xmlEventReader);
         } else if(typeValue.contains(":boolean")){
             return StaxParserUtil.getElementText(xmlEventReader);
         }
 
-
         throw logger.parserUnknownXSI(typeValue);
+    }
+
+    public static String parseAnyTypeAsString(XMLEventReader xmlEventReader) throws ParsingException {
+        try {
+            XMLEvent event = xmlEventReader.peek();
+            if (event.isStartElement()) {
+                event = xmlEventReader.nextTag();
+                StringWriter sw = new StringWriter();
+                XMLEventWriter writer = XMLOutputFactory.newInstance().createXMLEventWriter(sw);
+                //QName tagName = event.asStartElement().getName();
+                int tagLevel = 1;
+                do {
+                    writer.add(event);
+                    event = (XMLEvent) xmlEventReader.next();
+                    if (event.isStartElement()) {
+                        tagLevel++;
+                    }
+                    if (event.isEndElement()) {
+                        tagLevel--;
+                    }
+                } while (xmlEventReader.hasNext() && tagLevel > 0);
+                writer.add(event);
+                writer.flush();
+                return sw.toString();
+            } else {
+                return StaxParserUtil.getElementText(xmlEventReader);
+            }
+        } catch (Exception e) {
+            throw logger.parserError(e);
+        }
     }
 
     /**
