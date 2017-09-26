@@ -41,7 +41,7 @@ public abstract class AbstractHawtioAdapterTest extends AbstractExampleAdapterTe
         testRealmLoginPage.form().login("root", "password");
 
         waitUntilElement(By.xpath("//body")).is().present();
-        assertCurrentUrlStartsWith(hawtioPage.getDriver(), hawtioPage.toString() + "/welcome");
+        assertCurrentUrlStartsWith(hawtioPage.toString() + "/welcome", hawtioPage.getDriver());
 
         hawtioPage.logout();
         pause(1000);
