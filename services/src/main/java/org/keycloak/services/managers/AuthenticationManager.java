@@ -849,7 +849,7 @@ public class AuthenticationManager {
 
                 return session.getProvider(LoginFormsProvider.class)
                         .setExecution(execution)
-                        .setClientSessionCode(accessCode.getCode())
+                        .setClientSessionCode(accessCode.getOrGenerateCode())
                         .setAccessRequest(realmRoles, resourceRoles, protocolMappers)
                         .createOAuthGrant();
             } else {

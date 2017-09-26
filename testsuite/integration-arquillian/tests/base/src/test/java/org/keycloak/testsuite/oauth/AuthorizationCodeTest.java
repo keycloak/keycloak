@@ -22,6 +22,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.Constants;
@@ -73,7 +74,6 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         Assert.assertNull(response.getError());
 
         String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
-        assertCode(codeId, response.getCode());
     }
 
     @Test
@@ -89,7 +89,6 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         String code = driver.findElement(By.id(OAuth2Constants.CODE)).getAttribute("value");
 
         String codeId = events.expectLogin().detail(Details.REDIRECT_URI, "http://localhost:8180/auth/realms/test/protocol/openid-connect/oauth/oob").assertEvent().getDetails().get(Details.CODE_ID);
-        assertCode(codeId, code);
 
         ClientManager.realm(adminClient.realm("test")).clientId("test-app").removeRedirectUris(Constants.INSTALLED_APP_URN);
     }
@@ -104,7 +103,6 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         Assert.assertNotNull(response.getCode());
 
         String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
-        assertCode(codeId, response.getCode());
     }
 
     @Test
@@ -119,7 +117,6 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         Assert.assertNull(response.getError());
 
         String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
-        assertCode(codeId, response.getCode());
     }
 
     @Test
@@ -151,11 +148,6 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         assertEquals("OpenIdConnect.AuthenticationProperties=2302984sdlk", state);
 
         String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
-        assertCode(codeId, code);
-    }
-
-    private void assertCode(String expectedCodeId, String actualCode) {
-        assertEquals(expectedCodeId, actualCode.split("\\.")[2]);
     }
 
 }

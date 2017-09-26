@@ -107,7 +107,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
         LoginTask loginTask = null;
 
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().setRedirectStrategy(new LaxRedirectStrategy()).build()) {
-            loginTask = new LoginTask(httpClient, userSessionId, 100, 1, Arrays.asList(
+            loginTask = new LoginTask(httpClient, userSessionId, 100, 1, false, Arrays.asList(
               createHttpClientContextForUser(httpClient, "test-user@localhost", "password")
             ));
             run(DEFAULT_THREADS, DEFAULT_CLIENTS_COUNT, loginTask);
@@ -132,6 +132,29 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
     }
 
     @Test
+    public void concurrentLoginSingleUserSingleClient() throws Throwable {
+        log.info("*********************************************");
+        long start = System.currentTimeMillis();
+
+        AtomicReference<String> userSessionId = new AtomicReference<>();
+        LoginTask loginTask = null;
+
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().setRedirectStrategy(new LaxRedirectStrategy()).build()) {
+            loginTask = new LoginTask(httpClient, userSessionId, 100, 1, true, Arrays.asList(
+                    createHttpClientContextForUser(httpClient, "test-user@localhost", "password")
+            ));
+            run(DEFAULT_THREADS, DEFAULT_CLIENTS_COUNT, loginTask);
+            int clientSessionsCount = testingClient.testing().getClientSessionsCountInUserSession("test", userSessionId.get());
+            Assert.assertEquals(2, clientSessionsCount);
+        } finally {
+            long end = System.currentTimeMillis() - start;
+            log.infof("Statistics: %s", loginTask == null ? "??" : loginTask.getHistogram());
+            log.info("concurrentLoginSingleUserSingleClient took " + (end/1000) + "s");
+            log.info("*********************************************");
+        }
+    }
+
+    @Test
     public void concurrentLoginMultipleUsers() throws Throwable {
         log.info("*********************************************");
         long start = System.currentTimeMillis();
@@ -140,7 +163,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
         LoginTask loginTask = null;
 
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().setRedirectStrategy(new LaxRedirectStrategy()).build()) {
-            loginTask = new LoginTask(httpClient, userSessionId, 100, 1, Arrays.asList(
+            loginTask = new LoginTask(httpClient, userSessionId, 100, 1, false, Arrays.asList(
               createHttpClientContextForUser(httpClient, "test-user@localhost", "password"),
               createHttpClientContextForUser(httpClient, "john-doh@localhost", "password"),
               createHttpClientContextForUser(httpClient, "roleRichUser", "password")
@@ -156,6 +179,60 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
             log.info("*********************************************");
         }
     }
+
+
+    @Test
+    public void concurrentCodeReuseShouldFail() throws Throwable {
+        log.info("*********************************************");
+        long start = System.currentTimeMillis();
+
+
+        for (int i=0 ; i<10 ; i++) {
+            OAuthClient oauth1 = new OAuthClient();
+            oauth1.init(adminClient, driver);
+            oauth1.clientId("client0");
+
+            OAuthClient.AuthorizationEndpointResponse resp = oauth1.doLogin("test-user@localhost", "password");
+            String code = resp.getCode();
+            Assert.assertNotNull(code);
+            String codeURL = driver.getCurrentUrl();
+
+
+            AtomicInteger codeToTokenSuccessCount = new AtomicInteger(0);
+            AtomicInteger codeToTokenErrorsCount = new AtomicInteger(0);
+
+            KeycloakRunnable codeToTokenTask = new KeycloakRunnable() {
+
+                @Override
+                public void run(int threadIndex, Keycloak keycloak, RealmResource realm) throws Throwable {
+                    log.infof("Trying to execute codeURL: %s, threadIndex: %i", codeURL, threadIndex);
+
+                    OAuthClient.AccessTokenResponse resp = oauth1.doAccessTokenRequest(code, "password");
+                    if (resp.getAccessToken() != null && resp.getError() == null) {
+                        codeToTokenSuccessCount.incrementAndGet();
+                    } else if (resp.getAccessToken() == null && resp.getError() != null) {
+                        codeToTokenErrorsCount.incrementAndGet();
+                    }
+                }
+
+            };
+
+            run(DEFAULT_THREADS, DEFAULT_THREADS, codeToTokenTask);
+
+            oauth1.openLogout();
+
+            Assert.assertEquals(1, codeToTokenSuccessCount.get());
+            Assert.assertEquals(DEFAULT_THREADS - 1, codeToTokenErrorsCount.get());
+
+            log.infof("Iteration %i passed successfully", i);
+        }
+
+        long end = System.currentTimeMillis() - start;
+        log.info("concurrentCodeReuseShouldFail took " + (end/1000) + "s");
+        log.info("*********************************************");
+
+    }
+
 
     protected String getPageContent(String url, CloseableHttpClient httpClient, HttpClientContext context) throws IOException {
         HttpGet request = new HttpGet(url);
@@ -237,6 +314,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
         return m;
     }
 
+
     public class LoginTask implements KeycloakRunnable {
 
         private final AtomicInteger clientIndex = new AtomicInteger();
@@ -256,9 +334,10 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
         private final int retryCount;
         private final AtomicInteger[] retryHistogram;
         private final AtomicInteger totalInvocations = new AtomicInteger();
+        private final boolean sameClient;
         private final List<HttpClientContext> clientContexts;
 
-        public LoginTask(CloseableHttpClient httpClient, AtomicReference<String> userSessionId, int retryDelayMs, int retryCount, List<HttpClientContext> clientContexts) {
+        public LoginTask(CloseableHttpClient httpClient, AtomicReference<String> userSessionId, int retryDelayMs, int retryCount, boolean sameClient, List<HttpClientContext> clientContexts) {
             this.httpClient = httpClient;
             this.userSessionId = userSessionId;
             this.retryDelayMs = retryDelayMs;
@@ -267,12 +346,13 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
             for (int i = 0; i < retryHistogram.length; i ++) {
                 retryHistogram[i] = new AtomicInteger();
             }
+            this.sameClient = sameClient;
             this.clientContexts = clientContexts;
         }
 
         @Override
         public void run(int threadIndex, Keycloak keycloak, RealmResource realm) throws Throwable {
-            int i = clientIndex.getAndIncrement();
+            int i = sameClient ? 0 : clientIndex.getAndIncrement();
             OAuthClient oauth1 = oauthClient.get();
             oauth1.clientId("client" + i);
             log.infof("%d [%s]: Accessing login page for %s", threadIndex, Thread.currentThread().getName(), oauth1.getClientId());

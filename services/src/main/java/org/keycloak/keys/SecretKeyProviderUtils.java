@@ -27,18 +27,17 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public abstract class AbstractHmacKeyProviderFactory implements HmacKeyProviderFactory {
+public abstract class SecretKeyProviderUtils {
 
-    public final static ProviderConfigurationBuilder configurationBuilder() {
+    public static ProviderConfigurationBuilder configurationBuilder() {
         return ProviderConfigurationBuilder.create()
                 .property(Attributes.PRIORITY_PROPERTY)
                 .property(Attributes.ENABLED_PROPERTY)
                 .property(Attributes.ACTIVE_PROPERTY);
     }
 
-    @Override
-    public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel model) throws ComponentValidationException {
-        ConfigurationValidationHelper.check(model)
+    public static ConfigurationValidationHelper validateConfiguration(ComponentModel model) throws ComponentValidationException {
+        return ConfigurationValidationHelper.check(model)
                 .checkLong(Attributes.PRIORITY_PROPERTY, false)
                 .checkBoolean(Attributes.ENABLED_PROPERTY, false)
                 .checkBoolean(Attributes.ACTIVE_PROPERTY, false);

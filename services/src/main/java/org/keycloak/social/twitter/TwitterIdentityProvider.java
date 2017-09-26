@@ -77,7 +77,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
 
     @Override
     public Object callback(RealmModel realm, AuthenticationCallback callback, EventBuilder event) {
-        return new Endpoint(realm, callback);
+        return new Endpoint(realm, callback, event);
     }
 
     @Override
@@ -161,6 +161,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
     protected class Endpoint {
         protected RealmModel realm;
         protected AuthenticationCallback callback;
+        protected EventBuilder event;
 
         @Context
         protected KeycloakSession session;
@@ -174,9 +175,12 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
         @Context
         protected UriInfo uriInfo;
 
-        public Endpoint(RealmModel realm, AuthenticationCallback callback) {
+
+
+        public Endpoint(RealmModel realm, AuthenticationCallback callback, EventBuilder event) {
             this.realm = realm;
             this.callback = callback;
+            this.event = event;
         }
 
         @GET
@@ -194,7 +198,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
 
                 twitter.setOAuthConsumer(getConfig().getClientId(), getConfig().getClientSecret());
 
-                AuthenticationSessionModel authSession = ClientSessionCode.getClientSession(state, session, realm, AuthenticationSessionModel.class);
+                AuthenticationSessionModel authSession = ClientSessionCode.getClientSession(state, session, realm, event, AuthenticationSessionModel.class);
 
                 String twitterToken = authSession.getAuthNote(TWITTER_TOKEN);
                 String twitterSecret = authSession.getAuthNote(TWITTER_TOKENSECRET);
@@ -240,7 +244,6 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
         }
 
         private void sendErrorEvent() {
-            EventBuilder event = new EventBuilder(realm, session, clientConnection);
             event.event(EventType.LOGIN);
             event.error("twitter_login_failed");
         }

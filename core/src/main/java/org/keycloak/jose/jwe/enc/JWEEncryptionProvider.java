@@ -41,7 +41,7 @@ public interface JWEEncryptionProvider {
      * @throws IOException
      * @throws GeneralSecurityException
      */
-    void encodeJwe(JWE jwe) throws IOException, GeneralSecurityException;
+    void encodeJwe(JWE jwe) throws Exception;
 
 
     /**
@@ -51,7 +51,7 @@ public interface JWEEncryptionProvider {
      * @throws IOException
      * @throws GeneralSecurityException
      */
-    void verifyAndDecodeJwe(JWE jwe) throws IOException, GeneralSecurityException;
+    void verifyAndDecodeJwe(JWE jwe) throws Exception;
 
 
     /**

@@ -15,17 +15,11 @@
  * limitations under the License.
  */
 
-package org.keycloak.jose.jws;
+package org.keycloak.keys;
 
 /**
- * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
- * @version $Revision: 1 $
+ * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public enum AlgorithmType {
-
-    RSA,
-    HMAC,
-    AES,
-    ECDSA
+public class SecretKeyMetadata extends KeyMetadata {
 
 }

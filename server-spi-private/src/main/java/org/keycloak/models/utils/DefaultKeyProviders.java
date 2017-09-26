@@ -41,6 +41,7 @@ public class DefaultKeyProviders {
         realm.addComponentModel(generated);
 
         createSecretProvider(realm);
+        createAesProvider(realm);
     }
 
     public static void createSecretProvider(RealmModel realm) {
@@ -48,6 +49,20 @@ public class DefaultKeyProviders {
         generated.setName("hmac-generated");
         generated.setParentId(realm.getId());
         generated.setProviderId("hmac-generated");
+        generated.setProviderType(KeyProvider.class.getName());
+
+        MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
+        config.putSingle("priority", "100");
+        generated.setConfig(config);
+
+        realm.addComponentModel(generated);
+    }
+
+    public static void createAesProvider(RealmModel realm) {
+        ComponentModel generated = new ComponentModel();
+        generated.setName("aes-generated");
+        generated.setParentId(realm.getId());
+        generated.setProviderId("aes-generated");
         generated.setProviderType(KeyProvider.class.getName());
 
         MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
@@ -75,6 +90,7 @@ public class DefaultKeyProviders {
         realm.addComponentModel(rsa);
 
         createSecretProvider(realm);
+        createAesProvider(realm);
     }
 
 }
