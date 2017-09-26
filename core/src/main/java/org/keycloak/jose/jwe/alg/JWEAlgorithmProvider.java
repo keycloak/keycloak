@@ -29,8 +29,8 @@ import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
  */
 public interface JWEAlgorithmProvider {
 
-    byte[] decodeCek(byte[] encodedCek, Key encryptionKey) throws IOException, GeneralSecurityException;
+    byte[] decodeCek(byte[] encodedCek, Key encryptionKey) throws Exception;
 
-    byte[] encodeCek(JWEEncryptionProvider encryptionProvider, JWEKeyStorage keyStorage, Key encryptionKey) throws IOException, GeneralSecurityException;
+    byte[] encodeCek(JWEEncryptionProvider encryptionProvider, JWEKeyStorage keyStorage, Key encryptionKey) throws Exception;
 
 }

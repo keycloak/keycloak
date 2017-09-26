@@ -307,7 +307,6 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         events.expectCodeToToken(codeId, sessionId)
                 .removeDetail(Details.TOKEN_ID)
                 .user((String) null)
-                .session((String) null)
                 .removeDetail(Details.REFRESH_TOKEN_ID)
                 .removeDetail(Details.REFRESH_TOKEN_TYPE)
                 .error(Errors.INVALID_CODE).assertEvent();
@@ -334,8 +333,8 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
         setTimeOffset(0);
 
-        AssertEvents.ExpectedEvent expectedEvent = events.expectCodeToToken(codeId, null);
-        expectedEvent.error("invalid_code")
+        AssertEvents.ExpectedEvent expectedEvent = events.expectCodeToToken(codeId, codeId);
+        expectedEvent.error("expired_code")
                 .removeDetail(Details.TOKEN_ID)
                 .removeDetail(Details.REFRESH_TOKEN_ID)
                 .removeDetail(Details.REFRESH_TOKEN_TYPE)
@@ -380,7 +379,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
             response = oauth.doAccessTokenRequest(code, "password");
             Assert.assertEquals(400, response.getStatusCode());
 
-            AssertEvents.ExpectedEvent expectedEvent = events.expectCodeToToken(codeId, null);
+            AssertEvents.ExpectedEvent expectedEvent = events.expectCodeToToken(codeId, codeId);
             expectedEvent.error("invalid_code")
                     .removeDetail(Details.TOKEN_ID)
                     .removeDetail(Details.REFRESH_TOKEN_ID)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,11 +15,20 @@
  * limitations under the License.
  */
 
-package org.keycloak.keys;
+package org.keycloak.models;
+
+import java.util.UUID;
+
+import org.keycloak.provider.Provider;
 
 /**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * Provides single-use cache for OAuth2 code parameter. Used to ensure that particular value of code parameter is used once.
+ *
+ * For now, it is separate provider as it's a bit different use-case than {@link ActionTokenStoreProvider}, however it may reuse some components (eg. same infinispan cache)
+ *
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class HmacKeyMetadata extends KeyMetadata {
+public interface CodeToTokenStoreProvider extends Provider {
 
+    boolean putIfAbsent(UUID codeId);
 }

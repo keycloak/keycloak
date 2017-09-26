@@ -15,27 +15,36 @@
  * limitations under the License.
  */
 
-package org.keycloak.jose.jwe.alg;
+package org.keycloak.keys;
 
-import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.Key;
-
-import org.keycloak.jose.jwe.JWEKeyStorage;
-import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
+import javax.crypto.SecretKey;
 
 /**
+ * Base for secret key providers (HMAC, AES)
+ *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class DirectAlgorithmProvider implements JWEAlgorithmProvider {
+public interface SecretKeyProvider extends KeyProvider<SecretKeyMetadata> {
 
-    @Override
-    public byte[] decodeCek(byte[] encodedCek, Key encryptionKey) {
-        return new byte[0];
-    }
+    /**
+     * Return the active secret key, or <code>null</code> if no active key is available.
+     *
+     * @return
+     */
+    SecretKey getSecretKey();
 
-    @Override
-    public byte[] encodeCek(JWEEncryptionProvider encryptionProvider, JWEKeyStorage keyStorage, Key encryptionKey) {
-        return new byte[0];
-    }
+    /**
+     * Return the secret key for the specified kid, or <code>null</code> if the kid is unknown.
+     *
+     * @param kid
+     * @return
+     */
+    SecretKey getSecretKey(String kid);
+
+
+    /**
+     * Return name of Java (JCA) algorithm of the key. For example: HmacSHA256
+     * @return
+     */
+    String getJavaAlgorithmName();
 }

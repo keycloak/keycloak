@@ -39,6 +39,10 @@ public interface TestingCacheResource {
     @Produces(MediaType.APPLICATION_JSON)
     boolean contains(@PathParam("id") String id);
 
+    @GET
+    @Path("/contains-uuid/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    boolean containsUuid(@PathParam("id") String id);
 
     @GET
     @Path("/enumerate-keys")

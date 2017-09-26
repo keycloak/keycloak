@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,17 +15,20 @@
  * limitations under the License.
  */
 
-package org.keycloak.jose.jws;
+package org.keycloak.keys;
+
+import org.keycloak.jose.jws.AlgorithmType;
 
 /**
- * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
- * @version $Revision: 1 $
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public enum AlgorithmType {
+public interface AesKeyProvider extends SecretKeyProvider {
 
-    RSA,
-    HMAC,
-    AES,
-    ECDSA
+    default AlgorithmType getType() {
+        return AlgorithmType.AES;
+    }
 
+    default String getJavaAlgorithmName() {
+        return "AES";
+    }
 }

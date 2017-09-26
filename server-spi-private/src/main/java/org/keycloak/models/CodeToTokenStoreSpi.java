@@ -15,27 +15,36 @@
  * limitations under the License.
  */
 
-package org.keycloak.jose.jwe.alg;
+package org.keycloak.models;
 
-import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.Key;
-
-import org.keycloak.jose.jwe.JWEKeyStorage;
-import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.Spi;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class DirectAlgorithmProvider implements JWEAlgorithmProvider {
+public class CodeToTokenStoreSpi implements Spi {
+
+    public static final String NAME = "codeToTokenStore";
 
     @Override
-    public byte[] decodeCek(byte[] encodedCek, Key encryptionKey) {
-        return new byte[0];
+    public boolean isInternal() {
+        return true;
     }
 
     @Override
-    public byte[] encodeCek(JWEEncryptionProvider encryptionProvider, JWEKeyStorage keyStorage, Key encryptionKey) {
-        return new byte[0];
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public Class<? extends Provider> getProviderClass() {
+        return CodeToTokenStoreProvider.class;
+    }
+
+    @Override
+    public Class<? extends ProviderFactory> getProviderFactoryClass() {
+        return CodeToTokenStoreProviderFactory.class;
     }
 }

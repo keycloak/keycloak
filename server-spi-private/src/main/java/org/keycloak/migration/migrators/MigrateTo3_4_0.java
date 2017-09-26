@@ -15,27 +15,28 @@
  * limitations under the License.
  */
 
-package org.keycloak.jose.jwe.alg;
+package org.keycloak.migration.migrators;
 
-import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.Key;
-
-import org.keycloak.jose.jwe.JWEKeyStorage;
-import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
+import org.keycloak.migration.ModelVersion;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.utils.DefaultKeyProviders;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class DirectAlgorithmProvider implements JWEAlgorithmProvider {
+public class MigrateTo3_4_0 implements Migration {
+
+    public static final ModelVersion VERSION = new ModelVersion("3.4.0");
 
     @Override
-    public byte[] decodeCek(byte[] encodedCek, Key encryptionKey) {
-        return new byte[0];
+    public void migrate(KeycloakSession session) {
+        session.realms().getRealms().stream().forEach(
+                r -> DefaultKeyProviders.createAesProvider(r)
+        );
     }
 
     @Override
-    public byte[] encodeCek(JWEEncryptionProvider encryptionProvider, JWEKeyStorage keyStorage, Key encryptionKey) {
-        return new byte[0];
+    public ModelVersion getVersion() {
+        return VERSION;
     }
 }

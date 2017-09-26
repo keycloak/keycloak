@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,17 +15,17 @@
  * limitations under the License.
  */
 
-package org.keycloak.jose.jws;
+package org.keycloak.keys;
+
+import org.keycloak.component.ComponentModel;
 
 /**
- * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
- * @version $Revision: 1 $
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public enum AlgorithmType {
+public class GeneratedAesKeyProvider extends GeneratedSecretKeyProvider implements AesKeyProvider {
 
-    RSA,
-    HMAC,
-    AES,
-    ECDSA
+    public GeneratedAesKeyProvider(ComponentModel model) {
+        super(model);
+    }
 
 }

@@ -24,12 +24,10 @@ import java.util.Set;
 
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.changes.InfinispanChangelogBasedTransaction;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
-import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.changes.UserSessionClientSessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.changes.UserSessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
@@ -40,7 +38,7 @@ import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
  */
 public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSessionModel {
 
-    private final AuthenticatedClientSessionEntity entity;
+    private AuthenticatedClientSessionEntity entity;
     private final ClientModel client;
     private final InfinispanUserSessionProvider provider;
     private final InfinispanChangelogBasedTransaction updateTx;
@@ -63,7 +61,6 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
     @Override
     public void setUserSession(UserSessionModel userSession) {
         String clientUUID = client.getId();
-        UserSessionEntity sessionEntity = this.userSession.getEntity();
 
         // Dettach userSession
         if (userSession == null) {
@@ -83,7 +80,11 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
 
                 @Override
                 public void runUpdate(UserSessionEntity sessionEntity) {
-                    sessionEntity.getAuthenticatedClientSessions().put(clientUUID, entity);
+                    AuthenticatedClientSessionEntity current = sessionEntity.getAuthenticatedClientSessions().putIfAbsent(clientUUID, entity);
+                    if (current != null) {
+                        // It may happen when 2 concurrent HTTP requests trying SSO login against same client
+                        entity = current;
+                    }
                 }
 
             };

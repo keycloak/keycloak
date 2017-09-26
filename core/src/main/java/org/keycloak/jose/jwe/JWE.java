@@ -111,7 +111,7 @@ public class JWE {
     }
 
 
-    public String encodeJwe() {
+    public String encodeJwe() throws JWEException {
         try {
             if (header == null) {
                 throw new IllegalStateException("Header must be set");
@@ -139,8 +139,8 @@ public class JWE {
             encryptionProvider.encodeJwe(this);
 
             return getEncodedJweString();
-        } catch (IOException | GeneralSecurityException e) {
-            throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new JWEException(e);
         }
     }
 
@@ -157,7 +157,7 @@ public class JWE {
     }
 
 
-    public JWE verifyAndDecodeJwe(String jweStr) {
+    public JWE verifyAndDecodeJwe(String jweStr) throws JWEException {
         try {
             String[] parts = jweStr.split("\\.");
             if (parts.length != 5) {
@@ -189,8 +189,8 @@ public class JWE {
             encryptionProvider.verifyAndDecodeJwe(this);
 
             return this;
-        } catch (IOException | GeneralSecurityException e) {
-            throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new JWEException(e);
         }
     }
 

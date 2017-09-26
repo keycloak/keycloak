@@ -16,7 +16,7 @@ public class KeyUtilsTest {
         byte[] secretBytes = new byte[32];
         ThreadLocalRandom.current().nextBytes(secretBytes);
         SecretKeySpec expected = new SecretKeySpec(secretBytes, "HmacSHA256");
-        SecretKey actual = KeyUtils.loadSecretKey(secretBytes);
+        SecretKey actual = KeyUtils.loadSecretKey(secretBytes, "HmacSHA256");
         assertEquals(expected.getAlgorithm(), actual.getAlgorithm());
         assertArrayEquals(expected.getEncoded(), actual.getEncoded());
     }

@@ -34,18 +34,14 @@ import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 public class AesKeyWrapAlgorithmProvider implements JWEAlgorithmProvider {
 
     @Override
-    public byte[] decodeCek(byte[] encodedCek, Key encryptionKey) throws IOException, GeneralSecurityException {
-        try {
-            Wrapper encrypter = new AESWrapEngine();
-            encrypter.init(false, new KeyParameter(encryptionKey.getEncoded()));
-            return encrypter.unwrap(encodedCek, 0, encodedCek.length);
-        } catch (InvalidCipherTextException icte) {
-            throw new IllegalStateException(icte);
-        }
+    public byte[] decodeCek(byte[] encodedCek, Key encryptionKey) throws Exception {
+        Wrapper encrypter = new AESWrapEngine();
+        encrypter.init(false, new KeyParameter(encryptionKey.getEncoded()));
+        return encrypter.unwrap(encodedCek, 0, encodedCek.length);
     }
 
     @Override
-    public byte[] encodeCek(JWEEncryptionProvider encryptionProvider, JWEKeyStorage keyStorage, Key encryptionKey) throws IOException, GeneralSecurityException {
+    public byte[] encodeCek(JWEEncryptionProvider encryptionProvider, JWEKeyStorage keyStorage, Key encryptionKey) throws Exception {
         Wrapper encrypter = new AESWrapEngine();
         encrypter.init(true, new KeyParameter(encryptionKey.getEncoded()));
         byte[] cekBytes = keyStorage.getCekBytes();

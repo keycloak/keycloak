@@ -17,19 +17,16 @@
 
 package org.keycloak.services.managers;
 
-import org.jboss.logging.Logger;
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
+import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.sessions.CommonClientSessionModel;
 
-import java.security.MessageDigest;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -38,10 +35,6 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class ClientSessionCode<CLIENT_SESSION extends CommonClientSessionModel> {
-
-    private static final String ACTIVE_CODE = "active_code";
-
-    private static final Logger logger = Logger.getLogger(ClientSessionCode.class);
 
     private KeycloakSession session;
     private final RealmModel realm;
@@ -63,6 +56,7 @@ public class ClientSessionCode<CLIENT_SESSION extends CommonClientSessionModel> 
         ClientSessionCode<CLIENT_SESSION> code;
         boolean authSessionNotFound;
         boolean illegalHash;
+        boolean expiredToken;
         CLIENT_SESSION clientSession;
 
         public ClientSessionCode<CLIENT_SESSION> getCode() {
@@ -77,26 +71,36 @@ public class ClientSessionCode<CLIENT_SESSION extends CommonClientSessionModel> 
             return illegalHash;
         }
 
+        public boolean isExpiredToken() {
+            return expiredToken;
+        }
+
         public CLIENT_SESSION getClientSession() {
             return clientSession;
         }
     }
 
-    public static <CLIENT_SESSION extends CommonClientSessionModel> ParseResult<CLIENT_SESSION> parseResult(String code, KeycloakSession session, RealmModel realm, Class<CLIENT_SESSION> sessionClass) {
+    public static <CLIENT_SESSION extends CommonClientSessionModel> ParseResult<CLIENT_SESSION> parseResult(String code, KeycloakSession session, RealmModel realm, EventBuilder event, Class<CLIENT_SESSION> sessionClass) {
         ParseResult<CLIENT_SESSION> result = new ParseResult<>();
         if (code == null) {
             result.illegalHash = true;
             return result;
         }
         try {
-            result.clientSession = getClientSession(code, session, realm, sessionClass);
+            CodeGenerateUtil.ClientSessionParser<CLIENT_SESSION> clientSessionParser = CodeGenerateUtil.getParser(sessionClass);
+            result.clientSession = getClientSession(code, session, realm, event, clientSessionParser);
             if (result.clientSession == null) {
                 result.authSessionNotFound = true;
                 return result;
             }
 
-            if (!verifyCode(code, result.clientSession)) {
+            if (!clientSessionParser.verifyCode(session, code, result.clientSession)) {
                 result.illegalHash = true;
+                return result;
+            }
+
+            if (clientSessionParser.isExpired(session, code, result.clientSession)) {
+                result.expiredToken = true;
                 return result;
             }
 
@@ -108,12 +112,18 @@ public class ClientSessionCode<CLIENT_SESSION extends CommonClientSessionModel> 
         }
     }
 
-    public static <CLIENT_SESSION extends CommonClientSessionModel> CLIENT_SESSION getClientSession(String code, KeycloakSession session, RealmModel realm, Class<CLIENT_SESSION> sessionClass) {
-        CommonClientSessionModel clientSessionn = CodeGenerateUtil.getParser(sessionClass).parseSession(code, session, realm);;
-        CLIENT_SESSION clientSession = sessionClass.cast(clientSessionn);
 
-        return clientSession;
+    public static <CLIENT_SESSION extends CommonClientSessionModel> CLIENT_SESSION getClientSession(String code, KeycloakSession session, RealmModel realm, EventBuilder event, Class<CLIENT_SESSION> sessionClass) {
+        CodeGenerateUtil.ClientSessionParser<CLIENT_SESSION> clientSessionParser = CodeGenerateUtil.getParser(sessionClass);
+        return getClientSession(code, session, realm, event, clientSessionParser);
     }
+
+
+    private static <CLIENT_SESSION extends CommonClientSessionModel> CLIENT_SESSION getClientSession(String code, KeycloakSession session, RealmModel realm, EventBuilder event,
+                                                                                                     CodeGenerateUtil.ClientSessionParser<CLIENT_SESSION> clientSessionParser) {
+        return clientSessionParser.parseSession(code, session, realm, event);
+    }
+
 
     public CLIENT_SESSION getClientSession() {
         return commonLoginSession;
@@ -203,52 +213,9 @@ public class ClientSessionCode<CLIENT_SESSION extends CommonClientSessionModel> 
         commonLoginSession.setTimestamp(Time.currentTime());
     }
 
-    public String getCode() {
+    public String getOrGenerateCode() {
         CodeGenerateUtil.ClientSessionParser parser = CodeGenerateUtil.getParser(commonLoginSession.getClass());
-        String nextCode = parser.getNote(commonLoginSession, ACTIVE_CODE);
-        if (nextCode == null) {
-            nextCode = generateCode(commonLoginSession);
-        } else {
-            logger.debug("Code already generated for session, using same code");
-        }
-        return nextCode;
+        return parser.retrieveCode(session, commonLoginSession);
     }
 
-    private static String generateCode(CommonClientSessionModel authSession) {
-        try {
-            String actionId = Base64Url.encode(KeycloakModelUtils.generateSecret());
-
-            StringBuilder sb = new StringBuilder();
-            sb.append(actionId);
-            sb.append('.');
-            sb.append(authSession.getId());
-
-            CodeGenerateUtil.ClientSessionParser parser = CodeGenerateUtil.getParser(authSession.getClass());
-
-            String code = parser.generateCode(authSession, actionId);
-            parser.setNote(authSession, ACTIVE_CODE, code);
-
-            return code;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static boolean verifyCode(String code, CommonClientSessionModel authSession) {
-        try {
-            CodeGenerateUtil.ClientSessionParser parser = CodeGenerateUtil.getParser(authSession.getClass());
-
-            String activeCode = parser.getNote(authSession, ACTIVE_CODE);
-            if (activeCode == null) {
-                logger.debug("Active code not found in client session");
-                return false;
-            }
-
-            parser.removeNote(authSession, ACTIVE_CODE);
-
-            return MessageDigest.isEqual(code.getBytes(), activeCode.getBytes());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
 }

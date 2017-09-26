@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,40 +17,43 @@
 
 package org.keycloak.keys;
 
-import org.jboss.logging.Logger;
-import org.keycloak.Config;
-import org.keycloak.common.util.Base64Url;
-import org.keycloak.component.ComponentModel;
-import org.keycloak.component.ComponentValidationException;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.provider.ConfigurationValidationHelper;
-import org.keycloak.provider.ProviderConfigProperty;
-
 import java.util.List;
 
+import org.jboss.logging.Logger;
+import org.keycloak.component.ComponentModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.provider.ProviderConfigProperty;
+
+import static org.keycloak.provider.ProviderConfigProperty.LIST_TYPE;
+
 /**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class GeneratedHmacKeyProviderFactory extends GeneratedSecretKeyProviderFactory<HmacKeyProvider> implements HmacKeyProviderFactory {
+public class GeneratedAesKeyProviderFactory extends GeneratedSecretKeyProviderFactory<AesKeyProvider> implements AesKeyProviderFactory {
 
-    private static final Logger logger = Logger.getLogger(GeneratedHmacKeyProviderFactory.class);
+    private static final Logger logger = Logger.getLogger(GeneratedAesKeyProviderFactory.class);
 
-    public static final String ID = "hmac-generated";
+    public static final String ID = "aes-generated";
 
-    private static final String HELP_TEXT = "Generates HMAC secret key";
+    private static final String HELP_TEXT = "Generates AES secret key";
 
-    public static final int DEFAULT_HMAC_KEY_SIZE = 32;
+    private static final ProviderConfigProperty AES_KEY_SIZE_PROPERTY;
+
+    private static final int DEFAULT_AES_KEY_SIZE = 16;
+
+    static {
+        AES_KEY_SIZE_PROPERTY = new ProviderConfigProperty(Attributes.SECRET_SIZE_KEY, "AES Key size",
+                "Size in bytes for the generated AES Key. Size 16 is for AES-128, Size 24 for AES-192 and Size 32 for AES-256. WARN: Bigger keys then 128 bits are not allowed on some JDK implementations",
+                LIST_TYPE, String.valueOf(DEFAULT_AES_KEY_SIZE), "16", "24", "32");
+    }
 
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = SecretKeyProviderUtils.configurationBuilder()
-            .property(Attributes.SECRET_SIZE_PROPERTY)
+            .property(AES_KEY_SIZE_PROPERTY)
             .build();
 
     @Override
-    public HmacKeyProvider create(KeycloakSession session, ComponentModel model) {
-        return new GeneratedHmacKeyProvider(model);
+    public AesKeyProvider create(KeycloakSession session, ComponentModel model) {
+        return new GeneratedAesKeyProvider(model);
     }
 
     @Override
@@ -75,6 +78,6 @@ public class GeneratedHmacKeyProviderFactory extends GeneratedSecretKeyProviderF
 
     @Override
     protected int getDefaultKeySize() {
-        return DEFAULT_HMAC_KEY_SIZE;
+        return DEFAULT_AES_KEY_SIZE;
     }
 }
