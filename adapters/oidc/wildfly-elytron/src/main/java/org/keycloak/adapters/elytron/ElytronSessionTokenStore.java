@@ -53,7 +53,7 @@ public class ElytronSessionTokenStore implements ElytronTokeStore {
     @Override
     public void checkCurrentToken() {
         HttpScope session = httpFacade.getScope(Scope.SESSION);
-        if (!session.exists()) return;
+        if (session == null || !session.exists()) return;
         RefreshableKeycloakSecurityContext securityContext = (RefreshableKeycloakSecurityContext) session.getAttachment(KeycloakSecurityContext.class.getName());
         if (securityContext == null) return;
 
