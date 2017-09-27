@@ -1,0 +1,1 @@
+org.keycloak,keycloak-adapter-spi,2.5.12.Final-redhat-1,Apache Software License 2.0.txt

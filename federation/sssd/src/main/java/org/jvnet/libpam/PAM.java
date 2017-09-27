@@ -129,7 +129,7 @@ public class PAM {
             check(libpam.pam_authenticate(pht, 0), "pam_authenticate failed");
             check(libpam.pam_setcred(pht, 0), "pam_setcred failed");
             // several different error code seem to be used to represent authentication failures
-//            check(libpam.pam_acct_mgmt(pht,0),"pam_acct_mgmt failed");
+            check(libpam.pam_acct_mgmt(pht,0),"pam_acct_mgmt failed");
 
             PointerByReference r = new PointerByReference();
             check(libpam.pam_get_item(pht, PAM_USER, r), "pam_get_item failed");
