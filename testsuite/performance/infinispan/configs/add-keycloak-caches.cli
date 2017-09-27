@@ -1,0 +1,15 @@
+embed-server --server-config=clustered.xml
+
+cd /subsystem=datagrid-infinispan/cache-container=clustered/configurations=CONFIGURATIONS
+
+#./replicated-cache-configuration=sessions-cfg:add(mode=SYNC, start=EAGER, batching=false)
+./replicated-cache-configuration=sessions-cfg:add(mode=ASYNC, start=EAGER, batching=false)
+./replicated-cache-configuration=sessions-cfg/transaction=TRANSACTION:add(locking=PESSIMISTIC, mode=NON_XA)
+
+cd /subsystem=datagrid-infinispan/cache-container=clustered
+
+./replicated-cache=work:add(configuration=sessions-cfg)
+./replicated-cache=sessions:add(configuration=sessions-cfg)
+./replicated-cache=offlineSessions:add(configuration=sessions-cfg)
+./replicated-cache=actionTokens:add(configuration=sessions-cfg)
+./replicated-cache=loginFailures:add(configuration=sessions-cfg)
