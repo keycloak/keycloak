@@ -921,7 +921,8 @@ public class AuthenticationProcessor {
         if (!authenticatedUser.isEnabled()) throw new AuthenticationFlowException(AuthenticationFlowError.USER_DISABLED);
         if (realm.isBruteForceProtected() && !realm.isPermanentLockout()) {
             if (getBruteForceProtector().isTemporarilyDisabled(session, realm, authenticatedUser)) {
-                throw new AuthenticationFlowException(AuthenticationFlowError.USER_TEMPORARILY_DISABLED);
+                getEvent().error(Errors.RESET_CREDENTIAL_DISABLED);
+                ServicesLogger.LOGGER.passwordResetFailed(new AuthenticationFlowException(AuthenticationFlowError.USER_TEMPORARILY_DISABLED));
             }
         }
     }
