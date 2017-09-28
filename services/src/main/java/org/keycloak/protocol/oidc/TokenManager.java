@@ -250,17 +250,9 @@ public class TokenManager {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token. Token client and authorized client don't match");
         }
 
+        validateTokenReuse(session, realm, refreshToken, validation);
+
         int currentTime = Time.currentTime();
-
-        if (realm.isRevokeRefreshToken()) {
-            int clusterStartupTime = session.getProvider(ClusterProvider.class).getClusterStartupTime();
-
-            if (refreshToken.getIssuedAt() < validation.clientSession.getTimestamp() && (clusterStartupTime != validation.clientSession.getTimestamp())) {
-                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
-            }
-
-        }
-
         validation.clientSession.setTimestamp(currentTime);
         validation.userSession.setLastSessionRefresh(currentTime);
 
@@ -276,6 +268,36 @@ public class TokenManager {
         AccessTokenResponse res = responseBuilder.build();
 
         return new RefreshResult(res, TokenUtil.TOKEN_TYPE_OFFLINE.equals(refreshToken.getType()));
+    }
+
+    private void validateTokenReuse(KeycloakSession session, RealmModel realm, RefreshToken refreshToken,
+            TokenValidation validation) throws OAuthErrorException {
+        if (realm.isRevokeRefreshToken()) {
+            int clusterStartupTime = session.getProvider(ClusterProvider.class).getClusterStartupTime();
+
+            if (validation.clientSession.getCurrentRefreshToken() != null &&
+                    !refreshToken.getId().equals(validation.clientSession.getCurrentRefreshToken()) &&
+                    refreshToken.getIssuedAt() < validation.clientSession.getTimestamp() &&
+                    clusterStartupTime != validation.clientSession.getTimestamp()) {
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
+            }
+        }
+
+        if (realm.isRevokeRefreshToken()) {
+            if (!refreshToken.getId().equals(validation.clientSession.getCurrentRefreshToken())) {
+                validation.clientSession.setCurrentRefreshToken(refreshToken.getId());
+                validation.clientSession.setCurrentRefreshTokenUseCount(0);
+            }
+
+            int currentCount = validation.clientSession.getCurrentRefreshTokenUseCount();
+            if (currentCount > realm.getRefreshTokenMaxReuse()) {
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Maximum allowed refresh token reuse exceeded",
+                        "Maximum allowed refresh token reuse exceeded");
+            }
+            validation.clientSession.setCurrentRefreshTokenUseCount(currentCount + 1);
+        } else {
+            validation.clientSession.setCurrentRefreshToken(null);
+        }
     }
 
     public RefreshToken verifyRefreshToken(KeycloakSession session, RealmModel realm, String encodedRefreshToken) throws OAuthErrorException {
