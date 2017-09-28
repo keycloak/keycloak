@@ -27,6 +27,7 @@ import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
 import org.jboss.logging.Logger;
+import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.saml.AdapterConstants;
 import org.keycloak.adapters.saml.DefaultSamlDeployment;
 import org.keycloak.adapters.saml.SamlDeployment;
@@ -47,6 +48,8 @@ import org.keycloak.saml.common.exceptions.ParsingException;
 public class KeycloakConfigurationServletListener implements ServletContextListener {
 
     protected static Logger log = Logger.getLogger(KeycloakConfigurationServletListener.class);
+
+    static final String ADAPTER_DEPLOYMENT_CONTEXT_ATTRIBUTE = AdapterDeploymentContext.class.getName() + ".elytron";
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
@@ -83,7 +86,7 @@ public class KeycloakConfigurationServletListener implements ServletContextListe
                 }
             }
             deploymentContext = new SamlDeploymentContext(deployment);
-            servletContext.setAttribute(SamlDeploymentContext.class.getName(), deploymentContext);
+            servletContext.setAttribute(ADAPTER_DEPLOYMENT_CONTEXT_ATTRIBUTE, deploymentContext);
             log.debug("Keycloak is using a per-deployment configuration.");
         }
     }

@@ -31,7 +31,6 @@ import org.keycloak.adapters.AuthenticatedActionsHandler;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.NodesRegistrationManagement;
 import org.keycloak.adapters.PreAuthActionsHandler;
-import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.RequestAuthenticator;
 import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.AuthOutcome;
@@ -127,7 +126,7 @@ class KeycloakHttpServerAuthenticationMechanism implements HttpServerAuthenticat
 
     private AdapterDeploymentContext getDeploymentContext(HttpServerRequest request) {
         if (this.deploymentContext == null) {
-            return (AdapterDeploymentContext) request.getScope(Scope.APPLICATION).getAttachment(AdapterDeploymentContext.class.getName());
+            return (AdapterDeploymentContext) request.getScope(Scope.APPLICATION).getAttachment(KeycloakConfigurationServletListener.ADAPTER_DEPLOYMENT_CONTEXT_ATTRIBUTE);
         }
 
         return this.deploymentContext;

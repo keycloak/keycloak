@@ -42,6 +42,9 @@ import java.io.InputStream;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class KeycloakConfigurationServletListener implements ServletContextListener {
+
+    static final String ADAPTER_DEPLOYMENT_CONTEXT_ATTRIBUTE = AdapterDeploymentContext.class.getName() + ".elytron";
+
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         ServletContext servletContext = sce.getServletContext();
@@ -70,7 +73,7 @@ public class KeycloakConfigurationServletListener implements ServletContextListe
             deploymentContext = new AdapterDeploymentContext(deployment);
         }
 
-        servletContext.setAttribute(AdapterDeploymentContext.class.getName(), deploymentContext);
+        servletContext.setAttribute(ADAPTER_DEPLOYMENT_CONTEXT_ATTRIBUTE, deploymentContext);
     }
 
     @Override
