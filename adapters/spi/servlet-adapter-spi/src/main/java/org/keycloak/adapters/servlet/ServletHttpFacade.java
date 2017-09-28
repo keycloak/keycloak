@@ -59,8 +59,9 @@ public class ServletHttpFacade implements HttpFacade {
         @Override
         public String getURI() {
             StringBuffer buf = request.getRequestURL();
-            if (request.getQueryString() != null) {
-                buf.append('?').append(request.getQueryString());
+            String queryString = request.getQueryString();
+            if (queryString != null && !queryString.isEmpty()) {
+                buf.append('?').append(queryString);
             }
             return buf.toString();
         }
