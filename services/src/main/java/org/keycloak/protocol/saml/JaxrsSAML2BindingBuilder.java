@@ -69,7 +69,7 @@ public class JaxrsSAML2BindingBuilder extends BaseSAML2BindingBuilder<JaxrsSAML2
 
         private Response response(String redirectUri, boolean asRequest) throws ProcessingException, ConfigurationException, IOException {
             URI uri = generateURI(redirectUri, asRequest);
-            if (logger.isDebugEnabled()) logger.trace("redirect-binding uri: " + uri.toString());
+            logger.tracef("redirect-binding uri: %s", uri);
             CacheControl cacheControl = new CacheControl();
             cacheControl.setNoCache(true);
             return Response.status(302).location(uri)

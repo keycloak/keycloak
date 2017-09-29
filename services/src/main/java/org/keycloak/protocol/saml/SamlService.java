@@ -241,6 +241,11 @@ public class SamlService extends AuthorizationEndpointBase {
         protected Response loginRequest(String relayState, AuthnRequestType requestAbstractType, ClientModel client) {
             SamlClient samlClient = new SamlClient(client);
             // validate destination
+            if (requestAbstractType.getDestination() == null && samlClient.requiresClientSignature()) {
+                event.detail(Details.REASON, "invalid_destination");
+                event.error(Errors.INVALID_SAML_AUTHN_REQUEST);
+                return ErrorPage.error(session, Messages.INVALID_REQUEST);
+            }
             if (requestAbstractType.getDestination() != null && !uriInfo.getAbsolutePath().equals(requestAbstractType.getDestination())) {
                 event.detail(Details.REASON, "invalid_destination");
                 event.error(Errors.INVALID_SAML_AUTHN_REQUEST);
