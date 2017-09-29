@@ -245,35 +245,27 @@ public class TokenEndpoint {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Missing parameter: " + OAuth2Constants.CODE, Response.Status.BAD_REQUEST);
         }
 
-        String[] parts = code.split("\\.");
-        if (parts.length == 4) {
-            event.detail(Details.CODE_ID, parts[2]);
-        }
-
-        ClientSessionCode.ParseResult<AuthenticatedClientSessionModel> parseResult = ClientSessionCode.parseResult(code, session, realm, AuthenticatedClientSessionModel.class);
+        ClientSessionCode.ParseResult<AuthenticatedClientSessionModel> parseResult = ClientSessionCode.parseResult(code, session, realm, event, AuthenticatedClientSessionModel.class);
         if (parseResult.isAuthSessionNotFound() || parseResult.isIllegalHash()) {
-            event.error(Errors.INVALID_CODE);
+            AuthenticatedClientSessionModel clientSession = parseResult.getClientSession();
 
             // Attempt to use same code twice should invalidate existing clientSession
-            AuthenticatedClientSessionModel clientSession = parseResult.getClientSession();
             if (clientSession != null) {
                 clientSession.setUserSession(null);
             }
+
+            event.error(Errors.INVALID_CODE);
 
             throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Code not valid", Response.Status.BAD_REQUEST);
         }
 
         AuthenticatedClientSessionModel clientSession = parseResult.getClientSession();
 
-        if (!parseResult.getCode().isValid(AuthenticatedClientSessionModel.Action.CODE_TO_TOKEN.name(), ClientSessionCode.ActionType.CLIENT)) {
-            event.error(Errors.INVALID_CODE);
+        if (parseResult.isExpiredToken()) {
+            event.error(Errors.EXPIRED_CODE);
             throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Code is expired", Response.Status.BAD_REQUEST);
         }
 
-        // TODO: This shouldn't be needed to write into the AuthenticatedClientSessionModel itself
-        parseResult.getCode().setAction(null);
-
-        // TODO: Maybe rather create userSession even at this stage?
         UserSessionModel userSession = clientSession.getUserSession();
 
         if (userSession == null) {
@@ -281,19 +273,19 @@ public class TokenEndpoint {
             throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "User session not found", Response.Status.BAD_REQUEST);
         }
 
+
         UserModel user = userSession.getUser();
         if (user == null) {
             event.error(Errors.USER_NOT_FOUND);
             throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "User not found", Response.Status.BAD_REQUEST);
         }
+
+        event.user(userSession.getUser());
+
         if (!user.isEnabled()) {
             event.error(Errors.USER_DISABLED);
             throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "User disabled", Response.Status.BAD_REQUEST);
         }
-
-        event.user(userSession.getUser());
-
-        event.session(userSession.getId());
 
         String redirectUri = clientSession.getNote(OIDCLoginProtocol.REDIRECT_URI_PARAM);
         String formParam = formParams.getFirst(OAuth2Constants.REDIRECT_URI);

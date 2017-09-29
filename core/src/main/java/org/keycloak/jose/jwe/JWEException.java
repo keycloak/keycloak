@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,11 +15,21 @@
  * limitations under the License.
  */
 
-package org.keycloak.keys;
+package org.keycloak.jose.jwe;
 
 /**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class HmacKeyMetadata extends KeyMetadata {
+public class JWEException extends Exception {
 
+    public JWEException(String s) {
+        super(s);
+    }
+
+    public JWEException() {
+    }
+
+    public JWEException(Throwable throwable) {
+        super(throwable);
+    }
 }

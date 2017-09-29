@@ -17,16 +17,30 @@
 
 package org.keycloak.services.managers;
 
+import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
+import java.util.function.Supplier;
+
+import javax.crypto.SecretKey;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.Time;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.CodeToTokenStoreProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.CodeJWT;
 import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.util.TokenUtil;
 
 /**
  *
@@ -36,11 +50,18 @@ class CodeGenerateUtil {
 
     private static final Logger logger = Logger.getLogger(CodeGenerateUtil.class);
 
-    private static final Map<Class<? extends CommonClientSessionModel>, ClientSessionParser> PARSERS = new HashMap<>();
+    private static final String ACTIVE_CODE = "active_code";
+
+    private static final Map<Class<? extends CommonClientSessionModel>, Supplier<ClientSessionParser>> PARSERS = new HashMap<>();
 
     static {
-        PARSERS.put(AuthenticationSessionModel.class, new AuthenticationSessionModelParser());
-        PARSERS.put(AuthenticatedClientSessionModel.class, new AuthenticatedClientSessionModelParser());
+        PARSERS.put(AuthenticationSessionModel.class, () -> {
+            return new AuthenticationSessionModelParser();
+        });
+
+        PARSERS.put(AuthenticatedClientSessionModel.class, () -> {
+            return new AuthenticatedClientSessionModelParser();
+        });
     }
 
 
@@ -48,7 +69,7 @@ class CodeGenerateUtil {
     static <CS extends CommonClientSessionModel> ClientSessionParser<CS> getParser(Class<CS> clientSessionClass) {
         for (Class<?> c : PARSERS.keySet()) {
             if (c.isAssignableFrom(clientSessionClass)) {
-                return PARSERS.get(c);
+                return PARSERS.get(c).get();
             }
         }
         return null;
@@ -57,17 +78,15 @@ class CodeGenerateUtil {
 
     interface ClientSessionParser<CS extends CommonClientSessionModel> {
 
-        CS parseSession(String code, KeycloakSession session, RealmModel realm);
+        CS parseSession(String code, KeycloakSession session, RealmModel realm, EventBuilder event);
 
-        String generateCode(CS clientSession, String actionId);
+        String retrieveCode(KeycloakSession session, CS clientSession);
 
         void removeExpiredSession(KeycloakSession session, CS clientSession);
 
-        String getNote(CS clientSession, String name);
+        boolean verifyCode(KeycloakSession session, String code, CS clientSession);
 
-        void removeNote(CS clientSession, String name);
-
-        void setNote(CS clientSession, String name, String value);
+        boolean isExpired(KeycloakSession session, String code, CS clientSession);
 
     }
 
@@ -78,95 +97,149 @@ class CodeGenerateUtil {
     private static class AuthenticationSessionModelParser implements ClientSessionParser<AuthenticationSessionModel> {
 
         @Override
-        public AuthenticationSessionModel parseSession(String code, KeycloakSession session, RealmModel realm) {
+        public AuthenticationSessionModel parseSession(String code, KeycloakSession session, RealmModel realm, EventBuilder event) {
             // Read authSessionID from cookie. Code is ignored for now
             return new AuthenticationSessionManager(session).getCurrentAuthenticationSession(realm);
         }
 
         @Override
-        public String generateCode(AuthenticationSessionModel clientSession, String actionId) {
-            return actionId;
+        public String retrieveCode(KeycloakSession session, AuthenticationSessionModel authSession) {
+            String nextCode = authSession.getAuthNote(ACTIVE_CODE);
+            if (nextCode == null) {
+                String actionId = Base64Url.encode(KeycloakModelUtils.generateSecret());
+                authSession.setAuthNote(ACTIVE_CODE, actionId);
+                nextCode = actionId;
+            } else {
+                logger.debug("Code already generated for authentication session, using same code");
+            }
+
+            return nextCode;
         }
+
 
         @Override
         public void removeExpiredSession(KeycloakSession session, AuthenticationSessionModel clientSession) {
             new AuthenticationSessionManager(session).removeAuthenticationSession(clientSession.getRealm(), clientSession, true);
         }
 
-        @Override
-        public String getNote(AuthenticationSessionModel clientSession, String name) {
-            return clientSession.getAuthNote(name);
-        }
 
         @Override
-        public void removeNote(AuthenticationSessionModel clientSession, String name) {
-            clientSession.removeAuthNote(name);
+        public boolean verifyCode(KeycloakSession session, String code, AuthenticationSessionModel authSession) {
+            String activeCode = authSession.getAuthNote(ACTIVE_CODE);
+            if (activeCode == null) {
+                logger.debug("Active code not found in authentication session");
+                return false;
+            }
+
+            authSession.removeAuthNote(ACTIVE_CODE);
+
+            return MessageDigest.isEqual(code.getBytes(), activeCode.getBytes());
         }
 
+
         @Override
-        public void setNote(AuthenticationSessionModel clientSession, String name, String value) {
-            clientSession.setAuthNote(name, value);
+        public boolean isExpired(KeycloakSession session, String code, AuthenticationSessionModel clientSession) {
+            return false;
         }
     }
 
 
     private static class AuthenticatedClientSessionModelParser implements ClientSessionParser<AuthenticatedClientSessionModel> {
 
+        private CodeJWT codeJWT;
+
         @Override
-        public AuthenticatedClientSessionModel parseSession(String code, KeycloakSession session, RealmModel realm) {
+        public AuthenticatedClientSessionModel parseSession(String code, KeycloakSession session, RealmModel realm, EventBuilder event) {
+            SecretKey aesKey = session.keys().getActiveAesKey(realm).getSecretKey();
+            SecretKey hmacKey = session.keys().getActiveHmacKey(realm).getSecretKey();
+
             try {
-                String[] parts = code.split("\\.");
-                String userSessionId = parts[2];
-                String clientUUID = parts[3];
-
-                UserSessionModel userSession = new UserSessionCrossDCManager(session).getUserSessionWithClientAndCodeToTokenAction(realm, userSessionId, clientUUID);
-                if (userSession == null) {
-                    // TODO:mposolda Temporary workaround needed to track if code is invalid or was already used. Will be good to remove once used OAuth codes are tracked through one-time cache
-                    userSession = session.sessions().getUserSession(realm, userSessionId);
-                    if (userSession == null) {
-                        return null;
-                    }
-                }
-
-                return userSession.getAuthenticatedClientSessions().get(clientUUID);
-            } catch (ArrayIndexOutOfBoundsException e) {
+                codeJWT = TokenUtil.jweDirectVerifyAndDecode(aesKey, hmacKey, code, CodeJWT.class);
+            } catch (JWEException jweException) {
+                logger.error("Exception during JWE Verification or decode", jweException);
                 return null;
+            }
+
+            event.detail(Details.CODE_ID, codeJWT.getUserSessionId());
+            event.session(codeJWT.getUserSessionId());
+
+            UserSessionModel userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, codeJWT.getUserSessionId(), codeJWT.getIssuedFor());
+            if (userSession == null) {
+                // TODO:mposolda Temporary workaround needed to track if code is invalid or was already used. Will be good to remove once used OAuth codes are tracked through one-time cache
+                userSession = session.sessions().getUserSession(realm, codeJWT.getUserSessionId());
+                if (userSession == null) {
+                    return null;
+                }
+            }
+
+            return userSession.getAuthenticatedClientSessions().get(codeJWT.getIssuedFor());
+
+        }
+
+
+        @Override
+        public String retrieveCode(KeycloakSession session, AuthenticatedClientSessionModel clientSession) {
+            String actionId = KeycloakModelUtils.generateId();
+
+            CodeJWT codeJWT = new CodeJWT();
+            codeJWT.id(actionId);
+            codeJWT.issuedFor(clientSession.getClient().getId());
+            codeJWT.userSessionId(clientSession.getUserSession().getId());
+
+            RealmModel realm = clientSession.getRealm();
+
+            int issuedAt = Time.currentTime();
+            codeJWT.issuedAt(issuedAt);
+            codeJWT.expiration(issuedAt + realm.getAccessCodeLifespan());
+
+            SecretKey aesKey = session.keys().getActiveAesKey(realm).getSecretKey();
+            SecretKey hmacKey = session.keys().getActiveHmacKey(realm).getSecretKey();
+
+            if (logger.isTraceEnabled()) {
+                logger.tracef("Using AES key of length '%d' bytes and HMAC key of length '%d' bytes . Client: '%s', User Session: '%s'", aesKey.getEncoded().length,
+                        hmacKey.getEncoded().length, clientSession.getClient().getClientId(), clientSession.getUserSession().getId());
+            }
+
+            try {
+                return TokenUtil.jweDirectEncode(aesKey, hmacKey, codeJWT);
+            } catch (JWEException jweEx) {
+                throw new RuntimeException(jweEx);
             }
         }
 
-        @Override
-        public String generateCode(AuthenticatedClientSessionModel clientSession, String actionId) {
-            String userSessionId = clientSession.getUserSession().getId();
-            String clientUUID = clientSession.getClient().getId();
-            StringBuilder sb = new StringBuilder();
-            sb.append("uss.");
-            sb.append(actionId);
-            sb.append('.');
-            sb.append(userSessionId);
-            sb.append('.');
-            sb.append(clientUUID);
 
-            return sb.toString();
+        @Override
+        public boolean verifyCode(KeycloakSession session, String code, AuthenticatedClientSessionModel clientSession) {
+            if (codeJWT == null) {
+                throw new IllegalStateException("Illegal use. codeJWT not yet set");
+            }
+
+            UUID codeId = UUID.fromString(codeJWT.getId());
+            CodeToTokenStoreProvider singleUseCache = session.getProvider(CodeToTokenStoreProvider.class);
+
+            if (singleUseCache.putIfAbsent(codeId)) {
+
+                if (logger.isTraceEnabled()) {
+                    logger.tracef("Added code '%s' to single-use cache. User session: %s, client: %s", codeJWT.getId(), codeJWT.getUserSessionId(), codeJWT.getIssuedFor());
+                }
+
+                return true;
+            } else {
+                logger.warnf("Code '%s' already used for userSession '%s' and client '%s'.", codeJWT.getId(), codeJWT.getUserSessionId(), codeJWT.getIssuedFor());
+                return false;
+            }
         }
+
 
         @Override
         public void removeExpiredSession(KeycloakSession session, AuthenticatedClientSessionModel clientSession) {
             throw new IllegalStateException("Not yet implemented");
         }
 
-        @Override
-        public String getNote(AuthenticatedClientSessionModel clientSession, String name) {
-            return clientSession.getNote(name);
-        }
 
         @Override
-        public void removeNote(AuthenticatedClientSessionModel clientSession, String name) {
-            clientSession.removeNote(name);
-        }
-
-        @Override
-        public void setNote(AuthenticatedClientSessionModel clientSession, String name, String value) {
-            clientSession.setNote(name, value);
+        public boolean isExpired(KeycloakSession session, String code, AuthenticatedClientSessionModel clientSession) {
+            return !codeJWT.isActive();
         }
     }
 

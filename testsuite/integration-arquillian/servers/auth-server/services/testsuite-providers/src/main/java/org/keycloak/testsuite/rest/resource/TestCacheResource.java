@@ -20,6 +20,7 @@ package org.keycloak.testsuite.rest.resource;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.Consumes;
@@ -57,6 +58,14 @@ public class TestCacheResource {
     @Produces(MediaType.APPLICATION_JSON)
     public boolean contains(@PathParam("id") String id) {
         return cache.containsKey(id);
+    }
+
+    @GET
+    @Path("/contains-uuid/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public boolean containsUuid(@PathParam("id") String id) {
+        UUID uuid = UUID.fromString(id);
+        return cache.containsKey(uuid);
     }
 
 

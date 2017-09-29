@@ -33,6 +33,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.models.UserManager;
+import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.testsuite.rule.KeycloakRule;
 
 import java.util.Arrays;
@@ -169,14 +170,14 @@ public class UserSessionProviderTest {
         int time = clientSession.getTimestamp();
         assertEquals(null, clientSession.getAction());
 
-        clientSession.setAction(AuthenticatedClientSessionModel.Action.CODE_TO_TOKEN.name());
+        clientSession.setAction(AuthenticatedClientSessionModel.Action.LOGGED_OUT.name());
         clientSession.setTimestamp(time + 10);
 
         kc.stopSession(session, true);
         session = kc.startSession();
 
         AuthenticatedClientSessionModel updated = session.sessions().getUserSession(realm, userSessionId).getAuthenticatedClientSessions().get(clientUUID);
-        assertEquals(AuthenticatedClientSessionModel.Action.CODE_TO_TOKEN.name(), updated.getAction());
+        assertEquals(AuthenticatedClientSessionModel.Action.LOGGED_OUT.name(), updated.getAction());
         assertEquals(time + 10, updated.getTimestamp());
     }
 
@@ -190,11 +191,11 @@ public class UserSessionProviderTest {
         UserSessionModel userSession = session.sessions().getUserSession(realm, userSessionId);
         AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(clientUUID);
 
-        clientSession.setAction(AuthenticatedClientSessionModel.Action.CODE_TO_TOKEN.name());
+        clientSession.setAction(AuthenticatedClientSessionModel.Action.LOGGED_OUT.name());
         clientSession.setNote("foo", "bar");
 
         AuthenticatedClientSessionModel updated = session.sessions().getUserSession(realm, userSessionId).getAuthenticatedClientSessions().get(clientUUID);
-        assertEquals(AuthenticatedClientSessionModel.Action.CODE_TO_TOKEN.name(), updated.getAction());
+        assertEquals(AuthenticatedClientSessionModel.Action.LOGGED_OUT.name(), updated.getAction());
         assertEquals("bar", updated.getNote("foo"));
     }
 

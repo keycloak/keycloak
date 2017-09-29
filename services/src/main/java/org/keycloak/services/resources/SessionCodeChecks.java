@@ -133,7 +133,7 @@ public class SessionCodeChecks {
         }
 
         // object retrieve
-        AuthenticationSessionModel authSession = ClientSessionCode.getClientSession(code, session, realm, AuthenticationSessionModel.class);
+        AuthenticationSessionModel authSession = ClientSessionCode.getClientSession(code, session, realm, event, AuthenticationSessionModel.class);
         if (authSession != null) {
             return authSession;
         }
@@ -240,7 +240,7 @@ public class SessionCodeChecks {
                 return false;
             }
         } else {
-            ClientSessionCode.ParseResult<AuthenticationSessionModel> result = ClientSessionCode.parseResult(code, session, realm, AuthenticationSessionModel.class);
+            ClientSessionCode.ParseResult<AuthenticationSessionModel> result = ClientSessionCode.parseResult(code, session, realm, event, AuthenticationSessionModel.class);
             clientCode = result.getCode();
             if (clientCode == null) {
 
