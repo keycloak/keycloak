@@ -297,7 +297,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
         ClientSessionCode<AuthenticationSessionModel> clientSessionCode = new ClientSessionCode<>(session, realmModel, authSession);
         clientSessionCode.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
-        clientSessionCode.getCode();
+        clientSessionCode.getOrGenerateCode();
         authSession.setProtocol(client.getProtocol());
         authSession.setRedirectUri(redirectUri);
         authSession.setClientNote(OIDCLoginProtocol.STATE_PARAM, UUID.randomUUID().toString());
@@ -1046,7 +1046,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
         if (clientSessionCode != null) {
             authSession = clientSessionCode.getClientSession();
-            String relayState = clientSessionCode.getCode();
+            String relayState = clientSessionCode.getOrGenerateCode();
             encodedState = IdentityBrokerState.decoded(relayState, authSession.getClient().getClientId());
         }
 

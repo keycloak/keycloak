@@ -39,7 +39,7 @@ public class AuthenticatedClientSessionEntity implements Serializable {
 
     private String authMethod;
     private String redirectUri;
-    private int timestamp;
+    private volatile int timestamp;
     private String action;
 
     private Set<String> roles;

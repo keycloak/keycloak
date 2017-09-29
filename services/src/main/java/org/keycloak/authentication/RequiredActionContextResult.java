@@ -150,7 +150,7 @@ public class RequiredActionContextResult implements RequiredActionContext {
     public String generateCode() {
         ClientSessionCode<AuthenticationSessionModel> accessCode = new ClientSessionCode<>(session, getRealm(), getAuthenticationSession());
         authenticationSession.setTimestamp(Time.currentTime());
-        return accessCode.getCode();
+        return accessCode.getOrGenerateCode();
     }
 
 
