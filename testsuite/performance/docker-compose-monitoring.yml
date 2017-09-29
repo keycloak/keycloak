@@ -11,6 +11,7 @@ services:
     
     monitoring_influxdb:
         image: influxdb
+        cpuset: ${MONITORING_CPUSET:-1}
         volumes:
         - influx:/var/lib/influxdb
         networks:
@@ -26,6 +27,7 @@ services:
     monitoring_cadvisor:
         build: monitoring/cadvisor
         image: monitoring_cadvisor
+        cpuset: ${MONITORING_CPUSET:-1}
         hostname: '{{.Node.ID}}'
         volumes:
         - /:/rootfs:ro
@@ -50,6 +52,7 @@ services:
     monitoring_grafana:
         build: monitoring/grafana
         image: monitoring_grafana
+        cpuset: ${MONITORING_CPUSET:-1}
         depends_on:
         - monitoring_influxdb
         volumes:
