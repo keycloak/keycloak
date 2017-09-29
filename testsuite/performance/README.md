@@ -70,7 +70,7 @@ Provisioning/teardown is performed via `docker-compose` tool. More details in [R
 
 ### Generate Test Data
 
-Usage: `mvn verify -Pgenerate-data[,cluster] [-Ddataset=DATASET] [-D<dataset.property>=<value>]`.
+Usage: `mvn verify -Pgenerate-data[,cluster] [-Ddataset=DATASET] [-Dexport-dump] [-D<dataset.property>=<value>]`.
 
 Dataset properties are loaded from `datasets/${dataset}.properties` file. Individual properties can be overriden by specifying `-D` params.
 
@@ -85,8 +85,9 @@ Dataset data is first generated as a .json file, and then imported into Keycloak
 The data can also be exported from the database, and stored locally as `datasets/${dataset}.sql.gz`
 `DATASET=100u ./prepare-dump.sh`
 
-If there is a data dump file available then -Pimport-dump can be used to import the data directly into the database, 
-by-passing Keycloak server completely.
+To speed up dataset initialization part, it is possible to pass `-Dexport-dump` option to have the generated dataset
+exported right after it has been generated. Then, if there is a data dump file available then `-Pimport-dump` 
+can be used to import the data directly into the database, bypassing Keycloak server completely.
 
 Usage: `mvn verify -Pimport-dump [-Ddataset=DATASET]`
 
