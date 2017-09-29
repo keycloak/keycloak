@@ -157,6 +157,56 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
     }
 
     @Override
+    public int getCurrentRefreshTokenUseCount() {
+        return entity.getCurrentRefreshTokenUseCount();
+    }
+
+    @Override
+    public void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount) {
+        UserSessionClientSessionUpdateTask task = new UserSessionClientSessionUpdateTask(client.getId()) {
+
+            @Override
+            protected void runClientSessionUpdate(AuthenticatedClientSessionEntity entity) {
+                entity.setCurrentRefreshTokenUseCount(currentRefreshTokenUseCount);
+            }
+
+            @Override
+            public CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<UserSessionEntity> sessionWrapper) {
+                // We usually update lastSessionRefresh at the same time. That would handle it.
+                return CrossDCMessageStatus.NOT_NEEDED;
+            }
+
+        };
+
+        update(task);
+    }
+
+    @Override
+    public String getCurrentRefreshToken() {
+        return entity.getCurrentRefreshToken();
+    }
+
+    @Override
+    public void setCurrentRefreshToken(String currentRefreshToken) {
+        UserSessionClientSessionUpdateTask task = new UserSessionClientSessionUpdateTask(client.getId()) {
+
+            @Override
+            protected void runClientSessionUpdate(AuthenticatedClientSessionEntity entity) {
+                entity.setCurrentRefreshToken(currentRefreshToken);
+            }
+
+            @Override
+            public CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<UserSessionEntity> sessionWrapper) {
+                // We usually update lastSessionRefresh at the same time. That would handle it.
+                return CrossDCMessageStatus.NOT_NEEDED;
+            }
+
+        };
+
+        update(task);
+    }
+
+    @Override
     public String getAction() {
         return entity.getAction();
     }

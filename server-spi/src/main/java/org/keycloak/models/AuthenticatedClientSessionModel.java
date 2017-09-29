@@ -30,6 +30,12 @@ public interface AuthenticatedClientSessionModel extends CommonClientSessionMode
     void setUserSession(UserSessionModel userSession);
     UserSessionModel getUserSession();
 
+    String getCurrentRefreshToken();
+    void setCurrentRefreshToken(String currentRefreshToken);
+
+    int getCurrentRefreshTokenUseCount();
+    void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount);
+
     String getNote(String name);
     void setNote(String name, String value);
     void removeNote(String name);

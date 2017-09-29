@@ -1088,6 +1088,10 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
         }
     }, true);
 
+    $scope.changeRevokeRefreshToken = function() {
+
+    };
+
     $scope.save = function() {
         $scope.realm.accessTokenLifespan = $scope.realm.accessTokenLifespan.toSeconds();
         $scope.realm.accessTokenLifespanForImplicitFlow = $scope.realm.accessTokenLifespanForImplicitFlow.toSeconds();

@@ -165,6 +165,9 @@ public class RepresentationToModel {
         if (rep.getRevokeRefreshToken() != null) newRealm.setRevokeRefreshToken(rep.getRevokeRefreshToken());
         else newRealm.setRevokeRefreshToken(false);
 
+        if (rep.getRefreshTokenMaxReuse() != null) newRealm.setRefreshTokenMaxReuse(rep.getRefreshTokenMaxReuse());
+        else newRealm.setRefreshTokenMaxReuse(0);
+
         if (rep.getAccessTokenLifespan() != null) newRealm.setAccessTokenLifespan(rep.getAccessTokenLifespan());
         else newRealm.setAccessTokenLifespan(300);
 
@@ -841,6 +844,7 @@ public class RepresentationToModel {
             realm.setActionTokenGeneratedByUserLifespan(rep.getActionTokenGeneratedByUserLifespan());
         if (rep.getNotBefore() != null) realm.setNotBefore(rep.getNotBefore());
         if (rep.getRevokeRefreshToken() != null) realm.setRevokeRefreshToken(rep.getRevokeRefreshToken());
+        if (rep.getRefreshTokenMaxReuse() != null) realm.setRefreshTokenMaxReuse(rep.getRefreshTokenMaxReuse());
         if (rep.getAccessTokenLifespan() != null) realm.setAccessTokenLifespan(rep.getAccessTokenLifespan());
         if (rep.getAccessTokenLifespanForImplicitFlow() != null)
             realm.setAccessTokenLifespanForImplicitFlow(rep.getAccessTokenLifespanForImplicitFlow());
