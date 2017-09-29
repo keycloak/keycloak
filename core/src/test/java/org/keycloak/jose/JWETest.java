@@ -94,7 +94,7 @@ public class JWETest {
     }
 
 
-    // @Test
+    //@Test
     public void testPerfDirect() throws Exception {
         int iterations = 50000;
 

@@ -93,7 +93,7 @@ public class BruteForceCrossDCTest extends AbstractAdminCrossDCTest {
 
     @Test
     public void testBruteForceWithUserOperations() throws Exception {
-        // Enable 1st DC only
+        // Enable 1st node on each DC only
         enableDcOnLoadBalancer(DC.FIRST);
         enableDcOnLoadBalancer(DC.SECOND);
 
@@ -125,7 +125,7 @@ public class BruteForceCrossDCTest extends AbstractAdminCrossDCTest {
 
     @Test
     public void testBruteForceWithRealmOperations() throws Exception {
-        // Enable 1st DC only
+        // Enable 1st node on each DC only
         enableDcOnLoadBalancer(DC.FIRST);
         enableDcOnLoadBalancer(DC.SECOND);
 
@@ -162,7 +162,7 @@ public class BruteForceCrossDCTest extends AbstractAdminCrossDCTest {
 
     @Test
     public void testDuplicatedPutIfAbsentOperation() throws Exception {
-        // Enable 1st DC only
+        // Enable 1st node on each DC only
         enableDcOnLoadBalancer(DC.FIRST);
         enableDcOnLoadBalancer(DC.SECOND);
 
