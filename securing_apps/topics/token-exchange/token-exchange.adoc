@@ -1,0 +1,216 @@
+
+[[_token-exchange]]
+
+== Token Exchange
+
+In {project_name}, token exchange is the process of using a set of credentials or token to obtain an entirely different token.
+A client may want to invoke on a less trusted application so it may want to downgrade the current token it has.
+A client may want to exchange a {project_token} for a token stored for a linked social provider account.
+You may want to trust external tokens minted by other {project_name} realms or foreign IDPs. A client may have a need
+to impersonate a user.  Here's a short summary of the current capabilities of {project_name} around token exchange.
+
+* A client can exchange an existing {project_name} token created for a specific client for a new token targeted to a different client
+* A client can exchange an existing {project_name} token for an external token, i.e. a linked Facebook account
+* A client can exchange an external token for a {project_name} token.
+* A client can impersonate a user
+
+Token exchange in {project_name} is a very loose implementation of the link:http://www.ietf.org/id/draft-ietf-oauth-token-exchange-09.txt[OAuth Token Exchange] specification at the IETF.
+We have extended it a little, ignored some of it, and loosely interpreted other parts of the specification.  It is
+a simple grant type invocation on a realm's OpenID Connect token endpoint.
+
+----
+/realms/{realm}/protocol/openid-connect/token
+----
+
+It accepts form parameters (`application/x-www-form-urlencoded`) as input and the output depends on the type of token you requested an exchange for.
+Token exchange is a client endpoint so requests must provide authentication information for the calling client.
+Public clients specify their client identifier as a form parameter.  Confidential clients can also use form parameters
+to pass their client id and secret, Basic Auth, or however your admin has configured the client authentication flow in your
+realm.  Here's a list of form parameters
+
+client_id::
+    _REQUIRED MAYBE._  This parameter is required for clients using form parameters for authentication.  If you are using
+    Basic Auth, a client JWT token, or client cert authentication, then do not specify this parameter.
+client_secret::
+    _REQUIRED MAYBE_.  This parameter is required for clients using form parameters for authentication and using a client secret as a credential.
+    Do not specify this parameter if client invocations in your realm are authenticated by a different means.
+
+grant_type::
+    _REQUIRED._  The value of the parameter must be `urn:ietf:params:oauth:grant-type:token-exchange`.
+subject_token::
+    _OPTIONAL._  A security token that represents the identity of the party on behalf of whom the request is being made.  It is required if you are exchanging an existing token for a new one.
+subject_issuer::
+    _OPTIONAL._ Identifies the issuer of the `subject_token`.  It can be left blank if the token comes from the current realm or if the issuer
+    can be determined from the `subject_token_type`.  Otherwise it is required to be specified. Valid values are the alias of an `Identity Provider` configured for your realm.  Or an issuer claim identifier
+    configured by a specific `Identity Provider`.
+subject_token_type::
+    _OPTIONAL._  This parameter is the type of the token passed with the `subject_token` parameter.  This defaults
+    to `urn:ietf:params:oauth:token-type:access_token` if the `subject_token` comes from the realm and is an access token.
+    If it is an external token, this parameter may or may not have to be specified depending on the requirements of the
+    `subject_issuer`.
+requested_token_type::
+    _OPTIONAL._ This parameter represents the type of token the client wants to exchange for.  Currently only oauth
+    and OpenID Connect token types are supported.  The default value for this depends on whether the
+    is `urn:ietf:params:oauth:token-type:refresh_token` in which case you will be returned both an access token and refresh
+    token within the response.  Other appropriate values are `urn:ietf:params:oauth:token-type:access_token` and `urn:ietf:params:oauth:token-type:id_token`
+audience::
+    _OPTIONAL._  This parameter specifies the target client you want the new token minted for.
+requested_issuer::
+    _OPTIONAL._  This parameter specifies that the client wants a token minted by an external provider.  It must
+    be the alias of an `Identity Provider` configured within the realm.
+requested_subject::
+    _OPTIONAL._ This specifies a username or user id if your client wants to impersonate a different user.
+scope::
+    _NOT IMPLEMENTED._ This parameter represents the target set of OAuth and OpenID Connect scopes the client
+    is requesting.  It is not implemented at this time but will be once {project_name} has better support for
+    scopes in general.
+
+NOTE:   We currently only support OpenID Connect and OAuth exchanges.  Support for SAML based clients and identity providers may be added in the feature depending on user demand.
+
+A successful response from an exchange invocation will return the HTTP 200 response code with a content type that
+depends on the `requested-token-type` and `requested_issuer` the client asks for.  OAuth requested token types will return
+a JSON document as described in the link:http://www.ietf.org/id/draft-ietf-oauth-token-exchange-09.txt[OAuth Token Exchange] specification.
+
+----
+{
+   "access_token" : ".....",
+   "refresh_token" : ".....",
+   "expires_in" : "...."
+ }
+----
+
+Clients requesting a refresh token will get back both an access and refresh token in the response.  Clients requesting only
+access token type will only get an access token in the response.  Expiration information may or may not be included for
+clients requesting a an external issuer through the `requested_issuer`paramater.
+
+Error responses generally fall under the 400 HTTP response code category, but other error status codes may be returned
+depending on the severity of the error.  Error responses may include content depending on the `requested_issuer`.
+OAuth based exchanges may return a JSON document as follows:
+
+----
+{
+   "error" : "...."
+   "error_description" : "...."
+}
+----
+
+Additional error claims may be returned depending on the exchange type.  For example, OAuth Identity Providers may include
+an additional `account-link-url` claim if the user does not have a link to an identity provider.  This link can be used
+for a client initiated link request.
+
+NOTE: Token exchange setup requires knowledge of fine grain admin permissions (See the link:{adminguide_link}[{adminguide_name}] for more information).  You will need to grant clients
+      permission to exchange.  This is discusssed more later in this chapter.
+
+The rest of this chapter discusses the setup requirements and provides examples for different exchange scenarios.
+For simplicity's sake, let's call a token minted by the current realm as an _internal_ token and a token minted by
+an external realm or identity provider as an _external_ token.
+
+
+=== Internal Token to Internal Token Exchange
+
+With an internal token to token exchange you have an existing token minted to a specific client and you want to exchange
+this token for a new one minted for a different target client.  Why would you want to do this?  This generally happens
+when a client has a token minted for itself, and needs to make additional requests to other applications that require different
+claims and permissions within the access token.  Other reasons this type of exchange might be required is if you
+need to perform a "permission downgrade" where your app needs to invoke on a less trusted app and you don't want
+to propagate your current access token.
+
+==== Granting Permission for the Exchange
+
+Clients that want to exchange tokens for a different client need to be authorized in the admin console to do so.
+You'll need to define a `token-exchange` fine grain permission in the target client you want permission to exchange to.
+
+.Target Client Permission
+image:{project_images}/exchange-target-client-permission-unset.png[]
+
+Toggle the `Permissions Enabled` switch to true.
+
+.Target Client Permission
+image:{project_images}/exchange-target-client-permission-set.png[]
+
+You should see a `token-exchange` link on the page.  Click that to start defining the permission.  It will bring you
+to this page.
+
+.Target Client Exchange Permission Setup
+image:{project_images}/exchange-target-client-permission-setup.png[]
+
+You'll have to define a policy for this permission.  Click the `Authorization` link, go to the `Policies` tab and create
+a `Client` Policy.
+
+.Client Policy Creation
+image:{project_images}/exchange-target-client-policy.png[]
+
+Here you enter in the starting client, that is the authenticated client that is requesting a token exchange.  After you
+create this policy, go back to the target client's `token-exchange` permission and add the client policy you just
+defined.
+
+.Apply Client Policy
+image:{project_images}/exchange-target-client-exchange-apply-policy.png[]
+
+Your client now has permission to invoke.  If you do not do this correct, you will get a 403 Forbidden response if you
+try to make an exchange.
+
+==== Making the Request
+
+When your client is exchange an existing token for a token targeting another client, you must use the `audience` parameter.
+This parameter must be the client identifier for the target client that you configured in the admin console.
+
+[source,bash]
+----
+curl -X POST \
+    -d "client_id=starting-client" \
+    -d "client_secret=geheim" \
+    --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
+    -d "subject_token=...." \
+    --data-urlencode "requested_token_type=urn:ietf:params:oauth:token-type:refresh_token"
+    -d "audience=target-client" \
+    http://localhost:8080/auth/realms/myrealm/protocol/openid-connect/token
+----
+
+The `subject_token` parameter must be an access token for the target realm.  If your `requested_token_type` parameter
+is a refresh token type, then the response will contain both an access token, refresh token, and expiration.  Here's
+an example JSON response you get back from this call:
+
+----
+{
+   "access_token" : "....",
+   "refresh_token" : "....",
+   "expires_in" : 3600
+}
+----
+
+
+=== Internal Token to External Token Exchange
+
+==== Granting Permission for the Exchange
+
+==== Making the Request
+
+
+=== External Token to Internal Token Exchange
+
+==== Granting Permission for the Exchange
+
+==== Making the Request
+
+
+=== External Token to External Token Exchange
+
+=== Impersonation
+
+==== Granting Permission for the Exchange
+
+==== Making the Request
+
+
+=== Direct Naked Impersonation
+
+==== Granting Permission for the Exchange
+
+==== Making the Request
+
+
+
+
+
+
