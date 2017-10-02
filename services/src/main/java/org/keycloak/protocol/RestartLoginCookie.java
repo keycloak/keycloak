@@ -64,6 +64,10 @@ public class RestartLoginCookie {
     @JsonProperty("notes")
     protected Map<String, String> notes = new HashMap<>();
 
+    @Deprecated // Backwards compatibility
+    @JsonProperty("cs")
+    protected String cs;
+
     public Map<String, String> getNotes() {
         return notes;
     }
