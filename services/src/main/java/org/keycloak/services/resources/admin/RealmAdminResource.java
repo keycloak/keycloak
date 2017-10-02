@@ -833,6 +833,9 @@ public class RealmAdminResource {
             if (user.getEmail() == null) {
                 return ErrorResponse.error("Logged in user does not have an e-mail.", Response.Status.INTERNAL_SERVER_ERROR);
             }
+            if (ComponentRepresentation.SECRET_VALUE.equals(settings.get("password"))) {
+                settings.put("password", realm.getSmtpConfig().get("password"));
+            }
             session.getProvider(EmailTemplateProvider.class).sendSmtpTestEmail(settings, user);
         } catch (Exception e) {
             e.printStackTrace();
