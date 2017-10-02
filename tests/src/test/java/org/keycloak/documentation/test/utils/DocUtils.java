@@ -27,10 +27,16 @@ public class DocUtils {
 
     public String readBody(URL url) throws IOException {
         HttpURLConnection connection = null;
+
         try {
             connection = (HttpURLConnection) url.openConnection();
             connection.setConnectTimeout(Constants.HTTP_CONNECTION_TIMEOUT);
             connection.setReadTimeout(Constants.HTTP_READ_TIMEOUT);
+
+            if (connection.getResponseCode() != 200) {
+                throw new IOException("Invalid status code returned " + connection.getResponseCode());
+            }
+
             StringWriter w = new StringWriter();
             IOUtils.copy(connection.getInputStream(), w, "utf-8");
             String s = w.toString();
@@ -43,7 +49,9 @@ public class DocUtils {
             }
 
             Matcher m = p.matcher(s);
-            m.find();
+            if (!m.find()) {
+                throw new RuntimeException("Couldn't find body");
+            }
             return m.group(1);
 
         } finally {
@@ -53,7 +61,7 @@ public class DocUtils {
 
     public List<String> findMissingVariables(String body, List<String> ignoredVariables) {
         List<String> missingVariables = new LinkedList<>();
-        Pattern p = Pattern.compile("[^$/=\\s]\\{([^ }]*)}");
+        Pattern p = Pattern.compile("[^$/=\\s]\\{([^ }\"]*)}");
         Matcher m = p.matcher(body);
         while (m.find()) {
             String key = m.group(1);

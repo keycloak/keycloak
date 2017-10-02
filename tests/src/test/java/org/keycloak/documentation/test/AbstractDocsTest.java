@@ -23,18 +23,18 @@ public abstract class AbstractDocsTest {
 
     protected File guideDir;
     protected static String body;
+    protected String guideUrl;
 
     @Before
     public void before() throws IOException {
         guideDir = config.getGuideDir(getGuideDirName());
+        guideUrl = config.getGuideBaseUrl() + "/" + config.getGuideUrlFragment(getGuideDirName()) + "/";
 
         if (body == null) {
             if (config.isLoadFromFiles()) {
                 File htmlFile = config.getGuideHtmlFile(getGuideDirName());
                 body = utils.readBody(htmlFile);
             } else {
-                String guideUrl = config.getGuideBaseUrl() + "/" + config.getGuideUrlFragment(getGuideDirName());
-
                 log.info("Loading guide from '" + guideUrl);
                 body = utils.readBody(new URL(guideUrl));
             }
@@ -69,7 +69,7 @@ public abstract class AbstractDocsTest {
 
     @Test
     public void checkImages() {
-        List<String> failures = linkUtils.findInvalidImages(body, guideDir);
+        List<String> failures = linkUtils.findInvalidImages(body, guideDir, guideUrl);
         checkFailures("Images not found", failures);
     }
 

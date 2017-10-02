@@ -13,8 +13,8 @@ WARNING: The only supported version of Fuse is {fuseVersion}. If you use earlier
 
 Security for the following items is supported for Fuse:
 
-* Classic WAR applications deployed on Fuse with https://ops4j1.jira.com/wiki/display/ops4j/Pax+Web+Extender+-+War[Pax Web War Extender]
-* Servlets deployed on Fuse as OSGI services with https://ops4j1.jira.com/wiki/display/ops4j/Pax+Web+Extender+-+Whiteboard[Pax Web Whiteboard Extender]
+* Classic WAR applications deployed on Fuse with Pax Web War Extender
+* Servlets deployed on Fuse as OSGI services with Pax Web Whiteboard Extender
 * http://camel.apache.org/[Apache Camel] Jetty endpoints running with the http://camel.apache.org/jetty.html[Camel Jetty] component
 * http://cxf.apache.org/[Apache CXF] endpoints running on their own separate http://cxf.apache.org/docs/jetty-configuration.html[Jetty engine]
 * http://cxf.apache.org/[Apache CXF] endpoints running on the default engine provided by the CXF servlet
