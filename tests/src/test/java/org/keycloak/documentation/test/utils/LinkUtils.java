@@ -102,7 +102,7 @@ public class LinkUtils {
         return invalidLinks;
     }
 
-    public List<String> findInvalidImages(String body, File guideDir) {
+    public List<String> findInvalidImages(String body, File guideDir, String guideUrl) {
         List<String> missingImages = new LinkedList<>();
         Pattern p = Pattern.compile("<img src=\"([^ \"]*)[^>]*\"");
         Matcher m = p.matcher(body);
@@ -114,6 +114,10 @@ public class LinkUtils {
                     missingImages.add(image);
                 }
             } else {
+                if (image.startsWith("./")) {
+                    image = guideUrl + image;
+                }
+
                 if (!verifiedLinks.containsKey(image)) {
                     boolean valid = http.isValid(image);
                     if (valid) {
