@@ -94,16 +94,16 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
     }
 
     public Response exchangeNotLinked(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
-        return exchangeErrorResponse(uriInfo, authorizedClient, tokenUserSession, "identity provider is not linked");
+        return exchangeErrorResponse(uriInfo, authorizedClient, tokenUserSession, "not_linked", "identity provider is not linked");
     }
 
     public Response exchangeNotLinkedNoStore(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
-        return exchangeErrorResponse(uriInfo, authorizedClient, tokenUserSession, "identity provider is not linked, can only link to current user session");
+        return exchangeErrorResponse(uriInfo, authorizedClient, tokenUserSession, "not_linked", "identity provider is not linked, can only link to current user session");
     }
 
-    protected Response exchangeErrorResponse(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, String reason) {
+    protected Response exchangeErrorResponse(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, String errorCode, String reason) {
         Map<String, String> error = new HashMap<>();
-        error.put("error", "invalid_target");
+        error.put("error", errorCode);
         error.put("error_description", reason);
         String accountLinkUrl = getLinkingUrl(uriInfo, authorizedClient, tokenUserSession);
         if (accountLinkUrl != null) error.put(ACCOUNT_LINK_URL, accountLinkUrl);
@@ -133,7 +133,7 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
     }
 
     public Response exchangeTokenExpired(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
-        return exchangeErrorResponse(uriInfo, authorizedClient, tokenUserSession, "token_expired");
+        return exchangeErrorResponse(uriInfo, authorizedClient, tokenUserSession, "token_expired", "linked token is expired");
     }
 
     public Response exchangeUnsupportedRequiredType() {
