@@ -9,7 +9,7 @@ When you define your initial admin account, you create an account in the
 _master_ realm. Your initial login to the admin console will also be via the
 _master_ realm.
 
-Red Hat recommends that you do not use the _master_ realm to manage the users
+We recommend that you do not use the _master_ realm to manage the users
 and applications in your organization. Reserve use of the _master_ realm for
 _super_ admins to create and manage the realms in your system. Following this
 security model helps prevent accidental changes and follows the tradition
