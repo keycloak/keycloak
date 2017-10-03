@@ -64,7 +64,7 @@
     
     <container qualifier="auth-server-undertow" mode="suite" >
         <configuration>
-            <property name="enabled">${auth.server.undertow} &amp;&amp; ! ${auth.server.undertow.crossdc}</property>
+            <property name="enabled">${auth.server.undertow} &amp;&amp; ! ${auth.server.crossdc}</property>
             <property name="bindAddress">0.0.0.0</property>
             <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.KeycloakOnUndertow</property>
             <property name="bindHttpPort">${auth.server.http.port}</property>
@@ -74,7 +74,7 @@
     
     <container qualifier="auth-server-${auth.server}" mode="suite" >
         <configuration>
-            <property name="enabled">${auth.server.jboss}</property>
+            <property name="enabled">${auth.server.jboss} &amp;&amp; ! ${auth.server.crossdc}</property>
             <property name="adapterImplClass">${auth.server.adapter.impl.class}</property>
             <property name="jbossHome">${auth.server.home}</property>
             <property name="${auth.server.config.property.name}">${auth.server.config.property.value}</property>
@@ -186,18 +186,18 @@
     </group>
 
 
-    <!-- Cross DC with embedded undertow. Node numbering is [centre #].[node #] -->
-    <group qualifier="auth-server-undertow-cross-dc">
+    <!-- Cross DC. Node numbering is [centre #].[node #] -->
+    <group qualifier="auth-server-jboss-cross-dc">
         <container qualifier="cache-server-cross-dc-1" mode="suite" >
             <configuration>
-                <property name="enabled">${auth.server.undertow.crossdc} &amp;&amp; ! ${cache.server.lifecycle.skip}</property>
+                <property name="enabled">${auth.server.crossdc} &amp;&amp; ! ${cache.server.lifecycle.skip}</property>
                 <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
                 <property name="jbossHome">${cache.server.home}</property>
                 <property name="serverConfig">clustered.xml</property>
                 <property name="jbossArguments">
                     -Djboss.socket.binding.port-offset=${cache.server.port.offset}
                     -Djboss.default.multicast.address=234.56.78.99
-                    -Djboss.node.name=cache-server
+                    -Djboss.node.name=cache-server-dc-1
                     ${adapter.test.props}
                     ${auth.server.profile}
                 </property>
@@ -213,7 +213,7 @@
 
         <container qualifier="cache-server-cross-dc-2" mode="suite" >
             <configuration>
-                <property name="enabled">${auth.server.undertow.crossdc} &amp;&amp; ! ${cache.server.lifecycle.skip}</property>
+                <property name="enabled">${auth.server.crossdc} &amp;&amp; ! ${cache.server.lifecycle.skip}</property>
                 <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
                 <property name="jbossHome">${cache.server.home}</property>
                 <property name="setupCleanServerBaseDir">true</property>
@@ -238,11 +238,11 @@
 
         <container qualifier="auth-server-balancer-cross-dc" mode="suite" >
             <configuration>
-                <property name="enabled">${auth.server.undertow.crossdc}</property>
+                <property name="enabled">${auth.server.crossdc}</property>
                 <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.lb.SimpleUndertowLoadBalancerContainer</property>
                 <property name="bindAddress">localhost</property>
                 <property name="bindHttpPort">${auth.server.http.port}</property>
-                <property name="nodes">auth-server-undertow-cross-dc-0_1=http://localhost:8101,auth-server-undertow-cross-dc-0_2-manual=http://localhost:8102,auth-server-undertow-cross-dc-1_1=http://localhost:8111,auth-server-undertow-cross-dc-1_2-manual=http://localhost:8112</property>
+                <property name="nodes">auth-server-${node.name}-cross-dc-0_1=http://localhost:8101,auth-server-${node.name}-cross-dc-0_2-manual=http://localhost:8102,auth-server-${node.name}-cross-dc-1_1=http://localhost:8111,auth-server-${node.name}-cross-dc-1_2-manual=http://localhost:8112</property>
             </configuration>
         </container>
 
@@ -253,7 +253,6 @@
                 <property name="bindAddress">localhost</property>
                 <property name="bindHttpPort">${auth.server.http.port}</property>
                 <property name="bindHttpPortOffset">-79</property>
-                <property name="route">auth-server-undertow-cross-dc-0_1</property>
                 <property name="remoteMode">${undertow.remote}</property>
                 <property name="dataCenter">0</property>
                 <property name="keycloakConfigPropertyOverrides">{
@@ -277,7 +276,6 @@
                 <property name="bindAddress">localhost</property>
                 <property name="bindHttpPort">${auth.server.http.port}</property>
                 <property name="bindHttpPortOffset">-78</property>
-                <property name="route">auth-server-undertow-cross-dc-0_2-manual</property>
                 <property name="remoteMode">${undertow.remote}</property>
                 <property name="dataCenter">0</property>
                 <property name="keycloakConfigPropertyOverrides">{
@@ -302,7 +300,6 @@
                 <property name="bindAddress">localhost</property>
                 <property name="bindHttpPort">${auth.server.http.port}</property>
                 <property name="bindHttpPortOffset">-69</property>
-                <property name="route">auth-server-undertow-cross-dc-1_1</property>
                 <property name="remoteMode">${undertow.remote}</property>
                 <property name="dataCenter">1</property>
                 <property name="keycloakConfigPropertyOverrides">{
@@ -326,7 +323,6 @@
                 <property name="bindAddress">localhost</property>
                 <property name="bindHttpPort">${auth.server.http.port}</property>
                 <property name="bindHttpPortOffset">-68</property>
-                <property name="route">auth-server-undertow-cross-dc-1_2-manual</property>
                 <property name="remoteMode">${undertow.remote}</property>
                 <property name="dataCenter">1</property>
                 <property name="keycloakConfigPropertyOverrides">{
@@ -343,8 +339,97 @@
                 }</property>
             </configuration>
         </container>
-    </group>
+        <container qualifier="auth-server-jboss-cross-dc-0_1" mode="suite" >
+            <configuration>
+                <property name="enabled">${auth.server.jboss.crossdc}</property>
+                <property name="adapterImplClass">${auth.server.adapter.impl.class}</property>
+                <property name="jbossHome">${auth.server.crossdc01.home}</property>
+                <property name="serverConfig">standalone-ha.xml</property>
+                <property name="jbossArguments">
+                    -Djboss.socket.binding.port-offset=${auth.server.crossdc01.port.offset}
+                    -Djboss.default.multicast.address=234.56.78.1
+                    -Dremote.cache.port=12232
+                    -Djboss.site.name=dc0
+                    -Djboss.node.name=auth-server-${node.name}-cross-dc-0_1
+                </property>
+                <property name="javaVmArguments">
+                    -Djava.net.preferIPv4Stack=true
+                    ${auth.server.crossdc01.jvm.debug.args}
+                </property>
+                <property name="managementPort">${auth.server.crossdc01.management.port}</property>
+                <property name="bindHttpPortOffset">-79</property>
+                <property name="dataCenter">0</property>
+            </configuration>
+        </container>
+        <container qualifier="auth-server-jboss-cross-dc-0_2-manual" mode="manual" >
+            <configuration>
+                <property name="enabled">${auth.server.jboss.crossdc}</property>
+                <property name="adapterImplClass">${auth.server.adapter.impl.class}</property>
+                <property name="jbossHome">${auth.server.crossdc02.home}</property>
+                <property name="serverConfig">standalone-ha.xml</property>
+                <property name="jbossArguments">
+                    -Djboss.socket.binding.port-offset=${auth.server.crossdc02.port.offset}
+                    -Djboss.default.multicast.address=234.56.78.1
+                    -Dremote.cache.port=12232
+                    -Djboss.site.name=dc0
+                    -Djboss.node.name=auth-server-${node.name}-cross-dc-0_2-manual
+                </property>
+                <property name="javaVmArguments">
+                    -Djava.net.preferIPv4Stack=true
+                    ${auth.server.crossdc02.jvm.debug.args}
+                </property>
+                <property name="managementPort">${auth.server.crossdc02.management.port}</property>
+                <property name="bindHttpPortOffset">-78</property>
+                <property name="dataCenter">0</property>
+            </configuration>
+        </container>
 
+        <container qualifier="auth-server-jboss-cross-dc-1_1" mode="suite" >
+            <configuration>
+                <property name="enabled">${auth.server.jboss.crossdc}</property>
+                <property name="adapterImplClass">${auth.server.adapter.impl.class}</property>
+                <property name="jbossHome">${auth.server.crossdc11.home}</property>
+                <property name="serverConfig">standalone-ha.xml</property>
+                <property name="jbossArguments">
+                    -Djboss.socket.binding.port-offset=${auth.server.crossdc11.port.offset}
+                    -Djboss.default.multicast.address=234.56.78.2
+                    -Dremote.cache.port=13232
+                    -Djboss.site.name=dc1
+                    -Djboss.node.name=auth-server-${node.name}-cross-dc-1_1
+                </property>
+                <property name="javaVmArguments">
+                    -Djava.net.preferIPv4Stack=true
+                    ${auth.server.crossdc11.jvm.debug.args}
+                </property>
+                <property name="managementPort">${auth.server.crossdc11.management.port}</property>
+                <property name="bindHttpPortOffset">-69</property>
+                <property name="dataCenter">1</property>
+            </configuration>
+        </container>
+        <container qualifier="auth-server-jboss-cross-dc-1_2-manual" mode="manual" >
+            <configuration>
+                <property name="enabled">${auth.server.jboss.crossdc}</property>
+                <property name="adapterImplClass">${auth.server.adapter.impl.class}</property>
+                <property name="jbossHome">${auth.server.crossdc12.home}</property>
+                <property name="serverConfig">standalone-ha.xml</property>
+                <property name="jbossArguments">
+                    -Djboss.socket.binding.port-offset=${auth.server.crossdc12.port.offset}
+                    -Djboss.default.multicast.address=234.56.78.2
+                    -Dremote.cache.port=13232
+                    -Djboss.site.name=dc1
+                    -Djboss.node.name=auth-server-${node.name}-cross-dc-1_2-manual
+                </property>
+                <property name="javaVmArguments">
+                    -Djava.net.preferIPv4Stack=true
+                    ${auth.server.crossdc12.jvm.debug.args}
+                </property>
+                <property name="managementPort">${auth.server.crossdc12.management.port}</property>
+                <property name="bindHttpPortOffset">-68</property>
+                <property name="dataCenter">1</property>
+            </configuration>
+        </container>
+    </group>
+    
 
     <container qualifier="auth-server-balancer-wildfly" mode="suite" >
         <configuration>

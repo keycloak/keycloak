@@ -135,6 +135,11 @@ public class AuthServerTestEnricher {
 
         return managementClient;
     }
+    
+    public void distinguishContainersInConsoleOutput(@Observes(precedence = 5) StartContainer event) {
+        log.info("*****************************************************************"
+                + "*****************************************************************************");
+    }
 
     public void initializeSuiteContext(@Observes(precedence = 2) BeforeSuite event) {
         Set<ContainerInfo> containers = containerRegistry.get().getContainers().stream()
@@ -165,15 +170,16 @@ public class AuthServerTestEnricher {
             }
 
             containers.stream()
-              .filter(c -> c.getQualifier().startsWith(AUTH_SERVER_CONTAINER + "-cross-dc-"))
-              .sorted((a, b) -> a.getQualifier().compareTo(b.getQualifier()))
-              .forEach(c -> {
-                String portOffsetString = c.getArquillianContainer().getContainerConfiguration().getContainerProperties().getOrDefault("bindHttpPortOffset", "0");
-                String dcString = c.getArquillianContainer().getContainerConfiguration().getContainerProperties().getOrDefault("dataCenter", "0");
-                updateWithAuthServerInfo(c, Integer.valueOf(portOffsetString));
-                suiteContext.addAuthServerBackendsInfo(Integer.valueOf(dcString), c);
-              });
+                    .filter(c -> c.getQualifier().startsWith("auth-server-" + System.getProperty("node.name") + "-"))
+                    .sorted((a, b) -> a.getQualifier().compareTo(b.getQualifier()))
+                    .forEach(c -> {
+                        String portOffsetString = c.getArquillianContainer().getContainerConfiguration().getContainerProperties().getOrDefault("bindHttpPortOffset", "0");
+                        updateWithAuthServerInfo(c, Integer.valueOf(portOffsetString));
 
+                        String dcString = c.getArquillianContainer().getContainerConfiguration().getContainerProperties().getOrDefault("dataCenter", "0");
+                        suiteContext.addAuthServerBackendsInfo(Integer.valueOf(dcString), c);
+                    });
+            
             containers.stream()
                     .filter(c -> c.getQualifier().startsWith("cache-server-cross-dc-"))
                     .sorted((a, b) -> a.getQualifier().compareTo(b.getQualifier()))
