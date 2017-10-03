@@ -95,8 +95,10 @@ public abstract class AbstractAdminCrossDCTest extends AbstractCrossDCTest {
             T newStat = (T) stats.getSingleStatistics(key);
 
             Matcher<? super T> matcherInstance = matcherOnOldStat.apply(oldStat);
+            
+            log.infof("assertSingleStatistics '%s' : oldStat: %s, newStat: %s", key, oldStat.toString(), newStat.toString());
             assertThat(newStat, matcherInstance);
-        }, 20, 200);
+        }, 50, 200);
     }
 
     protected void assertStatistics(InfinispanStatistics stats, Runnable testedCode, BiConsumer<Map<String, Object>, Map<String, Object>> assertionOnStats) {
@@ -108,7 +110,7 @@ public abstract class AbstractAdminCrossDCTest extends AbstractCrossDCTest {
         Retry.execute(() -> {
             Map<String, Object> newStat = stats.getStatistics();
             assertionOnStats.accept(oldStat, newStat);
-        }, 5, 200);
+        }, 50, 200);
     }
 
 }

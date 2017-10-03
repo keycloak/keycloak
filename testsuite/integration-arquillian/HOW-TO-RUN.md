@@ -460,13 +460,13 @@ The cross DC requires setting a profile specifying used cache server by specifyi
 
 a) First compile the Infinispan/JDG test server via the following command:
 
-  `mvn -Pcache-server-infinispan -f testsuite/integration-arquillian -DskipTests clean install`
+  `mvn -Pcache-server-infinispan,auth-servers-crossdc-undertow -f testsuite/integration-arquillian -DskipTests clean install`
 
 or
 
-  `mvn -Pcache-server-jdg -f testsuite/integration-arquillian -DskipTests clean install`
+  `mvn -Pcache-server-jdg,auth-servers-crossdc-undertow -f testsuite/integration-arquillian -DskipTests clean install`
 
-b) Then in case you want to use **JBoss-based** containers instead of containers on Embedded Undertow run following command:
+b) Then in case you want to use **JBoss-based** Keycloak backend containers instead of containers on Embedded Undertow run following command:
 
     `mvn -Pauth-servers-crossdc-jboss,auth-server-wildfly -f testsuite/integration-arquillian -DskipTests clean install`
 
@@ -476,7 +476,7 @@ By default JBoss-based containers use in-memory h2 database. It can be configure
 
   `mvn -Pauth-servers-crossdc-jboss,auth-server-wildfly,jpa -f testsuite/integration-arquillian -DskipTests clean install -Djdbc.mvn.groupId=org.mariadb.jdbc -Djdbc.mvn.artifactId=mariadb-java-client -Djdbc.mvn.version=2.0.3 -Dkeycloak.connectionsJpa.url=jdbc:mariadb://localhost:3306/keycloak -Dkeycloak.connectionsJpa.password=keycloak -Dkeycloak.connectionsJpa.user=keycloak`
 
-c1) Then you can run the tests using the following command (adjust the test specification according to your needs) for containers on **Undertow**:
+c1) Then you can run the tests using the following command (adjust the test specification according to your needs) for Keycloak backend containers on **Undertow**:
 
   `mvn -Pcache-server-infinispan,auth-servers-crossdc-undertow -Dtest=*.crossdc.* -pl testsuite/integration-arquillian/tests/base clean install`
 
@@ -484,7 +484,7 @@ or
 
   `mvn -Pcache-server-jdg,auth-servers-crossdc-undertow -Dtest=*.crossdc.* -pl testsuite/integration-arquillian/tests/base clean install`
 
-c2) For **JBoss-based** containers:
+c2) For **JBoss-based** Keycloak backend containers:
 
   `mvn -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly -Dtest=*.crossdc.* -pl testsuite/integration-arquillian/tests/base clean install`
 

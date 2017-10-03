@@ -50,8 +50,8 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
 
     // Keep the following constants in sync with arquillian
     public static final String QUALIFIER_NODE_BALANCER = "auth-server-balancer-cross-dc";
-    public static final String QUALIFIER_JBOSS_DC_0_NODE_1 = "auth-server-jboss-cross-dc-0_1";
-    public static final String QUALIFIER_JBOSS_DC_1_NODE_1 = "auth-server-jboss-cross-dc-1_1";
+    public static final String QUALIFIER_AUTH_SERVER_DC_0_NODE_1 = "auth-server-${node.name}-cross-dc-0_1";
+    public static final String QUALIFIER_AUTH_SERVER_DC_1_NODE_1 = "auth-server-${node.name}-cross-dc-1_1";
 
     @ArquillianResource
     @LoadBalancer(value = QUALIFIER_NODE_BALANCER)
@@ -215,7 +215,9 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
     public void disableDcOnLoadBalancer(DC dc) {
         int dcIndex = dc.ordinal();
         log.infof("Disabling load balancer for dc=%d", dcIndex);
-        this.suiteContext.getDcAuthServerBackendsInfo().get(dcIndex).forEach(c -> loadBalancerCtrl.disableBackendNodeByName(c.getQualifier()));
+        this.suiteContext.getDcAuthServerBackendsInfo().get(dcIndex).forEach(containerInfo -> {
+            loadBalancerCtrl.disableBackendNodeByName(containerInfo.getQualifier());
+        });
     }
 
     /**
@@ -231,7 +233,9 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
         } else {
             dcNodes.stream()
               .filter(ContainerInfo::isStarted)
-              .forEach(c -> loadBalancerCtrl.enableBackendNodeByName(c.getQualifier()));
+              .forEach(containerInfo -> {
+                  loadBalancerCtrl.enableBackendNodeByName(containerInfo.getQualifier());
+              });
         }
     }
 

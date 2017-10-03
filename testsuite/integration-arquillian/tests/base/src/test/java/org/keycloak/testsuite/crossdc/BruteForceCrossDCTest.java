@@ -52,7 +52,7 @@ public class BruteForceCrossDCTest extends AbstractAdminCrossDCTest {
     private static final String REALM_NAME = "brute-force-test";
     
     @Deployment(name = "dc0")
-    @TargetsContainer(QUALIFIER_JBOSS_DC_0_NODE_1)
+    @TargetsContainer(QUALIFIER_AUTH_SERVER_DC_0_NODE_1)
     public static WebArchive deployDC0() {
         return RunOnServerDeployment.create(
                 BruteForceCrossDCTest.class,
@@ -64,7 +64,7 @@ public class BruteForceCrossDCTest extends AbstractAdminCrossDCTest {
     }
     
     @Deployment(name = "dc1")
-    @TargetsContainer(QUALIFIER_JBOSS_DC_1_NODE_1)
+    @TargetsContainer(QUALIFIER_AUTH_SERVER_DC_1_NODE_1)
     public static WebArchive deployDC1() {
         return RunOnServerDeployment.create(
                 BruteForceCrossDCTest.class,
@@ -248,7 +248,6 @@ public class BruteForceCrossDCTest extends AbstractAdminCrossDCTest {
     }
 
 
-    // TODO Having this working on Wildfly might be a challenge. Maybe require @Deployment with @TargetsContainer descriptor generated at runtime as we don't know the container qualifier at compile time... Maybe workaround by add endpoint to TestingResourceProvider if needed..
     // resolution on Wildfly: make deployment available on both dc0_1 and dc1_1, see @Deployment methods
     private void addUserLoginFailure(KeycloakTestingClient testingClient) throws URISyntaxException, IOException {
         testingClient.server().run(session -> {
