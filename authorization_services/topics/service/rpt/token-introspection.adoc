@@ -1,5 +1,5 @@
 [[_service_protection_token_introspection]]
-=== Introspecting a Requesting Party Token
+==== Introspecting a Requesting Party Token
 
 Sometimes you might want to introspect a requesting party token (RPT) to check its validity or obtain the permissions within the token to enforce authorization decisions on the resource server side.
 

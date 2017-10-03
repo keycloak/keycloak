@@ -45,5 +45,8 @@ This permission is a <<_permission_create_resource, resource-based permission>>,
 
 You can change the default configuration by removing the default resource, policy, or permission definitions and creating your own.
 
+The default resource is created with an **URI** that maps to any resource or path in your application using a **/*** pattern. Before creating your own resources, permissions and policies, make
+sure the default configuration doesn't conflict with your own settings.
+
 [NOTE]
 The default configuration defines a resource that maps to all paths in your application. If you are about to write permissions to your own resources, be sure to remove the *Default Resource* or change its ```URI``` field to a more specific path in your application. Otherwise, the policy associated with the default resource (which by default always grants access) will allow {project_name} to grant access to any protected resource.
