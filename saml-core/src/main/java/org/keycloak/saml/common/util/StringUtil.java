@@ -38,7 +38,7 @@ public class StringUtil {
     private static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
 
     /**
-     * Check whether the passed string is null or empty
+     * Check whether the passed string is null, empty (zero length) or whitespace
      *
      * @param str
      *
@@ -49,7 +49,7 @@ public class StringUtil {
     }
 
     /**
-     * Check whether the string is null or empty
+     * Check whether the string is null or empty (zero length)
      *
      * @param str
      *
