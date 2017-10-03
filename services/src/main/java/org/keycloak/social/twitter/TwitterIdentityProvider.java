@@ -191,14 +191,13 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
                 return callback.cancelled(state);
             }
 
-            Response errorResponse = null;
-
+            AuthenticationSessionModel authSession = null;
             try {
                 Twitter twitter = new TwitterFactory().getInstance();
 
                 twitter.setOAuthConsumer(getConfig().getClientId(), getConfig().getClientSecret());
 
-                AuthenticationSessionModel authSession = ClientSessionCode.getClientSession(state, session, realm, event, AuthenticationSessionModel.class);
+                authSession = ClientSessionCode.getClientSession(state, session, realm, event, AuthenticationSessionModel.class);
 
                 String twitterToken = authSession.getAuthNote(TWITTER_TOKEN);
                 String twitterSecret = authSession.getAuthNote(TWITTER_TOKENSECRET);
@@ -239,7 +238,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
             } catch (Exception e) {
                 logger.error("Could get user profile from twitter.", e);
                 sendErrorEvent();
-                return ErrorPage.error(session, Messages.UNEXPECTED_ERROR_HANDLING_RESPONSE);
+                return ErrorPage.error(session, authSession, Messages.UNEXPECTED_ERROR_HANDLING_RESPONSE);
             }
         }
 

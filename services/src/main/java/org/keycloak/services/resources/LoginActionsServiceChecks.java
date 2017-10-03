@@ -116,7 +116,7 @@ public class LoginActionsServiceChecks {
 
         UserSessionModel userSession = context.getSession().sessions().getUserSession(context.getRealm(), authSessionId);
         if (userSession != null) {
-            LoginFormsProvider loginForm = context.getSession().getProvider(LoginFormsProvider.class)
+            LoginFormsProvider loginForm = context.getSession().getProvider(LoginFormsProvider.class).setAuthenticationSession(context.getAuthenticationSession())
               .setSuccess(Messages.ALREADY_LOGGED_IN);
 
             if (context.getSession().getContext().getClient() == null) {
