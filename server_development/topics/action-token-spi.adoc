@@ -37,7 +37,7 @@ When an action token is passed to a {project_name} endpoint
 `_KEYCLOAK_ROOT_/auth/realms/master/login-actions/action-token` via `key` parameter, it is validated and a proper action
 token handler is executed. The processing always takes place in a context of an authentication session, either a fresh
 one or the action token service joins an existing authentication session (details are described below). The action token
-handler can perform actions prescribed by the token (often it alters the authentication session) and results into a HTTP
+handler can perform actions prescribed by the token (often it alters the authentication session) and results into an HTTP
 response (e.g. it can continue in authentication or display an information/error page). These steps are detailed below.
 
 1. *Basic action token validation.* Signature and time validity is checked, and action token handler is determined based
