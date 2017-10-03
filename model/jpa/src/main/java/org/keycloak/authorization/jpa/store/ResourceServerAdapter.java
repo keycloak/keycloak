@@ -16,11 +16,7 @@
  */
 package org.keycloak.authorization.jpa.store;
 
-import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.jpa.entities.ResourceEntity;
 import org.keycloak.authorization.jpa.entities.ResourceServerEntity;
-import org.keycloak.authorization.model.Policy;
-import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.jpa.JpaModel;
@@ -51,11 +47,6 @@ public class ResourceServerAdapter implements ResourceServer, JpaModel<ResourceS
     @Override
     public String getId() {
         return entity.getId();
-    }
-
-    @Override
-    public String getClientId() {
-        return entity.getClientId();
     }
 
     @Override

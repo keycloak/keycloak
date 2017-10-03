@@ -17,8 +17,6 @@
 
 package org.keycloak.models.sessions.infinispan.changes;
 
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
 /**

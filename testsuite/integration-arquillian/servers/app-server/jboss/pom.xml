@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-app-server</artifactId>
-        <version>3.3.0.CR1-SNAPSHOT</version>
+        <version>3.4.0.CR1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -182,6 +182,29 @@
                                     <overwrite>true</overwrite>
                                 </configuration>
                             </execution>
+                            <execution>
+                                <id>copy-keystore</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${app.server.jboss.home}/standalone/configuration</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${common.resources}/keystore</directory>
+                                            <includes>
+                                                <include>adapter.jks</include>
+                                                <include>keycloak.truststore</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
+                                    <nonFilteredFileExtensions>
+                                        <nonFilteredFileExtension>jks</nonFilteredFileExtension>
+                                        <nonFilteredFileExtension>truststore</nonFilteredFileExtension>
+                                    </nonFilteredFileExtensions>
+                                </configuration>
+                            </execution>
                         </executions>
                     </plugin>
 
@@ -323,79 +346,6 @@
                 </pluginManagement>
             </build>
         </profile>
-        <profile>
-            <id>ssl</id>
-            <activation>
-                <property>
-                    <name>app.server.ssl.required</name>
-                </property>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-resources-plugin</artifactId>
-                    </plugin>
-                </plugins>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.codehaus.mojo</groupId>
-                            <artifactId>xml-maven-plugin</artifactId>
-                            <executions>
-                                <execution>
-                                    <id>configure-adapter-subsystem-security</id>
-                                    <phase>process-resources</phase>
-                                    <goals>
-                                        <goal>transform</goal>
-                                    </goals>
-                                    <configuration>
-                                        <transformationSets>
-                                            <transformationSet>
-                                                <dir>${app.server.jboss.home}/standalone/configuration</dir>
-                                                <includes>
-                                                    <include>standalone.xml</include>
-                                                </includes>
-                                                <stylesheet>${common.resources}/${security.xslt}</stylesheet>
-                                                <outputDir>${app.server.jboss.home}/standalone/configuration</outputDir>
-                                            </transformationSet>
-                                        </transformationSets>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
-                        <plugin>
-                            <artifactId>maven-resources-plugin</artifactId>
-                            <executions>
-                                <execution>
-                                    <id>copy-keystore</id>
-                                    <phase>process-resources</phase>
-                                    <goals>
-                                        <goal>copy-resources</goal>
-                                    </goals>
-                                    <configuration>
-                                        <outputDirectory>${app.server.jboss.home}/standalone/configuration</outputDirectory>
-                                        <resources>
-                                            <resource>
-                                                <directory>${common.resources}/keystore</directory>
-                                                <includes>
-                                                    <include>adapter.jks</include>
-                                                    <include>keycloak.truststore</include>
-                                                </includes>
-                                            </resource>
-                                        </resources>
-                                        <nonFilteredFileExtensions>
-                                            <nonFilteredFileExtension>jks</nonFilteredFileExtension>
-                                            <nonFilteredFileExtension>truststore</nonFilteredFileExtension>
-                                        </nonFilteredFileExtensions>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
-        
         <profile>
             <id>app-server-as7</id>
             <modules>

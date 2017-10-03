@@ -16,6 +16,7 @@
 #
 
 org.keycloak.social.facebook.FacebookIdentityProviderFactory
+org.keycloak.social.paypal.PayPalIdentityProviderFactory
 org.keycloak.social.github.GitHubIdentityProviderFactory
 org.keycloak.social.google.GoogleIdentityProviderFactory
 org.keycloak.social.linkedin.LinkedInIdentityProviderFactory

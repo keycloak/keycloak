@@ -107,6 +107,8 @@ public class ResourceAdminManager {
     }
 
     public void logoutUser(URI requestUri, RealmModel realm, UserModel user, KeycloakSession keycloakSession) {
+        keycloakSession.users().setNotBeforeForUser(realm, user, Time.currentTime());
+
         List<UserSessionModel> userSessions = keycloakSession.sessions().getUserSessions(realm, user);
         logoutUserSessions(requestUri, realm, userSessions);
     }

@@ -181,7 +181,7 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
                 RealmModel realm = ((UserRemovedEvent) event).getRealm();
                 ResourceServerStore resourceServerStore = storeFactory.getResourceServerStore();
                 realm.getClients().forEach(clientModel -> {
-                    ResourceServer resourceServer = resourceServerStore.findByClient(clientModel.getId());
+                    ResourceServer resourceServer = resourceServerStore.findById(clientModel.getId());
 
                     if (resourceServer != null) {
                         policyStore.findByType(getId(), resourceServer.getId()).forEach(policy -> {

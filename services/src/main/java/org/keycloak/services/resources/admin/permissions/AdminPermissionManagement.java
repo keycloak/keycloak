@@ -27,8 +27,7 @@ import org.keycloak.models.ClientModel;
 public interface AdminPermissionManagement {
     public static final String MANAGE_SCOPE = "manage";
     public static final String VIEW_SCOPE = "view";
-    public static final String EXCHANGE_FROM_SCOPE="exchange-from";
-    public static final String EXCHANGE_TO_SCOPE="exchange-to";
+    public static final String TOKEN_EXCHANGE ="token-exchange";
 
     ClientModel getRealmManagementClient();
 
@@ -38,6 +37,7 @@ public interface AdminPermissionManagement {
     UserPermissionManagement users();
     GroupPermissionManagement groups();
     ClientPermissionManagement clients();
+    IdentityProviderPermissionManagement idps();
 
     ResourceServer realmResourceServer();
 }

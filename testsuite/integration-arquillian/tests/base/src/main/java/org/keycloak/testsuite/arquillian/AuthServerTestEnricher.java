@@ -36,6 +36,9 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.LogChecker;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.wildfly.extras.creaper.core.ManagementClient;
+import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
+import org.wildfly.extras.creaper.core.online.OnlineOptions;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -115,6 +118,22 @@ public class AuthServerTestEnricher {
         int port = sslRequired ? httpsPort : httpPort;
 
         return String.format("%s://%s:%s", scheme, host, port + clusterPortOffset);
+    }
+
+    public static OnlineManagementClient getManagementClient() {
+        OnlineManagementClient managementClient;
+        try {
+            managementClient = ManagementClient.online(OnlineOptions
+                    .standalone()
+                    .hostAndPort(System.getProperty("auth.server.host", "localhost"), Integer.parseInt(System.getProperty("auth.server.management.port", "10090")))
+                    .build()
+            );
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+
+        return managementClient;
     }
 
     public void initializeSuiteContext(@Observes(precedence = 2) BeforeSuite event) {

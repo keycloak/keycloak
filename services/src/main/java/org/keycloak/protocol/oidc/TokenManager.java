@@ -180,6 +180,9 @@ public class TokenManager {
         if (oldToken.getIssuedAt() < realm.getNotBefore()) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
         }
+        if (oldToken.getIssuedAt() < session.users().getNotBeforeOfUser(realm, user)) {
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
+        }
 
 
         // recreate token.
@@ -200,32 +203,38 @@ public class TokenManager {
             return false;
         }
 
-        UserModel user = session.users().getUserById(token.getSubject(), realm);
+        ClientModel client = realm.getClientByClientId(token.getIssuedFor());
+        if (client == null || !client.isEnabled() || token.getIssuedAt() < client.getNotBefore()) {
+            return false;
+        }
+
+        UserSessionModel userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), false, client.getId());
+        if (AuthenticationManager.isSessionValid(realm, userSession)) {
+            return isUserValid(session, realm, token, userSession);
+        }
+
+        userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), true, client.getId());
+        if (AuthenticationManager.isOfflineSessionValid(realm, userSession)) {
+            return isUserValid(session, realm, token, userSession);
+        }
+
+        return false;
+    }
+
+    private boolean isUserValid(KeycloakSession session, RealmModel realm, AccessToken token, UserSessionModel userSession) {
+        UserModel user = userSession.getUser();
         if (user == null) {
             return false;
         }
         if (!user.isEnabled()) {
             return false;
         }
-
-        ClientModel client = realm.getClientByClientId(token.getIssuedFor());
-        if (client == null || !client.isEnabled()) {
+        if (token.getIssuedAt() < session.users().getNotBeforeOfUser(realm, user)) {
             return false;
         }
-
-        UserSessionModel userSession =  new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), false, client.getId());
-        if (AuthenticationManager.isSessionValid(realm, userSession)) {
-            return true;
-        }
-
-
-        userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), true, client.getId());
-        if (AuthenticationManager.isOfflineSessionValid(realm, userSession)) {
-            return true;
-        }
-
-        return false;
+        return true;
     }
+
 
     public RefreshResult refreshAccessToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm, ClientModel authorizedClient,
                                             String encodedRefreshToken, EventBuilder event, HttpHeaders headers) throws OAuthErrorException {
@@ -241,17 +250,9 @@ public class TokenManager {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token. Token client and authorized client don't match");
         }
 
+        validateTokenReuse(session, realm, refreshToken, validation);
+
         int currentTime = Time.currentTime();
-
-        if (realm.isRevokeRefreshToken()) {
-            int clusterStartupTime = session.getProvider(ClusterProvider.class).getClusterStartupTime();
-
-            if (refreshToken.getIssuedAt() < validation.clientSession.getTimestamp() && (clusterStartupTime != validation.clientSession.getTimestamp())) {
-                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
-            }
-
-        }
-
         validation.clientSession.setTimestamp(currentTime);
         validation.userSession.setLastSessionRefresh(currentTime);
 
@@ -267,6 +268,36 @@ public class TokenManager {
         AccessTokenResponse res = responseBuilder.build();
 
         return new RefreshResult(res, TokenUtil.TOKEN_TYPE_OFFLINE.equals(refreshToken.getType()));
+    }
+
+    private void validateTokenReuse(KeycloakSession session, RealmModel realm, RefreshToken refreshToken,
+            TokenValidation validation) throws OAuthErrorException {
+        if (realm.isRevokeRefreshToken()) {
+            int clusterStartupTime = session.getProvider(ClusterProvider.class).getClusterStartupTime();
+
+            if (validation.clientSession.getCurrentRefreshToken() != null &&
+                    !refreshToken.getId().equals(validation.clientSession.getCurrentRefreshToken()) &&
+                    refreshToken.getIssuedAt() < validation.clientSession.getTimestamp() &&
+                    clusterStartupTime != validation.clientSession.getTimestamp()) {
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
+            }
+        }
+
+        if (realm.isRevokeRefreshToken()) {
+            if (!refreshToken.getId().equals(validation.clientSession.getCurrentRefreshToken())) {
+                validation.clientSession.setCurrentRefreshToken(refreshToken.getId());
+                validation.clientSession.setCurrentRefreshTokenUseCount(0);
+            }
+
+            int currentCount = validation.clientSession.getCurrentRefreshTokenUseCount();
+            if (currentCount > realm.getRefreshTokenMaxReuse()) {
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Maximum allowed refresh token reuse exceeded",
+                        "Maximum allowed refresh token reuse exceeded");
+            }
+            validation.clientSession.setCurrentRefreshTokenUseCount(currentCount + 1);
+        } else {
+            validation.clientSession.setCurrentRefreshToken(null);
+        }
     }
 
     public RefreshToken verifyRefreshToken(KeycloakSession session, RealmModel realm, String encodedRefreshToken) throws OAuthErrorException {
@@ -816,9 +847,13 @@ public class TokenManager {
                     res.setRefreshExpiresIn(refreshToken.getExpiration() - Time.currentTime());
                 }
             }
+
             int notBefore = realm.getNotBefore();
             if (client.getNotBefore() > notBefore) notBefore = client.getNotBefore();
+            int userNotBefore = session.users().getNotBeforeOfUser(realm, userSession.getUser());
+            if (userNotBefore > notBefore) notBefore = userNotBefore;
             res.setNotBeforePolicy(notBefore);
+
             return res;
         }
     }

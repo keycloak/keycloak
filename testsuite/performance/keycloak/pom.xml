@@ -1,0 +1,90 @@
+<?xml version="1.0"?>
+<!--
+~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+~ and other contributors as indicated by the @author tags.
+~
+~ Licensed under the Apache License, Version 2.0 (the "License");
+~ you may not use this file except in compliance with the License.
+~ You may obtain a copy of the License at
+~
+~ http://www.apache.org/licenses/LICENSE-2.0
+~
+~ Unless required by applicable law or agreed to in writing, software
+~ distributed under the License is distributed on an "AS IS" BASIS,
+~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+~ See the License for the specific language governing permissions and
+~ limitations under the License.
+-->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <parent>
+        <groupId>org.keycloak.testsuite</groupId>
+        <artifactId>performance</artifactId>
+        <version>3.4.0.CR1-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>performance-keycloak-server</artifactId>
+    <name>Keycloak Performance TestSuite - Keycloak Server</name>
+    <packaging>pom</packaging>
+    
+    <description>
+        Uses maven-dependency-plugin to unpack keycloak-server-dist artifact into `target/keycloak` which is then added to Docker image.
+    </description>
+    
+    <build>
+
+        <plugins>
+            <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <!--=============================-->
+                        <id>unpack-keycloak-server-dist</id>
+                        <!--=============================-->
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-server-dist</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>zip</type>
+                                    <outputDirectory>${project.build.directory}</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <!--=============================-->
+                        <id>rename-keycloak-folder</id>
+                        <!--=============================-->
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <move todir="${project.build.directory}/keycloak" failonerror="false">
+                                    <fileset dir="${project.build.directory}/keycloak-${project.version}"/>
+                                </move>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+    
+</project>

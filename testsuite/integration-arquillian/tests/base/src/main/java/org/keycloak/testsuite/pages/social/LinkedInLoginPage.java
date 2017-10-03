@@ -35,6 +35,7 @@ public class LinkedInLoginPage extends AbstractSocialLoginPage {
 
     @Override
     public void login(String user, String password) {
+        usernameInput.clear();
         usernameInput.sendKeys(user);
         passwordInput.sendKeys(password);
         loginButton.click();

@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.console.page.clients.authorization.policy;
 
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 import static org.openqa.selenium.By.tagName;
 
 import java.util.ArrayList;
@@ -93,6 +94,7 @@ public class GroupPolicyForm extends Form {
             String groupName = path.substring(path.lastIndexOf('/') + 1);
             WebElement element = driver.findElement(By.xpath("//span[text()='" + groupName + "']"));
             element.click();
+            waitUntilElement(selectGroupButton).is().enabled();
             selectGroupButton.click();
             driver.findElements(By.xpath("(//table[@id='selected-groups'])/tbody/tr")).stream()
                     .filter(webElement -> webElement.findElements(tagName("td")).size() > 1)

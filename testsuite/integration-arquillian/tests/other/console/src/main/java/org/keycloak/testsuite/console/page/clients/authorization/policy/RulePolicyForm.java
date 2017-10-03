@@ -77,7 +77,7 @@ public class RulePolicyForm extends Form {
         setInputValue(artifactVersion, expected.getArtifactVersion());
 
         resolveModuleButton.click();
-        WaitUtils.waitForPageToLoad(driver);
+        WaitUtils.waitForPageToLoad();
 
         moduleName.selectByVisibleText(expected.getModuleName());
         WaitUtils.pause(1000);

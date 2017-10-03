@@ -88,6 +88,11 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
                 public void execute() {
                     decorateCache(cache).put(key, value);
                 }
+
+                @Override
+                public String toString() {
+                    return String.format("CacheTaskWithValue: Operation 'put' for key %s", key);
+                }
             });
         }
     }
@@ -103,6 +108,11 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
                 @Override
                 public void execute() {
                     decorateCache(cache).put(key, value, lifespan, lifespanUnit);
+                }
+
+                @Override
+                public String toString() {
+                    return String.format("CacheTaskWithValue: Operation 'put' for key %s, lifespan %d TimeUnit %s", key, lifespan, lifespanUnit.toString());
                 }
             });
         }
@@ -123,6 +133,11 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
                         throw new IllegalStateException("There is already existing value in cache for key " + key);
                     }
                 }
+
+                @Override
+                public String toString() {
+                    return String.format("CacheTaskWithValue: Operation 'putIfAbsent' for key %s", key);
+                }
             });
         }
     }
@@ -142,6 +157,12 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
                 public void execute() {
                     decorateCache(cache).replace(key, value);
                 }
+
+                @Override
+                public String toString() {
+                    return String.format("CacheTaskWithValue: Operation 'replace' for key %s", key);
+                }
+
             });
         }
     }
@@ -162,7 +183,21 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
         log.tracev("Adding cache operation: {0} on {1}", CacheOperation.REMOVE, key);
 
         Object taskKey = getTaskKey(cache, key);
-        tasks.put(taskKey, () -> decorateCache(cache).remove(key));
+
+        // TODO:performance Eventual performance optimization could be to skip "cache.remove" if item was added in this transaction (EG. authenticationSession valid for single request due to automatic SSO login)
+        tasks.put(taskKey, new CacheTask() {
+
+            @Override
+            public void execute() {
+                decorateCache(cache).remove(key);
+            }
+
+            @Override
+            public String toString() {
+                return String.format("CacheTask: Operation 'remove' for key %s", key);
+            }
+
+        });
     }
 
     // This is for possibility to lookup for session by id, which was created in this transaction

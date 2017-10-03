@@ -30,17 +30,15 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserProvider;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -103,7 +101,7 @@ public class ResourceSetService {
 
         if (owner == null) {
             owner = new ResourceOwnerRepresentation();
-            owner.setId(resourceServer.getClientId());
+            owner.setId(resourceServer.getId());
         }
 
         String ownerId = owner.getId();
@@ -217,7 +215,7 @@ public class ResourceSetService {
         if (model.getType() != null) {
             ResourceStore resourceStore = authorization.getStoreFactory().getResourceStore();
             for (Resource typed : resourceStore.findByType(model.getType(), resourceServer.getId())) {
-                if (typed.getOwner().equals(resourceServer.getClientId()) && !typed.getId().equals(model.getId())) {
+                if (typed.getOwner().equals(resourceServer.getId()) && !typed.getId().equals(model.getId())) {
                     scopes.addAll(typed.getScopes().stream().map(model1 -> {
                         ScopeRepresentation scope = new ScopeRepresentation();
                         scope.setId(model1.getId());

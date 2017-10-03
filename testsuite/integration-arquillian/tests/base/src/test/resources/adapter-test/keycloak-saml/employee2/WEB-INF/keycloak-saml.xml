@@ -23,7 +23,7 @@
         nameIDPolicyFormat="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
         logoutPage="/logout.jsp"
         forceAuthentication="false">
-        <PrincipalNameMapping policy="FROM_NAME_ID"/>
+        <PrincipalNameMapping policy="FROM_ATTRIBUTE" attribute="email"/>
         <RoleIdentifiers>
             <Attribute name="memberOf"/>
             <Attribute name="Role"/>

@@ -35,6 +35,7 @@ public class FacebookLoginPage extends AbstractSocialLoginPage {
 
     @Override
     public void login(String user, String password) {
+        emailInput.clear();
         emailInput.sendKeys(user);
         passwordInput.sendKeys(password);
         loginButton.click();

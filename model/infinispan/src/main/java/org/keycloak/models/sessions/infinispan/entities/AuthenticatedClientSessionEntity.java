@@ -39,12 +39,15 @@ public class AuthenticatedClientSessionEntity implements Serializable {
 
     private String authMethod;
     private String redirectUri;
-    private int timestamp;
+    private volatile int timestamp;
     private String action;
 
     private Set<String> roles;
     private Set<String> protocolMappers;
     private Map<String, String> notes = new ConcurrentHashMap<>();
+
+    private String currentRefreshToken;
+    private int currentRefreshTokenUseCount;
 
     public String getAuthMethod() {
         return authMethod;
@@ -102,6 +105,21 @@ public class AuthenticatedClientSessionEntity implements Serializable {
         this.notes = notes;
     }
 
+    public String getCurrentRefreshToken() {
+        return currentRefreshToken;
+    }
+
+    public void setCurrentRefreshToken(String currentRefreshToken) {
+        this.currentRefreshToken = currentRefreshToken;
+    }
+
+    public int getCurrentRefreshTokenUseCount() {
+        return currentRefreshTokenUseCount;
+    }
+
+    public void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount) {
+        this.currentRefreshTokenUseCount = currentRefreshTokenUseCount;
+    }
 
     public static class ExternalizerImpl implements Externalizer<AuthenticatedClientSessionEntity> {
 
@@ -117,6 +135,9 @@ public class AuthenticatedClientSessionEntity implements Serializable {
 
             KeycloakMarshallUtil.writeCollection(session.getProtocolMappers(), KeycloakMarshallUtil.STRING_EXT, output);
             KeycloakMarshallUtil.writeCollection(session.getRoles(), KeycloakMarshallUtil.STRING_EXT, output);
+
+            MarshallUtil.marshallString(session.getCurrentRefreshToken(), output);
+            MarshallUtil.marshallInt(output, session.getCurrentRefreshTokenUseCount());
         }
 
 
@@ -138,6 +159,9 @@ public class AuthenticatedClientSessionEntity implements Serializable {
 
             Set<String> roles = KeycloakMarshallUtil.readCollection(input, KeycloakMarshallUtil.STRING_EXT, new KeycloakMarshallUtil.HashSetBuilder<>());
             sessionEntity.setRoles(roles);
+
+            sessionEntity.setCurrentRefreshToken(MarshallUtil.unmarshallString(input));
+            sessionEntity.setCurrentRefreshTokenUseCount(MarshallUtil.unmarshallInt(input));
 
             return sessionEntity;
         }

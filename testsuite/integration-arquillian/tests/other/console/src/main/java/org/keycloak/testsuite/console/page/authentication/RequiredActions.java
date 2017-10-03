@@ -33,7 +33,7 @@ public class RequiredActions extends Authentication {
 
         WebElement checkbox = requiredActionTable.findElement(By.id(id));
 
-        if (checkbox.isSelected() != value) {
+        if (checkbox.isEnabled() && checkbox.isSelected() != value) {
             checkbox.click();
         }
     }

@@ -222,7 +222,7 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
     }
 
     private void updateResourceServer(ClientModel clientModel, RoleModel removedRole, ResourceServerStore resourceServerStore, PolicyStore policyStore) {
-        ResourceServer resourceServer = resourceServerStore.findByClient(clientModel.getId());
+        ResourceServer resourceServer = resourceServerStore.findById(clientModel.getId());
 
         if (resourceServer != null) {
             policyStore.findByType(getId(), resourceServer.getId()).forEach(policy -> {

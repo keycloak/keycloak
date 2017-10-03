@@ -770,6 +770,18 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RoleDetailCtrl'
         })
+        .when('/realms/:realm/roles/:role/users', {
+        	templateUrl : resourceUrl + '/partials/realm-role-users.html',
+        	resolve : {
+        		realm : function(RealmLoader) {
+        			return RealmLoader();
+        		},
+        		role : function(RoleLoader) {
+        			return RoleLoader();
+        		}
+        	},
+        	controller : 'RoleMembersCtrl'
+        })
         .when('/realms/:realm/roles', {
             templateUrl : resourceUrl + '/partials/role-list.html',
             resolve : {
@@ -790,6 +802,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 groups : function(GroupListLoader) {
                     return GroupListLoader();
+                },
+                groupsCount : function(GroupCountLoader) {
+                    return GroupCountLoader();
                 }
             },
             controller : 'GroupListCtrl'
@@ -1924,7 +1939,7 @@ module.factory('spinnerInterceptor', function($q, $window, $rootScope, $location
                 $('#loading').hide();
             }
             return response;
-        }, 
+        },
         responseError: function(response) {
             resourceRequests--;
             if (resourceRequests == 0) {
@@ -1944,7 +1959,7 @@ module.factory('errorInterceptor', function($q, $window, $rootScope, $location, 
     return {
         response: function(response) {
             return response;
-        }, 
+        },
         responseError: function(response) {
             if (response.status == 401) {
                 Auth.authz.logout();
@@ -2186,17 +2201,17 @@ module.directive('kcEnter', function() {
 
 module.directive('kcSave', function ($compile, $timeout, Notifications) {
     var clickDelay = 500; // 500 ms
-    
+
     return {
         restrict: 'A',
         link: function ($scope, elem, attr, ctrl) {
             elem.addClass("btn btn-primary");
             elem.attr("type","submit");
-            
+
             var disabled = false;
             elem.on('click', function(evt) {
                 if ($scope.hasOwnProperty("changed") && !$scope.changed) return;
-                
+
                 // KEYCLOAK-4121: Prevent double form submission
                 if (disabled) {
                     evt.preventDefault();
@@ -2206,7 +2221,7 @@ module.directive('kcSave', function ($compile, $timeout, Notifications) {
                     disabled = true;
                     $timeout(function () { disabled = false; }, clickDelay, false);
                 }
-                
+
                 $scope.$apply(function() {
                     var form = elem.closest('form');
                     if (form && form.attr('name')) {
@@ -2869,35 +2884,35 @@ module.directive('kcOnReadFile', function ($parse) {
 
 module.controller('PagingCtrl', function ($scope) {
     $scope.currentPageInput = 1;
-    
+
     $scope.firstPage = function() {
         if (!$scope.hasPrevious()) return;
         $scope.currentPage = 1;
         $scope.currentPageInput = 1;
     };
-    
+
     $scope.lastPage = function() {
         if (!$scope.hasNext()) return;
         $scope.currentPage = $scope.numberOfPages;
         $scope.currentPageInput = $scope.numberOfPages;
     };
-    
+
     $scope.previousPage = function() {
         if (!$scope.hasPrevious()) return;
         $scope.currentPage--;
         $scope.currentPageInput = $scope.currentPage;
     };
-    
+
     $scope.nextPage = function() {
         if (!$scope.hasNext()) return;
         $scope.currentPage++;
         $scope.currentPageInput = $scope.currentPage;
     };
-    
+
     $scope.hasNext = function() {
         return $scope.currentPage < $scope.numberOfPages;
     };
-    
+
     $scope.hasPrevious = function() {
         return $scope.currentPage > 1;
     };
@@ -2927,11 +2942,11 @@ module.directive('kcValidPage', function() {
                if (viewValue >= 1 && viewValue <= scope.numberOfPages) {
                    scope.currentPage = viewValue;
                }
-               
+
                return true;
            }
        }
-   } 
+   }
 });
 
 // filter used for paged tables

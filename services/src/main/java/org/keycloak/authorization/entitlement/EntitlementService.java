@@ -119,7 +119,7 @@ public class EntitlementService {
         }
 
         StoreFactory storeFactory = authorization.getStoreFactory();
-        ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(client.getId());
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(client.getId());
 
         if (resourceServer == null) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client does not support permissions", Status.FORBIDDEN);
@@ -152,7 +152,7 @@ public class EntitlementService {
         }
 
         StoreFactory storeFactory = authorization.getStoreFactory();
-        ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(client.getId());
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(client.getId());
 
         if (resourceServer == null) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client does not support permissions", Status.FORBIDDEN);
@@ -167,7 +167,7 @@ public class EntitlementService {
             List<Permission> entitlements = Permissions.permits(result, metadata, authorization, resourceServer);
 
             if (!entitlements.isEmpty()) {
-                return Cors.add(request, Response.ok().entity(new EntitlementResponse(createRequestingPartyToken(entitlements, identity.getAccessToken())))).allowedOrigins(identity.getAccessToken()).allowedMethods("GET").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
+                return Cors.add(request, Response.ok().entity(new EntitlementResponse(createRequestingPartyToken(entitlements, identity.getAccessToken(), resourceServer)))).allowedOrigins(identity.getAccessToken()).allowedMethods("GET").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
             }
         } catch (Exception cause) {
             logger.error(cause);
@@ -184,12 +184,18 @@ public class EntitlementService {
                 .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
     }
 
-    private String createRequestingPartyToken(List<Permission> permissions, AccessToken accessToken) {
+    private String createRequestingPartyToken(List<Permission> permissions, AccessToken accessToken, ResourceServer resourceServer) {
         RealmModel realm = this.authorization.getKeycloakSession().getContext().getRealm();
         AccessToken.Authorization authorization = new AccessToken.Authorization();
 
         authorization.setPermissions(permissions);
         accessToken.setAuthorization(authorization);
+
+        ClientModel clientModel = realm.getClientById(resourceServer.getId());
+
+        if (!accessToken.hasAudience(clientModel.getClientId())) {
+            accessToken.audience(clientModel.getClientId());
+        }
 
         return new TokenManager().encodeToken(this.authorization.getKeycloakSession(), realm, accessToken);
     }

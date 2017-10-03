@@ -49,6 +49,8 @@ public interface UserPermissionEvaluator {
 
     boolean canImpersonate(UserModel user);
 
+    boolean isImpersonatable(UserModel user);
+
     boolean canImpersonate();
 
     void requireImpersonate(UserModel user);

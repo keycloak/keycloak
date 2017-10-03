@@ -33,24 +33,21 @@
     </description>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-parent</artifactId>
-    <version>3.3.0.CR1-SNAPSHOT</version>
+    <version>3.4.0.CR1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <properties>
-        <product.rhsso.version>7.2.0.DR3</product.rhsso.version>
+        <product.rhsso.version>7.2.0.DR4</product.rhsso.version>
 
         <product.build-time>${timestamp}</product.build-time>
 
-        <!-- WildFly -->
-        <jboss.as.version>7.2.0.Final</jboss.as.version>
-        <wildfly.version>11.0.0.Beta1</wildfly.version>
+        <wildfly.version>11.0.0.CR1</wildfly.version>
         <wildfly.build-tools.version>1.2.2.Final</wildfly.build-tools.version>
-        <eap.version>7.1.0.Beta1-redhat-5</eap.version>
+        <eap.version>7.1.0.GA-redhat-4</eap.version>
         <eap.build-tools.version>1.2.2.Final</eap.build-tools.version>
-        <wildfly.core.version>3.0.0.Beta30</wildfly.core.version>
+        <wildfly.core.version>3.0.1.Final</wildfly.core.version>
 
-        <version.org.wildfly.security.wildfly-elytron>1.1.0.Beta32</version.org.wildfly.security.wildfly-elytron>
-        <version.org.wildfly.security.elytron-web.undertow-server>1.0.0.Beta14</version.org.wildfly.security.elytron-web.undertow-server>
+        <jboss.as.version>7.2.0.Final</jboss.as.version>
 
         <aesh.version>0.66.15</aesh.version>
         <apache.httpcomponents.version>4.5</apache.httpcomponents.version>
@@ -64,7 +61,7 @@
         <h2.version>1.3.173</h2.version>
         <hibernate.entitymanager.version>5.0.7.Final</hibernate.entitymanager.version>
         <hibernate.javax.persistence.version>1.0.0.Final</hibernate.javax.persistence.version>
-        <infinispan.version>8.2.6.Final</infinispan.version>
+        <infinispan.version>8.2.8.Final</infinispan.version>
         <jackson.version>2.5.4</jackson.version>
         <javax.mail.version>1.5.5</javax.mail.version>
         <jboss.logging.version>3.3.0.Final</jboss.logging.version>
@@ -80,8 +77,11 @@
         <sun.jaxb.version>2.2.11</sun.jaxb.version>
         <sun.xsom.version>20140925</sun.xsom.version>
         <undertow.version>1.4.11.Final</undertow.version>
+        <elytron.version>1.1.1.Final</elytron.version>
+        <elytron.undertow-server.version>1.0.0.Final</elytron.undertow-server.version>
         <woodstox.version>5.0.3</woodstox.version>
         <xmlsec.version>2.0.5</xmlsec.version>
+        <glassfish.json.version>1.0.4</glassfish.json.version>
 
         <!-- Authorization Drools Policy Provider -->
         <version.org.drools>6.4.0.Final</version.org.drools>
@@ -120,7 +120,7 @@
         <jboss.as.plugin.version>7.5.Final</jboss.as.plugin.version>
         <jmeter.plugin.version>1.9.0</jmeter.plugin.version>
         <jmeter.analysis.plugin.version>1.0.4</jmeter.analysis.plugin.version>
-        <minify.plugin.version>1.7.2</minify.plugin.version>
+        <minify.plugin.version>1.7.6</minify.plugin.version>
         <osgi.bundle.plugin.version>2.3.7</osgi.bundle.plugin.version>
         <wildfly.plugin.version>1.1.0.Final</wildfly.plugin.version>
         <nexus.staging.plugin.version>1.6.5</nexus.staging.plugin.version>
@@ -415,6 +415,11 @@
                 <version>${wildfly.version}</version>
                 <type>zip</type>
             </dependency>
+            <dependency>
+                <groupId>org.glassfish</groupId>
+                <artifactId>javax.json</artifactId>
+                <version>${glassfish.json.version}</version>
+            </dependency>
 
             <!-- Twitter -->
             <dependency>
@@ -592,6 +597,12 @@
                 <artifactId>wildfly-undertow</artifactId>
                 <version>${wildfly.version}</version>
                 <scope>test</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>io.undertow.jastow</groupId>
+                        <artifactId>jastow</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.wildfly.core</groupId>
@@ -624,12 +635,12 @@
             <dependency>
                 <groupId>org.wildfly.security</groupId>
                 <artifactId>wildfly-elytron</artifactId>
-                <version>${version.org.wildfly.security.wildfly-elytron}</version>
+                <version>${elytron.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.wildfly.security.elytron-web</groupId>
                 <artifactId>undertow-server</artifactId>
-                <version>${version.org.wildfly.security.elytron-web.undertow-server}</version>
+                <version>${elytron.undertow-server.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.infinispan</groupId>
@@ -1309,14 +1320,19 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-testsuite-integration</artifactId>
+                <artifactId>keycloak-testsuite-integration-deprecated</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-testsuite-integration</artifactId>
+                <artifactId>keycloak-testsuite-integration-deprecated</artifactId>
                 <version>${project.version}</version>
                 <type>test-jar</type>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-testsuite-utils</artifactId>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
@@ -1417,6 +1433,7 @@
                     <configuration>
                         <forkMode>once</forkMode>
                         <argLine>${surefire.memory.settings}</argLine>
+                        <argLine>-Djava.awt.headless=true</argLine>
                     </configuration>
                 </plugin>
                 <plugin>

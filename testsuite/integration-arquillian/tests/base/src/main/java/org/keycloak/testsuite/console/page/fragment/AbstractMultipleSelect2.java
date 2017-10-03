@@ -16,22 +16,23 @@
  */
 package org.keycloak.testsuite.console.page.fragment;
 
+import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.jboss.arquillian.graphene.fragment.Root;
+import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.Keys;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.jboss.arquillian.graphene.fragment.Root;
-import org.keycloak.testsuite.util.WaitUtils;
-import org.openqa.selenium.By;
-import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.Keys;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.interactions.Actions;
-import org.openqa.selenium.support.FindBy;
+import static org.keycloak.testsuite.util.WaitUtils.pause;
+import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -44,7 +45,7 @@ public abstract class AbstractMultipleSelect2<R> {
     @Drone
     private WebDriver driver;
 
-    @FindBy(xpath = ".//input[contains(@class,'select2-input')]")
+    @FindBy(xpath = "//input[contains(@class,'select2-focused')]")
     private WebElement search;
 
     @FindBy(xpath = "//div[contains(@class,'select2-result-label')]")
@@ -76,17 +77,17 @@ public abstract class AbstractMultipleSelect2<R> {
     }
 
     public void select(R value) {
+        pause(500);
         root.click();
-        WaitUtils.pause(500);
+        pause(500);
 
         String id = identity().apply(value);
 
-        Actions actions = new Actions(driver);
-        actions.sendKeys(id).perform();
-        WaitUtils.pause(500);
+        search.sendKeys(id);
+        waitForPageToLoad();
 
         if (result.isEmpty()) {
-            actions.sendKeys(Keys.ESCAPE).perform();
+            search.sendKeys(Keys.ESCAPE);
             return;
         }
 
@@ -137,7 +138,7 @@ public abstract class AbstractMultipleSelect2<R> {
                 WebElement element = selected.findElement(By.xpath(".//a[contains(@class,'select2-search-choice-close')]"));
                 JavascriptExecutor executor = (JavascriptExecutor) driver;
                 executor.executeScript("arguments[0].click();", element);
-                WaitUtils.pause(500);
+                pause(500);
                 return true;
             }
             return false;

@@ -39,7 +39,6 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.jpa.entities.CredentialAttributeEntity;
 import org.keycloak.models.jpa.entities.CredentialEntity;
 import org.keycloak.models.jpa.entities.FederatedIdentityEntity;
-import org.keycloak.models.jpa.entities.UserAttributeEntity;
 import org.keycloak.models.jpa.entities.UserConsentEntity;
 import org.keycloak.models.jpa.entities.UserConsentProtocolMapperEntity;
 import org.keycloak.models.jpa.entities.UserConsentRoleEntity;
@@ -364,6 +363,18 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
 
     @Override
+    public void setNotBeforeForUser(RealmModel realm, UserModel user, int notBefore) {
+        UserEntity entity = em.getReference(UserEntity.class, user.getId());
+        entity.setNotBefore(notBefore);
+    }
+
+    @Override
+    public int getNotBeforeOfUser(RealmModel realm, UserModel user) {
+        UserEntity entity = em.getReference(UserEntity.class, user.getId());
+        return entity.getNotBefore();
+    }
+
+    @Override
     public void grantToAllUsers(RealmModel realm, RoleModel role) {
         int num = em.createNamedQuery("grantRoleToAllUsers")
                 .setParameter("realmId", realm.getId())
@@ -485,6 +496,20 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         }
         return users;
     }
+    
+    @Override
+    public List<UserModel> getRoleMembers(RealmModel realm, RoleModel role) {
+        TypedQuery<UserEntity> query = em.createNamedQuery("usersInRole", UserEntity.class);
+        query.setParameter("roleId", role.getId());
+        List<UserEntity> results = query.getResultList();
+
+        List<UserModel> users = new ArrayList<UserModel>();
+        for (UserEntity user : results) {
+            users.add(new UserAdapter(session, realm, em, user));
+        }
+        return users;
+    }
+
 
     @Override
     public void preRemove(RealmModel realm, GroupModel group) {
@@ -610,6 +635,25 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
         TypedQuery<UserEntity> query = em.createNamedQuery("groupMembership", UserEntity.class);
         query.setParameter("groupId", group.getId());
+        if (firstResult != -1) {
+            query.setFirstResult(firstResult);
+        }
+        if (maxResults != -1) {
+            query.setMaxResults(maxResults);
+        }
+        List<UserEntity> results = query.getResultList();
+
+        List<UserModel> users = new LinkedList<>();
+        for (UserEntity user : results) {
+            users.add(new UserAdapter(session, realm, em, user));
+        }
+        return users;
+    }
+    
+    @Override
+    public List<UserModel> getRoleMembers(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
+        TypedQuery<UserEntity> query = em.createNamedQuery("usersInRole", UserEntity.class);
+        query.setParameter("roleId", role.getId());
         if (firstResult != -1) {
             query.setFirstResult(firstResult);
         }

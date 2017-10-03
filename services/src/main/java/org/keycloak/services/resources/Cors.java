@@ -108,28 +108,32 @@ public class Cors {
 
     public Cors allowedOrigins(String... allowedOrigins) {
         if (allowedOrigins != null && allowedOrigins.length > 0) {
-            this.allowedOrigins = new HashSet<String>(Arrays.asList(allowedOrigins));
+            this.allowedOrigins = new HashSet<>(Arrays.asList(allowedOrigins));
         }
         return this;
     }
 
     public Cors allowedMethods(String... allowedMethods) {
-        this.allowedMethods = new HashSet<String>(Arrays.asList(allowedMethods));
+        this.allowedMethods = new HashSet<>(Arrays.asList(allowedMethods));
         return this;
     }
 
     public Cors exposedHeaders(String... exposedHeaders) {
-        this.exposedHeaders = new HashSet<String>(Arrays.asList(exposedHeaders));
+        this.exposedHeaders = new HashSet<>(Arrays.asList(exposedHeaders));
         return this;
     }
 
     public Response build() {
         String origin = request.getHttpHeaders().getRequestHeaders().getFirst(ORIGIN_HEADER);
         if (origin == null) {
+            logger.trace("No origin header ignoring");
             return builder.build();
         }
 
         if (!preflight && (allowedOrigins == null || (!allowedOrigins.contains(origin) && !allowedOrigins.contains(ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD)))) {
+            if (logger.isDebugEnabled()) {
+                logger.debugv("Invalid CORS request: origin {0} not in allowed origins {1}", origin, Arrays.toString(allowedOrigins.toArray()));
+            }
             return builder.build();
         }
 
@@ -165,22 +169,24 @@ public class Cors {
             builder.header(ACCESS_CONTROL_MAX_AGE, DEFAULT_MAX_AGE);
         }
 
+        logger.debug("Added CORS headers to response");
+
         return builder.build();
     }
 
     public void build(HttpResponse response) {
         String origin = request.getHttpHeaders().getRequestHeaders().getFirst(ORIGIN_HEADER);
         if (origin == null) {
-            logger.debug("No origin returning");
+            logger.trace("No origin header ignoring");
             return;
         }
 
         if (!preflight && (allowedOrigins == null || (!allowedOrigins.contains(origin) && !allowedOrigins.contains(ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD)))) {
-            logger.debug("!preflight and no origin");
+            if (logger.isDebugEnabled()) {
+                logger.debugv("Invalid CORS request: origin {0} not in allowed origins {1}", origin, Arrays.toString(allowedOrigins.toArray()));
+            }
             return;
         }
-
-        logger.debug("build CORS headers and return");
 
         if (allowedOrigins.contains(ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD)) {
             response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_ORIGIN, ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD);
@@ -213,6 +219,8 @@ public class Cors {
         if (preflight) {
             response.getOutputHeaders().add(ACCESS_CONTROL_MAX_AGE, DEFAULT_MAX_AGE);
         }
+
+        logger.debug("Added CORS headers to response");
     }
 
 }

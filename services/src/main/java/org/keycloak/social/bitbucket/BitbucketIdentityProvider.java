@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
-import org.keycloak.broker.oidc.util.JsonSimpleHttp;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.util.SimpleHttp;
@@ -54,7 +53,7 @@ public class BitbucketIdentityProvider extends AbstractOAuth2IdentityProvider im
 	@Override
 	protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
 		try {
-			JsonNode profile = JsonSimpleHttp.asJson(SimpleHttp.doGet(USER_URL, session).header("Authorization", "Bearer " + accessToken));
+			JsonNode profile = SimpleHttp.doGet(USER_URL, session).header("Authorization", "Bearer " + accessToken).asJson();
 
 			String type = getJsonProperty(profile, "type");
 			if (type == null) {

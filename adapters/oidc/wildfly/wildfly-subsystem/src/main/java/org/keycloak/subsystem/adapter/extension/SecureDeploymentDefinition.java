@@ -16,138 +16,88 @@
  */
 package org.keycloak.subsystem.adapter.extension;
 
-import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.SimpleAttributeDefinition;
-import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
-import org.jboss.as.controller.SimpleResourceDefinition;
-import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
-import org.jboss.as.controller.operations.validation.IntRangeValidator;
-import org.jboss.as.controller.operations.validation.StringLengthValidator;
-import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.ModelType;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.dmr.ModelNode;
+import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.ServiceTarget;
+import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
 
 /**
  * Defines attributes and operations for a secure-deployment.
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2013 Red Hat Inc.
  */
-public class SecureDeploymentDefinition extends SimpleResourceDefinition {
+final class SecureDeploymentDefinition extends AbstractAdapterConfigurationDefinition {
 
-    public static final String TAG_NAME = "secure-deployment";
-
-    protected static final SimpleAttributeDefinition REALM =
-            new SimpleAttributeDefinitionBuilder("realm", ModelType.STRING, true)
-                    .setXmlName("realm")
-                    .setAllowExpression(true)
-                    .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
-                    .build();
-    protected static final SimpleAttributeDefinition RESOURCE =
-            new SimpleAttributeDefinitionBuilder("resource", ModelType.STRING, true)
-                    .setXmlName("resource")
-                    .setAllowExpression(true)
-                    .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
-                    .build();
-    protected static final SimpleAttributeDefinition USE_RESOURCE_ROLE_MAPPINGS =
-            new SimpleAttributeDefinitionBuilder("use-resource-role-mappings", ModelType.BOOLEAN, true)
-            .setXmlName("use-resource-role-mappings")
-            .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(false))
-            .build();
-    protected static final SimpleAttributeDefinition BEARER_ONLY =
-            new SimpleAttributeDefinitionBuilder("bearer-only", ModelType.BOOLEAN, true)
-                    .setXmlName("bearer-only")
-                    .setAllowExpression(true)
-                    .setDefaultValue(new ModelNode(false))
-                    .build();
-    protected static final SimpleAttributeDefinition ENABLE_BASIC_AUTH =
-            new SimpleAttributeDefinitionBuilder("enable-basic-auth", ModelType.BOOLEAN, true)
-                    .setXmlName("enable-basic-auth")
-                    .setAllowExpression(true)
-                    .setDefaultValue(new ModelNode(false))
-                    .build();
-    protected static final SimpleAttributeDefinition PUBLIC_CLIENT =
-            new SimpleAttributeDefinitionBuilder("public-client", ModelType.BOOLEAN, true)
-                    .setXmlName("public-client")
-                    .setAllowExpression(true)
-                    .setDefaultValue(new ModelNode(false))
-                    .build();
-    protected static final SimpleAttributeDefinition TURN_OFF_CHANGE_SESSION =
-            new SimpleAttributeDefinitionBuilder("turn-off-change-session-id-on-login", ModelType.BOOLEAN, true)
-                    .setXmlName("turn-off-change-session-id-on-login")
-                    .setAllowExpression(true)
-                    .setDefaultValue(new ModelNode(false))
-                    .build();
-    protected static final SimpleAttributeDefinition TOKEN_MINIMUM_TIME_TO_LIVE =
-            new SimpleAttributeDefinitionBuilder("token-minimum-time-to-live", ModelType.INT, true)
-                    .setXmlName("token-minimum-time-to-live")
-                    .setValidator(new IntRangeValidator(-1, true))
-                    .setAllowExpression(true)
-                    .build();
-    protected static final SimpleAttributeDefinition MIN_TIME_BETWEEN_JWKS_REQUESTS =
-            new SimpleAttributeDefinitionBuilder("min-time-between-jwks-requests", ModelType.INT, true)
-                    .setXmlName("min-time-between-jwks-requests")
-                    .setValidator(new IntRangeValidator(-1, true))
-                    .setAllowExpression(true)
-                    .build();
-
-
-    protected static final List<SimpleAttributeDefinition> DEPLOYMENT_ONLY_ATTRIBUTES = new ArrayList<SimpleAttributeDefinition>();
-    static {
-        DEPLOYMENT_ONLY_ATTRIBUTES.add(REALM);
-        DEPLOYMENT_ONLY_ATTRIBUTES.add(RESOURCE);
-        DEPLOYMENT_ONLY_ATTRIBUTES.add(USE_RESOURCE_ROLE_MAPPINGS);
-        DEPLOYMENT_ONLY_ATTRIBUTES.add(BEARER_ONLY);
-        DEPLOYMENT_ONLY_ATTRIBUTES.add(ENABLE_BASIC_AUTH);
-        DEPLOYMENT_ONLY_ATTRIBUTES.add(PUBLIC_CLIENT);
-        DEPLOYMENT_ONLY_ATTRIBUTES.add(TURN_OFF_CHANGE_SESSION);
-        DEPLOYMENT_ONLY_ATTRIBUTES.add(TOKEN_MINIMUM_TIME_TO_LIVE);
-        DEPLOYMENT_ONLY_ATTRIBUTES.add(MIN_TIME_BETWEEN_JWKS_REQUESTS);
-    }
-
-    protected static final List<SimpleAttributeDefinition> ALL_ATTRIBUTES = new ArrayList<SimpleAttributeDefinition>();
-    static {
-        ALL_ATTRIBUTES.addAll(DEPLOYMENT_ONLY_ATTRIBUTES);
-        ALL_ATTRIBUTES.addAll(SharedAttributeDefinitons.ATTRIBUTES);
-    }
-
-    private static final Map<String, SimpleAttributeDefinition> DEFINITION_LOOKUP = new HashMap<String, SimpleAttributeDefinition>();
-    static {
-        for (SimpleAttributeDefinition def : ALL_ATTRIBUTES) {
-            DEFINITION_LOOKUP.put(def.getXmlName(), def);
-        }
-    }
-
-    private static SecureDeploymentWriteAttributeHandler attrHandler = new SecureDeploymentWriteAttributeHandler(ALL_ATTRIBUTES);
+    static final String TAG_NAME = "secure-deployment";
 
     public SecureDeploymentDefinition() {
-        super(PathElement.pathElement(TAG_NAME),
-                KeycloakExtension.getResourceDescriptionResolver(TAG_NAME),
-                SecureDeploymentAddHandler.INSTANCE,
-                SecureDeploymentRemoveHandler.INSTANCE);
+        super(TAG_NAME, ALL_ATTRIBUTES, new SecureDeploymentAddHandler(), new SecureDeploymentRemoveHandler(), new SecureDeploymentWriteAttributeHandler());
     }
 
-    @Override
-    public void registerOperations(ManagementResourceRegistration resourceRegistration) {
-        super.registerOperations(resourceRegistration);
-        resourceRegistration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
-    }
+    /**
+     * Add a deployment to a realm.
+     *
+     * @author Stan Silvert ssilvert@redhat.com (C) 2013 Red Hat Inc.
+     */
+    static final class SecureDeploymentAddHandler extends AbstractAdapterConfigurationAddHandler {
 
-    @Override
-    public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        super.registerAttributes(resourceRegistration);
-        for (AttributeDefinition attrDef : ALL_ATTRIBUTES) {
-            resourceRegistration.registerReadWriteAttribute(attrDef, null, attrHandler);
+        static final String HTTP_SERVER_AUTHENTICATION_CAPABILITY = "org.wildfly.security.http-server-mechanism-factory";
+        static RuntimeCapability<Void> HTTP_SERVER_AUTHENTICATION_RUNTIME_CAPABILITY;
+
+        static {
+            try {
+                HTTP_SERVER_AUTHENTICATION_RUNTIME_CAPABILITY = RuntimeCapability
+                        .Builder.of(HTTP_SERVER_AUTHENTICATION_CAPABILITY, true, HttpServerAuthenticationMechanismFactory.class)
+                        .build();
+            } catch (NoClassDefFoundError ncfe) {
+                // ignore, Elytron not present thus no capability will be published by this resource definition
+            }
+        }
+
+        SecureDeploymentAddHandler() {
+            super(HTTP_SERVER_AUTHENTICATION_RUNTIME_CAPABILITY, ALL_ATTRIBUTES);
+        }
+
+        @Override
+        protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
+            super.performRuntime(context, operation, model);
+            if (HTTP_SERVER_AUTHENTICATION_RUNTIME_CAPABILITY != null) {
+                installCapability(context, operation);
+            }
+        }
+
+        static void installCapability(OperationContext context, ModelNode operation) {
+            PathAddress pathAddress = PathAddress.pathAddress(operation.get(OP_ADDR));
+            String factoryName = pathAddress.getLastElement().getValue();
+            ServiceName serviceName = context.getCapabilityServiceName(HTTP_SERVER_AUTHENTICATION_CAPABILITY, factoryName, HttpServerAuthenticationMechanismFactory.class);
+            KeycloakHttpAuthenticationFactoryService service = new KeycloakHttpAuthenticationFactoryService(factoryName);
+            ServiceTarget serviceTarget = context.getServiceTarget();
+            serviceTarget.addService(serviceName, service).setInitialMode(ServiceController.Mode.ACTIVE).install();
         }
     }
 
-    public static SimpleAttributeDefinition lookup(String name) {
-        return DEFINITION_LOOKUP.get(name);
+    /**
+     * Remove a secure-deployment from a realm.
+     *
+     * @author Stan Silvert ssilvert@redhat.com (C) 2013 Red Hat Inc.
+     */
+    static final class SecureDeploymentRemoveHandler extends AbstractAdapterConfigurationRemoveHandler {}
+
+    /**
+     * Update an attribute on a secure-deployment.
+     *
+     * @author Stan Silvert ssilvert@redhat.com (C) 2013 Red Hat Inc.
+     */
+    static final class SecureDeploymentWriteAttributeHandler extends AbstractAdapterConfigurationWriteAttributeHandler {
+        SecureDeploymentWriteAttributeHandler() {
+            super(ALL_ATTRIBUTES);
+        }
     }
 }

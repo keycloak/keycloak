@@ -730,12 +730,17 @@ module.controller('ClientImportCtrl', function($scope, $location, $upload, realm
 
 module.controller('ClientListCtrl', function($scope, realm, Client, serverInfo, $route, Dialog, Notifications, filterFilter) {
     $scope.realm = realm;
-    $scope.clients = Client.query({realm: realm.realm, viewableOnly: true});
+    $scope.clients = [];
     $scope.currentPage = 1;
     $scope.currentPageInput = 1;
+    $scope.numberOfPages = 1;
     $scope.pageSize = 20;
-    $scope.numberOfPages = Math.ceil($scope.clients.length/$scope.pageSize);
-
+    
+    Client.query({realm: realm.realm, viewableOnly: true}).$promise.then(function(clients) {
+        $scope.numberOfPages = Math.ceil(clients.length/$scope.pageSize);
+        $scope.clients = clients;
+    });
+    
     $scope.$watch('search', function (newVal, oldVal) {
         $scope.filtered = filterFilter($scope.clients, newVal);
         $scope.totalItems = $scope.filtered.length;
@@ -743,7 +748,7 @@ module.controller('ClientListCtrl', function($scope, realm, Client, serverInfo, 
         $scope.currentPage = 1;
         $scope.currentPageInput = 1;
   }, true);
-
+  
     $scope.removeClient = function(client) {
         Dialog.confirmDelete(client.clientId, 'client', function() {
             Client.remove({
@@ -1774,11 +1779,11 @@ module.controller('ClientProtocolMapperCtrl', function($scope, realm, serverInfo
         protocol: client.protocol,
         mapper: angular.copy(mapper),
         changed: false
-    }
+    };
 
     var protocolMappers = serverInfo.protocolMapperTypes[client.protocol];
     for (var i = 0; i < protocolMappers.length; i++) {
-        if (protocolMappers[i].id == mapper.protocolMapper) {
+        if (protocolMappers[i].id === mapper.protocolMapper) {
             $scope.model.mapperType = protocolMappers[i];
         }
     }
@@ -1798,7 +1803,7 @@ module.controller('ClientProtocolMapperCtrl', function($scope, realm, serverInfo
         ClientProtocolMapper.update({
             realm : realm.realm,
             client: client.id,
-            id : mapper.id
+            id : $scope.model.mapper.id
         }, $scope.model.mapper, function() {
             $scope.model.changed = false;
             mapper = angular.copy($scope.mapper);
@@ -1851,7 +1856,24 @@ module.controller('ClientProtocolMapperCreateCtrl', function($scope, realm, serv
         mapper: { protocol :  client.protocol, config: {}},
         changed: false,
         mapperTypes: serverInfo.protocolMapperTypes[protocol]
-    }
+    };
+
+    // apply default configurations on change for selected protocolmapper type.
+    $scope.$watch('model.mapperType', function() {
+        var currentMapperType = $scope.model.mapperType;
+        var defaultConfig = {};
+
+        if (currentMapperType && Array.isArray(currentMapperType.properties)) {
+            for (var i = 0; i < currentMapperType.properties.length; i++) {
+                var property = currentMapperType.properties[i];
+                if (property && property.name && property.defaultValue) {
+                    defaultConfig[property.name] = property.defaultValue;
+                }
+            }
+        }
+
+        $scope.model.mapper.config = defaultConfig;
+    }, true);
 
     $scope.model.mapperType = $scope.model.mapperTypes[0];
 

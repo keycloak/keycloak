@@ -1,0 +1,9 @@
+embed-server --server-config=clustered.xml
+
+/interface=private:add(inet-address=${jboss.bind.address.private:127.0.0.1})
+
+/socket-binding-group=standard-sockets/socket-binding=jgroups-mping:write-attribute(name=interface, value=private)
+/socket-binding-group=standard-sockets/socket-binding=jgroups-tcp:write-attribute(name=interface, value=private)
+/socket-binding-group=standard-sockets/socket-binding=jgroups-tcp-fd:write-attribute(name=interface, value=private)
+/socket-binding-group=standard-sockets/socket-binding=jgroups-udp:write-attribute(name=interface, value=private)
+/socket-binding-group=standard-sockets/socket-binding=jgroups-udp-fd:write-attribute(name=interface, value=private)

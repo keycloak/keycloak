@@ -99,8 +99,10 @@ public class CreateLogoutRequestStepBuilder extends SamlDocumentStepBuilder<Logo
           .issuer(issuer)
           .sessionIndex(sessionIndex());
 
-        if (nameId() != null) {
-            builder = builder.userPrincipal(nameId().getValue(), nameId().getFormat().toString());
+        final NameIDType nameIdValue = nameId();
+
+        if (nameIdValue != null) {
+            builder = builder.userPrincipal(nameIdValue.getValue(), nameIdValue.getFormat() == null ? null : nameIdValue.getFormat().toString());
         }
 
         String documentAsString = DocumentUtil.getDocumentAsString(builder.buildDocument());

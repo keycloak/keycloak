@@ -48,7 +48,7 @@ public class Mappers {
         return new UserSessionEntityMapper();
     }
 
-    public static Function<Map.Entry<LoginFailureKey, LoginFailureEntity>, LoginFailureKey> loginFailureId() {
+    public static Function<Map.Entry<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>>, LoginFailureKey> loginFailureId() {
         return new LoginFailureIdMapper();
     }
 
@@ -103,9 +103,9 @@ public class Mappers {
 
     }
 
-    private static class LoginFailureIdMapper implements Function<Map.Entry<LoginFailureKey, LoginFailureEntity>, LoginFailureKey>, Serializable {
+    private static class LoginFailureIdMapper implements Function<Map.Entry<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>>, LoginFailureKey>, Serializable {
         @Override
-        public LoginFailureKey apply(Map.Entry<LoginFailureKey, LoginFailureEntity> entry) {
+        public LoginFailureKey apply(Map.Entry<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> entry) {
             return entry.getKey();
         }
     }

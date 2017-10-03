@@ -37,7 +37,6 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.common.util.Time;
-import org.keycloak.common.util.UriUtils;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -77,6 +76,7 @@ import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.resources.account.AccountFormService;
 import org.keycloak.services.util.BrowserHistoryHelper;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.validation.Validation;
@@ -297,7 +297,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
         ClientSessionCode<AuthenticationSessionModel> clientSessionCode = new ClientSessionCode<>(session, realmModel, authSession);
         clientSessionCode.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
-        clientSessionCode.getCode();
+        clientSessionCode.getOrGenerateCode();
         authSession.setProtocol(client.getProtocol());
         authSession.setRedirectUri(redirectUri);
         authSession.setClientNote(OIDCLoginProtocol.STATE_PARAM, UUID.randomUUID().toString());
@@ -1046,7 +1046,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
         if (clientSessionCode != null) {
             authSession = clientSessionCode.getClientSession();
-            String relayState = clientSessionCode.getCode();
+            String relayState = clientSessionCode.getOrGenerateCode();
             encodedState = IdentityBrokerState.decoded(relayState, authSession.getClient().getClientId());
         }
 
@@ -1082,7 +1082,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         FormMessage errorMessage = new FormMessage(message, parameters);
         try {
             String serializedError = JsonSerialization.writeValueAsString(errorMessage);
-            authSession.setAuthNote(AccountService.ACCOUNT_MGMT_FORWARDED_ERROR_NOTE, serializedError);
+            authSession.setAuthNote(AccountFormService.ACCOUNT_MGMT_FORWARDED_ERROR_NOTE, serializedError);
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         }
@@ -1143,7 +1143,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         throw new IdentityBrokerException("Identity Provider [" + alias + "] not found.");
     }
 
-    private static IdentityProviderFactory getIdentityProviderFactory(KeycloakSession session, IdentityProviderModel model) {
+    public static IdentityProviderFactory getIdentityProviderFactory(KeycloakSession session, IdentityProviderModel model) {
         Map<String, IdentityProviderFactory> availableProviders = new HashMap<String, IdentityProviderFactory>();
         List<ProviderFactory> allProviders = new ArrayList<ProviderFactory>();
 

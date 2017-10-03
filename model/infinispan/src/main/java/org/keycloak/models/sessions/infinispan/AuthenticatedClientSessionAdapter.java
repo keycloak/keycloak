@@ -24,12 +24,10 @@ import java.util.Set;
 
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.changes.InfinispanChangelogBasedTransaction;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
-import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.changes.UserSessionClientSessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.changes.UserSessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
@@ -40,7 +38,7 @@ import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
  */
 public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSessionModel {
 
-    private final AuthenticatedClientSessionEntity entity;
+    private AuthenticatedClientSessionEntity entity;
     private final ClientModel client;
     private final InfinispanUserSessionProvider provider;
     private final InfinispanChangelogBasedTransaction updateTx;
@@ -63,7 +61,6 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
     @Override
     public void setUserSession(UserSessionModel userSession) {
         String clientUUID = client.getId();
-        UserSessionEntity sessionEntity = this.userSession.getEntity();
 
         // Dettach userSession
         if (userSession == null) {
@@ -83,7 +80,11 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
 
                 @Override
                 public void runUpdate(UserSessionEntity sessionEntity) {
-                    sessionEntity.getAuthenticatedClientSessions().put(clientUUID, entity);
+                    AuthenticatedClientSessionEntity current = sessionEntity.getAuthenticatedClientSessions().putIfAbsent(clientUUID, entity);
+                    if (current != null) {
+                        // It may happen when 2 concurrent HTTP requests trying SSO login against same client
+                        entity = current;
+                    }
                 }
 
             };
@@ -142,6 +143,56 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
             @Override
             protected void runClientSessionUpdate(AuthenticatedClientSessionEntity entity) {
                 entity.setTimestamp(timestamp);
+            }
+
+            @Override
+            public CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<UserSessionEntity> sessionWrapper) {
+                // We usually update lastSessionRefresh at the same time. That would handle it.
+                return CrossDCMessageStatus.NOT_NEEDED;
+            }
+
+        };
+
+        update(task);
+    }
+
+    @Override
+    public int getCurrentRefreshTokenUseCount() {
+        return entity.getCurrentRefreshTokenUseCount();
+    }
+
+    @Override
+    public void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount) {
+        UserSessionClientSessionUpdateTask task = new UserSessionClientSessionUpdateTask(client.getId()) {
+
+            @Override
+            protected void runClientSessionUpdate(AuthenticatedClientSessionEntity entity) {
+                entity.setCurrentRefreshTokenUseCount(currentRefreshTokenUseCount);
+            }
+
+            @Override
+            public CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<UserSessionEntity> sessionWrapper) {
+                // We usually update lastSessionRefresh at the same time. That would handle it.
+                return CrossDCMessageStatus.NOT_NEEDED;
+            }
+
+        };
+
+        update(task);
+    }
+
+    @Override
+    public String getCurrentRefreshToken() {
+        return entity.getCurrentRefreshToken();
+    }
+
+    @Override
+    public void setCurrentRefreshToken(String currentRefreshToken) {
+        UserSessionClientSessionUpdateTask task = new UserSessionClientSessionUpdateTask(client.getId()) {
+
+            @Override
+            protected void runClientSessionUpdate(AuthenticatedClientSessionEntity entity) {
+                entity.setCurrentRefreshToken(currentRefreshToken);
             }
 
             @Override

@@ -229,12 +229,12 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         return invalidations.contains(id);
     }
 
-    public void registerResourceServerInvalidation(String id, String clientId) {
-        cache.resourceServerUpdated(id, clientId, invalidations);
+    public void registerResourceServerInvalidation(String id) {
+        cache.resourceServerUpdated(id, invalidations);
         ResourceServerAdapter adapter = managedResourceServers.get(id);
         if (adapter != null) adapter.invalidateFlag();
 
-        invalidationEvents.add(ResourceServerUpdatedEvent.create(id, clientId));
+        invalidationEvents.add(ResourceServerUpdatedEvent.create(id));
     }
 
     public void registerScopeInvalidation(String id, String name, String serverId) {
@@ -245,12 +245,12 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         invalidationEvents.add(ScopeUpdatedEvent.create(id, name, serverId));
     }
 
-    public void registerResourceInvalidation(String id, String name, String type, String uri, Set<String> scopes, String serverId) {
-        cache.resourceUpdated(id, name, type, uri, scopes, serverId, invalidations);
+    public void registerResourceInvalidation(String id, String name, String type, String uri, Set<String> scopes, String serverId, String owner) {
+        cache.resourceUpdated(id, name, type, uri, scopes, serverId, owner, invalidations);
         ResourceAdapter adapter = managedResources.get(id);
         if (adapter != null) adapter.invalidateFlag();
 
-        invalidationEvents.add(ResourceUpdatedEvent.create(id, name, type, uri, scopes, serverId));
+        invalidationEvents.add(ResourceUpdatedEvent.create(id, name, type, uri, scopes, serverId, owner));
     }
 
     public void registerPolicyInvalidation(String id, String name, Set<String> resources, Set<String> scopes, String serverId) {
@@ -350,7 +350,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         @Override
         public ResourceServer create(String clientId) {
             ResourceServer server = getResourceServerStoreDelegate().create(clientId);
-            registerResourceServerInvalidation(server.getId(), server.getClientId());
+            registerResourceServerInvalidation(server.getId());
             return server;
         }
 
@@ -361,8 +361,8 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             if (server == null) return;
 
             cache.invalidateObject(id);
-            invalidationEvents.add(ResourceServerRemovedEvent.create(id, server.getClientId()));
-            cache.resourceServerRemoval(id, server.getClientId(), invalidations);
+            invalidationEvents.add(ResourceServerRemovedEvent.create(id, server.getId()));
+            cache.resourceServerRemoval(id, invalidations);
             getResourceServerStoreDelegate().delete(id);
 
         }
@@ -391,33 +391,6 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             ResourceServerAdapter adapter = new ResourceServerAdapter(cached, StoreFactoryCacheSession.this);
              managedResourceServers.put(id, adapter);
             return adapter;
-        }
-
-
-        @Override
-        public ResourceServer findByClient(String clientId) {
-            String cacheKey = getResourceServerByClientCacheKey(clientId);
-            ResourceServerListQuery query = cache.get(cacheKey, ResourceServerListQuery.class);
-            if (query != null) {
-                logger.tracev("ResourceServer by clientId cache hit: {0}", clientId);
-            }
-            if (query == null) {
-                Long loaded = cache.getCurrentRevision(cacheKey);
-                ResourceServer model = getResourceServerStoreDelegate().findByClient(clientId);
-                if (model == null) return null;
-                if (invalidations.contains(model.getId())) return model;
-                query = new ResourceServerListQuery(loaded, cacheKey, model.getId());
-                cache.addRevisioned(query, startupRevision);
-                return model;
-            } else if (invalidations.contains(cacheKey)) {
-                return getResourceServerStoreDelegate().findByClient(clientId);
-            } else {
-                String serverId = query.getResourceServers().iterator().next();
-                if (invalidations.contains(serverId)) {
-                    return getResourceServerStoreDelegate().findByClient(clientId);
-                }
-                return findById(serverId);
-            }
         }
     }
 
@@ -509,8 +482,9 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         @Override
         public Resource create(String name, ResourceServer resourceServer, String owner) {
             Resource resource = getResourceStoreDelegate().create(name, resourceServer, owner);
-            registerResourceInvalidation(resource.getId(), resource.getName(), resource.getType(), resource.getUri(), resource.getScopes().stream().map(scope -> scope.getId()).collect(Collectors.toSet()), resourceServer.getId());
-            return resource;
+            Resource cached = findById(resource.getId(), resourceServer.getId());
+            registerResourceInvalidation(resource.getId(), resource.getName(), resource.getType(), resource.getUri(), resource.getScopes().stream().map(scope -> scope.getId()).collect(Collectors.toSet()), resourceServer.getId(), resource.getOwner());
+            return cached;
         }
 
         @Override

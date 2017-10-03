@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests-adapters-jboss</artifactId>
-        <version>3.3.0.CR1-SNAPSHOT</version>
+        <version>3.4.0.CR1-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-adapters-wildfly</artifactId>
@@ -36,13 +36,25 @@
             <groupId>org.wildfly.extras.creaper</groupId>
             <artifactId>creaper-core</artifactId>
             <scope>test</scope>
-            <version>1.5.0</version>
+            <version>1.6.1</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-cli</artifactId>
             <scope>test</scope>
-            <version>2.2.0.Final</version>
+            <version>${wildfly.core.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-controller-client</artifactId>
+            <scope>test</scope>
+            <version>${wildfly.core.version}</version>
         </dependency>
     </dependencies>    
 

@@ -23,4 +23,6 @@ package org.keycloak.adapters.saml;
  */
 public class AdapterConstants {
     public static final String AUTH_DATA_PARAM_NAME="org.keycloak.saml.xml.adapterConfig";
+    public static final String REPLICATION_CONFIG_CONTAINER_PARAM_NAME = "org.keycloak.saml.replication.container";
+    public static final String REPLICATION_CONFIG_SSO_CACHE_PARAM_NAME = "org.keycloak.saml.replication.cache.sso";
 }

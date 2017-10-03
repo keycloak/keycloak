@@ -46,19 +46,14 @@ public class UserSessionCrossDCManager {
     }
 
 
-    // get userSession if it has "authenticatedClientSession" of specified client attached to it and there is "CODE_TO_TOKEN" action. Otherwise download it from remoteCache
+    // get userSession if it has "authenticatedClientSession" of specified client attached to it. Otherwise download it from remoteCache
     // TODO Probably remove this method once AuthenticatedClientSession.getAction is removed and information is moved to OAuth code JWT instead
-    public UserSessionModel getUserSessionWithClientAndCodeToTokenAction(RealmModel realm, String id, String clientUUID) {
+    public UserSessionModel getUserSessionWithClient(RealmModel realm, String id, String clientUUID) {
 
         return kcSession.sessions().getUserSessionWithPredicate(realm, id, false, (UserSessionModel userSession) -> {
 
             Map<String, AuthenticatedClientSessionModel> authSessions = userSession.getAuthenticatedClientSessions();
-            if (!authSessions.containsKey(clientUUID)) {
-                return false;
-            }
-
-            AuthenticatedClientSessionModel authSession = authSessions.get(clientUUID);
-            return CommonClientSessionModel.Action.CODE_TO_TOKEN.toString().equals(authSession.getAction());
+            return authSessions.containsKey(clientUUID);
 
         });
     }

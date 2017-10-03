@@ -16,7 +16,6 @@
  */
 package org.keycloak.authorization.jpa.store;
 
-import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.jpa.entities.PolicyEntity;
 import org.keycloak.authorization.jpa.entities.ResourceEntity;
 import org.keycloak.authorization.jpa.entities.ScopeEntity;

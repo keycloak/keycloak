@@ -1,0 +1,7 @@
+embed-server --server-config=standalone-ha.xml
+
+# remove dynamic-load-provider
+/subsystem=modcluster/mod-cluster-config=configuration/dynamic-load-provider=configuration:remove
+
+# add simple-load-provider with factor=1 to assure round-robin balancing
+/subsystem=modcluster/mod-cluster-config=configuration:write-attribute(name=simple-load-provider, value=1)

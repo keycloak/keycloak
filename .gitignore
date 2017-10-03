@@ -52,4 +52,6 @@ target
 
 # nodejs #
 ##########
-node_modules
+# KEYCLOAK-5391: We will re-exclude node_modules when node_modules handling is worked out.
+# For now, we keep our js libraries checked into GitHub, so we don't ignore.
+#node_modules

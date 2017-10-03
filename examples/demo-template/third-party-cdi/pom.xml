@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-examples-demo-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.3.0.CR1-SNAPSHOT</version>
+        <version>3.4.0.CR1-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>

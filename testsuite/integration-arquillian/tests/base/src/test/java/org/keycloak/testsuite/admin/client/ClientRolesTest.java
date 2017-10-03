@@ -132,5 +132,4 @@ public class ClientRolesTest extends AbstractClientTest {
         assertFalse(rolesRsc.get("role-a").toRepresentation().isComposite());
         assertEquals(0, rolesRsc.get("role-a").getRoleComposites().size());
     }
-
 }

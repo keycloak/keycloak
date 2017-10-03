@@ -15,11 +15,10 @@
         <tr>
             <th class="kc-table-actions" colspan="4">
                 <div class="pull-right">
-                    <select data-ng-model="query.max" data-ng-click="update()" class="btn btn-default">
-                        <option>5</option>
-                        <option>10</option>
-                        <option>50</option>
-                        <option>100</option>
+                    <select data-ng-model="query.max"
+                            data-ng-click="update()"
+                            data-ng-options="itemCount for itemCount in [5,10,50,100]"
+                            class="btn btn-default">
                     </select>
                     <button class="btn btn-default" data-ng-click="filter = !filter">
                         <span class="glyphicon glyphicon-plus" data-ng-show="!filter"></span>

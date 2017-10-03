@@ -40,7 +40,7 @@
     </xsl:template>
     
     <!--add filter-->
-    <xsl:template match="//*[local-name()='filters']">
+    <xsl:template match="//*[local-name()='subsystem']/*[local-name()='filters']">
         <xsl:copy>
             <xsl:apply-templates select="node()|@*"/>
             <mod-cluster 

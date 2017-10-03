@@ -300,6 +300,16 @@ public class EjbExampleUserStorageProvider implements UserStorageProvider,
     }
 
     @Override
+    public List<UserModel> getRoleMembers(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
+        return Collections.EMPTY_LIST;
+    }
+
+    @Override
+    public List<UserModel> getRoleMembers(RealmModel realm, RoleModel role) {
+        return Collections.EMPTY_LIST;
+    }
+
+    @Override
     public List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm) {
         return Collections.EMPTY_LIST;
     }

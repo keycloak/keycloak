@@ -41,6 +41,7 @@ import org.keycloak.authorization.client.representation.EntitlementResponse;
 import org.keycloak.authorization.client.representation.PermissionRequest;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
@@ -49,6 +50,7 @@ import org.keycloak.representations.idm.authorization.ResourcePermissionRepresen
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
@@ -58,7 +60,7 @@ import org.keycloak.util.JsonSerialization;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class EntitlementAPITest extends AbstractKeycloakTest {
+public class EntitlementAPITest extends AbstractAuthzTest {
 
     private AuthzClient authzClient;
 
@@ -73,6 +75,11 @@ public class EntitlementAPITest extends AbstractKeycloakTest {
                     .authorizationServicesEnabled(true)
                     .redirectUris("http://localhost/resource-server-test")
                     .defaultRoles("uma_protection")
+                    .directAccessGrants())
+                .client(ClientBuilder.create().clientId("test-client")
+                    .secret("secret")
+                    .authorizationServicesEnabled(true)
+                    .redirectUris("http://localhost/test-client")
                     .directAccessGrants())
                 .build());
     }
@@ -155,7 +162,7 @@ public class EntitlementAPITest extends AbstractKeycloakTest {
         request.setMetadata(metadata);
 
         EntitlementResponse response = getAuthzClient().entitlement(authzClient.obtainAccessToken("marta", "password").getToken()).get("resource-server-test", request);
-        AccessToken rpt = toAccessToken(response);
+        AccessToken rpt = toAccessToken(response.getRpt());
 
         List<Permission> permissions = rpt.getAuthorization().getPermissions();
 
@@ -175,7 +182,7 @@ public class EntitlementAPITest extends AbstractKeycloakTest {
         request.setRpt(response.getRpt());
 
         response = getAuthzClient().entitlement(authzClient.obtainAccessToken("marta", "password").getToken()).get("resource-server-test", request);
-        rpt = toAccessToken(response);
+        rpt = toAccessToken(response.getRpt());
 
         permissions = rpt.getAuthorization().getPermissions();
 
@@ -199,7 +206,7 @@ public class EntitlementAPITest extends AbstractKeycloakTest {
         request.setRpt(response.getRpt());
 
         response = getAuthzClient().entitlement(authzClient.obtainAccessToken("marta", "password").getToken()).get("resource-server-test", request);
-        rpt = toAccessToken(response);
+        rpt = toAccessToken(response.getRpt());
 
         permissions = rpt.getAuthorization().getPermissions();
 
@@ -222,7 +229,7 @@ public class EntitlementAPITest extends AbstractKeycloakTest {
         request.setRpt(response.getRpt());
 
         response = getAuthzClient().entitlement(authzClient.obtainAccessToken("marta", "password").getToken()).get("resource-server-test", request);
-        rpt = toAccessToken(response);
+        rpt = toAccessToken(response.getRpt());
 
         permissions = rpt.getAuthorization().getPermissions();
 
@@ -234,8 +241,21 @@ public class EntitlementAPITest extends AbstractKeycloakTest {
         assertEquals("Resource 12", permissions.get(4).getResourceSetName());
     }
 
+    @Test
+    public void testResourceServerAsAudience() throws Exception {
+        EntitlementRequest request = new EntitlementRequest();
+
+        request.addPermission(new PermissionRequest("Resource 1"));
+
+        String accessToken = new OAuthClient().realm("authz-test").clientId("test-client").doGrantAccessTokenRequest("secret", "marta", "password").getAccessToken();
+        EntitlementResponse response = getAuthzClient().entitlement(accessToken).get("resource-server-test", request);
+        AccessToken rpt = toAccessToken(response.getRpt());
+
+        assertEquals("resource-server-test", rpt.getAudience()[0]);
+    }
+
     private void assertResponse(AuthorizationRequestMetadata metadata, Supplier<EntitlementResponse> responseSupplier) {
-        AccessToken.Authorization authorization = toAccessToken(responseSupplier.get()).getAuthorization();
+        AccessToken.Authorization authorization = toAccessToken(responseSupplier.get().getRpt()).getAuthorization();
 
         List<Permission> permissions = authorization.getPermissions();
 
@@ -249,17 +269,6 @@ public class EntitlementAPITest extends AbstractKeycloakTest {
                 assertNull(permission.getResourceSetName());
             }
         }
-    }
-
-    private AccessToken toAccessToken(EntitlementResponse response) {
-        AccessToken accessToken;
-
-        try {
-            accessToken = new JWSInput(response.getRpt()).readJsonContent(AccessToken.class);
-        } catch (JWSInputException cause) {
-            throw new RuntimeException("Failed to deserialize RPT", cause);
-        }
-        return accessToken;
     }
 
     private RealmResource getRealm() throws Exception {

@@ -165,6 +165,9 @@ public class RepresentationToModel {
         if (rep.getRevokeRefreshToken() != null) newRealm.setRevokeRefreshToken(rep.getRevokeRefreshToken());
         else newRealm.setRevokeRefreshToken(false);
 
+        if (rep.getRefreshTokenMaxReuse() != null) newRealm.setRefreshTokenMaxReuse(rep.getRefreshTokenMaxReuse());
+        else newRealm.setRefreshTokenMaxReuse(0);
+
         if (rep.getAccessTokenLifespan() != null) newRealm.setAccessTokenLifespan(rep.getAccessTokenLifespan());
         else newRealm.setAccessTokenLifespan(300);
 
@@ -841,6 +844,7 @@ public class RepresentationToModel {
             realm.setActionTokenGeneratedByUserLifespan(rep.getActionTokenGeneratedByUserLifespan());
         if (rep.getNotBefore() != null) realm.setNotBefore(rep.getNotBefore());
         if (rep.getRevokeRefreshToken() != null) realm.setRevokeRefreshToken(rep.getRevokeRefreshToken());
+        if (rep.getRefreshTokenMaxReuse() != null) realm.setRefreshTokenMaxReuse(rep.getRefreshTokenMaxReuse());
         if (rep.getAccessTokenLifespan() != null) realm.setAccessTokenLifespan(rep.getAccessTokenLifespan());
         if (rep.getAccessTokenLifespanForImplicitFlow() != null)
             realm.setAccessTokenLifespanForImplicitFlow(rep.getAccessTokenLifespanForImplicitFlow());
@@ -1454,6 +1458,11 @@ public class RepresentationToModel {
                 session.users().addConsent(newRealm, user.getId(), consentModel);
             }
         }
+
+        if (userRep.getNotBefore() != null) {
+            session.users().setNotBeforeForUser(newRealm, user, userRep.getNotBefore());
+        }
+
         if (userRep.getServiceAccountClientId() != null) {
             String clientId = userRep.getServiceAccountClientId();
             ClientModel client = newRealm.getClientByClientId(clientId);
@@ -1917,7 +1926,7 @@ public class RepresentationToModel {
     public static void toModel(ResourceServerRepresentation rep, AuthorizationProvider authorization) {
         ResourceServerStore resourceServerStore = authorization.getStoreFactory().getResourceServerStore();
         ResourceServer resourceServer;
-        ResourceServer existing = resourceServerStore.findByClient(rep.getClientId());
+        ResourceServer existing = resourceServerStore.findById(rep.getClientId());
 
         if (existing == null) {
             resourceServer = resourceServerStore.create(rep.getClientId());
@@ -1942,7 +1951,7 @@ public class RepresentationToModel {
 
             if (owner == null) {
                 owner = new ResourceOwnerRepresentation();
-                owner.setId(resourceServer.getClientId());
+                owner.setId(resourceServer.getId());
                 resource.setOwner(owner);
             } else if (owner.getName() != null) {
                 UserModel user = session.users().getUserByUsername(owner.getName(), realm);
@@ -2265,7 +2274,7 @@ public class RepresentationToModel {
 
         if (owner == null) {
             owner = new ResourceOwnerRepresentation();
-            owner.setId(resourceServer.getClientId());
+            owner.setId(resourceServer.getId());
         }
 
         String ownerId = owner.getId();
@@ -2274,7 +2283,7 @@ public class RepresentationToModel {
             throw new RuntimeException("No owner specified for resource [" + resource.getName() + "].");
         }
 
-        if (!resourceServer.getClientId().equals(ownerId)) {
+        if (!resourceServer.getId().equals(ownerId)) {
             RealmModel realm = authorization.getRealm();
             KeycloakSession keycloakSession = authorization.getKeycloakSession();
             UserProvider users = keycloakSession.users();
@@ -2377,6 +2386,9 @@ public class RepresentationToModel {
                 UserConsentModel consentModel = toModel(newRealm, consentRep);
                 federatedStorage.addConsent(newRealm, userRep.getId(), consentModel);
             }
+        }
+        if (userRep.getNotBefore() != null) {
+            federatedStorage.setNotBeforeForUser(newRealm, userRep.getId(), userRep.getNotBefore());
         }
 
 

@@ -18,10 +18,8 @@ package org.keycloak.services.resources.admin.permissions;
 
 import org.jboss.logging.Logger;
 import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.attribute.Attributes;
 import org.keycloak.authorization.common.ClientModelIdentity;
 import org.keycloak.authorization.common.DefaultEvaluationContext;
-import org.keycloak.authorization.identity.Identity;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
@@ -32,8 +30,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ForbiddenException;
 
 import java.util.Arrays;
@@ -44,8 +40,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static org.keycloak.services.resources.admin.permissions.AdminPermissionManagement.EXCHANGE_FROM_SCOPE;
-import static org.keycloak.services.resources.admin.permissions.AdminPermissionManagement.EXCHANGE_TO_SCOPE;
+import static org.keycloak.services.resources.admin.permissions.AdminPermissionManagement.TOKEN_EXCHANGE;
 
 /**
  * Manages default policies for all users.
@@ -54,7 +49,7 @@ import static org.keycloak.services.resources.admin.permissions.AdminPermissionM
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionManagement {
+class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionManagement {
     private static final Logger logger = Logger.getLogger(ClientPermissions.class);
     protected final KeycloakSession session;
     protected final RealmModel realm;
@@ -92,14 +87,10 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
     }
 
     private String getExchangeToPermissionName(ClientModel client) {
-        return EXCHANGE_TO_SCOPE + ".permission.client." + client.getId();
+        return TOKEN_EXCHANGE + ".permission.client." + client.getId();
     }
 
-    private String getExchangeFromPermissionName(ClientModel client) {
-        return EXCHANGE_FROM_SCOPE + ".permission.client." + client.getId();
-    }
-
-    private void initialize(ClientModel client) {
+     private void initialize(ClientModel client) {
         ResourceServer server = root.findOrCreateResourceServer(client);
         Scope manageScope = manageScope(server);
         if (manageScope == null) {
@@ -116,13 +107,12 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
         Scope mapRoleClientScope = root.initializeScope(MAP_ROLES_CLIENT_SCOPE, server);
         Scope mapRoleCompositeScope = root.initializeScope(MAP_ROLES_COMPOSITE_SCOPE, server);
         Scope configureScope = root.initializeScope(CONFIGURE_SCOPE, server);
-        Scope exchangeFromScope = root.initializeScope(EXCHANGE_FROM_SCOPE, server);
-        Scope exchangeToScope = root.initializeScope(EXCHANGE_TO_SCOPE, server);
+        Scope exchangeToScope = root.initializeScope(TOKEN_EXCHANGE, server);
 
         String resourceName = getResourceName(client);
         Resource resource = authz.getStoreFactory().getResourceStore().findByName(resourceName, server.getId());
         if (resource == null) {
-            resource = authz.getStoreFactory().getResourceStore().create(resourceName, server, server.getClientId());
+            resource = authz.getStoreFactory().getResourceStore().create(resourceName, server, server.getId());
             resource.setType("Client");
             Set<Scope> scopeset = new HashSet<>();
             scopeset.add(configureScope);
@@ -131,7 +121,6 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
             scopeset.add(mapRoleScope);
             scopeset.add(mapRoleClientScope);
             scopeset.add(mapRoleCompositeScope);
-            scopeset.add(exchangeFromScope);
             scopeset.add(exchangeToScope);
             resource.updateScopes(scopeset);
         }
@@ -170,11 +159,6 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
         if (exchangeToPermission == null) {
             Helper.addEmptyScopePermission(authz, server, exchangeToPermissionName, resource, exchangeToScope);
         }
-        String exchangeFromPermissionName = getExchangeFromPermissionName(client);
-        Policy exchangeFromPermission = authz.getStoreFactory().getPolicyStore().findByName(exchangeFromPermissionName, server.getId());
-        if (exchangeFromPermission == null) {
-            Helper.addEmptyScopePermission(authz, server, exchangeFromPermissionName, resource, exchangeFromScope);
-        }
     }
 
     private void deletePolicy(String name, ResourceServer server) {
@@ -195,7 +179,6 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
         deletePolicy(getMapRolesCompositePermissionName(client), server);
         deletePolicy(getConfigurePermissionName(client), server);
         deletePolicy(getExchangeToPermissionName(client), server);
-        deletePolicy(getExchangeFromPermissionName(client), server);
         Resource resource = authz.getStoreFactory().getResourceStore().findByName(getResourceName(client), server.getId());;
         if (resource != null) authz.getStoreFactory().getResourceStore().delete(resource.getId());
     }
@@ -223,12 +206,8 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
         return authz.getStoreFactory().getScopeStore().findByName(AdminPermissionManagement.MANAGE_SCOPE, server.getId());
     }
 
-    private Scope exchangeFromScope(ResourceServer server) {
-        return authz.getStoreFactory().getScopeStore().findByName(EXCHANGE_FROM_SCOPE, server.getId());
-    }
-
     private Scope exchangeToScope(ResourceServer server) {
-        return authz.getStoreFactory().getScopeStore().findByName(EXCHANGE_TO_SCOPE, server.getId());
+        return authz.getStoreFactory().getScopeStore().findByName(TOKEN_EXCHANGE, server.getId());
     }
 
     private Scope configureScope(ResourceServer server) {
@@ -314,57 +293,8 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
         scopes.put(MAP_ROLES_SCOPE,  mapRolesPermission(client).getId());
         scopes.put(MAP_ROLES_CLIENT_SCOPE, mapRolesClientScopePermission(client).getId());
         scopes.put(MAP_ROLES_COMPOSITE_SCOPE, mapRolesCompositePermission(client).getId());
-        scopes.put(EXCHANGE_FROM_SCOPE, exchangeFromPermission(client).getId());
-        scopes.put(EXCHANGE_TO_SCOPE, exchangeToPermission(client).getId());
+        scopes.put(TOKEN_EXCHANGE, exchangeToPermission(client).getId());
         return scopes;
-    }
-
-    @Override
-    public boolean canExchangeFrom(ClientModel authorizedClient, ClientModel from) {
-        if (!authorizedClient.equals(from)) {
-            ResourceServer server = resourceServer(from);
-            if (server == null) {
-                logger.debug("No resource server set up for target client");
-                return false;
-            }
-
-            Resource resource =  authz.getStoreFactory().getResourceStore().findByName(getResourceName(from), server.getId());
-            if (resource == null) {
-                logger.debug("No resource object set up for target client");
-                return false;
-            }
-
-            Policy policy = authz.getStoreFactory().getPolicyStore().findByName(getExchangeFromPermissionName(from), server.getId());
-            if (policy == null) {
-                logger.debug("No permission object set up for target client");
-                return false;
-            }
-
-            Set<Policy> associatedPolicies = policy.getAssociatedPolicies();
-            // if no policies attached to permission then just do default behavior
-            if (associatedPolicies == null || associatedPolicies.isEmpty()) {
-                logger.debug("No policies set up for permission on target client");
-                return false;
-            }
-
-            Scope scope = exchangeFromScope(server);
-            if (scope == null) {
-                logger.debug(EXCHANGE_FROM_SCOPE + " not initialized");
-                return false;
-            }
-            ClientModelIdentity identity = new ClientModelIdentity(session, authorizedClient);
-            EvaluationContext context = new DefaultEvaluationContext(identity, session) {
-                @Override
-                public Map<String, Collection<String>> getBaseAttributes() {
-                    Map<String, Collection<String>> attributes = super.getBaseAttributes();
-                    attributes.put("kc.client.id", Arrays.asList(authorizedClient.getClientId()));
-                    return attributes;
-                }
-
-            };
-            return root.evaluatePermission(resource, scope, server, context);
-        }
-        return true;
     }
 
     @Override
@@ -398,7 +328,7 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
 
             Scope scope = exchangeToScope(server);
             if (scope == null) {
-                logger.debug(EXCHANGE_TO_SCOPE + " not initialized");
+                logger.debug(TOKEN_EXCHANGE + " not initialized");
                 return false;
             }
             ClientModelIdentity identity = new ClientModelIdentity(session, authorizedClient);
@@ -599,13 +529,6 @@ class ClientPermissions implements ClientPermissionEvaluator, ClientPermissionMa
 
         Scope scope = mapRolesScope(server);
         return root.evaluatePermission(resource, scope, server);
-    }
-
-    @Override
-    public Policy exchangeFromPermission(ClientModel client) {
-        ResourceServer server = resourceServer(client);
-        if (server == null) return null;
-        return authz.getStoreFactory().getPolicyStore().findByName(getExchangeFromPermissionName(client), server.getId());
     }
 
     @Override

@@ -24,22 +24,33 @@ import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
+import org.keycloak.broker.provider.ExchangeTokenToIdentityProviderToken;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
@@ -51,7 +62,7 @@ import java.util.regex.Pattern;
 /**
  * @author Pedro Igor
  */
-public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityProviderConfig> extends AbstractIdentityProvider<C> {
+public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityProviderConfig> extends AbstractIdentityProvider<C> implements ExchangeTokenToIdentityProviderToken {
     protected static final Logger logger = Logger.getLogger(AbstractOAuth2IdentityProvider.class);
 
     public static final String OAUTH2_GRANT_TYPE_REFRESH_TOKEN = "refresh_token";
@@ -136,14 +147,141 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         return null;
     }
 
+    @Override
+    public Response exchangeFromToken(UriInfo uriInfo, EventBuilder event, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject, MultivaluedMap<String, String> params) {
+        // check to see if we have a token exchange in session
+        // in other words check to see if this session was created by an external exchange
+        Response tokenResponse = hasExternalExchangeToken(event, tokenUserSession, params);
+        if (tokenResponse != null) return tokenResponse;
+
+        // going further we only support access token type?  Why?
+        String requestedType = params.getFirst(OAuth2Constants.REQUESTED_TOKEN_TYPE);
+        if (requestedType != null && !requestedType.equals(OAuth2Constants.ACCESS_TOKEN_TYPE)) {
+            event.detail(Details.REASON, "requested_token_type unsupported");
+            event.error(Errors.INVALID_REQUEST);
+            return exchangeUnsupportedRequiredType();
+        }
+        if (!getConfig().isStoreToken()) {
+            // if token isn't stored, we need to see if this session has been linked
+            String brokerId = tokenUserSession.getNote(Details.IDENTITY_PROVIDER);
+            if (brokerId == null || !brokerId.equals(getConfig().getAlias())) {
+                event.detail(Details.REASON, "requested_issuer has not linked");
+                event.error(Errors.INVALID_REQUEST);
+                return exchangeNotLinkedNoStore(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
+            }
+            return exchangeSessionToken(uriInfo, event, authorizedClient, tokenUserSession, tokenSubject);
+        } else {
+            return exchangeStoredToken(uriInfo, event, authorizedClient, tokenUserSession, tokenSubject);
+        }
+    }
+
+    /**
+     * check to see if we have a token exchange in session
+     * in other words check to see if this session was created by an external exchange
+     * @param tokenUserSession
+     * @param params
+     * @return
+     */
+    protected Response hasExternalExchangeToken(EventBuilder event, UserSessionModel tokenUserSession, MultivaluedMap<String, String> params) {
+        if (getConfig().getAlias().equals(tokenUserSession.getNote(OIDCIdentityProvider.EXCHANGE_PROVIDER))) {
+
+            String requestedType = params.getFirst(OAuth2Constants.REQUESTED_TOKEN_TYPE);
+            if ((requestedType == null || requestedType.equals(OAuth2Constants.ACCESS_TOKEN_TYPE))) {
+                String accessToken = tokenUserSession.getNote(FEDERATED_ACCESS_TOKEN);
+                if (accessToken != null) {
+                    AccessTokenResponse tokenResponse = new AccessTokenResponse();
+                    tokenResponse.setToken(accessToken);
+                    tokenResponse.setIdToken(null);
+                    tokenResponse.setRefreshToken(null);
+                    tokenResponse.setRefreshExpiresIn(0);
+                    tokenResponse.setExpiresIn(0);
+                    tokenResponse.getOtherClaims().clear();
+                    tokenResponse.getOtherClaims().put(OAuth2Constants.ISSUED_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE);
+                    event.success();
+                    return Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE).build();
+                }
+            } else if (OAuth2Constants.ID_TOKEN_TYPE.equals(requestedType)) {
+                String idToken = tokenUserSession.getNote(OIDCIdentityProvider.FEDERATED_ID_TOKEN);
+                if (idToken != null) {
+                    AccessTokenResponse tokenResponse = new AccessTokenResponse();
+                    tokenResponse.setToken(null);
+                    tokenResponse.setIdToken(idToken);
+                    tokenResponse.setRefreshToken(null);
+                    tokenResponse.setRefreshExpiresIn(0);
+                    tokenResponse.setExpiresIn(0);
+                    tokenResponse.getOtherClaims().clear();
+                    tokenResponse.getOtherClaims().put(OAuth2Constants.ISSUED_TOKEN_TYPE, OAuth2Constants.ID_TOKEN_TYPE);
+                    event.success();
+                    return Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE).build();
+                }
+
+            }
+
+        }
+        return null;
+    }
+
+    protected Response exchangeStoredToken(UriInfo uriInfo, EventBuilder event, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
+        FederatedIdentityModel model = session.users().getFederatedIdentity(tokenSubject, getConfig().getAlias(), authorizedClient.getRealm());
+        if (model == null || model.getToken() == null) {
+            event.detail(Details.REASON, "requested_issuer is not linked");
+            event.error(Errors.INVALID_TOKEN);
+            return exchangeNotLinked(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
+        }
+        String accessToken = extractTokenFromResponse(model.getToken(), getAccessTokenResponseParameter());
+        if (accessToken == null) {
+            model.setToken(null);
+            session.users().updateFederatedIdentity(authorizedClient.getRealm(), tokenSubject, model);
+            event.detail(Details.REASON, "requested_issuer token expired");
+            event.error(Errors.INVALID_TOKEN);
+            return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
+        }
+        AccessTokenResponse tokenResponse = new AccessTokenResponse();
+        tokenResponse.setToken(accessToken);
+        tokenResponse.setIdToken(null);
+        tokenResponse.setRefreshToken(null);
+        tokenResponse.setRefreshExpiresIn(0);
+        tokenResponse.getOtherClaims().clear();
+        tokenResponse.getOtherClaims().put(OAuth2Constants.ISSUED_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE);
+        tokenResponse.getOtherClaims().put(ACCOUNT_LINK_URL, getLinkingUrl(uriInfo, authorizedClient, tokenUserSession));
+        event.success();
+        return Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE).build();
+    }
+
+    protected Response exchangeSessionToken(UriInfo uriInfo, EventBuilder event, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
+        String accessToken = tokenUserSession.getNote(FEDERATED_ACCESS_TOKEN);
+        if (accessToken == null) {
+            event.detail(Details.REASON, "requested_issuer is not linked");
+            event.error(Errors.INVALID_TOKEN);
+            return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
+        }
+        AccessTokenResponse tokenResponse = new AccessTokenResponse();
+        tokenResponse.setToken(accessToken);
+        tokenResponse.setIdToken(null);
+        tokenResponse.setRefreshToken(null);
+        tokenResponse.setRefreshExpiresIn(0);
+        tokenResponse.getOtherClaims().clear();
+        tokenResponse.getOtherClaims().put(OAuth2Constants.ISSUED_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE);
+        tokenResponse.getOtherClaims().put(ACCOUNT_LINK_URL, getLinkingUrl(uriInfo, authorizedClient, tokenUserSession));
+        event.success();
+        return Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE).build();
+    }
+
+
     public BrokeredIdentityContext getFederatedIdentity(String response) {
-        String accessToken = extractTokenFromResponse(response, OAUTH2_PARAMETER_ACCESS_TOKEN);
+        String accessToken = extractTokenFromResponse(response, getAccessTokenResponseParameter());
 
         if (accessToken == null) {
             throw new IdentityBrokerException("No access token available in OAuth server response: " + response);
         }
 
-        return doGetFederatedIdentity(accessToken);
+        BrokeredIdentityContext context = doGetFederatedIdentity(accessToken);
+        context.getContextData().put(FEDERATED_ACCESS_TOKEN, accessToken);
+        return context;
+    }
+
+    protected String getAccessTokenResponseParameter() {
+        return OAUTH2_PARAMETER_ACCESS_TOKEN;
     }
 
 
@@ -153,12 +291,18 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
 
     protected UriBuilder createAuthorizationUrl(AuthenticationRequest request) {
-        return UriBuilder.fromUri(getConfig().getAuthorizationUrl())
+        final UriBuilder uriBuilder = UriBuilder.fromUri(getConfig().getAuthorizationUrl())
                 .queryParam(OAUTH2_PARAMETER_SCOPE, getConfig().getDefaultScope())
                 .queryParam(OAUTH2_PARAMETER_STATE, request.getState().getEncodedState())
                 .queryParam(OAUTH2_PARAMETER_RESPONSE_TYPE, "code")
                 .queryParam(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
                 .queryParam(OAUTH2_PARAMETER_REDIRECT_URI, request.getRedirectUri());
+
+        String loginHint = request.getAuthenticationSession().getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
+        if (getConfig().isLoginHint() && loginHint != null) {
+            uriBuilder.queryParam(OIDCLoginProtocol.LOGIN_HINT_PARAM, loginHint);
+        }
+        return uriBuilder;
     }
 
     /**
@@ -185,6 +329,12 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     protected abstract String getDefaultScopes();
+
+    @Override
+    public void authenticationFinished(AuthenticationSessionModel authSession, BrokeredIdentityContext context) {
+        String token = (String) context.getContextData().get(FEDERATED_ACCESS_TOKEN);
+        if (token != null) authSession.setUserSessionNote(FEDERATED_ACCESS_TOKEN, token);
+    }
 
     protected class Endpoint {
         protected AuthenticationCallback callback;
@@ -232,7 +382,9 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                     BrokeredIdentityContext federatedIdentity = getFederatedIdentity(response);
 
                     if (getConfig().isStoreToken()) {
-                        federatedIdentity.setToken(response);
+                        // make sure that token wasn't already set by getFederatedIdentity();
+                        // want to be able to allow provider to set the token itself.
+                        if (federatedIdentity.getToken() == null)federatedIdentity.setToken(response);
                     }
 
                     federatedIdentity.setIdpConfig(getConfig());

@@ -18,15 +18,15 @@
 
 package org.keycloak.authorization.admin;
 
+import javax.ws.rs.Path;
+
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
-
-import javax.ws.rs.Path;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -43,7 +43,7 @@ public class AuthorizationService {
         this.client = client;
         this.authorization = session.getProvider(AuthorizationProvider.class);
         this.adminEvent = adminEvent;
-        this.resourceServer = this.authorization.getStoreFactory().getResourceServerStore().findByClient(this.client.getId());
+        this.resourceServer = this.authorization.getStoreFactory().getResourceServerStore().findById(this.client.getId());
         this.auth = auth;
     }
 

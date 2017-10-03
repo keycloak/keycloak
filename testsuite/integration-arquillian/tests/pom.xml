@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian</artifactId>
-        <version>3.3.0.CR1-SNAPSHOT</version>
+        <version>3.4.0.CR1-SNAPSHOT</version>
     </parent>
 
     <packaging>pom</packaging>
@@ -90,12 +90,20 @@
 
         <adapter.test.props/>
         <migration.import.properties/>
+        <kie.maven.settings/>
+        
         <examples.home>${project.build.directory}/examples</examples.home>
 
         <browser>htmlUnit</browser>
+        <webdriverDownloadBinaries>true</webdriverDownloadBinaries>
+        <github.username/>
+        <github.secretToken/>
+        <ieDriverArch/>
         <htmlUnitBrowserVersion>chrome</htmlUnitBrowserVersion>
-        <firefox_binary>/usr/bin/firefox</firefox_binary>
         <phantomjs.cli.args>--ignore-ssl-errors=true --web-security=false</phantomjs.cli.args>
+        <firefox_binary>/usr/bin/firefox</firefox_binary>
+        <firefoxLegacyDriver>true</firefoxLegacyDriver>
+        <chromeArguments/>
 
         <frontend.console.output>true</frontend.console.output>
         <backends.console.output>true</backends.console.output>
@@ -245,15 +253,25 @@
 
                             <adapter.test.props>${adapter.test.props}</adapter.test.props>
                             <migration.import.properties>${migration.import.properties}</migration.import.properties>
-
+                            <kie.maven.settings>${kie.maven.settings}</kie.maven.settings>
+                            
                             <testsuite.constants>${testsuite.constants}</testsuite.constants>
                             <cli.log.output>${cli.log.output}</cli.log.output>
                             <test.intermittent>${test.intermittent}</test.intermittent>
 
                             <browser>${browser}</browser>
                             <htmlUnitBrowserVersion>${htmlUnitBrowserVersion}</htmlUnitBrowserVersion>
+                            <webdriverDownloadBinaries>${webdriverDownloadBinaries}</webdriverDownloadBinaries>
+
+                            <github.username>${github.username}</github.username>
+                            <github.secretToken>${github.secretToken}</github.secretToken>
+                            <ieDriverArch>${ieDriverArch}</ieDriverArch>
+
                             <firefox_binary>${firefox_binary}</firefox_binary>
                             <phantomjs.cli.args>${phantomjs.cli.args}</phantomjs.cli.args>
+                            <chromeArguments>${chromeArguments}</chromeArguments>
+
+                            <firefoxLegacyDriver>${firefoxLegacyDriver}</firefoxLegacyDriver>
 
                             <project.version>${project.version}</project.version>
                             <migration.project.version>${migration.project.version}</migration.project.version>
@@ -313,6 +331,12 @@
             <groupId>org.jboss.arquillian.container</groupId>
             <artifactId>arquillian-container-osgi</artifactId>
             <version>2.1.0.CR18</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.osgi</groupId>
@@ -957,6 +981,21 @@
                     <groupId>junit</groupId>
                     <artifactId>junit</artifactId>
                 </dependency>
+
+                <!--Dependencies for creaper:-->
+
+                <dependency>
+                    <groupId>org.wildfly.extras.creaper</groupId>
+                    <artifactId>creaper-commands</artifactId>
+                    <version>${version.org.wildfly.extras.creaper}</version>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>com.google.guava</groupId>
+                            <artifactId>guava</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
+
                 <dependency>
                     <groupId>org.jboss.arquillian.junit</groupId>
                     <artifactId>arquillian-junit-container</artifactId>
@@ -986,9 +1025,18 @@
                             <groupId>org.apache.commons</groupId>
                             <artifactId>commons-io</artifactId>
                         </exclusion>
+                        <exclusion>
+                            <groupId>com.google.guava</groupId>
+                            <artifactId>guava</artifactId>
+                        </exclusion>
                     </exclusions>
                 </dependency>
 
+                <dependency>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpclient</artifactId>
+                    <version>4.5.3</version>
+                </dependency>
                 <dependency>
                     <groupId>jfree</groupId>
                     <artifactId>jfreechart</artifactId>
@@ -1067,6 +1115,12 @@
                     <groupId>org.keycloak</groupId>
                     <artifactId>keycloak-dependencies-server-all</artifactId>
                     <type>pom</type>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>com.google.guava</groupId>
+                            <artifactId>guava</artifactId>
+                        </exclusion>
+                    </exclusions>
                 </dependency>
 
                 <dependency>
@@ -1184,6 +1238,18 @@
                 </dependency>
 
             </dependencies>
+
+            <dependencyManagement>
+                <dependencies>
+                    <!-- we need to specify the correct version because of conflict in arquillian-drone-webdriver-depchain -->
+                    <dependency>
+                        <groupId>org.seleniumhq.selenium</groupId>
+                        <artifactId>htmlunit-driver</artifactId>
+                        <version>2.27</version>
+                    </dependency>
+                </dependencies>
+            </dependencyManagement>
+
             <build>
                 <plugins>
                     <plugin>
@@ -1212,6 +1278,25 @@
                 <auth.server.https.port>8443</auth.server.https.port>
                 <auth.server.management.port>9990</auth.server.management.port>
                 <auth.server.management.port.jmx>9999</auth.server.management.port.jmx>
+            </properties>
+        </profile>
+        
+        <profile>
+            <!--see KEYCLOAK-4793-->
+            <id>kie.maven.settings</id>
+            <activation>
+                <property>
+                    <name>repo.url</name>
+                </property>
+            </activation>
+            <properties>
+                <maven.repo.local>${user.home}/.m2/repository</maven.repo.local>
+                <settings.path>${user.home}/.m2/settings.xml</settings.path>
+                <kie.maven.settings>
+                    -Dkie.maven.settings.custom=${settings.path}
+                    -Dkie.maven.repo.local=${maven.repo.local}
+                    -Drepo.url=${repo.url}
+                </kie.maven.settings>
             </properties>
         </profile>
         

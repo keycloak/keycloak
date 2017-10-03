@@ -59,7 +59,7 @@ import org.keycloak.util.JsonSerialization;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class RolePolicyTest extends AbstractKeycloakTest {
+public class RolePolicyTest extends AbstractAuthzTest {
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {

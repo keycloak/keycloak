@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.3.0.CR1-SNAPSHOT</version>
+        <version>3.4.0.CR1-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
 
@@ -50,7 +50,7 @@
                                     <groupId>org.keycloak</groupId>
                                     <artifactId>keycloak-js-adapter</artifactId>
                                     <outputDirectory>${project.build.directory}/unpacked/js-adapter</outputDirectory>
-                                    <includes>*.js,*.d.ts</includes>                                 
+                                    <includes>*.js,*.map,*.d.ts</includes>
                                 </artifactItem>
                             </artifactItems>
                             <excludes>**/welcome-content/*</excludes>

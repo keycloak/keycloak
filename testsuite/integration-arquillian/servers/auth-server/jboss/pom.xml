@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-auth-server</artifactId>
-        <version>3.3.0.CR1-SNAPSHOT</version>
+        <version>3.4.0.CR1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -342,81 +342,6 @@
                 </pluginManagement>
             </build>
         </profile>
-
-        <profile>
-            <id>ssl</id>
-            <activation>
-                <property>
-                    <name>auth.server.ssl.required</name>
-                </property>
-            </activation>
-            <properties>
-                <!--disable exclusion pattern for x509 tests, which is enabled by default in the base/pom.xml-->
-                <exclude.x509>-</exclude.x509>
-            </properties>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.codehaus.mojo</groupId>
-                            <artifactId>xml-maven-plugin</artifactId>
-                            <executions>
-                                <execution>
-                                    <id>configure-adapter-subsystem-security</id>
-                                    <phase>process-resources</phase>
-                                    <goals>
-                                        <goal>transform</goal>
-                                    </goals>
-                                    <configuration>
-                                        <transformationSets>
-                                            <transformationSet>
-                                                <dir>${auth.server.home}/standalone/configuration</dir>
-                                                <includes>
-                                                    <include>standalone.xml</include>
-                                                </includes>
-                                                <stylesheet>${common.resources}/${security.xsl}</stylesheet>
-                                                <outputDir>${auth.server.home}/standalone/configuration</outputDir>
-                                            </transformationSet>
-                                        </transformationSets>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
-                        <plugin>
-                            <artifactId>maven-resources-plugin</artifactId>
-                            <executions>
-                                <execution>
-                                    <id>copy-keystore</id>
-                                    <phase>process-resources</phase>
-                                    <goals>
-                                        <goal>copy-resources</goal>
-                                    </goals>
-                                    <configuration>
-                                        <outputDirectory>${auth.server.home}/standalone/configuration</outputDirectory>
-                                        <resources>
-                                            <resource>
-                                                <directory>${common.resources}/keystore</directory>
-                                                <includes>
-                                                    <include>keycloak.jks</include>
-                                                    <include>keycloak.truststore</include>
-                                                    <include>client.jks</include>
-                                                    <include>ca.crt</include>
-                                                    <include>client.crt</include>
-                                                    <include>client.key</include>
-                                                    <include>intermediate-ca.crl</include>
-                                                    <include>empty.crl</include>
-                                                </includes>
-                                            </resource>
-                                        </resources>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
-
         <profile>
             <id>jpa</id>
             <properties>

@@ -16,22 +16,34 @@
  */
 package org.keycloak.broker.provider;
 
+import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * @author Pedro Igor
  */
 public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> implements IdentityProvider<C> {
 
+    public static final String ACCOUNT_LINK_URL = "account-link-url";
     protected final KeycloakSession session;
     private final C config;
 
@@ -72,6 +84,63 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
     @Override
     public void backchannelLogout(KeycloakSession session, UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
 
+    }
+
+    public Response exchangeNotSupported() {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", "invalid_target");
+        error.put("error_description", "target_exchange_unsupported");
+        return  Response.status(400).entity(error).type(MediaType.APPLICATION_JSON_TYPE).build();
+    }
+
+    public Response exchangeNotLinked(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
+        return exchangeErrorResponse(uriInfo, authorizedClient, tokenUserSession, "not_linked", "identity provider is not linked");
+    }
+
+    public Response exchangeNotLinkedNoStore(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
+        return exchangeErrorResponse(uriInfo, authorizedClient, tokenUserSession, "not_linked", "identity provider is not linked, can only link to current user session");
+    }
+
+    protected Response exchangeErrorResponse(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, String errorCode, String reason) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", errorCode);
+        error.put("error_description", reason);
+        String accountLinkUrl = getLinkingUrl(uriInfo, authorizedClient, tokenUserSession);
+        if (accountLinkUrl != null) error.put(ACCOUNT_LINK_URL, accountLinkUrl);
+        return Response.status(400).entity(error).type(MediaType.APPLICATION_JSON_TYPE).build();
+    }
+
+    protected String getLinkingUrl(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession) {
+        String provider = getConfig().getAlias();
+        String clientId = authorizedClient.getClientId();
+        String nonce = UUID.randomUUID().toString();
+        MessageDigest md = null;
+        try {
+            md = MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+        String input = nonce + tokenUserSession.getId() + clientId + provider;
+        byte[] check = md.digest(input.getBytes(StandardCharsets.UTF_8));
+        String hash = Base64Url.encode(check);
+        return KeycloakUriBuilder.fromUri(uriInfo.getBaseUri())
+                .path("/realms/{realm}/broker/{provider}/link")
+                .queryParam("nonce", nonce)
+                .queryParam("hash", hash)
+                .queryParam("client_id", clientId)
+                .build(authorizedClient.getRealm().getName(), provider)
+                .toString();
+    }
+
+    public Response exchangeTokenExpired(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
+        return exchangeErrorResponse(uriInfo, authorizedClient, tokenUserSession, "token_expired", "linked token is expired");
+    }
+
+    public Response exchangeUnsupportedRequiredType() {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", "invalid_target");
+        error.put("error_description", "response_token_type_unsupported");
+        return Response.status(400).entity(error).type(MediaType.APPLICATION_JSON_TYPE).build();
     }
 
     @Override

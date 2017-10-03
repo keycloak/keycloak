@@ -35,6 +35,7 @@ public class MicrosoftLoginPage extends AbstractSocialLoginPage {
 
     @Override
     public void login(String user, String password) {
+        usernameInput.clear();
         usernameInput.sendKeys(user);
         submitButton.click();
         passwordInput.sendKeys(password);

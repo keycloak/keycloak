@@ -20,32 +20,12 @@ package org.keycloak.models.cache.infinispan;
 import org.keycloak.Config;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.AuthenticationFlowModel;
-import org.keycloak.models.AuthenticatorConfigModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientTemplateModel;
-import org.keycloak.models.GroupModel;
-import org.keycloak.models.IdentityProviderMapperModel;
-import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.OTPPolicy;
-import org.keycloak.models.PasswordPolicy;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RequiredActionProviderModel;
-import org.keycloak.models.RequiredCredentialModel;
-import org.keycloak.models.RoleModel;
+import org.keycloak.models.*;
 import org.keycloak.models.cache.CachedRealmModel;
 import org.keycloak.models.cache.infinispan.entities.CachedRealm;
 import org.keycloak.storage.UserStorageProvider;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -328,7 +308,7 @@ public class RealmAdapter implements CachedRealmModel {
         getDelegateForUpdate();
         updated.setLoginWithEmailAllowed(loginWithEmailAllowed);
     }
-    
+
     @Override
     public boolean isDuplicateEmailsAllowed() {
         if (isUpdated()) return updated.isDuplicateEmailsAllowed();
@@ -375,6 +355,18 @@ public class RealmAdapter implements CachedRealmModel {
     public void setRevokeRefreshToken(boolean revokeRefreshToken) {
         getDelegateForUpdate();
         updated.setRevokeRefreshToken(revokeRefreshToken);
+    }
+
+    @Override
+    public int getRefreshTokenMaxReuse() {
+        if (isUpdated()) return updated.getRefreshTokenMaxReuse();
+        return cached.getRefreshTokenMaxReuse();
+    }
+
+    @Override
+    public void setRefreshTokenMaxReuse(int refreshTokenMaxReuse) {
+        getDelegateForUpdate();
+        updated.setRefreshTokenMaxReuse(refreshTokenMaxReuse);
     }
 
     @Override
@@ -797,9 +789,9 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public void setEnabledEventTypes(Set<String> enabledEventTypes) {
         getDelegateForUpdate();
-        updated.setEnabledEventTypes(enabledEventTypes);        
+        updated.setEnabledEventTypes(enabledEventTypes);
     }
-    
+
     @Override
     public boolean isAdminEventsEnabled() {
         if (isUpdated()) return updated.isAdminEventsEnabled();
@@ -823,7 +815,7 @@ public class RealmAdapter implements CachedRealmModel {
         getDelegateForUpdate();
         updated.setAdminEventsDetailsEnabled(enabled);
     }
-    
+
     @Override
     public ClientModel getMasterAdminClient() {
         return cached.getMasterAdminClient()==null ? null : cacheSession.getRealm(Config.getAdminRealm()).getClientById(cached.getMasterAdminClient());
@@ -1233,8 +1225,28 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public Long getGroupsCount(Boolean onlyTopGroups) {
+        return cacheSession.getGroupsCount(this, onlyTopGroups);
+    }
+
+    @Override
+    public Long getGroupsCountByNameContaining(String search) {
+        return cacheSession.getGroupsCountByNameContaining(this, search);
+    }
+
+    @Override
     public List<GroupModel> getTopLevelGroups() {
         return cacheSession.getTopLevelGroups(this);
+    }
+
+    @Override
+    public List<GroupModel> getTopLevelGroups(Integer first, Integer max) {
+        return cacheSession.getTopLevelGroups(this, first, max);
+    }
+
+    @Override
+    public List<GroupModel> searchForGroupByName(String search, Integer first, Integer max) {
+        return cacheSession.searchForGroupByName(this, search, first, max);
     }
 
     @Override

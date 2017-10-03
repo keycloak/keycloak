@@ -19,11 +19,11 @@ package org.keycloak.testsuite.util;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
-import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpOptions;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -50,7 +50,6 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
-import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
@@ -60,7 +59,6 @@ import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.core.UriBuilder;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -204,7 +202,7 @@ public class OAuthClient {
     }
 
     public void fillLoginForm(String username, String password) {
-        WaitUtils.waitForPageToLoad(driver);
+        WaitUtils.waitForPageToLoad();
         String src = driver.getPageSource();
         try {
             driver.findElement(By.id("username")).sendKeys(username);
@@ -249,6 +247,17 @@ public class OAuthClient {
                     .build();
         }
         return new DefaultHttpClient();
+    }
+
+    public CloseableHttpResponse doPreflightRequest() {
+        try (CloseableHttpClient client = newCloseableHttpClient()) {
+            HttpOptions options = new HttpOptions(getAccessTokenUrl());
+            options.setHeader("Origin", "http://example.com");
+
+            return client.execute(options);
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
     }
 
     public AccessTokenResponse doAccessTokenRequest(String code, String password) {
@@ -395,7 +404,7 @@ public class OAuthClient {
     }
 
     public AccessTokenResponse doTokenExchange(String realm, String token, String targetAudience,
-                                                         String clientId, String clientSecret) throws Exception {
+                                               String clientId, String clientSecret) throws Exception {
         CloseableHttpClient client = newCloseableHttpClient();
         try {
             HttpPost post = new HttpPost(getResourceOwnerPasswordCredentialGrantUrl(realm));
@@ -425,6 +434,40 @@ public class OAuthClient {
             }
 
             UrlEncodedFormEntity formEntity;
+            try {
+                formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
+            post.setEntity(formEntity);
+
+            return new AccessTokenResponse(client.execute(post));
+        } finally {
+            closeClient(client);
+        }
+    }
+
+    public AccessTokenResponse doTokenExchange(String realm, String clientId, String clientSecret, Map<String, String> params) throws Exception {
+        CloseableHttpClient client = newCloseableHttpClient();
+        try {
+            HttpPost post = new HttpPost(getResourceOwnerPasswordCredentialGrantUrl(realm));
+
+            List<NameValuePair> parameters = new LinkedList<NameValuePair>();
+            parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE));
+            for (Map.Entry<String, String> entry : params.entrySet()) {
+                parameters.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
+
+            }
+
+            if (clientSecret != null) {
+                String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
+                post.setHeader("Authorization", authorization);
+            } else {
+                parameters.add(new BasicNameValuePair("client_id", clientId));
+
+            }
+
+           UrlEncodedFormEntity formEntity;
             try {
                 formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
             } catch (UnsupportedEncodingException e) {

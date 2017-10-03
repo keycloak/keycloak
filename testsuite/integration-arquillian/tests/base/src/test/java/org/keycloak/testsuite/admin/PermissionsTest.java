@@ -1829,7 +1829,7 @@ public class PermissionsTest extends AbstractKeycloakTest {
 
         for (Method m : rep.getClass().getDeclaredMethods()) {
             if (m.getParameters().length == 0 && m.getName().startsWith("get") && !ignoreList.contains(m.getName())) {
-                try {
+                    try {
                     Object o = m.invoke(rep);
                     assertNull("Expected " + m.getName() + " to be null", o);
                 } catch (Exception e) {

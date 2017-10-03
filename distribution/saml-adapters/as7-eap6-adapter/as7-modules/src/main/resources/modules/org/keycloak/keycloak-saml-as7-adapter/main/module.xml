@@ -34,7 +34,6 @@
         <module name="org.jboss.as.security"/>
         <module name="org.jboss.as.web"/>
         <module name="org.picketbox"/>
-        <module name="org.keycloak.keycloak-saml-as7-adapter"/>
         <module name="org.keycloak.keycloak-adapter-spi"/>
         <module name="org.keycloak.keycloak-saml-core-public"/>
         <module name="org.keycloak.keycloak-saml-core"/>

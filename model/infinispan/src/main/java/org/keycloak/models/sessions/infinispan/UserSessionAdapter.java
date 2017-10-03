@@ -82,23 +82,26 @@ public class UserSessionAdapter implements UserSessionModel {
             });
         }
 
-        // Update user session
-        if (!removedClientUUIDS.isEmpty()) {
-            UserSessionUpdateTask task = new UserSessionUpdateTask() {
-
-                @Override
-                public void runUpdate(UserSessionEntity entity) {
-                    for (String clientUUID : removedClientUUIDS) {
-                        entity.getAuthenticatedClientSessions().remove(clientUUID);
-                    }
-                }
-
-            };
-
-            update(task);
-        }
+        removeAuthenticatedClientSessions(removedClientUUIDS);
 
         return Collections.unmodifiableMap(result);
+    }
+
+    @Override
+    public void removeAuthenticatedClientSessions(Iterable<String> removedClientUUIDS) {
+        if (removedClientUUIDS == null || ! removedClientUUIDS.iterator().hasNext()) {
+            return;
+        }
+
+        // Update user session
+        UserSessionUpdateTask task = new UserSessionUpdateTask() {
+            @Override
+            public void runUpdate(UserSessionEntity entity) {
+                removedClientUUIDS.forEach(entity.getAuthenticatedClientSessions()::remove);
+            }
+        };
+
+        update(task);
     }
 
     public String getId() {

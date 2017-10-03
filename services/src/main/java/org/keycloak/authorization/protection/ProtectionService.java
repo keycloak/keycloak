@@ -100,7 +100,7 @@ public class ProtectionService {
         ResourceServer resourceServer = getResourceServer(identity);
         KeycloakSession keycloakSession = authorization.getKeycloakSession();
         RealmModel realm = keycloakSession.getContext().getRealm();
-        ClientModel client = realm.getClientById(resourceServer.getClientId());
+        ClientModel client = realm.getClientById(resourceServer.getId());
 
         if (!identity.hasClientRole(client.getClientId(), "uma_protection")) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_SCOPE, "Requires uma_protection scope.", Status.FORBIDDEN);
@@ -117,7 +117,7 @@ public class ProtectionService {
             throw new ErrorResponseException("invalid_clientId", "Client application with id [" + identity.getId() + "] does not exist in realm [" + realm.getName() + "]", Status.BAD_REQUEST);
         }
 
-        ResourceServer resourceServer = this.authorization.getStoreFactory().getResourceServerStore().findByClient(identity.getId());
+        ResourceServer resourceServer = this.authorization.getStoreFactory().getResourceServerStore().findById(identity.getId());
 
         if (resourceServer == null) {
             throw new ErrorResponseException("invalid_clientId", "Client application [" + clientApplication.getClientId() + "] is not registered as resource server.", Status.FORBIDDEN);

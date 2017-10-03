@@ -120,6 +120,7 @@
             "username": "wburke",
             "enabled": true,
             "createdTimestamp" : 123654,
+            "notBefore": 159,
             "attributes": {
                 "email": "bburke@redhat.com"
             },
