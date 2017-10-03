@@ -67,7 +67,7 @@ hashtemp="$(mktemp)"
 trap "rm '$hashtemp'" EXIT
 
 cd "$output_dir"
-find -maxdepth 1 -type f -name '*.txt' -print0 | xargs --no-run-if-empty -0 sha256sum | sed 's, \./,,' > "$hashtemp"
+find -maxdepth 1 -type f -name '*.txt' -print0 | LC_ALL=C sort -z | xargs --no-run-if-empty -0 sha256sum | sed 's, \./,,' > "$hashtemp"
 
 declare -A processed_hashes
 

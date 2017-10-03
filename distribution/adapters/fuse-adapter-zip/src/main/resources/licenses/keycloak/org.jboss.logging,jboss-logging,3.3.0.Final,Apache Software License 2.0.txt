@@ -1,1 +1,1 @@
-commons-logging,commons-logging,1.2,Apache Software License 2.0.txt
+commons-codec,commons-codec,1.9,Apache Software License 2.0.txt
