@@ -88,6 +88,12 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
 
          identity.getContextData().put(VALIDATED_ID_TOKEN, idToken);
 
+        if (!getConfig().isDisableUserInfoService() && accessToken != null && name == null) {
+            JsonNode userInfo = SimpleHttp.doGet(getUserInfoUrl(), session)
+                    .header("Authorization", "Bearer " + accessToken).asJson();
+            name = getJsonProperty(userInfo, "name");
+        }
+
         identity.setId(id);
         identity.setName(name);
         identity.setEmail(email);
