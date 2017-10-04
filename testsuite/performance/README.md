@@ -24,7 +24,7 @@ mvn clean install
 
 # Make sure your Docker daemon is running THEN
 mvn verify -Pprovision
-mvn verify -Pimport-data -Ddataset=100u -DnumOfWorkers=10 -DhashIterations=100
+mvn verify -Pgenerate-data -Ddataset=100u -DnumOfWorkers=10 -DhashIterations=100
 mvn verify -Ptest -Ddataset=100u -DrunUsers=200 -DrampUpPeriod=10 -DuserThinkTime=0 -DbadLoginAttempts=1 -DrefreshTokenCount=1 -DnumOfIterations=3
 
 ```
@@ -38,7 +38,7 @@ mvn verify -Pteardown
 
 You can perform all phases in a single run:
 ```
-mvn verify -Pprovision,import-data,test,teardown -Ddataset=100u -DnumOfWorkers=10 -DhashIterations=100 -DrunUsers=200 -DrampUpPeriod=10
+mvn verify -Pprovision,generate-data,test,teardown -Ddataset=100u -DnumOfWorkers=10 -DhashIterations=100 -DrunUsers=200 -DrampUpPeriod=10
 ```
 Note: The order in which maven profiles are listed does not determine the order in which profile related plugins are executed. `teardown` profile always executes last.
 
@@ -68,19 +68,19 @@ Provisioning/teardown is performed via `docker-compose` tool. More details in [R
 
 ## Testing
 
-### Import Data
+### Generate Test Data
 
-Usage: `mvn verify -Pimport-data[,cluster] [-Ddataset=DATASET] [-D<dataset.property>=<value>]`.
+Usage: `mvn verify -Pgenerate-data[,cluster] [-Ddataset=DATASET] [-D<dataset.property>=<value>]`.
 
 Dataset properties are loaded from `datasets/${dataset}.properties` file. Individual properties can be overriden by specifying `-D` params.
 
 Dataset data is first generated as a .json file, and then imported into Keycloak via Admin Client REST API.
 
 #### Examples:
-- `mvn verify -Pimport-data` - import default dataset
-- `mvn verify -Pimport-data -DusersPerRealm=5` - import default dataset, override the `usersPerRealm` property
-- `mvn verify -Pimport-data -Ddataset=100u` - import `100u` dataset
-- `mvn verify -Pimport-data -Ddataset=100r/default` - import dataset from `datasets/100r/default.properties`
+- `mvn verify -Pgenerate-data` - generate default dataset
+- `mvn verify -Pgenerate-data -DusersPerRealm=5` - generate default dataset, override the `usersPerRealm` property
+- `mvn verify -Pgenerate-data -Ddataset=100u` - generate `100u` dataset
+- `mvn verify -Pgenerate-data -Ddataset=100r/default` - generate dataset based on `datasets/100r/default.properties`
 
 The data can also be exported from the database, and stored locally as `datasets/${dataset}.sql.gz`
 `DATASET=100u ./prepare-dump.sh`
@@ -98,7 +98,7 @@ Usage: `mvn verify -Pimport-dump [-Ddataset=DATASET]`
 
 Usage: `mvn verify -Ptest[,cluster] [-DrunUsers=N] [-DrampUpPeriod=SECONDS] [-DnumOfIterations=N] [-Ddataset=DATASET] [-D<dataset.property>=<value>]* [-D<test.property>=<value>]* `.
 
-_*Note:* The same dataset properties which were used for data import should be supplied to the `test` phase._
+_*Note:* The same dataset properties which were used for data generation/import should be supplied to the `test` phase._
 
 The default test `keycloak.DefaultSimulation` takes the following additional properties:
 
@@ -145,13 +145,13 @@ To view monitoring dashboard open Grafana UI at: `http://localhost:3000/dashboar
 
 ### Single-node
 
-- Provision single node of KC + DB, import data, run test, and tear down the provisioned system:
+- Provision single node of KC + DB, generate data, run test, and tear down the provisioned system:
 
-    `mvn verify -Pprovision,import-data,test,teardown -Ddataset=100u -DrunUsers=100`
+    `mvn verify -Pprovision,generate-data,test,teardown -Ddataset=100u -DrunUsers=100`
 
-- Provision single node of KC + DB, import data, no test, no teardown:
+- Provision single node of KC + DB, generate data, no test, no teardown:
 
-    `mvn verify -Pprovision,import-data -Ddataset=100u`
+    `mvn verify -Pprovision,generate-data -Ddataset=100u`
 
 - Run test against provisioned system using 100 concurrent users ramped up over 10 seconds, then tear it down:
 
@@ -159,13 +159,13 @@ To view monitoring dashboard open Grafana UI at: `http://localhost:3000/dashboar
 
 ### Cluster
 
-- Provision a 1-node KC cluster + DB, import data, run test against the provisioned system, then tear it down:
+- Provision a 1-node KC cluster + DB, generate data, run test against the provisioned system, then tear it down:
 
-    `mvn verify -Pprovision,cluster,import-data,test,teardown -Ddataset=100u -DrunUsers=100`
+    `mvn verify -Pprovision,cluster,generate-data,test,teardown -Ddataset=100u -DrunUsers=100`
 
-- Provision a 2-node KC cluster + DB, import data, run test against the provisioned system, then tear it down:
+- Provision a 2-node KC cluster + DB, generate data, run test against the provisioned system, then tear it down:
 
-    `mvn verify -Pprovision,cluster,import-data,test,teardown -Dkeycloak.scale=2 -DusersPerRealm=200 -DrunUsers=200`
+    `mvn verify -Pprovision,cluster,generate-data,test,teardown -Dkeycloak.scale=2 -DusersPerRealm=200 -DrunUsers=200`
 
 
 ## Developing tests in IntelliJ IDEA

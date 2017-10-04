@@ -381,7 +381,7 @@
         </profile>
         
         <profile>
-            <id>import-data</id>
+            <id>generate-data</id>
             <build>
                 <plugins>
                     <plugin>
