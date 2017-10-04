@@ -624,6 +624,7 @@
                                         <goal>transform</goal>
                                     </goals>
                                     <configuration>
+                                        <skip>${skip.h2.tcp}</skip>
                                         <transformationSets>
                                             <transformationSet>
                                                 <dir>${auth.server.home}/standalone/configuration</dir>

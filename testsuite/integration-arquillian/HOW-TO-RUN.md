@@ -472,6 +472,10 @@ b) Then in case you want to use **JBoss-based** containers instead of containers
 
 *note: 'auth-server-wildfly' can be replaced by 'auth-server-eap'*
 
+By default JBoss-based containers use in-memory h2 database. It can be configured to use real DB, e.g. with following command:
+
+  `mvn -Pauth-servers-crossdc-jboss,auth-server-wildfly,jpa -f testsuite/integration-arquillian -DskipTests clean install -Djdbc.mvn.groupId=org.mariadb.jdbc -Djdbc.mvn.artifactId=mariadb-java-client -Djdbc.mvn.version=2.0.3 -Dkeycloak.connectionsJpa.url=jdbc:mariadb://localhost:3306/keycloak -Dkeycloak.connectionsJpa.password=keycloak -Dkeycloak.connectionsJpa.user=keycloak`
+
 c1) Then you can run the tests using the following command (adjust the test specification according to your needs) for containers on **Undertow**:
 
   `mvn -Pcache-server-infinispan,auth-servers-crossdc-undertow -Dtest=*.crossdc.* -pl testsuite/integration-arquillian/tests/base clean install`
@@ -490,11 +494,16 @@ or
 
 *note: 'auth-server-wildfly can be replaced by auth-server-eap'*
 
+**note**
+Previous commands can be "squashed" into one. E.g.:
+
+  `mvn -f testsuite/integration-arquillian clean install -Dtest=*.crossdc.* -Djdbc.mvn.groupId=org.mariadb.jdbc -Djdbc.mvn.artifactId=mariadb-java-client -Djdbc.mvn.version=2.0.3 -Dkeycloak.connectionsJpa.url=jdbc:mariadb://localhost:3306/keycloak -Dkeycloak.connectionsJpa.password=keycloak -Dkeycloak.connectionsJpa.user=keycloak -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly,jpa clean install`
+
 It can be useful to add additional system property to enable logging:
   
     -Dkeycloak.infinispan.logging.level=debug
     
-Tests from package "manual" uses manual lifecycle for all servers, so needs to be executed manually. Also needs to be executed with real DB like MySQL. You can run them with:
+**Tests from package "manual"** uses manual lifecycle for all servers, so needs to be executed manually. Also needs to be executed with real DB like MySQL. You can run them with:
 
     mvn -Pcache-server-infinispan -Dtest=*.crossdc.manual.* -Dmanual.mode=true \
     -Dkeycloak.connectionsJpa.url.crossdc=jdbc:mysql://localhost/keycloak -Dkeycloak.connectionsJpa.driver.crossdc=com.mysql.jdbc.Driver \
