@@ -57,7 +57,17 @@ public class AccessTokenResponse {
 
     protected Map<String, Object> otherClaims = new HashMap<String, Object>();
 
+    // OIDC Financial API Read Only Profile : scope MUST be returned in the response from Token Endpoint
+    @JsonProperty("scope")
+    protected String scope;
 
+    public String getScope() {
+        return scope;
+    }
+
+    public void setScope(String scope) {
+        this.scope = scope;
+    }
 
     public String getToken() {
         return token;

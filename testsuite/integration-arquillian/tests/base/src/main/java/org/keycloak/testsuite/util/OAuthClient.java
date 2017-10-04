@@ -949,6 +949,8 @@ public class OAuthClient {
         private int expiresIn;
         private int refreshExpiresIn;
         private String refreshToken;
+        // OIDC Financial API Read Only Profile : scope MUST be returned in the response from Token Endpoint
+        private String scope;
 
         private String error;
         private String errorDescription;
@@ -969,6 +971,11 @@ public class OAuthClient {
                     tokenType = (String) responseJson.get("token_type");
                     expiresIn = (Integer) responseJson.get("expires_in");
                     refreshExpiresIn = (Integer) responseJson.get("refresh_expires_in");
+
+                    // OIDC Financial API Read Only Profile : scope MUST be returned in the response from Token Endpoint
+                    if (responseJson.containsKey(OAuth2Constants.SCOPE)) {
+                        scope = (String) responseJson.get(OAuth2Constants.SCOPE);
+                    }
 
                     if (responseJson.containsKey(OAuth2Constants.REFRESH_TOKEN)) {
                         refreshToken = (String) responseJson.get(OAuth2Constants.REFRESH_TOKEN);
@@ -1016,6 +1023,11 @@ public class OAuthClient {
 
         public String getTokenType() {
             return tokenType;
+        }
+
+        // OIDC Financial API Read Only Profile : scope MUST be returned in the response from Token Endpoint
+        public String getScope() {
+            return scope;
         }
     }
 
