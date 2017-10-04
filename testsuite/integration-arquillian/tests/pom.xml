@@ -579,7 +579,11 @@
                     <plugin>
                         <artifactId>maven-antrun-plugin</artifactId>
                         <configuration>
-                            <skip>${skipTests}</skip>
+                            <!--
+                                skipping execution for <artifactId>integration-arquillian-tests</artifactId>,
+                                it's re-enabled in <artifactId>integration-arquillian-tests-base</artifactId>
+                            -->
+                            <skip>true</skip>
                         </configuration>
                     </plugin>
                 </plugins>
