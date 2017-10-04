@@ -1122,6 +1122,27 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ClientCredentialsCtrl'
         })
+        .when('/realms/:realm/clients/:client/client-attributes', {
+            templateUrl : resourceUrl + '/partials/client-attributes.html',
+            resolve : {
+            	realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                templates : function(ClientTemplateListLoader) {
+                    return ClientTemplateListLoader();
+                },
+                clients : function(ClientListLoader) {
+                    return ClientListLoader();
+                },
+                client : function(ClientLoader) {
+                    return ClientLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'ClientDetailCtrl'
+        })
         .when('/realms/:realm/clients/:client/credentials/client-jwt/:keyType/import/:attribute', {
             templateUrl : resourceUrl + '/partials/client-credentials-jwt-key-import.html',
             resolve : {
