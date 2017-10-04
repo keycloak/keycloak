@@ -31,7 +31,7 @@ public class BaseRealmConfig {
     @JsonProperty("realm")
     protected String realm;
     @JsonProperty("realm-public-key")
-    protected String realmKey;
+    protected String realmPublicKey;
     @JsonProperty("auth-server-url")
     protected String authServerUrl;
     @JsonProperty("ssl-required")
@@ -53,12 +53,12 @@ public class BaseRealmConfig {
         this.realm = realm;
     }
 
-    public String getRealmKey() {
-        return realmKey;
+    public String getRealmPublicKey() {
+        return realmPublicKey;
     }
 
-    public void setRealmKey(String realmKey) {
-        this.realmKey = realmKey;
+    public void setRealmPublicKey(String realmPublicKey) {
+        this.realmPublicKey = realmPublicKey;
     }
 
     public String getAuthServerUrl() {

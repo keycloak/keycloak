@@ -58,7 +58,7 @@ public class KeycloakDeploymentBuilder {
         if (resource == null) throw new RuntimeException("Must set 'resource' in config");
         deployment.setResourceName(resource);
 
-        String realmKeyPem = adapterConfig.getRealmKey();
+        String realmKeyPem = adapterConfig.getRealmPublicKey();
         if (realmKeyPem != null) {
             PublicKey realmKey;
             try {
