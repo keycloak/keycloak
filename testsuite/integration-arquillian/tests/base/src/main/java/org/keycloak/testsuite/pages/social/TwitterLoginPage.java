@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.pages.social;
 
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -35,9 +36,15 @@ public class TwitterLoginPage extends AbstractSocialLoginPage {
 
     @Override
     public void login(String user, String password) {
-        usernameInput.clear();
-        usernameInput.sendKeys(user);
-        passwordInput.sendKeys(password);
-        loginButton.click();
+        try {
+            usernameInput.clear();
+            usernameInput.sendKeys(user);
+            passwordInput.sendKeys(password);
+        }
+        catch (NoSuchElementException e) { // at some conditions we are already logged in and just need to confirm it
+        }
+        finally {
+            loginButton.click();
+        }
     }
 }
