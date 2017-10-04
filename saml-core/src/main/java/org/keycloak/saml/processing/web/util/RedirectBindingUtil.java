@@ -139,7 +139,7 @@ public class RedirectBindingUtil {
      */
     public static String deflateBase64Encode(byte[] stringToEncode) throws IOException {
         byte[] deflatedMsg = DeflateUtil.encode(stringToEncode);
-        return Base64.encodeBytes(deflatedMsg);
+        return base64Encode(deflatedMsg);
     }
 
     /**
