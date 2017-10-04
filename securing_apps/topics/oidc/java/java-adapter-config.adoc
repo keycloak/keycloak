@@ -208,7 +208,7 @@ token-store::
   See <<_applicationclustering,Application Clustering>> for details
 
 principal-attribute::
-  OpenID Connection ID Token attribute to populate the UserPrincipal name with.
+  OpenID Connect ID Token attribute to populate the UserPrincipal name with.
   If token attribute is null, defaults to `sub`.
   Possible values are `sub`, `preferred_username`, `email`, `name`, `nickname`, `given_name`, `family_name`.
 
