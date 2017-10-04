@@ -64,6 +64,7 @@ import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.AdminClientUtil;
+import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.TestCleanup;
 import org.keycloak.testsuite.util.TestEventsLogger;
@@ -213,6 +214,9 @@ public abstract class AbstractKeycloakTest {
             }
             testContext.getCleanups().clear();
         }
+
+        // Remove all browsers from queue
+        DroneUtils.resetQueue();
     }
 
     protected TestCleanup getCleanup(String realmName) {
