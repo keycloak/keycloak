@@ -95,7 +95,8 @@ services:
         depends_on: 
             mariadb_dc1:
                 condition: service_healthy
-        cpus: 1
+        cpuset: ${DB_CPUSET:-1}
+        mem_limit: ${DB_MEMLIMIT:-1g}
         networks:
             - db_replication
             - dc2_keycloak
@@ -122,7 +123,8 @@ services:
             # wait for the ispn cluster to be ready before starting keycloak
             infinispan_dc2:
                 condition: service_healthy
-        cpus: 1
+        cpuset: ${KEYCLOAK_DC1_CPUSET:-2}
+        mem_limit: ${KEYCLOAK_MEMLIMIT:-2500m}
         networks:
             - dc1_keycloak
         environment:
@@ -138,7 +140,7 @@ services:
             INFINISPAN_HOST: infinispan_dc1
             SITE: dc1
             
-            JAVA_OPTS: ${KEYCLOAK_JVM_MEMORY:--Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m} -Djava.net.preferIPv4Stack=true -Djboss.modules.system.pkgs=org.jboss.byteman -Djava.awt.headless=true
+            JAVA_OPTS: ${KEYCLOAK_JVM_MEMORY:--Xms64m -Xmx2g -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m} -Djava.net.preferIPv4Stack=true -Djboss.modules.system.pkgs=org.jboss.byteman -Djava.awt.headless=true
             HTTP_MAX_CONNECTIONS: ${KEYCLOAK_HTTP_MAX_CONNECTIONS:-500}
             AJP_MAX_CONNECTIONS: ${KEYCLOAK_AJP_MAX_CONNECTIONS:-500}
             WORKER_IO_THREADS: ${KEYCLOAK_WORKER_IO_THREADS:-2}
@@ -162,7 +164,8 @@ services:
             # wait for first kc instance to be ready before starting another
             keycloak_dc1:
                 condition: service_healthy
-        cpus: 1
+        cpuset: ${KEYCLOAK_DC2_CPUSET:-3}
+        mem_limit: ${KEYCLOAK_MEMLIMIT:-2500m}
         networks:
             - dc2_keycloak
         environment:
@@ -176,7 +179,7 @@ services:
             INFINISPAN_HOST: infinispan_dc2
             SITE: dc2
 
-            JAVA_OPTS: ${KEYCLOAK_JVM_MEMORY:--Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m} -Djava.net.preferIPv4Stack=true -Djboss.modules.system.pkgs=org.jboss.byteman -Djava.awt.headless=true
+            JAVA_OPTS: ${KEYCLOAK_JVM_MEMORY:--Xms64m -Xmx2g -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m} -Djava.net.preferIPv4Stack=true -Djboss.modules.system.pkgs=org.jboss.byteman -Djava.awt.headless=true
             HTTP_MAX_CONNECTIONS: ${KEYCLOAK_HTTP_MAX_CONNECTIONS:-500}
             AJP_MAX_CONNECTIONS: ${KEYCLOAK_AJP_MAX_CONNECTIONS:-500}
             WORKER_IO_THREADS: ${KEYCLOAK_WORKER_IO_THREADS:-2}

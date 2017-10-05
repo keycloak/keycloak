@@ -4,7 +4,7 @@
 
 | Category    | Setting                       | Property                           | Default value                                                    |
 |-------------|-------------------------------|------------------------------------|------------------------------------------------------------------|
-| JVM         | Memory settings               | `keycloak.jvm.memory`              | -Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m |
+| JVM         | Memory settings               | `keycloak.jvm.memory`              | -Xms64m -Xmx2g -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m   |
 | Undertow    | HTTP Listener max connections | `keycloak.http.max-connections`    | 500                                                              |
 |             | AJP Listener max connections  | `keycloak.ajp.max-connections`     | 500                                                              |
 | IO          | Worker IO thread pool         | `keycloak.worker.io-threads`       | 2                                                                |
@@ -29,35 +29,20 @@
 |-------------|-------------------------------|-------------------------|-----------------------------------------------------------------------------------------|
 | JVM         | Memory settings               | `infinispan.jvm.memory` | -Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -XX:+DisableExplicitGC |
 
-## CPUs
+## Docker settings
 
-At the moment it is not possible to dynamically parametrize the number of CPUs for a service via Maven properties or environment variables.
+By default, there are 4 CPU cores allocated: core 0 for monitoring, core 1 for database (MariaDB), and cores 2 and 3 for Keycloak server.
+Default memory limits for database and Keycloak server are 2g. The `cpuset` and `memlimit` parameters set here are set to `cpuset` and
+`mem_limit` parameters of docker-compose configuration. See docker-compose documentation for meaning of the values. How to set the parameters
+correctly depends on number of factors - number of cpu cores, NUMA, available memory etc., hence it is out of scope of this document.
 
-To change the default value (`cpus: 1`) it is necessary to edit the Docker Compose file.
+| Container   | Setting                       | Property                        | Default value                                         |
+|-------------|-------------------------------|---------------------------------|-------------------------------------------------------|
+| Keycloak    | Allocated CPUs                | `keycloak.docker.cpuset`        | 2-3                                                   |
+|             | Allocated CPUs for DC1        | `keycloak.dc1.docker.cpuset`    | 2-3                                                   |
+|             | Allocated CPUs for DC2        | `keycloak.dc2.docker.cpuset`    | 2-3                                                   |
+|             | Available memory              | `keycloak.docker.memlimit`      | 2g                                                    |
+| MariaDB     | Allocated CPUs                | `db.docker.cpuset`              | 1                                                     |
+|             | Available memory              | `db.docker.memlimit`            | 2g                                                    |
+| Monitoring  | Allocated CPUs                | `monitoring.docker.cpuset`      | 0                                                     |
 
-
-### Example: Keycloak service using 2 CPU cores
-
-`docker-compose.yml` and `docker-compose-cluster.yml`:
-```
-services:
-    ...
-    keycloak:
-        ...
-        cpus: 2
-        ...
-```
-
-`docker-compose-crossdc.yml`:
-```
-services:
-    ...
-    keycloak_dc1:
-        ...
-        cpus: 2
-        ...
-    keycloak_dc2:
-        ...
-        cpus: 2
-        ...
-```
