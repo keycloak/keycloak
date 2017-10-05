@@ -58,6 +58,10 @@ public class Urls {
         return accountBase(baseUri).path(AccountService.class, "federatedIdentityPage").build(realmId);
     }
 
+    public static URI accountFederatedIdentityUpdate(URI baseUri, String realmName) {
+        return accountBase(baseUri).path(AccountService.class, "processFederatedIdentityUpdate").build(realmName);
+    }
+
     public static URI identityProviderAuthnResponse(URI baseUri, String providerId, String realmName) {
         return realmBase(baseUri).path(RealmsResource.class, "getBrokerService")
                 .path(IdentityBrokerService.class, "getEndpoint")
@@ -103,8 +107,9 @@ public class Urls {
         return accountBase(baseUri).path(AccountService.class, "totpPage").build(realmId);
     }
 
-    public static URI accountTotpRemove(URI baseUri, String realmId) {
+    public static URI accountTotpRemove(URI baseUri, String realmId, String stateChecker) {
         return accountBase(baseUri).path(AccountService.class, "processTotpRemove")
+                .queryParam("stateChecker", stateChecker)
                 .build(realmId);
     }
 
@@ -116,8 +121,9 @@ public class Urls {
         return accountBase(baseUri).path(AccountService.class, "sessionsPage").build(realmId);
     }
 
-    public static URI accountSessionsLogoutPage(URI baseUri, String realmId) {
+    public static URI accountSessionsLogoutPage(URI baseUri, String realmId, String stateChecker) {
         return accountBase(baseUri).path(AccountService.class, "processSessionsLogout")
+                .queryParam("stateChecker", stateChecker)
                 .build(realmId);
     }
 
