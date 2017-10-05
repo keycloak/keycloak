@@ -948,7 +948,7 @@
 
             if (type == 'cordova') {
                 loginIframe.enable = false;
-                function cordovaOpenWindowWrapper(loginUrl, target, options) {
+                var cordovaOpenWindowWrapper = function(loginUrl, target, options) {
                     if (window.cordova && window.cordova.InAppBrowser) {
                         // Use inappbrowser for IOS and Android if available
                         return window.cordova.InAppBrowser.open(loginUrl, target, options);
