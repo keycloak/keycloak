@@ -142,6 +142,12 @@ public abstract class AbstractSecuredLocalService {
             throw new ForbiddenException();
         }
     }
+    protected void csrfCheck(final String stateChecker) {
+        if (!auth.isCookieAuthenticated()) return;
+        if (auth.getSession().getNote(UserSessionModel.CSRF_TOKEN) == null || !auth.getSession().getNote(UserSessionModel.CSRF_TOKEN).equals(stateChecker)) {
+            throw new ForbiddenException();
+        }
+    }
 
     protected abstract URI getBaseRedirectUri();
 

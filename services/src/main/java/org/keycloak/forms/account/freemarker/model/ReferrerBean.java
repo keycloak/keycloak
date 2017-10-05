@@ -17,6 +17,8 @@
 
 package org.keycloak.forms.account.freemarker.model;
 
+import freemarker.template.utility.StringUtil;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -33,7 +35,7 @@ public class ReferrerBean {
     }
 
     public String getUrl() {
-        return referrer[1];
+        return StringUtil.HTMLEnc(referrer[1]);
     }
 
 }
