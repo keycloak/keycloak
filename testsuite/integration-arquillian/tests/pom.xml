@@ -441,6 +441,7 @@
                         <configuration>
                             <systemPropertyVariables>
                                 <node.name>${node.name}</node.name>
+                                <pageload.timeout>20000</pageload.timeout>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>
@@ -537,6 +538,8 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <systemPropertyVariables>
+
+                                <pageload.timeout>20000</pageload.timeout>
 
                                 <run.h2>true</run.h2>
                                 <node.name>${node.name}</node.name>
