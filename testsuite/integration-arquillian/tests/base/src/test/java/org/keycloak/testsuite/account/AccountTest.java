@@ -185,6 +185,17 @@ public class AccountTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void referrerEscaped() {
+        profilePage.open();
+        loginPage.login("test-user@localhost", "password");
+
+        driver.navigate().to(profilePage.getPath() + "?referrer=test-app&referrer_uri=http://localhost:8180/auth/realms/master/app/auth/test%2Ffkrenu%22%3E%3Cscript%3Ealert%281%29%3C%2fscript%3E");
+        Assert.assertTrue(profilePage.isCurrent());
+
+        Assert.assertFalse(driver.getPageSource().contains("<script>alert"));
+    }
+
+    @Test
     public void changePassword() {
         changePasswordPage.open();
         loginPage.login("test-user@localhost", "password");
