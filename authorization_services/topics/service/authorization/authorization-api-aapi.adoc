@@ -15,7 +15,7 @@ When requesting an RPT, you need to provide two things:
 * A <<_service_protection_permission_api_papi, permission ticket>> representing the resources you want to access
 * The <<_service_authorization_aat, Authorization API token (AAT)>> (as a bearer token) representing a user's identity and his consent to access authorization data on his behalf.
 
-The permission ticket is added to a HTTP request as a parameter whether the AAT is included in a ```Authorization``` header in order to authenticate de request
+The permission ticket is added to an HTTP request as a parameter whether the AAT is included in a ```Authorization``` header in order to authenticate the request
 using the AAT as a bearer token.
 
 ```bash

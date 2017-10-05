@@ -27,7 +27,7 @@ provides an easy way to obtain entitlements from the server, it might not be app
 with an user. In this case, the **POST** method is recommended.
 
 Regardless of the HTTP method you decide to use, the Entitlement API endpoint expects an access token in the request representing a user's identity
-and his consent to access authorization data on his behalf. The access token must be sent as a bearer token using a HTTP ```Authorization``` header.
+and his consent to access authorization data on his behalf. The access token must be sent as a bearer token using an HTTP ```Authorization``` header.
 
 After successfully invoking the Entitlement API endpoint, you will get a <<_service_rpt_overview, RPT>> with all permissions
 granted by the server.
