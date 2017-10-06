@@ -17,7 +17,6 @@
 
 package org.keycloak.connections.httpclient;
 
-import org.apache.http.HttpHost;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
 import org.apache.http.conn.ssl.BrowserCompatHostnameVerifier;
@@ -36,7 +35,6 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
-import java.net.URI;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -54,7 +52,7 @@ import java.util.concurrent.TimeUnit;
  * @version $Revision: 1 $
  */
 public class HttpClientBuilder {
-    public static enum HostnameVerificationPolicy {
+    public enum HostnameVerificationPolicy {
         /**
          * Hostname verification is not done on the server's certificate
          */
@@ -106,7 +104,7 @@ public class HttpClientBuilder {
     protected long establishConnectionTimeout = -1;
     protected TimeUnit establishConnectionTimeoutUnits = TimeUnit.MILLISECONDS;
     protected boolean disableCookies = false;
-    private String proxyUrl;
+    protected ProxyMapping proxyMapping;
 
     /**
      * Socket inactivity timeout
@@ -210,8 +208,8 @@ public class HttpClientBuilder {
         return this;
     }
 
-    public HttpClientBuilder proxyUrl(String proxyUrl) {
-        this.proxyUrl = proxyUrl;
+    public HttpClientBuilder proxyMapping(ProxyMapping proxyMapping) {
+        this.proxyMapping = proxyMapping;
         return this;
     }
 
@@ -288,6 +286,11 @@ public class HttpClientBuilder {
                     .setMaxConnPerRoute(maxPooledPerRoute)
                     .setConnectionTimeToLive(connectionTTL, connectionTTLUnit);
 
+
+            if (proxyMapping != null && !proxyMapping.isEmpty()) {
+                builder.setRoutePlanner(new ProxyMappingAwareRoutePlanner(proxyMapping));
+            }
+
             if (maxConnectionIdleTime > 0) {
                 // Will start background cleaner thread
                 builder.evictIdleConnections(maxConnectionIdleTime, maxConnectionIdleTimeUnit);
@@ -305,12 +308,6 @@ public class HttpClientBuilder {
         RequestConfig.Builder builder = RequestConfig.custom()
           .setConnectTimeout((int) establishConnectionTimeout)
           .setSocketTimeout((int) socketTimeout);
-
-        if (proxyUrl != null && !proxyUrl.isEmpty()) {
-            URI uri = URI.create(proxyUrl);
-            HttpHost proxyHost = new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme());
-            builder.setProxy(proxyHost);
-        }
 
         return builder.build();
     }
