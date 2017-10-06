@@ -36,11 +36,25 @@ import org.keycloak.truststore.TruststoreProvider;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyStore;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * The default {@link HttpClientFactory} for {@link HttpClientProvider HttpClientProvider's} used by Keycloak for outbound HTTP calls.
+ * <p>
+ * The constructed clients can be configured via Keycloaks SPI configuration, e.g. {@code standalone.xml, standalone-ha.xml, domain.xml}.
+ * </p>
+ * <p>
+ * Examples for jboss-cli
+ * </p>
+ * <pre>
+ * {@code
+ *
+ * /subsystem=keycloak-server/spi=connectionsHttpClient/provider=default:add(enabled=true)
+ * /subsystem=keycloak-server/spi=connectionsHttpClient/provider=default:write-attribute(name=properties.connection-pool-size,value=128)
+ * /subsystem=keycloak-server/spi=connectionsHttpClient/provider=default:write-attribute(name=properties.proxy-mappings,value=[".*\\.(google|googleapis)\\.com;http://www-proxy.acme.corp.com:8080",".*\\.acme\\.corp\\.com;NO_PROXY",".*;http://fallback:8080"])
+ * }
+ * </pre>
+ * </p>
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class DefaultHttpClientFactory implements HttpClientFactory {
@@ -148,7 +162,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                             .connectionTTL(connectionTTL, TimeUnit.MILLISECONDS)
                             .maxConnectionIdleTime(maxConnectionIdleTime, TimeUnit.MILLISECONDS)
                             .disableCookies(disableCookies)
-                            .proxyMapping(new ProxyMapping(proxyMappings == null ? Collections.emptyList() : Arrays.asList(proxyMappings)));
+                            .proxyMappings(ProxyMappings.valueOf(proxyMappings));
 
                     if (disableTrustManager) {
                         // TODO: is it ok to do away with disabling trust manager?
