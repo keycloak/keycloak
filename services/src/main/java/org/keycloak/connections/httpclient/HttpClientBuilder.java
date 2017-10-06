@@ -104,7 +104,7 @@ public class HttpClientBuilder {
     protected long establishConnectionTimeout = -1;
     protected TimeUnit establishConnectionTimeoutUnits = TimeUnit.MILLISECONDS;
     protected boolean disableCookies = false;
-    protected ProxyMapping proxyMapping;
+    protected ProxyMappings proxyMappings;
 
     /**
      * Socket inactivity timeout
@@ -208,8 +208,8 @@ public class HttpClientBuilder {
         return this;
     }
 
-    public HttpClientBuilder proxyMapping(ProxyMapping proxyMapping) {
-        this.proxyMapping = proxyMapping;
+    public HttpClientBuilder proxyMappings(ProxyMappings proxyMappings) {
+        this.proxyMappings = proxyMappings;
         return this;
     }
 
@@ -290,8 +290,8 @@ public class HttpClientBuilder {
                     .setConnectionTimeToLive(connectionTTL, connectionTTLUnit);
 
 
-            if (proxyMapping != null && !proxyMapping.isEmpty()) {
-                builder.setRoutePlanner(new ProxyMappingAwareRoutePlanner(proxyMapping));
+            if (proxyMappings != null && !proxyMappings.isEmpty()) {
+                builder.setRoutePlanner(new ProxyMappingsAwareRoutePlanner(proxyMappings));
             }
 
             if (maxConnectionIdleTime > 0) {

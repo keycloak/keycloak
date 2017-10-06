@@ -25,27 +25,28 @@ import org.apache.http.protocol.HttpContext;
 import org.jboss.logging.Logger;
 
 /**
- * A {@link DefaultRoutePlanner} that determines the proxy to use for a given target hostname by consulting a {@link ProxyMapping}.
+ * A {@link DefaultRoutePlanner} that determines the proxy to use for a given target hostname by consulting
+ * the given {@link ProxyMappings}.
  *
  * @author <a href="mailto:thomas.darimont@gmail.com">Thomas Darimont</a>
+ * @see ProxyMappings
  */
-public class ProxyMappingAwareRoutePlanner extends DefaultRoutePlanner {
+public class ProxyMappingsAwareRoutePlanner extends DefaultRoutePlanner {
 
-  private static final Logger LOG = Logger.getLogger(ProxyMappingAwareRoutePlanner.class);
+  private static final Logger LOG = Logger.getLogger(ProxyMappingsAwareRoutePlanner.class);
 
-  private final ProxyMapping proxyMapping;
+  private final ProxyMappings proxyMappings;
 
-  public ProxyMappingAwareRoutePlanner(ProxyMapping proxyMapping) {
+  public ProxyMappingsAwareRoutePlanner(ProxyMappings proxyMappings) {
     super(DefaultSchemePortResolver.INSTANCE);
-    this.proxyMapping = proxyMapping;
+    this.proxyMappings = proxyMappings;
   }
 
   @Override
   protected HttpHost determineProxy(HttpHost target, HttpRequest request, HttpContext context) throws HttpException {
 
-    HttpHost proxy = proxyMapping.getProxyFor(target.getHostName());
-
-    LOG.debugf("Returning proxy=%s for targetHost=%s", proxy ,target.getHostName());
+    HttpHost proxy = proxyMappings.getProxyFor(target.getHostName());
+    LOG.debugf("Returning proxy=%s for targetHost=%s", proxy, target.getHostName());
 
     return proxy;
   }
