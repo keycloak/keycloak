@@ -17,7 +17,6 @@
 
 package org.keycloak.models.sessions.infinispan.remotestore;
 
-import java.util.Optional;
 import java.util.concurrent.Executor;
 
 import org.infinispan.commons.CacheException;
@@ -62,17 +61,10 @@ public class KeycloakRemoteStore extends RemoteStore {
             EmbeddedCacheManager cacheManager = ctx.getCache().getCacheManager();
             cacheManager.getCache(cacheTemplateName, true);
 
-            Optional<StoreConfiguration> optional = cacheManager.getCacheConfiguration(cacheTemplateName).persistence().stores().stream().filter((StoreConfiguration storeConfig) -> {
-
-                return storeConfig instanceof KeycloakRemoteStoreConfiguration;
-
-            }).findFirst();
-
-            if (!optional.isPresent()) {
-                throw new CacheException("Unable to find remoteStore on cache '" + cacheTemplateName + ".");
-            }
-
-            KeycloakRemoteStoreConfiguration templateConfig = (KeycloakRemoteStoreConfiguration) optional.get();
+            KeycloakRemoteStoreConfiguration templateConfig = (KeycloakRemoteStoreConfiguration) cacheManager.getCacheConfiguration(cacheTemplateName).persistence().stores().stream()
+              .filter((StoreConfiguration storeConfig) -> storeConfig instanceof KeycloakRemoteStoreConfiguration)
+              .findFirst()
+              .orElseThrow(() -> new CacheException("Unable to find remoteStore on cache '" + cacheTemplateName + "."));
 
             // We have template configuration, so create new configuration from it. Override just remoteCacheName and sessionsCache (not pretty, but works for now)
             PersistenceConfigurationBuilder readPersistenceBuilder = new ConfigurationBuilder().read(ctx.getCache().getCacheConfiguration()).persistence();
