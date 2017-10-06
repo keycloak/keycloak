@@ -71,7 +71,6 @@ import java.security.PublicKey;
 public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIdentityProviderConfig> implements ExchangeExternalToken {
     protected static final Logger logger = Logger.getLogger(OIDCIdentityProvider.class);
 
-    public static final String OAUTH2_PARAMETER_PROMPT = "prompt";
     public static final String SCOPE_OPENID = "openid";
     public static final String FEDERATED_ID_TOKEN = "FEDERATED_ID_TOKEN";
     public static final String USER_INFO = "UserInfo";
@@ -210,18 +209,6 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             return userSession.getNote(FEDERATED_ID_TOKEN);
 
         }
-    }
-
-    @Override
-    protected UriBuilder createAuthorizationUrl(AuthenticationRequest request) {
-        UriBuilder authorizationUrl = super.createAuthorizationUrl(request);
-        String prompt = getConfig().getPrompt();
-
-        if (prompt != null && !prompt.isEmpty()) {
-            authorizationUrl.queryParam(OAUTH2_PARAMETER_PROMPT, prompt);
-        }
-
-        return authorizationUrl;
     }
 
     protected void processAccessTokenResponse(BrokeredIdentityContext context, AccessTokenResponse response) {

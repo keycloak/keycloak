@@ -558,7 +558,7 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
         Retry.execute(new Runnable() {
             @Override
             public void run() {
-                assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/sales-post-enc/");
+                assertEquals(APP_SERVER_BASE_URL + "/sales-post-enc/", driver.getCurrentUrl());
             }
         }, 10, 100);
         Assert.assertTrue(driver.getPageSource().contains("bburke"));

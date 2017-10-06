@@ -82,4 +82,8 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
     public void setLoginHint(boolean loginHint) {
         getConfig().put("loginHint", String.valueOf(loginHint));
     }
+
+    public String getPrompt() {
+        return getConfig().get("prompt");
+    }
 }
