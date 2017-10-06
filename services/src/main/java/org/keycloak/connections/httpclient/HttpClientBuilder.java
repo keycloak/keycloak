@@ -52,7 +52,7 @@ import java.util.concurrent.TimeUnit;
  * @version $Revision: 1 $
  */
 public class HttpClientBuilder {
-    public static enum HostnameVerificationPolicy {
+    public enum HostnameVerificationPolicy {
         /**
          * Hostname verification is not done on the server's certificate
          */
@@ -104,7 +104,7 @@ public class HttpClientBuilder {
     protected long establishConnectionTimeout = -1;
     protected TimeUnit establishConnectionTimeoutUnits = TimeUnit.MILLISECONDS;
     protected boolean disableCookies = false;
-
+    protected ProxyMapping proxyMapping;
 
     /**
      * Socket inactivity timeout
@@ -208,6 +208,11 @@ public class HttpClientBuilder {
         return this;
     }
 
+    public HttpClientBuilder proxyMapping(ProxyMapping proxyMapping) {
+        this.proxyMapping = proxyMapping;
+        return this;
+    }
+
 
     static class VerifierWrapper implements X509HostnameVerifier {
         protected HostnameVerifier verifier;
@@ -272,9 +277,7 @@ public class HttpClientBuilder {
                 tlsContext.init(null, null, null);
                 sslsf = new SSLConnectionSocketFactory(tlsContext, verifier);
             }
-            RequestConfig requestConfig = RequestConfig.custom()
-                    .setConnectTimeout((int) establishConnectionTimeout)
-                    .setSocketTimeout((int) socketTimeout).build();
+            RequestConfig requestConfig = createRequestConfig();
 
             org.apache.http.impl.client.HttpClientBuilder builder = HttpClients.custom()
                     .setDefaultRequestConfig(requestConfig)
@@ -282,6 +285,11 @@ public class HttpClientBuilder {
                     .setMaxConnTotal(connectionPoolSize)
                     .setMaxConnPerRoute(maxPooledPerRoute)
                     .setConnectionTimeToLive(connectionTTL, connectionTTLUnit);
+
+
+            if (proxyMapping != null && !proxyMapping.isEmpty()) {
+                builder.setRoutePlanner(new ProxyMappingAwareRoutePlanner(proxyMapping));
+            }
 
             if (maxConnectionIdleTime > 0) {
                 // Will start background cleaner thread
@@ -293,6 +301,15 @@ public class HttpClientBuilder {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private RequestConfig createRequestConfig() {
+
+        RequestConfig.Builder builder = RequestConfig.custom()
+          .setConnectTimeout((int) establishConnectionTimeout)
+          .setSocketTimeout((int) socketTimeout);
+
+        return builder.build();
     }
 
     private SSLContext createSslContext(

@@ -36,6 +36,8 @@ import org.keycloak.truststore.TruststoreProvider;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyStore;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -127,6 +129,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                     String clientKeystore = config.get("client-keystore");
                     String clientKeystorePassword = config.get("client-keystore-password");
                     String clientPrivateKeyPassword = config.get("client-key-password");
+                    String[] proxyMappings = config.getArray("proxy-mappings");
 
                     TruststoreProvider truststoreProvider = session.getProvider(TruststoreProvider.class);
                     boolean disableTrustManager = truststoreProvider == null || truststoreProvider.getTruststore() == null;
@@ -137,13 +140,15 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                             : HttpClientBuilder.HostnameVerificationPolicy.valueOf(truststoreProvider.getPolicy().name());
 
                     HttpClientBuilder builder = new HttpClientBuilder();
+
                     builder.socketTimeout(socketTimeout, TimeUnit.MILLISECONDS)
                             .establishConnectionTimeout(establishConnectionTimeout, TimeUnit.MILLISECONDS)
                             .maxPooledPerRoute(maxPooledPerRoute)
                             .connectionPoolSize(connectionPoolSize)
                             .connectionTTL(connectionTTL, TimeUnit.MILLISECONDS)
                             .maxConnectionIdleTime(maxConnectionIdleTime, TimeUnit.MILLISECONDS)
-                            .disableCookies(disableCookies);
+                            .disableCookies(disableCookies)
+                            .proxyMapping(new ProxyMapping(proxyMappings == null ? Collections.emptyList() : Arrays.asList(proxyMappings)));
 
                     if (disableTrustManager) {
                         // TODO: is it ok to do away with disabling trust manager?
