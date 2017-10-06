@@ -379,11 +379,12 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
     }
 
+
     protected BrokeredIdentityContext extractIdentity(AccessTokenResponse tokenResponse, String accessToken, JsonWebToken idToken) throws IOException {
         String id = idToken.getSubject();
         BrokeredIdentityContext identity = new BrokeredIdentityContext(id);
         String name = (String) idToken.getOtherClaims().get(IDToken.NAME);
-        String preferredUsername = (String) idToken.getOtherClaims().get(getUsernameClaimName());
+        String preferredUsername = (String) idToken.getOtherClaims().get(getusernameClaimNameForIdToken());
         String email = (String) idToken.getOtherClaims().get(IDToken.EMAIL);
 
         if (!getConfig().isDisableUserInfoService()) {
@@ -396,7 +397,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
                     id = getJsonProperty(userInfo, "sub");
                     name = getJsonProperty(userInfo, "name");
-                    preferredUsername = getJsonProperty(userInfo, "preferred_username");
+                    preferredUsername = getUsernameFromUserInfo(userInfo);
                     email = getJsonProperty(userInfo, "email");
                     AbstractJsonUserAttributeMapper.storeUserProfileForMapper(identity, userInfo, getConfig().getAlias());
                 }
@@ -427,7 +428,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         return identity;
     }
 
-    protected String getUsernameClaimName() {
+    protected String getusernameClaimNameForIdToken() {
         return IDToken.PREFERRED_USERNAME;
     }
 
@@ -518,9 +519,11 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         return "openid";
     }
 
-    protected boolean isIssuer(MultivaluedMap<String, String> params) {
+    @Override
+    public boolean isIssuer(String issuer, MultivaluedMap<String, String> params) {
+        if (!supportsExternalExchange()) return false;
         String requestedIssuer = params.getFirst(OAuth2Constants.SUBJECT_ISSUER);
-        if (requestedIssuer == null) return true;
+        if (requestedIssuer == null) requestedIssuer = issuer;
         if (requestedIssuer.equals(getConfig().getAlias())) return true;
 
         String[] issuers = getConfig().getIssuer().split(",");
@@ -534,38 +537,65 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
     }
 
+    protected boolean supportsExternalExchange() {
+        return true;
+    }
+
     @Override
-    public BrokeredIdentityContext exchangeExternal(EventBuilder event, MultivaluedMap<String, String> params) {
-        if (!isIssuer(params)) {
-            return null;
-        }
-        String subjectToken = params.getFirst(OAuth2Constants.SUBJECT_TOKEN);
-        if (subjectToken == null) {
-            event.detail(Details.REASON, OAuth2Constants.SUBJECT_TOKEN + " param unset");
+    protected String getProfileEndpointForValidation(EventBuilder event) {
+        String userInfoUrl = getUserInfoUrl();
+        if (getConfig().isDisableUserInfoService() || userInfoUrl == null || userInfoUrl.isEmpty()) {
+            event.detail(Details.REASON, "user info service disabled");
             event.error(Errors.INVALID_TOKEN);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "token not set", Response.Status.BAD_REQUEST);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid token", Response.Status.BAD_REQUEST);
+
         }
-        String subjectTokenType = params.getFirst(OAuth2Constants.SUBJECT_TOKEN_TYPE);
-        if (subjectTokenType == null) {
-            event.detail(Details.REASON, OAuth2Constants.SUBJECT_TOKEN_TYPE + " param unset");
-            event.error(Errors.INVALID_TOKEN_TYPE);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "token type unset", Response.Status.BAD_REQUEST);
+        return userInfoUrl;
+    }
+
+    @Override
+    protected BrokeredIdentityContext extractIdentityFromProfile(EventBuilder event, JsonNode userInfo) {
+        String id = getJsonProperty(userInfo, "sub");
+        if (id == null) {
+            event.detail(Details.REASON, "sub claim is null from user info json");
+            event.error(Errors.INVALID_TOKEN);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid token", Response.Status.BAD_REQUEST);
         }
-        boolean jwtAccessTokenType = subjectTokenType.equals(OAuth2Constants.JWT_ACCESS_TOKEN_TYPE);
-        boolean idTokenType = subjectTokenType.equals(OAuth2Constants.ID_TOKEN_TYPE);
-        if (!jwtAccessTokenType && !idTokenType) {
-            event.error(Errors.INVALID_TOKEN_TYPE);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid token type", Response.Status.BAD_REQUEST);
+        BrokeredIdentityContext identity = new BrokeredIdentityContext(id);
+
+        String name = getJsonProperty(userInfo, "name");
+        String preferredUsername = getUsernameFromUserInfo(userInfo);
+        String email = getJsonProperty(userInfo, "email");
+        AbstractJsonUserAttributeMapper.storeUserProfileForMapper(identity, userInfo, getConfig().getAlias());
+
+        identity.setId(id);
+        identity.setName(name);
+        identity.setEmail(email);
+
+        identity.setBrokerUserId(getConfig().getAlias() + "." + id);
+
+        if (preferredUsername == null) {
+            preferredUsername = email;
         }
 
-
-        if (getConfig().isValidateSignature() == false) {
-            event.detail(Details.REASON, "validate signature unset");
-            event.error(Errors.INVALID_CONFIG);
-            throw new ErrorResponseException(Errors.INVALID_CONFIG, "Invalid server config", Response.Status.BAD_REQUEST);
+        if (preferredUsername == null) {
+            preferredUsername = id;
         }
+
+        identity.setUsername(preferredUsername);
+        return identity;
+    }
+
+    protected String getUsernameFromUserInfo(JsonNode userInfo) {
+        return getJsonProperty(userInfo, "preferred_username");
+    }
+
+    final protected BrokeredIdentityContext validateJwt(EventBuilder event, String subjectToken, String subjectTokenType) {
+        if (!getConfig().isValidateSignature()) {
+            return validateExternalTokenThroughUserInfo(event, subjectToken, subjectTokenType);
+        }
+        event.detail("validation_method", "signature");
         if (getConfig().isUseJwksUrl()) {
-            logger.debug("using jwks url to validate token exchange");
             if (getConfig().getJwksUrl() == null) {
                 event.detail(Details.REASON, "jwks url unset");
                 event.error(Errors.INVALID_CONFIG);
@@ -589,6 +619,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
         try {
 
+            boolean idTokenType = OAuth2Constants.ID_TOKEN_TYPE.equals(subjectTokenType);
             BrokeredIdentityContext context = extractIdentity(null, idTokenType ? null : subjectToken, parsedToken);
             if (context == null) {
                 event.detail(Details.REASON, "Failed to extract identity from token");
@@ -596,10 +627,9 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid token", Response.Status.BAD_REQUEST);
 
             }
-            if (!idTokenType) {
+            if (idTokenType) {
                 context.getContextData().put(VALIDATED_ID_TOKEN, subjectToken);
-            }
-            if (jwtAccessTokenType) {
+            } else {
                 context.getContextData().put(KeycloakOIDCIdentityProvider.VALIDATED_ACCESS_TOKEN, parsedToken);
             }
             context.getContextData().put(EXCHANGE_PROVIDER, getConfig().getAlias());
@@ -610,15 +640,31 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             logger.debug("Unable to extract identity from identity token", e);
             throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid token", Response.Status.BAD_REQUEST);
         }
+
+
     }
 
     @Override
-    public void exchangeExternalComplete(UserSessionModel userSession, BrokeredIdentityContext context, MultivaluedMap<String, String> params) {
-        if (context.getContextData().containsKey(VALIDATED_ID_TOKEN))
-            userSession.setNote(FEDERATED_ACCESS_TOKEN, params.getFirst(OAuth2Constants.SUBJECT_TOKEN));
-        if (context.getContextData().containsKey(VALIDATED_ID_TOKEN))
-            userSession.setNote(FEDERATED_ID_TOKEN, params.getFirst(OAuth2Constants.SUBJECT_TOKEN));
-        userSession.setNote(EXCHANGE_PROVIDER, getConfig().getAlias());
-
+    protected BrokeredIdentityContext exchangeExternalImpl(EventBuilder event, MultivaluedMap<String, String> params) {
+        if (!supportsExternalExchange()) return null;
+        String subjectToken = params.getFirst(OAuth2Constants.SUBJECT_TOKEN);
+        if (subjectToken == null) {
+            event.detail(Details.REASON, OAuth2Constants.SUBJECT_TOKEN + " param unset");
+            event.error(Errors.INVALID_TOKEN);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "token not set", Response.Status.BAD_REQUEST);
+        }
+        String subjectTokenType = params.getFirst(OAuth2Constants.SUBJECT_TOKEN_TYPE);
+        if (subjectTokenType == null) {
+            subjectTokenType = OAuth2Constants.ACCESS_TOKEN_TYPE;
+        }
+        if (OAuth2Constants.JWT_TOKEN_TYPE.equals(subjectTokenType) || OAuth2Constants.ID_TOKEN_TYPE.equals(subjectTokenType)) {
+            return validateJwt(event, subjectToken, subjectTokenType);
+        } else if (OAuth2Constants.ACCESS_TOKEN_TYPE.equals(subjectTokenType)) {
+            return validateExternalTokenThroughUserInfo(event, subjectToken, subjectTokenType);
+        } else {
+            event.detail(Details.REASON, OAuth2Constants.SUBJECT_TOKEN_TYPE + " invalid");
+            event.error(Errors.INVALID_TOKEN_TYPE);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid token type", Response.Status.BAD_REQUEST);
+        }
     }
 }

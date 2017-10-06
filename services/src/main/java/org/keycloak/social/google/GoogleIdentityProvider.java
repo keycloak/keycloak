@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.KeycloakOIDCIdentityProvider;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
@@ -79,42 +80,23 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
         return uri;
     }
 
-    protected BrokeredIdentityContext extractIdentity(AccessTokenResponse tokenResponse, String accessToken, JsonWebToken idToken) throws IOException {
-        String id = idToken.getSubject();
-        BrokeredIdentityContext identity = new BrokeredIdentityContext(id);
-        String name = (String) idToken.getOtherClaims().get(IDToken.NAME);
-        String preferredUsername = (String) idToken.getOtherClaims().get(getUsernameClaimName());
-        String email = (String) idToken.getOtherClaims().get(IDToken.EMAIL);
-
-         identity.getContextData().put(VALIDATED_ID_TOKEN, idToken);
-
-        identity.setId(id);
-        identity.setName(name);
-        identity.setEmail(email);
-
-        identity.setBrokerUserId(getConfig().getAlias() + "." + id);
-
-        if (preferredUsername == null) {
-            preferredUsername = email;
-        }
-
-        if (preferredUsername == null) {
-            preferredUsername = id;
-        }
-
-        identity.setUsername(preferredUsername);
-        if (tokenResponse != null && tokenResponse.getSessionState() != null) {
-            identity.setBrokerSessionId(getConfig().getAlias() + "." + tokenResponse.getSessionState());
-        }
-        if (tokenResponse != null) identity.getContextData().put(FEDERATED_ACCESS_TOKEN_RESPONSE, tokenResponse);
-        if (tokenResponse != null) processAccessTokenResponse(identity, tokenResponse);
-        return identity;
+    @Override
+    protected boolean supportsExternalExchange() {
+        return true;
     }
 
 
     @Override
-    public BrokeredIdentityContext exchangeExternal(EventBuilder event, MultivaluedMap<String, String> params) {
-        return null;
+    public boolean isIssuer(String issuer, MultivaluedMap<String, String> params) {
+        String requestedIssuer = params.getFirst(OAuth2Constants.SUBJECT_ISSUER);
+        if (requestedIssuer == null) requestedIssuer = issuer;
+        return requestedIssuer.equals(getConfig().getAlias());
+    }
+
+
+    @Override
+    protected BrokeredIdentityContext exchangeExternalImpl(EventBuilder event, MultivaluedMap<String, String> params) {
+        return exchangeExternalUserInfoValidationOnly(event, params);
     }
 
 

@@ -40,6 +40,8 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -58,6 +60,7 @@ import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ServicesLogger;
@@ -590,15 +593,29 @@ public class TokenEndpoint {
 
         String subjectToken = formParams.getFirst(OAuth2Constants.SUBJECT_TOKEN);
         if (subjectToken != null) {
-            String subjectIssuer = formParams.getFirst(OAuth2Constants.SUBJECT_ISSUER);
+            String subjectTokenType = formParams.getFirst(OAuth2Constants.SUBJECT_TOKEN_TYPE);
             String realmIssuerUrl = Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName());
+            String subjectIssuer = formParams.getFirst(OAuth2Constants.SUBJECT_ISSUER);
+
+            if (subjectIssuer == null && OAuth2Constants.JWT_TOKEN_TYPE.equals(subjectTokenType)) {
+                try {
+                    JWSInput jws = new JWSInput(subjectToken);
+                    JsonWebToken jwt = jws.readJsonContent(JsonWebToken.class);
+                    subjectIssuer = jwt.getIssuer();
+                } catch (JWSInputException e) {
+                    event.detail(Details.REASON, "unable to parse jwt subject_token");
+                    event.error(Errors.INVALID_TOKEN);
+                    throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Invalid token type, must be access token", Response.Status.BAD_REQUEST);
+
+                }
+            }
+
             if (subjectIssuer != null && !realmIssuerUrl.equals(subjectIssuer)) {
                 event.detail(OAuth2Constants.SUBJECT_ISSUER, subjectIssuer);
-                return exchangeExternalToken();
+                return exchangeExternalToken(subjectIssuer);
 
             }
 
-            String subjectTokenType = formParams.getFirst(OAuth2Constants.SUBJECT_TOKEN_TYPE);
             if (subjectTokenType != null && !subjectTokenType.equals(OAuth2Constants.ACCESS_TOKEN_TYPE)) {
                 event.detail(Details.REASON, "subject_token supports access tokens only");
                 event.error(Errors.INVALID_TOKEN);
@@ -764,32 +781,44 @@ public class TokenEndpoint {
         return Cors.add(request, Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).auth().allowedOrigins(uriInfo, client).allowedMethods("POST").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
     }
 
-    public Response exchangeExternalToken() {
-        BrokeredIdentityContext context = null;
+    public Response exchangeExternalToken(String issuer) {
+        ExchangeExternalToken externalIdp = null;
+        IdentityProviderModel externalIdpModel = null;
 
         for (IdentityProviderModel idpModel : realm.getIdentityProviders()) {
             IdentityProviderFactory factory = IdentityBrokerService.getIdentityProviderFactory(session, idpModel);
             IdentityProvider idp = factory.create(session, idpModel);
             if (idp instanceof ExchangeExternalToken) {
-                context = ((ExchangeExternalToken)idp).exchangeExternal(event, formParams);
-                break;
+                ExchangeExternalToken external = (ExchangeExternalToken) idp;
+                if (idpModel.getAlias().equals(issuer) || externalIdp.isIssuer(issuer, formParams)) {
+                    externalIdp = external;
+                    externalIdpModel = idpModel;
+                    break;
+                }
             }
         }
-        if (context == null) {
+
+
+        if (externalIdp == null) {
             event.error(Errors.INVALID_ISSUER);
             throw new ErrorResponseException(Errors.INVALID_ISSUER, "Invalid " + OAuth2Constants.SUBJECT_ISSUER + " parameter", Response.Status.BAD_REQUEST);
         }
-        if (!AdminPermissions.management(session, realm).idps().canExchangeTo(client, context.getIdpConfig())) {
+        if (!AdminPermissions.management(session, realm).idps().canExchangeTo(client, externalIdpModel)) {
             event.detail(Details.REASON, "client not allowed to exchange subject_issuer");
             event.error(Errors.NOT_ALLOWED);
             throw new ErrorResponseException(OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);
+        }
+        BrokeredIdentityContext context = externalIdp.exchangeExternal(event, formParams);
+        if (context == null) {
+            event.error(Errors.INVALID_ISSUER);
+            throw new ErrorResponseException(Errors.INVALID_ISSUER, "Invalid " + OAuth2Constants.SUBJECT_ISSUER + " parameter", Response.Status.BAD_REQUEST);
         }
 
         UserModel user = importUserFromExternalIdentity(context);
 
         String sessionId = KeycloakModelUtils.generateId();
         UserSessionModel userSession = session.sessions().createUserSession(sessionId, realm, user, user.getUsername(), clientConnection.getRemoteAddr(), "external-exchange", false, null, null);
-        ((ExchangeExternalToken)context.getIdp()).exchangeExternalComplete(userSession, context, formParams);
+        externalIdp.exchangeExternalComplete(userSession, context, formParams);
         return exchangeClientToClient(user, userSession);
 
 

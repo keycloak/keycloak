@@ -18,6 +18,7 @@
 package org.keycloak.social.bitbucket;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
@@ -25,7 +26,13 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.services.ErrorResponseException;
+
+import javax.ws.rs.core.Response;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -48,6 +55,56 @@ public class BitbucketIdentityProvider extends AbstractOAuth2IdentityProvider im
 		if (defaultScope ==  null || defaultScope.trim().equals("")) {
 			config.setDefaultScope(ACCOUNT_SCOPE);
 		}
+	}
+
+	@Override
+	protected boolean supportsExternalExchange() {
+		return true;
+	}
+
+	@Override
+	protected String getProfileEndpointForValidation(EventBuilder event) {
+		return USER_URL;
+	}
+
+	@Override
+	protected BrokeredIdentityContext extractIdentityFromProfile(EventBuilder event, JsonNode profile) {
+		String type = getJsonProperty(profile, "type");
+		if (type == null) {
+			event.detail(Details.REASON, "no type data in user info response");
+			event.error(Errors.INVALID_TOKEN);
+			throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid token", Response.Status.BAD_REQUEST);
+
+		}
+		if (type.equals("error")) {
+			JsonNode errorNode = profile.get("error");
+			if (errorNode != null) {
+				String errorMsg = getJsonProperty(errorNode, "message");
+				event.detail(Details.REASON, "user info call failure: " + errorMsg);
+				event.error(Errors.INVALID_TOKEN);
+				throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid token", Response.Status.BAD_REQUEST);
+			} else {
+				event.detail(Details.REASON, "user info call failure");
+				event.error(Errors.INVALID_TOKEN);
+				throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid token", Response.Status.BAD_REQUEST);
+			}
+		}
+		if (!type.equals("user")) {
+			event.detail(Details.REASON, "no user info in response");
+			event.error(Errors.INVALID_TOKEN);
+			throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid token", Response.Status.BAD_REQUEST);
+
+		}
+		BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "account_id"));
+
+		String username = getJsonProperty(profile, "username");
+		user.setUsername(username);
+		user.setIdpConfig(getConfig());
+		user.setIdp(this);
+
+		AbstractJsonUserAttributeMapper.storeUserProfileForMapper(user, profile, getConfig().getAlias());
+
+		return user;
 	}
 
 	@Override

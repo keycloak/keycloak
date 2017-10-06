@@ -17,9 +17,13 @@
 
 package org.keycloak.broker.oidc;
 
+import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.constants.AdapterConstants;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
@@ -30,11 +34,13 @@ import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.adapters.action.AdminAction;
 import org.keycloak.representations.adapters.action.LogoutAction;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.security.PublicKey;
@@ -133,6 +139,22 @@ public class KeycloakOIDCIdentityProvider extends OIDCIdentityProvider {
 
 
     }
+
+    @Override
+    protected BrokeredIdentityContext exchangeExternalImpl(EventBuilder event, MultivaluedMap<String, String> params) {
+        String subjectToken = params.getFirst(OAuth2Constants.SUBJECT_TOKEN);
+        if (subjectToken == null) {
+            event.detail(Details.REASON, OAuth2Constants.SUBJECT_TOKEN + " param unset");
+            event.error(Errors.INVALID_TOKEN);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "token not set", Response.Status.BAD_REQUEST);
+        }
+        String subjectTokenType = params.getFirst(OAuth2Constants.SUBJECT_TOKEN_TYPE);
+        if (subjectTokenType == null) {
+            subjectTokenType = OAuth2Constants.ACCESS_TOKEN_TYPE;
+        }
+        return validateJwt(event, subjectToken, subjectTokenType);
+    }
+
 
 
 }
