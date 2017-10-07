@@ -160,7 +160,6 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
         });
     }
 
-
     @Test
     public void testNotUsername() {
         testingClient.server("passwordPolicy").run(session -> {
