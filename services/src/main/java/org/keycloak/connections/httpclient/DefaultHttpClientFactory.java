@@ -117,6 +117,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
         if (httpClient == null) {
             synchronized(this) {
                 if (httpClient == null) {
+                    String userAgent = config.get("user-agent");
                     long socketTimeout = config.getLong("socket-timeout-millis", -1L);
                     long establishConnectionTimeout = config.getLong("establish-connection-timeout-millis", -1L);
                     int maxPooledPerRoute = config.getInt("max-pooled-per-route", 64);
@@ -143,6 +144,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                             .connectionPoolSize(connectionPoolSize)
                             .connectionTTL(connectionTTL, TimeUnit.MILLISECONDS)
                             .maxConnectionIdleTime(maxConnectionIdleTime, TimeUnit.MILLISECONDS)
+                            .userAgent(userAgent)
                             .disableCookies(disableCookies);
 
                     if (disableTrustManager) {

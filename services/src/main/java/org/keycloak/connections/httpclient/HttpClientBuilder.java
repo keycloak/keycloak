@@ -103,6 +103,7 @@ public class HttpClientBuilder {
     protected TimeUnit socketTimeoutUnits = TimeUnit.MILLISECONDS;
     protected long establishConnectionTimeout = -1;
     protected TimeUnit establishConnectionTimeoutUnits = TimeUnit.MILLISECONDS;
+    protected String userAgent;
     protected boolean disableCookies = false;
 
 
@@ -171,6 +172,17 @@ public class HttpClientBuilder {
      */
     public HttpClientBuilder disableCookies(boolean disable) {
         this.disableCookies = disable;
+        return this;
+    }
+
+
+    /**
+     * User agent string
+     * @param userAgent
+     * @return
+     */
+    public HttpClientBuilder userAgent(String userAgent) {
+        this.userAgent = userAgent;
         return this;
     }
 
@@ -282,6 +294,10 @@ public class HttpClientBuilder {
                     .setMaxConnTotal(connectionPoolSize)
                     .setMaxConnPerRoute(maxPooledPerRoute)
                     .setConnectionTimeToLive(connectionTTL, connectionTTLUnit);
+
+            if (userAgent != null) {
+                builder.setUserAgent(userAgent);
+            }
 
             if (maxConnectionIdleTime > 0) {
                 // Will start background cleaner thread
