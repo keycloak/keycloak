@@ -1,0 +1,104 @@
+[[_service_entitlement_api_aapi]]
+= Requesting Entitlements
+
+Client applications can use a specific endpoint to obtain a special security token called a <<_service_rpt_overview, Requesting Party Token (RPT)>>.
+This token consists of all the entitlements (or permissions) for a user as a result of the evaluation of the permissions and authorization policies associated with the resources being requested.
+With an RPT, client applications can gain access to protected resources at the resource server.
+
+.Entitlement API Endpoint
+```bash
+http://${host}:${port}/auth/realms/${realm_name}/authz/entitlement/{client_id}
+```
+
+The **client_id** parameter above must be provided in order to identify the client application acting as a <<_overview_terminology_resource_server, resource server>>
+in {project_name}. You must provide the client identifier in order to restrict the scope of the evaluation to the resources, scopes and permissions
+managed by a specific resource server.
+
+The Entitlement API comes in two flavors:
+
+* Using HTTP **GET** in order to obtain all entitlements based on the resources owned by a specific user or/and general resources
+owned and managed by the resource server itself.
+
+* Using HTTP **POST** in order to obtain entitlements based on a a set of one or more resources and scopes sent along with an entitlement request.
+
+[NOTE]
+Using one or another depends on your use case and how much resources you have registered in {project_name}. Although the **GET** variant
+provides an easy way to obtain entitlements from the server, it might not be appropriate in case you have too much resources associated
+with an user. In this case, the **POST** method is recommended.
+
+Regardless of the HTTP method you decide to use, the Entitlement API endpoint expects an access token in the request representing a user's identity
+and his consent to access authorization data on his behalf. The access token must be sent as a bearer token using an HTTP ```Authorization``` header.
+
+After successfully invoking the Entitlement API endpoint, you will get a <<_service_rpt_overview, RPT>> with all permissions
+granted by the server.
+
+== Obtaining Entitlements
+
+The easiest way to obtain entitlements for a specific user is using an HTTP GET request. For example, using curl:
+
+```bash
+curl -X GET \
+    -H "Authorization: Bearer ${access_token}" \
+    "http://${host}:${port}/auth/realms/${realm_name}/authz/entitlement/{client_id}"
+```
+
+As a result, the server response is:
+
+```json
+{
+  "rpt": ${RPT}
+}
+```
+
+Using this method to obtain entitlements, the server responds to the requesting client with *all* entitlements for a user, based on the evaluation of the permissions and
+authorization policies associated with the resources owned by the user or the resource server itself. For instance, suppose you have permissions defined in {project_name} for the following resources:
+
+* Main Page
+* Alice Bank Account
+* Bob Bank Account
+
+*Main Page* is a common resource in your application and owned by the resource server itself, it represents a landing or main page in your application. On the
+other hand, *Alice Bank Account* is a resource where user *alice* is the owner. The same goes for *Bob Bank Account* which is owned by a different user, *bob*.
+
+When obtaining entitlements for user *alice*, the server is going to evaluate all permissions associated with resources *Main Page* and *Alice Bank Account*. Giving you
+back a RPT (if permissions were actually granted) with a set of permissions representing these resources.
+
+== Obtaining Entitlements for a Specific Set of Resources
+
+You can also use the entitlements endpoint to obtain a user's entitlements for a set of one or more resources. For example, using curl:
+
+```bash
+curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ${access_token}" -d '{
+    "permissions" : [
+        {
+            "resource_set_name" : "Alice Bank Account"
+        }
+    ]
+}' "http://${host}:${port}/auth/realms/${realm_name}/authz/entitlement/{client_id}"
+```
+
+As a result, the server response is:
+
+```json
+{
+  "rpt": ${RPT}
+}
+```
+
+Unlike the GET version, the server responds with an RPT holding the permissions granted during the evaluation of the permissions and authorization policies
+associated with the resources being requested.
+
+You can also specify the scopes you want to access. For example, using curl:
+
+```bash
+curl -X POST -H "Authorization: Bearer ${access_token}" -d '{
+    "permissions" : [
+        {
+            "resource_set_name" : "Alice Bank Account",
+            "scopes" : [
+                "withdraw"
+            ]
+        }
+    ]
+}' "http://${host}:${port}/auth/realms/${realm_name}/authz/entitlement/{client_id}"
+```

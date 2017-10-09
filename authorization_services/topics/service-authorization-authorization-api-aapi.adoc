@@ -1,0 +1,32 @@
+[[_service_authorization_api_aapi]]
+= Requesting Authorization Data and Token
+
+Client applications using the UMA protocol can use a specific endpoint to obtain a special security token called a <<_service_rpt_overview, Requesting Party Token (RPT)>>.
+This token consists of all the permissions granted to a user as a result of the evaluation of the permissions and authorization policies associated with the resources being requested.
+With an RPT, client applications can gain access to protected resources at the resource server.
+
+.UMA compliant Authorization API Endpoint
+```bash
+http://${host}:${port}/auth/realms/${realm_name}/authz/authorize
+```
+
+When requesting an RPT, you need to provide two things:
+
+* A <<_service_protection_permission_api_papi, permission ticket>> representing the resources you want to access
+* The <<_service_authorization_aat, Authorization API token (AAT)>> (as a bearer token) representing a user's identity and his consent to access authorization data on his behalf.
+
+The permission ticket is added to an HTTP request as a parameter whether the AAT is included in a ```Authorization``` header in order to authenticate the request
+using the AAT as a bearer token.
+
+```bash
+curl -X POST
+    -H "Authorization: Bearer ${AAT}" -d '{
+    "ticket" : ${PERMISSION_TICKET}
+}' "http://localhost:8080/auth/realms/hello-world-authz/authz/authorize"
+```
+
+As a result, the server response is:
+
+```json
+{"rpt":"${RPT}"}
+```

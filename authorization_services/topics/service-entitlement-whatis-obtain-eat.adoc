@@ -1,0 +1,36 @@
+[[_service_entitlement_whatis_obtain_eat]]
+= Entitlement API Tokens
+
+An entitlement API token (EAT) is a special OAuth2 access token with the scope *kc_entitlement*.
+
+Client applications can obtain an EAT from {project_name} like any other OAuth2 access token. Usually, client applications obtain EATs after the user is successfully
+authenticated in {project_name}. By default the _authorizaton_code_ grant type is used to authenticate a user and issue an OAuth2 access token to the client application acting on the user's behalf.
+
+For demonstration purposes, the example below uses Resource Owner Password Credentials Grant Type to request an EAT:
+
+```bash
+curl -X POST \
+    -H "Authorization: Basic aGVsbG8td29ybGQtYXV0aHotc2VydmljZTpwYXNzd29yZA==" \
+    -H "Content-Type: application/x-www-form-urlencoded" \
+    -d 'username=${username}&password=${user_password}&grant_type=password' \
+    "http://localhost:8080/auth/realms/${realm_name}/protocol/openid-connect/token"
+```
+
+As a result, the server response is:
+
+```json
+{
+  "access_token": ${EAT},
+  "expires_in": 300,
+  "refresh_expires_in": 1800,
+  "refresh_token": ${refresh_token},
+  "token_type": "bearer",
+  "id_token": ${id_token},
+  "not-before-policy": 0,
+  "session_state": "3cad2afc-855b-47b7-8e4d-a21c66e312fb"
+}
+```
+
+=== About the kc_entitlement scope
+
+The *kc_entitlement* scope can be created like any other _realm role_, or as a _client role_. Once created, grant this role to the users of your realm.

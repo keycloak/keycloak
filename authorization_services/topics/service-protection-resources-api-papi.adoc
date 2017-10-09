@@ -1,0 +1,19 @@
+[[_service_protection_resources_api]]
+= Managing Resources
+
+Resource servers can manage their resources remotely using a UMA-compliant endpoint.
+
+```bash
+http://${host}:${port}/auth/realms/${realm_name}/authz/protection/resource_set
+```
+
+This endpoint provides registration operations outlined as follows (entire path omitted for clarity):
+
+* Create resource set description: POST /resource_set
+* Read resource set description: GET /resource_set/{_id}
+* Update resource set description: PUT /resource_set/{_id}
+* Delete resource set description: DELETE /resource_set/{_id}
+* List resource set descriptions: GET /resource_set
+* List resource set descriptions using a filter: GET /resource_set?filter=${filter}
+
+For more information about the contract for each of these operations, see https://docs.kantarainitiative.org/uma/rec-oauth-resource-reg-v1_0_1.html[UMA Resource Set Registration].

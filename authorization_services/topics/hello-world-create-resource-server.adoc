@@ -1,0 +1,28 @@
+[[_getting_started_hello_world_enabling_authz_services]]
+= Enabling Authorization Services
+
+You can enable authorization services in an existing client application configured to use the OpenID Connect Protocol. You can also create a new client.
+
+To create a new client, complete the following steps:
+
+. Click *Clients* to start creating a new client application and fill in the *Client ID*, *Client Protocol*, and *Root URL* fields.
++
+.Create Client Application
+image:{project_images}/getting-started/hello-world/create-client.png[alt="Create Client Application"]
+
+. Click *Save*. The Client Details page is displayed.
++
+.Client Details
+image:{project_images}/getting-started/hello-world/enable-authz.png[alt="Client Details"]
+
+. On the Client Details page, click the *Authorization Enabled* switch to *ON*, and then click *Save*.
+A new *Authorization* tab is displayed for the client.
+
+. Click the *Authorization* tab and an Authorization Settings page similar to the following is displayed:
++
+.Authorization Settings
+image:{project_images}/getting-started/hello-world/authz-settings.png[alt="Authorization Settings"]
+
+When you enable authorization services for a client application, {project_name} automatically creates several <<_resource_server_default_config, default settings>> for your client authorization configuration.
+
+For more information about authorization configuration, see <<_resource_server_enable_authorization, Enabling Authorization Services>>.

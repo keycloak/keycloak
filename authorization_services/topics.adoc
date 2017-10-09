@@ -1,110 +1,112 @@
-include::topics/overview/overview.adoc[]
+include::topics/auth-services-overview.adoc[leveloffset=+1]
 
-include::topics/overview/architecture.adoc[]
+include::topics/auth-services-architecture.adoc[leveloffset=+2]
 
-include::topics/overview/terminology.adoc[]
+include::topics/auth-services-terminology.adoc[leveloffset=+2]
 
-include::topics/getting-started/overview.adoc[]
+include::topics/getting-started-overview.adoc[leveloffset=+1]
 
-include::topics/getting-started/hello-world/overview.adoc[]
+include::topics/hello-world-overview.adoc[leveloffset=+2]
 
-include::topics/getting-started/hello-world/create-realm.adoc[]
+include::topics/hello-world-create-realm.adoc[leveloffset=+2]
 
-include::topics/getting-started/hello-world/create-resource-server.adoc[]
+include::topics/hello-world-create-resource-server.adoc[leveloffset=+2]
 
-include::topics/getting-started/hello-world/deploy.adoc[]
+include::topics/hello-world-deploy.adoc[leveloffset=+2]
 ifeval::[{project_community}==true]
-include::topics/example/overview.adoc[]
+include::topics/example-overview.adoc[leveloffset=+2]
 endif::[]
 
-include::topics/resource-server/overview.adoc[]
+include::topics/resource-server-overview.adoc[leveloffset=+1]
 
-include::topics/resource-server/create-client.adoc[]
+include::topics/resource-server-create-client.adoc[leveloffset=+2]
 
-include::topics/resource-server/enable-authorization.adoc[]
+include::topics/resource-server-enable-authorization.adoc[leveloffset=+2]
 
-include::topics/resource-server/default-config.adoc[]
+include::topics/resource-server-default-config.adoc[leveloffset=+2]
 
-include::topics/resource-server/import-config.adoc[]
+include::topics/resource-server-import-config.adoc[leveloffset=+2]
 
-include::topics/resource/overview.adoc[]
+include::topics/resource-overview.adoc[leveloffset=+1]
 
-include::topics/resource/view.adoc[]
+include::topics/resource-view.adoc[leveloffset=+2]
 
-include::topics/resource/create.adoc[]
+include::topics/resource-create.adoc[leveloffset=+2]
 
-include::topics/policy/overview.adoc[]
+include::topics/policy-overview.adoc[leveloffset=+1]
 
-include::topics/policy/user-policy.adoc[]
+include::topics/policy-user-policy.adoc[leveloffset=+2]
 
-include::topics/policy/role-policy.adoc[]
+include::topics/policy-role-policy.adoc[leveloffset=+2]
 
-include::topics/policy/role-policy-required-role.adoc[]
+include::topics/policy-role-policy-required-role.adoc[leveloffset=+3]
 
-include::topics/policy/js-policy.adoc[]
+include::topics/policy-js-policy.adoc[leveloffset=+2]
 
-include::topics/policy/drools-policy.adoc[]
+include::topics/policy-drools-policy.adoc[leveloffset=+2]
 
-include::topics/policy/time-policy.adoc[]
+include::topics/policy-time-policy.adoc[leveloffset=+2]
 
-include::topics/policy/aggregated-policy.adoc[]
+include::topics/policy-aggregated-policy.adoc[leveloffset=+2]
 
-include::topics/policy/client-policy.adoc[]
+include::topics/policy-client-policy.adoc[leveloffset=+2]
 
-include::topics/policy/group-policy.adoc[]
+include::topics/policy-group-policy.adoc[leveloffset=+2]
 
-include::topics/policy/group-policy-extend-children.adoc[]
+include::topics/policy-group-policy-extend-children.adoc[leveloffset=+3]
 
-include::topics/policy/logic.adoc[]
+include::topics/policy-logic.adoc[leveloffset=+2]
 
-include::topics/policy/evaluation-api.adoc[]
+include::topics/policy-evaluation-api.adoc[leveloffset=+2]
 
-include::topics/permission/overview.adoc[]
+include::topics/permission-overview.adoc[leveloffset=+1]
 
-include::topics/permission/create-resource.adoc[]
+include::topics/permission-create-resource.adoc[leveloffset=+2]
 
-include::topics/permission/typed-resource-permission.adoc[]
+include::topics/permission-typed-resource-permission.adoc[leveloffset=+3]
 
-include::topics/permission/create-scope.adoc[]
+include::topics/permission-create-scope.adoc[leveloffset=+2]
 
-include::topics/permission/decision-strategy.adoc[]
+include::topics/permission-decision-strategy.adoc[leveloffset=+2]
 
-include::topics/policy-evaluation-tool/overview.adoc[]
+include::topics/policy-evaluation-tool-overview.adoc[leveloffset=+1]
 
-include::topics/service/overview.adoc[]
+include::topics/service-overview.adoc[leveloffset=+1]
 
-include::topics/service/protection/protection-api.adoc[]
+include::topics/service-protection-protection-api.adoc[leveloffset=+2]
 
-include::topics/service/protection/whatis-obtain-pat.adoc[]
+include::topics/service-protection-whatis-obtain-pat.adoc[leveloffset=+3]
 
-include::topics/service/protection/resources-api-papi.adoc[]
+include::topics/service-protection-resources-api-papi.adoc[leveloffset=+3]
 
-include::topics/service/protection/permission-api-papi.adoc[]
+include::topics/service-protection-permission-api-papi.adoc[leveloffset=+3]
 
-include::topics/service/authorization/authorization-api.adoc[]
+include::topics/service-authorization-authorization-api.adoc[leveloffset=+2]
 
-include::topics/service/authorization/whatis-obtain-aat.adoc[]
+include::topics/service-authorization-whatis-obtain-aat.adoc[leveloffset=+3]
 
-include::topics/service/authorization/authorization-api-aapi.adoc[]
+include::topics/service-authorization-authorization-api-aapi.adoc[leveloffset=+3]
 
-include::topics/service/entitlement/entitlement-api.adoc[]
+include::topics/service-entitlement-entitlement-api.adoc[leveloffset=+2]
 
-include::topics/service/entitlement/entitlement-api-aapi.adoc[]
-include::topics/service/entitlement/entitlement-request-metadata.adoc[]
+include::topics/service-entitlement-entitlement-api-aapi.adoc[leveloffset=+3]
 
-include::topics/service/rpt/overview.adoc[]
-include::topics/service/rpt/token-introspection.adoc[]
+include::topics/service-entitlement-entitlement-request-metadata.adoc[leveloffset=+3]
 
-include::topics/service/client-api.adoc[]
+include::topics/service-rpt-overview.adoc[leveloffset=+2]
 
-include::topics/enforcer/overview.adoc[]
+include::topics/service-rpt-token-introspection.adoc[leveloffset=+3]
 
-include::topics/enforcer/keycloak-enforcement-filter.adoc[]
+include::topics/service-client-api.adoc[leveloffset=+2]
 
-include::topics/enforcer/keycloak-enforcement-bearer.adoc[]
+include::topics/enforcer-overview.adoc[leveloffset=+1]
 
-include::topics/enforcer/authorization-context.adoc[]
+include::topics/enforcer-keycloak-enforcement-filter.adoc[leveloffset=+2]
 
-include::topics/enforcer/js-adapter.adoc[]
+include::topics/enforcer-keycloak-enforcement-bearer.adoc[leveloffset=+3]
 
-include::topics/enforcer/https.adoc[]
+include::topics/enforcer-authorization-context.adoc[leveloffset=+3]
+
+include::topics/enforcer-js-adapter.adoc[leveloffset=+3]
+
+include::topics/enforcer-https.adoc[leveloffset=+3]

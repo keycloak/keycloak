@@ -1,0 +1,63 @@
+[[_service_entitlement_request_metadata]]
+= Entitlement Request Metadata
+
+When requesting entitlements client applications are allowed to associate metadata information to the request and define how
+they expect to obtain the permissions.
+
+```bash
+curl -X POST -H "Authorization: Bearer ${access_token}" -d '{
+    "metadata" : {
+        "include_resource_name" : false
+    },
+    "permissions" : [
+        ...
+    ]
+}' "http://${host}:${port}/auth/realms/${realm_name}/authz/entitlement/{client_id}"
+```
+
+[NOTE]
+The Entitlement API endpoint only allows passing metadata along an entitlement request when using HTTP POST.
+
+The following sections will explain how and when you can use the different information you can include in an entitlement request as a metadata.
+
+= Decide whether or not resource's name should be included the response
+
+.include_resource_name
+```bash
+curl -X POST -H "Authorization: Bearer ${access_token}" -d '{
+    "metadata" : {
+        "include_resource_name" : false
+    },
+    "permissions" : [
+        ...
+    ]
+}' "http://${host}:${port}/auth/realms/${realm_name}/authz/entitlement/{client_id}"
+```
+Clients can use ```include_resource_name``` to decide whether or not resource`s name should be included on each permission granted by the server. This option
+can be used to reduce the size of RPTs and optimize client-server communication.
+
+By default, permissions in a RPT contain both the id and name of the resource that was granted by every single permission. This option is specially useful
+when the resource server is capable of map their resources only based on the resource`s id.
+
+= Limiting the number of permissions within a RPT
+
+.limit
+```bash
+curl -X POST -H "Authorization: Bearer ${access_token}" -d '{
+    "metadata" : {
+        "limit" : 10
+    },
+    "permissions" : [
+        ...
+    ]
+}' "http://${host}:${port}/auth/realms/${realm_name}/authz/entitlement/{client_id}"
+```
+Clients can use ```limit``` to specify how many permissions they expected within a RPT returned by the server. The limit option works as follows:
+
+* If a request is sent *without* a previously issued RPT, only ```limit``` permissions will be returned based on the resources/scopes from the ```permissions``` claim.
+* If a request is sent *with* a previously issued RPT, the permissions associated with the resources/scopes from the ```permissions``` claim take precedence where the permissions
+from the previously issued RPT are only included if ```limit``` is not reached. In case there is enough room for permissions from a previously issued RPT, the server
+will include the first permissions defined there.
+
+This option allows clients to control the size of RPTs and keep only last permissions granted by the server. It usually makes sense only in cases your client
+is capable of sending previously issued RPTs while asking for new permissions (a.k.a.: incremental authorization).

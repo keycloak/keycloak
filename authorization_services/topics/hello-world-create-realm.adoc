@@ -1,0 +1,34 @@
+[[_getting_started_hello_world_create_realm]]
+= Creating a Realm and a User
+
+The first step is to create a realm and a user in that realm. The realm consists of:
+
+* A single user
+
+* A single client application, which then becomes a <<_overview_terminology, resource server>> for which you need to enable authorization services.
+
+To create a realm and a user complete the following steps:
+
+. Create a realm with a name *hello-world-authz*. Once created, a page similar to the following is displayed:
++
+.Realm hello-world-authz
+image:{project_images}/getting-started/hello-world/create-realm.png[alt="Realm hello-world-authz"]
+
+. Create a user for your newly created realm. Click *Users*. The user list page opens.
+
+. On the right side of the empty user list, click *Add User*.
+
+. To create a new user, complete the *Username*, *Email*, *First Name*, and *Last Name* fields.
+Click the *User Enabled* switch to *On*, and then click *Save*.
++
+.Add User
+image:{project_images}/getting-started/hello-world/create-user.png[alt="Add User"]
+
+. Set a password for the user by clicking the *Credentials* tab.
++
+.Set User Password
+image:{project_images}/getting-started/hello-world/reset-user-pwd.png[alt="Set User Password"]
+
+. Complete the *New Password* and *Password Confirmation* fields with a password and click the *Temporary* switch to *OFF*.
+
+. Click *Reset Password* to set the user's password.
