@@ -97,7 +97,7 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory 
                     String myAddress = InfinispanUtil.getMyAddress(session);
                     String mySite = InfinispanUtil.getMySite(session);
 
-                    notificationsManager = InfinispanNotificationsManager.create(workCache, myAddress, mySite, remoteStores);
+                    notificationsManager = InfinispanNotificationsManager.create(session, workCache, myAddress, mySite, remoteStores);
                 }
             }
         }

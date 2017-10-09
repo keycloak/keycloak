@@ -413,6 +413,14 @@
                 <auth.servers.crossdc>true</auth.servers.crossdc>
                 <auth.server.undertow.crossdc>true</auth.server.undertow.crossdc>
                 <node.name>undertow</node.name>
+
+                <cache.server.crossdc1.jvm.debug.port>6001</cache.server.crossdc1.jvm.debug.port>
+                <cache.server.crossdc2.jvm.debug.port>6002</cache.server.crossdc2.jvm.debug.port>
+
+
+                <!-- default is "n", possible to override by e.g. -Dcache.server.crossdc1.debug.suspend=y -->
+                <cache.server.crossdc1.debug.suspend>${auth.server.debug.suspend}</cache.server.crossdc1.debug.suspend>
+                <cache.server.crossdc2.debug.suspend>${auth.server.debug.suspend}</cache.server.crossdc2.debug.suspend>
             </properties>
             <build>
                 <plugins>
@@ -442,6 +450,15 @@
                             <systemPropertyVariables>
                                 <node.name>${node.name}</node.name>
                                 <pageload.timeout>20000</pageload.timeout>
+
+                                <!-- TODO Same props config is duplicated for undertow. Use separate profile? -->
+                                <cache.server.crossdc1.jvm.debug.args>
+                                    -agentlib:jdwp=transport=dt_socket,server=y,suspend=${cache.server.crossdc1.debug.suspend},address=localhost:${cache.server.crossdc1.jvm.debug.port}
+                                </cache.server.crossdc1.jvm.debug.args>
+                                <cache.server.crossdc2.jvm.debug.args>
+                                    -agentlib:jdwp=transport=dt_socket,server=y,suspend=${cache.server.crossdc2.debug.suspend},address=localhost:${cache.server.crossdc2.jvm.debug.port}
+                                </cache.server.crossdc2.jvm.debug.args>
+
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>
@@ -464,12 +481,16 @@
                 <!-- property specifies keycloak-add-user.json file destination -->
                 <auth.server.config.dir>${auth.server.crossdc01.home}/standalone/configuration</auth.server.config.dir>
 
+                <cache.server.crossdc1.jvm.debug.port>6001</cache.server.crossdc1.jvm.debug.port>
+                <cache.server.crossdc2.jvm.debug.port>6002</cache.server.crossdc2.jvm.debug.port>
                 <auth.server.crossdc01.jvm.debug.port>5001</auth.server.crossdc01.jvm.debug.port>
                 <auth.server.crossdc02.jvm.debug.port>5002</auth.server.crossdc02.jvm.debug.port>
                 <auth.server.crossdc11.jvm.debug.port>5011</auth.server.crossdc11.jvm.debug.port>
                 <auth.server.crossdc12.jvm.debug.port>5012</auth.server.crossdc12.jvm.debug.port>
 
                 <!-- default is "n", possible to override by e.g. -Dauth.server.crossdc01.debug.suspend=y -->
+                <cache.server.crossdc1.debug.suspend>${auth.server.debug.suspend}</cache.server.crossdc1.debug.suspend>
+                <cache.server.crossdc2.debug.suspend>${auth.server.debug.suspend}</cache.server.crossdc2.debug.suspend>
                 <auth.server.crossdc01.debug.suspend>${auth.server.debug.suspend}</auth.server.crossdc01.debug.suspend>
                 <auth.server.crossdc02.debug.suspend>${auth.server.debug.suspend}</auth.server.crossdc02.debug.suspend>
                 <auth.server.crossdc11.debug.suspend>${auth.server.debug.suspend}</auth.server.crossdc11.debug.suspend>
@@ -562,6 +583,14 @@
                                 <auth.server.crossdc02.management.port>10012</auth.server.crossdc02.management.port>
                                 <auth.server.crossdc11.management.port>10021</auth.server.crossdc11.management.port>
                                 <auth.server.crossdc12.management.port>10022</auth.server.crossdc12.management.port>
+
+                                <!-- TODO Same props config is duplicated for undertow. Use separate profile? -->
+                                <cache.server.crossdc1.jvm.debug.args>
+                                    -agentlib:jdwp=transport=dt_socket,server=y,suspend=${cache.server.crossdc1.debug.suspend},address=localhost:${cache.server.crossdc1.jvm.debug.port}
+                                </cache.server.crossdc1.jvm.debug.args>
+                                <cache.server.crossdc2.jvm.debug.args>
+                                    -agentlib:jdwp=transport=dt_socket,server=y,suspend=${cache.server.crossdc2.debug.suspend},address=localhost:${cache.server.crossdc2.jvm.debug.port}
+                                </cache.server.crossdc2.jvm.debug.args>
 
                                 <auth.server.crossdc01.jvm.debug.args>
                                     -agentlib:jdwp=transport=dt_socket,server=y,suspend=${auth.server.crossdc01.debug.suspend},address=localhost:${auth.server.crossdc01.jvm.debug.port}

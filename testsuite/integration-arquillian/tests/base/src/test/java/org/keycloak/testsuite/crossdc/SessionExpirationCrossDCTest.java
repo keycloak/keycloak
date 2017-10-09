@@ -20,6 +20,7 @@ package org.keycloak.testsuite.crossdc;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.ws.rs.NotFoundException;
 
@@ -369,14 +370,23 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
         // Logout user
         ApiUtil.findUserByUsernameId(getAdminClient().realm(REALM_NAME), "login-test").logout();
 
+        // Another increase after notBefore set
+        setTimeOffset(10);
+
         // Assert it's not possible to refresh sessions. Works because user.notBefore
-        int i = 0;
-        for (OAuthClient.AccessTokenResponse response : responses) {
-            i++;
-            OAuthClient.AccessTokenResponse refreshTokenResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
-            Assert.assertNull("Failed in iteration " + i, refreshTokenResponse.getRefreshToken());
-            Assert.assertNotNull("Failed in iteration " + i, refreshTokenResponse.getError());
-        }
+        AtomicInteger i = new AtomicInteger(0);
+        Retry.execute(() -> {
+            i.incrementAndGet();
+            int j = 0;
+            for (OAuthClient.AccessTokenResponse response : responses) {
+                j++;
+                OAuthClient.AccessTokenResponse refreshTokenResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+                Assert.assertNull("Failed in iteration " + j, refreshTokenResponse.getRefreshToken());
+                Assert.assertNotNull("Failed in iteration " + j, refreshTokenResponse.getError());
+            }
+
+            log.infof("Passed the testLogoutUserWithFailover in the iteration: %d", i.get());
+        }, 50, 50);
     }
 
 
