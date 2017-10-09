@@ -42,7 +42,6 @@ import org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.sessions.infinispan.remotestore.KeycloakRemoteStoreConfigurationBuilder;
-import org.keycloak.models.sessions.infinispan.remotestore.KeycloakTcpTransportFactory;
 
 import javax.naming.InitialContext;
 
@@ -367,10 +366,9 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                     .rawValues(true)
                     .forceReturnValues(false)
                     .marshaller(KeycloakHotRodMarshallerFactory.class.getName())
-                    .transportFactory(KeycloakTcpTransportFactory.class.getName())
-//                    .addServer()
-//                        .host(jdgServer)
-//                        .port(jdgPort)
+                    .addServer()
+                        .host(jdgServer)
+                        .port(jdgPort)
 //                  .connectionPool()
 //                      .maxActive(100)
 //                      .exhaustedAction(ExhaustedAction.CREATE_NEW)
@@ -397,10 +395,9 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                     .rawValues(true)
                     .forceReturnValues(false)
                     .marshaller(KeycloakHotRodMarshallerFactory.class.getName())
-                    .transportFactory(KeycloakTcpTransportFactory.class.getName())
-//                    .addServer()
-//                        .host(jdgServer)
-//                        .port(jdgPort)
+                    .addServer()
+                        .host(jdgServer)
+                        .port(jdgPort)
                     .async()
                         .enabled(async);
 
