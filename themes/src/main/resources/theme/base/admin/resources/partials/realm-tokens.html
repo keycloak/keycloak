@@ -188,6 +188,32 @@
         </div>
 
         <div class="form-group">
+            <label class="col-md-2 control-label" for="actionTokenAttributeSelect" class="two-lines">
+                {{:: 'action-token-generated-by-user.operation' | translate }} </label>
+            <div class="form-inline col-md-6 time-selector">
+                <select class="form-control" name="actionTokenAttributeSelect" id="actionTokenAttributeSelect"
+                        ng-model="actionLifespanId">
+                    <option value="" disabled selected>{{:: 'select-one.placeholder' | translate}}</option>
+                    <option ng-repeat="(actionTokenId, value) in actionTokenProviders" value="{{actionTokenId}}">
+                        {{:: 'action-token-generated-by-user.' + actionTokenId | translate }}
+                    </option>
+                </select>
+                <input class="form-control" type="number" min="1" max="31536000" data-ng-model="actionTokenAttribute.time"
+                       id="actionTokenAttributeTime" name="actionTokenAttributeTime">
+                <select class="form-control" name="actionTokenAttributeUnit"
+                        data-ng-model="actionTokenAttribute.unit">
+                    <option value="Minutes" ng-selected="true">{{:: 'minutes' | translate}}</option>
+                    <option value="Hours">{{:: 'hours' | translate}}</option>
+                    <option value="Days">{{:: 'days' | translate}}</option>
+                </select>
+                <button data-ng-click="resetToDefaultToken(actionTokenId)">{{:: 'action-token-generated-by-user.reset' | translate}}</button>
+            </div>
+            <kc-tooltip>
+                {{:: 'action-token-generated-by-user.tooltip' | translate}}
+            </kc-tooltip>
+        </div>
+
+        <div class="form-group">
             <div class="col-md-10 col-md-offset-2" data-ng-show="access.manageRealm">
                 <button kc-save data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
                 <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>

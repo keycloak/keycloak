@@ -455,6 +455,12 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public Map<String, Integer> getUserActionTokenLifespans() {
+        if (isUpdated()) return updated.getUserActionTokenLifespans();
+        return cached.getUserActionTokenLifespans();
+    }
+
+    @Override
     public int getAccessCodeLifespanLogin() {
         if (isUpdated()) return updated.getAccessCodeLifespanLogin();
         return cached.getAccessCodeLifespanLogin();
@@ -488,6 +494,20 @@ public class RealmAdapter implements CachedRealmModel {
     public void setActionTokenGeneratedByUserLifespan(int seconds) {
         getDelegateForUpdate();
         updated.setActionTokenGeneratedByUserLifespan(seconds);
+    }
+
+    @Override
+    public int getActionTokenGeneratedByUserLifespan(String actionTokenId) {
+        if (isUpdated()) return updated.getActionTokenGeneratedByUserLifespan(actionTokenId);
+        return cached.getActionTokenGeneratedByUserLifespan(actionTokenId);
+    }
+
+    @Override
+    public void setActionTokenGeneratedByUserLifespan(String actionTokenId, Integer seconds) {
+        if (seconds != null) {
+            getDelegateForUpdate();
+            updated.setActionTokenGeneratedByUserLifespan(actionTokenId, seconds);
+        }
     }
 
     @Override

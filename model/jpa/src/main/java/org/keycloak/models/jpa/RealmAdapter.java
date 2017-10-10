@@ -474,6 +474,19 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
+    public Map<String, Integer> getUserActionTokenLifespans() {
+
+        Map<String, Integer> userActionTokens = new HashMap<>();
+
+        getAttributes().entrySet().stream()
+                .filter(Objects::nonNull)
+                .filter(entry -> entry.getKey().startsWith(RealmAttributes.ACTION_TOKEN_GENERATED_BY_USER_LIFESPAN + "."))
+                .forEach(entry -> userActionTokens.put(entry.getKey().substring(RealmAttributes.ACTION_TOKEN_GENERATED_BY_USER_LIFESPAN.length() + 1), Integer.valueOf(entry.getValue())));
+
+        return Collections.unmodifiableMap(userActionTokens);
+    }
+
+    @Override
     public int getAccessCodeLifespanLogin() {
         return realm.getAccessCodeLifespanLogin();
     }
@@ -502,6 +515,17 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     @Override
     public void setActionTokenGeneratedByUserLifespan(int actionTokenGeneratedByUserLifespan) {
         setAttribute(RealmAttributes.ACTION_TOKEN_GENERATED_BY_USER_LIFESPAN, actionTokenGeneratedByUserLifespan);
+    }
+
+    @Override
+    public int getActionTokenGeneratedByUserLifespan(String actionTokenId) {
+        return getAttribute(RealmAttributes.ACTION_TOKEN_GENERATED_BY_USER_LIFESPAN + "." + actionTokenId, getAccessCodeLifespanUserAction());
+    }
+
+    @Override
+    public void setActionTokenGeneratedByUserLifespan(String actionTokenId, Integer actionTokenGeneratedByUserLifespan) {
+        if (actionTokenGeneratedByUserLifespan != null)
+            setAttribute(RealmAttributes.ACTION_TOKEN_GENERATED_BY_USER_LIFESPAN + "." + actionTokenId, actionTokenGeneratedByUserLifespan);
     }
 
     protected RequiredCredentialModel initRequiredCredentialModel(String type) {
@@ -647,7 +671,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
             entities.remove(entity);
         }
         em.flush();
-     }
+    }
 
     @Override
     public List<GroupModel> getDefaultGroups() {
@@ -1802,7 +1826,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     /**
      * This just exists for testing purposes
-     *
+     * 
      */
     public static final String COMPONENT_PROVIDER_EXISTS_DISABLED = "component.provider.exists.disabled";
 
@@ -1954,4 +1978,5 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         if (c == null) return null;
         return entityToModel(c);
     }
+
 }

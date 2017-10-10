@@ -195,6 +195,9 @@ module.config([ '$routeProvider', function($routeProvider) {
         .when('/realms/:realm/token-settings', {
             templateUrl : resourceUrl + '/partials/realm-tokens.html',
             resolve : {
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                },
                 realm : function(RealmLoader) {
                     return RealmLoader();
                 }

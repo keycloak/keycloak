@@ -143,6 +143,8 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     protected Map<String, String> attributes;
 
+    private Map<String, Integer> userActionTokenLifespans;
+
     public CachedRealm(Long revision, RealmModel model) {
         super(revision, model.getId());
         name = model.getName();
@@ -192,6 +194,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         emailTheme = model.getEmailTheme();
 
         requiredCredentials = model.getRequiredCredentials();
+        userActionTokenLifespans = Collections.unmodifiableMap(new HashMap<>(model.getUserActionTokenLifespans()));
 
         this.identityProviders = new ArrayList<>();
 
@@ -407,6 +410,11 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     public int getAccessCodeLifespanUserAction() {
         return accessCodeLifespanUserAction;
     }
+
+    public Map<String, Integer> getUserActionTokenLifespans() {
+        return userActionTokenLifespans;
+    }
+
     public int getAccessCodeLifespanLogin() {
         return accessCodeLifespanLogin;
     }
@@ -417,6 +425,18 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public int getActionTokenGeneratedByUserLifespan() {
         return actionTokenGeneratedByUserLifespan;
+    }
+
+    /**
+     * This method is supposed to return user lifespan based on the action token ID
+     * provided. If nothing is provided, it will return the default lifespan.
+     * @param actionTokenId
+     * @return lifespan
+     */
+    public int getActionTokenGeneratedByUserLifespan(String actionTokenId) {
+        if (actionTokenId == null || this.userActionTokenLifespans.get(actionTokenId) == null)
+            return getActionTokenGeneratedByUserLifespan();
+        return this.userActionTokenLifespans.get(actionTokenId);
     }
 
     public List<RequiredCredentialModel> getRequiredCredentials() {
@@ -609,5 +629,4 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     public Map<String, String> getAttributes() {
         return attributes;
     }
-
 }
