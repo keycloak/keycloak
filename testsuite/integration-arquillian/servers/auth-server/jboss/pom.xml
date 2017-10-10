@@ -191,6 +191,7 @@
                                             <dir>${auth.server.home}/standalone/configuration</dir>
                                             <includes>
                                                 <include>standalone.xml</include>
+                                                <include>standalone-ha.xml</include>
                                             </includes>
                                             <stylesheet>${common.resources}/keycloak-server-subsystem.xsl</stylesheet>
                                             <outputDir>${auth.server.home}/standalone/configuration</outputDir>
@@ -575,6 +576,120 @@
                 </pluginManagement>
             </build>
         </profile>
+        
+        <profile>
+            <id>auth-servers-crossdc-jboss</id>
+            <properties>
+                <crossdc.jboss.jdbc.url>jdbc:h2:tcp://localhost:9092/mem:keycloak-dc-shared;DB_CLOSE_DELAY=-1</crossdc.jboss.jdbc.url>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
+                    </plugin>
+                </plugins>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <artifactId>maven-enforcer-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>enforce-profile-activation</id>
+                                    <goals>
+                                        <goal>enforce</goal>
+                                    </goals>
+                                    <configuration>
+                                        <rules>
+                                            <requireProperty>
+                                                <property>auth.server.jboss</property>
+                                                <message>Profile "auth-servers-crossdc-jboss" requires activation of another profile: either "auth-server-wildfly" or "auth-server-eap".</message>
+                                                <regex>(wildfly|eap)</regex>
+                                            </requireProperty>
+                                        </rules>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.codehaus.mojo</groupId>
+                            <artifactId>xml-maven-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>jpa-h2-tcp</id>
+                                    <phase>process-resources</phase>
+                                    <goals>
+                                        <goal>transform</goal>
+                                    </goals>
+                                    <configuration>
+                                        <skip>${skip.h2.tcp}</skip>
+                                        <transformationSets>
+                                            <transformationSet>
+                                                <dir>${auth.server.home}/standalone/configuration</dir>
+                                                <includes>
+                                                    <include>standalone-ha.xml</include>
+                                                </includes>
+                                                <stylesheet>${common.resources}/datasource-jdbc-url.xsl</stylesheet>
+                                                <outputDir>${auth.server.home}/standalone/configuration</outputDir>
+                                                <parameters>
+                                                    <parameter>
+                                                        <name>pool.name</name>
+                                                        <value>KeycloakDS</value>
+                                                    </parameter>
+                                                    <parameter>
+                                                        <name>jdbc.url</name>
+                                                        <value>${crossdc.jboss.jdbc.url}</value>
+                                                    </parameter>
+                                                </parameters>
+                                            </transformationSet>
+                                        </transformationSets>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.codehaus.mojo</groupId>
+                            <artifactId>exec-maven-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>crossdc-setup</id>
+                                    <phase>process-resources</phase>
+                                    <goals>
+                                        <goal>exec</goal>
+                                    </goals>
+                                    <configuration>
+                                        <executable>${auth.server.home}/bin/jboss-cli.sh</executable>
+                                        <arguments>
+                                            <argument>--file=${common.resources}/crossdc/cross-dc-setup.cli</argument>
+                                        </arguments>
+                                    </configuration>
+                                </execution>
+                                <execution>
+                                    <id>remove-temp-data-crossdc-setup</id>
+                                    <phase>process-resources</phase>
+                                    <goals>
+                                        <goal>exec</goal>
+                                    </goals>
+                                    <configuration>
+                                        <workingDirectory>${auth.server.home}/standalone/</workingDirectory>
+                                        <executable>rm</executable>
+                                        <arguments>
+                                            <argument>-rf</argument>
+                                            <argument>data</argument>
+                                            <argument>log</argument>
+                                            <argument>tmp</argument>
+                                        </arguments>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+        
         <profile>
             <id>auth-server-cluster</id>
             <properties>

@@ -446,39 +446,64 @@ and argument: `-p 8181`
 
 ## Cross-DC tests
 
-Cross-DC tests use 2 data centers, each with one automatically started and one manually controlled backend servers
-(currently only Keycloak on Undertow), and 1 frontend loadbalancer server node that sits in front of all servers.
+Cross-DC tests use 2 data centers, each with one automatically started and one manually controlled backend servers, 
+and 1 frontend loadbalancer server node that sits in front of all servers.
 The browser usually communicates directly with the frontent node and the test controls where the HTTP requests
 land by adjusting load balancer configuration (e.g. to direct the traffic to only a single DC).
 
 For an example of a test, see [org.keycloak.testsuite.crossdc.ActionTokenCrossDCTest](tests/base/src/test/java/org/keycloak/testsuite/crossdc/ActionTokenCrossDCTest.java).
 
-The cross DC requires setting a profile specifying used cache server (currently only Infinispan) by specifying
-`cache-server-infinispan` profile in maven.
+The cross DC requires setting a profile specifying used cache server by specifying
+`cache-server-infinispan` or `cache-server-jdg` profile in maven.
 
 #### Run Cross-DC Tests from Maven
 
-First compile the Infinispan/JDG test server via the following command:
+a) First compile the Infinispan/JDG test server via the following command:
 
-  `mvn -Pcache-server-infinispan -f testsuite/integration-arquillian -DskipTests clean install`
-
-or
-
-  `mvn -Pcache-server-jdg -f testsuite/integration-arquillian -DskipTests clean install`
-
-Then you can run the tests using the following command (adjust the test specification according to your needs):
-
-  `mvn -Pcache-server-infinispan -Dtest=*.crossdc.* -pl testsuite/integration-arquillian/tests/base test`
+  `mvn -Pcache-server-infinispan,auth-servers-crossdc-undertow -f testsuite/integration-arquillian -DskipTests clean install`
 
 or
 
-  `mvn -Pcache-server-jdg -Dtest=*.crossdc.* -pl testsuite/integration-arquillian/tests/base test`
-  
+  `mvn -Pcache-server-jdg,auth-servers-crossdc-undertow -f testsuite/integration-arquillian -DskipTests clean install`
+
+b) Then in case you want to use **JBoss-based** Keycloak backend containers instead of containers on Embedded Undertow run following command:
+
+    `mvn -Pauth-servers-crossdc-jboss,auth-server-wildfly -f testsuite/integration-arquillian -DskipTests clean install`
+
+*note: 'auth-server-wildfly' can be replaced by 'auth-server-eap'*
+
+By default JBoss-based containers use in-memory h2 database. It can be configured to use real DB, e.g. with following command:
+
+  `mvn -Pauth-servers-crossdc-jboss,auth-server-wildfly,jpa -f testsuite/integration-arquillian -DskipTests clean install -Djdbc.mvn.groupId=org.mariadb.jdbc -Djdbc.mvn.artifactId=mariadb-java-client -Djdbc.mvn.version=2.0.3 -Dkeycloak.connectionsJpa.url=jdbc:mariadb://localhost:3306/keycloak -Dkeycloak.connectionsJpa.password=keycloak -Dkeycloak.connectionsJpa.user=keycloak`
+
+c1) Then you can run the tests using the following command (adjust the test specification according to your needs) for Keycloak backend containers on **Undertow**:
+
+  `mvn -Pcache-server-infinispan,auth-servers-crossdc-undertow -Dtest=*.crossdc.* -pl testsuite/integration-arquillian/tests/base clean install`
+
+or
+
+  `mvn -Pcache-server-jdg,auth-servers-crossdc-undertow -Dtest=*.crossdc.* -pl testsuite/integration-arquillian/tests/base clean install`
+
+c2) For **JBoss-based** Keycloak backend containers:
+
+  `mvn -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly -Dtest=*.crossdc.* -pl testsuite/integration-arquillian/tests/base clean install`
+
+or
+
+  `mvn -Pcache-server-jdg,auth-servers-crossdc-jboss,auth-server-wildfly -Dtest=*.crossdc.* -pl testsuite/integration-arquillian/tests/base clean install`
+
+*note: 'auth-server-wildfly can be replaced by auth-server-eap'*
+
+**note**
+Previous commands can be "squashed" into one. E.g.:
+
+  `mvn -f testsuite/integration-arquillian clean install -Dtest=*.crossdc.* -Djdbc.mvn.groupId=org.mariadb.jdbc -Djdbc.mvn.artifactId=mariadb-java-client -Djdbc.mvn.version=2.0.3 -Dkeycloak.connectionsJpa.url=jdbc:mariadb://localhost:3306/keycloak -Dkeycloak.connectionsJpa.password=keycloak -Dkeycloak.connectionsJpa.user=keycloak -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly,jpa clean install`
+
 It can be useful to add additional system property to enable logging:
   
     -Dkeycloak.infinispan.logging.level=debug
     
-Tests from package "manual" uses manual lifecycle for all servers, so needs to be executed manually. Also needs to be executed with real DB like MySQL. You can run them with:
+**Tests from package "manual"** uses manual lifecycle for all servers, so needs to be executed manually. Also needs to be executed with real DB like MySQL. You can run them with:
 
     mvn -Pcache-server-infinispan -Dtest=*.crossdc.manual.* -Dmanual.mode=true \
     -Dkeycloak.connectionsJpa.url.crossdc=jdbc:mysql://localhost/keycloak -Dkeycloak.connectionsJpa.driver.crossdc=com.mysql.jdbc.Driver \

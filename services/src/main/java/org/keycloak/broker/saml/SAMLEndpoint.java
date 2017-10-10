@@ -87,12 +87,10 @@ import java.util.List;
 import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
-import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
 import org.w3c.dom.Element;
 
 import java.util.*;
 import javax.xml.crypto.dsig.XMLSignature;
-import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 
 /**
@@ -194,18 +192,18 @@ public class SAMLEndpoint {
             if (!checkSsl()) {
                 event.event(EventType.LOGIN);
                 event.error(Errors.SSL_REQUIRED);
-                return ErrorPage.error(session, Messages.HTTPS_REQUIRED);
+                return ErrorPage.error(session, null, Messages.HTTPS_REQUIRED);
             }
             if (!realm.isEnabled()) {
                 event.event(EventType.LOGIN_ERROR);
                 event.error(Errors.REALM_DISABLED);
-                return ErrorPage.error(session, Messages.REALM_NOT_ENABLED);
+                return ErrorPage.error(session, null, Messages.REALM_NOT_ENABLED);
             }
 
             if (samlRequest == null && samlResponse == null) {
                 event.event(EventType.LOGIN);
                 event.error(Errors.INVALID_REQUEST);
-                return ErrorPage.error(session, Messages.INVALID_REQUEST);
+                return ErrorPage.error(session, null, Messages.INVALID_REQUEST);
 
             }
             return null;
@@ -247,7 +245,7 @@ public class SAMLEndpoint {
                 event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                 event.detail(Details.REASON, "invalid_destination");
                 event.error(Errors.INVALID_SAML_RESPONSE);
-                return ErrorPage.error(session, Messages.INVALID_REQUEST);
+                return ErrorPage.error(session, null, Messages.INVALID_REQUEST);
             }
             if (config.isValidateSignature()) {
                 try {
@@ -256,7 +254,7 @@ public class SAMLEndpoint {
                     logger.error("validation failed", e);
                     event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                     event.error(Errors.INVALID_SIGNATURE);
-                    return ErrorPage.error(session, Messages.INVALID_REQUESTER);
+                    return ErrorPage.error(session, null, Messages.INVALID_REQUESTER);
                 }
             }
 
@@ -269,7 +267,7 @@ public class SAMLEndpoint {
             } else {
                 event.event(EventType.LOGIN);
                 event.error(Errors.INVALID_TOKEN);
-                return ErrorPage.error(session, Messages.INVALID_REQUEST);
+                return ErrorPage.error(session, null, Messages.INVALID_REQUEST);
             }
         }
 
@@ -342,6 +340,7 @@ public class SAMLEndpoint {
         private String getEntityId(UriInfo uriInfo, RealmModel realm) {
             return UriBuilder.fromUri(uriInfo.getBaseUri()).path("realms").path(realm.getName()).build().toString();
         }
+        
         protected Response handleLoginResponse(String samlResponse, SAMLDocumentHolder holder, ResponseType responseType, String relayState, String clientId) {
 
             try {
@@ -360,7 +359,7 @@ public class SAMLEndpoint {
                     logger.error("The assertion is not encrypted, which is required.");
                     event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                     event.error(Errors.INVALID_SAML_RESPONSE);
-                    return ErrorPage.error(session, Messages.INVALID_REQUESTER);
+                    return ErrorPage.error(session, null, Messages.INVALID_REQUESTER);
                 }
 
                 Element assertionElement;
@@ -380,7 +379,7 @@ public class SAMLEndpoint {
                     logger.error("validation failed");
                     event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                     event.error(Errors.INVALID_SIGNATURE);
-                    return ErrorPage.error(session, Messages.INVALID_REQUESTER);
+                    return ErrorPage.error(session, null, Messages.INVALID_REQUESTER);
                 }
 
                 AssertionType assertion = responseType.getAssertions().get(0).getAssertion();
@@ -464,7 +463,7 @@ public class SAMLEndpoint {
                 event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                 event.detail(Details.REASON, "invalid_destination");
                 event.error(Errors.INVALID_SAML_RESPONSE);
-                return ErrorPage.error(session, Messages.INVALID_FEDERATED_IDENTITY_ACTION);
+                return ErrorPage.error(session, null, Messages.INVALID_FEDERATED_IDENTITY_ACTION);
             }
             if (config.isValidateSignature()) {
                 try {
@@ -473,7 +472,7 @@ public class SAMLEndpoint {
                     logger.error("validation failed", e);
                     event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                     event.error(Errors.INVALID_SIGNATURE);
-                    return ErrorPage.error(session, Messages.INVALID_FEDERATED_IDENTITY_ACTION);
+                    return ErrorPage.error(session, null, Messages.INVALID_FEDERATED_IDENTITY_ACTION);
                 }
             }
             if (statusResponse instanceof ResponseType) {
@@ -492,20 +491,20 @@ public class SAMLEndpoint {
                 logger.error("no valid user session");
                 event.event(EventType.LOGOUT);
                 event.error(Errors.USER_SESSION_NOT_FOUND);
-                return ErrorPage.error(session, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+                return ErrorPage.error(session, null, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
             }
             UserSessionModel userSession = session.sessions().getUserSession(realm, relayState);
             if (userSession == null) {
                 logger.error("no valid user session");
                 event.event(EventType.LOGOUT);
                 event.error(Errors.USER_SESSION_NOT_FOUND);
-                return ErrorPage.error(session, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+                return ErrorPage.error(session, null, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
             }
             if (userSession.getState() != UserSessionModel.State.LOGGING_OUT) {
                 logger.error("usersession in different state");
                 event.event(EventType.LOGOUT);
                 event.error(Errors.USER_SESSION_NOT_FOUND);
-                return ErrorPage.error(session, Messages.SESSION_NOT_ACTIVE);
+                return ErrorPage.error(session, null, Messages.SESSION_NOT_ACTIVE);
             }
             return AuthenticationManager.finishBrowserLogout(session, realm, userSession, uriInfo, clientConnection, headers);
         }

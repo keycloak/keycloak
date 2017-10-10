@@ -469,6 +469,7 @@ public class AuthenticationProcessor {
             String accessCode = generateAccessCode();
             URI action = getActionUrl(accessCode);
             LoginFormsProvider provider = getSession().getProvider(LoginFormsProvider.class)
+                    .setAuthenticationSession(getAuthenticationSession())
                     .setUser(getUser())
                     .setActionUri(action)
                     .setExecution(getExecution().getId())
@@ -609,25 +610,25 @@ public class AuthenticationProcessor {
             if (e.getError() == AuthenticationFlowError.INVALID_USER) {
                 ServicesLogger.LOGGER.failedAuthentication(e);
                 event.error(Errors.USER_NOT_FOUND);
-                return ErrorPage.error(session, Messages.INVALID_USER);
+                return ErrorPage.error(session, authenticationSession, Messages.INVALID_USER);
             } else if (e.getError() == AuthenticationFlowError.USER_DISABLED) {
                 ServicesLogger.LOGGER.failedAuthentication(e);
                 event.error(Errors.USER_DISABLED);
-                return ErrorPage.error(session, Messages.ACCOUNT_DISABLED);
+                return ErrorPage.error(session,authenticationSession, Messages.ACCOUNT_DISABLED);
             } else if (e.getError() == AuthenticationFlowError.USER_TEMPORARILY_DISABLED) {
                 ServicesLogger.LOGGER.failedAuthentication(e);
                 event.error(Errors.USER_TEMPORARILY_DISABLED);
-                return ErrorPage.error(session, Messages.INVALID_USER);
+                return ErrorPage.error(session,authenticationSession, Messages.INVALID_USER);
 
             } else if (e.getError() == AuthenticationFlowError.INVALID_CLIENT_SESSION) {
                 ServicesLogger.LOGGER.failedAuthentication(e);
                 event.error(Errors.INVALID_CODE);
-                return ErrorPage.error(session, Messages.INVALID_CODE);
+                return ErrorPage.error(session, authenticationSession, Messages.INVALID_CODE);
 
             } else if (e.getError() == AuthenticationFlowError.EXPIRED_CODE) {
                 ServicesLogger.LOGGER.failedAuthentication(e);
                 event.error(Errors.EXPIRED_CODE);
-                return ErrorPage.error(session, Messages.EXPIRED_CODE);
+                return ErrorPage.error(session, authenticationSession, Messages.EXPIRED_CODE);
 
             } else if (e.getError() == AuthenticationFlowError.FORK_FLOW) {
                 ForkFlowException reset = (ForkFlowException)e;
@@ -654,13 +655,13 @@ public class AuthenticationProcessor {
             } else {
                 ServicesLogger.LOGGER.failedAuthentication(e);
                 event.error(Errors.INVALID_USER_CREDENTIALS);
-                return ErrorPage.error(session, Messages.INVALID_USER);
+                return ErrorPage.error(session, authenticationSession, Messages.INVALID_USER);
             }
 
         } else {
             ServicesLogger.LOGGER.failedAuthentication(failure);
             event.error(Errors.INVALID_USER_CREDENTIALS);
-            return ErrorPage.error(session, Messages.UNEXPECTED_ERROR_HANDLING_REQUEST);
+            return ErrorPage.error(session, authenticationSession, Messages.UNEXPECTED_ERROR_HANDLING_REQUEST);
         }
 
     }
@@ -885,7 +886,7 @@ public class AuthenticationProcessor {
                 if (!authSession.getAuthenticatedUser().equals(userSession.getUser())) {
                     event.detail(Details.EXISTING_USER, userSession.getUser().getId());
                     event.error(Errors.DIFFERENT_USER_AUTHENTICATED);
-                    throw new ErrorPageException(session, Messages.DIFFERENT_USER_AUTHENTICATED, userSession.getUser().getUsername());
+                    throw new ErrorPageException(session, authSession, Messages.DIFFERENT_USER_AUTHENTICATED, userSession.getUser().getUsername());
                 }
             }
             userSession.setState(UserSessionModel.State.LOGGED_IN);
@@ -921,7 +922,8 @@ public class AuthenticationProcessor {
         if (!authenticatedUser.isEnabled()) throw new AuthenticationFlowException(AuthenticationFlowError.USER_DISABLED);
         if (realm.isBruteForceProtected() && !realm.isPermanentLockout()) {
             if (getBruteForceProtector().isTemporarilyDisabled(session, realm, authenticatedUser)) {
-                throw new AuthenticationFlowException(AuthenticationFlowError.USER_TEMPORARILY_DISABLED);
+                getEvent().error(Errors.RESET_CREDENTIAL_DISABLED);
+                ServicesLogger.LOGGER.passwordResetFailed(new AuthenticationFlowException(AuthenticationFlowError.USER_TEMPORARILY_DISABLED));
             }
         }
     }

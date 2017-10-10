@@ -71,26 +71,26 @@ public class FreeMarkerAccountProvider implements AccountProvider {
 
     private static final Logger logger = Logger.getLogger(FreeMarkerAccountProvider.class);
 
-    private UserModel user;
-    private MultivaluedMap<String, String> profileFormData;
-    private Response.Status status = Response.Status.OK;
-    private RealmModel realm;
-    private String[] referrer;
-    private List<Event> events;
-    private String stateChecker;
-    private List<UserSessionModel> sessions;
-    private boolean identityProviderEnabled;
-    private boolean eventsEnabled;
-    private boolean passwordUpdateSupported;
-    private boolean passwordSet;
-    private KeycloakSession session;
-    private FreeMarkerUtil freeMarker;
-    private HttpHeaders headers;
+    protected UserModel user;
+    protected MultivaluedMap<String, String> profileFormData;
+    protected Response.Status status = Response.Status.OK;
+    protected RealmModel realm;
+    protected String[] referrer;
+    protected List<Event> events;
+    protected String stateChecker;
+    protected List<UserSessionModel> sessions;
+    protected boolean identityProviderEnabled;
+    protected boolean eventsEnabled;
+    protected boolean passwordUpdateSupported;
+    protected boolean passwordSet;
+    protected KeycloakSession session;
+    protected FreeMarkerUtil freeMarker;
+    protected HttpHeaders headers;
 
-    private UriInfo uriInfo;
+    protected UriInfo uriInfo;
 
-    private List<FormMessage> messages = null;
-    private MessageType messageType = MessageType.ERROR;
+    protected List<FormMessage> messages = null;
+    protected MessageType messageType = MessageType.ERROR;
 
     public FreeMarkerAccountProvider(KeycloakSession session, FreeMarkerUtil freeMarker) {
         this.session = session;
@@ -112,30 +112,16 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     public Response createResponse(AccountPages page) {
         Map<String, Object> attributes = new HashMap<String, Object>();
 
-        ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
         Theme theme;
         try {
-            theme = themeProvider.getTheme(realm.getAccountTheme(), Theme.Type.ACCOUNT);
+            theme = getTheme();
         } catch (IOException e) {
             logger.error("Failed to create theme", e);
             return Response.serverError().build();
         }
 
-        try {
-            attributes.put("properties", theme.getProperties());
-        } catch (IOException e) {
-            logger.warn("Failed to load properties", e);
-        }
-
         Locale locale = session.getContext().resolveLocale(user);
-        Properties messagesBundle;
-        try {
-            messagesBundle = theme.getMessages(locale);
-            attributes.put("msg", new MessageFormatterMethod(locale, messagesBundle));
-        } catch (IOException e) {
-            logger.warn("Failed to load messages", e);
-            messagesBundle = new Properties();
-        }
+        Properties messagesBundle = handleThemeResources(theme, locale, attributes);
 
         URI baseUri = uriInfo.getBaseUri();
         UriBuilder baseUriBuilder = uriInfo.getBaseUriBuilder();
@@ -148,19 +134,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
             attributes.put("stateChecker", stateChecker);
         }
 
-        MessagesPerFieldBean messagesPerField = new MessagesPerFieldBean();
-        if (messages != null) {
-            MessageBean wholeMessage = new MessageBean(null, messageType);
-            for (FormMessage message : this.messages) {
-                String formattedMessageText = formatMessage(message, messagesBundle, locale);
-                if (formattedMessageText != null) {
-                    wholeMessage.appendSummaryLine(formattedMessageText);
-                    messagesPerField.addMessage(message.getField(), formattedMessageText, messageType);
-                }
-            }
-            attributes.put("message", wholeMessage);
-        }
-        attributes.put("messagesPerField", messagesPerField);
+        handleMessages(locale, messagesBundle, attributes);
 
         if (referrer != null) {
             attributes.put("referrer", new ReferrerBean(referrer));
@@ -173,12 +147,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
         attributes.put("url", new UrlBean(realm, theme, baseUri, baseQueryUri, uriInfo.getRequestUri(), stateChecker));
 
         if (realm.isInternationalizationEnabled()) {
-            UriBuilder b;
-            switch (page) {
-                default:
-                    b = UriBuilder.fromUri(baseQueryUri).path(uriInfo.getPath());
-                    break;
-            }
+            UriBuilder b = UriBuilder.fromUri(baseQueryUri).path(uriInfo.getPath());
             attributes.put("locale", new LocaleBean(realm, locale, b, messagesBundle));
         }
 
@@ -204,8 +173,84 @@ public class FreeMarkerAccountProvider implements AccountProvider {
                 break;
             case PASSWORD:
                 attributes.put("password", new PasswordBean(passwordSet));
+                break;
+            default:
         }
 
+        return processTemplate(theme, page, attributes, locale);
+    }
+
+    /**
+     * Get Theme used for page rendering.
+     * 
+     * @return theme for page rendering, never null
+     * @throws IOException in case of Theme loading problem
+     */
+    protected Theme getTheme() throws IOException {
+        ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
+        return themeProvider.getTheme(realm.getAccountTheme(), Theme.Type.ACCOUNT);
+    }
+
+    /**
+     * Load message bundle and place it into <code>msg</code> template attribute. Also load Theme properties and place them into <code>properties</code> template attribute.
+     * 
+     * @param theme actual Theme to load bundle from
+     * @param locale to load bundle for
+     * @param attributes template attributes to add resources to
+     * @return message bundle for other use
+     */
+    protected Properties handleThemeResources(Theme theme, Locale locale, Map<String, Object> attributes) {
+        Properties messagesBundle;
+        try {
+            messagesBundle = theme.getMessages(locale);
+            attributes.put("msg", new MessageFormatterMethod(locale, messagesBundle));
+        } catch (IOException e) {
+            logger.warn("Failed to load messages", e);
+            messagesBundle = new Properties();
+        }
+        try {
+            attributes.put("properties", theme.getProperties());
+        } catch (IOException e) {
+            logger.warn("Failed to load properties", e);
+        }
+        return messagesBundle;
+    }
+
+    /**
+     * Handle messages to be shown on the page - set them to template attributes
+     * 
+     * @param locale to be used for message text loading
+     * @param messagesBundle to be used for message text loading
+     * @param attributes template attributes to messages related info to
+     * @see #messageType
+     * @see #messages
+     */
+    protected void handleMessages(Locale locale, Properties messagesBundle, Map<String, Object> attributes) {
+        MessagesPerFieldBean messagesPerField = new MessagesPerFieldBean();
+        if (messages != null) {
+            MessageBean wholeMessage = new MessageBean(null, messageType);
+            for (FormMessage message : this.messages) {
+                String formattedMessageText = formatMessage(message, messagesBundle, locale);
+                if (formattedMessageText != null) {
+                    wholeMessage.appendSummaryLine(formattedMessageText);
+                    messagesPerField.addMessage(message.getField(), formattedMessageText, messageType);
+                }
+            }
+            attributes.put("message", wholeMessage);
+        }
+        attributes.put("messagesPerField", messagesPerField);
+    }
+
+    /**
+     * Process FreeMarker template and prepare Response. Some fields are used for rendering also.
+     * 
+     * @param theme to be used (provided by <code>getTheme()</code>)
+     * @param page to be rendered
+     * @param attributes pushed to the template
+     * @param locale to be used
+     * @return Response object to be returned to the browser, never null
+     */
+    protected Response processTemplate(Theme theme, AccountPages page, Map<String, Object> attributes, Locale locale) {
         try {
             String result = freeMarker.processTemplate(attributes, Templates.getTemplate(page), theme);
             Response.ResponseBuilder builder = Response.status(status).type(MediaType.TEXT_HTML_UTF_8_TYPE).language(locale).entity(result);

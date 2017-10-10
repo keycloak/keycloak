@@ -82,6 +82,7 @@ public class VerifyEmailActionTokenHandler extends AbstractActionTokenHander<Ver
             String confirmUri = builder.build(realm.getName()).toString();
 
             return session.getProvider(LoginFormsProvider.class)
+                    .setAuthenticationSession(authSession)
                     .setSuccess(Messages.CONFIRM_EMAIL_ADDRESS_VERIFICATION, user.getEmail())
                     .setAttribute(Constants.TEMPLATE_ATTR_ACTION_URI, confirmUri)
                     .createInfoPage();
@@ -99,6 +100,7 @@ public class VerifyEmailActionTokenHandler extends AbstractActionTokenHander<Ver
             asm.removeAuthenticationSession(tokenContext.getRealm(), authSession, true);
 
             return tokenContext.getSession().getProvider(LoginFormsProvider.class)
+                    .setAuthenticationSession(authSession)
                     .setSuccess(Messages.EMAIL_VERIFIED)
                     .createInfoPage();
         }

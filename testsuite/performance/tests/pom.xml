@@ -39,7 +39,7 @@
         <keycloak.server.uris>http://localhost:8080/auth</keycloak.server.uris>
         <db.url>jdbc:mariadb://keycloak:keycloak@localhost:3306/keycloak</db.url>
 
-        <keycloak.jvm.memory>-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m</keycloak.jvm.memory>
+        <keycloak.jvm.memory>-Xms64m -Xmx2g -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m</keycloak.jvm.memory>
         <keycloak.http.max-connections>500</keycloak.http.max-connections>
         <keycloak.ajp.max-connections>500</keycloak.ajp.max-connections>
         <keycloak.worker.io-threads>2</keycloak.worker.io-threads>
@@ -48,14 +48,25 @@
         <keycloak.ds.max-pool-size>100</keycloak.ds.max-pool-size>
         <keycloak.ds.pool-prefill>true</keycloak.ds.pool-prefill>
         <keycloak.ds.ps-cache-size>100</keycloak.ds.ps-cache-size>
-        
+
         <keycloak-lb.jvm.memory>-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m</keycloak-lb.jvm.memory>
         <keycloak-lb.http.max-connections>500</keycloak-lb.http.max-connections>
         <keycloak-lb.worker.io-threads>2</keycloak-lb.worker.io-threads>
         <keycloak-lb.worker.task-max-threads>16</keycloak-lb.worker.task-max-threads>
-        
+
+        <!-- Docker-related properties -->
+        <db.docker.cpuset>1</db.docker.cpuset>
+        <keycloak.docker.cpuset>2-3</keycloak.docker.cpuset>
+        <keycloak.dc1.docker.cpuset>2</keycloak.dc1.docker.cpuset>
+        <keycloak.dc2.docker.cpuset>3</keycloak.dc2.docker.cpuset>
+        <monitoring.docker.cpuset>0</monitoring.docker.cpuset>
+
+        <db.docker.memlimit>2g</db.docker.memlimit>
+        <keycloak.docker.memlimit>2g</keycloak.docker.memlimit>
+        <!-- End of docker-related properties -->
+
         <infinispan.jvm.memory>-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -XX:+DisableExplicitGC</infinispan.jvm.memory>
-        
+
         <dataset>default</dataset>
         <numOfWorkers>1</numOfWorkers>
 
@@ -321,6 +332,13 @@
                                     <commandlineArgs>-f ${compose.file} up -d --build ${compose.up.params}</commandlineArgs>
                                     <environmentVariables>
                                         <KEYCLOAK_VERSION>${project.version}</KEYCLOAK_VERSION>
+
+                                        <KEYCLOAK_CPUSET>${keycloak.docker.cpuset}</KEYCLOAK_CPUSET>
+                                        <KEYCLOAK_DC1_CPUSET>${keycloak.dc1.docker.cpuset}</KEYCLOAK_DC1_CPUSET>
+                                        <KEYCLOAK_DC2_CPUSET>${keycloak.dc2.docker.cpuset}</KEYCLOAK_DC2_CPUSET>
+                                        <KEYCLOAK_MEMLIMIT>${keycloak.docker.memlimit}</KEYCLOAK_MEMLIMIT>
+                                        <DB_CPUSET>${db.docker.cpuset}</DB_CPUSET>
+                                        <DB_MEMLIMIT>${db.docker.memlimit}</DB_MEMLIMIT>
                                         
                                         <KEYCLOAK_JVM_MEMORY>${keycloak.jvm.memory}</KEYCLOAK_JVM_MEMORY>
                                         <KEYCLOAK_HTTP_MAX_CONNECTIONS>${keycloak.http.max-connections}</KEYCLOAK_HTTP_MAX_CONNECTIONS>
@@ -381,7 +399,7 @@
         </profile>
         
         <profile>
-            <id>import-data</id>
+            <id>generate-data</id>
             <build>
                 <plugins>
                     <plugin>
@@ -454,6 +472,43 @@
                                             <entry key="hashIterations" value="${hashIterations}"/>
                                         </propertyfile>
                                     </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>export-dump-after-generation</id>
+
+            <activation>
+                <activeByDefault>false</activeByDefault>
+                <property>
+                    <name>export-dump</name>
+                </property>
+            </activation>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>export-dump</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <workingDirectory>${project.basedir}/..</workingDirectory>
+                                    <executable>./prepare-dump.sh</executable>
+
+                                    <environmentVariables>
+                                        <DATASET>${dataset}</DATASET>
+                                    </environmentVariables>
                                 </configuration>
                             </execution>
                         </executions>
@@ -581,6 +636,9 @@
                                     <workingDirectory>${project.basedir}/..</workingDirectory>
                                     <executable>docker-compose</executable>
                                     <commandlineArgs>-f docker-compose-monitoring.yml up -d --build</commandlineArgs>
+                                    <environmentVariables>
+                                        <MONITORING_CPUSET>${monitoring.docker.cpuset}</MONITORING_CPUSET>
+                                    </environmentVariables>
                                 </configuration>
                             </execution>
                         </executions>

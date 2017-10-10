@@ -107,7 +107,7 @@ public class LogoutEndpoint {
                 event.event(EventType.LOGOUT);
                 event.detail(Details.REDIRECT_URI, redirect);
                 event.error(Errors.INVALID_REDIRECT_URI);
-                return ErrorPage.error(session, Messages.INVALID_REDIRECT_URI);
+                return ErrorPage.error(session, null, Messages.INVALID_REDIRECT_URI);
             }
             redirect = validatedUri;
         }
@@ -120,7 +120,7 @@ public class LogoutEndpoint {
             } catch (OAuthErrorException e) {
                 event.event(EventType.LOGOUT);
                 event.error(Errors.INVALID_TOKEN);
-                return ErrorPage.error(session, Messages.SESSION_NOT_ACTIVE);
+                return ErrorPage.error(session, null, Messages.SESSION_NOT_ACTIVE);
             }
         }
 

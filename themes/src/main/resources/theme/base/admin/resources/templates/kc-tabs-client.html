@@ -26,7 +26,7 @@
             data-ng-show="serverInfo.featureEnabled('AUTHORIZATION') && !disableAuthorizationTab && client.authorizationServicesEnabled">
             <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server">{{:: 'authz-authorization' |
                 translate}}</a></li>
-        <li ng-class="{active: path[4] == 'revocation'}" data-ng-show="client.protocol != 'docker-v2'"><a
+        <li ng-class="{active: path[4] == 'revocation'}" data-ng-show="client.protocol != 'docker-v2' && client.protocol != 'saml'"><a
                 href="#/realms/{{realm.realm}}/clients/{{client.id}}/revocation">{{:: 'revocation' | translate}}</a>
         </li>
     <!--    <li ng-class="{active: path[4] == 'identity-provider'}" data-ng-show="realm.identityFederationEnabled"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/identity-provider">Identity Provider</a></li> -->

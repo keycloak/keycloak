@@ -710,7 +710,7 @@ public class AuthenticationManager {
         }
 
         if (authSession.getAuthNote(END_AFTER_REQUIRED_ACTIONS) != null) {
-            LoginFormsProvider infoPage = session.getProvider(LoginFormsProvider.class)
+            LoginFormsProvider infoPage = session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authSession)
                     .setSuccess(Messages.ACCOUNT_UPDATED);
             if (authSession.getAuthNote(SET_REDIRECT_URI_AFTER_REQUIRED_ACTIONS) != null) {
                 if (authSession.getRedirectUri() != null) {
@@ -848,6 +848,7 @@ public class AuthenticationManager {
                 authSession.setAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION, execution);
 
                 return session.getProvider(LoginFormsProvider.class)
+                        .setAuthenticationSession(authSession)
                         .setExecution(execution)
                         .setClientSessionCode(accessCode.getOrGenerateCode())
                         .setAccessRequest(realmRoles, resourceRoles, protocolMappers)

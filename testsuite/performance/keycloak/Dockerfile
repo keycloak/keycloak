@@ -17,26 +17,23 @@ ADD target/keycloak configs/ ./
 ADD *.sh /usr/local/bin/
 
 USER root
-RUN chown -R jboss .; chgrp -R jboss .; 
-RUN chmod -R -v +x /usr/local/bin/
-RUN yum install -y epel-release jq iproute && yum clean all
+RUN chown -R jboss .; chgrp -R jboss .; \
+    chmod -R -v +x /usr/local/bin/ ; \
+    yum install -y epel-release jq iproute && yum clean all
 
 USER jboss
 # install mariadb JDBC driver
-RUN mkdir -p modules/system/layers/base/org/mariadb/jdbc/main; \
-    cd modules/system/layers/base/org/mariadb/jdbc/main; \
-    curl -O http://central.maven.org/maven2/org/mariadb/jdbc/mariadb-java-client/2.0.3/mariadb-java-client-2.0.3.jar
-ADD module.xml modules/system/layers/base/org/mariadb/jdbc/main/
-# apply configurations
-RUN $JBOSS_HOME/bin/jboss-cli.sh --file=set-keycloak-ds.cli
-RUN $JBOSS_HOME/bin/jboss-cli.sh --file=io-worker-threads.cli
-RUN $JBOSS_HOME/bin/jboss-cli.sh --file=undertow.cli
-RUN $JBOSS_HOME/bin/jboss-cli.sh --file=distributed-cache-owners.cli
-RUN $JBOSS_HOME/bin/jboss-cli.sh --file=modcluster-simple-load-provider.cli
-RUN if [ "$REMOTE_CACHES" == "true" ]; then $JBOSS_HOME/bin/jboss-cli.sh --file=add-remote-cache-stores.cli; fi
-RUN cd $JBOSS_HOME/standalone; rm -rf configuration/standalone_xml_history log data tmp
+RUN curl --create-dirs --output modules/system/layers/base/org/mariadb/jdbc/main/mariadb-java-client-2.0.3.jar http://central.maven.org/maven2/org/mariadb/jdbc/mariadb-java-client/2.0.3/mariadb-java-client-2.0.3.jar ; \
+    $JBOSS_HOME/bin/jboss-cli.sh --file=set-keycloak-ds.cli && \
+    $JBOSS_HOME/bin/jboss-cli.sh --file=io-worker-threads.cli && \
+    $JBOSS_HOME/bin/jboss-cli.sh --file=undertow.cli && \
+    $JBOSS_HOME/bin/jboss-cli.sh --file=distributed-cache-owners.cli && \
+    $JBOSS_HOME/bin/jboss-cli.sh --file=modcluster-simple-load-provider.cli && \
+    if [ "$REMOTE_CACHES" == "true" ]; then $JBOSS_HOME/bin/jboss-cli.sh --file=add-remote-cache-stores.cli; fi && \
+    cd $JBOSS_HOME/standalone; rm -rf configuration/standalone_xml_history log data tmp ; \
+    $JBOSS_HOME/bin/add-user.sh -u $DEBUG_USER -p $DEBUG_USER_PASSWORD
 
-RUN $JBOSS_HOME/bin/add-user.sh -u $DEBUG_USER -p $DEBUG_USER_PASSWORD
+ADD module.xml modules/system/layers/base/org/mariadb/jdbc/main/
 
 EXPOSE 8080
 EXPOSE 9990

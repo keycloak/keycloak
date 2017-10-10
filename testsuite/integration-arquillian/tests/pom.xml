@@ -41,10 +41,12 @@
     <properties>
         <auth.server>undertow</auth.server>
         <auth.server.undertow>true</auth.server.undertow>
-        <auth.server.undertow.crossdc>false</auth.server.undertow.crossdc>
+
         <auth.server.crossdc>false</auth.server.crossdc>
+        <auth.server.undertow.crossdc>false</auth.server.undertow.crossdc>
+        <auth.server.jboss.crossdc>false</auth.server.jboss.crossdc>
         <cache.server.lifecycle.skip>false</cache.server.lifecycle.skip>
-        
+
         <auth.server.container>auth-server-${auth.server}</auth.server.container>
         <auth.server.home>${containers.home}/${auth.server.container}</auth.server.home>
         <auth.server.config.dir>${auth.server.home}</auth.server.config.dir>
@@ -60,16 +62,16 @@
         <auth.server.memory.settings>-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m</auth.server.memory.settings>
         <auth.server.config.property.name>serverConfig</auth.server.config.property.name>
         <auth.server.adapter.impl.class>org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</auth.server.adapter.impl.class>
-        
+
         <auth.server.jboss.artifactId>integration-arquillian-servers-auth-server-${auth.server}</auth.server.jboss.artifactId>
         <auth.server.jboss.skip.unpack>${auth.server.undertow}</auth.server.jboss.skip.unpack>
         <auth.server.jboss.startup.timeout>300</auth.server.jboss.startup.timeout>
-        
+
         <!--debug properties-->
         <auth.server.debug.port>5005</auth.server.debug.port>
         <auth.server.debug.suspend>n</auth.server.debug.suspend>
         <auth.server.jboss.jvm.debug.args>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${auth.server.debug.suspend},address=${auth.server.host}:${auth.server.debug.port}</auth.server.jboss.jvm.debug.args>
-        
+
         <auth.server.remote>false</auth.server.remote>
         <auth.server.profile/>
         <auth.server.feature/>
@@ -91,7 +93,7 @@
         <adapter.test.props/>
         <migration.import.properties/>
         <kie.maven.settings/>
-        
+
         <examples.home>${project.build.directory}/examples</examples.home>
 
         <browser>htmlUnit</browser>
@@ -242,10 +244,10 @@
                             <auth.server.config.property.value>${auth.server.config.property.value}</auth.server.config.property.value>
                             <auth.server.adapter.impl.class>${auth.server.adapter.impl.class}</auth.server.adapter.impl.class>
                             <auth.server.jboss.jvm.debug.args>${auth.server.jboss.jvm.debug.args}</auth.server.jboss.jvm.debug.args>
-                            
+
                             <auth.server.profile>${auth.server.profile}</auth.server.profile>
                             <auth.server.feature>${auth.server.feature}</auth.server.feature>
-                            
+
                             <frontend.console.output>${frontend.console.output}</frontend.console.output>
                             <backends.console.output>${backend.console.output}</backends.console.output>
 
@@ -254,7 +256,7 @@
                             <adapter.test.props>${adapter.test.props}</adapter.test.props>
                             <migration.import.properties>${migration.import.properties}</migration.import.properties>
                             <kie.maven.settings>${kie.maven.settings}</kie.maven.settings>
-                            
+
                             <testsuite.constants>${testsuite.constants}</testsuite.constants>
                             <cli.log.output>${cli.log.output}</cli.log.output>
                             <test.intermittent>${test.intermittent}</test.intermittent>
@@ -287,10 +289,11 @@
                             <client.key.passphrase>${client.key.passphrase}</client.key.passphrase>
 
                             <auth.server.ocsp.responder.enabled>${auth.server.ocsp.responder.enabled}</auth.server.ocsp.responder.enabled>
-                            
+
                             <!--cache server properties-->
                             <auth.server.crossdc>${auth.server.crossdc}</auth.server.crossdc>
                             <auth.server.undertow.crossdc>${auth.server.undertow.crossdc}</auth.server.undertow.crossdc>
+                            <auth.server.jboss.crossdc>${auth.server.jboss.crossdc}</auth.server.jboss.crossdc>
                             <cache.server.lifecycle.skip>${cache.server.lifecycle.skip}</cache.server.lifecycle.skip>
 
                             <cache.server>${cache.server}</cache.server>
@@ -367,14 +370,13 @@
                 </dependency>
             </dependencies>
         </profile>
-            
+
         <profile>
             <id>auth-server-wildfly</id>
             <properties>
                 <auth.server>wildfly</auth.server>
                 <auth.server.jboss>true</auth.server.jboss>
                 <auth.server.undertow>false</auth.server.undertow>
-                <auth.server.undertow.crossdc>false</auth.server.undertow.crossdc>
                 <auth.server.config.property.value>standalone.xml</auth.server.config.property.value>
                 <auth.server.config.dir>${auth.server.home}/standalone/configuration</auth.server.config.dir>
                 <h2.version>1.3.173</h2.version>
@@ -393,7 +395,6 @@
                 <auth.server>eap</auth.server>
                 <auth.server.jboss>true</auth.server.jboss>
                 <auth.server.undertow>false</auth.server.undertow>
-                <auth.server.undertow.crossdc>false</auth.server.undertow.crossdc>
                 <auth.server.config.property.value>standalone.xml</auth.server.config.property.value>
                 <auth.server.config.dir>${auth.server.home}/standalone/configuration</auth.server.config.dir>
                 <h2.version>1.3.173</h2.version>
@@ -407,13 +408,198 @@
         </profile>
 
         <profile>
+            <id>auth-servers-crossdc-undertow</id>
+            <properties>
+                <auth.servers.crossdc>true</auth.servers.crossdc>
+                <auth.server.undertow.crossdc>true</auth.server.undertow.crossdc>
+                <node.name>undertow</node.name>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>enforce-profile-activation</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireProperty>
+                                            <property>cache.server.jboss</property>
+                                            <message>Profile "auth-servers-crossdc-undertow" requires activation of another profile: either "cache-server-infinispan" or "cache-server-jdg".</message>
+                                            <regex>true</regex>
+                                        </requireProperty>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <node.name>${node.name}</node.name>
+                                <pageload.timeout>20000</pageload.timeout>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>auth-servers-crossdc-jboss</id>
+            <properties>
+                <auth.servers.crossdc>true</auth.servers.crossdc>
+                <auth.server.jboss.crossdc>true</auth.server.jboss.crossdc>
+                <node.name>jboss</node.name>
+
+                <auth.server.crossdc01.home>${containers.home}/auth-server-${auth.server}-crossdc01</auth.server.crossdc01.home>
+                <auth.server.crossdc02.home>${containers.home}/auth-server-${auth.server}-crossdc02</auth.server.crossdc02.home>
+                <auth.server.crossdc11.home>${containers.home}/auth-server-${auth.server}-crossdc11</auth.server.crossdc11.home>
+                <auth.server.crossdc12.home>${containers.home}/auth-server-${auth.server}-crossdc12</auth.server.crossdc12.home>
+
+                <!-- property specifies keycloak-add-user.json file destination -->
+                <auth.server.config.dir>${auth.server.crossdc01.home}/standalone/configuration</auth.server.config.dir>
+
+                <auth.server.crossdc01.jvm.debug.port>5001</auth.server.crossdc01.jvm.debug.port>
+                <auth.server.crossdc02.jvm.debug.port>5002</auth.server.crossdc02.jvm.debug.port>
+                <auth.server.crossdc11.jvm.debug.port>5011</auth.server.crossdc11.jvm.debug.port>
+                <auth.server.crossdc12.jvm.debug.port>5012</auth.server.crossdc12.jvm.debug.port>
+
+                <!-- default is "n", possible to override by e.g. -Dauth.server.crossdc01.debug.suspend=y -->
+                <auth.server.crossdc01.debug.suspend>${auth.server.debug.suspend}</auth.server.crossdc01.debug.suspend>
+                <auth.server.crossdc02.debug.suspend>${auth.server.debug.suspend}</auth.server.crossdc02.debug.suspend>
+                <auth.server.crossdc11.debug.suspend>${auth.server.debug.suspend}</auth.server.crossdc11.debug.suspend>
+                <auth.server.crossdc12.debug.suspend>${auth.server.debug.suspend}</auth.server.crossdc12.debug.suspend>
+            </properties>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <artifactId>maven-antrun-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>copy-auth-server-crossdc-nodes</id>
+                                    <phase>process-resources</phase>
+                                    <goals>
+                                        <goal>run</goal>
+                                    </goals>
+                                    <configuration>
+                                        <target>
+                                            <move todir="${auth.server.crossdc01.home}">
+                                                <fileset dir="${auth.server.home}"/>
+                                            </move>
+                                            <copy todir="${auth.server.crossdc02.home}">
+                                                <fileset dir="${auth.server.crossdc01.home}"/>
+                                            </copy>
+                                            <copy todir="${auth.server.crossdc11.home}">
+                                                <fileset dir="${auth.server.crossdc01.home}"/>
+                                            </copy>
+                                            <copy todir="${auth.server.crossdc12.home}">
+                                                <fileset dir="${auth.server.crossdc01.home}"/>
+                                            </copy>
+                                        </target>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>enforce-profiles-activation</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireProperty>
+                                            <property>cache.server.jboss</property>
+                                            <message>Profile "auth-servers-crossdc-jboss" requires activation of another profile: either "cache-server-infinispan" or "cache-server-jdg".</message>
+                                            <regex>true</regex>
+                                        </requireProperty>
+                                        <requireProperty>
+                                            <property>auth.server.jboss</property>
+                                            <message>Profile "auth-servers-crossdc-jboss" requires activation of another profile: either "auth-server-wildfly" or "auth-server-eap".</message>
+                                            <regex>true</regex>
+                                        </requireProperty>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+
+                                <pageload.timeout>20000</pageload.timeout>
+
+                                <run.h2>true</run.h2>
+                                <node.name>${node.name}</node.name>
+
+                                <auth.server.crossdc01.home>${auth.server.crossdc01.home}</auth.server.crossdc01.home>
+                                <auth.server.crossdc02.home>${auth.server.crossdc02.home}</auth.server.crossdc02.home>
+                                <auth.server.crossdc11.home>${auth.server.crossdc11.home}</auth.server.crossdc11.home>
+                                <auth.server.crossdc12.home>${auth.server.crossdc12.home}</auth.server.crossdc12.home>
+
+                                <!--8101-->
+                                <auth.server.crossdc01.port.offset>21</auth.server.crossdc01.port.offset>
+                                <!--8102-->
+                                <auth.server.crossdc02.port.offset>22</auth.server.crossdc02.port.offset>
+                                <!--8111-->
+                                <auth.server.crossdc11.port.offset>31</auth.server.crossdc11.port.offset>
+                                <!--8112-->
+                                <auth.server.crossdc12.port.offset>32</auth.server.crossdc12.port.offset>
+
+                                <auth.server.crossdc01.management.port>10011</auth.server.crossdc01.management.port>
+                                <auth.server.crossdc02.management.port>10012</auth.server.crossdc02.management.port>
+                                <auth.server.crossdc11.management.port>10021</auth.server.crossdc11.management.port>
+                                <auth.server.crossdc12.management.port>10022</auth.server.crossdc12.management.port>
+
+                                <auth.server.crossdc01.jvm.debug.args>
+                                    -agentlib:jdwp=transport=dt_socket,server=y,suspend=${auth.server.crossdc01.debug.suspend},address=localhost:${auth.server.crossdc01.jvm.debug.port}
+                                </auth.server.crossdc01.jvm.debug.args>
+                                <auth.server.crossdc02.jvm.debug.args>
+                                    -agentlib:jdwp=transport=dt_socket,server=y,suspend=${auth.server.crossdc02.debug.suspend},address=localhost:${auth.server.crossdc02.jvm.debug.port}
+                                </auth.server.crossdc02.jvm.debug.args>
+                                <auth.server.crossdc11.jvm.debug.args>
+                                    -agentlib:jdwp=transport=dt_socket,server=y,suspend=${auth.server.crossdc11.debug.suspend},address=localhost:${auth.server.crossdc11.jvm.debug.port}
+                                </auth.server.crossdc11.jvm.debug.args>
+                                <auth.server.crossdc12.jvm.debug.args>
+                                    -agentlib:jdwp=transport=dt_socket,server=y,suspend=${auth.server.crossdc12.debug.suspend},address=localhost:${auth.server.crossdc12.jvm.debug.port}
+                                </auth.server.crossdc12.jvm.debug.args>
+
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <configuration>
+                            <!--
+                                skipping execution for <artifactId>integration-arquillian-tests</artifactId>,
+                                it's re-enabled in <artifactId>integration-arquillian-tests-base</artifactId>
+                            -->
+                            <skip>true</skip>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
             <id>cache-server-infinispan</id>
             <properties>
                 <cache.server>infinispan</cache.server>
-                <auth.server.undertow.crossdc>true</auth.server.undertow.crossdc>
                 <auth.server.crossdc>true</auth.server.crossdc>
                 <cache.server.jboss>true</cache.server.jboss>
-                <cache.server.config.dir>${cache.server.home}/standalone/configuration</cache.server.config.dir>                
+                <cache.server.config.dir>${cache.server.home}/standalone/configuration</cache.server.config.dir>
                 <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
             </properties>
             <dependencies>
@@ -429,17 +615,15 @@
                         <artifactId>maven-enforcer-plugin</artifactId>
                         <executions>
                             <execution>
+                                <id>enforce-profile-activation</id>
                                 <goals>
                                     <goal>enforce</goal>
                                 </goals>
                                 <configuration>
                                     <rules>
-                                        <!--requireActiveProfile 'auth-server-wildfly/eap' doesn't work unless the profiles are defined in all submodule poms
-                                        using requireProperty instead-->
                                         <requireProperty>
-                                            <property>cache.server</property>
-                                            <regex>(infinispan)|(jdg)</regex>
-                                            <regexMessage>Profile "cache-server-infinispan" requires activation of profile "cache-server-infinispan" or "cache-server-jdg".</regexMessage>
+                                            <property>auth.servers.crossdc</property>
+                                            <message>Profile "cache-server-infinispan" requires activation of another profile: either "auth-servers-crossdc-undertow" or "auth-servers-crossdc-jboss".</message>
                                         </requireProperty>
                                     </rules>
                                 </configuration>
@@ -480,12 +664,11 @@
                 </pluginManagement>
             </build>
         </profile>
-        
+
         <profile>
             <id>cache-server-jdg</id>
             <properties>
                 <cache.server>jdg</cache.server>
-                <auth.server.undertow.crossdc>true</auth.server.undertow.crossdc>
                 <auth.server.crossdc>true</auth.server.crossdc>
                 <cache.server.jboss>true</cache.server.jboss>
                 <cache.server.config.dir>${cache.server.home}/standalone/configuration</cache.server.config.dir>
@@ -504,17 +687,15 @@
                         <artifactId>maven-enforcer-plugin</artifactId>
                         <executions>
                             <execution>
+                                <id>enforce-profile-activation</id>
                                 <goals>
                                     <goal>enforce</goal>
                                 </goals>
                                 <configuration>
                                     <rules>
-                                        <!--requireActiveProfile 'auth-server-wildfly/eap' doesn't work unless the profiles are defined in all submodule poms
-                                        using requireProperty instead-->
                                         <requireProperty>
-                                            <property>cache.server</property>
-                                            <regex>(infinispan)|(jdg)</regex>
-                                            <regexMessage>Profile "cache-server-jdg" requires activation of profile "cache-server-infinispan" or "cache-server-jdg".</regexMessage>
+                                            <property>auth.servers.crossdc</property>
+                                            <message>Profile "cache-server-jdg" requires activation of another profile: either "auth-servers-crossdc-undertow" or "auth-servers-crossdc-jboss".</message>
                                         </requireProperty>
                                     </rules>
                                 </configuration>
@@ -569,8 +750,8 @@
         </profile>
 
         <!--
-            profile that enables/disables specified feature, for more details see 
-            https://keycloak.gitbooks.io/documentation/content/server_installation/topics/profiles.html 
+            profile that enables/disables specified feature, for more details see
+            https://keycloak.gitbooks.io/documentation/content/server_installation/topics/profiles.html
         -->
         <profile>
             <id>auth-server-enable-disable-feature</id>
@@ -765,7 +946,7 @@
                 </pluginManagement>
             </build>
         </profile>
-        
+
         <profile>
             <id>jdbc-driver-dependency</id>
             <activation>
@@ -807,13 +988,13 @@
         </profile>
 
         <!-- Profiles for migration tests-->
-        
+
         <profile>
             <id>auth-server-migration</id>
             <properties>
                 <migration.import.file>target/test-classes/migration-test/migration-realm-${migrated.auth.server.version}.json</migration.import.file>
                 <migration.import.props.previous>
-                    -Dkeycloak.migration.action=import 
+                    -Dkeycloak.migration.action=import
                     -Dkeycloak.migration.provider=singleFile
                     -Dkeycloak.migration.file=${migration.import.file}
                     -Dkeycloak.migration.strategy=OVERWRITE_EXISTING
@@ -883,8 +1064,8 @@
                     </plugins>
                 </pluginManagement>
             </build>
-        </profile>    
-        
+        </profile>
+
         <profile>
             <id>migration-import</id>
             <activation>
@@ -896,7 +1077,7 @@
             <properties>
                 <migration.import.file>target/test-classes/migration-test/migration-realm-${migrated.auth.server.version}.json</migration.import.file>
                 <migration.import.properties>
-                    -Dkeycloak.migration.action=import 
+                    -Dkeycloak.migration.action=import
                     -Dkeycloak.migration.provider=singleFile
                     -Dkeycloak.migration.file=${migration.import.file}
                     -Dkeycloak.migration.strategy=OVERWRITE_EXISTING
@@ -934,7 +1115,7 @@
                 </plugins>
             </build>
         </profile>    
-        
+
         <profile>
             <id>migration-productized</id>
             <activation>
@@ -946,7 +1127,7 @@
                 <migration.import.file>target/test-classes/migration-test/migration-realm-${migrated.version.import.file.suffix}.json</migration.import.file>
             </properties>
         </profile>
-      
+
         <profile>
             <id>no-account</id>
             <properties>
@@ -1280,7 +1461,7 @@
                 <auth.server.management.port.jmx>9999</auth.server.management.port.jmx>
             </properties>
         </profile>
-        
+
         <profile>
             <!--see KEYCLOAK-4793-->
             <id>kie.maven.settings</id>
@@ -1299,7 +1480,7 @@
                 </kie.maven.settings>
             </properties>
         </profile>
-        
+
     </profiles>
-    
+
 </project>

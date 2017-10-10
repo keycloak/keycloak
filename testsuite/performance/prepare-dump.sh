@@ -4,13 +4,7 @@ GATLING_HOME=$DIRNAME/tests
 
 if [ -z "$DATASET" ]; then
     echo "This script requires DATASET env variable to be set"
-    echo 1
-fi
-
-./prepare-data.sh $@
-if [ $? -ne 0 ]; then
-    echo "Failed! See log file for details."
-    exit $?
+    exit 1
 fi
 
 echo "Exporting dump file"

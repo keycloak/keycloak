@@ -21,6 +21,9 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 
 import javax.ws.rs.NotFoundException;
+import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.arquillian.container.test.api.TargetsContainer;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -31,9 +34,11 @@ import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.Retry;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
+import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -45,7 +50,31 @@ import org.keycloak.testsuite.util.UserBuilder;
 public class BruteForceCrossDCTest extends AbstractAdminCrossDCTest {
 
     private static final String REALM_NAME = "brute-force-test";
-
+    
+    @Deployment(name = "dc0")
+    @TargetsContainer(QUALIFIER_AUTH_SERVER_DC_0_NODE_1)
+    public static WebArchive deployDC0() {
+        return RunOnServerDeployment.create(
+                BruteForceCrossDCTest.class,
+                AbstractAdminCrossDCTest.class,
+                AbstractCrossDCTest.class,
+                AbstractTestRealmKeycloakTest.class,
+                KeycloakTestingClient.class
+        );
+    }
+    
+    @Deployment(name = "dc1")
+    @TargetsContainer(QUALIFIER_AUTH_SERVER_DC_1_NODE_1)
+    public static WebArchive deployDC1() {
+        return RunOnServerDeployment.create(
+                BruteForceCrossDCTest.class,
+                AbstractAdminCrossDCTest.class,
+                AbstractCrossDCTest.class,
+                AbstractTestRealmKeycloakTest.class,
+                KeycloakTestingClient.class
+        );
+    }
+    
     @Before
     public void beforeTest() {
         try {
@@ -93,7 +122,7 @@ public class BruteForceCrossDCTest extends AbstractAdminCrossDCTest {
 
     @Test
     public void testBruteForceWithUserOperations() throws Exception {
-        // Enable 1st DC only
+        // Enable 1st node on each DC only
         enableDcOnLoadBalancer(DC.FIRST);
         enableDcOnLoadBalancer(DC.SECOND);
 
@@ -125,7 +154,7 @@ public class BruteForceCrossDCTest extends AbstractAdminCrossDCTest {
 
     @Test
     public void testBruteForceWithRealmOperations() throws Exception {
-        // Enable 1st DC only
+        // Enable 1st node on each DC only
         enableDcOnLoadBalancer(DC.FIRST);
         enableDcOnLoadBalancer(DC.SECOND);
 
@@ -162,7 +191,7 @@ public class BruteForceCrossDCTest extends AbstractAdminCrossDCTest {
 
     @Test
     public void testDuplicatedPutIfAbsentOperation() throws Exception {
-        // Enable 1st DC only
+        // Enable 1st node on each DC only
         enableDcOnLoadBalancer(DC.FIRST);
         enableDcOnLoadBalancer(DC.SECOND);
 
@@ -219,7 +248,7 @@ public class BruteForceCrossDCTest extends AbstractAdminCrossDCTest {
     }
 
 
-    // TODO Having this working on Wildfly might be a challenge. Maybe require @Deployment with @TargetsContainer descriptor generated at runtime as we don't know the container qualifier at compile time... Maybe workaround by add endpoint to TestingResourceProvider if needed..
+    // resolution on Wildfly: make deployment available on both dc0_1 and dc1_1, see @Deployment methods
     private void addUserLoginFailure(KeycloakTestingClient testingClient) throws URISyntaxException, IOException {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName(REALM_NAME);
