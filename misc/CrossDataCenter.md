@@ -123,8 +123,6 @@ Keycloak servers setup
     <store class="org.keycloak.models.sessions.infinispan.remotestore.KeycloakRemoteStoreConfigurationBuilder" passivation="false" fetch-state="false" purge="false" preload="false" shared="true">   
         <property name="rawValues">true</property>	
         <property name="marshaller">org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory</property>
-        <property name="transportFactory">org.keycloak.models.sessions.infinispan.remotestore.KeycloakTcpTransportFactory</property>
-        <property name="remoteServers">localhost:${remote.cache.port}</property>
         <property name="remoteCacheName">work</property> 
         <property name="sessionCache">false</property>
     </store>

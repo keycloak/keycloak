@@ -22,8 +22,6 @@ echo ** Update replicated-cache work element **
     name=properties, value={ \
         rawValues=true, \
         marshaller=org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory, \
-        transportFactory=org.keycloak.models.sessions.infinispan.remotestore.KeycloakTcpTransportFactory, \
-        remoteServers=localhost:${remote.cache.port}, \
         remoteCacheName=work, \
         sessionCache=false \
     } \

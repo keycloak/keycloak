@@ -70,6 +70,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
 import java.security.PublicKey;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -854,7 +855,56 @@ public class TokenManager {
             if (userNotBefore > notBefore) notBefore = userNotBefore;
             res.setNotBeforePolicy(notBefore);
 
+            // OIDC Financial API Read Only Profile : scope MUST be returned in the response from Token Endpoint
+            String requestedScope = clientSession.getNote(OAuth2Constants.SCOPE);
+            if (accessToken != null && requestedScope != null) {
+                List<String> returnedScopes = new ArrayList<String>();
+                // at attachAuthenticationSession(), take over notes from AuthenticationSessionModel to AuthenticatedClientSessionModel
+                List<String> requestedScopes = Arrays.asList(requestedScope.split(" "));
+
+                // distinguish between so called role scope and oauth scope
+                // only pick up oauth scope following https://tools.ietf.org/html/rfc6749#section-5.1
+
+                // for realm role - scope
+                if (accessToken.getRealmAccess() != null && accessToken.getRealmAccess().getRoles() != null) {
+                    addRolesAsScopes(returnedScopes, requestedScopes, accessToken.getRealmAccess().getRoles());
+                }
+                // for client role - scope
+                if (accessToken.getResourceAccess() != null) {
+                    for (String clientId : accessToken.getResourceAccess().keySet()) {
+                        if (accessToken.getResourceAccess(clientId).getRoles() != null) {
+                            addRolesAsScopes(returnedScopes, requestedScopes, accessToken.getResourceAccess(clientId).getRoles(), clientId);
+                        }
+                    }
+                }
+                StringBuilder builder = new StringBuilder();
+                for (String s : returnedScopes) {
+                    builder.append(s).append(" ");
+                }
+                res.setScope(builder.toString().trim());
+            }
+
             return res;
+        }
+
+        private void addRolesAsScopes(List<String> returnedScopes, List<String> requestedScopes, Set<String> roles) {
+            for (String r : roles) {
+                for (String s : requestedScopes) {
+                    if (s.equals(r)) {
+                        returnedScopes.add(s);
+                    }
+                }
+            }
+        }
+
+        private void addRolesAsScopes(List<String> returnedScopes, List<String> requestedScopes, Set<String> roles, String clientId) {
+            for (String r : roles) {
+                for (String s : requestedScopes) {
+                    if (s.equals(clientId + "/" + r)) {
+                        returnedScopes.add(s);
+                    }
+                }
+            }       	
         }
     }
 
