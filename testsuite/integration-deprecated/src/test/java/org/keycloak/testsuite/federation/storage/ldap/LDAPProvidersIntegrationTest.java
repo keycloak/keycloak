@@ -25,6 +25,7 @@ import static org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT;
 
 import java.util.List;
 
+import org.apache.commons.lang.StringUtils;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Before;
@@ -38,6 +39,7 @@ import org.junit.runners.MethodSorters;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.Constants;
@@ -48,6 +50,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.managers.RealmManager;
@@ -193,6 +196,13 @@ public class LDAPProvidersIntegrationTest {
     @Before
     public void onBefore() {
         adminClient = Keycloak.getInstance(AUTH_SERVER_ROOT, MASTER, ADMIN, ADMIN, Constants.ADMIN_CLI_CLIENT_ID);
+        UserStorageProviderModel model = new UserStorageProviderModel(ldapModel);
+        model.setCachePolicy(UserStorageProviderModel.CachePolicy.MAX_LIFESPAN);
+        model.setMaxLifespan(600000); // Lifetime is 10 minutes
+        KeycloakSession session = keycloakRule.startSession();
+        RealmModel realm = session.realms().getRealmByName("test");
+        realm.updateComponent(model);
+        keycloakRule.stopSession(session, true);
     }
 
     @Test
@@ -1131,4 +1141,107 @@ public class LDAPProvidersIntegrationTest {
         }
     }
 
+    @Test
+    public void testLDAPUserRefreshCache() {
+        KeycloakSession session = keycloakRule.startSession();
+
+        try {
+            RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+
+            LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+            LDAPTestUtils.addLDAPUser(ldapProvider, appRealm, "johndirect", "John", "Direct", "johndirect@email.org", null, "1234");
+
+            // Fetch user from LDAP and check that postalCode is filled
+            UserModel user = session.users().getUserByUsername("johndirect", appRealm);
+            String postalCode = user.getFirstAttribute("postal_code");
+            Assert.assertEquals("1234", postalCode);
+
+            LDAPTestUtils.removeLDAPUserByUsername(ldapProvider, appRealm, ldapProvider.getLdapIdentityStore().getConfig(), "johndirect");
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+        Time.setOffset(60 * 5); // 5 minutes in future, user should be cached still
+        session = keycloakRule.startSession();
+        try {
+            RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+            CachedUserModel user = (CachedUserModel) session.users().getUserByUsername("johndirect", appRealm);
+            String postalCode = user.getFirstAttribute("postal_code");
+            String email = user.getEmail();
+            Assert.assertEquals("1234", postalCode);
+            Assert.assertEquals("johndirect@email.org", email);
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+        Time.setOffset(60 * 20); // 20 minutes into future, cache will be invalidated
+        session = keycloakRule.startSession();
+        try {
+            RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+            UserModel user = session.users().getUserByUsername("johndirect", appRealm);
+            Assert.assertNull(user);
+        } finally {
+            keycloakRule.stopSession(session, true);
+            Time.setOffset(0);
+        }
+    }
+
+    @Test
+    public void testCacheUser() {
+        UserStorageProviderModel model = new UserStorageProviderModel(ldapModel);
+        model.setCachePolicy(UserStorageProviderModel.CachePolicy.NO_CACHE);
+        KeycloakSession session = keycloakRule.startSession();
+        RealmModel appRealm = session.realms().getRealmByName("test");
+        appRealm.updateComponent(model);
+
+        String userId = null;
+        UserModel testedUser = null;
+        try {
+            LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+            LDAPTestUtils.addLDAPUser(ldapProvider, appRealm, "testCacheUser", "John", "Cached", "johndirect@test.com", null, "1234");
+
+            // Fetch user from LDAP and check that postalCode is filled
+            testedUser = session.users().getUserByUsername("testCacheUser", appRealm);
+            userId = testedUser.getId();
+
+            Assert.assertNotNull(userId);
+            Assert.assertTrue(StringUtils.isNotBlank(userId));
+
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+        session = keycloakRule.startSession();
+        appRealm = session.realms().getRealmByName("test");
+
+        testedUser = session.users().getUserById(userId, appRealm);
+        Assert.assertFalse(testedUser instanceof CachedUserModel);
+        keycloakRule.stopSession(session, false);
+
+        // restore default cache policy
+        onBefore();
+
+        session = keycloakRule.startSession();
+        appRealm = session.realms().getRealmByName("test");
+        // initial get for cache
+        testedUser = session.users().getUserById(userId, appRealm);
+        Assert.assertTrue(testedUser instanceof CachedUserModel);
+        keycloakRule.stopSession(session, false);
+
+        Time.setOffset(60 * 5); // 5 minutes in future, should be cached still
+        session = keycloakRule.startSession();
+        appRealm = session.realms().getRealmByName("test");
+        testedUser = session.users().getUserById(userId, appRealm);
+        Assert.assertTrue(testedUser instanceof CachedUserModel);
+        keycloakRule.stopSession(session, false);
+
+        Time.setOffset(60 * 10); // 10 minutes into future, cache will be invalidated
+        session = keycloakRule.startSession();
+        appRealm = session.realms().getRealmByName("test");
+        testedUser = session.users().getUserByUsername("thor", appRealm);
+        Assert.assertFalse(testedUser instanceof CachedUserModel);
+        keycloakRule.stopSession(session, false);
+
+        Time.setOffset(0);
+    }
 }
