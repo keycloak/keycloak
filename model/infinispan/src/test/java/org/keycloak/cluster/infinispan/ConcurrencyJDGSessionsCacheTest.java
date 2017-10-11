@@ -64,6 +64,8 @@ public class ConcurrencyJDGSessionsCacheTest {
     private static final AtomicInteger successfulListenerWrites = new AtomicInteger(0);
     private static final AtomicInteger successfulListenerWrites2 = new AtomicInteger(0);
 
+    private static final ConcurrencyTestHistogram histogram = new ConcurrencyTestHistogram();
+
     //private static Map<String, EntryInfo> state = new HashMap<>();
 
     public static void main(String[] args) throws Exception {
@@ -176,7 +178,8 @@ public class ConcurrencyJDGSessionsCacheTest {
                 ", successfulListenerWrites: " + successfulListenerWrites.get() + ", successfulListenerWrites2: " + successfulListenerWrites2.get() +
                 ", failedReplaceCounter: " + failedReplaceCounter.get() + ", failedReplaceCounter2: " + failedReplaceCounter2.get());
 
-
+        System.out.println("Histogram: ");
+        histogram.dumpStats();
 
         // Finish JVM
         cache1.getCacheManager().stop();
@@ -232,7 +235,14 @@ public class ConcurrencyJDGSessionsCacheTest {
             String cacheKey = (String) event.getKey();
             listenerCount.incrementAndGet();
 
-            // TODO: can be optimized
+            // TODO: can be optimized - object sent in the event
+            VersionedValue<SessionEntity> versionedVal = remoteCache.getVersioned(cacheKey);
+
+            if (versionedVal.getVersion() < event.getVersion()) {
+                System.err.println("INCOMPATIBLE VERSION. event version: " + event.getVersion() + ", entity version: " + versionedVal.getVersion());
+                return;
+            }
+
             SessionEntity session = (SessionEntity) remoteCache.get(cacheKey);
             SessionEntityWrapper sessionWrapper = new SessionEntityWrapper(session);
 
@@ -267,7 +277,11 @@ public class ConcurrencyJDGSessionsCacheTest {
 
             for (int i=0 ; i<ITERATION_PER_WORKER ; i++) {
 
+                // Histogram will contain value 1 in all places as it's always different note and hence session is changed to different value
                 String noteKey = "n-" + myThreadId + "-" + i;
+
+                // In case it's hardcoded (eg. all the replaces are doing same change, so session is defacto not changed), then histogram may contain bigger value than 1 on some places.
+                //String noteKey = "some";
 
                 boolean replaced = false;
                 while (!replaced) {
@@ -299,6 +313,8 @@ public class ConcurrencyJDGSessionsCacheTest {
                     failedReplaceCounter.incrementAndGet();
                     //return false;
                     //System.out.println("Replace failed!!!");
+                } else {
+                    histogram.increaseSuccessOpsCount(oldSession.getVersion());
                 }
                 return replaced;
             } catch (Exception re) {
