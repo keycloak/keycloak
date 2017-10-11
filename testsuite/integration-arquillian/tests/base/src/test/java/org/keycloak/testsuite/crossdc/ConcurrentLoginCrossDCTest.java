@@ -104,8 +104,10 @@ public class ConcurrentLoginCrossDCTest extends ConcurrentLoginTest {
                 int failureIndex = currentInvocarion / INVOCATIONS_BEFORE_SIMULATING_DC_FAILURE;
                 int dcToEnable = failureIndex % 2;
                 int dcToDisable = (failureIndex + 1) % 2;
-                suiteContext.getDcAuthServerBackendsInfo().get(dcToDisable).forEach(c -> loadBalancerCtrl.disableBackendNodeByName(c.getQualifier()));
+
+                // Ensure nodes from dcToEnable are available earlier then previous nodes from dcToDisable are disabled.
                 suiteContext.getDcAuthServerBackendsInfo().get(dcToEnable).forEach(c -> loadBalancerCtrl.enableBackendNodeByName(c.getQualifier()));
+                suiteContext.getDcAuthServerBackendsInfo().get(dcToDisable).forEach(c -> loadBalancerCtrl.disableBackendNodeByName(c.getQualifier()));
             }
         }
     }
