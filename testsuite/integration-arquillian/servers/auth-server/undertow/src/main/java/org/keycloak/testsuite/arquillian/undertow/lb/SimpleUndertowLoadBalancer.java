@@ -353,6 +353,7 @@ public class SimpleUndertowLoadBalancer {
 
         @Override
         public void couldNotResolveBackend(HttpServerExchange exchange) {
+            log.warnf("Could not resolve backend when request to: %s", exchange.getRequestURI());
             delegate.couldNotResolveBackend(exchange);
         }
 
