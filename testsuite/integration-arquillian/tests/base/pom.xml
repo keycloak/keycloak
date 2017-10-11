@@ -229,14 +229,24 @@
                 </executions>
             </plugin>
 
-            <plugin>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <configuration>
-                    <skip>false</skip>
-                </configuration>
-            </plugin>
         </plugins>
 
     </build>
-    
+
+    <profiles>
+        <profile>
+            <id>auth-servers-crossdc-undertow</id>
+            <properties>
+                <skip.clean.second.cache>false</skip.clean.second.cache>
+            </properties>
+        </profile>
+        <profile>
+            <id>auth-servers-crossdc-jboss</id>
+            <properties>
+                <skip.clean.second.cache>false</skip.clean.second.cache>
+                <skip.copy.auth.crossdc.nodes>false</skip.copy.auth.crossdc.nodes>
+            </properties>
+        </profile>
+    </profiles>
+
 </project>
