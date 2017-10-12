@@ -19,8 +19,6 @@ package org.keycloak.models.sessions.infinispan.initializer;
 
 import org.keycloak.models.KeycloakSession;
 
-import java.io.Serializable;
-
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */

@@ -17,11 +17,8 @@
 
 package org.keycloak.jose.jwe.alg;
 
-import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.security.Key;
 
-import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.crypto.engines.AESWrapEngine;
 import org.bouncycastle.crypto.params.KeyParameter;

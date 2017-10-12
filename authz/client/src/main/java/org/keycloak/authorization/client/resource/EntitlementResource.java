@@ -1,11 +1,9 @@
 package org.keycloak.authorization.client.resource;
 
 import org.keycloak.authorization.client.AuthorizationDeniedException;
-import org.keycloak.authorization.client.representation.AuthorizationRequestMetadata;
 import org.keycloak.authorization.client.representation.EntitlementRequest;
 import org.keycloak.authorization.client.representation.EntitlementResponse;
 import org.keycloak.authorization.client.util.Http;
-import org.keycloak.authorization.client.util.HttpMethod;
 import org.keycloak.authorization.client.util.HttpResponseException;
 import org.keycloak.util.JsonSerialization;
 

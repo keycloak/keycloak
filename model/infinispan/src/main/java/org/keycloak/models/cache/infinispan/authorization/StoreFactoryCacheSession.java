@@ -53,7 +53,6 @@ import org.keycloak.models.cache.infinispan.authorization.entities.PolicyScopeLi
 import org.keycloak.models.cache.infinispan.authorization.entities.ResourceListQuery;
 import org.keycloak.models.cache.infinispan.authorization.entities.ResourceQuery;
 import org.keycloak.models.cache.infinispan.authorization.entities.ResourceScopeListQuery;
-import org.keycloak.models.cache.infinispan.authorization.entities.ResourceServerListQuery;
 import org.keycloak.models.cache.infinispan.authorization.entities.ScopeListQuery;
 import org.keycloak.models.cache.infinispan.authorization.events.PolicyRemovedEvent;
 import org.keycloak.models.cache.infinispan.authorization.events.PolicyUpdatedEvent;
