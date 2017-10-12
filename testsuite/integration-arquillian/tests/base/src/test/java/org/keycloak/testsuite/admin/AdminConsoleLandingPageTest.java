@@ -27,7 +27,7 @@ public class AdminConsoleLandingPageTest extends AbstractKeycloakTest {
 
         String resourceUrl = body.substring(body.indexOf("var resourceUrl = '") + 19);
         resourceUrl = resourceUrl.substring(0, resourceUrl.indexOf("'"));
-        Assert.assertTrue(resourceUrl.matches("/auth/resources/[^/]*/admin/[a-z]*"));
+        Assert.assertTrue(resourceUrl.matches("/auth/resources/[^/]*/admin/([a-z]*|[a-z]*-[a-z]*)"));
 
         Pattern p = Pattern.compile("link href=\"([^\"]*)\"");
         Matcher m = p.matcher(body);
