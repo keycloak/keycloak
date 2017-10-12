@@ -173,6 +173,13 @@
                 </div>
                 <kc-tooltip>{{:: 'ldap.search-scope.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="validatePasswordPolicy">{{:: 'validate-password-policy' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="instance.config['validatePasswordPolicy'][0]" name="validatePasswordPolicy" id="validatePasswordPolicy" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'ldap.validate-password-policy.tooltip' | translate}}</kc-tooltip>
+            </div>
             <div class="form-group">
                 <label class="col-md-2 control-label" for="useTruststoreSpi">{{:: 'use-truststore-spi' | translate}}</label>
                 <div class="col-md-6">
