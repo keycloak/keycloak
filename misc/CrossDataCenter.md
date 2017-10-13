@@ -116,64 +116,62 @@ Keycloak servers setup
  <cache-container name="keycloak" jndi-name="infinispan/Keycloak" module="org.keycloak.keycloak-model-infinispan">
 ``` 
 
-3.3) Add the `store` under `work` cache:
+3.3) Add the `remote-store` under `work` cache:
 
 ```xml
 <replicated-cache name="work" mode="SYNC">
-    <store class="org.keycloak.models.sessions.infinispan.remotestore.KeycloakRemoteStoreConfigurationBuilder" passivation="false" fetch-state="false" purge="false" preload="false" shared="true">   
-        <property name="rawValues">true</property>	
+    <remote-store cache="work" remote-servers="remote-cache" passivation="false" fetch-state="false" purge="false" preload="false" shared="true">
+        <property name="rawValues">true</property>
         <property name="marshaller">org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory</property>
-        <property name="remoteCacheName">work</property> 
-        <property name="sessionCache">false</property>
-    </store>
+    </remote-store>
 </replicated-cache>
 ```
 
-3.5) Add the `store` like this under `sessions` cache:
+3.5) Add the `remote-store` like this under `sessions` cache:
 
 ```xml
 <distributed-cache name="sessions" mode="SYNC" owners="1">
-    <store class="org.keycloak.models.sessions.infinispan.remotestore.KeycloakRemoteStoreConfigurationBuilder" passivation="false" fetch-state="false" purge="false" preload="false" shared="true">   
-        <property name="remoteCacheName">sessions</property> 
-        <property name="useConfigTemplateFromCache">work</property>
-        <property name="sessionCache">true</property>
-    </store>
+    <remote-store cache="sessions" remote-servers="remote-cache" passivation="false" fetch-state="false" purge="false" preload="false" shared="true">   
+        <property name="rawValues">true</property>
+        <property name="marshaller">org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory</property>
+    </remote-store>
 </distributed-cache>
 ```
 
-3.6) Same for `offlineSessions` and `loginFailures` caches (The only difference from `sessions` cache is, that `remoteCacheName` property value are different:
+3.6) Same for `offlineSessions`, `loginFailures`, and `actionTokens` caches (the only difference from `sessions` cache is that `cache` property value are different):
 
 ```xml
 <distributed-cache name="offlineSessions" mode="SYNC" owners="1">
-    <store class="org.keycloak.models.sessions.infinispan.remotestore.KeycloakRemoteStoreConfigurationBuilder" passivation="false" fetch-state="false" purge="false" preload="false" shared="true">   
-        <property name="remoteCacheName">offlineSessions</property> 
-        <property name="useConfigTemplateFromCache">work</property>
-        <property name="sessionCache">true</property>
-    </store>
+    <remote-store cache="offlineSessions" remote-servers="remote-cache" passivation="false" fetch-state="false" purge="false" preload="false" shared="true">
+        <property name="rawValues">true</property>
+        <property name="marshaller">org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory</property>
+    </remote-store>
 </distributed-cache>
 
 <distributed-cache name="loginFailures" mode="SYNC" owners="1">
-    <store class="org.keycloak.models.sessions.infinispan.remotestore.KeycloakRemoteStoreConfigurationBuilder" passivation="false" fetch-state="false" purge="false" preload="false" shared="true">   
-        <property name="remoteCacheName">loginFailures</property> 
-        <property name="useConfigTemplateFromCache">work</property>
-        <property name="sessionCache">true</property>
-    </store>
+    <remote-store cache="loginFailures" remote-servers="remote-cache" passivation="false" fetch-state="false" purge="false" preload="false" shared="true">
+        <property name="rawValues">true</property>
+        <property name="marshaller">org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory</property>
+    </remote-store>
 </distributed-cache>
-```
 
-3.7) The configuration of `actionTokens` cache have different `remoteCacheName`, `sessionCache` and the `preload` attribute:
-
-```xml
 <distributed-cache name="actionTokens" mode="SYNC" owners="2">
     <eviction max-entries="-1" strategy="NONE"/>
     <expiration max-idle="-1" interval="300000"/>
-    <store class="org.keycloak.models.sessions.infinispan.remotestore.KeycloakRemoteStoreConfigurationBuilder" passivation="false" fetch-state="false" purge="false" preload="true" shared="true">   
-        <property name="remoteCacheName">actionTokens</property> 
-        <property name="useConfigTemplateFromCache">work</property>
-        <property name="sessionCache">false</property>
-    </store>
+    <remote-store cache="actionTokens" remote-servers="remote-cache" passivation="false" fetch-state="false" purge="false" preload="true" shared="true">
+        <property name="rawValues">true</property>
+        <property name="marshaller">org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory</property>
+    </remote-store>
 </distributed-cache>
-```            
+```
+
+3.7) Add outbound socket binding for the remote store into `socket-binding-group` configuration:
+
+```xml
+<outbound-socket-binding name="remote-cache">
+    <remote-destination host="${remote.cache.host:localhost}" port="${remote.cache.port:11222}"/>
+</outbound-socket-binding>
+```
 
 3.8) The configuration of distributed cache `authenticationSessions` and other caches is left unchanged.
 

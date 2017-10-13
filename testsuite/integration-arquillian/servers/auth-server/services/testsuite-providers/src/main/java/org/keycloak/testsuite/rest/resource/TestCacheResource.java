@@ -35,6 +35,7 @@ import org.infinispan.remoting.transport.Transport;
 import org.jgroups.JChannel;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
 import org.keycloak.testsuite.rest.representation.JGroupsStats;
@@ -136,11 +137,11 @@ public class TestCacheResource {
         if (remoteCache == null) {
             return -1;
         } else {
-            UserSessionEntity userSession = (UserSessionEntity) remoteCache.get(userSessionId);
+            SessionEntityWrapper<UserSessionEntity> userSession = (SessionEntityWrapper<UserSessionEntity>) remoteCache.get(userSessionId);
             if (userSession == null) {
                 return -1;
             } else {
-                return userSession.getLastSessionRefresh();
+                return userSession.getEntity().getLastSessionRefresh();
             }
         }
     }

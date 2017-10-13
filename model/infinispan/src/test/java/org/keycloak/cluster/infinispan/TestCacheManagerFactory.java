@@ -19,11 +19,12 @@ package org.keycloak.cluster.infinispan;
 
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
+import org.infinispan.configuration.cache.StoreConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.persistence.remote.configuration.ExhaustedAction;
-import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
+import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationChildBuilder;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -31,7 +32,7 @@ import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationB
 class TestCacheManagerFactory {
 
 
-    <T extends RemoteStoreConfigurationBuilder> EmbeddedCacheManager createManager(int threadId, String cacheName, Class<T> builderClass) {
+    <T extends StoreConfigurationBuilder<?, T> & RemoteStoreConfigurationChildBuilder<T>> EmbeddedCacheManager createManager(int threadId, String cacheName, Class<T> builderClass) {
         System.setProperty("java.net.preferIPv4Stack", "true");
         System.setProperty("jgroups.tcp.port", "53715");
         GlobalConfigurationBuilder gcb = new GlobalConfigurationBuilder();
@@ -57,7 +58,7 @@ class TestCacheManagerFactory {
     }
 
 
-    private <T extends RemoteStoreConfigurationBuilder> Configuration getCacheBackedByRemoteStore(int threadId, String cacheName, Class<T> builderClass) {
+    private <T extends StoreConfigurationBuilder<?, T> & RemoteStoreConfigurationChildBuilder<T>> Configuration getCacheBackedByRemoteStore(int threadId, String cacheName, Class<T> builderClass) {
         ConfigurationBuilder cacheConfigBuilder = new ConfigurationBuilder();
 
         String host = "localhost";

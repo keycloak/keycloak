@@ -27,6 +27,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.sessions.infinispan.CacheDecorators;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
 
@@ -172,17 +173,17 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
         switch (operation) {
             case REMOVE:
                 // Just remove it
-                cache
+                CacheDecorators.skipCacheStore(cache)
                         .getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES)
                         .remove(key);
                 break;
             case ADD:
-                cache
+                CacheDecorators.skipCacheStore(cache)
                         .getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES)
                         .put(key, sessionWrapper, task.getLifespanMs(), TimeUnit.MILLISECONDS);
                 break;
             case ADD_IF_ABSENT:
-                SessionEntityWrapper<V> existing = cache.putIfAbsent(key, sessionWrapper);
+                SessionEntityWrapper<V> existing = CacheDecorators.skipCacheStore(cache).putIfAbsent(key, sessionWrapper);
                 if (existing != null) {
                     logger.debugf("Existing entity in cache for key: %s . Will update it", key);
 
@@ -210,7 +211,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
             SessionEntityWrapper<V> newVersionEntity = generateNewVersionAndWrapEntity(session, oldVersionEntity.getLocalMetadata());
 
             // Atomic cluster-aware replace
-            replaced = cache.replace(key, oldVersionEntity, newVersionEntity);
+            replaced = CacheDecorators.skipCacheStore(cache).replace(key, oldVersionEntity, newVersionEntity);
 
             // Replace fail. Need to load latest entity from cache, apply updates again and try to replace in cache again
             if (!replaced) {
