@@ -195,7 +195,8 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     }
 
     private String getIDTokenForLogout(KeycloakSession session, UserSessionModel userSession) {
-        long exp = Long.parseLong(userSession.getNote(FEDERATED_TOKEN_EXPIRATION));
+        String tokenExpirationString = userSession.getNote(FEDERATED_TOKEN_EXPIRATION);
+        long exp = tokenExpirationString == null ? 0 : Long.parseLong(tokenExpirationString);
         int currentTime = Time.currentTime();
         if (exp > 0 && currentTime > exp) {
             String response = refreshTokenForLogout(session, userSession);
@@ -392,8 +393,20 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             if (userInfoUrl != null && !userInfoUrl.isEmpty() && (id == null || name == null || preferredUsername == null || email == null)) {
 
                 if (accessToken != null) {
-                    JsonNode userInfo = SimpleHttp.doGet(userInfoUrl, session)
-                            .header("Authorization", "Bearer " + accessToken).asJson();
+                    SimpleHttp.Response response = SimpleHttp.doGet(userInfoUrl, session)
+                            .header("Authorization", "Bearer " + accessToken).asResponse();
+                    if (response.getStatus() != 200) {
+                        String msg = "failed to invoke user info url";
+                        try {
+                            String tmp = response.asString();
+                            if (tmp != null) msg = tmp;
+
+                        } catch (IOException e) {
+
+                        }
+                        throw new IdentityBrokerException("Failed to invoke on user info url: " + msg);
+                    }
+                    JsonNode userInfo = response.asJson();
 
                     id = getJsonProperty(userInfo, "sub");
                     name = getJsonProperty(userInfo, "name");

@@ -612,7 +612,7 @@ public class TokenEndpoint {
 
             if (subjectIssuer != null && !realmIssuerUrl.equals(subjectIssuer)) {
                 event.detail(OAuth2Constants.SUBJECT_ISSUER, subjectIssuer);
-                return exchangeExternalToken(subjectIssuer);
+                return exchangeExternalToken(subjectIssuer, subjectToken);
 
             }
 
@@ -687,8 +687,18 @@ public class TokenEndpoint {
         if (requestedIssuer == null) {
             return exchangeClientToClient(tokenUser, tokenSession);
         } else {
-            return exchangeToIdentityProvider(tokenUser, tokenSession, requestedIssuer);
-        }
+            try {
+                return exchangeToIdentityProvider(tokenUser, tokenSession, requestedIssuer);
+            } finally {
+                if (subjectToken == null) { // we are naked! So need to clean up user session
+                    try {
+                        session.sessions().removeUserSession(realm, tokenSession);
+                    } catch (Exception ignore) {
+
+                    }
+                }
+            }
+         }
     }
 
     public Response exchangeToIdentityProvider(UserModel targetUser, UserSessionModel targetUserSession, String requestedIssuer) {
@@ -781,7 +791,7 @@ public class TokenEndpoint {
         return Cors.add(request, Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).auth().allowedOrigins(uriInfo, client).allowedMethods("POST").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
     }
 
-    public Response exchangeExternalToken(String issuer) {
+    public Response exchangeExternalToken(String issuer, String subjectToken) {
         ExchangeExternalToken externalIdp = null;
         IdentityProviderModel externalIdpModel = null;
 
@@ -790,7 +800,7 @@ public class TokenEndpoint {
             IdentityProvider idp = factory.create(session, idpModel);
             if (idp instanceof ExchangeExternalToken) {
                 ExchangeExternalToken external = (ExchangeExternalToken) idp;
-                if (idpModel.getAlias().equals(issuer) || externalIdp.isIssuer(issuer, formParams)) {
+                if (idpModel.getAlias().equals(issuer) || external.isIssuer(issuer, formParams)) {
                     externalIdp = external;
                     externalIdpModel = idpModel;
                     break;
@@ -819,6 +829,11 @@ public class TokenEndpoint {
         String sessionId = KeycloakModelUtils.generateId();
         UserSessionModel userSession = session.sessions().createUserSession(sessionId, realm, user, user.getUsername(), clientConnection.getRemoteAddr(), "external-exchange", false, null, null);
         externalIdp.exchangeExternalComplete(userSession, context, formParams);
+
+        // this must exist so that we can obtain access token from user session if idp's store tokens is off
+        userSession.setNote(IdentityProvider.EXTERNAL_IDENTITY_PROVIDER, externalIdpModel.getAlias());
+        userSession.setNote(IdentityProvider.FEDERATED_ACCESS_TOKEN, subjectToken);
+
         return exchangeClientToClient(user, userSession);
 
 

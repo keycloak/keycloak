@@ -35,9 +35,20 @@ public class GreenMailRule extends ExternalResource {
 
     private GreenMail greenMail;
 
+    private int port = 3025;
+    private String host = "localhost";
+
+    public GreenMailRule() {
+    }
+
+    public GreenMailRule(int port, String host) {
+        this.port = port;
+        this.host = host;
+    }
+
     @Override
     protected void before() throws Throwable {
-        ServerSetup setup = new ServerSetup(3025, "localhost", "smtp");
+        ServerSetup setup = new ServerSetup(port, host, "smtp");
 
         greenMail = new GreenMail(setup);
         greenMail.start();
