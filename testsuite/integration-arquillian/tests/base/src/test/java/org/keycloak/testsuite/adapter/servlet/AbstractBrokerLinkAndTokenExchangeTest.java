@@ -464,40 +464,58 @@ public abstract class AbstractBrokerLinkAndTokenExchangeTest extends AbstractSer
             IdentityProviderRepresentation rep = adminClient.realm(CHILD_IDP).identityProviders().get(PARENT_IDP).toRepresentation();
             rep.getConfig().put(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, String.valueOf(false));
             adminClient.realm(CHILD_IDP).identityProviders().get(PARENT_IDP).update(rep);
-            // test failure that validate signatures not set up yet.
+            // test user info validation.
             Response response = exchangeUrl.request()
                     .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader(ClientApp.DEPLOYMENT_NAME, "password"))
                     .post(Entity.form(
                             new Form()
                                     .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
                                     .param(OAuth2Constants.SUBJECT_TOKEN, accessToken)
-                                    .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.JWT_ACCESS_TOKEN_TYPE)
+                                    .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.JWT_TOKEN_TYPE)
                                     .param(OAuth2Constants.SUBJECT_ISSUER, PARENT_IDP)
 
                     ));
-            Assert.assertEquals(400, response.getStatus());
-            String json = response.readEntity(String.class);
-            System.out.println(json);
-            Assert.assertTrue(json.contains("Invalid server config"));
+            Assert.assertEquals(200, response.getStatus());
+            AccessTokenResponse tokenResponse = response.readEntity(AccessTokenResponse.class);
+            String exchangedAccessToken = tokenResponse.getToken();
+            Assert.assertNotNull(exchangedAccessToken);
+            response.close();
+
+            Assert.assertEquals(1, adminClient.realm(CHILD_IDP).getClientSessionStats().size());
+
+            // test logout
+            response = childLogoutWebTarget(httpClient)
+                    .queryParam("id_token_hint", exchangedAccessToken)
+                    .request()
+                    .get();
+            response.close();
+
+            Assert.assertEquals(0, adminClient.realm(CHILD_IDP).getClientSessionStats().size());
+
         }
         IdentityProviderRepresentation rep = adminClient.realm(CHILD_IDP).identityProviders().get(PARENT_IDP).toRepresentation();
         rep.getConfig().put(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, String.valueOf(true));
         rep.getConfig().put(OIDCIdentityProviderConfig.USE_JWKS_URL, String.valueOf(true));
         rep.getConfig().put(OIDCIdentityProviderConfig.JWKS_URL, parentJwksUrl());
+        String parentIssuer = UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT)
+                .path("/realms")
+                .path(PARENT_IDP)
+                .build().toString();
+        rep.getConfig().put("issuer", parentIssuer);
         adminClient.realm(CHILD_IDP).identityProviders().get(PARENT_IDP).update(rep);
 
         String exchangedUserId = null;
         String exchangedUsername = null;
 
         {
-            // valid exchange
+            // test signature validation
             Response response = exchangeUrl.request()
                     .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader(ClientApp.DEPLOYMENT_NAME, "password"))
                     .post(Entity.form(
                             new Form()
                                     .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
                                     .param(OAuth2Constants.SUBJECT_TOKEN, accessToken)
-                                    .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.JWT_ACCESS_TOKEN_TYPE)
+                                    .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.JWT_TOKEN_TYPE)
                                     .param(OAuth2Constants.SUBJECT_ISSUER, PARENT_IDP)
 
                     ));
@@ -554,8 +572,47 @@ public abstract class AbstractBrokerLinkAndTokenExchangeTest extends AbstractSer
                             new Form()
                                     .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
                                     .param(OAuth2Constants.SUBJECT_TOKEN, accessToken)
-                                    .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.JWT_ACCESS_TOKEN_TYPE)
+                                    .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.JWT_TOKEN_TYPE)
                                     .param(OAuth2Constants.SUBJECT_ISSUER, PARENT_IDP)
+
+                    ));
+            Assert.assertEquals(200, response.getStatus());
+            AccessTokenResponse tokenResponse = response.readEntity(AccessTokenResponse.class);
+            String exchangedAccessToken = tokenResponse.getToken();
+            JWSInput jws = new JWSInput(tokenResponse.getToken());
+            AccessToken token = jws.readJsonContent(AccessToken.class);
+            response.close();
+
+            String exchanged2UserId = token.getSubject();
+            String exchanged2Username = token.getPreferredUsername();
+
+            // assert that we get the same linked account as was previously imported
+
+            Assert.assertEquals(exchangedUserId, exchanged2UserId);
+            Assert.assertEquals(exchangedUsername, exchanged2Username);
+
+            // test logout
+            response = childLogoutWebTarget(httpClient)
+                    .queryParam("id_token_hint", exchangedAccessToken)
+                    .request()
+                    .get();
+            response.close();
+
+            Assert.assertEquals(0, adminClient.realm(CHILD_IDP).getClientSessionStats().size());
+
+
+            List<FederatedIdentityRepresentation> links = childRealm.users().get(exchangedUserId).getFederatedIdentity();
+            Assert.assertEquals(1, links.size());
+        }
+        {
+            // check that we can exchange without specifying an SUBJECT_ISSUER
+            Response response = exchangeUrl.request()
+                    .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader(ClientApp.DEPLOYMENT_NAME, "password"))
+                    .post(Entity.form(
+                            new Form()
+                                    .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
+                                    .param(OAuth2Constants.SUBJECT_TOKEN, accessToken)
+                                    .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.JWT_TOKEN_TYPE)
 
                     ));
             Assert.assertEquals(200, response.getStatus());
@@ -597,7 +654,7 @@ public abstract class AbstractBrokerLinkAndTokenExchangeTest extends AbstractSer
                             new Form()
                                     .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
                                     .param(OAuth2Constants.SUBJECT_TOKEN, accessToken)
-                                    .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.JWT_ACCESS_TOKEN_TYPE)
+                                    .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.JWT_TOKEN_TYPE)
                                     .param(OAuth2Constants.SUBJECT_ISSUER, PARENT_IDP)
 
                     ));

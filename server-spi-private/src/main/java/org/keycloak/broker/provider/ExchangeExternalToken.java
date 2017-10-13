@@ -29,6 +29,7 @@ import javax.ws.rs.core.MultivaluedMap;
  * @version $Revision: 1 $
  */
 public interface ExchangeExternalToken {
+    boolean isIssuer(String issuer, MultivaluedMap<String, String> params);
     BrokeredIdentityContext exchangeExternal(EventBuilder event, MultivaluedMap<String, String> params);
 
     void exchangeExternalComplete(UserSessionModel userSession, BrokeredIdentityContext context, MultivaluedMap<String, String> params);
