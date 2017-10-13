@@ -79,6 +79,7 @@ public interface OAuth2Constants {
     String UI_LOCALES_PARAM = "ui_locales";
 
     String PROMPT = "prompt";
+    String ACR_VALUES = "acr_values";
 
     String MAX_AGE = "max_age";
 

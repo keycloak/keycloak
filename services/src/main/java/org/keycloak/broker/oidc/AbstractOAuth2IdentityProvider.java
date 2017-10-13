@@ -306,6 +306,19 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         if (getConfig().isLoginHint() && loginHint != null) {
             uriBuilder.queryParam(OIDCLoginProtocol.LOGIN_HINT_PARAM, loginHint);
         }
+
+        String prompt = getConfig().getPrompt();
+        if (prompt == null || prompt.isEmpty()) {
+            prompt = request.getAuthenticationSession().getClientNote(OAuth2Constants.PROMPT);
+        }
+        if (prompt != null) {
+            uriBuilder.queryParam(OAuth2Constants.PROMPT, prompt);
+        }
+
+        String acr = request.getAuthenticationSession().getClientNote(OAuth2Constants.ACR_VALUES);
+        if (acr != null) {
+            uriBuilder.queryParam(OAuth2Constants.ACR_VALUES, acr);
+        }
         return uriBuilder;
     }
 
