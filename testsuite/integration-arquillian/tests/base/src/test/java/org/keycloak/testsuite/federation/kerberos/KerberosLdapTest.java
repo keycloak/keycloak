@@ -17,19 +17,24 @@
 
 package org.keycloak.testsuite.federation.kerberos;
 
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.core.Response;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.directory.server.core.api.authn.ppolicy.PasswordPolicyConfiguration;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.events.Details;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
+import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
@@ -75,7 +80,7 @@ public class KerberosLdapTest extends AbstractKerberosTest {
     protected boolean isCaseSensitiveLogin() {
         return kerberosRule.isCaseSensitiveLogin();
     }
-    
+
     @Override
     protected boolean isStartEmbeddedLdapServer() {
         return kerberosRule.isStartEmbeddedLdapServer();
@@ -96,6 +101,25 @@ public class KerberosLdapTest extends AbstractKerberosTest {
         assertUser("hnelson", "hnelson@keycloak.org", "Horatio", "Nelson", false);
     }
 
+    @Test
+    public void validatePasswordPolicyTest() throws Exception{
+         updateProviderEditMode(UserStorageProvider.EditMode.WRITABLE);
+
+         changePasswordPage.open();
+         loginPage.login("jduke", "theduke");
+
+         updateProviderValidatePasswordPolicy(true);
+         changePasswordPage.changePassword("theduke", "jduke", "jduke");
+         Assert.assertTrue(driver.getPageSource().contains("Invalid"));
+
+         updateProviderValidatePasswordPolicy(false);
+         changePasswordPage.changePassword("theduke", "jduke", "jduke");
+         Assert.assertTrue(driver.getPageSource().contains("Your password has been updated."));
+
+         // Change password back
+         changePasswordPage.open();
+         changePasswordPage.changePassword("jduke", "theduke", "theduke");
+    }
 
     @Test
     public void writableEditModeTest() throws Exception {

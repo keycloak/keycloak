@@ -436,6 +436,14 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
         testRealmResource().components().component(kerberosProvider.getId()).update(kerberosProvider);
     }
 
+    protected void updateProviderValidatePasswordPolicy(Boolean validatePasswordPolicy) {
+        List<ComponentRepresentation> reps = testRealmResource().components().query("test", UserStorageProvider.class.getName());
+        Assert.assertEquals(1, reps.size());
+        ComponentRepresentation kerberosProvider = reps.get(0);
+        kerberosProvider.getConfig().putSingle(LDAPConstants.VALIDATE_PASSWORD_POLICY, validatePasswordPolicy.toString());
+        testRealmResource().components().component(kerberosProvider.getId()).update(kerberosProvider);
+    }
+    
     public RealmResource testRealmResource() {
         return adminClient.realm("test");
     }
