@@ -11,7 +11,7 @@
             
             <#if referrer??>
                 var referrer = '${referrer}';
-                var referrer_uri = '${referrer_uri?html}';
+                var referrer_uri = '${referrer_uri}';
             </#if>
         
             <#if msg??>

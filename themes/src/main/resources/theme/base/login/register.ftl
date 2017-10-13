@@ -3,7 +3,7 @@
     <#if section = "title">
         ${msg("registerWithTitle",(realm.displayName!''))}
     <#elseif section = "header">
-        ${msg("registerWithTitleHtml",(realm.displayNameHtml!''))}
+        ${msg("registerWithTitleHtml",(realm.displayNameHtml!''))?no_esc}
     <#elseif section = "form">
         <form id="kc-register-form" class="${properties.kcFormClass!}" action="${url.registrationAction}" method="post">
           <input type="text" readonly value="this is not a login form" style="display: none;">
@@ -15,7 +15,7 @@
                     <label for="username" class="${properties.kcLabelClass!}">${msg("username")}</label>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
-                    <input type="text" id="username" class="${properties.kcInputClass!}" name="username" value="${(register.formData.username!'')?html}" />
+                    <input type="text" id="username" class="${properties.kcInputClass!}" name="username" value="${(register.formData.username!'')}" />
                 </div>
             </div>
           </#if>
@@ -24,7 +24,7 @@
                     <label for="firstName" class="${properties.kcLabelClass!}">${msg("firstName")}</label>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
-                    <input type="text" id="firstName" class="${properties.kcInputClass!}" name="firstName" value="${(register.formData.firstName!'')?html}" />
+                    <input type="text" id="firstName" class="${properties.kcInputClass!}" name="firstName" value="${(register.formData.firstName!'')}" />
                 </div>
             </div>
 
@@ -33,7 +33,7 @@
                     <label for="lastName" class="${properties.kcLabelClass!}">${msg("lastName")}</label>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
-                    <input type="text" id="lastName" class="${properties.kcInputClass!}" name="lastName" value="${(register.formData.lastName!'')?html}" />
+                    <input type="text" id="lastName" class="${properties.kcInputClass!}" name="lastName" value="${(register.formData.lastName!'')}" />
                 </div>
             </div>
 
@@ -42,7 +42,7 @@
                     <label for="email" class="${properties.kcLabelClass!}">${msg("email")}</label>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
-                    <input type="text" id="email" class="${properties.kcInputClass!}" name="email" value="${(register.formData.email!'')?html}" />
+                    <input type="text" id="email" class="${properties.kcInputClass!}" name="email" value="${(register.formData.email!'')}" />
                 </div>
             </div>
 
@@ -77,7 +77,7 @@
             <div class="${properties.kcFormGroupClass!}">
                 <div id="kc-form-options" class="${properties.kcFormOptionsClass!}">
                     <div class="${properties.kcFormOptionsWrapperClass!}">
-                        <span><a href="${url.loginUrl}">${msg("backToLogin")}</a></span>
+                        <span><a href="${url.loginUrl}">${msg("backToLogin")?no_esc}</a></span>
                     </div>
                 </div>
 
