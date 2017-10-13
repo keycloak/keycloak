@@ -19,6 +19,7 @@ package org.keycloak.testsuite.util;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.apache.http.Header;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -958,8 +959,11 @@ public class OAuthClient {
         public AccessTokenResponse(CloseableHttpResponse response) throws Exception {
             try {
                 statusCode = response.getStatusLine().getStatusCode();
-                if (!"application/json".equals(response.getHeaders("Content-Type")[0].getValue())) {
-                    Assert.fail("Invalid content type");
+
+                Header[] contentTypeHeaders = response.getHeaders("Content-Type");
+                String contentType = (contentTypeHeaders != null && contentTypeHeaders.length > 0) ? contentTypeHeaders[0].getValue() : null;
+                if (!"application/json".equals(contentType)) {
+                    Assert.fail("Invalid content type. Status: " + statusCode + ", contentType: " + contentType);
                 }
 
                 String s = IOUtils.toString(response.getEntity().getContent());

@@ -206,7 +206,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
 
                 @Override
                 public void run(int threadIndex, Keycloak keycloak, RealmResource realm) throws Throwable {
-                    log.infof("Trying to execute codeURL: %s, threadIndex: %i", codeURL, threadIndex);
+                    log.infof("Trying to execute codeURL: %s, threadIndex: %d", codeURL, threadIndex);
 
                     OAuthClient.AccessTokenResponse resp = oauth1.doAccessTokenRequest(code, "password");
                     if (resp.getAccessToken() != null && resp.getError() == null) {
@@ -222,10 +222,11 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
 
             oauth1.openLogout();
 
+            // Code should be successfully exchanged for the token just once
             Assert.assertEquals(1, codeToTokenSuccessCount.get());
             Assert.assertEquals(DEFAULT_THREADS - 1, codeToTokenErrorsCount.get());
 
-            log.infof("Iteration %i passed successfully", i);
+            log.infof("Iteration %d passed successfully", i);
         }
 
         long end = System.currentTimeMillis() - start;

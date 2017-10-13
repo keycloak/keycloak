@@ -204,6 +204,7 @@
                 <property name="javaVmArguments">
                     ${auth.server.memory.settings}
                     -Djava.net.preferIPv4Stack=true
+                    ${cache.server.crossdc1.jvm.debug.args}
                 </property>
                 <property name="outputToConsole">${cache.server.console.output}</property>
                 <property name="managementPort">${cache.server.management.port}</property>
@@ -229,6 +230,7 @@
                 <property name="javaVmArguments">
                     ${auth.server.memory.settings}
                     -Djava.net.preferIPv4Stack=true
+                    ${cache.server.crossdc2.jvm.debug.args}
                 </property>
                 <property name="outputToConsole">${cache.server.console.output}</property>
                 <property name="managementPort">${cache.server.2.management.port}</property>

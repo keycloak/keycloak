@@ -60,11 +60,12 @@ if (outcome == failed) of /subsystem=deployment-scanner/scanner=default/:read-re
   /subsystem=deployment-scanner/scanner=default/:add(path=deployments,relative-to=jboss.server.base.dir,runtime-failure-causes-rollback=${jboss.deployment.scanner.rollback.on.failure:false},scan-interval=5000)
   echo
 end-if
-if (outcome == failed) of /subsystem=infinispan/cache-container=keycloak/distributed-cache=authorization/:read-resource
-  echo Additing distributed-cache=authorization
-  /subsystem=infinispan/cache-container=keycloak/distributed-cache=authorization/:add(mode=SYNC,owners=1)
-  echo
-end-if
+# Do not add.  This is now removed.
+#if (outcome == failed) of /subsystem=infinispan/cache-container=keycloak/distributed-cache=authorization/:read-resource
+#  echo Adding distributed-cache=authorization
+#  /subsystem=infinispan/cache-container=keycloak/distributed-cache=authorization/:add(mode=SYNC,owners=1)
+#  echo
+#end-if
 if (result == update) of /subsystem=keycloak-server/spi=connectionsJpa/provider=default/:map-get(name=properties,key=databaseSchema)
   echo Updating connectionsJpa default properties...
   /subsystem=keycloak-server/spi=connectionsJpa/provider=default/:map-remove(name=properties,key=databaseSchema)
@@ -228,6 +229,15 @@ if (outcome == success) of /subsystem=infinispan/cache-container=keycloak/distri
   /subsystem=infinispan/cache-container=keycloak/local-cache=authorization/component=eviction/:write-attribute(name=strategy,value=LRU)
   /subsystem=infinispan/cache-container=keycloak/local-cache=authorization/component=eviction/:write-attribute(name=max-entries,value=10000)
   echo
+end-if
+
+# Migrate from 3.2.0 to 3.4.0
+if (outcome == success) of /subsystem=undertow/server=default-server/host=default-host/filter-ref=server-header/:read-resource
+  echo Removing X-Powered-By and Server headers from Keycloak responses...
+  /subsystem=undertow/server=default-server/host=default-host/filter-ref=server-header/:remove
+  /subsystem=undertow/server=default-server/host=default-host/filter-ref=x-powered-by-header/:remove
+  /subsystem=undertow/configuration=filter/response-header=x-powered-by-header/:remove
+  /subsystem=undertow/configuration=filter/response-header=server-header/:remove
 end-if
 
 echo *** End Migration ***

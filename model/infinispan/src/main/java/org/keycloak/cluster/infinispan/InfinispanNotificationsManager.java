@@ -23,6 +23,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import org.infinispan.Cache;
@@ -48,6 +50,8 @@ import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterListener;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.ConcurrentMultivaluedHashMap;
+import org.keycloak.executors.ExecutorsProvider;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
 
 /**
@@ -71,17 +75,20 @@ public class InfinispanNotificationsManager {
 
     private final String mySite;
 
+    private final ExecutorService listenersExecutor;
 
-    protected InfinispanNotificationsManager(Cache<String, Serializable> workCache, RemoteCache workRemoteCache, String myAddress, String mySite) {
+
+    protected InfinispanNotificationsManager(Cache<String, Serializable> workCache, RemoteCache workRemoteCache, String myAddress, String mySite, ExecutorService listenersExecutor) {
         this.workCache = workCache;
         this.workRemoteCache = workRemoteCache;
         this.myAddress = myAddress;
         this.mySite = mySite;
+        this.listenersExecutor = listenersExecutor;
     }
 
 
     // Create and init manager including all listeners etc
-    public static InfinispanNotificationsManager create(Cache<String, Serializable> workCache, String myAddress, String mySite, Set<RemoteStore> remoteStores) {
+    public static InfinispanNotificationsManager create(KeycloakSession session, Cache<String, Serializable> workCache, String myAddress, String mySite, Set<RemoteStore> remoteStores) {
         RemoteCache workRemoteCache = null;
 
         if (!remoteStores.isEmpty()) {
@@ -93,7 +100,8 @@ public class InfinispanNotificationsManager {
             }
         }
 
-        InfinispanNotificationsManager manager = new InfinispanNotificationsManager(workCache, workRemoteCache, myAddress, mySite);
+        ExecutorService listenersExecutor = workRemoteCache==null ? null : session.getProvider(ExecutorsProvider.class).getExecutor("work-cache-event-listener");
+        InfinispanNotificationsManager manager = new InfinispanNotificationsManager(workCache, workRemoteCache, myAddress, mySite, listenersExecutor);
 
         // We need CacheEntryListener for communication within current DC
         workCache.addListener(manager.new CacheEntryListener());
@@ -206,8 +214,20 @@ public class InfinispanNotificationsManager {
 
         private void hotrodEventReceived(String key) {
             // TODO: Look at CacheEventConverter stuff to possibly include value in the event and avoid additional remoteCache request
-            Object value = workCache.get(key);
-            eventReceived(key, (Serializable) value);
+            try {
+                listenersExecutor.submit(() -> {
+
+                    Object value = workCache.get(key);
+                    eventReceived(key, (Serializable) value);
+
+                });
+            } catch (RejectedExecutionException ree) {
+                logger.warnf("Rejected submitting of the event for key: %s. Probably server going to shutdown", key);
+
+                if (logger.isDebugEnabled()) {
+                    logger.debug(ree.getMessage(), ree);
+                }
+            }
         }
 
     }
