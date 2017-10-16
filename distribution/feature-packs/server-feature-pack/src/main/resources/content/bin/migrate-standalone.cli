@@ -55,6 +55,21 @@ if (result == []) of /subsystem=keycloak-server/:read-children-names(child-type=
   /subsystem=keycloak-server/:migrate-json
   echo
 end-if
+if (result == [expression "classpath:${jboss.server.config.dir}/providers/*"]) of /subsystem=keycloak-server/:read-attribute(name=providers)
+    echo Updating provider to default value
+    /subsystem=keycloak-server/:write-attribute(name=providers,value=[classpath:${jboss.home.dir}/providers/*])
+    echo
+end-if
+if (result == keycloak) of /subsystem=keycloak-server/theme=defaults:read-attribute(name=default)
+    echo Undefining default theme...
+    /subsystem=keycloak-server/theme=defaults:undefine-attribute(name=default)
+    echo
+end-if
+if (result == expression "${jboss.server.config.dir}/themes") of /subsystem=keycloak-server/theme=defaults:read-attribute(name=dir)
+    echo Updating theme dir to default value
+    /subsystem=keycloak-server/theme=defaults/:write-attribute(name=dir,value=${jboss.home.dir}/themes)
+    echo
+end-if
 
 set persistenceProvider=jpa
 
@@ -195,8 +210,10 @@ if ((result.default-provider == undefined) && (result.provider.default.enabled =
    echo
 end-if
 
+# Migrate from 3.0.0 to 3.1.0
+# NO CHANGES
 
-# Migrate from 3.0.0 to 3.2.0
+# Migrate from 3.1.0 to 3.2.0
 if (outcome == failed) of /subsystem=infinispan/cache-container=keycloak/local-cache=authenticationSessions/:read-resource
   echo Adding local-cache=authenticationSessions to keycloak cache container...
   /subsystem=infinispan/cache-container=keycloak/local-cache=authenticationSessions/:add(indexing=NONE,start=LAZY)
@@ -211,6 +228,126 @@ if (outcome == failed) of /subsystem=infinispan/cache-container=keycloak/local-c
   /subsystem=infinispan/cache-container=keycloak/local-cache=actionTokens/component=expiration/:write-attribute(name=interval,value=300000)
   /subsystem=infinispan/cache-container=keycloak/local-cache=actionTokens/component=expiration/:write-attribute(name=max-idle,value=-1)
   echo
+end-if
+
+if (result == 100L) of /subsystem=infinispan/cache-container=keycloak/local-cache=authorization/component=eviction/:read-attribute(name=max-entries)
+    echo Updating eviction in local-cache=authorization...
+    /subsystem=infinispan/cache-container=keycloak/local-cache=authorization/component=eviction/:write-attribute(name=max-entries,value=10000)
+    echo
+end-if
+
+# Migrate from 3.2.0 to 3.2.1
+# NO CHANGES
+
+# Migrate from 3.2.1 to 3.3.0
+if (outcome == failed) of /core-service=management/security-realm=ApplicationRealm/server-identity=ssl:read-resource
+    echo Adding keystore to ApplicationRealm...
+    /core-service=management/security-realm=ApplicationRealm/server-identity=ssl:add(keystore-path=application.keystore,keystore-relative-to=jboss.server.config.dir,keystore-password=password,alias=server,key-password=password,generate-self-signed-certificate-host=localhost)
+    echo
+end-if    
+
+if (outcome == failed) of /extension=org.wildfly.extension.elytron/:read-resource
+    echo Adding elytron extension...
+    /extension=org.wildfly.extension.elytron/:add(module=org.wildfly.extension.elytron)
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=elytron/:read-resource
+    echo Adding elytron subsystem
+    /subsystem=elytron:add
+    /subsystem=elytron/provider-loader=elytron/:add(module=org.wildfly.security.elytron)
+    /subsystem=elytron/provider-loader=openssl/:add(module=org.wildfly.openssl)
+    /subsystem=elytron/aggregate-providers=combined-providers/:add(providers=[elytron,openssl])
+    /subsystem=elytron/file-audit-log=local-audit/:add(path=audit.log,relative-to=jboss.server.log.dir,format=JSON)
+    /subsystem=elytron/identity-realm=local/:add(identity="$local")
+    /subsystem=elytron/properties-realm=ApplicationRealm/:add(users-properties={path=application-users.properties,relative-to=jboss.server.config.dir,digest-realm-name=ApplicationRealm},groups-properties={path=application-roles.properties,relative-to=jboss.server.config.dir})
+    /subsystem=elytron/properties-realm=ManagementRealm/:add(users-properties={path=mgmt-users.properties,relative-to=jboss.server.config.dir,digest-realm-name=ManagementRealm},groups-properties={path=mgmt-groups.properties,relative-to=jboss.server.config.dir})
+    /subsystem=elytron/simple-permission-mapper=anonymous-permission-mapper/:add(permission-mappings=[{principals=[anonymous],permissions=[{class-name=org.wildfly.security.auth.permission.LoginPermission}]}]
+    /subsystem=elytron/constant-permission-mapper=constant-permission-mapper/:add(permissions=[{class-name=org.wildfly.security.auth.permission.LoginPermission},{class-name=org.wildfly.extension.batch.jberet.deployment.BatchPermission,module=org.wildfly.extension.batch.jberet,target-name=*},{class-name=org.wildfly.transaction.client.RemoteTransactionPermission,module=org.wildfly.transaction.client},{class-name=org.jboss.ejb.client.RemoteEJBPermission,module=org.jboss.ejb-client}])
+    /subsystem=elytron/logical-permission-mapper=default-permission-mapper/:add(logical-operation=unless,left=constant-permission-mapper,right=anonymous-permission-mapper)
+    /subsystem=elytron/constant-realm-mapper=local/:add(realm-name=local)
+    /subsystem=elytron/simple-role-decoder=groups-to-roles/:add(attribute=groups)
+    /subsystem=elytron/constant-role-mapper=super-user-mapper/:add(roles=[SuperUser])
+    /subsystem=elytron/security-domain=ApplicationDomain/:add(default-realm=ApplicationRealm,permission-mapper=default-permission-mapper,realms=[{realm=ApplicationRealm,role-decoder=groups-to-roles},{realm=local}])
+    /subsystem=elytron/security-domain=ManagementDomain/:add(default-realm=ManagementRealm,permission-mapper=default-permission-mapper,realms=[{realm=ManagementRealm,role-decoder=groups-to-roles},{realm=local,role-mapper=super-user-mapper}])
+    /subsystem=elytron/provider-http-server-mechanism-factory=global/:add
+    /subsystem=elytron/http-authentication-factory=management-http-authentication/:add(http-server-mechanism-factory=global,security-domain=ManagementDomain,mechanism-configurations=[{mechanism-name=DIGEST,mechanism-realm-configurations=[{realm-name=ManagementRealm}]}])
+    /subsystem=elytron/http-authentication-factory=application-http-authentication/:add(http-server-mechanism-factory=global,security-domain=ApplicationDomain,mechanism-configurations=[{mechanism-name=BASIC,mechanism-realm-configurations=[{realm-name=Application Realm}]},{mechanism-name=FORM}])
+    /subsystem=elytron/provider-sasl-server-factory=global/:add
+    /subsystem=elytron/mechanism-provider-filtering-sasl-server-factory=elytron/:add(sasl-server-factory=global,filters=[{provider-name=WildFlyElytron}])
+    /subsystem=elytron/configurable-sasl-server-factory=configured/:add(sasl-server-factory=elytron,properties={wildfly.sasl.local-user.default-user => "$local"})
+    /subsystem=elytron/sasl-authentication-factory=management-sasl-authentication/:add(sasl-server-factory=configured,security-domain=ManagementDomain,mechanism-configurations=[{mechanism-name=JBOSS-LOCAL-USER,realm-mapper=local},{mechanism-name=DIGEST-MD5,mechanism-realm-configurations=[{realm-name=ManagementRealm}]}])
+    /subsystem=elytron/sasl-authentication-factory=application-sasl-authentication/:add(sasl-server-factory=configured,security-domain=ApplicationDomain,mechanism-configurations=[{mechanism-name=JBOSS-LOCAL-USER,realm-mapper=local},{mechanism-name=DIGEST-MD5,mechanism-realm-configurations=[{realm-name=ApplicationRealm}]}])
+    /subsystem=elytron/:write-attribute(name=final-providers,value=combined-providers)
+    /subsystem=elytron/:write-attribute(name=disallowed-providers,value=[OracleUcrypto])
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=ejb3/service=remote/channel-creation-options=READ_TIMEOUT/:read-resource
+    echo Adding channel-creation-options READ_TIMEOUT and MAX_OUTBOUND_MESSAGES to ejb3 remote
+    /subsystem=ejb3/service=remote/channel-creation-options=READ_TIMEOUT/:add(value="${prop.remoting-connector.read.timeout:20}",type=xnio)
+    /subsystem=ejb3/service=remote/channel-creation-options=MAX_OUTBOUND_MESSAGES/:add(value=1234,type=remoting)
+    echo
+end-if
+
+if (outcome == success) of /subsystem=infinispan/cache-container=web/local-cache=persistent:read-resource
+    echo Removing local-cache persistent from web cache-container
+    /subsystem=infinispan/cache-container=web/local-cache=persistent:remove
+    echo
+end-if
+
+if (outcome == success) of /subsystem=infinispan/cache-container=ejb/local-cache=persistent:read-resource
+    echo Removing local-cache persistent from ejb cache-container
+    /subsystem=infinispan/cache-container=ejb/local-cache=persistent:remove
+    echo
+end-if
+
+if (result == local-query) of /subsystem=infinispan/cache-container=hibernate/:read-attribute(name=default-cache)
+    echo Removing default-cache from hibernate cache-container
+    /subsystem=infinispan/cache-container=hibernate/:undefine-attribute(name=default-cache)
+    echo
+end-if
+    
+if (outcome == failed) of /subsystem=undertow/server=default-server/host=default-host/setting=http-invoker/:read-resource
+    echo Adding http-invoker to default-host
+    /subsystem=undertow/server=default-server/host=default-host/setting=http-invoker/:add(security-realm=ApplicationRealm)
+    echo
+end-if
+
+if (result == false) of /subsystem=undertow/server=default-server/http-listener=default/:read-attribute(name=enable-http2)
+    echo Enabling http2 for default http-listener
+    /subsystem=undertow/server=default-server/http-listener=default/:write-attribute(name=enable-http2,value=true)
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=undertow/server=default-server/https-listener=https/:read-resource
+    echo Adding https-listener
+    /subsystem=undertow/server=default-server/https-listener=https/:add(socket-binding=https,security-realm=ApplicationRealm,enable-http2=true)
+    echo
+end-if
+
+# Migrate from 3.3.0 to 3.4.0
+if (outcome == success) of /subsystem=undertow/server=default-server/host=default-host/filter-ref=server-header/:read-resource
+  echo Removing X-Powered-By and Server headers from Keycloak responses...
+  /subsystem=undertow/server=default-server/host=default-host/filter-ref=server-header/:remove
+  /subsystem=undertow/server=default-server/host=default-host/filter-ref=x-powered-by-header/:remove
+  /subsystem=undertow/configuration=filter/response-header=x-powered-by-header/:remove
+  /subsystem=undertow/configuration=filter/response-header=server-header/:remove
+  echo
+end-if
+
+if (outcome == success) of /subsystem=jdr/:read-resource
+    echo Removing jdr subsystem and extension
+    /subsystem=jdr/:remove
+    /extension=org.jboss.as.jdr/:remove
+    echo
+end-if
+    
+if (outcome == success) of /subsystem=jsf/:read-resource
+    echo Removing jsf subsystem and extension
+    /subsystem=jsf/:remove
+    /extension=org.jboss.as.jsf/:remove
+    echo
 end-if
 
 echo *** End Migration ***
