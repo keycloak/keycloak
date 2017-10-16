@@ -4,23 +4,21 @@ import org.keycloak.testsuite.pages.AbstractPage;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
-public class SpringAdminPage extends AbstractPage {
+public class LinkingPage extends AbstractPage {
 
-    @FindBy(className = "test")
-    private WebElement testDiv;
-
+    @FindBy(id = "error")
+    private WebElement errorMessage;
 
     @Override
     public boolean isCurrent() {
-        return driver.getTitle().equalsIgnoreCase("springboot admin page");
+        return driver.getTitle().equalsIgnoreCase("linking page result");
     }
 
     @Override
     public void open() throws Exception {
-
     }
 
-    public String getTestDivString() {
-        return testDiv.getText();
+    public String getErrorMessage() {
+        return errorMessage.getText();
     }
 }
