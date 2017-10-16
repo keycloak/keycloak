@@ -21,9 +21,6 @@ import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeyUtils;
 
 import java.math.BigInteger;
-import java.security.Key;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.interfaces.RSAPublicKey;
 

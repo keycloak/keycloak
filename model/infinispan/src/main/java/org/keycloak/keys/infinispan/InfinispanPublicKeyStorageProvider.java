@@ -35,7 +35,6 @@ import org.keycloak.keys.PublicKeyStorageProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.cache.infinispan.ClearCacheEvent;
-import org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderFactory;
 
 
 /**

@@ -25,7 +25,6 @@ import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.distribution.DistributionManager;
 import org.infinispan.persistence.manager.PersistenceManager;
 import org.infinispan.persistence.remote.RemoteStore;
-import org.infinispan.remoting.transport.Address;
 import org.infinispan.remoting.transport.Transport;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;

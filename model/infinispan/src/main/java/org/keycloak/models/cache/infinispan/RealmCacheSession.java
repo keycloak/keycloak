@@ -19,8 +19,6 @@ package org.keycloak.models.cache.infinispan;
 
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
-import org.keycloak.models.ClientInitialAccessModel;
-import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.migration.MigrationModel;
 import org.keycloak.models.*;
 import org.keycloak.models.cache.CacheRealmProvider;

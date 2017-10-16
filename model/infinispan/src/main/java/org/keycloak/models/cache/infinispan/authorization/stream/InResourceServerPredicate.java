@@ -1,7 +1,6 @@
 package org.keycloak.models.cache.infinispan.authorization.stream;
 
 import org.keycloak.models.cache.infinispan.authorization.entities.InResourceServer;
-import org.keycloak.models.cache.infinispan.entities.InRealm;
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
 
 import java.io.Serializable;

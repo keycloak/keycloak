@@ -18,7 +18,6 @@
 package org.keycloak.jose.jwe;
 
 import java.io.IOException;
-import java.security.GeneralSecurityException;
 
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.BouncyIntegration;

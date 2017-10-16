@@ -18,7 +18,6 @@
 package org.keycloak.models.sessions.infinispan.stream;
 
 import org.keycloak.models.sessions.infinispan.UserSessionTimestamp;
-import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
 import java.io.Serializable;

@@ -22,7 +22,6 @@ import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
-import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.timer.TimerProvider;
 
 /**

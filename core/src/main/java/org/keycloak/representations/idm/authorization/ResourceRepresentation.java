@@ -19,7 +19,6 @@ package org.keycloak.representations.idm.authorization;
 import java.net.URI;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
