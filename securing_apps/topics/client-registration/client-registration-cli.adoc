@@ -1,56 +1,54 @@
 [[_client_registration_cli]]
 == Client Registration CLI
 
-ifeval::[{project_product}==true]
-NOTE: Client Registration CLI is a Technology Preview feature and is not fully supported.
-endif::[]
+`Client Registration CLI` is a command line interface tool for application developers to configure new clients in self-service manner
+when integrating with {project_name}. It is specifically designed to interact with {project_name} Client Registration REST endpoints.
 
-`Client Registration CLI` is a command line interface tool that can be used by application developers to configure new clients
-to integrate with {project_name}. It is specifically designed to interact with {project_name} Client Registration REST endpoints.
-
-It is necessary to create a new client configuration for each new application hosted on a unique hostname in order for Keycloak
-to be able to interact with the application (and vice-versa) and perform its function of providing a login page, SSO session management etc.
+In order for any application to be able to use {project_name} it is necessary to create or obtain a client configuration. Usually a new client is configured for
+each new application hosted on a unique hostname. When application interacts with {project_name} it needs to identify itself with a `client_id` in order for {project_name}
+to be able to provide login page, SSO session management, and other services.
 
 `Client Registration CLI` allows you to configure application clients from a command line, and can be used in shell scripts as well.
 
-To allow a particular user to use `Client Registration CLI` a {project_name} administrator will typically use `Admin Console` to configure
- a new user, or configure a new client, and a client secret, to protect access to `Client Registration REST API`.
+To allow a particular user to use `Client Registration CLI` the {project_name} administrator will typically use `Admin Console` to configure
+ a new user with proper roles, or configure a new client and client secret to grant access to `Client Registration REST API`.
 
 
 [[_configuring_a_user_for_client_registration_cli]]
 === Configuring a new regular user for use with Client Registration CLI
 
 Login as `admin` into `Admin Console` (e.g. `http://localhost:8080/auth/admin`). Select a realm you want to administer.
-If you want to use existing user, select it for edit, otherwise create a new user. Go to `Role Mappings` tab. Under
-`Client Roles` select `realm-management`. Under `Available Roles` select `manage-client` for full set of client management
-permissions. Alternatively you can choose `view-clients` for read-only or `create-client` for ability to create new clients.
-These permissions grant user the capability to perform operations without the use of `Initial Access Token` or
-`Registration Access Token`.
+If you want to use existing user, select that user for edit, otherwise create a new user. Go to `Role Mappings` tab. Under
+`Client Roles` select `realm-management` (if in master realm, select `NAME-realm` where NAME is name of the target realm - users in master realm can have access to any other realms).
+Under `Available Roles` select `manage-client` for full set of client management permissions. Alternatively you can choose
+`view-clients` for read-only or `create-client` for ability to create new clients.
+These permissions grant user the capability to perform operations without the use of <<_initial_access_token,Initial Access Token>> or
+<<_registration_access_token,Registration Access Token>>.
 
 It's possible to not assign users any of `realm-management` roles. In that case user can still login with `Registration Client CLI`
-but will not be able to use it without having possession of an `Initial Access Token`. Trying to perform any operations
+but will not be able to use it without being in possession of an `Initial Access Token`. Trying to perform any operations
 without it will result in `403 Forbidden` error.
 
-Administrator can issue `Initial Access Tokens` from `Admin Console` by selecting `Initial Access Token` tab under `Realm Settings`.
+Administrator can issue `Initial Access Tokens` from `Admin Console` by selecting `Client Registration` tab under `Realm Settings`, then `Initial Access Token` sub-tab.
 
 [[_configuring_a_client_for_use_with_client_registration_cli]]
 === Configuring a client for use with Client Registration CLI
 
-By default the `Client Registration CLI` identifies as `admin-cli` client which is automatically configured for every new realm.
-No additional client configuration is required when using login with a username. You may wish to strengthen security by
+By default the `Client Registration CLI` identifies to the server as `admin-cli` client which is automatically configured for every new realm.
+No additional client configuration is necessary when logging in with username. You may wish to strengthen security by
 configuring the client `Access Type` as `Confidential`, and under `Credentials` tab select `ClientId and Secret`. When
-running `kcreg config credentials` you would then also have to provide a secret e.g. by using `--secret`.
+running `kcreg config credentials` you would then also have to provide a secret by using `--secret` option.
 
-If you want to use a separate client configuration for `Registration Client CLI` then you can create a new client - for
-example you can call it `reg-cli`. When running `kcreg config credentials` you then need to specify a `clientId` to use e.g. `--client reg-cli`.
+If you want to use a separate client configuration for `Registration Client CLI` then you can create a new client - you can call it `reg-cli`
+for example. When running `kcreg config credentials` you then need to specify which `clientId` to use e.g. `--client reg-cli`.
 
-If you want to use a service account associated with the client, then you need to enable a service account. In `Admin Client`
-you go to `Clients` section, and select a client for edit. Then under `Settings` first change `Access Type` to `Confidential`.
-Then toggle `Service Accounts Enabled` setting to `On`, and `Save` the configuration.
+If you want to use a service account associated with the client, you first need to enable service accounts. In `Admin Console`
+go to `Clients` section, and select a client for edit. Then under `Settings` change the `Access Type` to `Confidential`, and toggle
+`Service Accounts Enabled` setting to `On`. Make sure to `Save` the configuration.
 
 Under `Credentials` tab you can choose to configure either `Client Id and Secret`, or `Signed JWT`.
 
-You can now avoid specifying user when using `kcreg config credentials` and only provide a client secret or keystore info.
+Having done that you can then omit specifying user during `kcreg config credentials`, and only provide client secret or keystore info.
 
 [[_installing_client_registration_cli]]
 === Installing Client Registration CLI
@@ -59,7 +57,7 @@ Client Registration CLI is packaged inside Keycloak Server distribution. You can
 
 The Linux script is called `kcreg.sh`, and the one for Windows is called `kcreg.bat`.
 
-In order to setup the client to be used from any location on the filesystem you may want to add Keycloak server directory to your PATH.
+In order to setup the client for use from any location on the filesystem you may want to add Keycloak server directory to your PATH.
 
 On Linux:
 [source,bash]
@@ -75,10 +73,13 @@ c:\> set PATH=%PATH%;%KEYCLOAK_HOME%\bin
 c:\> kcreg
 ----
 
+Where KEYCLOAK_HOME refers to a directory where Keycloak Server distribution was unpacked.
+
+
 [[_using_client_registration_cli]]
 === Using Client Registration CLI
 
-Usually a user will first start an authenticated session by providing credentials, then perform some CRUD operations.
+First you need to start an authenticated session (i.e. logging in) by providing credentials. Then you perform operations on Client Registration REST endpoint.
 
 For example on Linux:
 
@@ -100,7 +101,7 @@ c:\> kcreg get my_client
 
 
 In a production environment Keycloak has to be accessed with `https:` to avoid exposing tokens to network sniffers. If server's
-certificate is not issued by one of the trusted CAs that are included in Java's default certificate truststore, then you will
+certificate is not issued by one of the trusted CAs that are included in Java's default certificate truststore, you will
 need to prepare a truststore.jks file, and instruct `Client Registration CLI` to use it.
 
 For example on Linux:
@@ -120,19 +121,20 @@ c:\> kcreg config truststore --trustpass %PASSWORD% %HOMEPATH%\.keycloak\trustst
 [[_logging_in]]
 ==== Logging In
 
-When logging in with `Client Registration CLI` you specify a server endpoint url, and a realm. Then you specify a username,
-or alternatively you can only specify a client id, which will result in special service account being used. In the first case,
+When logging in with `Client Registration CLI` you specify a server endpoint url, and a realm. Then you specify a username
+or, alternatively, a client id, which will result in special service account being used. In the first case,
 a password for the specified user has to be used at login. In the latter case there is no user password - only client secret
 or a `Signed JWT` is used.
 
-Regardless of the method, the account that logs in needs to have proper permissions in order to be able to perform client
-registration operations. Keep in mind that any account can only have permissions to manage clients within the same realm.
-If you need to manage different realms, you need to configure users in different realms with permissions to manage clients.
+Regardless of the method, the account that logs in needs proper permissions to be able to perform client
+registration operations. Keep in mind that any account in non-master realm can only have permissions to manage clients within the same realm.
+If you need to manage different realms, you can either configure multiple users in different realms, or you can create a single user in `master` realm and
+add it roles for managing clients in different realms.
 
-`Client Registration CLI` by itself does not support configuring the users, for that you would need to use `Admin Console`
-web interface or `Admin Client CLI` once it's available.
+`Client Registration CLI` by itself does not support configuring users, for that you would need to use `Admin Console`
+web interface or Admin Client CLI command line tool (see link:{adminguide_link}[{adminguide_name}] for more details).
 
-When `kcreg` successfully logs in it receives authorization tokens and saves them into a private config file so they can be
+When `kcreg` successfully logs in it receives authorization tokens and saves them into private config file so they can be
 used for subsequent invocations. See <<_working_with_alternative_configurations, next chapter>> for more info on configuration file.
 
 See built-in help for more information on using `Client Registration CLI`.
@@ -158,13 +160,13 @@ See `kcreg config credentials --help` for more information about starting an aut
 [[_working_with_alternative_configurations]]
 ==== Working with alternative configurations
 
-By default, `Client Registration CLI` automatically maintains a configuration file at a default location - `.keycloak/kcreg.config`
+By default, `Client Registration CLI` automatically maintains a configuration file at a default location - `./.keycloak/kcreg.config`
 under user's home directory.
 
-You can use `--config` option at any time to point to a different file / location. This way you can mantain multiple authenticated
+You can always use `--config` option to point to a different file / location. This way you can mantain multiple authenticated
 sessions in parallel. It is safest to perform operations tied to a single config file from a single thread.
 
-Make sure to not make a config file visible to other users on the system as it contains access tokens, and secrets that should be kept private.
+Make sure to not make the config file visible to other users on the system as it contains access tokens, and secrets that should be kept private.
 
 You may want to avoid storing any secrets at all inside a config file for the price of less convenience and having to do more token requests.
 In that case you can use `--no-config` option with all your commands. You will have to specify all authentication info with each
@@ -177,8 +179,9 @@ In that case you can use `--no-config` option with all your commands. You will h
 
 `Client Registration CLI` can be used by developers who don't have an account configured at Keycloak server they want to use.
 That's possible when realm administrator issues developer an `Initial Access Token`. It is up to realm administrator to decide
-how to issue and distribute these tokens. Admin can limit an Initial Access Token by maximum age, and a total number of clients
-that can be created with it. Many Initial Access Tokens can be created, and it's up to realm administrator to distribute them.
+how to issue and distribute these tokens. Admin can limit Initial Access Token's maximum age, and a total number of clients
+that can be created with it. Many Initial Access Tokens can be created, and it's up to realm administrator to distribute them
+to application developers.
 
 Once a developer is in possession of Initial Access Token they can use it to create new clients without authenticating
 with `kcreg config credentials`. Rather, Initial Access Token can be stored in configuration, or specified as part of `kcreg create`
@@ -214,12 +217,12 @@ c:\> kcreg create -s clientId=myclient -t %TOKEN%
 ----
 
 
-When Initial Access Token is used, the server response will include a newly issued Registration Access Token for client that was
-just created. Any subsequent operation for that client needs to be performed by authenticating with that token.
+When Initial Access Token is used, the server response will include a newly issued Registration Access Token.
+Any subsequent operation for that client needs to be performed by authenticating with that token which is only valid for that client.
 
-`Client Registration CLI` automatically uses its private configuration file to save, and make use of this token for each
-created client. As long as the same configuration file is used for all client operations, the developer will not need to
-authenticate in order to read, update, or delete a client they created.
+`Client Registration CLI` automatically uses its private configuration file to save, and use this token with its associated client.
+As long as the same configuration file is used for all client operations, the developer will not need to
+authenticate in order to read, update, or delete a client that was created this way.
 
 
 You can read more about Initial Access and Registration Access Tokens in <<_client_registration,Client Registration chapter>>.
@@ -229,40 +232,40 @@ See `kcreg config initial-token --help` and `kcreg config registration-token --h
 
 
 [[_performing_crud_operations]]
-==== Performing CRUD operations
-
+==== Creating client configuration
 
 After authenticating with credentials or configuring Initial Access Token, the first operation will usually be to create a new client.
 
-We've seen the simplest command to create a new client already. Often we may want to use a prepared JSON file as a template,
-and set / override some of the attributes. For example, this is how you read a JSON file in default client configuration format,
-override any clientId it may contain with a new one, override / set any other attributes as well, and after successful creation
-print the new client configuration to standard output.
+We've seen the simplest create command already. Often we may want to use a prepared JSON file as a template and set / override
+some of the attributes. For example, here is how you read a JSON file, override any `clientId` it may contain,
+set any other attributes as well, and after successful creation print the configuration to standard output.
 
 On Linux:
 [source,bash]
 ----
-$ kcreg.sh create -s clientId=myclient -f client-template.json -s baseUrl=/myclient -s 'redirectUris=["/myclient/*"]' -o
+$ kcreg.sh create -f client-template.json -s clientId=myclient -s baseUrl=/myclient -s 'redirectUris=["/myclient/*"]' -o
 ----
 
 On Windows:
 [source,bash]
 ----
-C:\> kcreg create -s clientId=myclient -f client-template.json -s baseUrl=/myclient -s "redirectUris=[\"/myclient/*\"]" -o
+C:\> kcreg create -f client-template.json -s clientId=myclient -s baseUrl=/myclient -s "redirectUris=[\"/myclient/*\"]" -o
 ----
 
 
 See `kcreg create --help` for more information about `kcreg create`.
 
 
-You can use `kcreg attrs` to list the available attributes. Note, that many configuration attributes are not checked for
-validity or consistency. It is up to you to specify proper values. Also note, that you should not have any `id` fields in your
-template or specify them as arguments to `kcreg create`.
+You can use `kcreg attrs` to list available attributes. Keep in mind that many configuration attributes are not checked for
+validity or consistency. It is up to you to specify proper values. Also note that you should not have any `id` fields in your
+template and should not specify them as arguments to `kcreg create`.
 
 
-Once a new client is created you can retrieve it again by using `kcreg get`.
+==== Retrieving client configuration
 
-On Linux:
+You can retrieve an existing client by using `kcreg get`.
+
+For example, on Linux:
 [source,bash]
 ----
 $ kcreg.sh get myclient
@@ -275,24 +278,25 @@ C:\> kcreg get myclient
 ----
 
 
-You can also get an adapter configuration which you can drop into your web application in order to integrate with Keycloak server.
+You can also get client configuration as adapter configuration file which you can package with your web application.
 
-On Linux:
+For example, on Linux:
 [source,bash]
 ----
-$ kcreg.sh get myclient -e install
+$ kcreg.sh get myclient -e install > keycloak.json
 ----
 
 On Windows:
 [source,bash]
 ----
-C:\> kcreg get myclient -e install
+C:\> kcreg get myclient -e install > keycloak.json
 ----
 
 See `kcreg get --help` for more information about `kcreg get`.
 
+==== Modifying client configuration
 
-It's simple to update client configurations as well. There are two modes of updating.
+There are two modes of updating client configuration.
 
 One is to submit a complete new state to the server after getting current configuration, saving it into a file, editing it, and posting it back.
 
@@ -313,9 +317,9 @@ C:\> kcreg update myclient -f myclient.json
 ----
 
 
-Another is to get current client, set or delete fields on it, and post it back all in one single step.
+Another way is to fetch current client, set or delete fields on it, and post it back all in one single step.
 
-On Linux:
+For example, on Linux:
 [source,bash]
 ----
 $ kcreg.sh update myclient -s enabled=false -d redirectUris
@@ -328,9 +332,9 @@ C:\> kcreg update myclient -s enabled=false -d redirectUris
 ----
 
 
-You can even use a file that contains only changes to be applied so you don't have to specify too many values as arguments.
-In this case we specify `--merge` to tell `Client Registration CLI` that rather than treating mychanges.json as full
-new configuration, it should see it as a set of attributes to be applied over existing configuration.
+You can even use a file that only contains changes to be applied so you don't have to specify too many values as arguments.
+In this case specify `--merge` to tell `Client Registration CLI` that rather than treating JSON file as full
+new configuration, it should treat it as a set of attributes to be applied over existing configuration.
 
 
 On Linux:
@@ -347,6 +351,7 @@ C:\> kcreg update myclient --merge -d redirectUris -f mychanges.json
 
 See `kcreg update --help` for more information about `kcreg update`.
 
+==== Deleting client configuration
 
 You may sometimes also need to delete a client.
 
@@ -369,13 +374,13 @@ See `kcreg delete --help` for more information about `kcreg delete`.
 [[_refreshing_invalid_registration_access_tokens]]
 ==== Refreshing Invalid Registration Access Tokens
 
-When performing CRUD operation using `no-config` mode `Client Registration CLI` can no longer handle Registration Access Tokens for you.
+When performing a CRUD operation using `--no-config` mode, `Client Registration CLI` can no longer handle Registration Access Tokens for you.
 In that case it is possible to lose track of most recently issued Registration Access Token for a client, which makes it impossible to
-perform any further CRUD operations on that client without using credentials of an account with 'manage-clients' permissions.
+perform any further CRUD operations on that client without authenticating with account that has 'manage-clients' permissions.
 
-If you have permissions you can reissue a new Registration Access Token for the client, and have it printed to stdout or saved to a config
-file of your choice. If not you have to ask realm administrator to reissue a new Registration Access Token for your client, and send it
-to you. You can then use the token by passing it to any CRUD command via `--token` option. You can also use `kcreg config registration-token`
+If you have permissions, you can issue a new Registration Access Token for the client, and have it printed to stdout or saved to a config
+file of your choice. Otherwise you have to ask realm administrator to issue new Registration Access Token for your client, and send it
+to you. You can then pass it to any CRUD command via `--token` option. You can also use `kcreg config registration-token`
 command to save the new token in configuration file, and have `Client Registration CLI` automatically handle it for you from that point on.
 
 See `kcreg update-token --help` for more information about `kcreg update-token`.
