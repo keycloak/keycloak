@@ -42,10 +42,8 @@ public class AccountFederatedIdentityBean {
 
     private final List<FederatedIdentityEntry> identities;
     private final boolean removeLinkPossible;
-    private final KeycloakSession session;
 
     public AccountFederatedIdentityBean(KeycloakSession session, RealmModel realm, UserModel user, URI baseUri, String stateChecker) {
-        this.session = session;
         URI accountIdentityUpdateUri = Urls.accountFederatedIdentityUpdate(baseUri, realm.getName());
 
         List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
@@ -63,16 +61,9 @@ public class AccountFederatedIdentityBean {
                     availableIdentities++;
                 }
 
-                String action = identity != null ? "remove" : "add";
-                String actionUrl = UriBuilder.fromUri(accountIdentityUpdateUri)
-                        .queryParam("action", action)
-                        .queryParam("provider_id", providerId)
-                        .queryParam("stateChecker", stateChecker)
-                        .build().toString();
-
                 String displayName = KeycloakModelUtils.getIdentityProviderDisplayName(session, provider);
-                FederatedIdentityEntry entry = new FederatedIdentityEntry(identity, displayName, provider.getAlias(), provider.getAlias(), actionUrl,
-                		  															provider.getConfig() != null ? provider.getConfig().get("guiOrder") : null);
+                FederatedIdentityEntry entry = new FederatedIdentityEntry(identity, displayName, provider,
+                  UriBuilder.fromUri(accountIdentityUpdateUri), stateChecker);
                 orderedSet.add(entry);
             }
         }
@@ -102,21 +93,31 @@ public class AccountFederatedIdentityBean {
 
     public class FederatedIdentityEntry {
 
-        private FederatedIdentityModel federatedIdentityModel;
+        private final FederatedIdentityModel identity;
         private final String providerId;
-		private final String providerName;
+        private final String providerName;
         private final String actionUrl;
         private final String guiOrder;
         private final String displayName;
+        private final String stateChecker;
+        private final String action;
 
-        public FederatedIdentityEntry(FederatedIdentityModel federatedIdentityModel, String displayName, String providerId,
-                                      String providerName, String actionUrl, String guiOrder) {
-            this.federatedIdentityModel = federatedIdentityModel;
+        public FederatedIdentityEntry(FederatedIdentityModel identity, String displayName, IdentityProviderModel provider
+                                    , UriBuilder actionUrlBuilder, String stateChecker) {
+
+            this.identity = identity;
             this.displayName = displayName;
-            this.providerId = providerId;
-            this.providerName = providerName;
-            this.actionUrl = actionUrl;
-            this.guiOrder = guiOrder;
+            this.providerId = provider.getAlias();
+            this.providerName = provider.getAlias();
+            this.guiOrder = provider.getConfig() != null ? provider.getConfig().get("guiOrder") : null;
+            this.stateChecker = stateChecker;
+            String action = identity != null ? "remove" : "add";
+            this.action = action;
+            this.actionUrl = actionUrlBuilder
+              .queryParam("action", action)
+              .queryParam("provider_id", providerId)
+              .queryParam("stateChecker", stateChecker)
+              .build().toString();
         }
 
         public String getProviderId() {
@@ -128,15 +129,15 @@ public class AccountFederatedIdentityBean {
         }
 
         public String getUserId() {
-            return federatedIdentityModel != null ? federatedIdentityModel.getUserId() : null;
+            return identity != null ? identity.getUserId() : null;
         }
 
         public String getUserName() {
-            return federatedIdentityModel != null ? federatedIdentityModel.getUserName() : null;
+            return identity != null ? identity.getUserName() : null;
         }
 
         public boolean isConnected() {
-            return federatedIdentityModel != null;
+            return identity != null;
         }
 
         public String getActionUrl() {
@@ -151,6 +152,13 @@ public class AccountFederatedIdentityBean {
             return displayName;
         }
 
+        public String getStateChecker() {
+          return stateChecker;
+        }
+
+        public String getAction() {
+          return action;
+        }
     }
     
 	public static class IdentityProviderComparator implements Comparator<FederatedIdentityEntry> {
@@ -180,7 +188,7 @@ public class AccountFederatedIdentityBean {
 				try {
 					return Integer.parseInt(ip.getGuiOrder());
 				} catch (NumberFormatException e) {
-					// ignore it and use defaulr
+					// ignore it and use default
 				}
 			}
 			return 10000;
