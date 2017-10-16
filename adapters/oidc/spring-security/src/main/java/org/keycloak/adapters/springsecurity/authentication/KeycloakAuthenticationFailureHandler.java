@@ -17,14 +17,13 @@
 
 package org.keycloak.adapters.springsecurity.authentication;
 
-import java.io.IOException;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import java.io.IOException;
 
 /**
  * To return the forbidden code with the corresponding message.
@@ -36,6 +35,14 @@ public class KeycloakAuthenticationFailureHandler implements AuthenticationFailu
 
 	@Override
 	public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception) throws IOException, ServletException {
-		response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unable to authenticate using the Authorization header");
+		// Check that the response was not committed yet (this may happen when another
+		// part of the Keycloak adapter sends a challenge or a redirect).
+		if (!response.isCommitted()) {
+			response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unable to authenticate using the Authorization header");
+		} else {
+			if (200 <= response.getStatus() && response.getStatus() < 300) {
+				throw new RuntimeException("Success response was committed while authentication failed!", exception);
+			}
+		}
 	}
 }
