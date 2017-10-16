@@ -1,11 +1,7 @@
 
 == Admin CLI
 
-ifeval::[{project_product}==true]
-NOTE: Admin CLI is a Technology Preview feature and is not fully supported.
-endif::[]
-
-In previous chapters we have described how to use the {project_name} Admin Console to perform administrative tasks.
+In previous chapters we have described how to use {project_name} Admin Console to perform administrative tasks.
 All those tasks can also be performed from command line by using Admin CLI command line tool.
 
 
@@ -15,7 +11,7 @@ Admin CLI is packaged inside {project_name} Server distribution. You can find ex
 
 The Linux script is called `kcadm.sh`, and the one for Windows is called `kcadm.bat`.
 
-In order to setup the client to be used from any location on the filesystem you may want to add {project_name} server directory to your PATH.
+In order to use the client from any location on your filesystem you may want to add {project_name} server directory to your PATH.
 
 On Linux:
 
@@ -27,13 +23,20 @@ On Windows:
     c:\> set PATH=%PATH%;%KEYCLOAK_HOME%\bin
     c:\> kcadm
 
+
+We assume KEYCLOAK_HOME env variable is set to the path where you extracted {project_name} Server distribution.
+
 NOTE: To avoid unnecessary repetition the rest of this document will only give Windows examples in places where difference
 in command line is more than just in `kcadm` command name.
 
 
 === Using Admin CLI
 
-Usually a user will first start an authenticated session by providing credentials, then perform some CRUD operations.
+Admin CLI works by making HTTP requests to Admin REST endpoints. Access to them is protected and requires authentication.
+
+NOTE: Consult Admin REST API documentation for details about JSON attributes for specific endpoints.
+
+You start an authenticated session by providing credentials (i.e. logging in), then you are ready to perform some CRUD operations.
 
 For example on Linux:
 
@@ -66,31 +69,25 @@ Or on Windows:
 
 === Authenticating
 
-Admin CLI works by making HTTP requests to Admin REST endpoints. Access to them is protected and requires authentication.
-
 When logging in with `Admin CLI` you specify a server endpoint url, and a realm. Then you specify a username,
-or alternatively you can only specify a client id, which will result in special service account being used. In the first case,
-a password for the specified user has to be used at login. In the latter case there is no user password - only client secret
-or a `Signed JWT` is used.
+or alternatively you can specify only a client id, which will result in special, so called 'service account' being used. In the first case,
+a password for the specified user has to be used at login. In the latter case there is no user password - only client secret.
+Alternatively, `Signed JWT` can be used.
 
-The account that logs in needs to have proper permissions in order to be able to invoke Admin REST API operations.
-Specifically - `realm-admin` role of `realm-management` client is required for user to administer the realm within which the user is defined.
+The account used for the session needs to have proper permissions in order to be able to invoke Admin REST API operations.
+For example, `realm-admin` role of `realm-management` client allows user to administer the realm within which the user is defined.
 
 
-There are two primary mechanisms to authenticate. One is by using `kcadm config credentials` to start an authenticated session:
+There are two primary mechanisms for authentication. One is using `kcadm config credentials` to start an authenticated session:
 
     $ kcadm.sh config credentials --server http://localhost:8080/auth --realm master --user admin --password admin
 
 This approach maintains an authenticated session between `kcadm` command invocations by saving the obtained access token, and
-associated refresh token, possibly other secrets as well in a private configuration file. By default this file is called `kcadm.config`
-and is located under user's home directory - it's full pathname is `$HOME/.keycloak/kcadm.config` (on Windows it's `%HOMEPATH%\.keycloak\kcadm.config`).
-The file can be named something else by using `-c, --config` option.
-
-See <<_working_with_alternative_configurations, next chapter>> for more info on configuration file.
+associated refresh token, possibly other secrets as well in a private configuration file. See <<_working_with_alternative_configurations, next chapter>> for more info on configuration file.
 
 Another approach is to authenticate with each command invocation for the duration of that invocation only. This approach results
 in more load on the server, and more time spent with round-trips obtaining tokens, but has a benefit of not needing to save any
-tokens between invocations, thus nothing is saved to disk.
+tokens between invocations, thus nothing is saved to disk. This mode is used when `--no-config` argument is specified.
 
 For example, when performing an operation we specify all the information required for authentication:
 
@@ -112,24 +109,28 @@ See `kcadm.sh config credentials --help` for more information about starting an 
 [[_working_with_alternative_configurations]]
 === Working with alternative configurations
 
-By default, `Admin CLI` automatically maintains a configuration file at a default location - `.keycloak/kcadm.config`
-under user's home directory.
+By default, `Admin CLI` automatically maintains a configuration file called `kcadm.config` located under user's home
+directory - it's full pathname is `$HOME/.keycloak/kcadm.config` (on Windows it's `%HOMEPATH%\.keycloak\kcadm.config`).
 
-You can use `--config` option at any time to point to a different file / location. This way you can maintain multiple authenticated
-sessions in parallel. It is safest to perform operations tied to a single config file from a single thread.
+You can use `--config` option to point to a different file / location. This way you can maintain multiple authenticated
+sessions in parallel.
 
-Make sure to not make a config file visible to other users on the system as it contains access tokens, and secrets that should be kept private.
+NOTE: It's best to perform operations tied to a single config file from a single thread.
+
+Make sure to not make config file visible to other users on the system as it contains access tokens, and secrets that should be kept private.
+By default the ~/.keycloak directory and its content will be automatically created with proper access limits. However if directory will
+exist already with non-default permissions, those will not be updated.
 
 You may want to avoid storing any secrets at all inside a config file for the price of less convenience and having to do more token requests.
-In that case you can use `--no-config` option with all your commands. You will have to specify all authentication info with each
-`kcadm` invocation.
+In that case you can use `--no-config` option with all your commands. In that case you will have to specify all the authentication info needed by
+`config credentials` command with each `kcadm` invocation.
 
 
 
 === Basic operations, and resource URIs
 
 Admin CLI allows you to perform CRUD operations against Admin REST API endpoints in quite a generic way, with additional commands
-that simplify performing certain actions.
+that simplify performing certain tasks.
 
 Main usage pattern is the following:
 
@@ -158,7 +159,7 @@ There is `realms` endpoint which is treated slightly differently since it is the
 There is also `serverinfo` which is treated the same way since it is independent of realms.
 
 When authenticating as a user with realm-admin powers you may need to perform operations on multiple different realms. In that case
-you can specify `-r, --target-realm` option to tell explicitly which realm the operation should be executed against.
+you can specify `-r` option to tell explicitly which realm the operation should be executed against.
 Instead of using REALM as specified via `--realm` option of `kcadm.sh config credentials`, the TARGET_REALM will be used:
 
     SERVER_URI/admin/realms/TARGET_REALM/ENDPOINT
@@ -175,13 +176,36 @@ resource URL:
     http://localhost:8080/auth/admin/realms/demorealm/users
 
 
+Commands `create` and `update` by default send JSON body to the server. You can use `-f FILENAME` to read a pre-made document from a file.
+You can use `-f -`, and message body will be read from standard input.
+But you can also specify individual attributes and their values as seen in the previous `create users` example, and they will be composed into a JSON body and sent to the server.
+
+
+When using `update` there are several ways to update a resource. You can first get current state of a resource, and save it into a file,
+then edit that file and send it to the server for update. For example:
+
+    $ kcadm.sh get realms/demorealm > demorealm.json
+    $ vi demorealm.json
+    $ kcadm.sh update realms/demorealm -f demorealm.json
+
+This way the resource on the server will be updated with all the attributes in the sent JSON document.
+
+Another option is to perform an update on-the-fly using `-s, --set` options to set new values. For example:
+
+    $ kcadm.sh update realms/demorealm -s enabled=false
+
+That would only update `enabled` attribute to `false`.
+
+By default `update` operation first performs a `get`, and then merges new attribute values with existing.
+Mostly this is a preferred behaviour. In some cases the endpoint may support `PUT` but not `GET`.
+You can use `-n` option to perform a so called 'no-merge' update which performs a PUT, without first doing a GET.
+
 
 === Realm operations
 
 Creating a new realm::
 
-A new realm can be created by specifying individual attributes on command line. They will be converted into a JSON document
-and sent to the server:
+To create a new enabled realm use `create` operation on `realms` endpoint, and set attributes `realm` and `enabled`:
 
     $ kcadm.sh create realms -s realm=demorealm -s enabled=true
 
@@ -206,18 +230,18 @@ Or on Windows:
 
 Listing existing realms::
 
-The following will return a list of all the realms:
+The following will return a list of all realms:
 
     $ kcadm.sh get realms
 
-Note, that the list of realms returned is additionally filtered on the server to only return realms the user has permissions for.
+Note that a list of realms is additionally filtered on the server to only return realms user is allowed to see.
 
-Often that is too much information as we may only be interested in realm name, or - for example - if it is enabled or not.
-You can specify the attributes to return by using `--fields` option:
+Returning the whole realm description is often too much information as we are often only interested in a subset of attributes like realm name, and if realm is enabled or not.
+You can specify which attributes to return by using `--fields` option:
 
     $ kcadm.sh get realms --fields realm,enabled
 
-You may even display the result as comma separated values:
+You can even display the result as comma separated values:
 
     $ kcadm.sh get realms --fields realm --format csv --noquotes
 
@@ -231,25 +255,20 @@ As is common for REST web services, in order to get an individual item of a coll
 
 Updating a realm::
 
-There are several options when updating any resource. You can first get current state of resource, and save it into a file,
-then edit that file, and send it to server for update. For example:
+In order to only change some attributes of the realm use `-s` to set new values for the attributes. For example:
+
+    $ kcadm.sh update realms/demorealm -s enabled=false
+
+If you want to set all writable attributes with new values, perform a `get` first, edit current values in JSON file, and resubmit. For example:
 
     $ kcadm.sh get realms/demorealm > demorealm.json
     $ vi demorealm.json
     $ kcadm.sh update realms/demorealm -f demorealm.json
 
-This way the resource on the server will be updated with all the attributes in the sent JSON document.
-
-Another option is to perform the update on-the-fly using `-s, --set` options to set new values:
-
-    $ kcadm.sh update realms/demorealm -s enabled=false
-
-That would only update `enabled` attribute to `false`.
-
 
 Deleting a realm::
 
-It's very simple to delete a realm:
+Here is how to delete a realm:
 
     $ kcadm.sh delete realms/demorealm
 
@@ -265,14 +284,14 @@ For example:
 
 Listing the realm keys::
 
-It's very simple to list the realm keys for a specific realm:
+Use `get` operation on `keys` endpoint of the target realm:
 
     $ kcadm.sh get keys -r demorealm
 
 
 Generating new realm keys::
 
-To add a new RSA generated keypair, first get `id` of the target realm. For example, to get `id` for a realm whose `realm` attribute is 'demorealm':
+To add a new RSA generated keypair, first get `id` of the target realm. For example:
 
     $ kcadm.sh get realms/demorealm --fields id --format csv --noquotes
 
@@ -303,7 +322,7 @@ Or on Windows:
 
     c:\> kcadm create components -r demorealm -s name=java-keystore -s providerId=java-keystore -s providerType=org.keycloak.keys.KeyProvider -s parentId=959844c1-d149-41d7-8359-6aa527fca0b0 -s "config.priority=[\"101\"]" -s "config.enabled=[\"true\"]" -s "config.active=[\"true\"]" -s "config.keystore=[\"/opt/keycloak/keystore.jks\"]" -s "config.keystorePassword=[\"secret\"]" -s "config.keyPassword=[\"secret\"]" -s "config.alias=[\"localhost\"]"
 
-And change attribute values for `keystore`, `keystorePassword`, `keyPassword`, and `alias` to match your specific keystore.
+Make sure to change attribute values for `keystore`, `keystorePassword`, `keyPassword`, and `alias` to match your specific keystore.
 
 Attribute `parentId` should be set to the value of target realm's `id`.
 
@@ -348,15 +367,15 @@ Use the `providerId` of that key to perform a delete. For example:
 
 Configuring event logging for a realm::
 
-Use `update` against `events/config` endpoint.
+Use `update` on `events/config` endpoint.
 
-Attribute 'eventsListeners' sets the list of EventListenerProviderFactory 'id's specifying all the event listeners receiving events.
-Separately from that there are attributes that control a built-in event storage which allows querying of past events via Admin REST API.
+Attribute `eventsListeners` contains a list of EventListenerProviderFactory ids, specifying all event listeners receiving events.
+Separately, there are attributes that control a built-in event storage which allows querying past events via Admin REST API.
 There is separate control over logging of service calls - 'eventsEnabled', and auditing events triggered during Admin Console or Admin REST API - 'adminEventsEnabled'.
-You may want to limit the time when old events expire so that your database doesn't get filled up - 'eventsExpiration' is set to time-to-live expressed in seconds.
+You may want to setup expiry of old events so that your database doesn't get filled up - 'eventsExpiration' is set to time-to-live expressed in seconds.
 
 
-For example, this is how you set a built-in event listener that will receive all the events and log them through jboss-logging (error events are logged as `WARN`, others as `DEBUG`, using a logger called `org.keycloak.events`):
+Here is an example of setting up a built-in event listener that will receive all the events and log them through jboss-logging (error events are logged as `WARN`, others as `DEBUG`, using a logger called `org.keycloak.events`):
 
 On Linux:
 
@@ -367,7 +386,7 @@ Or on Windows:
     c:\> kcadm update events/config -r demorealm -s "eventsListeners=[\"jboss-logging\"]"
 
 
-This is how you turn on storage of all available ERROR events - not auditing events - for 2 days so they can be retrieved via Admin REST:
+Here is an example of turning on storage of all available ERROR events - not including auditing events - for 2 days so they can be retrieved via Admin REST:
 
 On Linux:
 
@@ -377,12 +396,12 @@ Or on Windows:
 
     c:\> kcadm update events/config -r demorealm -s eventsEnabled=true -s "enabledEventTypes=[\"LOGIN_ERROR\",\"REGISTER_ERROR\",\"LOGOUT_ERROR\",\"CODE_TO_TOKEN_ERROR\",\"CLIENT_LOGIN_ERROR\",\"FEDERATED_IDENTITY_LINK_ERROR\",\"REMOVE_FEDERATED_IDENTITY_ERROR\",\"UPDATE_EMAIL_ERROR\",\"UPDATE_PROFILE_ERROR\",\"UPDATE_PASSWORD_ERROR\",\"UPDATE_TOTP_ERROR\",\"VERIFY_EMAIL_ERROR\",\"REMOVE_TOTP_ERROR\",\"SEND_VERIFY_EMAIL_ERROR\",\"SEND_RESET_PASSWORD_ERROR\",\"SEND_IDENTITY_PROVIDER_LINK_ERROR\",\"RESET_PASSWORD_ERROR\",\"IDENTITY_PROVIDER_FIRST_LOGIN_ERROR\",\"IDENTITY_PROVIDER_POST_LOGIN_ERROR\",\"CUSTOM_REQUIRED_ACTION_ERROR\",\"EXECUTE_ACTIONS_ERROR\",\"CLIENT_REGISTER_ERROR\",\"CLIENT_UPDATE_ERROR\",\"CLIENT_DELETE_ERROR\"]" -s eventsExpiration=172800
 
-This is how you reset stored event types to `all available event types` - setting to empty list is the same as enumerating all:
+Here is how you reset stored event types to *all available event types* - setting to empty list is the same as enumerating all:
 
     $ kcadm.sh update events/config -r demorealm -s enabledEventTypes=[]
 
 
-And this is how you turn on auditing events:
+And here is how you enable storage of auditing events:
 
     $ kcadm.sh update events/config -r demorealm -s adminEventsEnabled=true -s adminEventsDetailsEnabled=true
 
@@ -427,7 +446,7 @@ To create a client role identify the client first - use `get` to list available 
 
     $ kcadm.sh get clients -r demorealm --fields id,clientId
 
-Then create a new role by using client's `id` attribute to construct an endpoint uri - `clients/ID/roles`.
+Then, create a new role by using client's `id` attribute to construct an endpoint uri - `clients/ID/roles`.
 
 For example:
 
@@ -436,7 +455,7 @@ For example:
 
 Listing realm roles::
 
-To list existing realm roles use `get` command:
+To list existing realm roles use `get` command on `roles` endpoint:
 
     $ kcadm.sh get roles -r demorealm
 
@@ -447,7 +466,10 @@ You can also use `get-roles` command:
 
 Listing client roles::
 
-Use special `get-roles` command, passing it either `clientId` (via `--cclientid` option) or `id` (via `--cid` option) to identify the client, and list defined roles:
+There is a dedicated `get-roles` command to simplify listing of both realm and client roles. It is an extension of `get` command and so it behaves
+the same with additional semantics for listing roles.
+
+To list client roles use `get-roles` command, passing it either `clientId` (via `--cclientid` option) or `id` (via `--cid` option) to identify the client.
 
 For example:
 
@@ -475,8 +497,8 @@ For example:
 
 Getting a specific client role::
 
-Use special `get-roles` command, passing it either `clientId` (via `--cclientid` option) or `id` (via `--cid` option) to identify the client,
-and passing it either role `name` (via `--rolename` option) or 'id' (via --roleid) to identify a specific client role:
+Use a dedicated `get-roles` command, passing it either `clientId` (via `--cclientid` option) or `id` (via `--cid` option) to identify the client,
+and passing it either role `name` (via `--rolename` option) or 'id' (via `--roleid`) to identify a specific client role:
 
 For example:
 
@@ -513,8 +535,7 @@ Use `delete` operation with the same endpoint uri as for getting a specific clie
 
 Listing assigned, available and effective realm roles for a composite role::
 
-There is a dedicated `get-roles` command to simplify listing of both realm and client roles. It is an extension of `get` command thus it behaves
-like `get` command with additional semantics for listing roles.
+Use a dedicated `get-roles` command.
 
 To list *assigned* realm roles for the composite role you can specify the target composite role by either `name` (via --rname option) or `id` (via --rid option).
 
@@ -539,7 +560,7 @@ For example:
 
 Listing assigned, available, and effective client roles for a composite role::
 
-You can again use `get-roles` command to simplify listing of roles.
+Use a dedicated `get-roles` command.
 
 To list *assigned* client roles for the composite role you can specify the target composite role by either `name` (via --rname option)
 or `id` (via --rid option), and client by either `clientId` (via --cclientid option) or `id` (via --cid option).
@@ -581,18 +602,42 @@ For example, to remove 'user' role from target composite role 'testrole':
     $ kcadm.sh remove-roles --rname testrole --rolename user -r demorealm
 
 
-Adding client roles to a composite role::
+Adding client roles to a realm role::
 
-There is a dedicated `add-roles` operation that can be used for adding both realm roles and client roles.
+This is how you create or modify a composite realm role.
+
+Use a dedicated `add-roles` command that can be used for adding both realm roles and client roles.
 
 For example, to add to `testrole` composite role two roles defined on client `realm-management` - `create-client` role and `view-users` role:
 
     $ kcadm.sh add-roles -r demorealm --rname testrole --cclientid realm-management --rolename create-client --rolename view-users
 
 
+Adding client roles to a client role::
+
+This is how you create or modify a composite client role.
+
+First, find out an `id` of the composite client role - by using `get-roles` command for example:
+
+    $ kcadm.sh get-roles -r demorealm --cclientid test-client --rolename operations
+
+Let's assume that there exists a client with "clientId": 'test-client', a client role called 'support', and another client role - that will become composite role - that has an "id": "fc400897-ef6a-4e8c-872b-1581b7fa8a71", "name":"operations".
+
+In this example 'operations' is our target composite role, and we just got its `id`.
+
+We can now add another role to it:
+
+    $ kcadm.sh add-roles -r demorealm --cclientid test-client --rid fc400897-ef6a-4e8c-872b-1581b7fa8a71 --rolename support
+
+
+Afterwards all the roles of a composite role can be listed by using `get-roles --all`. For example:
+
+    $ kcadm.sh get-roles --rid fc400897-ef6a-4e8c-872b-1581b7fa8a71 --all
+
+
 Removing client roles from a composite role::
 
-There is a dedicated `remove-roles` operation that can be used for removing both realm roles and client roles.
+Use a dedicated `remove-roles` command.
 
 For example, to remove from `testrole` composite role two roles defined on client `realm management` - `create-client` role and `view-users` role:
 
@@ -603,14 +648,18 @@ For example, to remove from `testrole` composite role two roles defined on clien
 
 Creating a client::
 
-A new client can be created by using `create` command against `clients` endpoint. For example:
+To create a new client perform `create` command on `clients` endpoint. For example:
 
     $ kcadm.sh create clients -r demorealm -s clientId=myapp -s enabled=true
+
+If you want to set a secret for adapters to authenticate specify a `secret`. For example:
+
+    $ kcadm.sh create clients -r demorealm -s clientId=myapp -s enabled=true -s clientAuthenticatorType=client-secret -s secret=d0b8122f-8dfb-46b7-b68a-f5cc4e25d000
 
 
 Listing clients::
 
-It's very easy to list existing clients. For example:
+Use `get` operation on `clients` endpoint. For example:
 
     $ kcadm.sh get clients -r demorealm --fields id,clientId
 
@@ -622,6 +671,13 @@ Getting a specific client::
 Use client's `id` to construct an endpoint uri targeting specific client - `clients/ID`. For example:
 
     $ kcadm.sh get clients/c7b8547f-e748-4333-95d0-410b76b3f4a3 -r demorealm
+
+
+Getting current secret for specific client::
+
+Use client's `id` to construct an endpoint uri - `clients/ID/client-secret`. For example
+
+    $ kcadm.sh get clients/$CID/client-secret
 
 
 Getting adapter configuration file (keycloak.json) for specific client::
@@ -663,7 +719,7 @@ Use `delete` operation with the same endpoint uri as for getting a specific clie
 
 Creating a user::
 
-A new user can be created using the `create` command against the `users` endpoint. For example:
+To create a new user perform `create` operation on `users` endpoint. For example:
 
     $ kcadm.sh create users -r demorealm -s username=testuser -s enabled=true
 
@@ -687,7 +743,7 @@ that match condition for all the attributes.
 
 Getting a specific user::
 
-Use user `id` to compose an endpoint uri matching a specific user - `users/USER_ID`.
+Use user's `id` to compose an endpoint uri - `users/USER_ID`.
 
 For example:
 
@@ -715,28 +771,26 @@ Resetting user's password::
 
 There is a dedicated `set-password` command specifically to reset user's password. For example:
 
-    $ kcadm.sh set-password -r demorealm --username testuser --password NEWPASSWORD --temporary
+    $ kcadm.sh set-password -r demorealm --username testuser --new-password NEWPASSWORD --temporary
 
 That will set a temporary password for the user, which they will have to change the next time they login.
 
 You can use `--userid` if you want to specify the user by using `id` attribute.
 
 
-The same can be achieved using the `update` operation against an endpoint constructed from one for getting a specific user - `users/USER_ID/reset-password`.
+The same can be achieved using `update` operation on an endpoint constructed from one for getting a specific user - `users/USER_ID/reset-password`.
 
 For example:
 
     $ kcadm.sh update users/0ba7a3fd-6fd8-48cd-a60b-2e8fd82d56e2/reset-password -r demorealm -s type=password -s value=NEWPASSWORD -s temporary=true -n
 
-The last parameter (`-n`) forces a so called 'no-merge' update which performs a PUT only, without first doing a GET to retrieve current
-state of the resource. In this case it is necessary since `reset-password` endpoint doesn't support GET.
+The last parameter (`-n`) ensures that only PUT is performed without a prior GET. In this case it is necessary since `reset-password` endpoint doesn't support GET.
 
 
 
 Listing assigned, available, and effective realm roles for a user::
 
-There is a dedicated `get-roles` command to simplify listing of both realm and client roles. It is an extension of `get` command thus it behaves
-like `get` command with additional semantics for listing roles.
+Use a dedicated `get-roles` command.
 
 To list *assigned* realm roles for the user you can specify the target user by either `username` or `id`.
 
@@ -761,7 +815,7 @@ For example:
 
 Listing assigned, available, and effective client roles for a user::
 
-You can again use `get-roles` command to simplify listing of roles.
+Use a dedicated `get-roles` command.
 
 To list *assigned* client roles for the user you can specify the target user by either `username` (via --uusername option) or `id` (via --uid option),
 and client by either `clientId` (via --cclientid option) or `id` (via --cid option).
@@ -787,7 +841,7 @@ For example:
 
 Adding realm roles to a user::
 
-There is a dedicated `add-roles` command that can be used for adding both realm roles and client roles.
+Use a dedicated `add-roles` command.
 
 For example, to add 'user' role to user 'testuser' :
 
@@ -796,7 +850,7 @@ For example, to add 'user' role to user 'testuser' :
 
 Removing realm roles from a user::
 
-There is a dedicated `remove-roles` command that can be used to remove both realm roles and client roles.
+Use a dedicated `remove-roles` command.
 
 For example, to remove 'user' role from user 'testuser':
 
@@ -805,7 +859,7 @@ For example, to remove 'user' role from user 'testuser':
 
 Adding client roles to a user::
 
-There is a dedicated `add-roles` operation that can be used for adding both realm roles and client roles.
+Use a dedicated `add-roles` command.
 
 For example, to add to user `testuser` two roles defined on client `realm management` - `create-client` role and `view-users` role:
 
@@ -814,7 +868,7 @@ For example, to add to user `testuser` two roles defined on client `realm manage
 
 Removing client roles from a user::
 
-There is a dedicated `remove-roles` operation that can be used for removing both realm roles and client roles.
+Use a dedicated `remove-roles` command.
 
 For example, to remove from user `testuser` two roles defined on client `realm management` - `create-client` role and `view-users` role:
 
@@ -834,11 +888,11 @@ For example:
 
 Logging out user from specific session::
 
-To invalidate a session you only need session's `id`. You can get it by listing user's sessions.
+To logout the user's session first get session's `id` as described above.
 
 Use session's `id` to compose an endpoint uri - `sessions/ID`.
 
-The use `delete` to invalidate it. For example:
+Then use `delete` to invalidate it. For example:
 
     $ kcadm.sh delete sessions/d0eaa7cc-8c5d-489d-811a-69d3c4ec84d1
 
@@ -848,7 +902,7 @@ Logging out user from all sessions::
 
 You need user's `id` to construct an endpoint uri - `users/ID/logout`.
 
-Use 'create' to send logout-from-all-sessions request:
+Use 'create' to perform POST on that endpoint uri:
 
     $ kcadm.sh create users/6da5ab89-3397-4205-afaa-e201ff638f9e/logout -r demorealm -s realm=demorealm -s user=6da5ab89-3397-4205-afaa-e201ff638f9e
 
@@ -858,14 +912,14 @@ Use 'create' to send logout-from-all-sessions request:
 
 Creating a group::
 
-Use `create` operation, and `groups` endpoint to create a new group:
+Use `create` operation on `groups` endpoint to create a new group:
 
     $ kcadm.sh create groups -r demorealm -s name=Group
 
 
 Listing groups::
 
-Use `get` operation, and `groups` endpoint to list groups:
+Use `get` operation on `groups` endpoint to list groups:
 
     $ kcadm.sh get groups -r demorealm
 
@@ -906,14 +960,14 @@ Moving a group under another group::
 
 Find 'id' of existing parent group, and of existing child group. Use parent group's `id` to construct and endpoint uri - groups/PARENT_GROUP_ID/children.
 
-Make 'create' operation against this endpoint, and pass child group `id` as JSON body. For example:
+Perform 'create' operation on this endpoint, and pass child group `id` as JSON body. For example:
 
     $ kcadm.sh create groups/51204821-0580-46db-8f2d-27106c6b5ded/children -r demorealm -s id=08d410c6-d585-4059-bb07-54dcb92c5094
 
 
 Get groups for specific user::
 
-To get user's membership in groups, use user's `id` to compose a resource URI - `users/USER_ID/groups`
+To get user's membership in groups, use user's `id` to compose an endpoint URI - `users/USER_ID/groups`
 
 For example:
 
@@ -922,7 +976,7 @@ For example:
 
 Adding user to a group::
 
-To join user to a group use `update` operation against a resource uri composed from user's `id`, and group's `id` - users/USER_ID/groups/GROUP_ID.
+To join user to a group use `update` operation with an endpoint uri composed from user's `id`, and group's `id` - users/USER_ID/groups/GROUP_ID.
 
 For example:
 
@@ -931,7 +985,7 @@ For example:
 
 Removing user from a group::
 
-To remove user from a group use `delete` operation against the same resource uri as used for adding user to a group - users/USER_ID/groups/GROUP_ID.
+To remove user from a group use `delete` operation on the same endpoint uri as used for adding user to a group - users/USER_ID/groups/GROUP_ID.
 
 For example:
 
@@ -941,8 +995,7 @@ For example:
 
 Listing assigned, available, and effective realm roles for a group::
 
-There is a dedicated 'get-roles' command to simplify listing of roles. It is an extension of `get` command thus it behaves
-like `get` command with additional semantics for listing roles.
+Use a dedicated 'get-roles' command.
 
 To list *assigned* realm roles for the group you can specify the target group by `name` (via `--gname` option),
 `path` (via `--gpath` option), or `id` (via `--gid` option).
@@ -968,7 +1021,7 @@ For example:
 
 Listing assigned, available, and effective client roles for a group::
 
-A dedicated 'get-roles' command can be used to list for both realm roles and client roles.
+Use a dedicated 'get-roles' command.
 
 To list *assigned* client roles for the user you can specify the target group by either `name` (via --gname option) or `id` (via `--gid` option),
 and client by either `clientId` (via `--cclientid` option) or `id` (via `--id` option).
@@ -1001,8 +1054,8 @@ Use `serverinfo` endpoint to list available identity providers. For example:
 
     $ kcadm.sh get serverinfo -r demorealm --fields 'identityProviders(*)'
 
-Note that `serverinfo` endpoint is handled similarly to `realms` endpoint in that it is not resolved into resource URI as
-relative to target realm.
+Note that `serverinfo` endpoint is handled similarly to `realms` endpoint in that it is not resolved
+relative to target realm, because it exists outside any specific realm.
 
 
 Listing configured identity providers::
@@ -1014,7 +1067,7 @@ Use `identity-provider/instances` endpoint. For example:
 
 Getting a specific configured identity provider::
 
-To get a specific identity provider use an `alias` attribute of identity provider to construct an endpoint uri - `identity-provider/instances/ALIAS`.
+To get a specific identity provider use `alias` attribute of identity provider to construct an endpoint uri - `identity-provider/instances/ALIAS`.
 
 For example:
 
@@ -1030,7 +1083,7 @@ Use `delete` operation with the same endpoint uri as for getting a specific conf
 
 Configuring a Keycloak OpenID Connect identity provider::
 
-For Keycloak OpenID Connect use `keycloak-oidc` as `providerId` when creating a new identity provider instance.
+Use `keycloak-oidc` as `providerId` when creating a new identity provider instance.
 
 Provide config attributes `authorizationUrl`, `tokenUrl`, `clientId`, and `clientSecret`.
 
@@ -1047,7 +1100,7 @@ You configure the generic OpenID Connect provider the same way as Keycloak OpenI
 
 Configuring a SAML 2 identity provider::
 
-Use `saml` as `providerId` when creating a new identity provider instance. Provide `config` attributes - `singleSignOnServiceUrl`, `nameIDPolicyFormat`, and `signatureAlgorithm`.
+Use `saml` as `providerId`. Provide `config` attributes - `singleSignOnServiceUrl`, `nameIDPolicyFormat`, and `signatureAlgorithm`.
 
 For example:
 
@@ -1056,7 +1109,7 @@ For example:
 
 Configuring a Facebook identity provider::
 
-Use `facebook` as `providerId` when creating a new identity provider instance. Provide `config` attributes - `clientId` and `clientSecret`
+Use `facebook` as `providerId`. Provide `config` attributes - `clientId` and `clientSecret`
 as obtained from Facebook Developers application configuration page for your application.
 
     $ kcadm.sh create identity-provider/instances -r demorealm -s alias=facebook -s providerId=facebook -s enabled=true  -s 'config.useJwksUrl="true"' -s config.clientId=FACEBOOK_CLIENT_ID -s config.clientSecret=FACEBOOK_CLIENT_SECRET
@@ -1064,7 +1117,7 @@ as obtained from Facebook Developers application configuration page for your app
 
 Configuring a Google identity provider::
 
-Use `google` as `providerId` when creating a new identity provider instance. Provide `config` attributes - `clientId` and `clientSecret`
+Use `google` as `providerId`. Provide `config` attributes - `clientId` and `clientSecret`
 as obtained from Google Developers application configuration page for your application.
 
     $ kcadm.sh create identity-provider/instances -r demorealm -s alias=google -s providerId=google -s enabled=true  -s 'config.useJwksUrl="true"' -s config.clientId=GOOGLE_CLIENT_ID -s config.clientSecret=GOOGLE_CLIENT_SECRET
@@ -1072,7 +1125,7 @@ as obtained from Google Developers application configuration page for your appli
 
 Configuring a Twitter identity provider::
 
-Use `twitter` as `providerId` when creating a new identity provider instance. Provide `config` attributes - `clientId` and `clientSecret`
+Use `twitter` as `providerId`. Provide `config` attributes - `clientId` and `clientSecret`
 as obtained from Twitter Application Management application configuration page for your application.
 
     $ kcadm.sh create identity-provider/instances -r demorealm -s alias=google -s providerId=google -s enabled=true  -s 'config.useJwksUrl="true"' -s config.clientId=TWITTER_API_KEY -s config.clientSecret=TWITTER_API_SECRET
@@ -1080,7 +1133,7 @@ as obtained from Twitter Application Management application configuration page f
 
 Configuring a GitHub identity provider::
 
-Use `github` as `providerId` when creating a new identity provider instance. Provide `config` attributes - `clientId` and `clientSecret`
+Use `github` as `providerId`. Provide `config` attributes - `clientId` and `clientSecret`
 as obtained from GitHub Developer Application Settings page for your application.
 
     $ kcadm.sh create identity-provider/instances -r demorealm -s alias=github -s providerId=github -s enabled=true  -s 'config.useJwksUrl="true"' -s config.clientId=GITHUB_CLIENT_ID -s config.clientSecret=GITHUB_CLIENT_SECRET
@@ -1088,7 +1141,7 @@ as obtained from GitHub Developer Application Settings page for your application
 
 Configuring a LinkedIn identity provider::
 
-Use `linkedin` as `providerId` when creating a new identity provider instance. Provide `config` attributes - `clientId` and `clientSecret`
+Use `linkedin` as `providerId`. Provide `config` attributes - `clientId` and `clientSecret`
 as obtained from LinkedIn Developer Console application page for your application.
 
     $ kcadm.sh create identity-provider/instances -r demorealm -s alias=linkedin -s providerId=linkedin -s enabled=true  -s 'config.useJwksUrl="true"' -s config.clientId=LINKEDIN_CLIENT_ID -s config.clientSecret=LINKEDIN_CLIENT_SECRET
@@ -1096,7 +1149,7 @@ as obtained from LinkedIn Developer Console application page for your applicatio
 
 Configuring a Microsoft Live identity provider::
 
-Use `microsoft` as `providerId` when creating a new identity provider instance. Provide `config` attributes - `clientId` and `clientSecret`
+Use `microsoft` as `providerId`. Provide `config` attributes - `clientId` and `clientSecret`
 as obtained from Microsoft Application Registration Portal page for your application.
 
     $ kcadm.sh create identity-provider/instances -r demorealm -s alias=microsoft -s providerId=microsoft -s enabled=true  -s 'config.useJwksUrl="true"' -s config.clientId=MICROSOFT_APP_ID -s config.clientSecret=MICROSOFT_PASSWORD
@@ -1104,7 +1157,7 @@ as obtained from Microsoft Application Registration Portal page for your applica
 
 Configuring a StackOverflow identity provider::
 
-Use `stackoverflow` as `providerId` when creating a new identity provider instance. Provide `config` attributes - `clientId`, `clientSecret` and `key`
+Use `stackoverflow` as `providerId`. Provide `config` attributes - `clientId`, `clientSecret` and `key`
 as obtained from Stack Apps OAuth page for your application.
 
     $ kcadm.sh create identity-provider/instances -r demorealm -s alias=stackoverflow -s providerId=stackoverflow -s enabled=true  -s 'config.useJwksUrl="true"' -s config.clientId=STACKAPPS_CLIENT_ID -s config.clientSecret=STACKAPPS_CLIENT_SECRET -s config.key=STACKAPPS_KEY
@@ -1142,7 +1195,7 @@ Perform `delete` operation against this endpoint. For example:
 Triggering synchronization of all users for specific user storage provider::
 
 Use storage provider's `id` attribute to compose an endpoint uri - user-storage/ID_OF_USER_STORAGE_INSTANCE/sync
-Add `action=triggerFullSync` query parameter and use `create`.
+Add `action=triggerFullSync` query parameter and perform `create` command.
 
 For example:
 
@@ -1161,7 +1214,7 @@ For example:
 
 Test LDAP user storage connectivity::
 
-Perform `get` operation against `testLDAPConnection` endpoint. Provide query parameters `bindCredential`, `bindDn`, `connectionUrl`, and `useTruststoreSpi`, and set `action` query parameter to `testConnection`.
+Perform `get` operation on `testLDAPConnection` endpoint. Provide query parameters `bindCredential`, `bindDn`, `connectionUrl`, and `useTruststoreSpi`, and set `action` query parameter to `testConnection`.
 
 For example:
 
@@ -1170,7 +1223,7 @@ For example:
 
 Test LDAP user storage authentication::
 
-Perform `get` operation against `testLDAPConnection` endpoint. Provide query parameters `bindCredential`, `bindDn`, `connectionUrl`, and `useTruststoreSpi`, and set `action` query parameter to `testAuthentication`.
+Perform `get` operation on `testLDAPConnection` endpoint. Provide query parameters `bindCredential`, `bindDn`, `connectionUrl`, and `useTruststoreSpi`, and set `action` query parameter to `testAuthentication`.
 
 For example:
 
@@ -1182,7 +1235,7 @@ For example:
 
 Adding a hardcoded role LDAP mapper::
 
-Use `create` against `components` endpoint. Set `providerType` attribute to `org.keycloak.storage.ldap.mappers.LDAPStorageMapper`. Set `parentId` attribute to `id` of LDAP provider instance.
+Use `create` on `components` endpoint. Set `providerType` attribute to `org.keycloak.storage.ldap.mappers.LDAPStorageMapper`. Set `parentId` attribute to `id` of LDAP provider instance.
 Set `providerId` attribute to `hardcoded-ldap-role-mapper`. Make sure to provide a value of `role` config parameter.
 
 For example:
@@ -1192,7 +1245,7 @@ For example:
 
 Adding a MS Active Directory mapper::
 
-Use `create` against `components` endpoint. Set `providerType` attribute to `org.keycloak.storage.ldap.mappers.LDAPStorageMapper`. Set `parentId` attribute to `id` of LDAP provider instance.
+Use `create` on `components` endpoint. Set `providerType` attribute to `org.keycloak.storage.ldap.mappers.LDAPStorageMapper`. Set `parentId` attribute to `id` of LDAP provider instance.
 Set `providerId` attribute to `msad-user-account-control-mapper`.
 
 For example:
@@ -1200,9 +1253,9 @@ For example:
     $ kcadm.sh create components -r demorealm -s name=msad-user-account-control-mapper -s providerId=msad-user-account-control-mapper -s providerType=org.keycloak.storage.ldap.mappers.LDAPStorageMapper -s parentId=b7c63d02-b62a-4fc1-977c-947d6a09e1ea
 
 
-Adding a user attribute LDAP mapper::
+Adding an user attribute LDAP mapper::
 
-Use `create` against `components` endpoint. Set `providerType` attribute to `org.keycloak.storage.ldap.mappers.LDAPStorageMapper`. Set `parentId` attribute to `id` of LDAP provider instance.
+Use `create` on `components` endpoint. Set `providerType` attribute to `org.keycloak.storage.ldap.mappers.LDAPStorageMapper`. Set `parentId` attribute to `id` of LDAP provider instance.
 Set `providerId` attribute to `user-attribute-ldap-mapper`.
 
 For example:
@@ -1212,7 +1265,7 @@ For example:
 
 Adding a group LDAP mapper::
 
-Use `create` against `components` endpoint. Set `providerType` attribute to `org.keycloak.storage.ldap.mappers.LDAPStorageMapper`. Set `parentId` attribute to `id` of LDAP provider instance.
+Use `create` on `components` endpoint. Set `providerType` attribute to `org.keycloak.storage.ldap.mappers.LDAPStorageMapper`. Set `parentId` attribute to `id` of LDAP provider instance.
 Set `providerId` attribute to `group-ldap-mapper`.
 
 For example:
@@ -1222,7 +1275,7 @@ For example:
 
 Adding a full name LDAP mapper::
 
-Use `create` against `components` endpoint. Set `providerType` attribute to `org.keycloak.storage.ldap.mappers.LDAPStorageMapper`. Set `parentId` attribute to `id` of LDAP provider instance.
+Use `create` on `components` endpoint. Set `providerType` attribute to `org.keycloak.storage.ldap.mappers.LDAPStorageMapper`. Set `parentId` attribute to `id` of LDAP provider instance.
 Set `providerId` attribute to `full-name-ldap-mapper`.
 
 For example:
@@ -1236,9 +1289,9 @@ For example:
 
 Setting a password policy::
 
-Set realm's `passwordPolicy` attribute to an enumeration expression including specific policy provider id, and an optional configuration:
+Set realm's `passwordPolicy` attribute to enumeration expression that includes the specific policy provider id, and optional configuration.
 
-For example, to set password policy to 20000 hash iterations, requiring at least one special character, at least one uppercase character,
+For example, to set password policy to default values - i.e.: 27500 hashing iterations, requiring at least one special character, at least one uppercase character,
 at least one digit character, not be equal to user's `username`, and be at least 8 characters long you would use the following:
 
     $ kcadm.sh update realms/demorealm -s 'passwordPolicy="hashIterations and specialChars and upperCase and digits and notUsername and length"'
@@ -1261,8 +1314,7 @@ For example, to display `passwordPolicy` for demorealm:
 
 Listing authentication flows::
 
-Use `get` operation against `authentication/flows` endpoint. For example:
+Use `get` operation on `authentication/flows` endpoint. For example:
 
     $ kcadm.sh get authentication/flows -r demorealm
-
 
