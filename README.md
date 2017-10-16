@@ -49,6 +49,10 @@ To start Keycloak from the server distribution first build the distribution it a
     
 To stop the server press `Ctrl + C`.
 
+Reporting security vulnerabilities
+----------------------------------
+
+If you've found a security vulnerability, please look at the [instructions on how to properly report it](http://www.keycloak.org/security.html)
 
 Help and Documentation
 ----------------------
