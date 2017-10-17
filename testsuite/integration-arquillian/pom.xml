@@ -56,7 +56,8 @@
         <migration.70.version>1.9.8.Final</migration.70.version>
         <migration.70.authz.version>2.2.1.Final</migration.70.authz.version>
         <migration.71.version>2.5.5.Final</migration.71.version>
-
+        <google.guava.version>23.0</google.guava.version>
+        
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.source>1.8</maven.compiler.source>
     </properties>

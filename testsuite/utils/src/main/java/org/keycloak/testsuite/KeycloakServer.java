@@ -40,17 +40,18 @@ import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.testsuite.util.cli.TestsuiteCLI;
 import org.keycloak.util.JsonSerialization;
 
+import javax.net.ssl.SSLContext;
 import javax.servlet.DispatcherType;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import javax.net.ssl.SSLContext;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -58,6 +59,7 @@ import javax.net.ssl.SSLContext;
 public class KeycloakServer {
 
     private static final Logger log = Logger.getLogger(KeycloakServer.class);
+    public static final String JBOSS_SERVER_DATA_DIR = "jboss.server.data.dir";
 
     private boolean sysout = false;
 
@@ -211,6 +213,8 @@ public class KeycloakServer {
             config.setWorkerThreads(undertowWorkerThreads);
         }
 
+        configureDataDirectory();
+
         detectNodeName(config);
 
         final KeycloakServer keycloak = new KeycloakServer(config);
@@ -239,6 +243,52 @@ public class KeycloakServer {
         }
 
         return keycloak;
+    }
+
+    public static void configureDataDirectory() {
+        String dataPath = detectDataDirectory();
+        System.setProperty(JBOSS_SERVER_DATA_DIR, dataPath);
+        log.infof("Using %s %s", JBOSS_SERVER_DATA_DIR,  dataPath);
+    }
+
+  /**
+   * Detects the {@code jboss.server.data.dir} to use.
+   * If the System property {@code jboss.server.data.dir} is already set then the property value is used,
+   * otherwise a temporary data dir is created that will be deleted on JVM exit.
+   *
+   * @return
+   */
+  public static String detectDataDirectory() {
+
+        String dataPath = System.getProperty(JBOSS_SERVER_DATA_DIR);
+
+        if (dataPath != null){
+            // we assume jboss.server.data.dir is managed externally so just use it as is.
+            File dataDir = new File(dataPath);
+            if (!dataDir.exists() || !dataDir.isDirectory()) {
+                throw new RuntimeException("Invalid " + JBOSS_SERVER_DATA_DIR + " resources directory: " + dataPath);
+            }
+
+            return dataPath;
+        }
+
+        // we generate a dynamic jboss.server.data.dir and remove it at the end.
+        try {
+          File tempKeycloakFolder = Files.createTempDirectory("keycloak-server-").toFile();
+          File tmpDataDir = new File(tempKeycloakFolder, "/data");
+
+          if (tmpDataDir.mkdirs()) {
+            tmpDataDir.deleteOnExit();
+          } else {
+            throw new IOException("Could not create directory " + tmpDataDir);
+          }
+
+          dataPath = tmpDataDir.getAbsolutePath();
+        } catch (IOException ioe){
+          throw new RuntimeException("Could not create temporary " + JBOSS_SERVER_DATA_DIR, ioe);
+        }
+
+        return dataPath;
     }
 
     private KeycloakServerConfig config;

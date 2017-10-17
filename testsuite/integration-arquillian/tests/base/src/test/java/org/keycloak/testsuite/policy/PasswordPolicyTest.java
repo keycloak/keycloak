@@ -20,11 +20,11 @@ package org.keycloak.testsuite.policy;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
+import org.keycloak.policy.BlacklistPasswordPolicyProvider;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
@@ -32,7 +32,6 @@ import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.RealmBuilder;
 
 import java.util.List;
-import java.util.regex.PatternSyntaxException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -139,6 +138,25 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
             Assert.assertEquals("invalidPasswordMinSpecialCharsMessage", policyManager.validate("jdoe", "ab&d1234").getMessage());
             Assert.assertArrayEquals(new Object[]{2}, policyManager.validate("jdoe", "ab&d1234").getParameters());
             assertNull(policyManager.validate("jdoe", "ab&d-234"));
+        });
+    }
+
+    /**
+     * KEYCLOAK-5244
+     */
+    @Test
+    public void testBlacklistPasswordPolicyWithTestBlacklist() throws Exception {
+
+        testingClient.server("passwordPolicy").run(session -> {
+
+            RealmModel realmModel = session.getContext().getRealm();
+            PasswordPolicyManagerProvider policyManager = session.getProvider(PasswordPolicyManagerProvider.class);
+
+            realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "passwordBlacklist(test-password-blacklist.txt)"));
+
+            Assert.assertEquals(BlacklistPasswordPolicyProvider.ERROR_MESSAGE, policyManager.validate("jdoe", "blacklisted1").getMessage());
+            Assert.assertEquals(BlacklistPasswordPolicyProvider.ERROR_MESSAGE, policyManager.validate("jdoe", "blacklisted2").getMessage());
+            assertNull(policyManager.validate("jdoe", "notblacklisted"));
         });
     }
 
