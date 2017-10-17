@@ -855,5 +855,23 @@
             </modules>
         </profile>
 
+
+        <profile>
+            <id>db-failover-mariadb</id>
+            <properties>
+                <jdbc.mvn.groupId>org.mariadb.jdbc</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>mariadb-java-client</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>2.0.3</jdbc.mvn.version>
+                <keycloak.connectionsJpa.user>keycloak</keycloak.connectionsJpa.user>
+                <keycloak.connectionsJpa.password>keycloak</keycloak.connectionsJpa.password>
+                
+                <mariadb.ha.mode>replication</mariadb.ha.mode>
+                <mariadb.hosts>localhost:3316,localhost:3326</mariadb.hosts>
+                <mariadb.database>keycloak</mariadb.database>
+                <mariadb.options></mariadb.options>
+                <keycloak.connectionsJpa.url>jdbc:mariadb:${mariadb.ha.mode}://${mariadb.hosts}/${mariadb.database}${mariadb.options}</keycloak.connectionsJpa.url>
+            </properties>
+        </profile>
+
     </profiles>
 </project>

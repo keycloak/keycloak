@@ -34,6 +34,12 @@
         Uses maven-dependency-plugin to unpack keycloak-server-dist artifact into `target/keycloak` which is then added to Docker image.
     </description>
     
+    <properties>
+        <server.groupId>org.keycloak</server.groupId>
+        <server.artifactId>keycloak-server-dist</server.artifactId>
+        <server.unpacked.folder>keycloak-${product.version}</server.unpacked.folder>
+    </properties>
+
     <build>
 
         <plugins>
@@ -51,8 +57,8 @@
                         <configuration>
                             <artifactItems>
                                 <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-server-dist</artifactId>
+                                    <groupId>${server.groupId}</groupId>
+                                    <artifactId>${server.artifactId}</artifactId>
                                     <version>${project.version}</version>
                                     <type>zip</type>
                                     <outputDirectory>${project.build.directory}</outputDirectory>
@@ -77,7 +83,7 @@
                         <configuration>
                             <target>
                                 <move todir="${project.build.directory}/keycloak" failonerror="false">
-                                    <fileset dir="${project.build.directory}/keycloak-${project.version}"/>
+                                    <fileset dir="${project.build.directory}/${server.unpacked.folder}"/>
                                 </move>
                             </target>
                         </configuration>
@@ -86,5 +92,17 @@
             </plugin>
         </plugins>
     </build>
+    
+    <profiles>
+        
+        <profile>
+            <id>integration-testsuite-server</id>
+            <properties>
+                <server.groupId>org.keycloak.testsuite</server.groupId>
+                <server.artifactId>integration-arquillian-servers-auth-server-wildfly</server.artifactId>
+                <server.unpacked.folder>auth-server-wildfly</server.unpacked.folder>
+            </properties>
+        </profile>
+    </profiles>
     
 </project>
