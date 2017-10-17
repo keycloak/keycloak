@@ -439,7 +439,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
             MimeMessage message = greenMail.getReceivedMessages()[0];
 
-            String changePasswordUrl = getPasswordResetEmailLink(message);
+            String changePasswordUrl = getPasswordResetEmailLink(message).replace("&amp;", "&");
 
             setTimeOffset(70);
 
