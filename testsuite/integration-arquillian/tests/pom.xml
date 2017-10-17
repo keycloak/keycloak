@@ -113,6 +113,8 @@
         <testsuite.constants>${project.build.directory}/dependency/test-constants.properties</testsuite.constants>
 
         <skip.add.user.json>false</skip.add.user.json>
+        <skip.clean.second.cache>true</skip.clean.second.cache>
+        <skip.copy.auth.crossdc.nodes>true</skip.copy.auth.crossdc.nodes>
         <client.certificate.keystore>${auth.server.config.dir}/client.jks</client.certificate.keystore>
         <client.certificate.keystore.passphrase>secret</client.certificate.keystore.passphrase>
         <client.truststore>${auth.server.config.dir}/keycloak.truststore</client.truststore>
@@ -204,6 +206,7 @@
                             <phase>process-test-resources</phase>
                             <goals><goal>run</goal></goals>
                             <configuration>
+                                <skip>${skip.clean.second.cache}</skip>
                                 <target>
                                     <echo>${cache.server.home}/standalone-dc-2</echo>
                                     <delete failonerror="false" dir="${cache.server.home}/standalone-dc-2" />
@@ -509,6 +512,7 @@
                                         <goal>run</goal>
                                     </goals>
                                     <configuration>
+                                        <skip>${skip.copy.auth.crossdc.nodes}</skip>
                                         <target>
                                             <move todir="${auth.server.crossdc01.home}">
                                                 <fileset dir="${auth.server.home}"/>
@@ -606,16 +610,6 @@
                                 </auth.server.crossdc12.jvm.debug.args>
 
                             </systemPropertyVariables>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-antrun-plugin</artifactId>
-                        <configuration>
-                            <!--
-                                skipping execution for <artifactId>integration-arquillian-tests</artifactId>,
-                                it's re-enabled in <artifactId>integration-arquillian-tests-base</artifactId>
-                            -->
-                            <skip>true</skip>
                         </configuration>
                     </plugin>
                 </plugins>
