@@ -39,8 +39,8 @@ import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
-import org.keycloak.models.sessions.infinispan.remotestore.KeycloakRemoteStoreConfigurationBuilder;
 import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
+import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
 
 /**
  * Test concurrency for remoteStore (backed by HotRod RemoteCaches) against external JDG. Especially tests "replaceWithVersion" contract.
@@ -207,7 +207,7 @@ public class ConcurrencyJDGSessionsCacheTest {
 
 
     private static EmbeddedCacheManager createManager(int threadId) {
-        return new TestCacheManagerFactory().createManager(threadId, InfinispanConnectionProvider.SESSION_CACHE_NAME, KeycloakRemoteStoreConfigurationBuilder.class);
+        return new TestCacheManagerFactory().createManager(threadId, InfinispanConnectionProvider.SESSION_CACHE_NAME, RemoteStoreConfigurationBuilder.class);
     }
 
 

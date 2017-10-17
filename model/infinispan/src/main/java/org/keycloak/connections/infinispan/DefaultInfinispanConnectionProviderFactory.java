@@ -41,9 +41,9 @@ import org.keycloak.Config;
 import org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.sessions.infinispan.remotestore.KeycloakRemoteStoreConfigurationBuilder;
 
 import javax.naming.InitialContext;
+import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -157,7 +157,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                 this.nodeName = generateNodeName();
             }
 
-            logger.debugv("Using container managed Infinispan cache container, lookup={1}", cacheContainerLookup);
+            logger.debugv("Using container managed Infinispan cache container, lookup={0}", cacheContainerLookup);
         } catch (Exception e) {
             throw new RuntimeException("Failed to retrieve cache container", e);
         }
@@ -354,8 +354,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
         builder.persistence()
                 .passivation(false)
-                .addStore(KeycloakRemoteStoreConfigurationBuilder.class)
-                    .sessionCache(sessionCache)
+                .addStore(RemoteStoreConfigurationBuilder.class)
                     .fetchPersistentState(false)
                     .ignoreModifications(false)
                     .purgeOnStartup(false)
@@ -382,8 +381,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
         builder.persistence()
                 .passivation(false)
-                .addStore(KeycloakRemoteStoreConfigurationBuilder.class)
-                    .sessionCache(false)
+                .addStore(RemoteStoreConfigurationBuilder.class)
                     .fetchPersistentState(false)
                     .ignoreModifications(false)
                     .purgeOnStartup(false)

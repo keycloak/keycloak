@@ -303,8 +303,9 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         RemoteCache remoteCache = InfinispanUtil.getRemoteCache(cache);
 
         if (remoteCache != null) {
-            UserSessionEntity remoteSessionEntity = (UserSessionEntity) remoteCache.get(id);
-            if (remoteSessionEntity != null) {
+            SessionEntityWrapper<UserSessionEntity> remoteSessionEntityWrapper = (SessionEntityWrapper<UserSessionEntity>) remoteCache.get(id);
+            if (remoteSessionEntityWrapper != null) {
+                UserSessionEntity remoteSessionEntity = remoteSessionEntityWrapper.getEntity();
                 log.debugf("getUserSessionWithPredicate(%s): remote cache contains session entity %s", id, remoteSessionEntity);
 
                 UserSessionModel remoteSessionAdapter = wrap(realm, remoteSessionEntity, offline);
@@ -399,7 +400,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
         FuturesHelper futures = new FuturesHelper();
 
-        // Each cluster node cleanups just local sessions, which are those owned by himself (+ few more taking l1 cache into account)
+        // Each cluster node cleanups just local sessions, which are those owned by itself (+ few more taking l1 cache into account)
         Cache<String, SessionEntityWrapper<UserSessionEntity>> localCache = CacheDecorators.localCache(sessionCache);
 
         Cache<String, SessionEntityWrapper<UserSessionEntity>> localCacheStoreIgnore = CacheDecorators.skipCacheLoaders(localCache);

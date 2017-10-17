@@ -28,6 +28,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
+import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
@@ -43,11 +44,11 @@ public class LastSessionRefreshListener implements ClusterListener {
     private final boolean offline;
 
     private final KeycloakSessionFactory sessionFactory;
-    private final Cache<String, SessionEntityWrapper> cache;
+    private final Cache<String, SessionEntityWrapper<UserSessionEntity>> cache;
     private final boolean distributed;
     private final String myAddress;
 
-    public LastSessionRefreshListener(KeycloakSession session, Cache<String, SessionEntityWrapper> cache, boolean offline) {
+    public LastSessionRefreshListener(KeycloakSession session, Cache<String, SessionEntityWrapper<UserSessionEntity>> cache, boolean offline) {
         this.sessionFactory = session.getKeycloakSessionFactory();
         this.cache = cache;
         this.offline = offline;

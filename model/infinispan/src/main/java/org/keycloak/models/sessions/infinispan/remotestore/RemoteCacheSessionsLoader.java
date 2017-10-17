@@ -29,7 +29,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
-import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.initializer.BaseCacheInitializer;
 import org.keycloak.models.sessions.infinispan.initializer.OfflinePersistentUserSessionLoader;
 import org.keycloak.models.sessions.infinispan.initializer.SessionLoader;
@@ -116,9 +115,7 @@ public class RemoteCacheSessionsLoader implements SessionLoader {
         for (Map.Entry<byte[], byte[]> entry : remoteObjects.entrySet()) {
             try {
                 Object key = marshaller.objectFromByteBuffer(entry.getKey());
-                SessionEntity entity = (SessionEntity) marshaller.objectFromByteBuffer(entry.getValue());
-
-                SessionEntityWrapper entityWrapper = new SessionEntityWrapper(entity);
+                SessionEntityWrapper entityWrapper = (SessionEntityWrapper) marshaller.objectFromByteBuffer(entry.getValue());
 
                 decoratedCache.putAsync(key, entityWrapper);
             } catch (Exception e) {

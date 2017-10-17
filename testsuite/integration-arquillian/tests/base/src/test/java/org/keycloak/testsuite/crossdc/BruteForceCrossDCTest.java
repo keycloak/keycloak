@@ -222,10 +222,10 @@ public class BruteForceCrossDCTest extends AbstractAdminCrossDCTest {
 
             log.infof("%s: dc0User1=%d, dc0user2=%d, dc1user1=%d, dc1user2=%d, dc0CacheSize=%d, dc1CacheSize=%d", prefixMessage, dc0user1, dc0user2, dc1user1, dc1user2, dc0CacheSize, dc1CacheSize);
 
-            Assert.assertEquals(dc0user1, expectedUser1);
-            Assert.assertEquals(dc0user2, expectedUser2);
-            Assert.assertEquals(dc1user1, expectedUser1);
-            Assert.assertEquals(dc1user2, expectedUser2);
+            Assert.assertEquals(expectedUser1, dc0user1);
+            Assert.assertEquals(expectedUser2, dc0user2);
+            Assert.assertEquals(expectedUser1, dc1user1);
+            Assert.assertEquals(expectedUser2, dc1user2);
 
             Assert.assertEquals(expectedCacheSize, dc0CacheSize);
             Assert.assertEquals(expectedCacheSize, dc1CacheSize);
