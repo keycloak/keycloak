@@ -735,7 +735,12 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         assertEquals("text/html; charset=UTF-8", htmlContentType);
 
         final String htmlBody = (String) multipart.getBodyPart(1).getContent();
-        final String htmlChangePwdUrl = MailUtils.getLink(htmlBody);
+        
+        // .replace() accounts for escaping the ampersand
+        // It's not escaped in the html version because html retrieved from a
+        // message bundle is considered safe and it must be unescaped to display
+        // properly.
+        final String htmlChangePwdUrl = MailUtils.getLink(htmlBody).replace("&", "&amp;");
 
         assertEquals(htmlChangePwdUrl, textChangePwdUrl);
 
