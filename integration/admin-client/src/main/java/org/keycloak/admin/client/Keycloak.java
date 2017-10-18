@@ -17,6 +17,12 @@
 
 package org.keycloak.admin.client;
 
+import java.util.Map;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.Invocation;
+import javax.ws.rs.core.Configuration;
+import javax.ws.rs.core.Link;
+import javax.ws.rs.core.UriBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
@@ -43,10 +49,11 @@ import static org.keycloak.OAuth2Constants.PASSWORD;
  * @author rodrigo.sasaki@icarros.com.br
  * @see KeycloakBuilder
  */
-public class Keycloak {
+public class Keycloak implements Client
+{
     private final Config config;
     private final TokenManager tokenManager;
-    private String authToken;
+    private final String authToken;
     private final ResteasyWebTarget target;
     private final ResteasyClient client;
     private static final boolean authServerSslRequired = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required"));
@@ -129,12 +136,12 @@ public class Keycloak {
      * All set up with appropriate token
      *
      * @param proxyClass
-     * @param absoluteURI
+     * @param absoluteBaseURI
      * @param <T>
      * @return
      */
-    public <T> T proxy(Class<T> proxyClass, URI absoluteURI) {
-        return client.target(absoluteURI).register(newAuthFilter()).proxy(proxyClass);
+    public <T> T proxy(Class<T> proxyClass, URI absoluteBaseURI) {
+        return target(absoluteBaseURI).proxy(proxyClass);
     }
 
     /**
@@ -142,5 +149,113 @@ public class Keycloak {
      */
     public void close() {
         client.close();
+    }
+
+    @Override
+    public ResteasyWebTarget target(URI absoluteURI) {
+        return client.target(absoluteURI).register(newAuthFilter());
+    }
+
+    @Override
+    public ResteasyWebTarget target(final UriBuilder uriBuilder)
+    {
+        return client.target(uriBuilder).register(newAuthFilter());
+    }
+
+    @Override
+    public ResteasyWebTarget target(final Link link)
+    {
+        return client.target(link).register(newAuthFilter());
+    }
+
+    @Override
+    public ResteasyWebTarget target(final String s)
+    {
+        return client.target(s).register(newAuthFilter());
+    }
+
+    @Override
+    public Invocation.Builder invocation(final Link link)
+    {
+        return client.invocation(link);
+    }
+
+    @Override
+    public SSLContext getSslContext()
+    {
+        return client.getSslContext();
+    }
+
+    @Override
+    public HostnameVerifier getHostnameVerifier()
+    {
+        return client.getHostnameVerifier();
+    }
+
+    @Override
+    public Configuration getConfiguration()
+    {
+        return client.getConfiguration();
+    }
+
+    @Override
+    public Client property(final String s,
+                           final Object o)
+    {
+        return client.property(s, o);
+    }
+
+    @Override
+    public Client register(final Class<?> aClass)
+    {
+        return client.register(aClass);
+    }
+
+    @Override
+    public Client register(final Class<?> aClass,
+                           final int i)
+    {
+        return client.register(aClass, i);
+    }
+
+    @Override
+    public Client register(final Class<?> aClass,
+                           final Class<?>... classes)
+    {
+        return client.register(aClass, classes);
+    }
+
+    @Override
+    public Client register(final Class<?> aClass,
+                           final Map<Class<?>, Integer> map)
+    {
+        return client.register(aClass, map);
+    }
+
+    @Override
+    public Client register(final Object o)
+    {
+        return client.register(o);
+    }
+
+    @Override
+    public Client register(final Object o,
+                           final int i)
+    {
+        return client.register(o, i);
+    }
+
+    @Override
+    public Client register(final Object o,
+                           final Class<?>... classes)
+    {
+        return client.register(o, classes);
+    }
+
+    @Override
+    public Client register(final Object o,
+                           final Map<Class<?>, Integer> map)
+    {
+        return client.register(o, map);
     }
 }
