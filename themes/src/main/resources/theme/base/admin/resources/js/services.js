@@ -1789,6 +1789,10 @@ module.factory('UserStorageOperations', function($resource) {
         realm : '@realm',
         componentId : '@componentId'
     });
+    object.simpleName = $resource(authUrl + '/admin/realms/:realm/user-storage/:componentId/name', {
+        realm : '@realm',
+        componentId : '@componentId'
+    });
     return object;
 });
 
