@@ -799,12 +799,6 @@ module.config([ '$routeProvider', function($routeProvider) {
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
-                },
-                groups : function(GroupListLoader) {
-                    return GroupListLoader();
-                },
-                groupsCount : function(GroupCountLoader) {
-                    return GroupCountLoader();
                 }
             },
             controller : 'GroupListCtrl'
