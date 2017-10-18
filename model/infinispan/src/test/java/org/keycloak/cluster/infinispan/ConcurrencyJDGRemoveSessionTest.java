@@ -162,7 +162,7 @@ public class ConcurrencyJDGRemoveSessionTest {
         // Create 100 initial sessions
         UserSessionEntity session = new UserSessionEntity();
         session.setId(sessionId);
-        session.setRealm("foo");
+        session.setRealmId("foo");
         session.setBrokerSessionId("!23123123");
         session.setBrokerUserId(null);
         session.setUser("foo");

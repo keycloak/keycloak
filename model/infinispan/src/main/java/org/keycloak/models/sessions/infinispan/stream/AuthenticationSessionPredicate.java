@@ -76,7 +76,7 @@ public class AuthenticationSessionPredicate implements Predicate<Map.Entry<Strin
     public boolean test(Map.Entry<String, AuthenticationSessionEntity> entry) {
         AuthenticationSessionEntity entity = entry.getValue();
 
-        if (!realm.equals(entity.getRealm())) {
+        if (!realm.equals(entity.getRealmId())) {
             return false;
         }
 

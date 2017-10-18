@@ -82,7 +82,7 @@
                         </goals>
                         <phase>compile</phase>
                         <configuration>
-                            <config-file>../server-provisioning.xml</config-file>
+                            <config-file>../${keycloak.provisioning.xml}</config-file>
                             <overlay>true</overlay>
                         </configuration>
                     </execution>

@@ -63,7 +63,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
                 return;
             }
 
-            RealmModel realm = kcSession.realms().getRealm(wrappedEntity.getEntity().getRealm());
+            RealmModel realm = kcSession.realms().getRealm(wrappedEntity.getEntity().getRealmId());
 
             myUpdates = new SessionUpdatesList<>(realm, wrappedEntity);
             updates.put(key, myUpdates);
@@ -81,7 +81,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
             throw new IllegalArgumentException("Null entity not allowed");
         }
 
-        RealmModel realm = kcSession.realms().getRealm(entity.getRealm());
+        RealmModel realm = kcSession.realms().getRealm(entity.getRealmId());
         SessionEntityWrapper<V> wrappedEntity = new SessionEntityWrapper<>(entity);
         SessionUpdatesList<V> myUpdates = new SessionUpdatesList<>(realm, wrappedEntity);
         updates.put(key, myUpdates);
@@ -121,7 +121,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
                 return null;
             }
 
-            RealmModel realm = kcSession.realms().getRealm(wrappedEntity.getEntity().getRealm());
+            RealmModel realm = kcSession.realms().getRealm(wrappedEntity.getEntity().getRealmId());
 
             myUpdates = new SessionUpdatesList<>(realm, wrappedEntity);
             updates.put(key, myUpdates);

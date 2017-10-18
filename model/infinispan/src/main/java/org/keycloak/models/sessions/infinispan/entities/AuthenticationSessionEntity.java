@@ -40,7 +40,7 @@ public class AuthenticationSessionEntity extends SessionEntity {
     private Set<String> roles;
     private Set<String> protocolMappers;
 
-    private Map<String, AuthenticationSessionModel.ExecutionStatus> executionStatus  = new HashMap<>();;
+    private Map<String, AuthenticationSessionModel.ExecutionStatus> executionStatus  = new HashMap<>();
     private String protocol;
 
     private Map<String, String> clientNotes;
@@ -179,6 +179,6 @@ public class AuthenticationSessionEntity extends SessionEntity {
 
     @Override
     public String toString() {
-        return String.format("AuthenticationSessionEntity [id=%s, realm=%s, clientUuid=%s ]", getId(), getRealm(), getClientUuid());
+        return String.format("AuthenticationSessionEntity [id=%s, realm=%s, clientUuid=%s ]", getId(), getRealmId(), getClientUuid());
     }
 }

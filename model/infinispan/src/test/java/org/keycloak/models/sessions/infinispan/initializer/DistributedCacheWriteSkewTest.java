@@ -60,7 +60,7 @@ public class DistributedCacheWriteSkewTest {
         // Create initial item
         UserSessionEntity session = new UserSessionEntity();
         session.setId("123");
-        session.setRealm("foo");
+        session.setRealmId("foo");
         session.setBrokerSessionId("!23123123");
         session.setBrokerUserId(null);
         session.setUser("foo");

@@ -43,7 +43,7 @@ public class UserLoginFailurePredicate implements Predicate<Map.Entry<LoginFailu
     @Override
     public boolean test(Map.Entry<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> entry) {
         LoginFailureEntity e = entry.getValue().getEntity();
-        return realm.equals(e.getRealm());
+        return realm.equals(e.getRealmId());
     }
 
 }
