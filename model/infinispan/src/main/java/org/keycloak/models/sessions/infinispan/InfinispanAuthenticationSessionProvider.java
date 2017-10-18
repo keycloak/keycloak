@@ -71,7 +71,7 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
     public AuthenticationSessionModel createAuthenticationSession(String id, RealmModel realm, ClientModel client) {
         AuthenticationSessionEntity entity = new AuthenticationSessionEntity();
         entity.setId(id);
-        entity.setRealm(realm.getId());
+        entity.setRealmId(realm.getId());
         entity.setTimestamp(Time.currentTime());
         entity.setClientUuid(client.getId());
 

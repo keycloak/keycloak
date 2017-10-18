@@ -73,7 +73,7 @@ public abstract class AbstractSessionCacheCommand extends AbstractCommand {
 
     protected String toString(UserSessionEntity userSession) {
         int clientSessionsSize = userSession.getAuthenticatedClientSessions()==null ? 0 : userSession.getAuthenticatedClientSessions().size();
-        return "ID: " + userSession.getId() + ", realm: " + userSession.getRealm() + ", lastAccessTime: " + Time.toDate(userSession.getLastSessionRefresh()) +
+        return "ID: " + userSession.getId() + ", realm: " + userSession.getRealmId()+ ", lastAccessTime: " + Time.toDate(userSession.getLastSessionRefresh()) +
                 ", authenticatedClientSessions: " + clientSessionsSize;
     }
 
@@ -100,7 +100,7 @@ public abstract class AbstractSessionCacheCommand extends AbstractCommand {
             String id = getArg(1);
 
             userSession.setId(id);
-            userSession.setRealm(getArg(2));
+            userSession.setRealmId(getArg(2));
 
             userSession.setLastSessionRefresh(Time.currentTime());
             cache.put(id, new SessionEntityWrapper(userSession));
@@ -287,7 +287,7 @@ public abstract class AbstractSessionCacheCommand extends AbstractCommand {
                     String id = KeycloakModelUtils.generateId();
 
                     userSession.setId(id);
-                    userSession.setRealm(realmName);
+                    userSession.setRealmId(realmName);
 
                     userSession.setLastSessionRefresh(Time.currentTime());
                     cache.put(id, new SessionEntityWrapper(userSession));

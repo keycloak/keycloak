@@ -96,8 +96,7 @@ public abstract class BaseCacheInitializer extends CacheInitializer {
 
             });
 
-            state = new InitializerState();
-            state.init(count[0], sessionsPerSegment);
+            state = new InitializerState(count[0], sessionsPerSegment);
             saveStateToCache(state);
         }
         return state;

@@ -26,17 +26,26 @@ import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
  */
 public abstract class SessionEntity implements Serializable {
 
-    private String realm;
+    private String realmId;
 
-
-    public String getRealm() {
-        return realm;
+    /**
+     * Returns realmId ID.
+     * @return
+     */
+    public String getRealmId() {
+        return realmId;
     }
 
-    public void setRealm(String realm) {
-        this.realm = realm;
+    public void setRealmId(String realmId) {
+        this.realmId = realmId;
     }
 
+    public SessionEntity() {
+    }
+
+    protected SessionEntity(String realmId) {
+        this.realmId = realmId;
+    }
 
     public SessionEntityWrapper mergeRemoteEntityWithLocalEntity(SessionEntityWrapper localEntityWrapper) {
         if (localEntityWrapper == null) {

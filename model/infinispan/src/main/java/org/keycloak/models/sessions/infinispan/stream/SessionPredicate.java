@@ -41,7 +41,7 @@ public class SessionPredicate<S extends SessionEntity> implements Predicate<Map.
 
     @Override
     public boolean test(Map.Entry<String, SessionEntityWrapper<S>> entry) {
-        return realm.equals(entry.getValue().getEntity().getRealm());
+        return realm.equals(entry.getValue().getEntity().getRealmId());
     }
 
 }

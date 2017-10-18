@@ -83,7 +83,7 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
 
         UserSessionEntity entity = (UserSessionEntity) e;
 
-        if (!realm.equals(entity.getRealm())) {
+        if (!realm.equals(entity.getRealmId())) {
             return false;
         }
 
