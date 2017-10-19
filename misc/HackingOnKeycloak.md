@@ -62,3 +62,13 @@ Here's a quick check list for a good pull request (PR):
 * We only accept contributions to the master branch. The exception to this is if the fix is for the latest CR release and Final has not yet been released, in which case you can send the PR to both the corresponding branch and the master branch.
 
 Once you're happy with your changes go to GitHub and create a PR to the master branch.
+
+
+Development of Wildfly-based features
+-------------------------------------
+
+When your changes are developed for Wildfly only, it is rather useful to create a jar-less distro that would retrieve the module jars directly
+from maven artifacts so that you would not to have to replace the module jars manually during development. You can create such a server
+distribution by adding a keycloak.provisioning.xml parameter to the standard maven command for creating distribution:
+
+    mvn clean install -Pdistribution -Dkeycloak.provisioning.xml=server-provisioning-devel.xml
