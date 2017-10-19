@@ -43,6 +43,13 @@
                 </div>
                 <kc-tooltip>{{:: 'x-xss-protection-tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="strictTransportSecurity"><a href="https://www.owasp.org/index.php/OWASP_Secure_Headers_Project#hsts" target="_blank">{{:: 'strict-transport-security' | translate}}</a></label>
+                <div class="col-sm-6">
+                    <input class="form-control" id="strictTransportSecurity" type="text" ng-model="realm.browserSecurityHeaders.strictTransportSecurity">
+                </div>
+                <kc-tooltip>{{:: 'strict-transport-security-tooltip' | translate}}</kc-tooltip>
+            </div>
         </fieldset>
         <div class="form-group" data-ng-show="access.manageRealm">
             <div class="col-md-10 col-md-offset-2">

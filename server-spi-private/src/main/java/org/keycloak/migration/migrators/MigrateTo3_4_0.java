@@ -21,6 +21,10 @@ import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.DefaultKeyProviders;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -31,7 +35,17 @@ public class MigrateTo3_4_0 implements Migration {
     @Override
     public void migrate(KeycloakSession session) {
         session.realms().getRealms().stream().forEach(
-                r -> DefaultKeyProviders.createAesProvider(r)
+                r -> {
+                    DefaultKeyProviders.createAesProvider(r);
+                    Map<String, String> securityHeaders = r.getBrowserSecurityHeaders();
+                    if (securityHeaders != null) {
+
+                        Map<String, String> browserSecurityHeaders = new HashMap<>(securityHeaders);
+                        browserSecurityHeaders.put("strictTransportSecurity", "max-age=31536000; includeSubDomains");
+
+                        r.setBrowserSecurityHeaders(Collections.unmodifiableMap(browserSecurityHeaders));
+                    }
+                }
         );
     }
 
