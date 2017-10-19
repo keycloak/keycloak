@@ -107,18 +107,63 @@
                                 </goals>
                                 <configuration>
                                     <transformationSets>
+
+                                        <!-- Configure dc-0 site in file clustered-1.xml -->
                                         <transformationSet>
                                             <dir>${cache.server.jboss.home}/standalone/configuration</dir>
                                             <includes>
-                                                <include>standalone.xml</include>
                                                 <include>clustered.xml</include>
                                             </includes>
                                             <stylesheet>${common.resources}/add-keycloak-caches.xsl</stylesheet>
+                                            <parameters>
+                                                <parameter>
+                                                    <name>local.site</name>
+                                                    <value>dc-0</value>
+                                                </parameter>
+                                                <parameter>
+                                                    <name>remote.site</name>
+                                                    <value>dc-1</value>
+                                                </parameter>
+                                            </parameters>
                                             <outputDir>${cache.server.jboss.home}/standalone/configuration</outputDir>
+                                            <fileMappers>
+                                                <fileMapper implementation="org.codehaus.plexus.components.io.filemappers.RegExpFileMapper">
+                                                    <pattern>^(.*)\.xml$</pattern>
+                                                    <replacement>$1-1.xml</replacement>
+                                                </fileMapper>
+                                            </fileMappers>
                                         </transformationSet>
+
+                                        <!-- Configure dc-1 site in file clustered-2.xml -->
+                                        <transformationSet>
+                                            <dir>${cache.server.jboss.home}/standalone/configuration</dir>
+                                            <includes>
+                                                <include>clustered.xml</include>
+                                            </includes>
+                                            <stylesheet>${common.resources}/add-keycloak-caches.xsl</stylesheet>
+                                            <parameters>
+                                                <parameter>
+                                                    <name>local.site</name>
+                                                    <value>dc-1</value>
+                                                </parameter>
+                                                <parameter>
+                                                    <name>remote.site</name>
+                                                    <value>dc-0</value>
+                                                </parameter>
+                                            </parameters>
+                                            <outputDir>${cache.server.jboss.home}/standalone/configuration</outputDir>
+                                            <fileMappers>
+                                                <fileMapper implementation="org.codehaus.plexus.components.io.filemappers.RegExpFileMapper">
+                                                    <pattern>^(.*)\.xml$</pattern>
+                                                    <replacement>$1-2.xml</replacement>
+                                                </fileMapper>
+                                            </fileMappers>
+                                        </transformationSet>
+
                                     </transformationSets>
                                 </configuration>
                             </execution>
+
                             <execution>
                                 <id>io-worker-threads</id>
                                 <phase>process-resources</phase>

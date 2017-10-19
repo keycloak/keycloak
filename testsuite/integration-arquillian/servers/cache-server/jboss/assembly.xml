@@ -31,6 +31,7 @@
             <outputDirectory>cache-server-${cache.server}</outputDirectory>
             <excludes>
                 <exclude>**/*.sh</exclude>
+                <exclude>**/clustered.xml</exclude>
             </excludes>
         </fileSet>
         <fileSet>

@@ -193,7 +193,7 @@
                 <property name="enabled">${auth.server.crossdc} &amp;&amp; ! ${cache.server.lifecycle.skip}</property>
                 <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
                 <property name="jbossHome">${cache.server.home}</property>
-                <property name="serverConfig">clustered.xml</property>
+                <property name="serverConfig">clustered-1.xml</property>
                 <property name="jbossArguments">
                     -Djboss.socket.binding.port-offset=${cache.server.port.offset}
                     -Djboss.default.multicast.address=234.56.78.99
@@ -219,10 +219,10 @@
                 <property name="jbossHome">${cache.server.home}</property>
                 <property name="setupCleanServerBaseDir">true</property>
                 <property name="cleanServerBaseDir">${cache.server.home}/standalone-dc-2</property>
-                <property name="serverConfig">clustered.xml</property>
+                <property name="serverConfig">clustered-2.xml</property>
                 <property name="jbossArguments">
                     -Djboss.socket.binding.port-offset=${cache.server.2.port.offset}
-                    -Djboss.default.multicast.address=234.56.78.99
+                    -Djboss.default.multicast.address=234.56.78.100
                     -Djboss.node.name=cache-server-dc-2
                     ${adapter.test.props}
                     ${auth.server.profile}

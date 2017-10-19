@@ -113,9 +113,13 @@ public class ConcurrencyJDGRemoteCacheClientListenersTest {
                 Assert.assertEquals(info.val.get(), info.dc2Created.get());
                 Assert.assertEquals(info.val.get() * 2, info.dc1Updated.get());
                 Assert.assertEquals(info.val.get() * 2, info.dc2Updated.get());
-                worker1.cache.remove(entry.getKey());
             }
         } finally {
+            // Remove items
+            for (Map.Entry<String, EntryInfo> entry : state.entrySet()) {
+                worker1.cache.remove(entry.getKey());
+            }
+
             // Finish JVM
             worker1.cache.getCacheManager().stop();
             worker2.cache.getCacheManager().stop();
