@@ -66,6 +66,7 @@
                 <exclude>themes/**</exclude>
                 <exclude>version.txt</exclude>
                 <exclude>${profileExcludes}</exclude>
+                <exclude>docs/licenses-${product.slot}/**</exclude>
                 <!-- unused resteasy providers eat up memory can't remove them as it my effect RH-SSO patching
                 <exclude>**/jose-jwt/**</exclude>
                 <exclude>**/resteasy-atom-provider/**</exclude>
@@ -116,6 +117,13 @@
             <filtered>false</filtered>
             <includes>
                 <include>**/*</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>target/licenses/content/docs</directory>
+            <outputDirectory>docs</outputDirectory>
+            <includes>
+                <include>licenses-${product.slot}/**</include>
             </includes>
         </fileSet>
     </fileSets>
