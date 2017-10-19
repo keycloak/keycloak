@@ -667,3 +667,4 @@ Then, before running the test, setup Keycloak Server distribution for the tests:
 When running the test, add the following arguments to the command line:
 
     -Pauth-server-wildfly -Pauth-server-enable-disable-feature -Dfeature.name=docker -Dfeature.value=enabled
+blah
