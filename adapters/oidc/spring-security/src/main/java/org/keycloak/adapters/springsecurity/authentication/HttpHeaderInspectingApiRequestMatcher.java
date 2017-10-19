@@ -45,11 +45,7 @@ public class HttpHeaderInspectingApiRequestMatcher implements RequestMatcher {
      */
     @Override
     public boolean matches(HttpServletRequest request) {
-        boolean ajax = X_REQUESTED_WITH_HEADER_AJAX_VALUE.equals(request.getHeader(X_REQUESTED_WITH_HEADER));
-        boolean html = request.getHeader(HttpHeaders.ACCEPT) != null && request.getHeader(HttpHeaders.ACCEPT).contains(
-                MediaType.TEXT_HTML_VALUE);
-
-        return ajax || !html;
+        return X_REQUESTED_WITH_HEADER_AJAX_VALUE.equals(request.getHeader(X_REQUESTED_WITH_HEADER));
     }
 
 }
