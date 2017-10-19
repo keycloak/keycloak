@@ -17,12 +17,12 @@
  */
 package org.keycloak.authorization.client.resource;
 
+import static org.keycloak.authorization.client.util.Throwables.handleAndWrapException;
+
 import org.keycloak.authorization.client.representation.PermissionRequest;
 import org.keycloak.authorization.client.representation.PermissionResponse;
 import org.keycloak.authorization.client.util.Http;
 import org.keycloak.util.JsonSerialization;
-
-import java.io.IOException;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -43,8 +43,8 @@ public class PermissionResource {
                     .authorizationBearer(this.pat)
                     .json(JsonSerialization.writeValueAsBytes(request))
                     .response().json(PermissionResponse.class).execute();
-        } catch (IOException e) {
-            throw new RuntimeException("Error obtaining permission ticket.", e);
+        } catch (Exception cause) {
+            throw handleAndWrapException("Error obtaining permission ticket", cause);
         }
     }
 }
