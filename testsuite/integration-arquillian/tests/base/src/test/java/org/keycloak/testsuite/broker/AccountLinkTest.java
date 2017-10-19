@@ -148,7 +148,7 @@ public class AccountLinkTest extends AbstractKeycloakTest {
 
         // Assert identity linked in account management
         assertTrue(accountFederatedIdentityPage.isCurrent());
-        assertTrue(driver.getPageSource().contains("id=\"remove-" + PARENT_IDP + "\""));
+        assertTrue(driver.getPageSource().contains("id=\"remove-link-" + PARENT_IDP + "\""));
 
         // Logout from account management
         accountFederatedIdentityPage.logout();
@@ -161,11 +161,11 @@ public class AccountLinkTest extends AbstractKeycloakTest {
         System.out.println("--------------------------------");
         System.out.println(driver.getPageSource());
         assertTrue(accountFederatedIdentityPage.isCurrent());
-        assertTrue(driver.getPageSource().contains("id=\"remove-" + PARENT_IDP + "\""));
+        assertTrue(driver.getPageSource().contains("id=\"remove-link-" + PARENT_IDP + "\""));
 
         // Unlink my "test-user"
         accountFederatedIdentityPage.clickRemoveProvider(PARENT_IDP);
-        assertTrue(driver.getPageSource().contains("id=\"add-" + PARENT_IDP + "\""));
+        assertTrue(driver.getPageSource().contains("id=\"add-link-" + PARENT_IDP + "\""));
 
 
         // Logout from account management
