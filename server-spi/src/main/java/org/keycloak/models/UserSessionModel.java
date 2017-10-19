@@ -24,6 +24,8 @@ import java.util.Map;
  */
 public interface UserSessionModel {
 
+    String CSRF_TOKEN = "CSRF_TOKEN";
+
     String getId();
     RealmModel getRealm();
 

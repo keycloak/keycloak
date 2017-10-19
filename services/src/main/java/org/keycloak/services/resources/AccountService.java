@@ -44,6 +44,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -55,6 +56,9 @@ import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.resources.AbstractSecuredLocalService;
+import org.keycloak.services.resources.AttributeFormDataProcessor;
+import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -137,8 +141,13 @@ public class AccountService extends AbstractSecuredLocalService {
             authResult = authManager.authenticateIdentityCookie(session, realm);
             if (authResult != null) {
                 auth = new Auth(realm, authResult.getToken(), authResult.getUser(), client, authResult.getSession(), true);
-                updateCsrfChecks();
-                account.setStateChecker(stateChecker);
+
+                String csrfTokenSession = auth.getSession().getNote(UserSessionModel.CSRF_TOKEN);
+                if (csrfTokenSession == null) {
+                    csrfTokenSession = Base64Url.encode(KeycloakModelUtils.generateSecret(128));
+                    auth.getSession().setNote(UserSessionModel.CSRF_TOKEN, csrfTokenSession);
+                }
+                account.setStateChecker(csrfTokenSession);
             }
         }
 
@@ -475,15 +484,15 @@ public class AccountService extends AbstractSecuredLocalService {
     }
 
     @Path("totp-remove")
-    @GET
-    public Response processTotpRemove(@QueryParam("stateChecker") String stateChecker) {
+    @POST
+    public Response processTotpRemove(final MultivaluedMap<String, String> formData) {
         if (auth == null) {
             return login("totp");
         }
 
         require(AccountRoles.MANAGE_ACCOUNT);
 
-        csrfCheck(stateChecker);
+        csrfCheck(formData);
 
         UserModel user = auth.getUser();
         session.userCredentialManager().disableCredentialType(realm, user, CredentialModel.OTP);
@@ -496,14 +505,14 @@ public class AccountService extends AbstractSecuredLocalService {
 
 
     @Path("sessions-logout")
-    @GET
-    public Response processSessionsLogout(@QueryParam("stateChecker") String stateChecker) {
+    @POST
+    public Response processSessionsLogout(final MultivaluedMap<String, String> formData) {
         if (auth == null) {
             return login("sessions");
         }
 
         require(AccountRoles.MANAGE_ACCOUNT);
-        csrfCheck(stateChecker);
+        csrfCheck(formData);
 
         UserModel user = auth.getUser();
 
@@ -720,18 +729,20 @@ public class AccountService extends AbstractSecuredLocalService {
         return account.setPasswordSet(true).setSuccess(Messages.ACCOUNT_PASSWORD_UPDATED).createResponse(AccountPages.PASSWORD);
     }
 
-    @Path("federated-identity-update")
-    @GET
-    public Response processFederatedIdentityUpdate(@QueryParam("action") String action,
-                                                   @QueryParam("provider_id") String providerId,
-                                                   @QueryParam("stateChecker") String stateChecker) {
+    @Path("identity")
+    @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response processFederatedIdentityUpdate(final MultivaluedMap<String, String> formData) {
         if (auth == null) {
             return login("identity");
         }
 
         require(AccountRoles.MANAGE_ACCOUNT);
-        csrfCheck(stateChecker);
+        csrfCheck(formData);
         UserModel user = auth.getUser();
+
+        String action = formData.getFirst("action");
+        String providerId = formData.getFirst("providerId");
 
         if (Validation.isEmpty(providerId)) {
             setReferrerOnPage();
