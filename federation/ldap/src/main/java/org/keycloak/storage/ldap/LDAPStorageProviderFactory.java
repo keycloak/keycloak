@@ -540,7 +540,7 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                                     LDAPStorageMapper ldapMapper = ldapFedProvider.getMapperManager().getMapper(mapperModel);
                                     ldapMapper.onImportUserFromLDAP(ldapUser, currentUser, currentRealm, false);
                                 }
-
+                                session.userCache().evict(currentRealm, currentUser);
                                 logger.debugf("Updated user from LDAP: %s", currentUser.getUsername());
                                 syncResult.increaseUpdated();
                             } else {
