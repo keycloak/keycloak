@@ -37,6 +37,7 @@ import org.keycloak.adapters.KeycloakConfigResolver;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.NodesRegistrationManagement;
+import org.keycloak.adapters.spi.KeycloakAccount;
 import org.keycloak.constants.AdapterConstants;
 
 import javax.servlet.ServletContext;
@@ -159,6 +160,9 @@ public class KeycloakServletExtension implements ServletExtension {
         deploymentInfo.setIdentityManager(new IdentityManager() {
             @Override
             public Account verify(Account account) {
+                if (account instanceof KeycloakUndertowAccount) {
+                    propagateKeycloakContext((KeycloakUndertowAccount) account);
+                }
                 return account;
             }
 
@@ -208,6 +212,10 @@ public class KeycloakServletExtension implements ServletExtension {
             errorPage = loginConfig.getErrorPage();
         }
         return errorPage;
+    }
+
+    protected void propagateKeycloakContext(KeycloakAccount account) {
+        // overridden in child classes
     }
 
 }
