@@ -115,7 +115,7 @@ public class SPNEGOAuthenticator {
     public String getAuthenticatedUsername() {
         String[] tokens = authenticatedKerberosPrincipal.split("@");
         String username = tokens[0];
-        if (!tokens[1].equalsIgnoreCase(kerberosConfig.getKerberosRealm())) {
+        if (!tokens[1].matches(kerberosConfig.getKerberosRealm())) {
             throw new IllegalStateException("Invalid kerberos realm. Realm from the ticket: " + tokens[1] + ", configured realm: " + kerberosConfig.getKerberosRealm());
         }
         return username;
