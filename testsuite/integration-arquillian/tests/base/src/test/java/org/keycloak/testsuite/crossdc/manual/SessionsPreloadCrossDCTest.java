@@ -30,6 +30,7 @@ import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.crossdc.AbstractAdminCrossDCTest;
 import org.keycloak.testsuite.crossdc.DC;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.junit.Assume;
 
 /**
  * Tests userSessions and offline sessions preloading at startup
@@ -47,7 +48,7 @@ public class SessionsPreloadCrossDCTest extends AbstractAdminCrossDCTest {
     @Override
     public void beforeAbstractKeycloakTest() throws Exception {
         // Doublecheck we are in manual mode
-        Assert.assertTrue("The test requires to be executed with manual.mode=true", suiteContext.getCacheServersInfo().get(0).isManual());
+        Assume.assumeTrue("The test requires to be executed with manual.mode=true", suiteContext.getCacheServersInfo().get(0).isManual());
 
         stopAllCacheServersAndAuthServers();
 
