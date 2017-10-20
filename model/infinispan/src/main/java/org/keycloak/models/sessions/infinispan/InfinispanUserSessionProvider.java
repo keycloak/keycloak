@@ -22,6 +22,7 @@ import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.context.Flag;
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -53,6 +54,7 @@ import org.keycloak.models.sessions.infinispan.stream.UserLoginFailurePredicate;
 import org.keycloak.models.sessions.infinispan.stream.UserSessionPredicate;
 import org.keycloak.models.sessions.infinispan.util.FuturesHelper;
 import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -180,15 +182,13 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         entity.setRememberMe(rememberMe);
         entity.setBrokerSessionId(brokerSessionId);
         entity.setBrokerUserId(brokerUserId);
+        entity.setNotes(new ConcurrentHashMap<>());
 
         int currentTime = Time.currentTime();
 
         entity.setStarted(currentTime);
         entity.setLastSessionRefresh(currentTime);
-
-
     }
-
 
     @Override
     public UserSessionModel getUserSession(RealmModel realm, String id) {
@@ -782,7 +782,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
         entity.setStarted(userSession.getStarted());
         entity.setLastSessionRefresh(userSession.getLastSessionRefresh());
-
 
         InfinispanChangelogBasedTransaction<String, UserSessionEntity> tx = getTransaction(offline);
 

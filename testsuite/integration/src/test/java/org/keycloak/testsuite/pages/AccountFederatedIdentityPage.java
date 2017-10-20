@@ -55,11 +55,11 @@ public class AccountFederatedIdentityPage extends AbstractAccountPage {
     }
 
     public void clickAddProvider(String providerId) {
-        driver.findElement(By.id("add-" + providerId)).click();
+        driver.findElement(By.id("add-link-" + providerId)).click();
     }
 
     public void clickRemoveProvider(String providerId) {
-        driver.findElement(By.id("remove-" + providerId)).click();
+        driver.findElement(By.id("remove-link-" + providerId)).click();
     }
 
     public String getError() {

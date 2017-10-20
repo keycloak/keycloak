@@ -126,9 +126,8 @@ public class Urls {
         return accountBase(baseUri).path(AccountService.class, "totpPage").build(realmName);
     }
 
-    public static URI accountTotpRemove(URI baseUri, String realmName, String stateChecker) {
+    public static URI accountTotpRemove(URI baseUri, String realmName) {
         return accountBase(baseUri).path(AccountService.class, "processTotpRemove")
-                .queryParam("stateChecker", stateChecker)
                 .build(realmName);
     }
 
@@ -140,9 +139,8 @@ public class Urls {
         return accountBase(baseUri).path(AccountService.class, "sessionsPage").build(realmName);
     }
 
-    public static URI accountSessionsLogoutPage(URI baseUri, String realmName, String stateChecker) {
+    public static URI accountSessionsLogoutPage(URI baseUri, String realmName) {
         return accountBase(baseUri).path(AccountService.class, "processSessionsLogout")
-                .queryParam("stateChecker", stateChecker)
                 .build(realmName);
     }
 

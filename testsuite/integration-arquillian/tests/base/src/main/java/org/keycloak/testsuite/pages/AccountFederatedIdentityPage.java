@@ -22,6 +22,9 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
+import java.util.LinkedList;
+import java.util.List;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -50,26 +53,72 @@ public class AccountFederatedIdentityPage extends AbstractAccountPage {
     public boolean isCurrent() {
         return driver.getTitle().contains("Account Management") && driver.getPageSource().contains("Federated Identities");
     }
-    
-    public WebElement findAddProviderButton(String alias) {
-        return driver.findElement(By.id("add-" + alias));
-    }
-    
-    public WebElement findRemoveProviderButton(String alias) {
-        return driver.findElement(By.id("remove-" + alias));
+
+    public List<FederatedIdentity> getIdentities() {
+        List<FederatedIdentity> identities = new LinkedList<>();
+        WebElement identitiesElement = driver.findElement(By.id("federated-identities"));
+        for (WebElement i : identitiesElement.findElements(By.className("row"))) {
+
+            String providerId = i.findElement(By.tagName("label")).getText();
+            String subject = i.findElement(By.tagName("input")).getAttribute("value");
+            WebElement button = i.findElement(By.tagName("button"));
+
+            identities.add(new FederatedIdentity(providerId, subject, button));
+        }
+        return identities;
     }
 
-    public void clickAddProvider(String alias) {
-        WebElement addButton = findAddProviderButton(alias);
-        addButton.click();
+    public WebElement findAddProvider(String providerId) {
+        return driver.findElement(By.id("add-link-" + providerId));
     }
 
-    public void clickRemoveProvider(String alias) {
-        WebElement addButton = findRemoveProviderButton(alias);
-        addButton.click();
+    public void clickAddProvider(String providerId) {
+        findAddProvider(providerId).click();
+    }
+
+    public void clickRemoveProvider(String providerId) {
+        driver.findElement(By.id("remove-link-" + providerId)).click();
     }
 
     public String getError() {
         return errorMessage.getText();
     }
+
+    public static class FederatedIdentity {
+
+        private String providerId;
+        private String subject;
+        private WebElement action;
+
+        public FederatedIdentity(String providerId, String subject, WebElement action) {
+            this.providerId = providerId;
+            this.subject = subject;
+            this.action = action;
+        }
+
+        public String getProvider() {
+            return providerId;
+        }
+
+        public void setProviderId(String providerId) {
+            this.providerId = providerId;
+        }
+
+        public String getSubject() {
+            return subject;
+        }
+
+        public void setSubject(String subject) {
+            this.subject = subject;
+        }
+
+        public WebElement getAction() {
+            return action;
+        }
+
+        public void setAction(WebElement action) {
+            this.action = action;
+        }
+    }
+
 }
