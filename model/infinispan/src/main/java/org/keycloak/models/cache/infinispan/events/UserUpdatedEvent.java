@@ -20,10 +20,17 @@ package org.keycloak.models.cache.infinispan.events;
 import java.util.Set;
 
 import org.keycloak.models.cache.infinispan.UserCacheManager;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import org.infinispan.commons.marshall.Externalizer;
+import org.infinispan.commons.marshall.MarshallUtil;
+import org.infinispan.commons.marshall.SerializeWith;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@SerializeWith(UserUpdatedEvent.ExternalizerImpl.class)
 public class UserUpdatedEvent extends InvalidationEvent implements UserCacheInvalidationEvent {
 
     private String userId;
@@ -53,5 +60,40 @@ public class UserUpdatedEvent extends InvalidationEvent implements UserCacheInva
     @Override
     public void addInvalidations(UserCacheManager userCache, Set<String> invalidations) {
         userCache.userUpdatedInvalidations(userId, username, email, realmId, invalidations);
+    }
+
+    public static class ExternalizerImpl implements Externalizer<UserUpdatedEvent> {
+
+        private static final int VERSION_1 = 1;
+
+        @Override
+        public void writeObject(ObjectOutput output, UserUpdatedEvent obj) throws IOException {
+            output.writeByte(VERSION_1);
+
+            MarshallUtil.marshallString(obj.userId, output);
+            MarshallUtil.marshallString(obj.username, output);
+            MarshallUtil.marshallString(obj.email, output);
+            MarshallUtil.marshallString(obj.realmId, output);
+        }
+
+        @Override
+        public UserUpdatedEvent readObject(ObjectInput input) throws IOException, ClassNotFoundException {
+            switch (input.readByte()) {
+                case VERSION_1:
+                    return readObjectVersion1(input);
+                default:
+                    throw new IOException("Unknown version");
+            }
+        }
+
+        public UserUpdatedEvent readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
+            UserUpdatedEvent res = new UserUpdatedEvent();
+            res.userId = MarshallUtil.unmarshallString(input);
+            res.username = MarshallUtil.unmarshallString(input);
+            res.email = MarshallUtil.unmarshallString(input);
+            res.realmId = MarshallUtil.unmarshallString(input);
+
+            return res;
+        }
     }
 }

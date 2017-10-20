@@ -70,7 +70,7 @@ public class AuthenticationSessionAuthNoteUpdateEvent implements ClusterEvent {
 
         @Override
         public void writeObject(ObjectOutput output, AuthenticationSessionAuthNoteUpdateEvent value) throws IOException {
-            output.write(VERSION_1);
+            output.writeByte(VERSION_1);
 
             MarshallUtil.marshallString(value.authSessionId, output);
             MarshallUtil.marshallMap(value.authNotesFragment, output);
@@ -89,7 +89,7 @@ public class AuthenticationSessionAuthNoteUpdateEvent implements ClusterEvent {
         public AuthenticationSessionAuthNoteUpdateEvent readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
             return create(
               MarshallUtil.unmarshallString(input),
-              MarshallUtil.unmarshallMap(input, (size) -> new HashMap<>(size))
+              MarshallUtil.unmarshallMap(input, HashMap::new)
             );
         }
 

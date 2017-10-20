@@ -18,10 +18,17 @@
 package org.keycloak.models.sessions.infinispan.events;
 
 import org.keycloak.models.KeycloakSession;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import org.infinispan.commons.marshall.Externalizer;
+import org.infinispan.commons.marshall.MarshallUtil;
+import org.infinispan.commons.marshall.SerializeWith;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@SerializeWith(ClientRemovedSessionEvent.ExternalizerImpl.class)
 public class ClientRemovedSessionEvent extends SessionClusterEvent  {
 
     private String clientUuid;
@@ -39,5 +46,35 @@ public class ClientRemovedSessionEvent extends SessionClusterEvent  {
 
     public String getClientUuid() {
         return clientUuid;
+    }
+
+    public static class ExternalizerImpl implements Externalizer<ClientRemovedSessionEvent> {
+
+        private static final int VERSION_1 = 1;
+
+        @Override
+        public void writeObject(ObjectOutput output, ClientRemovedSessionEvent obj) throws IOException {
+            output.writeByte(VERSION_1);
+            obj.marshallTo(output);
+            MarshallUtil.marshallString(obj.clientUuid, output);
+        }
+
+        @Override
+        public ClientRemovedSessionEvent readObject(ObjectInput input) throws IOException, ClassNotFoundException {
+            switch (input.readByte()) {
+                case VERSION_1:
+                    return readObjectVersion1(input);
+                default:
+                    throw new IOException("Unknown version");
+            }
+        }
+
+        public ClientRemovedSessionEvent readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
+            ClientRemovedSessionEvent res = new ClientRemovedSessionEvent();
+            res.unmarshallFrom(input);
+            res.clientUuid = MarshallUtil.unmarshallString(input);
+
+            return res;
+        }
     }
 }

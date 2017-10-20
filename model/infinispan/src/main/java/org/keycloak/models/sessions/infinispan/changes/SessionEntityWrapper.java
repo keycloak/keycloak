@@ -29,6 +29,7 @@ import org.infinispan.commons.marshall.Externalizer;
 import org.infinispan.commons.marshall.MarshallUtil;
 import org.infinispan.commons.marshall.SerializeWith;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
+import java.util.HashMap;
 import org.jboss.logging.Logger;
 
 /**
@@ -157,7 +158,7 @@ public class SessionEntityWrapper<S extends SessionEntity> {
 
         @Override
         public void writeObject(ObjectOutput output, SessionEntityWrapper obj) throws IOException {
-            output.write(VERSION_1);
+            output.writeByte(VERSION_1);
 
             final boolean forTransport = obj.isForTransport();
             output.writeBoolean(forTransport);
@@ -187,7 +188,7 @@ public class SessionEntityWrapper<S extends SessionEntity> {
                 return new SessionEntityWrapper(entity);
             } else {
                 UUID sessionVersion = new UUID(input.readLong(), input.readLong());
-                ConcurrentHashMap<String, String> map = MarshallUtil.unmarshallMap(input, (size) -> new ConcurrentHashMap<>(size));
+                HashMap<String, String> map = MarshallUtil.unmarshallMap(input, HashMap::new);
                 final SessionEntity entity = (SessionEntity) input.readObject();
                 log.debugf("Found entity locally: %s", entity);
                 return new SessionEntityWrapper(sessionVersion, map, entity);
