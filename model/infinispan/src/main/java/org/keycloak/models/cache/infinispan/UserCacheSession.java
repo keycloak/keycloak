@@ -108,6 +108,8 @@ public class UserCacheSession implements UserCache {
 
     @Override
     public void evict(RealmModel realm, UserModel user) {
+        if (!transactionActive) throw new IllegalStateException("Cannot call evict() without a transaction");
+        getDelegate(); // invalidations need delegate set
         if (user instanceof CachedUserModel) {
             ((CachedUserModel)user).invalidate();
         } else {
