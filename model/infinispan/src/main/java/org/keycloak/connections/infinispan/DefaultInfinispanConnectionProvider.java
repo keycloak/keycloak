@@ -25,7 +25,7 @@ import org.infinispan.manager.EmbeddedCacheManager;
  */
 public class DefaultInfinispanConnectionProvider implements InfinispanConnectionProvider {
 
-    private EmbeddedCacheManager cacheManager;
+    private final EmbeddedCacheManager cacheManager;
     private final String siteName;
     private final String nodeName;
 

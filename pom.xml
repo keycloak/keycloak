@@ -92,6 +92,10 @@
         <apacheds.codec.version>1.0.0-M33</apacheds.codec.version>
         <google.zxing.version>3.2.1</google.zxing.version>
         <freemarker.version>2.3.26-incubating</freemarker.version>
+
+        <!-- Same version as ships with wildfly. -->
+        <google.guava.version>20.0</google.guava.version>
+
         <jetty9.version>9.1.0.v20131115</jetty9.version>
         <liquibase.version>3.4.1</liquibase.version>
         <mysql.version>5.1.29</mysql.version>
@@ -438,6 +442,12 @@
                 <groupId>com.google.zxing</groupId>
                 <artifactId>javase</artifactId>
                 <version>${google.zxing.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${google.guava.version}</version>
             </dependency>
 
             <!-- Email Test Servers -->

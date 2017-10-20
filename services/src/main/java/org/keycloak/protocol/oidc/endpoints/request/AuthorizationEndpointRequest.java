@@ -43,6 +43,12 @@ public class AuthorizationEndpointRequest {
     String codeChallenge;
     String codeChallengeMethod;
 
+    String acr;
+
+    public String getAcr() {
+        return acr;
+    }
+
     public String getClientId() {
         return clientId;
     }

@@ -47,7 +47,7 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
     protected static final Logger logger = Logger.getLogger(RemoteCacheSessionListener.class);
 
     private Cache<K, SessionEntityWrapper<V>> cache;
-    private RemoteCache<K, V> remoteCache;
+    private RemoteCache<K, SessionEntityWrapper<V>> remoteCache;
     private boolean distributed;
     private String myAddress;
     private ClientListenerExecutorDecorator<K> executor;
@@ -57,7 +57,7 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
     }
 
 
-    protected void init(KeycloakSession session, Cache<K, SessionEntityWrapper<V>> cache, RemoteCache<K, V> remoteCache) {
+    protected void init(KeycloakSession session, Cache<K, SessionEntityWrapper<V>> cache, RemoteCache<K, SessionEntityWrapper<V>> remoteCache) {
         this.cache = cache;
         this.remoteCache = remoteCache;
 
@@ -113,10 +113,10 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
             replaceRetries++;
             
             SessionEntityWrapper<V> localEntityWrapper = cache.get(key);
-            VersionedValue<V> remoteSessionVersioned = remoteCache.getVersioned(key);
+            VersionedValue<SessionEntityWrapper<V>> remoteSessionVersioned = remoteCache.getVersioned(key);
 
             // Probably already removed
-            if (remoteSessionVersioned == null) {
+            if (remoteSessionVersioned == null || remoteSessionVersioned.getValue() == null) {
                 logger.debugf("Entity '%s' not present in remoteCache. Ignoring replace",
                         key.toString());
                 return;
@@ -134,7 +134,7 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
                     sleepInterval = sleepInterval << 1;
                 }
             }
-            SessionEntity remoteSession = remoteSessionVersioned.getValue();
+            SessionEntity remoteSession = remoteSessionVersioned.getValue().getEntity();
 
             logger.debugf("Read session entity from the remote cache: %s . replaceRetries=%d", remoteSession.toString(), replaceRetries);
 
@@ -201,7 +201,7 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
     }
 
 
-    public static <K, V extends SessionEntity> RemoteCacheSessionListener createListener(KeycloakSession session, Cache<K, SessionEntityWrapper<V>> cache, RemoteCache<K, V> remoteCache) {
+    public static <K, V extends SessionEntity> RemoteCacheSessionListener createListener(KeycloakSession session, Cache<K, SessionEntityWrapper<V>> cache, RemoteCache<K, SessionEntityWrapper<V>> remoteCache) {
         /*boolean isCoordinator = InfinispanUtil.isCoordinator(cache);
 
         // Just cluster coordinator will fetch userSessions from remote cache.

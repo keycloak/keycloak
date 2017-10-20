@@ -18,17 +18,10 @@
 package org.keycloak.connections.jpa.updater.liquibase.custom;
 
 import liquibase.exception.CustomChangeException;
-import liquibase.statement.core.InsertStatement;
-import liquibase.structure.core.Table;
-import org.keycloak.keys.KeyProvider;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.storage.UserStorageProvider;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.util.List;
 
 /**

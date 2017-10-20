@@ -26,7 +26,6 @@ import org.keycloak.authorization.policy.evaluation.Evaluation;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 
 /**

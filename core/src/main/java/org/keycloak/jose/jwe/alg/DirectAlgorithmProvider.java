@@ -17,8 +17,6 @@
 
 package org.keycloak.jose.jwe.alg;
 
-import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.security.Key;
 
 import org.keycloak.jose.jwe.JWEKeyStorage;

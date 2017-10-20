@@ -19,7 +19,6 @@ package org.keycloak.models.sessions.infinispan.initializer;
 
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -60,7 +59,7 @@ public class DistributedCacheConcurrentWritesTest {
         // Create initial item
         UserSessionEntity session = new UserSessionEntity();
         session.setId("123");
-        session.setRealm("foo");
+        session.setRealmId("foo");
         session.setBrokerSessionId("!23123123");
         session.setBrokerUserId(null);
         session.setUser("foo");
@@ -170,7 +169,7 @@ public class DistributedCacheConcurrentWritesTest {
     private static UserSessionEntity cloneSession(UserSessionEntity session) {
         UserSessionEntity clone = new UserSessionEntity();
         clone.setId(session.getId());
-        clone.setRealm(session.getRealm());
+        clone.setRealmId(session.getRealmId());
         clone.setNotes(new ConcurrentHashMap<>(session.getNotes()));
         return clone;
     }

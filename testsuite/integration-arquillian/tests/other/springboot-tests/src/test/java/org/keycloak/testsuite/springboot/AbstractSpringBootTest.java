@@ -36,32 +36,27 @@ import org.openqa.selenium.By;
 
 public abstract class AbstractSpringBootTest extends AbstractKeycloakTest {
 
-    protected static final String REALM_ID = "cd8ee421-5100-41ba-95dd-b27c8e5cf042";
+    static final String REALM_ID = "cd8ee421-5100-41ba-95dd-b27c8e5cf042";
 
-    protected static final String REALM_NAME = "test";
+    static final String REALM_NAME = "test";
 
-    protected static final String CLIENT_ID = "spring-boot-app";
-    protected static final String SECRET = "e3789ac5-bde6-4957-a7b0-612823dac101";
+    static final String CLIENT_ID = "spring-boot-app";
+    static final String SECRET = "e3789ac5-bde6-4957-a7b0-612823dac101";
 
-    protected static final String APPLICATION_URL = "http://localhost:8280";
-    protected static final String BASE_URL = APPLICATION_URL + "/admin";
+    static final String APPLICATION_URL = "http://localhost:8280";
+    static final String BASE_URL = APPLICATION_URL + "/admin";
 
-    protected static final String USER_LOGIN = "testuser";
-    protected static final String USER_EMAIL = "user@email.test";
-    protected static final String USER_PASSWORD = "user-password";
+    static final String USER_LOGIN = "testuser";
+    static final String USER_EMAIL = "user@email.test";
+    static final String USER_PASSWORD = "user-password";
 
-    protected static final String USER_LOGIN_2 = "testuser2";
-    protected static final String USER_EMAIL_2 = "user2@email.test";
-    protected static final String USER_PASSWORD_2 = "user2-password";
+    static final String CORRECT_ROLE = "admin";
 
-    protected static final String CORRECT_ROLE = "admin";
-    protected static final String INCORRECT_ROLE = "wrong-admin";
-
-    protected static final String REALM_PUBLIC_KEY = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5" +
+    static final String REALM_PUBLIC_KEY = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5" +
             "mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi7" +
             "9NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB";
 
-    protected static final String REALM_PRIVATE_KEY = "MIICXAIBAAKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3Bj" +
+    static final String REALM_PRIVATE_KEY = "MIICXAIBAAKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3Bj" +
             "LGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vj" +
             "O2NjsSAVcWEQMVhJ31LwIDAQABAoGAfmO8gVhyBxdqlxmIuglbz8bcjQbhXJLR2EoS8ngTXmN1bo2L90M0mUKSdc7qF10LgETBzqL8jY" +
             "lQIbt+e6TH8fcEpKCjUlyq0Mf/vVbfZSNaVycY13nTzo27iPyWQHK5NLuJzn1xvxxrUeXI6A2WFpGEBLbHjwpx5WQG9A+2scECQQDvdn" +
@@ -72,16 +67,16 @@ public abstract class AbstractSpringBootTest extends AbstractKeycloakTest {
             "N39fOYAlo+nTixgeW7X8Y=";
 
     @Page
-    protected LoginPage loginPage;
+    LoginPage loginPage;
 
     @Page
-    protected SpringApplicationPage applicationPage;
+    SpringApplicationPage applicationPage;
 
     @Page
-    protected SpringAdminPage adminPage;
+    SpringAdminPage adminPage;
     
     @Page
-    protected TokenPage tokenPage;
+    TokenPage tokenPage;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -117,7 +112,7 @@ public abstract class AbstractSpringBootTest extends AbstractKeycloakTest {
         return clientRepresentation;
     }
 
-    private void addUser(String login, String email, String password, String... roles) {
+    void addUser(String login, String email, String password, String... roles) {
         UserRepresentation userRepresentation = new UserRepresentation();
 
         userRepresentation.setUsername(login);
@@ -149,14 +144,14 @@ public abstract class AbstractSpringBootTest extends AbstractKeycloakTest {
         return result;
     }
     
-    protected String logoutPage(String redirectUrl) {
+    String logoutPage(String redirectUrl) {
     	return getAuthRoot(suiteContext)
                 + "/auth/realms/" + REALM_NAME
                 + "/protocol/" + "openid-connect"
                 + "/logout?redirect_uri=" + encodeUrl(redirectUrl);
     }
 
-    protected void setAdapterAndServerTimeOffset(int timeOffset, String url) {
+    void setAdapterAndServerTimeOffset(int timeOffset, String url) {
         setTimeOffset(timeOffset);
 
         String timeOffsetUri = UriBuilder.fromUri(url)
@@ -167,51 +162,41 @@ public abstract class AbstractSpringBootTest extends AbstractKeycloakTest {
         WaitUtils.waitUntilElement(By.tagName("body")).is().visible();
     }
 
-    protected String getCorrectUserId() {
-        return adminClient.realms().realm(REALM_NAME).users().search(USER_LOGIN)
-                .get(0).getId();
-    }
-
-    @Before
     public void createRoles() {
         RealmResource realm = realmsResouce().realm(REALM_NAME);
 
         RoleRepresentation correct = new RoleRepresentation(CORRECT_ROLE, CORRECT_ROLE, false);
         realm.roles().create(correct);
-
-        RoleRepresentation incorrect = new RoleRepresentation(INCORRECT_ROLE, INCORRECT_ROLE, false);
-        realm.roles().create(incorrect);
     }
 
-    @Before
     public void addUsers() {
         addUser(USER_LOGIN, USER_EMAIL, USER_PASSWORD, CORRECT_ROLE);
-        addUser(USER_LOGIN_2, USER_EMAIL_2, USER_PASSWORD_2, INCORRECT_ROLE);
     }
 
-    @After
     public void cleanupUsers() {
-        RealmResource providerRealm = adminClient.realm(REALM_NAME);
-        UserRepresentation userRep = ApiUtil.findUserByUsername(providerRealm, USER_LOGIN);
+        RealmResource realmResource = adminClient.realm(REALM_NAME);
+        UserRepresentation userRep = ApiUtil.findUserByUsername(realmResource, USER_LOGIN);
         if (userRep != null) {
-            providerRealm.users().get(userRep.getId()).remove();
-        }
-
-        RealmResource childRealm = adminClient.realm(REALM_NAME);
-        userRep = ApiUtil.findUserByUsername(childRealm, USER_LOGIN_2);
-        if (userRep != null) {
-            childRealm.users().get(userRep.getId()).remove();
+            realmResource.users().get(userRep.getId()).remove();
         }
     }
 
-    @After
     public void cleanupRoles() {
         RealmResource realm = realmsResouce().realm(REALM_NAME);
 
         RoleResource correctRole = realm.roles().get(CORRECT_ROLE);
         correctRole.remove();
+    }
 
-        RoleResource incorrectRole = realm.roles().get(INCORRECT_ROLE);
-        incorrectRole.remove();
+    @Before
+    public void setUp() {
+        createRoles();
+        addUsers();
+    }
+
+    @After
+    public void tearDown() {
+        cleanupUsers();
+        cleanupRoles();
     }
 }

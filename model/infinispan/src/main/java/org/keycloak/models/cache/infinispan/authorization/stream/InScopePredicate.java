@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.function.Predicate;
 
-import org.keycloak.models.cache.infinispan.authorization.entities.InResourceServer;
 import org.keycloak.models.cache.infinispan.authorization.entities.InScope;
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
 

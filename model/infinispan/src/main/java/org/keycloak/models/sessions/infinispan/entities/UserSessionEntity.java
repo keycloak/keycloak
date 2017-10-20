@@ -22,13 +22,17 @@ import org.infinispan.commons.marshall.MarshallUtil;
 import org.infinispan.commons.marshall.SerializeWith;
 import org.jboss.logging.Logger;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.UserSessionModel.State;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.util.KeycloakMarshallUtil;
 
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -191,7 +195,7 @@ public class UserSessionEntity extends SessionEntity {
 
     @Override
     public String toString() {
-        return String.format("UserSessionEntity [id=%s, realm=%s, lastSessionRefresh=%d, clients=%s]", getId(), getRealm(), getLastSessionRefresh(),
+        return String.format("UserSessionEntity [id=%s, realm=%s, lastSessionRefresh=%d, clients=%s]", getId(), getRealmId(), getLastSessionRefresh(),
           new TreeSet(this.authenticatedClientSessions.keySet()));
     }
 
@@ -225,6 +229,18 @@ public class UserSessionEntity extends SessionEntity {
 
         private static final int VERSION_1 = 1;
 
+        private static final EnumMap<UserSessionModel.State, Integer> STATE_TO_ID = new EnumMap<>(UserSessionModel.State.class);
+        private static final Map<Integer, UserSessionModel.State> ID_TO_STATE = new HashMap<>();
+        static {
+            STATE_TO_ID.put(State.LOGGED_IN, 1);
+            STATE_TO_ID.put(State.LOGGED_OUT, 2);
+            STATE_TO_ID.put(State.LOGGING_OUT, 3);
+
+            for (Entry<State, Integer> entry : STATE_TO_ID.entrySet()) {
+                ID_TO_STATE.put(entry.getValue(), entry.getKey());
+            }
+        }
+
         @Override
         public void writeObject(ObjectOutput output, UserSessionEntity session) throws IOException {
             output.writeByte(VERSION_1);
@@ -235,15 +251,14 @@ public class UserSessionEntity extends SessionEntity {
             MarshallUtil.marshallString(session.getId(), output);
             MarshallUtil.marshallString(session.getIpAddress(), output);
             MarshallUtil.marshallString(session.getLoginUsername(), output);
-            MarshallUtil.marshallString(session.getRealm(), output);
+            MarshallUtil.marshallString(session.getRealmId(), output);
             MarshallUtil.marshallString(session.getUser(), output);
 
             MarshallUtil.marshallInt(output, session.getLastSessionRefresh());
             MarshallUtil.marshallInt(output, session.getStarted());
             output.writeBoolean(session.isRememberMe());
 
-            int state = session.getState() == null ? 0 :
-                    ((session.getState() == UserSessionModel.State.LOGGED_IN) ? 1 : (session.getState() == UserSessionModel.State.LOGGED_OUT ? 2 : 3));
+            int state = session.getState() == null ? 0 : STATE_TO_ID.get(session.getState());
             output.writeInt(state);
 
             Map<String, String> notes = session.getNotes();
@@ -273,24 +288,14 @@ public class UserSessionEntity extends SessionEntity {
             sessionEntity.setId(MarshallUtil.unmarshallString(input));
             sessionEntity.setIpAddress(MarshallUtil.unmarshallString(input));
             sessionEntity.setLoginUsername(MarshallUtil.unmarshallString(input));
-            sessionEntity.setRealm(MarshallUtil.unmarshallString(input));
+            sessionEntity.setRealmId(MarshallUtil.unmarshallString(input));
             sessionEntity.setUser(MarshallUtil.unmarshallString(input));
 
             sessionEntity.setLastSessionRefresh(MarshallUtil.unmarshallInt(input));
             sessionEntity.setStarted(MarshallUtil.unmarshallInt(input));
             sessionEntity.setRememberMe(input.readBoolean());
 
-            int state = input.readInt();
-            switch(state) {
-                case 1: sessionEntity.setState(UserSessionModel.State.LOGGED_IN);
-                    break;
-                case 2: sessionEntity.setState(UserSessionModel.State.LOGGED_OUT);
-                    break;
-                case 3: sessionEntity.setState(UserSessionModel.State.LOGGING_OUT);
-                    break;
-                default:
-                    sessionEntity.setState(null);
-            }
+            sessionEntity.setState(ID_TO_STATE.get(input.readInt()));
 
             Map<String, String> notes = KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT,
                     new KeycloakMarshallUtil.ConcurrentHashMapBuilder<>());

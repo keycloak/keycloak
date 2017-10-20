@@ -31,6 +31,10 @@
     <artifactId>keycloak-distribution-parent</artifactId>
     <packaging>pom</packaging>
 
+    <properties>
+        <keycloak.provisioning.xml>server-provisioning.xml</keycloak.provisioning.xml>
+    </properties>
+
     <modules>
         <module>adapters</module>
         <module>saml-adapters</module>

@@ -20,11 +20,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.broker.provider.ExchangeExternalToken;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.ExchangeTokenToIdentityProviderToken;
+import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.Details;
@@ -40,6 +43,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.ErrorPage;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
@@ -61,12 +65,12 @@ import java.util.regex.Pattern;
 /**
  * @author Pedro Igor
  */
-public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityProviderConfig> extends AbstractIdentityProvider<C> implements ExchangeTokenToIdentityProviderToken {
+public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityProviderConfig> extends AbstractIdentityProvider<C> implements ExchangeTokenToIdentityProviderToken, ExchangeExternalToken {
     protected static final Logger logger = Logger.getLogger(AbstractOAuth2IdentityProvider.class);
 
     public static final String OAUTH2_GRANT_TYPE_REFRESH_TOKEN = "refresh_token";
     public static final String OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE = "authorization_code";
-    public static final String FEDERATED_ACCESS_TOKEN = "FEDERATED_ACCESS_TOKEN";
+
     public static final String FEDERATED_REFRESH_TOKEN = "FEDERATED_REFRESH_TOKEN";
     public static final String FEDERATED_TOKEN_EXPIRATION = "FEDERATED_TOKEN_EXPIRATION";
     public static final String ACCESS_DENIED = "access_denied";
@@ -163,6 +167,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         if (!getConfig().isStoreToken()) {
             // if token isn't stored, we need to see if this session has been linked
             String brokerId = tokenUserSession.getNote(Details.IDENTITY_PROVIDER);
+            brokerId = brokerId == null ? tokenUserSession.getNote(IdentityProvider.EXTERNAL_IDENTITY_PROVIDER) : brokerId;
             if (brokerId == null || !brokerId.equals(getConfig().getAlias())) {
                 event.detail(Details.REASON, "requested_issuer has not linked");
                 event.error(Errors.INVALID_REQUEST);
@@ -301,6 +306,19 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         if (getConfig().isLoginHint() && loginHint != null) {
             uriBuilder.queryParam(OIDCLoginProtocol.LOGIN_HINT_PARAM, loginHint);
         }
+
+        String prompt = getConfig().getPrompt();
+        if (prompt == null || prompt.isEmpty()) {
+            prompt = request.getAuthenticationSession().getClientNote(OAuth2Constants.PROMPT);
+        }
+        if (prompt != null) {
+            uriBuilder.queryParam(OAuth2Constants.PROMPT, prompt);
+        }
+
+        String acr = request.getAuthenticationSession().getClientNote(OAuth2Constants.ACR_VALUES);
+        if (acr != null) {
+            uriBuilder.queryParam(OAuth2Constants.ACR_VALUES, acr);
+        }
         return uriBuilder;
     }
 
@@ -411,4 +429,113 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                     .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE);
         }
     }
+
+    protected String getProfileEndpointForValidation(EventBuilder event) {
+        event.detail(Details.REASON, "exchange unsupported");
+        event.error(Errors.INVALID_TOKEN);
+        throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid token", Response.Status.BAD_REQUEST);
+    }
+
+    protected BrokeredIdentityContext extractIdentityFromProfile(EventBuilder event, JsonNode node) {
+        return null;
+    }
+
+    protected BrokeredIdentityContext validateExternalTokenThroughUserInfo(EventBuilder event, String subjectToken, String subjectTokenType) {
+        event.detail("validation_method", "user info");
+        SimpleHttp.Response response = null;
+        int status = 0;
+        try {
+            String userInfoUrl = getProfileEndpointForValidation(event);
+            response = buildUserInfoRequest(subjectToken, userInfoUrl).asResponse();
+            status = response.getStatus();
+        } catch (IOException e) {
+            logger.debug("Failed to invoke user info for external exchange", e);
+        }
+        if (status != 200) {
+            logger.debug("Failed to invoke user info status: " + status);
+            event.detail(Details.REASON, "user info call failure");
+            event.error(Errors.INVALID_TOKEN);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid token", Response.Status.BAD_REQUEST);
+        }
+        JsonNode profile = null;
+        try {
+            profile = response.asJson();
+        } catch (IOException e) {
+            event.detail(Details.REASON, "user info call failure");
+            event.error(Errors.INVALID_TOKEN);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid token", Response.Status.BAD_REQUEST);
+        }
+        BrokeredIdentityContext context = extractIdentityFromProfile(event, profile);
+        if (context.getId() == null) {
+            event.detail(Details.REASON, "user info call failure");
+            event.error(Errors.INVALID_TOKEN);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid token", Response.Status.BAD_REQUEST);
+        }
+        return context;
+    }
+
+    protected SimpleHttp buildUserInfoRequest(String subjectToken, String userInfoUrl) {
+        return SimpleHttp.doGet(userInfoUrl, session)
+                  .header("Authorization", "Bearer " + subjectToken);
+    }
+
+
+    protected boolean supportsExternalExchange() {
+        return false;
+    }
+
+    @Override
+    public boolean isIssuer(String issuer, MultivaluedMap<String, String> params) {
+        if (!supportsExternalExchange()) return false;
+        String requestedIssuer = params.getFirst(OAuth2Constants.SUBJECT_ISSUER);
+        if (requestedIssuer == null) requestedIssuer = issuer;
+        return requestedIssuer.equals(getConfig().getAlias());
+    }
+
+
+    final public BrokeredIdentityContext exchangeExternal(EventBuilder event, MultivaluedMap<String, String> params) {
+        if (!supportsExternalExchange()) return null;
+        BrokeredIdentityContext context = exchangeExternalImpl(event, params);
+        if (context != null) {
+            context.setIdp(this);
+            context.setIdpConfig(getConfig());
+        }
+        return context;
+    }
+
+    protected BrokeredIdentityContext exchangeExternalImpl(EventBuilder event, MultivaluedMap<String, String> params) {
+        return exchangeExternalUserInfoValidationOnly(event, params);
+
+    }
+
+    protected BrokeredIdentityContext exchangeExternalUserInfoValidationOnly(EventBuilder event, MultivaluedMap<String, String> params) {
+        String subjectToken = params.getFirst(OAuth2Constants.SUBJECT_TOKEN);
+        if (subjectToken == null) {
+            event.detail(Details.REASON, OAuth2Constants.SUBJECT_TOKEN + " param unset");
+            event.error(Errors.INVALID_TOKEN);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "token not set", Response.Status.BAD_REQUEST);
+        }
+        String subjectTokenType = params.getFirst(OAuth2Constants.SUBJECT_TOKEN_TYPE);
+        if (subjectTokenType == null) {
+            subjectTokenType = OAuth2Constants.ACCESS_TOKEN_TYPE;
+        }
+        if (!OAuth2Constants.ACCESS_TOKEN_TYPE.equals(subjectTokenType)) {
+            event.detail(Details.REASON, OAuth2Constants.SUBJECT_TOKEN_TYPE + " invalid");
+            event.error(Errors.INVALID_TOKEN_TYPE);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid token type", Response.Status.BAD_REQUEST);
+        }
+        return validateExternalTokenThroughUserInfo(event, subjectToken, subjectTokenType);
+    }
+
+    @Override
+    public void exchangeExternalComplete(UserSessionModel userSession, BrokeredIdentityContext context, MultivaluedMap<String, String> params) {
+        if (context.getContextData().containsKey(OIDCIdentityProvider.VALIDATED_ID_TOKEN))
+            userSession.setNote(FEDERATED_ACCESS_TOKEN, params.getFirst(OAuth2Constants.SUBJECT_TOKEN));
+        if (context.getContextData().containsKey(OIDCIdentityProvider.VALIDATED_ID_TOKEN))
+            userSession.setNote(OIDCIdentityProvider.FEDERATED_ID_TOKEN, params.getFirst(OAuth2Constants.SUBJECT_TOKEN));
+        userSession.setNote(OIDCIdentityProvider.EXCHANGE_PROVIDER, getConfig().getAlias());
+
+    }
+
+
 }

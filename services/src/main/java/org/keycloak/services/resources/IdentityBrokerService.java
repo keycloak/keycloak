@@ -371,6 +371,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                 return response;
             }
         } catch (IdentityBrokerException e) {
+            e.printStackTrace();
             return redirectToErrorPage(Messages.COULD_NOT_SEND_AUTHENTICATION_REQUEST, e, providerId);
         } catch (Exception e) {
             return redirectToErrorPage(Messages.UNEXPECTED_ERROR_HANDLING_REQUEST, e, providerId);

@@ -172,7 +172,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     }
 
     void updateSessionEntity(UserSessionEntity entity, RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
-        entity.setRealm(realm.getId());
+        entity.setRealmId(realm.getId());
         entity.setUser(user.getId());
         entity.setLoginUsername(loginUsername);
         entity.setIpAddress(ipAddress);
@@ -303,8 +303,9 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         RemoteCache remoteCache = InfinispanUtil.getRemoteCache(cache);
 
         if (remoteCache != null) {
-            UserSessionEntity remoteSessionEntity = (UserSessionEntity) remoteCache.get(id);
-            if (remoteSessionEntity != null) {
+            SessionEntityWrapper<UserSessionEntity> remoteSessionEntityWrapper = (SessionEntityWrapper<UserSessionEntity>) remoteCache.get(id);
+            if (remoteSessionEntityWrapper != null) {
+                UserSessionEntity remoteSessionEntity = remoteSessionEntityWrapper.getEntity();
                 log.debugf("getUserSessionWithPredicate(%s): remote cache contains session entity %s", id, remoteSessionEntity);
 
                 UserSessionModel remoteSessionAdapter = wrap(realm, remoteSessionEntity, offline);
@@ -399,7 +400,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
         FuturesHelper futures = new FuturesHelper();
 
-        // Each cluster node cleanups just local sessions, which are those owned by himself (+ few more taking l1 cache into account)
+        // Each cluster node cleanups just local sessions, which are those owned by itself (+ few more taking l1 cache into account)
         Cache<String, SessionEntityWrapper<UserSessionEntity>> localCache = CacheDecorators.localCache(sessionCache);
 
         Cache<String, SessionEntityWrapper<UserSessionEntity>> localCacheStoreIgnore = CacheDecorators.skipCacheLoaders(localCache);
@@ -524,7 +525,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     public UserLoginFailureModel addUserLoginFailure(RealmModel realm, String userId) {
         LoginFailureKey key = new LoginFailureKey(realm.getId(), userId);
         LoginFailureEntity entity = new LoginFailureEntity();
-        entity.setRealm(realm.getId());
+        entity.setRealmId(realm.getId());
         entity.setUserId(userId);
 
         SessionUpdateTask<LoginFailureEntity> createLoginFailureTask = new SessionUpdateTask<LoginFailureEntity>() {
@@ -767,7 +768,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     public UserSessionAdapter importUserSession(UserSessionModel userSession, boolean offline, boolean importAuthenticatedClientSessions) {
         UserSessionEntity entity = new UserSessionEntity();
         entity.setId(userSession.getId());
-        entity.setRealm(userSession.getRealm().getId());
+        entity.setRealmId(userSession.getRealm().getId());
 
         entity.setAuthMethod(userSession.getAuthMethod());
         entity.setBrokerSessionId(userSession.getBrokerSessionId());

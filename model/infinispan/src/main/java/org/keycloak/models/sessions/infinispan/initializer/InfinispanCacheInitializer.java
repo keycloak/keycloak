@@ -124,9 +124,7 @@ public class InfinispanCacheInitializer extends BaseCacheInitializer {
 
                 saveStateToCache(state);
 
-                if (log.isDebugEnabled()) {
-                    log.debug("New initializer state pushed. The state is: " + state.printState());
-                }
+                log.debugf("New initializer state pushed. The state is: %s", state);
             }
 
             // Loader callback after the task is finished

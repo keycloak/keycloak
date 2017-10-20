@@ -82,23 +82,22 @@ public class RemoteCacheInvoker {
     }
 
 
-    private <K, V extends SessionEntity> void runOnRemoteCache(RemoteCache<K, V> remoteCache, long maxIdleMs, K key, SessionUpdateTask<V> task, SessionEntityWrapper<V> sessionWrapper) {
-        V session = sessionWrapper.getEntity();
+    private <K, V extends SessionEntity> void runOnRemoteCache(RemoteCache<K, SessionEntityWrapper<V>> remoteCache, long maxIdleMs, K key, SessionUpdateTask<V> task, SessionEntityWrapper<V> sessionWrapper) {
+        final V session = sessionWrapper.getEntity();
         SessionUpdateTask.CacheOperation operation = task.getOperation(session);
 
         switch (operation) {
             case REMOVE:
-                // REMOVE already handled at remote cache store level
-                //remoteCache.remove(key);
+                remoteCache.remove(key);
                 break;
             case ADD:
-                remoteCache.put(key, session, task.getLifespanMs(), TimeUnit.MILLISECONDS, maxIdleMs, TimeUnit.MILLISECONDS);
+                remoteCache.put(key, sessionWrapper.forTransport(), task.getLifespanMs(), TimeUnit.MILLISECONDS, maxIdleMs, TimeUnit.MILLISECONDS);
                 break;
             case ADD_IF_ABSENT:
                 final int currentTime = Time.currentTime();
-                SessionEntity existing = remoteCache
+                SessionEntityWrapper<V> existing = remoteCache
                         .withFlags(Flag.FORCE_RETURN_VALUE)
-                        .putIfAbsent(key, session, -1, TimeUnit.MILLISECONDS, maxIdleMs, TimeUnit.MILLISECONDS);
+                        .putIfAbsent(key, sessionWrapper.forTransport(), -1, TimeUnit.MILLISECONDS, maxIdleMs, TimeUnit.MILLISECONDS);
                 if (existing != null) {
                     logger.debugf("Existing entity in remote cache for key: %s . Will update it", key);
 
@@ -116,23 +115,24 @@ public class RemoteCacheInvoker {
     }
 
 
-    private <K, V extends SessionEntity> void replace(RemoteCache<K, V> remoteCache, long lifespanMs, long maxIdleMs, K key, SessionUpdateTask<V> task) {
+    private <K, V extends SessionEntity> void replace(RemoteCache<K, SessionEntityWrapper<V>> remoteCache, long lifespanMs, long maxIdleMs, K key, SessionUpdateTask<V> task) {
         boolean replaced = false;
         while (!replaced) {
-            VersionedValue<V> versioned = remoteCache.getVersioned(key);
+            VersionedValue<SessionEntityWrapper<V>> versioned = remoteCache.getVersioned(key);
             if (versioned == null) {
                 logger.warnf("Not found entity to replace for key '%s'", key);
                 return;
             }
 
-            V session = versioned.getValue();
+            SessionEntityWrapper<V> sessionWrapper = versioned.getValue();
+            final V session = sessionWrapper.getEntity();
 
             // Run task on the remote session
             task.runUpdate(session);
 
             logger.debugf("Before replaceWithVersion. Entity to write version %d: %s", versioned.getVersion(), session);
 
-            replaced = remoteCache.replaceWithVersion(key, session, versioned.getVersion(), lifespanMs, TimeUnit.MILLISECONDS, maxIdleMs, TimeUnit.MILLISECONDS);
+            replaced = remoteCache.replaceWithVersion(key, SessionEntityWrapper.forTransport(session), versioned.getVersion(), lifespanMs, TimeUnit.MILLISECONDS, maxIdleMs, TimeUnit.MILLISECONDS);
 
             if (!replaced) {
                 logger.debugf("Failed to replace entity '%s' version %d. Will retry again", key, versioned.getVersion());

@@ -51,8 +51,4 @@ public interface ActionTokenStoreProvider extends Provider {
      * @return {@code null} if no token is found for given key and nonce, value otherwise
      */
     ActionTokenValueModel remove(ActionTokenKeyModel key);
-
-    void removeAll(String userId, String actionId);
-
-
 }

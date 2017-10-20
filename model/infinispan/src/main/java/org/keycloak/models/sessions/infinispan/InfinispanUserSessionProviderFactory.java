@@ -33,14 +33,13 @@ import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.UserSessionProviderFactory;
 import org.keycloak.models.sessions.infinispan.changes.sessions.LastSessionRefreshStore;
 import org.keycloak.models.sessions.infinispan.changes.sessions.LastSessionRefreshStoreFactory;
-import org.keycloak.models.sessions.infinispan.initializer.BaseCacheInitializer;
 import org.keycloak.models.sessions.infinispan.initializer.CacheInitializer;
 import org.keycloak.models.sessions.infinispan.initializer.DBLockBasedCacheInitializer;
-import org.keycloak.models.sessions.infinispan.initializer.SingleWorkerCacheInitializer;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
+import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.events.AbstractUserSessionClusterListener;
 import org.keycloak.models.sessions.infinispan.events.ClientRemovedSessionEvent;
@@ -206,7 +205,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
         InfinispanConnectionProvider ispn = session.getProvider(InfinispanConnectionProvider.class);
 
-        Cache sessionsCache = ispn.getCache(InfinispanConnectionProvider.SESSION_CACHE_NAME);
+        Cache<String, SessionEntityWrapper<UserSessionEntity>> sessionsCache = ispn.getCache(InfinispanConnectionProvider.SESSION_CACHE_NAME);
         boolean sessionsRemoteCache = checkRemoteCache(session, sessionsCache, (RealmModel realm) -> {
             return realm.getSsoSessionIdleTimeout() * 1000;
         });
@@ -216,7 +215,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         }
 
 
-        Cache offlineSessionsCache = ispn.getCache(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME);
+        Cache<String, SessionEntityWrapper<UserSessionEntity>> offlineSessionsCache = ispn.getCache(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME);
         boolean offlineSessionsRemoteCache = checkRemoteCache(session, offlineSessionsCache, (RealmModel realm) -> {
             return realm.getOfflineSessionIdleTimeout() * 1000;
         });
@@ -225,13 +224,13 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
             offlineLastSessionRefreshStore = new LastSessionRefreshStoreFactory().createAndInit(session, offlineSessionsCache, true);
         }
 
-        Cache loginFailuresCache = ispn.getCache(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME);
+        Cache<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> loginFailuresCache = ispn.getCache(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME);
         boolean loginFailuresRemoteCache = checkRemoteCache(session, loginFailuresCache, (RealmModel realm) -> {
             return realm.getMaxDeltaTimeSeconds() * 1000;
         });
     }
 
-    private boolean checkRemoteCache(KeycloakSession session, Cache ispnCache, RemoteCacheInvoker.MaxIdleTimeLoader maxIdleLoader) {
+    private <K, V extends SessionEntity> boolean checkRemoteCache(KeycloakSession session, Cache<K, SessionEntityWrapper<V>> ispnCache, RemoteCacheInvoker.MaxIdleTimeLoader maxIdleLoader) {
         Set<RemoteStore> remoteStores = InfinispanUtil.getRemoteStores(ispnCache);
 
         if (remoteStores.isEmpty()) {
@@ -240,7 +239,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         } else {
             log.infof("Remote store configured for cache '%s'", ispnCache.getName());
 
-            RemoteCache remoteCache = remoteStores.iterator().next().getRemoteCache();
+            RemoteCache<K, SessionEntityWrapper<V>> remoteCache = (RemoteCache) remoteStores.iterator().next().getRemoteCache();
 
             remoteCacheInvoker.addRemoteCache(ispnCache.getName(), remoteCache, maxIdleLoader);
 

@@ -34,6 +34,9 @@ import javax.ws.rs.core.UriInfo;
  */
 public interface IdentityProvider<C extends IdentityProviderModel> extends Provider {
 
+    String EXTERNAL_IDENTITY_PROVIDER = "EXTERNAL_IDENTITY_PROVIDER";
+    String FEDERATED_ACCESS_TOKEN = "FEDERATED_ACCESS_TOKEN";
+
     interface AuthenticationCallback {
         /**
          * This method should be called by provider after the JAXRS callback endpoint has finished authentication

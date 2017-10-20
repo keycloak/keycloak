@@ -325,6 +325,7 @@ module.controller('UserTabCtrl', function($scope, $location, Dialog, Notificatio
 module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser, User,
                                              Components,
                                              UserImpersonation, RequiredActions,
+                                             UserStorageOperations,
                                              $location, $http, Dialog, Notifications) {
     $scope.realm = realm;
     $scope.create = !user.id;
@@ -352,18 +353,36 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
         if(user.federationLink) {
             console.log("federationLink is not null. It is " + user.federationLink);
 
-            Components.get({realm: realm.realm, componentId: user.federationLink}, function (link) {
-                $scope.federationLinkName = link.name;
-                $scope.federationLink = "#/realms/" + realm.realm + "/user-storage/providers/" + link.providerId + "/" + link.id;
-            });
+            if ($scope.access.viewRealm) {
+                Components.get({realm: realm.realm, componentId: user.federationLink}, function (link) {
+                    $scope.federationLinkName = link.name;
+                    $scope.federationLink = "#/realms/" + realm.realm + "/user-storage/providers/" + link.providerId + "/" + link.id;
+                });
+            } else {
+                // KEYCLOAK-4328
+                UserStorageOperations.simpleName.get({realm: realm.realm, componentId: user.federationLink}, function (link) {
+                    $scope.federationLinkName = link.name;
+                    $scope.federationLink = $location.absUrl();
+                })
+            }
+
         } else {
             console.log("federationLink is null");
         }
         if(user.origin) {
-            Components.get({realm: realm.realm, componentId: user.origin}, function (link) {
-                $scope.originName = link.name;
-                $scope.originLink = "#/realms/" + realm.realm + "/user-storage/providers/" + link.providerId + "/" + link.id;
-            })
+            if ($scope.access.viewRealm) {
+                Components.get({realm: realm.realm, componentId: user.origin}, function (link) {
+                    $scope.originName = link.name;
+                    $scope.originLink = "#/realms/" + realm.realm + "/user-storage/providers/" + link.providerId + "/" + link.id;
+                })
+            }
+            else {
+                // KEYCLOAK-4328
+                UserStorageOperations.simpleName.get({realm: realm.realm, componentId: user.origin}, function (link) {
+                    $scope.originName = link.name;
+                    $scope.originLink = $location.absUrl();
+                })
+             }
         } else {
             console.log("origin is null");
         }
