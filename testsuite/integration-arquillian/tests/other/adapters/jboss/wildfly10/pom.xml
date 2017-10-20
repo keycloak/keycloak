@@ -44,12 +44,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <dependency>
-            <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-cli</artifactId>
-            <scope>test</scope>
-            <version>2.2.0.Final</version>
-        </dependency>
     </dependencies>    
 
     <properties>

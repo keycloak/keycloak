@@ -392,6 +392,12 @@
                     <groupId>org.wildfly.arquillian</groupId>
                     <artifactId>wildfly-arquillian-container-managed</artifactId>
                 </dependency>
+                <dependency>
+                    <groupId>org.wildfly.core</groupId>
+                    <artifactId>wildfly-cli</artifactId>
+                    <scope>test</scope>
+                    <version>${wildfly.core.version}</version>
+                </dependency>
             </dependencies>
         </profile>
 
@@ -409,6 +415,12 @@
                 <dependency>
                     <groupId>org.wildfly.arquillian</groupId>
                     <artifactId>wildfly-arquillian-container-managed</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>org.wildfly.core</groupId>
+                    <artifactId>wildfly-cli</artifactId>
+                    <scope>test</scope>
+                    <version>2.2.0.Final</version>
                 </dependency>
             </dependencies>
         </profile>
