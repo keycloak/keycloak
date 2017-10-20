@@ -188,6 +188,7 @@ public abstract class AbstractPolicyEnforcer {
     }
 
     private boolean hasResourceScopePermission(MethodConfig methodConfig, Permission permission) {
+        List<String> requiredScopes = methodConfig.getScopes();
         Set<String> allowedScopes = permission.getScopes();
 
         if (allowedScopes.isEmpty()) {
@@ -197,18 +198,18 @@ public abstract class AbstractPolicyEnforcer {
         PolicyEnforcerConfig.ScopeEnforcementMode enforcementMode = methodConfig.getScopesEnforcementMode();
 
         if (PolicyEnforcerConfig.ScopeEnforcementMode.ALL.equals(enforcementMode)) {
-            return allowedScopes.containsAll(methodConfig.getScopes());
+            return allowedScopes.containsAll(requiredScopes);
         }
 
         if (PolicyEnforcerConfig.ScopeEnforcementMode.ANY.equals(enforcementMode)) {
-            for (String requiredScope : methodConfig.getScopes()) {
+            for (String requiredScope : requiredScopes) {
                 if (allowedScopes.contains(requiredScope)) {
                     return true;
                 }
             }
         }
 
-        return false;
+        return requiredScopes.isEmpty();
     }
 
     protected AuthzClient getAuthzClient() {
