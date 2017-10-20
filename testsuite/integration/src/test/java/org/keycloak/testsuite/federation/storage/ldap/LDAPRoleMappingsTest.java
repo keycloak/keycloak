@@ -27,6 +27,8 @@ import org.junit.rules.TestRule;
 import org.junit.runners.MethodSorters;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.models.cache.CachedUserModel;
+import org.keycloak.services.managers.UserStorageSyncManager;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
@@ -44,6 +46,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.storage.ldap.mappers.membership.role.RoleLDAPStorageMapper;
+import org.keycloak.storage.user.SynchronizationResult;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -72,6 +75,7 @@ public class LDAPRoleMappingsTest {
             LDAPTestUtils.addLocalUser(manager.getSession(), appRealm, "mary", "mary@test.com", "password-app");
 
             MultivaluedHashMap<String,String> ldapConfig = LDAPTestUtils.getLdapRuleConfig(ldapRule);
+            ldapConfig.remove(LDAPConstants.PAGINATION);
             ldapConfig.putSingle(LDAPConstants.SYNC_REGISTRATIONS, "true");
             ldapConfig.putSingle(LDAPConstants.EDIT_MODE, UserStorageProvider.EditMode.WRITABLE.toString());
             UserStorageProviderModel model = new UserStorageProviderModel();
@@ -82,6 +86,7 @@ public class LDAPRoleMappingsTest {
             model.setPriority(0);
             model.setProviderId(LDAPStorageProviderFactory.PROVIDER_NAME);
             model.setConfig(ldapConfig);
+            model.setImportEnabled(true);
 
             ldapModel = appRealm.addComponentModel(model);
 
@@ -358,5 +363,110 @@ public class LDAPRoleMappingsTest {
     private void deleteRoleMappingsInLDAP(RoleLDAPStorageMapper roleMapper, LDAPObject ldapUser, String roleName) {
         LDAPObject ldapRole1 = roleMapper.loadLDAPRoleByName(roleName);
         roleMapper.deleteRoleMappingInLDAP(ldapUser, ldapRole1);
+    }
+
+    /**
+     * KEYCLOAK-5698
+     */
+    @Test
+    public void test04_syncRoleMappings() {
+        KeycloakSession session = keycloakRule.startSession();
+        try {
+            RealmModel appRealm = session.realms().getRealmByName("test");
+
+            LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+            LDAPObject john = LDAPTestUtils.addLDAPUser(ldapProvider, appRealm, "johnrolemapper", "John", "RoleMapper", "johnrolemapper@email.org", null, "1234");
+            LDAPTestUtils.updateLDAPPassword(ldapProvider, john, "Password1");
+            LDAPTestUtils.addOrUpdateRoleLDAPMappers(appRealm, ldapModel, LDAPGroupMapperMode.LDAP_ONLY);
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+        session = keycloakRule.startSession();
+        try {
+            RealmModel appRealm = session.realms().getRealmByName("test");
+            UserStorageSyncManager usersSyncManager = new UserStorageSyncManager();
+            SynchronizationResult syncResult = usersSyncManager.syncChangedUsers(session.getKeycloakSessionFactory(), appRealm.getId(), new UserStorageProviderModel(ldapModel));
+            syncResult.getAdded();
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+        session = keycloakRule.startSession();
+        try {
+            // make sure user is cached.
+            RealmModel appRealm = session.realms().getRealmByName("test");
+            UserModel johnRoleMapper = session.users().getUserByUsername("johnrolemapper", appRealm);
+            Assert.assertNotNull(johnRoleMapper);
+            Assert.assertEquals(0, johnRoleMapper.getRealmRoleMappings().size());
+            Assert.assertTrue(johnRoleMapper instanceof CachedUserModel);
+
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+        session = keycloakRule.startSession();
+        try {
+            RealmModel appRealm = session.realms().getRealmByName("test");
+            // Add some role mappings directly in LDAP
+            LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+            ComponentModel roleMapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ldapModel, "realmRolesMapper");
+            RoleLDAPStorageMapper roleMapper = LDAPTestUtils.getRoleMapper(roleMapperModel, ldapProvider, appRealm);
+
+            LDAPObject johnLdap = ldapProvider.loadLDAPUserByUsername(appRealm, "johnrolemapper");
+            roleMapper.addRoleMappingInLDAP("realmRole1", johnLdap);
+            roleMapper.addRoleMappingInLDAP("realmRole2", johnLdap);
+
+            // Get user and check that he has requested roles from LDAP
+            UserModel johnRoleMapper = session.users().getUserByUsername("johnrolemapper", appRealm);
+            RoleModel realmRole1 = appRealm.getRole("realmRole1");
+            RoleModel realmRole2 = appRealm.getRole("realmRole2");
+
+            Set<RoleModel> johnRoles = johnRoleMapper.getRealmRoleMappings();
+            Assert.assertFalse(johnRoles.contains(realmRole1));
+            Assert.assertFalse(johnRoles.contains(realmRole2));
+
+
+
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+        session = keycloakRule.startSession();
+        try {
+            RealmModel appRealm = session.realms().getRealmByName("test");
+            // Add some role mappings directly in LDAP
+            LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+            ComponentModel roleMapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ldapModel, "realmRolesMapper");
+            RoleLDAPStorageMapper roleMapper = LDAPTestUtils.getRoleMapper(roleMapperModel, ldapProvider, appRealm);
+
+            LDAPObject johnLdap = ldapProvider.loadLDAPUserByUsername(appRealm, "johnrolemapper");
+            roleMapper.addRoleMappingInLDAP("realmRole1", johnLdap);
+            roleMapper.addRoleMappingInLDAP("realmRole2", johnLdap);
+
+            UserStorageSyncManager usersSyncManager = new UserStorageSyncManager();
+            SynchronizationResult syncResult = usersSyncManager.syncChangedUsers(session.getKeycloakSessionFactory(), appRealm.getId(), new UserStorageProviderModel(ldapModel));
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+        session = keycloakRule.startSession();
+        try {
+            RealmModel appRealm = session.realms().getRealmByName("test");
+            // Get user and check that he has requested roles from LDAP
+            UserModel johnRoleMapper = session.users().getUserByUsername("johnrolemapper", appRealm);
+            RoleModel realmRole1 = appRealm.getRole("realmRole1");
+            RoleModel realmRole2 = appRealm.getRole("realmRole2");
+
+            Set<RoleModel> johnRoles = johnRoleMapper.getRealmRoleMappings();
+            Assert.assertTrue(johnRoles.contains(realmRole1));
+            Assert.assertTrue(johnRoles.contains(realmRole2));
+
+
+
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
     }
 }
