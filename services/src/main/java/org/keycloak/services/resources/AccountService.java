@@ -141,13 +141,8 @@ public class AccountService extends AbstractSecuredLocalService {
             authResult = authManager.authenticateIdentityCookie(session, realm);
             if (authResult != null) {
                 auth = new Auth(realm, authResult.getToken(), authResult.getUser(), client, authResult.getSession(), true);
-
-                String csrfTokenSession = auth.getSession().getNote(UserSessionModel.CSRF_TOKEN);
-                if (csrfTokenSession == null) {
-                    csrfTokenSession = Base64Url.encode(KeycloakModelUtils.generateSecret(128));
-                    auth.getSession().setNote(UserSessionModel.CSRF_TOKEN, csrfTokenSession);
-                }
-                account.setStateChecker(csrfTokenSession);
+                updateCsrfChecks();
+                account.setStateChecker(stateChecker);
             }
         }
 

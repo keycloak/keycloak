@@ -376,6 +376,11 @@ public class AuthenticationManager {
         return uri.getRawPath();
     }
 
+    public static String getAccountCookiePath(RealmModel realm, UriInfo uriInfo) {
+        URI uri = RealmsResource.accountUrl(uriInfo.getBaseUriBuilder()).build(realm.getName());
+        return uri.getRawPath();
+    }
+
     public static void expireCookie(RealmModel realm, String cookieName, String path, boolean httpOnly, ClientConnection connection) {
         logger.debugv("Expiring cookie: {0} path: {1}", cookieName, path);
         boolean secureOnly = realm.getSslRequired().isRequired(connection);;

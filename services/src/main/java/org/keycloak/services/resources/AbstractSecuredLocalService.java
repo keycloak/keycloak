@@ -22,6 +22,7 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.AbstractOAuthClient;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.ClientModel;
@@ -39,6 +40,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.NewCookie;
@@ -57,6 +59,7 @@ import java.util.Set;
 public abstract class AbstractSecuredLocalService {
     private static final Logger logger = Logger.getLogger(AbstractSecuredLocalService.class);
 
+    private static final String KEYCLOAK_STATE_CHECKER = "KEYCLOAK_STATE_CHECKER";
 
     protected final ClientModel client;
     protected RealmModel realm;
@@ -67,6 +70,7 @@ public abstract class AbstractSecuredLocalService {
     protected HttpHeaders headers;
     @Context
     protected ClientConnection clientConnection;
+    protected String stateChecker;
     @Context
     protected KeycloakSession session;
     @Context
@@ -124,6 +128,24 @@ public abstract class AbstractSecuredLocalService {
         }
     }
 
+    protected void updateCsrfChecks() {
+        stateChecker = getStateChecker();
+        if (stateChecker == null) {
+            stateChecker = Base64Url.encode(KeycloakModelUtils.generateSecret());
+
+            StringBuilder sb = new StringBuilder();
+            sb.append(auth.getSession().getId());
+            sb.append("/");
+            sb.append(stateChecker);
+
+            String sessionCookieValue = sb.toString();
+
+            String cookiePath = AuthenticationManager.getAccountCookiePath(realm, uriInfo);
+            boolean secureOnly = realm.getSslRequired().isRequired(clientConnection);
+            CookieHelper.addCookie(KEYCLOAK_STATE_CHECKER, sessionCookieValue, cookiePath, null, null, -1, secureOnly, true);
+        }
+    }
+
     protected abstract Set<String> getValidPaths();
 
     /**
@@ -132,12 +154,27 @@ public abstract class AbstractSecuredLocalService {
      * @param formData
      */
     protected void csrfCheck(final MultivaluedMap<String, String> formData) {
-        if (!auth.isCookieAuthenticated()) return;
         String stateChecker = formData.getFirst("stateChecker");
-        String sessionStateChecker = auth.getSession().getNote(UserSessionModel.CSRF_TOKEN);
-        if (sessionStateChecker == null || !sessionStateChecker.equals(stateChecker)) {
+        if (stateChecker == null || !stateChecker.equals(getStateChecker())) {
             throw new ForbiddenException();
         }
+    }
+
+    protected String getStateChecker() {
+        Cookie cookie = headers.getCookies().get(KEYCLOAK_STATE_CHECKER);
+        if (cookie != null) {
+            stateChecker = cookie.getValue();
+            String[] s = stateChecker.split("/");
+            if (s.length == 2) {
+                String sessionId = s[0];
+                String stateChecker = s[1];
+
+                if (auth.getSession().getId().equals(sessionId)) {
+                    return stateChecker;
+                }
+            }
+        }
+        return null;
     }
 
     protected abstract URI getBaseRedirectUri();
