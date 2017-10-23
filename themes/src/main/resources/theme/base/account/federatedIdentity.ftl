@@ -20,7 +20,7 @@
                 <#if identity.connected>
                     <#if federatedIdentity.removeLinkPossible>
                         <form action="${url.socialUrl}" method="post" class="form-inline">
-                            <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker?html}">
+                            <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker}">
                             <input type="hidden" id="action" name="action" value="remove">
                             <input type="hidden" id="providerId" name="providerId" value="${identity.providerId!}">
                             <button id="remove-link-${identity.providerId!}" class="btn btn-default">${msg("doRemove")}</button>
@@ -28,7 +28,7 @@
                     </#if>
                 <#else>
                     <form action="${url.socialUrl}" method="post" class="form-inline">
-                        <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker?html}">
+                        <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker}">
                         <input type="hidden" id="action" name="action" value="add">
                         <input type="hidden" id="providerId" name="providerId" value="${identity.providerId!}">
                         <button id="add-link-${identity.providerId!}" class="btn btn-default">${msg("doAdd")}</button>
