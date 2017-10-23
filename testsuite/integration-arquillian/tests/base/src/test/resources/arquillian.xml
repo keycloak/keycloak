@@ -85,6 +85,7 @@
                 -Djboss.bind.address=0.0.0.0 
                 -Dauth.server.http.port=${auth.server.http.port}
                 -Dauth.server.https.port=${auth.server.https.port}
+                -Dkeycloak.password.blacklists.path=${keycloak.password.blacklists.path}
                 ${adapter.test.props}
                 ${migration.import.properties}
                 ${auth.server.profile}
