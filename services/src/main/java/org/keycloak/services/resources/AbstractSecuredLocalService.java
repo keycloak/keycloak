@@ -24,14 +24,12 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.services.ForbiddenException;
-import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.util.CookieHelper;
@@ -130,14 +128,20 @@ public abstract class AbstractSecuredLocalService {
     }
 
     protected void updateCsrfChecks() {
-        Cookie cookie = headers.getCookies().get(KEYCLOAK_STATE_CHECKER);
-        if (cookie != null) {
-            stateChecker = cookie.getValue();
-        } else {
+        stateChecker = getStateChecker();
+        if (stateChecker == null) {
             stateChecker = Base64Url.encode(KeycloakModelUtils.generateSecret());
-            String cookiePath = AuthenticationManager.getRealmCookiePath(realm, uriInfo);
+
+            StringBuilder sb = new StringBuilder();
+            sb.append(auth.getSession().getId());
+            sb.append("/");
+            sb.append(stateChecker);
+
+            String sessionCookieValue = sb.toString();
+
+            String cookiePath = AuthenticationManager.getAccountCookiePath(realm, uriInfo);
             boolean secureOnly = realm.getSslRequired().isRequired(clientConnection);
-            CookieHelper.addCookie(KEYCLOAK_STATE_CHECKER, stateChecker, cookiePath, null, null, -1, secureOnly, true);
+            CookieHelper.addCookie(KEYCLOAK_STATE_CHECKER, sessionCookieValue, cookiePath, null, null, -1, secureOnly, true);
         }
     }
 
@@ -149,25 +153,27 @@ public abstract class AbstractSecuredLocalService {
      * @param formData
      */
     protected void csrfCheck(final MultivaluedMap<String, String> formData) {
-        if (!auth.isCookieAuthenticated()) return;
         String stateChecker = formData.getFirst("stateChecker");
-        if (!this.stateChecker.equals(stateChecker)) {
+        if (stateChecker == null || !stateChecker.equals(getStateChecker())) {
             throw new ForbiddenException();
         }
-
     }
 
-    /**
-     * Check to see if form post has sessionId hidden field and match it against the session id.
-     *
-     */
-    protected void csrfCheck(String stateChecker) {
-        if (!auth.isCookieAuthenticated()) return;
-        if (auth.getSession() == null) return;
-        if (!this.stateChecker.equals(stateChecker)) {
-            throw new ForbiddenException();
-        }
+    protected String getStateChecker() {
+        Cookie cookie = headers.getCookies().get(KEYCLOAK_STATE_CHECKER);
+        if (cookie != null) {
+            stateChecker = cookie.getValue();
+            String[] s = stateChecker.split("/");
+            if (s.length == 2) {
+                String sessionId = s[0];
+                String stateChecker = s[1];
 
+                if (auth.getSession().getId().equals(sessionId)) {
+                    return stateChecker;
+                }
+            }
+        }
+        return null;
     }
 
     protected abstract URI getBaseRedirectUri();
@@ -201,32 +207,6 @@ public abstract class AbstractSecuredLocalService {
 
         oauth.setStateCookiePath(accountUri.getRawPath());
         return oauth.redirect(uriInfo, accountUri.toString());
-    }
-
-    protected Response authenticateBrowser() {
-        AppAuthManager authManager = new AppAuthManager();
-        AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm);
-        if (authResult != null) {
-            auth = new Auth(realm, authResult.getToken(), authResult.getUser(), client, authResult.getSession(), true);
-        } else {
-            return login(null);
-        }
-        // don't allow cors requests
-        // This is to prevent CSRF attacks.
-        String requestOrigin = UriUtils.getOrigin(uriInfo.getBaseUri());
-        String origin = headers.getRequestHeaders().getFirst("Origin");
-        if (origin != null && !requestOrigin.equals(origin)) {
-            throw new ForbiddenException();
-        }
-
-        if (!request.getHttpMethod().equals("GET")) {
-            String referrer = headers.getRequestHeaders().getFirst("Referer");
-            if (referrer != null && !requestOrigin.equals(UriUtils.getOrigin(referrer))) {
-                throw new ForbiddenException();
-            }
-        }
-        updateCsrfChecks();
-        return null;
     }
 
     static class OAuthRedirect extends AbstractOAuthClient {

@@ -422,7 +422,7 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
 
         // Assert identity linked in account management
         assertTrue(accountFederatedIdentityPage.isCurrent());
-        assertTrue(driver.getPageSource().contains("id=\"remove-" + identityProviderModel.getAlias() + "\""));
+        assertTrue(driver.getPageSource().contains("id=\"remove-link-" + identityProviderModel.getAlias() + "\""));
 
         // Revoke grant in account mgmt
         revokeGrant();
@@ -436,11 +436,11 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
         this.loginPage.login("test-user", "password");
         doAfterProviderAuthentication();
         assertTrue(accountFederatedIdentityPage.isCurrent());
-        assertTrue(driver.getPageSource().contains("id=\"remove-" + identityProviderModel.getAlias() + "\""));
+        assertTrue(driver.getPageSource().contains("id=\"remove-link-" + identityProviderModel.getAlias() + "\""));
 
         // Unlink my "test-user"
         accountFederatedIdentityPage.clickRemoveProvider(identityProviderModel.getAlias());
-        assertTrue(driver.getPageSource().contains("id=\"add-" + identityProviderModel.getAlias() + "\""));
+        assertTrue(driver.getPageSource().contains("id=\"add-link-" + identityProviderModel.getAlias() + "\""));
 
         // Revoke grant in account mgmt
         revokeGrant();
