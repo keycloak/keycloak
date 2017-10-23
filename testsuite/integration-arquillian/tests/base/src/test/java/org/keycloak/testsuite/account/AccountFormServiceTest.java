@@ -993,7 +993,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
     public void testIdentityProviderHiddenOnLoginPageIsVisbleInAccount(){
         federatedIdentityPage.open();
         loginPage.login("test-user@localhost", "password");
-        Assert.assertNotNull(federatedIdentityPage.findAddProviderButton("myhiddenoidc"));
+        Assert.assertNotNull(federatedIdentityPage.findAddProvider("myhiddenoidc"));
     }
 
     @Test
