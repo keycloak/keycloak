@@ -29,7 +29,7 @@
 
 <ol>
     <li>
-        <p>${msg("totpStep1")}</p>
+        <p>${msg("totpStep1")?no_esc}</p>
     </li>
     <li>
         <p>${msg("totpStep2")}</p>
@@ -44,7 +44,7 @@
 <hr/>
 
 <form action="${url.totpUrl}" class="form-horizontal" method="post">
-    <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker?html}">
+    <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker}">
     <div class="form-group">
         <div class="col-sm-2 col-md-2">
             <label for="totp" class="control-label">${msg("authenticatorCode")}</label>

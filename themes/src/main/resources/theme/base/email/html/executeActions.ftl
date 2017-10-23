@@ -3,6 +3,6 @@
 </#assign>
 <html>
 <body>
-${msg("executeActionsBodyHtml",link, linkExpiration, realmName, requiredActionsText)}
+${msg("executeActionsBodyHtml",link, linkExpiration, realmName, requiredActionsText)?no_esc}
 </body>
 </html>

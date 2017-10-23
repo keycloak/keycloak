@@ -3,7 +3,7 @@
     <#if section = "title">
         ${msg("loginTitle",(realm.displayName!''))}
     <#elseif section = "header">
-        ${msg("loginTitleHtml",(realm.displayNameHtml!''))}
+        ${msg("loginTitleHtml",(realm.displayNameHtml!''))?no_esc}
     <#elseif section = "form">
 
         <form id="kc-x509-login-info" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
@@ -14,7 +14,7 @@
                 </div>
                 <#if subjectDN??>
                     <div class="${properties.kcLabelWrapperClass!}">
-                         <label id="certificate_subjectDN" class="${properties.kcLabelClass!}">${(subjectDN!"")?html}</label>
+                         <label id="certificate_subjectDN" class="${properties.kcLabelClass!}">${(subjectDN!"")}</label>
                     </div>
                 <#else>
                     <div class="${properties.kcLabelWrapperClass!}">
@@ -30,7 +30,7 @@
                              <label for="username" class="${properties.kcLabelClass!}">You will be logged in as:</label>
                           </div>
                           <div class="${properties.kcLabelWrapperClass!}">
-                             <label id="username" class="${properties.kcLabelClass!}">${(username!'')?html}</label>
+                             <label id="username" class="${properties.kcLabelClass!}">${(username!'')}</label>
                          </div>
                     </#if>
 

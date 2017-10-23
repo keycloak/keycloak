@@ -91,11 +91,11 @@
         <apacheds.version>2.0.0-M21</apacheds.version>
         <apacheds.codec.version>1.0.0-M33</apacheds.codec.version>
         <google.zxing.version>3.2.1</google.zxing.version>
+        <freemarker.version>2.3.26-incubating</freemarker.version>
 
         <!-- Same version as ships with wildfly. -->
         <google.guava.version>20.0</google.guava.version>
 
-        <freemarker.version>2.3.23</freemarker.version>
         <jetty9.version>9.1.0.v20131115</jetty9.version>
         <liquibase.version>3.4.1</liquibase.version>
         <mysql.version>5.1.29</mysql.version>
