@@ -46,12 +46,6 @@
         </dependency>
         <dependency>
             <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-cli</artifactId>
-            <scope>test</scope>
-            <version>${wildfly.core.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-controller-client</artifactId>
             <scope>test</scope>
             <version>${wildfly.core.version}</version>
