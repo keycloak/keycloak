@@ -59,13 +59,9 @@ public class WildflyConsoleProtectionTest extends AbstractAdapterTest {
     }
 
     @Before
-    public void beforeAuthTest() throws IOException, OperationException {
-        super.beforeAuthTest();
+    public void beforeConsoleProtectionTest() throws IOException, OperationException {
 
-        OnlineManagementClient clientWorkerNodeClient = null;
-
-        try {
-            clientWorkerNodeClient = AppServerTestEnricher.getManagementClient();
+        try (OnlineManagementClient clientWorkerNodeClient = AppServerTestEnricher.getManagementClient()) {
 
             Operations operations = new Operations(clientWorkerNodeClient);
 
@@ -94,10 +90,6 @@ public class WildflyConsoleProtectionTest extends AbstractAdapterTest {
             clientWorkerNodeClient.execute("reload");
         } catch (CliException cause) {
             throw new RuntimeException("Failed to configure app server", cause);
-        } finally {
-            if (clientWorkerNodeClient != null) {
-                clientWorkerNodeClient.close();
-            }
         }
     }
 
