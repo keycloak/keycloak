@@ -2,25 +2,25 @@
 # yarn lockfile v1
 
 
-angular-cookies@^1.6.4:
-  version "1.6.4"
-  resolved "https://registry.yarnpkg.com/angular-cookies/-/angular-cookies-1.6.4.tgz#c28f3f6aac7a9826c1e45f1d6807240036e5b26d"
+angular-cookies@^1.6.6:
+  version "1.6.6"
+  resolved "https://registry.yarnpkg.com/angular-cookies/-/angular-cookies-1.6.6.tgz#311642dafdbc4ff7cd69220b8925b88359fba148"
 
-angular-loader@^1.6.4:
-  version "1.6.4"
-  resolved "https://registry.yarnpkg.com/angular-loader/-/angular-loader-1.6.4.tgz#c202b9dd233b11e66c802f7716c5d82ad249bb42"
+angular-loader@^1.6.6:
+  version "1.6.6"
+  resolved "https://registry.yarnpkg.com/angular-loader/-/angular-loader-1.6.6.tgz#ee0b69a0407ccb8bcd0546c33e89bacbcb5d0d9f"
 
-angular-resource@^1.6.4:
-  version "1.6.4"
-  resolved "https://registry.yarnpkg.com/angular-resource/-/angular-resource-1.6.4.tgz#bcb83688b0a7d3402fde58dc7f4881383a6c0ebb"
+angular-resource@^1.6.6:
+  version "1.6.6"
+  resolved "https://registry.yarnpkg.com/angular-resource/-/angular-resource-1.6.6.tgz#430660e969c3e7cf40c5e247e5e690f06d6efc61"
 
-angular-route@^1.6.4:
-  version "1.6.4"
-  resolved "https://registry.yarnpkg.com/angular-route/-/angular-route-1.6.4.tgz#7bb216fcda746a1b8c452054b05900a7074ecc62"
+angular-route@^1.6.6:
+  version "1.6.6"
+  resolved "https://registry.yarnpkg.com/angular-route/-/angular-route-1.6.6.tgz#8c11748aa195c717b1b615a7e746442bfc7c61f4"
 
-angular-sanitize@^1.6.4:
-  version "1.6.4"
-  resolved "https://registry.yarnpkg.com/angular-sanitize/-/angular-sanitize-1.6.4.tgz#60a37ea96fb0d4a322a3ccb64ee4a5cf3b154f0c"
+angular-sanitize@^1.6.6:
+  version "1.6.6"
+  resolved "https://registry.yarnpkg.com/angular-sanitize/-/angular-sanitize-1.6.6.tgz#0fd065a19931517fbece66596d325d72b6e06041"
 
 angular-translate-loader-url@^2.15.1:
   version "2.15.1"
@@ -42,9 +42,9 @@ angular-ui-select2@^0.0.5:
   version "0.0.5"
   resolved "https://registry.yarnpkg.com/angular-ui-select2/-/angular-ui-select2-0.0.5.tgz#15e7643afd69ca9063d405eb3be2f95dd5ec87f5"
 
-"angular@>=1.2.26 <=1.6", angular@^1.6.4:
-  version "1.6.4"
-  resolved "https://registry.yarnpkg.com/angular/-/angular-1.6.4.tgz#03b7b15c01a0802d7e2cf593240e604054dc77fb"
+"angular@>=1.2.26 <=1.6", angular@^1.6.6:
+  version "1.6.6"
+  resolved "https://registry.yarnpkg.com/angular/-/angular-1.6.6.tgz#fd5a3cfb437ce382d854ee01120797978527cb64"
 
 autofill-event@^0.0.1:
   version "0.0.1"
