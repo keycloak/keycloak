@@ -37,7 +37,7 @@
     </table>
 
     <form action="${url.sessionsLogoutUrl}" method="post">
-        <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker?html}">
+        <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker}">
         <button id="logout-all-sessions" class="btn btn-default">${msg("doLogOutAllSessions")}</button>
     </form>
 
