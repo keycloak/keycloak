@@ -145,6 +145,10 @@ image:images/x509-execution.png[]
 
 image:images/x509-browser-flow.png[]
 
+* Select the "Bindings" tab, find the drop down for "Browser Flow". Select the newly created X509 browser flow from the drop down and click on "Save".
+
+image:images/x509-browser-flow-bindings.png[]
+
 #### Configuring X.509 Client Certificate Authentication
 
 image:images/x509-configuration.png[]
@@ -199,6 +203,9 @@ image:images/x509-directgrant-execution.png[]
 image:images/x509-directgrant-flow.png[]
 
 * Set up the x509 authentication configuration by following the steps described earlier in the x.509 Browser Flow section. 
+* Select the "Bindings" tab, find the drop down for "Direct Grant Flow". Select the newly created X509 direct grant flow from the drop down and click on "Save".
+
+image:images/x509-directgrant-flow-bindings.png[]
 
 ### Troubleshooting
 
