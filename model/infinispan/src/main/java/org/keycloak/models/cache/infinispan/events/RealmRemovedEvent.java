@@ -20,10 +20,17 @@ package org.keycloak.models.cache.infinispan.events;
 import java.util.Set;
 
 import org.keycloak.models.cache.infinispan.RealmCacheManager;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import org.infinispan.commons.marshall.Externalizer;
+import org.infinispan.commons.marshall.MarshallUtil;
+import org.infinispan.commons.marshall.SerializeWith;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@SerializeWith(RealmRemovedEvent.ExternalizerImpl.class)
 public class RealmRemovedEvent extends InvalidationEvent implements RealmCacheInvalidationEvent {
 
     private String realmId;
@@ -49,5 +56,36 @@ public class RealmRemovedEvent extends InvalidationEvent implements RealmCacheIn
     @Override
     public void addInvalidations(RealmCacheManager realmCache, Set<String> invalidations) {
         realmCache.realmRemoval(realmId, realmName, invalidations);
+    }
+
+    public static class ExternalizerImpl implements Externalizer<RealmRemovedEvent> {
+
+        private static final int VERSION_1 = 1;
+
+        @Override
+        public void writeObject(ObjectOutput output, RealmRemovedEvent obj) throws IOException {
+            output.writeByte(VERSION_1);
+
+            MarshallUtil.marshallString(obj.realmId, output);
+            MarshallUtil.marshallString(obj.realmName, output);
+        }
+
+        @Override
+        public RealmRemovedEvent readObject(ObjectInput input) throws IOException, ClassNotFoundException {
+            switch (input.readByte()) {
+                case VERSION_1:
+                    return readObjectVersion1(input);
+                default:
+                    throw new IOException("Unknown version");
+            }
+        }
+
+        public RealmRemovedEvent readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
+            RealmRemovedEvent res = new RealmRemovedEvent();
+            res.realmId = MarshallUtil.unmarshallString(input);
+            res.realmName = MarshallUtil.unmarshallString(input);
+
+            return res;
+        }
     }
 }
