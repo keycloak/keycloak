@@ -37,15 +37,15 @@
     <packaging>pom</packaging>
 
     <properties>
-        <product.rhsso.version>7.2.0.DR4</product.rhsso.version>
+        <product.rhsso.version>7.2.0.DR5</product.rhsso.version>
 
         <product.build-time>${timestamp}</product.build-time>
 
-        <wildfly.version>11.0.0.CR1</wildfly.version>
+        <wildfly.version>11.0.0.Final</wildfly.version>
         <wildfly.build-tools.version>1.2.2.Final</wildfly.build-tools.version>
         <eap.version>7.1.0.GA-redhat-4</eap.version>
         <eap.build-tools.version>1.2.2.Final</eap.build-tools.version>
-        <wildfly.core.version>3.0.1.Final</wildfly.core.version>
+        <wildfly.core.version>3.0.8.Final</wildfly.core.version>
 
         <jboss.as.version>7.2.0.Final</jboss.as.version>
 
@@ -71,14 +71,14 @@
         <jboss-transaction-api_1.2_spec>1.0.0.Final</jboss-transaction-api_1.2_spec>
         <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.2_spec.version>1.0.4.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.2_spec.version>
         <log4j.version>1.2.16</log4j.version>
-        <resteasy.version>3.0.14.Final</resteasy.version>
+        <resteasy.version>3.0.24.Final</resteasy.version>
         <slf4j.version>1.7.7</slf4j.version>
         <sun.istack.version>2.21</sun.istack.version>
         <sun.jaxb.version>2.2.11</sun.jaxb.version>
         <sun.xsom.version>20140925</sun.xsom.version>
-        <undertow.version>1.4.11.Final</undertow.version>
-        <elytron.version>1.1.1.Final</elytron.version>
-        <elytron.undertow-server.version>1.0.0.Final</elytron.undertow-server.version>
+        <undertow.version>1.4.18.Final</undertow.version>
+        <elytron.version>1.1.6.Final</elytron.version>
+        <elytron.undertow-server.version>1.0.1.Final</elytron.undertow-server.version>
         <woodstox.version>5.0.3</woodstox.version>
         <xmlsec.version>2.0.5</xmlsec.version>
         <glassfish.json.version>1.0.4</glassfish.json.version>
