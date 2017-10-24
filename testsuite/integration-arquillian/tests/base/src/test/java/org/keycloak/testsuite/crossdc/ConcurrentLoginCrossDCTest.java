@@ -66,6 +66,16 @@ public class ConcurrentLoginCrossDCTest extends ConcurrentLoginTest {
                 .forEach(loadBalancerCtrl::enableBackendNodeByName);
     }
 
+
+    // TODO: We know that this test won't work in cross-dc setup based on "backup "caches. But we need to add the test that clientSessions
+    // are invalidated after attempt of reuse the same code multiple times
+    @Test
+    @Override
+    @Ignore
+    public void concurrentCodeReuseShouldFail() throws Throwable {
+
+    }
+
     @Test
     public void concurrentLoginWithRandomDcFailures() throws Throwable {
         log.info("*********************************************");

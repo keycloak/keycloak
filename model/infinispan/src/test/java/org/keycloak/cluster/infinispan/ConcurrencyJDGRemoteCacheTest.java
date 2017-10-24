@@ -49,7 +49,7 @@ public class ConcurrencyJDGRemoteCacheTest {
 
     public static void main(String[] args) throws Exception {
         // Init map somehow
-        for (int i=0 ; i<100 ; i++) {
+        for (int i=0 ; i<30 ; i++) {
             String key = "key-" + i;
             state.put(key, new EntryInfo());
         }
@@ -77,8 +77,8 @@ public class ConcurrencyJDGRemoteCacheTest {
     }
 
     private static Worker createWorker(int threadId) {
-        EmbeddedCacheManager manager = new TestCacheManagerFactory().createManager(threadId, InfinispanConnectionProvider.WORK_CACHE_NAME, RemoteStoreConfigurationBuilder.class);
-        Cache<String, Integer> cache = manager.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
+        EmbeddedCacheManager manager = new TestCacheManagerFactory().createManager(threadId, InfinispanConnectionProvider.SESSION_CACHE_NAME, RemoteStoreConfigurationBuilder.class);
+        Cache<String, Integer> cache = manager.getCache(InfinispanConnectionProvider.SESSION_CACHE_NAME);
 
         System.out.println("Retrieved cache: " + threadId);
 
@@ -142,19 +142,33 @@ public class ConcurrencyJDGRemoteCacheTest {
     }
 
     public static int getClusterStartupTime(Cache<String, Integer> cache, String cacheKey, EntryInfo wrapper) {
-        int startupTime = new Random().nextInt(1024);
+        Integer startupTime = new Random().nextInt(1024);
 
         // Concurrency doesn't work correctly with this
         //Integer existingClusterStartTime = (Integer) cache.putIfAbsent(cacheKey, startupTime);
 
         // Concurrency works fine with this
         RemoteCache remoteCache = cache.getAdvancedCache().getComponentRegistry().getComponent(PersistenceManager.class).getStores(RemoteStore.class).iterator().next().getRemoteCache();
-        Integer existingClusterStartTime = (Integer) remoteCache.withFlags(Flag.FORCE_RETURN_VALUE).putIfAbsent(cacheKey, startupTime);
 
-        if (existingClusterStartTime == null) {
+        Integer existingClusterStartTime = null;
+        for (int i=0 ; i<10 ; i++) {
+            try {
+                existingClusterStartTime = (Integer) remoteCache.withFlags(Flag.FORCE_RETURN_VALUE).putIfAbsent(cacheKey, startupTime);
+            } catch (Exception ce) {
+                if (i == 9) {
+                    throw ce;
+                    //break;
+                } else {
+                    System.err.println("EXception: i=" + i);
+                }
+            }
+        }
+
+        if (existingClusterStartTime == null || startupTime.equals(remoteCache.get(cacheKey))) {
             wrapper.successfulInitializations.incrementAndGet();
             return startupTime;
         } else {
+            System.err.println("Not equal!!! startupTime=" + startupTime + ", existingClusterStartTime=" + existingClusterStartTime );
             return existingClusterStartTime;
         }
     }

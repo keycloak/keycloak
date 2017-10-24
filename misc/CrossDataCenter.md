@@ -21,23 +21,25 @@ So 2 infinispan servers and 4 Keycloak servers are totally in the testing setup.
 
 * Site2 consists of infinispan server `jdg2` and 2 Keycloak servers `node21` and `node22` .
  
-* Infinispan servers `jdg1` and `jdg2` forms cluster with each other. The communication between them is the only communication between the 2 datacenters.
+* Infinispan servers `jdg1` and `jdg2` are connected with each other through the RELAY protocol and "backup" based infinispan caches in
+similar way as described in the infinispan documentation - https://access.redhat.com/documentation/en-us/red_hat_jboss_data_grid/7.1/html-single/administration_and_configuration_guide/#configure_cross_datacenter_replication_remote_client_server_mode .
  
-* Keycloak servers `node11` and `node12` forms cluster with each other, but they don't communicate with any server in `site2` . They communicate with infinispan server `jdg1` through the HotRod protocol (Remote cache).
+* Keycloak servers `node11` and `node12` forms cluster with each other, but they don't communicate with any server in `site2` .
+They communicate with infinispan server `jdg1` through the HotRod protocol (Remote cache).
   
 * Same applies for `node21` and `node22` . They have cluster with each other and communicate just with `jdg2` server through the HotRod protocol.
   
 TODO: Picture on blog
   
 * For example when some object (realm, client, role, user, ...) is updated on `node11`, the `node11` will send invalidation message. It does it by saving special cache entry to the remote cache `work` on `jdg1` .
-  The `jdg1` notifies client listeners in same DC (hence on `node12`) and propagate the message to it. But `jdg1` is in replicated cache with `jdg2` . 
+  The `jdg1` notifies client listeners in same DC (hence on `node12`) and propagate the message to it. But `jdg1` is connected through backup with `jdg2` too.
   So the entry is saved on `jdg2` too and `jdg2` will notify client listeners on nodes `node21` and `node22`.
   All the nodes know that they should invalidate the updated object from their caches. The caches with the actual data (`realms`, `users` and `authorization`) are infinispan local caches.     
 
 TODO: Picture and better explanation?
 
 * For example when some userSession is created/updated/removed on `node11` it is saved in cluster on current DC, so the `node12` can see it. But it's saved also to remote cache on `jdg1` server. 
- The userSession is then automatically seen on `jdg2` server because there is replicated cache `sessions` between `jdg1` and `jdg2` . Server `jdg2` then notifies nodes `node21` and `node22` through 
+ The userSession is then automatically seen on `jdg2` server through the backup cache `sessions` between `jdg1` and `jdg2` . Server `jdg2` then notifies nodes `node21` and `node22` through
  the client listeners (Feature of Remote Cache and HotRod protocol. See infinispan docs for details). The node, who is owner of the userSession (either `node21` or `node22`) will update userSession in the cluster 
  on `site2` . Hence any user requests coming to Keycloak nodes on `site2` will see latest updates.
  
@@ -49,29 +51,74 @@ Example setup assumes all 6 servers are bootstrapped on localhost, but each on d
 Infinispan Server setup
 -----------------------
 
-1) Download Infinispan 8.2.6 server and unzip to some folder
+1) Download Infinispan 8.2.8 server and unzip to some folder
 
-2) Add this into `JDG1_HOME/standalone/configuration/clustered.xml` under cache-container named `clustered` :
+2) Change those things in the `JDG1_HOME/standalone/configuration/clustered.xml` in the configuration of JGroups subsystem:
+
+2.a) Add the `xsite` channel, which will use `tcp` stack, under `channels` element:
+
+```xml
+<channels default="cluster">
+    <channel name="cluster"/>
+    <channel name="xsite" stack="tcp"/>
+</channels>
+```
+
+2.b) Add `relay` element to the end of the `udp` stack:
+
+```xml
+<stack name="udp">
+    ...
+    <relay site="site1">
+        <remote-site name="site2" channel="xsite"/>
+    </relay>
+</stack>
+```
+
+2.c) Configure `tcp` stack to use TCPPING instead of MPING . Just remove MPING element and replace with the TCPPING like this:
+
+```xml
+<stack name="tcp">
+    <transport type="TCP" socket-binding="jgroups-tcp"/>
+    <protocol type="TCPPING">
+        <property name="initial_hosts">localhost[8610],localhost[9610]"</property>
+        <property name="ergonomics">false</property>
+    </protocol>
+    <protocol type="MERGE3"/>
+    ...
+</stack>
+```
+
+3) Add this into `JDG1_HOME/standalone/configuration/clustered.xml` under cache-container named `clustered` :
 
 ```xml   
 <cache-container name="clustered" default-cache="default" statistics="true">
         ...
-        <replicated-cache-configuration name="sessions-cfg" mode="ASYNC" start="EAGER" batching="false">        
-            <transaction mode="NON_XA" locking="PESSIMISTIC"/>		            	
-        </replicated-cache-configuration>                                
-       
-        <replicated-cache name="work" configuration="sessions-cfg" />    
-        <replicated-cache name="sessions" configuration="sessions-cfg" />       
-        <replicated-cache name="offlineSessions" configuration="sessions-cfg" />        
-        <replicated-cache name="actionTokens" configuration="sessions-cfg" />        
-        <replicated-cache name="loginFailures" configuration="sessions-cfg" />
+        <replicated-cache-configuration name="sessions-cfg" mode="SYNC" start="EAGER" batching="false">
+            <transaction mode="NON_XA" locking="PESSIMISTIC"/>
+            <backups>
+                <backup site="site2" failure-policy="FAIL" strategy="SYNC" enabled="true"/>
+            </backups>
+        </replicated-cache-configuration>
+
+        <replicated-cache name="work" configuration="sessions-cfg"/>
+        <replicated-cache name="sessions" configuration="sessions-cfg"/>
+        <replicated-cache name="offlineSessions" configuration="sessions-cfg"/>
+        <replicated-cache name="actionTokens" configuration="sessions-cfg"/>
+        <replicated-cache name="loginFailures" configuration="sessions-cfg"/>
                 
 </cache-container>
 ```
         
-3) Copy the server into the second location referred later as `JDG2_HOME`
+4) Copy the server into the second location referred later as `JDG2_HOME`
 
-4) Start server `jdg1`:
+5) In the `JDG2_HOME/standalone/configuration/clustered.xml` exchange `site1` with `site2` and viceversa in the configuration of `relay` in the
+JGroups subsystem and in configuration of `backups` in the cache-subsystem.
+
+NOTE: It's currently needed to have different configuration files for both sites as Infinispan subsystem doesn't support
+replacing site name with expressions. See https://issues.jboss.org/browse/WFLY-9458 for more details.
+
+6) Start server `jdg1`:
 
 ```
 cd JDG1_HOME/bin
@@ -80,19 +127,22 @@ cd JDG1_HOME/bin
 -Djboss.node.name=jdg1
 ```
 
-5) Start server `jdg2`:
+7) Start server `jdg2` . There is different multicast address, so the `jdg1` and `jdg2` servers are not in "direct" cluster with each other,
+but they are just connected through the RELAY protocol and TCP JGroups stack is used for communication between them. So the startup command is like this:
 
 ```
 cd JDG2_HOME/bin
 ./standalone.sh -c clustered.xml -Djava.net.preferIPv4Stack=true \
--Djboss.socket.binding.port-offset=2010 -Djboss.default.multicast.address=234.56.78.99 \
+-Djboss.socket.binding.port-offset=2010 -Djboss.default.multicast.address=234.56.78.100 \
 -Djboss.node.name=jdg2
 ```
 
-6) There should be message in the log that nodes are in cluster with each other:
+8) To verify that channel works at this point, you may need to use JConsole and connect either to JDG1 or JDG2 running server. When
+use the MBean `jgroups:type=protocol,cluster="cluster",protocol=RELAY2` and operation `printRoutes`, you should see the output like this:
 
 ```
-Received new cluster view for channel clustered: [jdg1|1] (2) [jdg1, jdg2]
+site1 --> _jdg1:site1
+site2 --> _jdg2:site2
 ```
 
 Keycloak servers setup
