@@ -642,6 +642,20 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         }
     }
 
+    @Test
+    public void testResourceProtectedWithAnyScope() throws Exception {
+        try {
+            this.deployer.deploy(RESOURCE_SERVER_ID);
+            loginToClientPage("alice", "alice");
+            this.clientPage.requestResourceProtectedAllScope();
+            assertTrue(this.clientPage.wasDenied());
+            this.clientPage.requestResourceProtectedAnyScope();
+            assertFalse(this.clientPage.wasDenied());
+        } finally {
+            this.deployer.undeploy(RESOURCE_SERVER_ID);
+        }
+    }
+
     private void importResourceServerSettings() throws FileNotFoundException {
         ResourceServerRepresentation authSettings = loadJson(new FileInputStream(new File(TEST_APPS_HOME_DIR + "/photoz/photoz-restful-api-authz-service.json")), ResourceServerRepresentation.class);
 

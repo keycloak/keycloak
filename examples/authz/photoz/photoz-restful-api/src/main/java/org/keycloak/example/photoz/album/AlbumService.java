@@ -90,7 +90,7 @@ public class AlbumService {
     @Path("{id}")
     @Produces("application/json")
     public Response findById(@PathParam("id") String id) {
-        List result = this.entityManager.createQuery("from Album where id = :id").setParameter("id", id).getResultList();
+        List result = this.entityManager.createQuery("from Album where id = :id").setParameter("id", Long.valueOf(id)).getResultList();
 
         if (result.isEmpty()) {
             return Response.status(Status.NOT_FOUND).build();
