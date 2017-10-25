@@ -116,6 +116,10 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
     }
 
     @Override
+    public void detachFromUserSession() {
+        setUserSession(null);
+    }
+
     public void setUserSession(UserSessionModel userSession) {
         this.userSession = userSession;
     }

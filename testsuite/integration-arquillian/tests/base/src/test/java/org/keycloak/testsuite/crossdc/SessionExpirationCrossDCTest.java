@@ -102,10 +102,12 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
 
     @Test
     public void testRealmRemoveSessions(
-            @JmxInfinispanCacheStatistics(dc=DC.FIRST, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.SESSION_CACHE_NAME) InfinispanStatistics cacheDc1Statistics,
-            @JmxInfinispanCacheStatistics(dc=DC.SECOND, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.SESSION_CACHE_NAME) InfinispanStatistics cacheDc2Statistics,
+            @JmxInfinispanCacheStatistics(dc=DC.FIRST, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.USER_SESSION_CACHE_NAME) InfinispanStatistics cacheDc1Statistics,
+            @JmxInfinispanCacheStatistics(dc=DC.SECOND, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.USER_SESSION_CACHE_NAME) InfinispanStatistics cacheDc2Statistics,
+            @JmxInfinispanCacheStatistics(dc=DC.FIRST, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME) InfinispanStatistics clientCacheDc1Statistics,
+            @JmxInfinispanCacheStatistics(dc=DC.SECOND, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME) InfinispanStatistics clientCacheDc2Statistics,
             @JmxInfinispanChannelStatistics() InfinispanStatistics channelStatisticsCrossDc) throws Exception {
-        createInitialSessions(InfinispanConnectionProvider.SESSION_CACHE_NAME, false, cacheDc1Statistics, cacheDc2Statistics, true);
+        createInitialSessions(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, false, cacheDc1Statistics, cacheDc2Statistics, true);
 
 //        log.infof("Sleeping!");
 //        Thread.sleep(10000000);
@@ -116,7 +118,7 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
         getAdminClient().realm(REALM_NAME).remove();
 
         // Assert sessions removed on node1 and node2 and on remote caches. Assert that count of messages sent between DCs is not too big.
-        assertStatisticsExpected("After realm remove", InfinispanConnectionProvider.SESSION_CACHE_NAME, cacheDc1Statistics, cacheDc2Statistics, channelStatisticsCrossDc,
+        assertStatisticsExpected("After realm remove", InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, cacheDc1Statistics, cacheDc2Statistics, channelStatisticsCrossDc,
                 sessions01, sessions02, remoteSessions01, remoteSessions02, 100l);
     }
 
@@ -194,11 +196,11 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
 
     @Test
     public void testRealmRemoveOfflineSessions(
-            @JmxInfinispanCacheStatistics(dc=DC.FIRST, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME) InfinispanStatistics cacheDc1Statistics,
-            @JmxInfinispanCacheStatistics(dc=DC.SECOND, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME) InfinispanStatistics cacheDc2Statistics,
+            @JmxInfinispanCacheStatistics(dc=DC.FIRST, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME) InfinispanStatistics cacheDc1Statistics,
+            @JmxInfinispanCacheStatistics(dc=DC.SECOND, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME) InfinispanStatistics cacheDc2Statistics,
             @JmxInfinispanChannelStatistics() InfinispanStatistics channelStatisticsCrossDc) throws Exception {
 
-        createInitialSessions(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME, true, cacheDc1Statistics, cacheDc2Statistics, true);
+        createInitialSessions(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME, true, cacheDc1Statistics, cacheDc2Statistics, true);
 
         channelStatisticsCrossDc.reset();
 
@@ -206,18 +208,18 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
         getAdminClient().realm(REALM_NAME).remove();
 
         // Assert sessions removed on node1 and node2 and on remote caches. Assert that count of messages sent between DCs is not too big.
-        assertStatisticsExpected("After realm remove", InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME, cacheDc1Statistics, cacheDc2Statistics, channelStatisticsCrossDc,
+        assertStatisticsExpected("After realm remove", InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME, cacheDc1Statistics, cacheDc2Statistics, channelStatisticsCrossDc,
                 sessions01, sessions02, remoteSessions01, remoteSessions02, 200l); // Might be bigger messages as online sessions removed too.
     }
 
 
     @Test
     public void testLogoutAllInRealm(
-            @JmxInfinispanCacheStatistics(dc=DC.FIRST, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.SESSION_CACHE_NAME) InfinispanStatistics cacheDc1Statistics,
-            @JmxInfinispanCacheStatistics(dc=DC.SECOND, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.SESSION_CACHE_NAME) InfinispanStatistics cacheDc2Statistics,
+            @JmxInfinispanCacheStatistics(dc=DC.FIRST, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.USER_SESSION_CACHE_NAME) InfinispanStatistics cacheDc1Statistics,
+            @JmxInfinispanCacheStatistics(dc=DC.SECOND, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.USER_SESSION_CACHE_NAME) InfinispanStatistics cacheDc2Statistics,
             @JmxInfinispanChannelStatistics() InfinispanStatistics channelStatisticsCrossDc) throws Exception {
 
-        createInitialSessions(InfinispanConnectionProvider.SESSION_CACHE_NAME, false, cacheDc1Statistics, cacheDc2Statistics, true);
+        createInitialSessions(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, false, cacheDc1Statistics, cacheDc2Statistics, true);
 
         channelStatisticsCrossDc.reset();
 
@@ -225,18 +227,18 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
         getAdminClient().realm(REALM_NAME).logoutAll();
 
         // Assert sessions removed on node1 and node2 and on remote caches. Assert that count of messages sent between DCs is not too big.
-        assertStatisticsExpected("After realm logout", InfinispanConnectionProvider.SESSION_CACHE_NAME, cacheDc1Statistics, cacheDc2Statistics, channelStatisticsCrossDc,
+        assertStatisticsExpected("After realm logout", InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, cacheDc1Statistics, cacheDc2Statistics, channelStatisticsCrossDc,
                 sessions01, sessions02, remoteSessions01, remoteSessions02, 100l);
     }
 
 
     @Test
     public void testPeriodicExpiration(
-            @JmxInfinispanCacheStatistics(dc=DC.FIRST, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.SESSION_CACHE_NAME) InfinispanStatistics cacheDc1Statistics,
-            @JmxInfinispanCacheStatistics(dc=DC.SECOND, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.SESSION_CACHE_NAME) InfinispanStatistics cacheDc2Statistics,
+            @JmxInfinispanCacheStatistics(dc=DC.FIRST, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.USER_SESSION_CACHE_NAME) InfinispanStatistics cacheDc1Statistics,
+            @JmxInfinispanCacheStatistics(dc=DC.SECOND, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.USER_SESSION_CACHE_NAME) InfinispanStatistics cacheDc2Statistics,
             @JmxInfinispanChannelStatistics() InfinispanStatistics channelStatisticsCrossDc) throws Exception {
 
-        OAuthClient.AccessTokenResponse lastAccessTokenResponse = createInitialSessions(InfinispanConnectionProvider.SESSION_CACHE_NAME, false, cacheDc1Statistics, cacheDc2Statistics, true).get(SESSIONS_COUNT - 1);
+        OAuthClient.AccessTokenResponse lastAccessTokenResponse = createInitialSessions(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, false, cacheDc1Statistics, cacheDc2Statistics, true).get(SESSIONS_COUNT - 1);
 
         // Assert I am able to refresh
         OAuthClient.AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(lastAccessTokenResponse.getRefreshToken(), "password");
@@ -249,7 +251,7 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
         getTestingClientForStartedNodeInDc(0).testing().removeExpired(REALM_NAME);
 
         // Nothing yet expired. Limit 5 for sent_messages is just if "lastSessionRefresh" periodic thread happened
-        assertStatisticsExpected("After remove expired - 1", InfinispanConnectionProvider.SESSION_CACHE_NAME, cacheDc1Statistics, cacheDc2Statistics, channelStatisticsCrossDc,
+        assertStatisticsExpected("After remove expired - 1", InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, cacheDc1Statistics, cacheDc2Statistics, channelStatisticsCrossDc,
                 sessions01 + SESSIONS_COUNT, sessions02 + SESSIONS_COUNT, remoteSessions01 + SESSIONS_COUNT, remoteSessions02 + SESSIONS_COUNT, 5l);
 
 
@@ -268,7 +270,7 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
         getTestingClientForStartedNodeInDc(0).testing().removeExpired(REALM_NAME);
 
         // Assert sessions removed on node1 and node2 and on remote caches. Assert that count of messages sent between DCs is not too big.
-        assertStatisticsExpected("After remove expired - 2", InfinispanConnectionProvider.SESSION_CACHE_NAME, cacheDc1Statistics, cacheDc2Statistics, channelStatisticsCrossDc,
+        assertStatisticsExpected("After remove expired - 2", InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, cacheDc1Statistics, cacheDc2Statistics, channelStatisticsCrossDc,
                 sessions01, sessions02, remoteSessions01, remoteSessions02, 100l);
     }
 
@@ -277,10 +279,10 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
 
     @Test
     public void testUserRemoveSessions(
-            @JmxInfinispanCacheStatistics(dc=DC.FIRST, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.SESSION_CACHE_NAME) InfinispanStatistics cacheDc1Statistics,
-            @JmxInfinispanCacheStatistics(dc=DC.SECOND, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.SESSION_CACHE_NAME) InfinispanStatistics cacheDc2Statistics,
+            @JmxInfinispanCacheStatistics(dc=DC.FIRST, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.USER_SESSION_CACHE_NAME) InfinispanStatistics cacheDc1Statistics,
+            @JmxInfinispanCacheStatistics(dc=DC.SECOND, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.USER_SESSION_CACHE_NAME) InfinispanStatistics cacheDc2Statistics,
             @JmxInfinispanChannelStatistics() InfinispanStatistics channelStatisticsCrossDc) throws Exception {
-        createInitialSessions(InfinispanConnectionProvider.SESSION_CACHE_NAME, false, cacheDc1Statistics, cacheDc2Statistics, true);
+        createInitialSessions(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, false, cacheDc1Statistics, cacheDc2Statistics, true);
 
 //        log.infof("Sleeping!");
 //        Thread.sleep(10000000);
@@ -292,17 +294,17 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
 
 
         // Assert sessions removed on node1 and node2 and on remote caches. Assert that count of messages sent between DCs is not too big.
-        assertStatisticsExpected("After user remove", InfinispanConnectionProvider.SESSION_CACHE_NAME, cacheDc1Statistics, cacheDc2Statistics, channelStatisticsCrossDc,
+        assertStatisticsExpected("After user remove", InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, cacheDc1Statistics, cacheDc2Statistics, channelStatisticsCrossDc,
                 sessions01, sessions02, remoteSessions01, remoteSessions02, 100l);
     }
 
 
     @Test
     public void testUserRemoveOfflineSessions(
-            @JmxInfinispanCacheStatistics(dc=DC.FIRST, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME) InfinispanStatistics cacheDc1Statistics,
-            @JmxInfinispanCacheStatistics(dc=DC.SECOND, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME) InfinispanStatistics cacheDc2Statistics,
+            @JmxInfinispanCacheStatistics(dc=DC.FIRST, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME) InfinispanStatistics cacheDc1Statistics,
+            @JmxInfinispanCacheStatistics(dc=DC.SECOND, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME) InfinispanStatistics cacheDc2Statistics,
             @JmxInfinispanChannelStatistics() InfinispanStatistics channelStatisticsCrossDc) throws Exception {
-        createInitialSessions(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME, true, cacheDc1Statistics, cacheDc2Statistics, true);
+        createInitialSessions(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME, true, cacheDc1Statistics, cacheDc2Statistics, true);
 
 //        log.infof("Sleeping!");
 //        Thread.sleep(10000000);
@@ -314,18 +316,18 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
 
 
         // Assert sessions removed on node1 and node2 and on remote caches. Assert that count of messages sent between DCs is not too big.
-        assertStatisticsExpected("After user remove", InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME, cacheDc1Statistics, cacheDc2Statistics, channelStatisticsCrossDc,
+        assertStatisticsExpected("After user remove", InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME, cacheDc1Statistics, cacheDc2Statistics, channelStatisticsCrossDc,
                 sessions01, sessions02, remoteSessions01, remoteSessions02, 100l);
     }
 
 
     @Test
     public void testLogoutUser(
-            @JmxInfinispanCacheStatistics(dc=DC.FIRST, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.SESSION_CACHE_NAME) InfinispanStatistics cacheDc1Statistics,
-            @JmxInfinispanCacheStatistics(dc=DC.SECOND, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.SESSION_CACHE_NAME) InfinispanStatistics cacheDc2Statistics,
+            @JmxInfinispanCacheStatistics(dc=DC.FIRST, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.USER_SESSION_CACHE_NAME) InfinispanStatistics cacheDc1Statistics,
+            @JmxInfinispanCacheStatistics(dc=DC.SECOND, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.USER_SESSION_CACHE_NAME) InfinispanStatistics cacheDc2Statistics,
             @JmxInfinispanChannelStatistics() InfinispanStatistics channelStatisticsCrossDc) throws Exception {
 
-        createInitialSessions(InfinispanConnectionProvider.SESSION_CACHE_NAME, false, cacheDc1Statistics, cacheDc2Statistics, true);
+        createInitialSessions(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, false, cacheDc1Statistics, cacheDc2Statistics, true);
 
         channelStatisticsCrossDc.reset();
 
@@ -335,29 +337,29 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
         getAdminClient().realm(REALM_NAME).deleteSession(userSession.getId());
 
         // Just one session expired. Limit 5 for sent_messages is just if "lastSessionRefresh" periodic thread happened
-        assertStatisticsExpected("After logout single session", InfinispanConnectionProvider.SESSION_CACHE_NAME, cacheDc1Statistics, cacheDc2Statistics, channelStatisticsCrossDc,
+        assertStatisticsExpected("After logout single session", InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, cacheDc1Statistics, cacheDc2Statistics, channelStatisticsCrossDc,
                 sessions01 + SESSIONS_COUNT - 1, sessions02 + SESSIONS_COUNT - 1, remoteSessions01 + SESSIONS_COUNT - 1, remoteSessions02 + SESSIONS_COUNT - 1, 5l);
 
         // Logout all sessions for user now
         user.logout();
 
         // Assert sessions removed on node1 and node2 and on remote caches. Assert that count of messages sent between DCs is not too big.
-        assertStatisticsExpected("After user logout", InfinispanConnectionProvider.SESSION_CACHE_NAME, cacheDc1Statistics, cacheDc2Statistics, channelStatisticsCrossDc,
+        assertStatisticsExpected("After user logout", InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, cacheDc1Statistics, cacheDc2Statistics, channelStatisticsCrossDc,
                 sessions01, sessions02, remoteSessions01, remoteSessions02, 100l);
     }
 
 
     @Test
     public void testLogoutUserWithFailover(
-            @JmxInfinispanCacheStatistics(dc=DC.FIRST, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.SESSION_CACHE_NAME) InfinispanStatistics cacheDc1Statistics,
-            @JmxInfinispanCacheStatistics(dc=DC.SECOND, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.SESSION_CACHE_NAME) InfinispanStatistics cacheDc2Statistics,
+            @JmxInfinispanCacheStatistics(dc=DC.FIRST, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.USER_SESSION_CACHE_NAME) InfinispanStatistics cacheDc1Statistics,
+            @JmxInfinispanCacheStatistics(dc=DC.SECOND, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.USER_SESSION_CACHE_NAME) InfinispanStatistics cacheDc2Statistics,
             @JmxInfinispanChannelStatistics() InfinispanStatistics channelStatisticsCrossDc) throws Exception {
 
         // Start node2 on first DC
         startBackendNode(DC.FIRST, 1);
 
         // Don't include remote stats. Size is smaller because of distributed cache
-        List<OAuthClient.AccessTokenResponse> responses = createInitialSessions(InfinispanConnectionProvider.SESSION_CACHE_NAME, false, cacheDc1Statistics, cacheDc2Statistics, false);
+        List<OAuthClient.AccessTokenResponse> responses = createInitialSessions(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, false, cacheDc1Statistics, cacheDc2Statistics, false);
 
         // Kill node2 now. Around 10 sessions (half of SESSIONS_COUNT) will be lost on Keycloak side. But not on infinispan side
         stopBackendNode(DC.FIRST, 1);

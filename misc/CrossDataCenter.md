@@ -188,11 +188,26 @@ Keycloak servers setup
 </distributed-cache>
 ```
 
-3.6) Same for `offlineSessions`, `loginFailures`, and `actionTokens` caches (the only difference from `sessions` cache is that `cache` property value are different):
+3.6) Same for `offlineSessions`, `clientSessions`, `offlineClientSessions`, `loginFailures`, and `actionTokens` caches (the only difference
+from `sessions` cache is that `cache` property value are different):
 
 ```xml
 <distributed-cache name="offlineSessions" mode="SYNC" owners="1">
     <remote-store cache="offlineSessions" remote-servers="remote-cache" passivation="false" fetch-state="false" purge="false" preload="false" shared="true">
+        <property name="rawValues">true</property>
+        <property name="marshaller">org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory</property>
+    </remote-store>
+</distributed-cache>
+
+<distributed-cache name="clientSessions" mode="SYNC" owners="1">
+    <remote-store cache="clientSessions" remote-servers="remote-cache" passivation="false" fetch-state="false" purge="false" preload="false" shared="true">
+        <property name="rawValues">true</property>
+        <property name="marshaller">org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory</property>
+    </remote-store>
+</distributed-cache>
+
+<distributed-cache name="offlineClientSessions" mode="SYNC" owners="1">
+    <remote-store cache="offlineClientSessions" remote-servers="remote-cache" passivation="false" fetch-state="false" purge="false" preload="false" shared="true">
         <property name="rawValues">true</property>
         <property name="marshaller">org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory</property>
     </remote-store>

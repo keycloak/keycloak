@@ -142,7 +142,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
         if (authResult != null) {
             UserSessionModel userSession = authResult.getSession();
             if (userSession != null) {
-                AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(client.getId());
+                AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
                 if (clientSession == null) {
                     clientSession = session.sessions().createClientSession(userSession.getRealm(), client, userSession);
                 }

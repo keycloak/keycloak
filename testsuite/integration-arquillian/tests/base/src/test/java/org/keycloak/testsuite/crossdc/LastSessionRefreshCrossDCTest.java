@@ -26,7 +26,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.Retry;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
-import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.rest.representation.RemoteCacheStats;
 import org.keycloak.testsuite.util.OAuthClient;
 
@@ -57,7 +56,7 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
         // Get statistics
         int lsr00 = getTestingClientForStartedNodeInDc(0).testing("test").getLastSessionRefresh("test", sessionId);
         int lsr10 = getTestingClientForStartedNodeInDc(1).testing("test").getLastSessionRefresh("test", sessionId);
-        int lsrr0 = getTestingClientForStartedNodeInDc(0).testing("test").cache(InfinispanConnectionProvider.SESSION_CACHE_NAME).getRemoteCacheLastSessionRefresh(sessionId);
+        int lsrr0 = getTestingClientForStartedNodeInDc(0).testing("test").cache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).getRemoteCacheLastSessionRefresh(sessionId);
         log.infof("lsr00: %d, lsr10: %d, lsrr0: %d", lsr00, lsr10, lsrr0);
 
         Assert.assertEquals(lsr00, lsr10);
@@ -76,7 +75,7 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
         Retry.execute(() -> {
             int lsr01 = getTestingClientForStartedNodeInDc(0).testing("test").getLastSessionRefresh("test", sessionId);
             int lsr11 = getTestingClientForStartedNodeInDc(1).testing("test").getLastSessionRefresh("test", sessionId);
-            int lsrr1 = getTestingClientForStartedNodeInDc(0).testing("test").cache(InfinispanConnectionProvider.SESSION_CACHE_NAME).getRemoteCacheLastSessionRefresh(sessionId);
+            int lsrr1 = getTestingClientForStartedNodeInDc(0).testing("test").cache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).getRemoteCacheLastSessionRefresh(sessionId);
             log.infof("lsr01: %d, lsr11: %d, lsrr1: %d", lsr01, lsr11, lsrr1);
             
             Assert.assertEquals(lsr01, lsr11);
@@ -88,7 +87,7 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
         disableDcOnLoadBalancer(DC.FIRST);
         enableDcOnLoadBalancer(DC.SECOND);
         tokenResponse = oauth.doRefreshTokenRequest(refreshToken1, "password");
-        Assert.assertNull(tokenResponse.getAccessToken());
+        Assert.assertNull("Expecting no access token present", tokenResponse.getAccessToken());
         Assert.assertNotNull(tokenResponse.getError());
 
         // try refresh with new token on DC1. It should pass.
@@ -164,7 +163,7 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
         Assert.assertEquals(lsr10, lsr11.get());
 
         // assert that lastSessionRefresh still the same on remoteCache
-        int lsrr1 = getTestingClientForStartedNodeInDc(0).testing("test").cache(InfinispanConnectionProvider.SESSION_CACHE_NAME).getRemoteCacheLastSessionRefresh(sessionId);
+        int lsrr1 = getTestingClientForStartedNodeInDc(0).testing("test").cache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).getRemoteCacheLastSessionRefresh(sessionId);
         Assert.assertEquals(lsr00, lsrr1);
         log.infof("lsrr1: %d", lsrr1);
 
@@ -187,7 +186,7 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
             Assert.assertTrue(lsr02.get() > lsr01.get());
             Assert.assertTrue(lsr12.get() > lsr11.get());
 
-            lsrr2.set(getTestingClientForStartedNodeInDc(0).testing("test").cache(InfinispanConnectionProvider.SESSION_CACHE_NAME).getRemoteCacheLastSessionRefresh(sessionId));
+            lsrr2.set(getTestingClientForStartedNodeInDc(0).testing("test").cache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).getRemoteCacheLastSessionRefresh(sessionId));
             log.infof("lsrr2: %d", lsrr2.get());
             Assert.assertEquals(lsrr1, lsrr2.get());
 
@@ -218,7 +217,7 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
             Assert.assertTrue(lsr03.get() > lsr02.get());
             Assert.assertTrue(lsr13.get() > lsr12.get());
 
-            lsrr3.set(getTestingClientForStartedNodeInDc(0).testing("test").cache(InfinispanConnectionProvider.SESSION_CACHE_NAME).getRemoteCacheLastSessionRefresh(sessionId));
+            lsrr3.set(getTestingClientForStartedNodeInDc(0).testing("test").cache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).getRemoteCacheLastSessionRefresh(sessionId));
             log.infof("lsrr3: %d", lsrr3.get());
             Assert.assertTrue(lsrr3.get() > lsrr2.get());
 
@@ -232,7 +231,7 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
 
     private RemoteCacheStats getRemoteCacheStats(int dcIndex) {
         return getTestingClientForStartedNodeInDc(dcIndex).testing("test")
-                .cache(InfinispanConnectionProvider.SESSION_CACHE_NAME)
+                .cache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME)
                 .getRemoteCacheStats();
     }
 

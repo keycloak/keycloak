@@ -78,7 +78,7 @@ public class UserSessionEntity extends SessionEntity {
 
     private Map<String, String> notes = new ConcurrentHashMap<>();
 
-    private Map<String, AuthenticatedClientSessionEntity> authenticatedClientSessions  = new ConcurrentHashMap<>();
+    private AuthenticatedClientSessionStore authenticatedClientSessions = new AuthenticatedClientSessionStore();
 
     public String getUser() {
         return user;
@@ -144,11 +144,11 @@ public class UserSessionEntity extends SessionEntity {
         this.notes = notes;
     }
 
-    public Map<String, AuthenticatedClientSessionEntity> getAuthenticatedClientSessions() {
+    public AuthenticatedClientSessionStore getAuthenticatedClientSessions() {
         return authenticatedClientSessions;
     }
 
-    public void setAuthenticatedClientSessions(Map<String, AuthenticatedClientSessionEntity> authenticatedClientSessions) {
+    public void setAuthenticatedClientSessions(AuthenticatedClientSessionStore authenticatedClientSessions) {
         this.authenticatedClientSessions = authenticatedClientSessions;
     }
 
@@ -264,8 +264,7 @@ public class UserSessionEntity extends SessionEntity {
             Map<String, String> notes = session.getNotes();
             KeycloakMarshallUtil.writeMap(notes, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT, output);
 
-            Map<String, AuthenticatedClientSessionEntity> authSessions = session.getAuthenticatedClientSessions();
-            KeycloakMarshallUtil.writeMap(authSessions, KeycloakMarshallUtil.STRING_EXT, new AuthenticatedClientSessionEntity.ExternalizerImpl(), output);
+            output.writeObject(session.getAuthenticatedClientSessions());
         }
 
 
@@ -285,7 +284,8 @@ public class UserSessionEntity extends SessionEntity {
             sessionEntity.setAuthMethod(MarshallUtil.unmarshallString(input));
             sessionEntity.setBrokerSessionId(MarshallUtil.unmarshallString(input));
             sessionEntity.setBrokerUserId(MarshallUtil.unmarshallString(input));
-            sessionEntity.setId(MarshallUtil.unmarshallString(input));
+            final String userSessionId = MarshallUtil.unmarshallString(input);
+            sessionEntity.setId(userSessionId);
             sessionEntity.setIpAddress(MarshallUtil.unmarshallString(input));
             sessionEntity.setLoginUsername(MarshallUtil.unmarshallString(input));
             sessionEntity.setRealmId(MarshallUtil.unmarshallString(input));
@@ -301,8 +301,7 @@ public class UserSessionEntity extends SessionEntity {
                     new KeycloakMarshallUtil.ConcurrentHashMapBuilder<>());
             sessionEntity.setNotes(notes);
 
-            Map<String, AuthenticatedClientSessionEntity> authSessions = KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, new AuthenticatedClientSessionEntity.ExternalizerImpl(),
-                    new KeycloakMarshallUtil.ConcurrentHashMapBuilder<>());
+            AuthenticatedClientSessionStore authSessions = (AuthenticatedClientSessionStore) input.readObject();
             sessionEntity.setAuthenticatedClientSessions(authSessions);
 
             return sessionEntity;

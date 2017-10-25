@@ -254,7 +254,7 @@ public class TokenEndpoint {
 
             // Attempt to use same code twice should invalidate existing clientSession
             if (clientSession != null) {
-                clientSession.setUserSession(null);
+                clientSession.detachFromUserSession();
             }
 
             event.error(Errors.INVALID_CODE);
@@ -400,7 +400,7 @@ public class TokenEndpoint {
 
             if (!result.isOfflineToken()) {
                 UserSessionModel userSession = session.sessions().getUserSession(realm, res.getSessionState());
-                AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(client.getId());
+                AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
                 updateClientSession(clientSession);
                 updateUserSessionFromClientAuth(userSession);
             }

@@ -382,4 +382,16 @@ if (outcome == success) of /subsystem=jsf/:read-resource
     echo
 end-if
 
+if (outcome == failed) of /subsystem=infinispan/cache-container=keycloak/distributed-cache=clientSessions/:read-resource
+  echo Adding distributed-cache=clientSessions to keycloak cache container...
+  /subsystem=infinispan/cache-container=keycloak/distributed-cache=clientSessions/:add(mode=SYNC,owners=1)
+  echo
+end-if
+
+if (outcome == failed) of /subsystem=infinispan/cache-container=keycloak/distributed-cache=offlineClientSessions/:read-resource
+  echo Adding distributed-cache=offlineClientSessions to keycloak cache container...
+  /subsystem=infinispan/cache-container=keycloak/distributed-cache=offlineClientSessions/:add(mode=SYNC,owners=1)
+  echo
+end-if
+
 echo *** End Migration ***

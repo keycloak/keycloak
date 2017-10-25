@@ -77,8 +77,8 @@ public class ConcurrencyJDGRemoteCacheTest {
     }
 
     private static Worker createWorker(int threadId) {
-        EmbeddedCacheManager manager = new TestCacheManagerFactory().createManager(threadId, InfinispanConnectionProvider.SESSION_CACHE_NAME, RemoteStoreConfigurationBuilder.class);
-        Cache<String, Integer> cache = manager.getCache(InfinispanConnectionProvider.SESSION_CACHE_NAME);
+        EmbeddedCacheManager manager = new TestCacheManagerFactory().createManager(threadId, InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, RemoteStoreConfigurationBuilder.class);
+        Cache<String, Integer> cache = manager.getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
 
         System.out.println("Retrieved cache: " + threadId);
 

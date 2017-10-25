@@ -159,13 +159,13 @@ public class TokenManager {
         }
 
         ClientModel client = session.getContext().getClient();
-        AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(client.getId());
+        AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
 
         // Can theoretically happen in cross-dc environment. Try to see if userSession with our client is available in remoteCache
         if (clientSession == null) {
             userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, userSession.getId(), offline, client.getId());
             if (userSession != null) {
-                clientSession = userSession.getAuthenticatedClientSessions().get(client.getId());
+                clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
             } else {
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Session doesn't have required client", "Session doesn't have required client");
             }
@@ -400,7 +400,7 @@ public class TokenManager {
     public static AuthenticatedClientSessionModel attachAuthenticationSession(KeycloakSession session, UserSessionModel userSession, AuthenticationSessionModel authSession) {
         ClientModel client = authSession.getClient();
 
-        AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(client.getId());
+        AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
         if (clientSession == null) {
             clientSession = session.sessions().createClientSession(userSession.getRealm(), client, userSession);
         }
@@ -436,8 +436,9 @@ public class TokenManager {
             return;
         }
 
-        clientSession.setUserSession(null);
+        clientSession.detachFromUserSession();
 
+        // TODO: Might need optimization to prevent loading client sessions from cache in getAuthenticatedClientSessions()
         if (userSession.getAuthenticatedClientSessions().isEmpty()) {
             sessions.removeUserSession(realm, userSession);
         }

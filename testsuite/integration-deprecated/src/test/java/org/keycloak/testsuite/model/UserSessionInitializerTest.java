@@ -132,7 +132,6 @@ public class UserSessionInitializerTest {
 
     private AuthenticatedClientSessionModel createClientSession(ClientModel client, UserSessionModel userSession, String redirect, String state, Set<String> roles, Set<String> protocolMappers) {
         AuthenticatedClientSessionModel clientSession = session.sessions().createClientSession(realm, client, userSession);
-        if (userSession != null) clientSession.setUserSession(userSession);
         clientSession.setRedirectUri(redirect);
         if (state != null) clientSession.setNote(OIDCLoginProtocol.STATE_PARAM, state);
         if (roles != null) clientSession.setRoles(roles);

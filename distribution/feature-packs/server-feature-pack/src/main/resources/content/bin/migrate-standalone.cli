@@ -350,4 +350,16 @@ if (outcome == success) of /subsystem=jsf/:read-resource
     echo
 end-if
 
+if (outcome == failed) of /subsystem=infinispan/cache-container=keycloak/local-cache=offlineClientSessions/:read-resource
+  echo Adding local-cache=offlineClientSessions to keycloak cache container...
+  /subsystem=infinispan/cache-container=keycloak/local-cache=offlineClientSessions/:add(indexing=NONE,start=LAZY)
+  echo
+end-if
+
+if (outcome == failed) of /subsystem=infinispan/cache-container=keycloak/local-cache=clientSessions/:read-resource
+  echo Adding local-cache=clientSessions to keycloak cache container...
+  /subsystem=infinispan/cache-container=keycloak/local-cache=clientSessions/:add(indexing=NONE,start=LAZY)
+  echo
+end-if
+
 echo *** End Migration ***

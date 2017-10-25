@@ -42,9 +42,10 @@
                 </backups>
             </replicated-cache-configuration>
 
-
             <replicated-cache name="sessions" configuration="sessions-cfg" />
             <replicated-cache name="offlineSessions" configuration="sessions-cfg" />
+            <replicated-cache name="clientSessions" configuration="sessions-cfg" />
+            <replicated-cache name="offlineClientSessions" configuration="sessions-cfg" />
             <replicated-cache name="loginFailures" configuration="sessions-cfg" />
             <replicated-cache name="actionTokens" configuration="sessions-cfg" />
             <replicated-cache name="work" configuration="sessions-cfg" />

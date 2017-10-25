@@ -388,10 +388,8 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
     private void setTimeOffsetOnAllStartedContainers(int offset) {
         backendTestingClients.entrySet().stream()
                 .filter(testingClientEntry -> testingClientEntry.getKey().isStarted())
-                .forEach(testingClientEntry -> {
-                    KeycloakTestingClient testingClient = testingClientEntry.getValue();
-                    testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(offset)));
-                });
+                .map(testingClientEntry -> testingClientEntry.getValue())
+                .forEach(testingClient -> testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(offset))));
     }
 
     /**
