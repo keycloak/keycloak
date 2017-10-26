@@ -235,7 +235,7 @@ public class PolicyService {
     }
 
     protected AbstractPolicyRepresentation toRepresentation(Policy model, AuthorizationProvider authorization) {
-        return ModelToRepresentation.toRepresentation(model, PolicyRepresentation.class, authorization);
+        return ModelToRepresentation.toRepresentation(model, authorization, true, false);
     }
 
     protected List<Object> doSearch(Integer firstResult, Integer maxResult, Map<String, String[]> filters) {

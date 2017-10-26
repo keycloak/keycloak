@@ -66,7 +66,8 @@ public class TimePolicyProviderFactory implements PolicyProviderFactory<TimePoli
     }
 
     @Override
-    public TimePolicyRepresentation toRepresentation(Policy policy, TimePolicyRepresentation representation) {
+    public TimePolicyRepresentation toRepresentation(Policy policy) {
+        TimePolicyRepresentation representation = new TimePolicyRepresentation();
         Map<String, String> config = policy.getConfig();
 
         representation.setDayMonth(config.get("dayMonth"));

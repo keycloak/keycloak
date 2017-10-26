@@ -359,7 +359,7 @@ public class ExportUtils {
 
     private static PolicyRepresentation createPolicyRepresentation(AuthorizationProvider authorizationProvider, Policy policy) {
         try {
-            PolicyRepresentation rep = toRepresentation(policy, PolicyRepresentation.class, authorizationProvider, true);
+            PolicyRepresentation rep = toRepresentation(policy, authorizationProvider, true, true);
 
             rep.setId(null);
 

@@ -88,8 +88,7 @@ public class PolicyTypeService extends PolicyService {
 
     @Override
     protected AbstractPolicyRepresentation toRepresentation(Policy policy, AuthorizationProvider authorization) {
-        PolicyProviderFactory providerFactory = authorization.getProviderFactory(policy.getType());
-        return ModelToRepresentation.toRepresentation(policy, providerFactory.getRepresentationType(), authorization);
+        return ModelToRepresentation.toRepresentation(policy, authorization, false, false);
     }
 
     @Override

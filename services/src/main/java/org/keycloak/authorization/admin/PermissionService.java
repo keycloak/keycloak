@@ -22,6 +22,8 @@ import java.util.Map;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 
@@ -55,5 +57,10 @@ public class PermissionService extends PolicyService {
     protected List<Object> doSearch(Integer firstResult, Integer maxResult, Map<String, String[]> filters) {
         filters.put("permission", new String[] {Boolean.TRUE.toString()});
         return super.doSearch(firstResult, maxResult, filters);
+    }
+
+    @Override
+    protected AbstractPolicyRepresentation toRepresentation(Policy policy, AuthorizationProvider authorization) {
+        return ModelToRepresentation.toRepresentation(policy, authorization, false, false);
     }
 }

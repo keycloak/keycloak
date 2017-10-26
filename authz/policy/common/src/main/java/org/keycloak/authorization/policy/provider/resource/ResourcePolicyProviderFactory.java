@@ -40,7 +40,8 @@ public class ResourcePolicyProviderFactory implements PolicyProviderFactory<Reso
     }
 
     @Override
-    public ResourcePermissionRepresentation toRepresentation(Policy policy, ResourcePermissionRepresentation representation) {
+    public ResourcePermissionRepresentation toRepresentation(Policy policy) {
+        ResourcePermissionRepresentation representation = new ResourcePermissionRepresentation();
         representation.setResourceType(policy.getConfig().get("defaultResourceType"));
         return representation;
     }
