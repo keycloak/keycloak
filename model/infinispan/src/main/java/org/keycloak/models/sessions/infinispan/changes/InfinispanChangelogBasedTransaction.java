@@ -215,7 +215,9 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
 
             // Replace fail. Need to load latest entity from cache, apply updates again and try to replace in cache again
             if (!replaced) {
-                logger.debugf("Replace failed for entity: %s . Will try again", key);
+                if (logger.isDebugEnabled()) {
+                    logger.debugf("Replace failed for entity: %s, old version %s, new version %s. Will try again", key, oldVersionEntity.getVersion(), newVersionEntity.getVersion());
+                }
 
                 oldVersionEntity = cache.get(key);
 

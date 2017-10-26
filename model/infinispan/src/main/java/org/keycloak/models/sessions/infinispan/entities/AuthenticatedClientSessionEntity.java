@@ -135,6 +135,28 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
         return id;
     }
 
+    @Override
+    public String toString() {
+        return "AuthenticatedClientSessionEntity [" + "id=" + id + ']';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof AuthenticatedClientSessionEntity)) return false;
+
+        AuthenticatedClientSessionEntity that = (AuthenticatedClientSessionEntity) o;
+
+        if (id != null ? !id.equals(that.id) : that.id != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return id != null ? id.hashCode() : 0;
+    }
+
     public static class ExternalizerImpl implements Externalizer<AuthenticatedClientSessionEntity> {
 
         @Override

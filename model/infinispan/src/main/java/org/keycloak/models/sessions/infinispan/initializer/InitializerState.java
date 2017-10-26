@@ -26,6 +26,7 @@ import java.io.ObjectOutput;
 import java.util.BitSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import org.infinispan.commons.marshall.Externalizer;
 import org.infinispan.commons.marshall.MarshallUtil;
 import org.infinispan.commons.marshall.SerializeWith;
@@ -121,6 +122,43 @@ public class InitializerState extends SessionEntity {
           + sessionsCount
           + (", finished segments count: " + finished)
           + (", non-finished segments count: " + nonFinished);
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 3;
+        hash = 97 * hash + this.sessionsCount;
+        hash = 97 * hash + this.segmentsCount;
+        hash = 97 * hash + Objects.hashCode(this.segments);
+        hash = 97 * hash + this.lowestUnfinishedSegment;
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final InitializerState other = (InitializerState) obj;
+        if (this.sessionsCount != other.sessionsCount) {
+            return false;
+        }
+        if (this.segmentsCount != other.segmentsCount) {
+            return false;
+        }
+        if (this.lowestUnfinishedSegment != other.lowestUnfinishedSegment) {
+            return false;
+        }
+        if ( ! Objects.equals(this.segments, other.segments)) {
+            return false;
+        }
+        return true;
     }
 
     public static class ExternalizerImpl implements Externalizer<InitializerState> {
