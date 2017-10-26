@@ -51,6 +51,21 @@ public class DroolsPolicyProviderFactory implements PolicyProviderFactory<RulePo
     }
 
     @Override
+    public RulePolicyRepresentation toRepresentation(Policy policy) {
+        RulePolicyRepresentation representation = new RulePolicyRepresentation();
+
+        representation.setArtifactGroupId(policy.getConfig().get("mavenArtifactGroupId"));
+        representation.setArtifactId(policy.getConfig().get("mavenArtifactId"));
+        representation.setArtifactVersion(policy.getConfig().get("mavenArtifactVersion"));
+        representation.setScannerPeriod(policy.getConfig().get("scannerPeriod"));
+        representation.setScannerPeriodUnit(policy.getConfig().get("scannerPeriodUnit"));
+        representation.setSessionName(policy.getConfig().get("sessionName"));
+        representation.setModuleName(policy.getConfig().get("moduleName"));
+
+        return representation;
+    }
+
+    @Override
     public PolicyProviderAdminService getAdminResource(ResourceServer resourceServer, AuthorizationProvider authorization) {
         return new DroolsPolicyAdminResource(this);
     }
@@ -80,18 +95,6 @@ public class DroolsPolicyProviderFactory implements PolicyProviderFactory<RulePo
     @Override
     public void onRemove(Policy policy, AuthorizationProvider authorization) {
         remove(policy);
-    }
-
-    @Override
-    public RulePolicyRepresentation toRepresentation(Policy policy, RulePolicyRepresentation representation) {
-        representation.setArtifactGroupId(policy.getConfig().get("mavenArtifactGroupId"));
-        representation.setArtifactId(policy.getConfig().get("mavenArtifactId"));
-        representation.setArtifactVersion(policy.getConfig().get("mavenArtifactVersion"));
-        representation.setScannerPeriod(policy.getConfig().get("scannerPeriod"));
-        representation.setScannerPeriodUnit(policy.getConfig().get("scannerPeriodUnit"));
-        representation.setSessionName(policy.getConfig().get("sessionName"));
-        representation.setModuleName(policy.getConfig().get("moduleName"));
-        return representation;
     }
 
     @Override

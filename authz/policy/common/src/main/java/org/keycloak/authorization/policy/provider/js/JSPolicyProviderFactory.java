@@ -43,7 +43,8 @@ public class JSPolicyProviderFactory implements PolicyProviderFactory<JSPolicyRe
     }
 
     @Override
-    public JSPolicyRepresentation toRepresentation(Policy policy, JSPolicyRepresentation representation) {
+    public JSPolicyRepresentation toRepresentation(Policy policy) {
+        JSPolicyRepresentation representation = new JSPolicyRepresentation();
         representation.setCode(policy.getConfig().get("code"));
         return representation;
     }

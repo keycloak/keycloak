@@ -18,6 +18,7 @@ package org.keycloak.testsuite.authorization;
 
 import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
@@ -25,6 +26,8 @@ import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -44,6 +47,16 @@ public class TestPolicyProviderFactory implements PolicyProviderFactory {
     @Override
     public PolicyProvider create(AuthorizationProvider authorization) {
         return new TestPolicyProvider(authorization);
+    }
+
+    @Override
+    public AbstractPolicyRepresentation toRepresentation(Policy policy) {
+        return new PolicyRepresentation();
+    }
+
+    @Override
+    public Class getRepresentationType() {
+        return PolicyRepresentation.class;
     }
 
     @Override

@@ -52,7 +52,7 @@ import org.keycloak.util.JsonSerialization;
  */
 public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPolicyRepresentation> {
 
-    private UserPolicyProvider provider = new UserPolicyProvider((Function<Policy, UserPolicyRepresentation>) policy -> toRepresentation(policy, new UserPolicyRepresentation()));
+    private UserPolicyProvider provider = new UserPolicyProvider((Function<Policy, UserPolicyRepresentation>) policy -> toRepresentation(policy));
 
     @Override
     public String getName() {
@@ -75,12 +75,15 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
     }
 
     @Override
-    public UserPolicyRepresentation toRepresentation(Policy policy, UserPolicyRepresentation representation) {
+    public UserPolicyRepresentation toRepresentation(Policy policy) {
+        UserPolicyRepresentation representation = new UserPolicyRepresentation();
+
         try {
             representation.setUsers(JsonSerialization.readValue(policy.getConfig().get("users"), Set.class));
         } catch (IOException cause) {
             throw new RuntimeException("Failed to deserialize roles", cause);
         }
+
         return representation;
     }
 
@@ -110,7 +113,7 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
 
     @Override
     public void onExport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorizationProvider) {
-        UserPolicyRepresentation userRep = toRepresentation(policy, new UserPolicyRepresentation());
+        UserPolicyRepresentation userRep = toRepresentation(policy);
         Map<String, String> config = new HashMap<>();
 
         try {
