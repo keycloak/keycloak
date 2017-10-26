@@ -62,6 +62,21 @@ if (result == []) of /profile=$standaloneProfile/subsystem=keycloak-server/:read
   /profile=$standaloneProfile/subsystem=keycloak-server/:migrate-json(file=$pathToJson)
   echo
 end-if
+if (result == [expression "classpath:${jboss.server.config.dir}/providers/*"]) of /profile=$standaloneProfile/subsystem=keycloak-server/:read-attribute(name=providers)
+    echo Updating provider to default value
+    /profile=$standaloneProfile/subsystem=keycloak-server/:write-attribute(name=providers,value=[classpath:${jboss.home.dir}/providers/*])
+    echo
+end-if
+if (result == keycloak) of /profile=$standaloneProfile/subsystem=keycloak-server/theme=defaults:read-attribute(name=default)
+    echo Undefining default theme...
+    /profile=$standaloneProfile/subsystem=keycloak-server/theme=defaults:undefine-attribute(name=default)
+    echo
+end-if
+if (result == expression "${jboss.server.config.dir}/themes") of /profile=$standaloneProfile/subsystem=keycloak-server/theme=defaults:read-attribute(name=dir)
+    echo Updating theme dir to default value
+    /profile=$standaloneProfile/subsystem=keycloak-server/theme=defaults/:write-attribute(name=dir,value=${jboss.home.dir}/themes)
+    echo
+end-if
 
 set persistenceProvider=jpa
 
@@ -181,14 +196,16 @@ if (outcome == failed) of /profile=$standaloneProfile/subsystem=keycloak-server/
    echo
 end-if
 
-if ((result.default-provider == undefined) && (result.provider.default.enabled == true)) of /subsystem=keycloak-server/spi=connectionsInfinispan/:read-resource(recursive=true,include-defaults=false)
+if ((result.default-provider == undefined) && (result.provider.default.enabled == true)) of /profile=$standaloneProfile/subsystem=keycloak-server/spi=connectionsInfinispan/:read-resource(recursive=true,include-defaults=false)
    echo Adding 'default' as default provider for connectionsInfinispan
    /profile=$standaloneProfile/subsystem=keycloak-server/spi=connectionsInfinispan/:write-attribute(name=default-provider,value=default)
    echo
 end-if
 
+# Migrate from 3.0.0 to 3.1.0
+# NO CHANGES
 
-# Migrate from 3.0.0 to 3.2.0
+# Migrate from 3.1.0 to 3.2.0
 if (outcome == failed) of /profile=$standaloneProfile/subsystem=infinispan/cache-container=keycloak/local-cache=authenticationSessions/:read-resource
   echo Adding local-cache=authenticationSessions to keycloak cache container...
   /profile=$standaloneProfile/subsystem=infinispan/cache-container=keycloak/local-cache=authenticationSessions/:add(indexing=NONE,start=LAZY)
@@ -203,6 +220,124 @@ if (outcome == failed) of /profile=$standaloneProfile/subsystem=infinispan/cache
   /profile=$standaloneProfile/subsystem=infinispan/cache-container=keycloak/local-cache=actionTokens/component=expiration/:write-attribute(name=interval,value=300000)
   /profile=$standaloneProfile/subsystem=infinispan/cache-container=keycloak/local-cache=actionTokens/component=expiration/:write-attribute(name=max-idle,value=-1)
   echo
+end-if
+
+if (result == 100L) of /profile=$standaloneProfile/subsystem=infinispan/cache-container=keycloak/local-cache=authorization/component=eviction/:read-attribute(name=max-entries)
+    echo Updating eviction in local-cache=authorization...
+    /profile=$standaloneProfile/subsystem=infinispan/cache-container=keycloak/local-cache=authorization/component=eviction/:write-attribute(name=max-entries,value=10000)
+    echo
+end-if
+
+# Migrate from 3.2.0 to 3.2.1
+# NO CHANGES
+
+# Migrate from 3.2.1 to 3.3.0
+if (outcome == failed) of /profile=$standaloneProfile/subsystem=core-management/:read-resource
+    try
+        echo Trying to add core-management extension
+        /extension=org.wildfly.extension.core-management/:add
+        echo
+    catch
+        echo Wasn't able to add core-management extension, it should be already added by migrate-domain-clustered.cli
+        echo
+    end-try
+    echo Adding subsystem core-management
+    /profile=$standaloneProfile/subsystem=core-management/:add
+    echo
+end-if
+
+if (outcome == failed) of /profile=$standaloneProfile/subsystem=elytron/:read-resource
+    try
+        echo Trying to add elytron extension
+        /extension=org.wildfly.extension.elytron/:add
+        echo
+    catch
+        echo Wasn't able to add elytron extension, it should be already added by migrate-domain-clustered.cli
+        echo
+    end-try
+    echo Adding subsystem elytron
+    /profile=$standaloneProfile/subsystem=elytron/:add
+    /profile=$standaloneProfile/subsystem=elytron/provider-loader=elytron/:add(module=org.wildfly.security.elytron)
+    /profile=$standaloneProfile/subsystem=elytron/provider-loader=openssl/:add(module=org.wildfly.openssl)
+    /profile=$standaloneProfile/subsystem=elytron/aggregate-providers=combined-providers/:add(providers=[elytron,openssl])
+    /profile=$standaloneProfile/subsystem=elytron/file-audit-log=local-audit/:add(path=audit.log,relative-to=jboss.server.log.dir,format=JSON)
+    /profile=$standaloneProfile/subsystem=elytron/identity-realm=local/:add(identity="$local")
+    /profile=$standaloneProfile/subsystem=elytron/properties-realm=ApplicationRealm/:add(users-properties={path=application-users.properties,relative-to=jboss.domain.config.dir,digest-realm-name=ApplicationRealm},groups-properties={path=application-roles.properties,relative-to=jboss.domain.config.dir})
+    /profile=$standaloneProfile/subsystem=elytron/simple-permission-mapper=default-permission-mapper/:add(mapping-mode=first,permission-mappings=[{principals=[anonymous],permissions=[{class-name=org.wildfly.extension.batch.jberet.deployment.BatchPermission,module=org.wildfly.extension.batch.jberet,target-name=*},{class-name=org.wildfly.transaction.client.RemoteTransactionPermission,module=org.wildfly.transaction.client},{class-name=org.jboss.ejb.client.RemoteEJBPermission,module=org.jboss.ejb-client}]},{match-all=true,permissions=[{class-name=org.wildfly.security.auth.permission.LoginPermission},{class-name=org.wildfly.extension.batch.jberet.deployment.BatchPermission,module=org.wildfly.extension.batch.jberet,target-name=*},{class-name=org.wildfly.transaction.client.RemoteTransactionPermission,module=org.wildfly.transaction.client},{class-name=org.jboss.ejb.client.RemoteEJBPermission,module=org.jboss.ejb-client}]}])
+    /profile=$standaloneProfile/subsystem=elytron/constant-realm-mapper=local/:add(realm-name=local)
+    /profile=$standaloneProfile/subsystem=elytron/simple-role-decoder=groups-to-roles/:add(attribute=groups)
+    /profile=$standaloneProfile/subsystem=elytron/constant-role-mapper=super-user-mapper/:add(roles=[SuperUser])
+    /profile=$standaloneProfile/subsystem=elytron/security-domain=ApplicationDomain/:add(default-realm=ApplicationRealm,permission-mapper=default-permission-mapper,realms=[{realm=ApplicationRealm,role-decoder=groups-to-roles},{realm=local}])
+    /profile=$standaloneProfile/subsystem=elytron/provider-http-server-mechanism-factory=global/:add
+    /profile=$standaloneProfile/subsystem=elytron/http-authentication-factory=application-http-authentication/:add(http-server-mechanism-factory=global,security-domain=ApplicationDomain,mechanism-configurations=[{mechanism-name=BASIC,mechanism-realm-configurations=[{realm-name=Application Realm}]},{mechanism-name=FORM}])
+    /profile=$standaloneProfile/subsystem=elytron/provider-sasl-server-factory=global/:add
+    /profile=$standaloneProfile/subsystem=elytron/mechanism-provider-filtering-sasl-server-factory=elytron/:add(sasl-server-factory=global,filters=[{provider-name=WildFlyElytron}])
+    /profile=$standaloneProfile/subsystem=elytron/configurable-sasl-server-factory=configured/:add(sasl-server-factory=elytron,properties={wildfly.sasl.local-user.default-user => "$local"})
+    /profile=$standaloneProfile/subsystem=elytron/sasl-authentication-factory=application-sasl-authentication/:add(sasl-server-factory=configured,security-domain=ApplicationDomain,mechanism-configurations=[{mechanism-name=JBOSS-LOCAL-USER,realm-mapper=local},{mechanism-name=DIGEST-MD5,mechanism-realm-configurations=[{realm-name=ApplicationRealm}]}])
+    /profile=$standaloneProfile/subsystem=elytron/:write-attribute(name=final-providers,value=combined-providers)
+    /profile=$standaloneProfile/subsystem=elytron/:write-attribute(name=disallowed-providers,value=[OracleUcrypto])
+    echo
+end-if
+
+if (outcome == failed) of /profile=$standaloneProfile/subsystem=ejb3/service=remote/channel-creation-options=READ_TIMEOUT/:read-resource
+    echo Adding channel-creation-options READ_TIMEOUT and MAX_OUTBOUND_MESSAGES to ejb3 remote
+    /profile=$standaloneProfile/subsystem=ejb3/service=remote/channel-creation-options=READ_TIMEOUT/:add(value="${prop.remoting-connector.read.timeout:20}",type=xnio)
+    /profile=$standaloneProfile/subsystem=ejb3/service=remote/channel-creation-options=MAX_OUTBOUND_MESSAGES/:add(value=1234,type=remoting)
+    echo
+end-if
+
+if (outcome == success) of /profile=$standaloneProfile/subsystem=infinispan/cache-container=web/local-cache=persistent:read-resource
+    echo Removing local-cache persistent from web cache-container
+    /profile=$standaloneProfile/subsystem=infinispan/cache-container=web/local-cache=persistent:remove
+    echo
+end-if
+
+if (outcome == success) of /profile=$standaloneProfile/subsystem=infinispan/cache-container=ejb/local-cache=persistent:read-resource
+    echo Removing local-cache persistent from ejb cache-container
+    /profile=$standaloneProfile/subsystem=infinispan/cache-container=ejb/local-cache=persistent:remove
+    echo
+end-if
+
+if (result == local-query) of /profile=$standaloneProfile/subsystem=infinispan/cache-container=hibernate/:read-attribute(name=default-cache)
+    echo Removing default-cache from hibernate cache-container
+    /profile=$standaloneProfile/subsystem=infinispan/cache-container=hibernate/:undefine-attribute(name=default-cache)
+    echo
+end-if
+
+if (outcome == failed) of /profile=$standaloneProfile/subsystem=undertow/server=default-server/host=default-host/setting=http-invoker/:read-resource
+    echo Adding http-invoker to default-host
+    /profile=$standaloneProfile/subsystem=undertow/server=default-server/host=default-host/setting=http-invoker/:add(security-realm=ApplicationRealm)
+    echo
+end-if
+
+if (result == false) of /profile=$standaloneProfile/subsystem=undertow/server=default-server/http-listener=default/:read-attribute(name=enable-http2)
+    echo Enabling http2 for default http-listener
+    /profile=$standaloneProfile/subsystem=undertow/server=default-server/http-listener=default/:write-attribute(name=enable-http2,value=true)
+    echo
+end-if
+
+if (outcome == failed) of /profile=$standaloneProfile/subsystem=undertow/server=default-server/https-listener=https/:read-resource
+    echo Adding https-listener
+    /profile=$standaloneProfile/subsystem=undertow/server=default-server/https-listener=https/:add(socket-binding=https,security-realm=ApplicationRealm,enable-http2=true)
+    echo
+end-if
+
+if (outcome == success) of /socket-binding-group=ha-sockets/socket-binding=jgroups-tcp-fd/:read-resource
+    echo Removing socket-binding jgroups-tcp-fd
+    /socket-binding-group=ha-sockets/socket-binding=jgroups-tcp-fd/:remove
+    echo
+end-if
+
+if (outcome == success) of /socket-binding-group=ha-sockets/socket-binding=jgroups-udp-fd/:read-resource
+    echo Removing socket-binding jgroups-udp-fd
+    /socket-binding-group=ha-sockets/socket-binding=jgroups-udp-fd/:remove
+    echo
+end-if
+
+if (result == 224.0.1.105) of /socket-binding-group=ha-sockets/socket-binding=modcluster/:read-attribute(name=multicast-address)
+    echo Adding jboss.modcluster.multicast.address property to modcluster multicast-address
+    /socket-binding-group=ha-sockets/socket-binding=modcluster/:write-attribute(name=multicast-address,value=${jboss.modcluster.multicast.address:224.0.1.105})
+    echo
 end-if
 
 echo *** End Migration of /profile=$standaloneProfile ***
