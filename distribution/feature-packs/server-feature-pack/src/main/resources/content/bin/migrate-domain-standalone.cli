@@ -263,9 +263,7 @@ if (outcome == failed) of /profile=$standaloneProfile/subsystem=elytron/:read-re
     /profile=$standaloneProfile/subsystem=elytron/file-audit-log=local-audit/:add(path=audit.log,relative-to=jboss.server.log.dir,format=JSON)
     /profile=$standaloneProfile/subsystem=elytron/identity-realm=local/:add(identity="$local")
     /profile=$standaloneProfile/subsystem=elytron/properties-realm=ApplicationRealm/:add(users-properties={path=application-users.properties,relative-to=jboss.domain.config.dir,digest-realm-name=ApplicationRealm},groups-properties={path=application-roles.properties,relative-to=jboss.domain.config.dir})
-    /profile=$standaloneProfile/subsystem=elytron/simple-permission-mapper=anonymous-permission-mapper/:add(permission-mappings=[{principals=[anonymous],permissions=[{class-name=org.wildfly.security.auth.permission.LoginPermission}]}]
-    /profile=$standaloneProfile/subsystem=elytron/constant-permission-mapper=constant-permission-mapper/:add(permissions=[{class-name=org.wildfly.security.auth.permission.LoginPermission},{class-name=org.wildfly.extension.batch.jberet.deployment.BatchPermission,module=org.wildfly.extension.batch.jberet,target-name=*},{class-name=org.wildfly.transaction.client.RemoteTransactionPermission,module=org.wildfly.transaction.client},{class-name=org.jboss.ejb.client.RemoteEJBPermission,module=org.jboss.ejb-client}])
-    /profile=$standaloneProfile/subsystem=elytron/logical-permission-mapper=default-permission-mapper/:add(logical-operation=unless,left=constant-permission-mapper,right=anonymous-permission-mapper)
+    /profile=$standaloneProfile/subsystem=elytron/simple-permission-mapper=default-permission-mapper/:add(mapping-mode=first,permission-mappings=[{principals=[anonymous],permissions=[{class-name=org.wildfly.extension.batch.jberet.deployment.BatchPermission,module=org.wildfly.extension.batch.jberet,target-name=*},{class-name=org.wildfly.transaction.client.RemoteTransactionPermission,module=org.wildfly.transaction.client},{class-name=org.jboss.ejb.client.RemoteEJBPermission,module=org.jboss.ejb-client}]},{match-all=true,permissions=[{class-name=org.wildfly.security.auth.permission.LoginPermission},{class-name=org.wildfly.extension.batch.jberet.deployment.BatchPermission,module=org.wildfly.extension.batch.jberet,target-name=*},{class-name=org.wildfly.transaction.client.RemoteTransactionPermission,module=org.wildfly.transaction.client},{class-name=org.jboss.ejb.client.RemoteEJBPermission,module=org.jboss.ejb-client}]}])
     /profile=$standaloneProfile/subsystem=elytron/constant-realm-mapper=local/:add(realm-name=local)
     /profile=$standaloneProfile/subsystem=elytron/simple-role-decoder=groups-to-roles/:add(attribute=groups)
     /profile=$standaloneProfile/subsystem=elytron/constant-role-mapper=super-user-mapper/:add(roles=[SuperUser])
@@ -321,6 +319,24 @@ end-if
 if (outcome == failed) of /profile=$standaloneProfile/subsystem=undertow/server=default-server/https-listener=https/:read-resource
     echo Adding https-listener
     /profile=$standaloneProfile/subsystem=undertow/server=default-server/https-listener=https/:add(socket-binding=https,security-realm=ApplicationRealm,enable-http2=true)
+    echo
+end-if
+
+if (outcome == success) of /socket-binding-group=ha-sockets/socket-binding=jgroups-tcp-fd/:read-resource
+    echo Removing socket-binding jgroups-tcp-fd
+    /socket-binding-group=ha-sockets/socket-binding=jgroups-tcp-fd/:remove
+    echo
+end-if
+
+if (outcome == success) of /socket-binding-group=ha-sockets/socket-binding=jgroups-udp-fd/:read-resource
+    echo Removing socket-binding jgroups-udp-fd
+    /socket-binding-group=ha-sockets/socket-binding=jgroups-udp-fd/:remove
+    echo
+end-if
+
+if (result == 224.0.1.105) of /socket-binding-group=ha-sockets/socket-binding=modcluster/:read-attribute(name=multicast-address)
+    echo Adding jboss.modcluster.multicast.address property to modcluster multicast-address
+    /socket-binding-group=ha-sockets/socket-binding=modcluster/:write-attribute(name=multicast-address,value=${jboss.modcluster.multicast.address:224.0.1.105})
     echo
 end-if
 
