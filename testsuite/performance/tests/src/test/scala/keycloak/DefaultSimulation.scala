@@ -81,7 +81,7 @@ class DefaultSimulation extends Simulation {
       .queryParam("client_id", "${clientId}")
       .queryParam("state", "${state}")
       .queryParam("redirect_uri", "${appUrl}")
-      .check(status.is(200), regex("action=\"([^\"]*)\"").saveAs("login-form-uri")))
+      .check(status.is(200), regex("action=\"([^\"]*)\"").find.transform(_.replaceAll("&amp;", "&")).saveAs("login-form-uri")))
     .exitHereIfFailed
     .pause(TestConfig.userThinkTime, Normal(TestConfig.userThinkTime * 0.2))
 
@@ -92,7 +92,7 @@ class DefaultSimulation extends Simulation {
         .formParam("username", "${username}")
         .formParam("password", _ => Util.randomString(10))
         .formParam("login", "Log in")
-        .check(status.is(200), regex("action=\"([^\"]*)\"").saveAs("login-form-uri")))
+        .check(status.is(200), regex("action=\"([^\"]*)\"").find.transform(_.replaceAll("&amp;", "&")).saveAs("login-form-uri")))
         .exitHereIfFailed
         .pause(TestConfig.userThinkTime, Normal(TestConfig.userThinkTime * 0.2))
     }

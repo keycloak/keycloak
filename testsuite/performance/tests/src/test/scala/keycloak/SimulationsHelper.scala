@@ -64,7 +64,7 @@ object SimulationsHelper {
         .exec(http("JS Adapter Auth - Login Form Redirect")
           .get("/auth/realms/master/protocol/openid-connect/auth?client_id=security-admin-console&redirect_uri=${keycloakServerUrlEncoded}%2Fadmin%2Fmaster%2Fconsole%2F&state=${state}&nonce=${nonce}&response_mode=fragment&response_type=code&scope=openid")
           .headers(UI_HEADERS)
-          .check(status.is(200), regex("action=\"([^\"]*)\"").saveAs("login-form-uri")))
+          .check(status.is(200), regex("action=\"([^\"]*)\"").find.transform(_.replaceAll("&amp;", "&")).saveAs("login-form-uri")))
         .exitHereIfFailed
         .thinkPause()
         // Successful login
