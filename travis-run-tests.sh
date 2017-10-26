@@ -68,7 +68,7 @@ if [ $1 == "server-group2" ]; then
 fi
 
 if [ $1 == "server-group3" ]; then
-    run-server-tests org.keycloak.testsuite.au*.**.*Test,org.keycloak.testsuite.d*.**.*Test,org.keycloak.testsuite.e*.**.*Test,org.keycloak.testsuite.f*.**.*Test,org.keycloak.testsuite.i*.**.*Test
+    run-server-tests org.keycloak.testsuite.au*.**.*Test,org.keycloak.testsuite.d*.**.*Test,org.keycloak.testsuite.e*.**.*Test,org.keycloak.testsuite.f*.**.*Test,org.keycloak.testsuite.i*.**.*Test,org.keycloak.testsuite.p*.**.*Test
 fi
 
 if [ $1 == "server-group4" ]; then
