@@ -35,7 +35,7 @@ services:
         networks:
             - keycloak
         environment:
-            MARIADB_HOST: mariadb
+            MARIADB_HOSTS: mariadb:3306
             MARIADB_DATABASE: keycloak
             MARIADB_USER: keycloak
             MARIADB_PASSWORD: keycloak

@@ -2,7 +2,7 @@
 
 cd /subsystem=datasources/data-source=KeycloakDS
 
-:write-attribute(name=connection-url, value=jdbc:mariadb://${env.MARIADB_HOST:mariadb}:${env.MARIADB_PORT:3306}/${env.MARIADB_DATABASE:keycloak})
+:write-attribute(name=connection-url, value=jdbc:mariadb:${env.MARIADB_HA_MODE:}://${env.MARIADB_HOSTS:mariadb:3306}/${env.MARIADB_DATABASE:keycloak}${env.MARIADB_OPTIONS:})
 :write-attribute(name=driver-name, value=mariadb)
 :write-attribute(name=user-name, value=${env.MARIADB_USER:keycloak})
 :write-attribute(name=password, value=${env.MARIADB_PASSWORD:keycloak})

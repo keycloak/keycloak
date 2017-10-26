@@ -41,7 +41,7 @@ services:
             CONFIGURATION: standalone-ha.xml
             PUBLIC_SUBNET: 10.0.1.0/24
             PRIVATE_SUBNET: 10.0.1.0/24
-            MARIADB_HOST: mariadb
+            MARIADB_HOSTS: mariadb:3306
             MARIADB_DATABASE: keycloak
             MARIADB_USER: keycloak
             MARIADB_PASSWORD: keycloak
