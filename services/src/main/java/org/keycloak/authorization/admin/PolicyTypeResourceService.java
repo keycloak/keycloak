@@ -62,6 +62,6 @@ public class PolicyTypeResourceService extends PolicyResourceService {
 
     @Override
     protected AbstractPolicyRepresentation toRepresentation(Policy policy, AuthorizationProvider authorization) {
-        return ModelToRepresentation.toRepresentation(policy, authorization);
+        return ModelToRepresentation.toRepresentation(policy, authorization, false, false);
     }
 }
