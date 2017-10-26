@@ -383,41 +383,4 @@ if (result == 224.0.1.105) of /socket-binding-group=ha-sockets/socket-binding=mo
     echo
 end-if
 
-# Migrate from 3.3.0 to 3.4.0
-if (outcome == success) of /profile=$clusteredProfile/subsystem=undertow/server=default-server/host=default-host/filter-ref=server-header/:read-resource
-  echo Removing X-Powered-By and Server headers from Keycloak responses...
-  /profile=$clusteredProfile/subsystem=undertow/server=default-server/host=default-host/filter-ref=server-header/:remove
-  /profile=$clusteredProfile/subsystem=undertow/server=default-server/host=default-host/filter-ref=x-powered-by-header/:remove
-  /profile=$clusteredProfile/subsystem=undertow/configuration=filter/response-header=x-powered-by-header/:remove
-  /profile=$clusteredProfile/subsystem=undertow/configuration=filter/response-header=server-header/:remove
-end-if
-
-if (outcome == success) of /profile=$clusteredProfile/subsystem=jdr/:read-resource
-    echo Removing jdr subsystem and extension
-    /profile=$clusteredProfile/subsystem=jdr/:remove
-    echo
-    try
-        echo Trying to remove jdr extension
-        /extension=org.jboss.as.jdr/:remove
-        echo
-    catch
-        echo Wasn't able to remove jdr extension, Should be removed by migrate-domain-standalone.cli
-        echo
-    end-try
-end-if
-    
-if (outcome == success) of /profile=$clusteredProfile/subsystem=jsf/:read-resource
-    echo Removing jsf subsystem and extension
-    /profile=$clusteredProfile/subsystem=jsf/:remove
-    echo
-    try
-        echo Trying to remove jsf extension
-        /extension=org.jboss.as.jsf/:remove
-        echo
-    catch
-        echo Wasn't able to remove jsf extension, Should be removed by migrate-domain-standalone.cli
-        echo
-    end-try
-end-if
-
 echo *** End Migration of /profile=$clusteredProfile ***
