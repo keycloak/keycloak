@@ -172,7 +172,7 @@ class CodeGenerateUtil {
                 }
             }
 
-            return userSession.getAuthenticatedClientSessions().get(codeJWT.getIssuedFor());
+            return userSession.getAuthenticatedClientSessionByClient(codeJWT.getIssuedFor());
 
         }
 

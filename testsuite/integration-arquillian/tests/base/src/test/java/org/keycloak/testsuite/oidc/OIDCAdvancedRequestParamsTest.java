@@ -562,7 +562,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             RealmModel realmModel = session.getContext().getRealm();
             String clientUuid = realmModel.getClientByClientId(clientId).getId();
             UserSessionModel userSession = session.sessions().getUserSession(realmModel, sessionId);
-            AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(clientUuid);
+            AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(clientUuid);
             
             String claimsInSession = clientSession.getNote(OIDCLoginProtocol.CLAIMS_PARAM);
             assertEquals(claimsJson, claimsInSession);

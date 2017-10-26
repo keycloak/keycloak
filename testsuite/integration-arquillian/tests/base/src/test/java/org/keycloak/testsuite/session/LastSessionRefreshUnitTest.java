@@ -169,7 +169,7 @@ public class LastSessionRefreshUnitTest extends AbstractKeycloakTest {
 
             };
 
-            Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.SESSION_CACHE_NAME);
+            Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
             return factory.createAndInit(session, cache, timerIntervalMs, maxIntervalBetweenMessagesSeconds, 10, false);
         }
 

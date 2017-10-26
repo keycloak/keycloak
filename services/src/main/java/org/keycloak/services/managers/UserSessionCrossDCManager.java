@@ -42,7 +42,7 @@ public class UserSessionCrossDCManager {
 
     // get userSession if it has "authenticatedClientSession" of specified client attached to it. Otherwise download it from remoteCache
     public UserSessionModel getUserSessionWithClient(RealmModel realm, String id, boolean offline, String clientUUID) {
-        return kcSession.sessions().getUserSessionWithPredicate(realm, id, offline, userSession -> userSession.getAuthenticatedClientSessions().containsKey(clientUUID));
+        return kcSession.sessions().getUserSessionWithPredicate(realm, id, offline, userSession -> userSession.getAuthenticatedClientSessionByClient(clientUUID) != null);
     }
 
 
@@ -52,8 +52,8 @@ public class UserSessionCrossDCManager {
 
         return kcSession.sessions().getUserSessionWithPredicate(realm, id, false, (UserSessionModel userSession) -> {
 
-            Map<String, AuthenticatedClientSessionModel> authSessions = userSession.getAuthenticatedClientSessions();
-            return authSessions.containsKey(clientUUID);
+            AuthenticatedClientSessionModel authSessions = userSession.getAuthenticatedClientSessionByClient(clientUUID);
+            return authSessions != null;
 
         });
     }

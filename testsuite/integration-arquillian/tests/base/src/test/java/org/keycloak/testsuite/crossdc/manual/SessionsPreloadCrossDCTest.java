@@ -112,7 +112,7 @@ public class SessionsPreloadCrossDCTest extends AbstractAdminCrossDCTest {
 
     @Test
     public void sessionsPreloadTest() throws Exception {
-        int sessionsBefore = getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.SESSION_CACHE_NAME).size();
+        int sessionsBefore = getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).size();
         log.infof("sessionsBefore: %d", sessionsBefore);
 
         // Create initial sessions
@@ -124,8 +124,8 @@ public class SessionsPreloadCrossDCTest extends AbstractAdminCrossDCTest {
         enableLoadBalancerNode(DC.SECOND, 0);
 
         // Ensure sessions are loaded in both 1st DC and 2nd DC
-        int sessions01 = getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.SESSION_CACHE_NAME).size();
-        int sessions02 = getTestingClientForStartedNodeInDc(1).testing().cache(InfinispanConnectionProvider.SESSION_CACHE_NAME).size();
+        int sessions01 = getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).size();
+        int sessions02 = getTestingClientForStartedNodeInDc(1).testing().cache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).size();
         log.infof("sessions01: %d, sessions02: %d", sessions01, sessions02);
         Assert.assertEquals(sessions01, sessionsBefore + SESSIONS_COUNT);
         Assert.assertEquals(sessions02, sessionsBefore + SESSIONS_COUNT);
@@ -144,13 +144,13 @@ public class SessionsPreloadCrossDCTest extends AbstractAdminCrossDCTest {
 
     @Test
     public void offlineSessionsPreloadTest() throws Exception {
-        int offlineSessionsBefore = getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME).size();
+        int offlineSessionsBefore = getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME).size();
         log.infof("offlineSessionsBefore: %d", offlineSessionsBefore);
 
         // Create initial sessions
         List<OAuthClient.AccessTokenResponse> tokenResponses = createInitialSessions(true);
 
-        int offlineSessions01 = getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME).size();
+        int offlineSessions01 = getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME).size();
         Assert.assertEquals(offlineSessions01, offlineSessionsBefore + SESSIONS_COUNT);
         log.infof("offlineSessions01: %d", offlineSessions01);
 
@@ -168,8 +168,8 @@ public class SessionsPreloadCrossDCTest extends AbstractAdminCrossDCTest {
         enableLoadBalancerNode(DC.SECOND, 0);
 
         // Ensure sessions are loaded in both 1st DC and 2nd DC
-        int offlineSessions11 = getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME).size();
-        int offlineSessions12 = getTestingClientForStartedNodeInDc(1).testing().cache(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME).size();
+        int offlineSessions11 = getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME).size();
+        int offlineSessions12 = getTestingClientForStartedNodeInDc(1).testing().cache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME).size();
         log.infof("offlineSessions11: %d, offlineSessions12: %d", offlineSessions11, offlineSessions12);
         Assert.assertEquals(offlineSessions11, offlineSessionsBefore + SESSIONS_COUNT);
         Assert.assertEquals(offlineSessions12, offlineSessionsBefore + SESSIONS_COUNT);

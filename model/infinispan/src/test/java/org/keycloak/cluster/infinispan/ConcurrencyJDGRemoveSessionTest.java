@@ -41,6 +41,7 @@ import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
+import java.util.UUID;
 
 /**
  * Check that removing of session from remoteCache is session immediately removed on remoteCache in other DC. This is true.
@@ -68,9 +69,11 @@ public class ConcurrencyJDGRemoveSessionTest {
 
     //private static Map<String, EntryInfo> state = new HashMap<>();
 
+    private static final UUID CLIENT_1_UUID = UUID.randomUUID();
+
     public static void main(String[] args) throws Exception {
-        Cache<String, SessionEntityWrapper<UserSessionEntity>> cache1 = createManager(1).getCache(InfinispanConnectionProvider.SESSION_CACHE_NAME);
-        Cache<String, SessionEntityWrapper<UserSessionEntity>> cache2 = createManager(2).getCache(InfinispanConnectionProvider.SESSION_CACHE_NAME);
+        Cache<String, SessionEntityWrapper<UserSessionEntity>> cache1 = createManager(1).getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
+        Cache<String, SessionEntityWrapper<UserSessionEntity>> cache2 = createManager(2).getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
 
         // Create caches, listeners and finally worker threads
         Thread worker1 = createWorker(cache1, 1);
@@ -177,7 +180,7 @@ public class ConcurrencyJDGRemoveSessionTest {
         clientSession.setTimestamp(1234);
         clientSession.setProtocolMappers(new HashSet<>(Arrays.asList("mapper1", "mapper2")));
         clientSession.setRoles(new HashSet<>(Arrays.asList("role1", "role2")));
-        session.getAuthenticatedClientSessions().put("client1", clientSession);
+        session.getAuthenticatedClientSessions().put(CLIENT_1_UUID.toString(), clientSession.getId());
 
         SessionEntityWrapper<UserSessionEntity> wrappedSession = new SessionEntityWrapper<>(session);
         return wrappedSession;
@@ -205,7 +208,7 @@ public class ConcurrencyJDGRemoveSessionTest {
 
 
     private static EmbeddedCacheManager createManager(int threadId) {
-        return new TestCacheManagerFactory().createManager(threadId, InfinispanConnectionProvider.SESSION_CACHE_NAME, RemoteStoreConfigurationBuilder.class);
+        return new TestCacheManagerFactory().createManager(threadId, InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, RemoteStoreConfigurationBuilder.class);
     }
 
 

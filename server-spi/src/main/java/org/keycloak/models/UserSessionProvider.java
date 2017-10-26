@@ -20,6 +20,7 @@ package org.keycloak.models;
 import org.keycloak.provider.Provider;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Predicate;
 
 /**
@@ -29,6 +30,7 @@ import java.util.function.Predicate;
 public interface UserSessionProvider extends Provider {
 
     AuthenticatedClientSessionModel createClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession);
+    AuthenticatedClientSessionModel getClientSession(UserSessionModel userSession, ClientModel client, UUID clientSessionId, boolean offline);
 
     UserSessionModel createUserSession(String id, RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId);
     UserSessionModel getUserSession(RealmModel realm, String id);
@@ -39,7 +41,7 @@ public interface UserSessionProvider extends Provider {
     UserSessionModel getUserSessionByBrokerSessionId(RealmModel realm, String brokerSessionId);
 
     /**
-     * Return userSession of specified ID as long as the predicate passes. Otherwise returs null.
+     * Return userSession of specified ID as long as the predicate passes. Otherwise returns {@code null}.
      * If predicate doesn't pass, implementation can do some best-effort actions to try have predicate passing (eg. download userSession from other DC)
      */
     UserSessionModel getUserSessionWithPredicate(RealmModel realm, String id, boolean offline, Predicate<UserSessionModel> predicate);

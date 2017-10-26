@@ -36,7 +36,6 @@ import org.infinispan.client.hotrod.event.ClientCacheEntryModifiedEvent;
 import org.infinispan.context.Flag;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.jboss.logging.Logger;
-import org.junit.Assert;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
@@ -44,6 +43,7 @@ import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessi
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
+import java.util.UUID;
 import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
 
 /**
@@ -74,9 +74,11 @@ public class ConcurrencyJDGSessionsCacheTest {
 
     //private static Map<String, EntryInfo> state = new HashMap<>();
 
+    private static final UUID CLIENT_1_UUID = UUID.randomUUID();
+
     public static void main(String[] args) throws Exception {
-        Cache<String, SessionEntityWrapper<UserSessionEntity>> cache1 = createManager(1).getCache(InfinispanConnectionProvider.SESSION_CACHE_NAME);
-        Cache<String, SessionEntityWrapper<UserSessionEntity>> cache2 = createManager(2).getCache(InfinispanConnectionProvider.SESSION_CACHE_NAME);
+        Cache<String, SessionEntityWrapper<UserSessionEntity>> cache1 = createManager(1).getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
+        Cache<String, SessionEntityWrapper<UserSessionEntity>> cache2 = createManager(2).getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
 
         // Create initial item
         UserSessionEntity session = new UserSessionEntity();
@@ -96,7 +98,7 @@ public class ConcurrencyJDGSessionsCacheTest {
         clientSession.setTimestamp(1234);
         clientSession.setProtocolMappers(new HashSet<>(Arrays.asList("mapper1", "mapper2")));
         clientSession.setRoles(new HashSet<>(Arrays.asList("role1", "role2")));
-        session.getAuthenticatedClientSessions().put("client1", clientSession);
+        session.getAuthenticatedClientSessions().put(CLIENT_1_UUID.toString(), clientSession.getId());
 
         SessionEntityWrapper<UserSessionEntity> wrappedSession = new SessionEntityWrapper<>(session);
 
@@ -219,7 +221,7 @@ public class ConcurrencyJDGSessionsCacheTest {
 
 
     private static EmbeddedCacheManager createManager(int threadId) {
-        return new TestCacheManagerFactory().createManager(threadId, InfinispanConnectionProvider.SESSION_CACHE_NAME, RemoteStoreConfigurationBuilder.class);
+        return new TestCacheManagerFactory().createManager(threadId, InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, RemoteStoreConfigurationBuilder.class);
     }
 
 

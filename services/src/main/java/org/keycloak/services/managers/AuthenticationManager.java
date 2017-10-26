@@ -395,7 +395,7 @@ public class AuthenticationManager {
     public static void backchannelLogoutUserFromClient(KeycloakSession session, RealmModel realm, UserModel user, ClientModel client, UriInfo uriInfo, HttpHeaders headers) {
         List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
         for (UserSessionModel userSession : userSessions) {
-            AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(client.getId());
+            AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
             if (clientSession != null) {
                 AuthenticationManager.backchannelLogoutClientSession(session, realm, clientSession, null, uriInfo, headers);
                 clientSession.setAction(AuthenticationSessionModel.Action.LOGGED_OUT.name());

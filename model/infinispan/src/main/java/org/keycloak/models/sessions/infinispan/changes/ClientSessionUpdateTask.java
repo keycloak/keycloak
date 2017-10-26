@@ -15,32 +15,23 @@
  * limitations under the License.
  */
 
-package org.keycloak.models;
+package org.keycloak.models.sessions.infinispan.changes;
 
-
-import java.util.Map;
-
-import org.keycloak.sessions.CommonClientSessionModel;
+import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface AuthenticatedClientSessionModel extends CommonClientSessionModel {
+public abstract class ClientSessionUpdateTask implements SessionUpdateTask<AuthenticatedClientSessionEntity> {
 
-    /**
-     * Detaches the client session from its user session.
-     */
-    void detachFromUserSession();
-    UserSessionModel getUserSession();
+    @Override
+    public CacheOperation getOperation(AuthenticatedClientSessionEntity session) {
+        return CacheOperation.REPLACE;
+    }
 
-    String getCurrentRefreshToken();
-    void setCurrentRefreshToken(String currentRefreshToken);
+    @Override
+    public CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<AuthenticatedClientSessionEntity> sessionWrapper) {
+        return CrossDCMessageStatus.SYNC;
+    }
 
-    int getCurrentRefreshTokenUseCount();
-    void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount);
-
-    String getNote(String name);
-    void setNote(String name, String value);
-    void removeNote(String name);
-    Map<String, String> getNotes();
 }

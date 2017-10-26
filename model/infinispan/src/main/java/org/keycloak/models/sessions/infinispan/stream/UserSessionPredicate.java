@@ -17,8 +17,8 @@
 
 package org.keycloak.models.sessions.infinispan.stream;
 
+import org.keycloak.models.sessions.infinispan.AuthenticatedClientSessionAdapter;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
-import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
 import org.keycloak.models.sessions.infinispan.util.KeycloakMarshallUtil;
@@ -54,6 +54,11 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
         this.realm = realm;
     }
 
+    /**
+     * Creates a user session predicate. If using the {@link #client(java.lang.String)} method, see its warning.
+     * @param realm
+     * @return
+     */
     public static UserSessionPredicate create(String realm) {
         return new UserSessionPredicate(realm);
     }
@@ -63,6 +68,15 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
         return this;
     }
 
+    /**
+     * Adds a test for client. Note that this test can return stale sessions because on detaching client session
+     * from user session, only client session is deleted and user session is not updated for performance reason.
+     *
+     * @see AuthenticatedClientSessionAdapter#detachFromUserSession()
+     * @param clientSessionCache
+     * @param clientUUID
+     * @return
+     */
     public UserSessionPredicate client(String clientUUID) {
         this.client = clientUUID;
         return this;
@@ -86,9 +100,7 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
 
     @Override
     public boolean test(Map.Entry<String, SessionEntityWrapper<UserSessionEntity>> entry) {
-        SessionEntity e = entry.getValue().getEntity();
-
-        UserSessionEntity entity = (UserSessionEntity) e;
+        UserSessionEntity entity = entry.getValue().getEntity();
 
         if (!realm.equals(entity.getRealmId())) {
             return false;
