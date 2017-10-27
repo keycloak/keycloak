@@ -28,6 +28,21 @@ public interface TimerProvider extends Provider {
 
     public void scheduleTask(ScheduledTask scheduledTask, long intervalMillis, String taskName);
 
-    public void cancelTask(String taskName);
+
+    /**
+     * Cancel task and return the details about it, so it can be eventually restored later
+     *
+     * @param taskName
+     * @return existing task or null if task under this name doesn't exist
+     */
+    public TimerTaskContext cancelTask(String taskName);
+
+
+    interface TimerTaskContext {
+
+        Runnable getRunnable();
+
+        long getIntervalMillis();
+    }
 
 }

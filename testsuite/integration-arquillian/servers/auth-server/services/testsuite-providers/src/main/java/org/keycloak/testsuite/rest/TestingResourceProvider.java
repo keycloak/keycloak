@@ -40,6 +40,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.sessions.infinispan.changes.sessions.LastSessionRefreshStoreFactory;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.AdminEventRepresentation;
@@ -49,6 +50,7 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resource.RealmResourceProvider;
+import org.keycloak.services.scheduled.ClearExpiredUserSessions;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.components.TestProvider;
 import org.keycloak.testsuite.components.TestProviderFactory;
@@ -63,6 +65,7 @@ import org.keycloak.testsuite.runonserver.ModuleUtil;
 import org.keycloak.testsuite.runonserver.FetchOnServer;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.runonserver.SerializationUtil;
+import org.keycloak.timer.TimerProvider;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
 
@@ -83,21 +86,24 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimerTask;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class TestingResourceProvider implements RealmResourceProvider {
 
-    private KeycloakSession session;
+    private final KeycloakSession session;
+    private final Map<String, TimerProvider.TimerTaskContext> suspendedTimerTasks;
 
     @Override
     public Object getResource() {
         return this;
     }
 
-    public TestingResourceProvider(KeycloakSession session) {
+    public TestingResourceProvider(KeycloakSession session, Map<String, TimerProvider.TimerTaskContext> suspendedTimerTasks) {
         this.session = session;
+        this.suspendedTimerTasks = suspendedTimerTasks;
     }
 
     @POST
@@ -134,9 +140,9 @@ public class TestingResourceProvider implements RealmResourceProvider {
     }
 
     @GET
-    @Path("/get-user-session")
+    @Path("/get-last-session-refresh")
     @Produces(MediaType.APPLICATION_JSON)
-    public Integer getLastSessionRefresh(@QueryParam("realm") final String name, @QueryParam("session") final String sessionId) {
+    public Integer getLastSessionRefresh(@QueryParam("realm") final String name, @QueryParam("session") final String sessionId, @QueryParam("offline") boolean offline) {
 
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = realmManager.getRealmByName(name);
@@ -144,7 +150,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
             throw new NotFoundException("Realm not found");
         }
 
-        UserSessionModel sessionModel = session.sessions().getUserSession(realm, sessionId);
+        UserSessionModel sessionModel = offline ? session.sessions().getOfflineUserSession(realm, sessionId) : session.sessions().getUserSession(realm, sessionId);
         if (sessionModel == null) {
             throw new NotFoundException("Session not found");
         }
@@ -672,6 +678,41 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public void setKrb5ConfFile(@QueryParam("krb5-conf-file") String krb5ConfFile) {
         System.setProperty("java.security.krb5.conf", krb5ConfFile);
     }
+
+    @POST
+    @Path("/suspend-periodic-tasks")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response suspendPeriodicTasks() {
+        suspendTask(ClearExpiredUserSessions.TASK_NAME);
+        suspendTask(LastSessionRefreshStoreFactory.LSR_PERIODIC_TASK_NAME);
+        suspendTask(LastSessionRefreshStoreFactory.LSR_OFFLINE_PERIODIC_TASK_NAME);
+
+        return Response.noContent().build();
+    }
+
+    private void suspendTask(String taskName) {
+        TimerProvider.TimerTaskContext taskContext = session.getProvider(TimerProvider.class).cancelTask(taskName);
+
+        if (taskContext != null) {
+            suspendedTimerTasks.put(taskName, taskContext);
+        }
+    }
+
+    @POST
+    @Path("/restore-periodic-tasks")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response restorePeriodicTasks() {
+        TimerProvider timer = session.getProvider(TimerProvider.class);
+
+        for (Map.Entry<String, TimerProvider.TimerTaskContext> task : suspendedTimerTasks.entrySet()) {
+            timer.schedule(task.getValue().getRunnable(), task.getValue().getIntervalMillis(), task.getKey());
+        }
+
+        suspendedTimerTasks.clear();
+
+        return Response.noContent().build();
+    }
+
 
     @POST
     @Path("/run-on-server")
