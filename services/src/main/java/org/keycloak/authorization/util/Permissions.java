@@ -222,6 +222,7 @@ public final class Permissions {
         List<Resource> resources = new ArrayList<>();
         Resource resource = permission.getResource();
         Set<String> scopes = permission.getScopes().stream().map(Scope::getName).collect(Collectors.toSet());
+        Map<String, String> providerAttrs = permission.getProviderAttrs();
 
         if (resource != null) {
             resources.add(resource);
@@ -241,7 +242,7 @@ public final class Permissions {
                 Permission evalPermission = permissions.get(allowedResource.getId());
 
                 if (evalPermission == null) {
-                    evalPermission = new Permission(resourceId, resourceName, scopes);
+                    evalPermission = new Permission(resourceId, resourceName, scopes, providerAttrs);
                     permissions.put(resourceId, evalPermission);
                 }
 
@@ -261,7 +262,7 @@ public final class Permissions {
                 }
             }
         } else {
-            Permission scopePermission = new Permission(null, null, scopes);
+            Permission scopePermission = new Permission(null, null, scopes, providerAttrs);
             permissions.put(scopePermission.toString(), scopePermission);
         }
     }

@@ -19,7 +19,9 @@ package org.keycloak.representations.idm.authorization;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -35,15 +37,24 @@ public class Permission {
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private Set<String> scopes;
-
+    
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @JsonProperty("provider_attrs")
+    private Map<String, String> providerAttrs;
+    
     public Permission() {
-        this(null, null, null);
+        this(null, null, null, null);
     }
 
     public Permission(final String resourceSetId, String resourceSetName, final Set<String> scopes) {
+    	this(resourceSetId, resourceSetName, scopes, new HashMap<String,String>(0));
+    }
+
+    public Permission(final String resourceSetId, String resourceSetName, final Set<String> scopes, final Map<String, String> providerAttrs) {
         this.resourceSetId = resourceSetId;
         this.resourceSetName = resourceSetName;
         this.scopes = scopes;
+        this.providerAttrs = providerAttrs;
     }
 
     public String getResourceSetId() {
@@ -75,4 +86,8 @@ public class Permission {
     public void setScopes(Set<String> scopes) {
         this.scopes = scopes;
     }
+
+	public Map<String, String> getProviderAttrs() {
+		return providerAttrs;
+	}
 }

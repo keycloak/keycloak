@@ -22,8 +22,9 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Represents a permission for a given resource.
@@ -35,11 +36,17 @@ public class ResourcePermission {
     private final Resource resource;
     private final List<Scope> scopes;
     private ResourceServer resourceServer;
+    private final Map<String, String> providerAttrs;
 
     public ResourcePermission(Resource resource, List<Scope> scopes, ResourceServer resourceServer) {
+    	this(resource, scopes, resourceServer, new HashMap<String,String>(0));
+    }
+
+    public ResourcePermission(Resource resource, List<Scope> scopes, ResourceServer resourceServer, Map<String,String> providerAttrs) {
         this.resource = resource;
         this.scopes = scopes;
         this.resourceServer = resourceServer;
+        this.providerAttrs = providerAttrs;
     }
 
     /**
@@ -68,4 +75,16 @@ public class ResourcePermission {
     public ResourceServer getResourceServer() {
         return this.resourceServer;
     }
+
+    /**
+     * Returns the attributes provided by the policy provider
+     * for this permission 
+     * 
+     * @return attributes
+     */
+	public Map<String, String> getProviderAttrs() {
+		return providerAttrs;
+	}
+    
+    
 }

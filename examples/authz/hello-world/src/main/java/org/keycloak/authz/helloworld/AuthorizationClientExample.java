@@ -28,6 +28,7 @@ import org.keycloak.authorization.client.representation.TokenIntrospectionRespon
 import org.keycloak.authorization.client.resource.ProtectedResource;
 import org.keycloak.representations.idm.authorization.Permission;
 
+import java.util.Map.Entry;
 import java.util.Set;
 
 /**
@@ -77,6 +78,11 @@ public class AuthorizationClientExample {
 
         for (Permission granted : requestingPartyToken.getPermissions()) {
             System.out.println(granted);
+            if (granted.getProviderAttrs() != null) {
+	            for (Entry<String, String> e : granted.getProviderAttrs().entrySet()) {
+	            	System.out.println(e.getKey() + ": " + e.getValue());
+	            }
+            }
         }
 
     }
