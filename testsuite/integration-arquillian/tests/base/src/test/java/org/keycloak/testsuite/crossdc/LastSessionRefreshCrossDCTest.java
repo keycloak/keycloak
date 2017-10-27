@@ -19,14 +19,29 @@ package org.keycloak.testsuite.crossdc;
 
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
+import javax.ws.rs.NotFoundException;
+
+import org.hamcrest.Matchers;
+import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.arquillian.container.test.api.TargetsContainer;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.common.util.Retry;
-import org.keycloak.testsuite.arquillian.ContainerInfo;
-import org.keycloak.testsuite.rest.representation.RemoteCacheStats;
+import org.keycloak.testsuite.arquillian.InfinispanStatistics;
+import org.keycloak.testsuite.arquillian.annotation.JmxInfinispanCacheStatistics;
+import org.keycloak.testsuite.client.KeycloakTestingClient;
+import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.OAuthClient;
 
 /**
@@ -34,8 +49,40 @@ import org.keycloak.testsuite.util.OAuthClient;
  */
 public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
 
+    @Deployment(name = "dc0")
+    @TargetsContainer(QUALIFIER_AUTH_SERVER_DC_0_NODE_1)
+    public static WebArchive deployDC0() {
+        return RunOnServerDeployment.create(
+                LastSessionRefreshCrossDCTest.class,
+                AbstractAdminCrossDCTest.class,
+                AbstractCrossDCTest.class,
+                AbstractTestRealmKeycloakTest.class,
+                KeycloakTestingClient.class,
+                InfinispanStatistics.class
+        );
+    }
+
+    @Deployment(name = "dc1")
+    @TargetsContainer(QUALIFIER_AUTH_SERVER_DC_1_NODE_1)
+    public static WebArchive deployDC1() {
+        return RunOnServerDeployment.create(
+                LastSessionRefreshCrossDCTest.class,
+                AbstractAdminCrossDCTest.class,
+                AbstractCrossDCTest.class,
+                AbstractTestRealmKeycloakTest.class,
+                KeycloakTestingClient.class,
+                InfinispanStatistics.class
+        );
+    }
+
+
     @Test
-    public void testRevokeRefreshToken() {
+    public void testRevokeRefreshToken(@JmxInfinispanCacheStatistics(dc=DC.FIRST, managementPortProperty = "cache.server.management.port", cacheName=InfinispanConnectionProvider.USER_SESSION_CACHE_NAME) InfinispanStatistics sessionCacheDc1Stats,
+                                       @JmxInfinispanCacheStatistics(dc=DC.SECOND, managementPortProperty = "cache.server.2.management.port", cacheName=InfinispanConnectionProvider.USER_SESSION_CACHE_NAME) InfinispanStatistics sessionCacheDc2Stats,
+                                       @JmxInfinispanCacheStatistics(dc=DC.FIRST, managementPortProperty = "cache.server.management.port", cacheName=InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME) InfinispanStatistics clientSessionCacheDc1Stats,
+                                       @JmxInfinispanCacheStatistics(dc=DC.SECOND, managementPortProperty = "cache.server.2.management.port", cacheName=InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME) InfinispanStatistics clientSessionCacheDc2Stats
+
+    ) {
         // Enable revokeRefreshToken
         RealmRepresentation realmRep = testRealm().toRepresentation();
         realmRep.setRevokeRefreshToken(true);
@@ -43,6 +90,19 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
 
         // Enable second DC
         enableDcOnLoadBalancer(DC.SECOND);
+
+        sessionCacheDc1Stats.reset();
+        sessionCacheDc2Stats.reset();
+        clientSessionCacheDc1Stats.reset();
+        clientSessionCacheDc2Stats.reset();
+
+        // Get statistics
+        AtomicLong sessionStoresDc1 = new AtomicLong(getStores(sessionCacheDc1Stats));
+        AtomicLong sessionStoresDc2 = new AtomicLong(getStores(sessionCacheDc2Stats));
+        AtomicLong clientSessionStoresDc1 = new AtomicLong(getStores(clientSessionCacheDc1Stats));
+        AtomicLong clientSessionStoresDc2 = new AtomicLong(getStores(clientSessionCacheDc2Stats));
+        AtomicInteger lsrDc1 = new AtomicInteger(-1);
+        AtomicInteger lsrDc2 = new AtomicInteger(-1);
 
         // Login
         OAuthClient.AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
@@ -53,44 +113,33 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
         String refreshToken1 = tokenResponse.getRefreshToken();
 
 
-        // Get statistics
-        int lsr00 = getTestingClientForStartedNodeInDc(0).testing("test").getLastSessionRefresh("test", sessionId);
-        int lsr10 = getTestingClientForStartedNodeInDc(1).testing("test").getLastSessionRefresh("test", sessionId);
-        int lsrr0 = getTestingClientForStartedNodeInDc(0).testing("test").cache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).getRemoteCacheLastSessionRefresh(sessionId);
-        log.infof("lsr00: %d, lsr10: %d, lsrr0: %d", lsr00, lsr10, lsrr0);
-
-        Assert.assertEquals(lsr00, lsr10);
-        Assert.assertEquals(lsr00, lsrr0);
+        // Assert statistics - sessions created on both DCs and created on remoteCaches too
+        assertStatistics("After session created", sessionId, sessionCacheDc1Stats, sessionCacheDc2Stats, clientSessionCacheDc1Stats, clientSessionCacheDc2Stats,
+                sessionStoresDc1, sessionStoresDc2, clientSessionStoresDc1, clientSessionStoresDc2,
+                lsrDc1, lsrDc2, true, true, true, false);
 
 
         // Set time offset to some point in future. TODO This won't be needed once we have single-use cache based solution for refresh tokens
         setTimeOffset(10);
 
-        // refresh token on DC0
+        // refresh token on DC1
         disableDcOnLoadBalancer(DC.SECOND);
         tokenResponse = oauth.doRefreshTokenRequest(refreshToken1, "password");
         String refreshToken2 = tokenResponse.getRefreshToken();
 
-        // Assert times changed on DC0, DC1 and remoteCache
-        Retry.execute(() -> {
-            int lsr01 = getTestingClientForStartedNodeInDc(0).testing("test").getLastSessionRefresh("test", sessionId);
-            int lsr11 = getTestingClientForStartedNodeInDc(1).testing("test").getLastSessionRefresh("test", sessionId);
-            int lsrr1 = getTestingClientForStartedNodeInDc(0).testing("test").cache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).getRemoteCacheLastSessionRefresh(sessionId);
-            log.infof("lsr01: %d, lsr11: %d, lsrr1: %d", lsr01, lsr11, lsrr1);
-            
-            Assert.assertEquals(lsr01, lsr11);
-            Assert.assertEquals(lsr01, lsrr1);
-            Assert.assertTrue(lsr01 > lsr00);
-        }, 50, 50);
+        // Assert statistics - sessions updated on both DCs and on remoteCaches too
+        assertStatistics("After time offset 10", sessionId, sessionCacheDc1Stats, sessionCacheDc2Stats, clientSessionCacheDc1Stats, clientSessionCacheDc2Stats,
+                sessionStoresDc1, sessionStoresDc2, clientSessionStoresDc1, clientSessionStoresDc2,
+                lsrDc1, lsrDc2, true, true, true, false);
 
-        // try refresh with old token on DC1. It should fail.
+        // try refresh with old token on DC2. It should fail.
         disableDcOnLoadBalancer(DC.FIRST);
         enableDcOnLoadBalancer(DC.SECOND);
         tokenResponse = oauth.doRefreshTokenRequest(refreshToken1, "password");
         Assert.assertNull("Expecting no access token present", tokenResponse.getAccessToken());
         Assert.assertNotNull(tokenResponse.getError());
 
-        // try refresh with new token on DC1. It should pass.
+        // try refresh with new token on DC2. It should pass.
         tokenResponse = oauth.doRefreshTokenRequest(refreshToken2, "password");
         Assert.assertNotNull(tokenResponse.getAccessToken());
         Assert.assertNull(tokenResponse.getError());
@@ -103,12 +152,35 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
 
 
     @Test
-    public void testLastSessionRefreshUpdate() {
-        // Disable DC1 on loadbalancer
+    public void testLastSessionRefreshUpdate(@JmxInfinispanCacheStatistics(dc=DC.FIRST, managementPortProperty = "cache.server.management.port", cacheName=InfinispanConnectionProvider.USER_SESSION_CACHE_NAME) InfinispanStatistics sessionCacheDc1Stats,
+                                             @JmxInfinispanCacheStatistics(dc=DC.SECOND, managementPortProperty = "cache.server.2.management.port", cacheName=InfinispanConnectionProvider.USER_SESSION_CACHE_NAME) InfinispanStatistics sessionCacheDc2Stats,
+                                             @JmxInfinispanCacheStatistics(dc=DC.FIRST, managementPortProperty = "cache.server.management.port", cacheName=InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME) InfinispanStatistics clientSessionCacheDc1Stats,
+                                             @JmxInfinispanCacheStatistics(dc=DC.SECOND, managementPortProperty = "cache.server.2.management.port", cacheName=InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME) InfinispanStatistics clientSessionCacheDc2Stats
+
+    ) {
+
+        // TODO:mposolda Disable periodic cleaner now on all Keycloak nodes. Make sure it's re-enabled after finish
+
+        // Ensure to remove all current sessions and offline sessions
+        setTimeOffset(10000000);
+        getTestingClientForStartedNodeInDc(0).testing("test").removeExpired("test");
+        setTimeOffset(0);
+
+        sessionCacheDc1Stats.reset();
+        sessionCacheDc2Stats.reset();
+        clientSessionCacheDc1Stats.reset();
+        clientSessionCacheDc2Stats.reset();
+
+        // Disable DC2 on loadbalancer
         disableDcOnLoadBalancer(DC.SECOND);
 
         // Get statistics
-        int stores0 = getRemoteCacheStats(0).getGlobalStores();
+        AtomicLong sessionStoresDc1 = new AtomicLong(getStores(sessionCacheDc1Stats));
+        AtomicLong sessionStoresDc2 = new AtomicLong(getStores(sessionCacheDc2Stats));
+        AtomicLong clientSessionStoresDc1 = new AtomicLong(getStores(clientSessionCacheDc1Stats));
+        AtomicLong clientSessionStoresDc2 = new AtomicLong(getStores(clientSessionCacheDc2Stats));
+        AtomicInteger lsrDc1 = new AtomicInteger(-1);
+        AtomicInteger lsrDc2 = new AtomicInteger(-1);
 
         // Login
         OAuthClient.AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
@@ -118,121 +190,264 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
         String sessionId = oauth.verifyToken(tokenResponse.getAccessToken()).getSessionState();
         String refreshToken1 = tokenResponse.getRefreshToken();
 
+        // Assert statistics - sessions created on both DCs and created on remoteCaches too
+        assertStatistics("After session created", sessionId, sessionCacheDc1Stats, sessionCacheDc2Stats, clientSessionCacheDc1Stats, clientSessionCacheDc2Stats,
+                sessionStoresDc1, sessionStoresDc2, clientSessionStoresDc1, clientSessionStoresDc2,
+                lsrDc1, lsrDc2, true, true, true, false);
 
-        // Get statistics
-        this.suiteContext.getDcAuthServerBackendsInfo().get(0).stream()
-                .filter(ContainerInfo::isStarted).findFirst().get();
 
-        AtomicInteger stores1 = new AtomicInteger(-1);
-        Retry.execute(() -> {
-            stores1.set(getRemoteCacheStats(0).getGlobalStores());
-            log.infof("stores0=%d, stores1=%d", stores0, stores1.get());
-            Assert.assertTrue(stores1.get() > stores0);
-        }, 50, 50);
-
-        int lsr00 = getTestingClientForStartedNodeInDc(0).testing("test").getLastSessionRefresh("test", sessionId);
-        int lsr10 = getTestingClientForStartedNodeInDc(1).testing("test").getLastSessionRefresh("test", sessionId);
-        Assert.assertEquals(lsr00, lsr10);
-
-        // Set time offset to some point in future.
-        setTimeOffset(10);
-
-        // refresh token on DC0
-        tokenResponse = oauth.doRefreshTokenRequest(refreshToken1, "password");
-        String refreshToken2 = tokenResponse.getRefreshToken();
-
-        // assert that hotrod statistics were NOT updated
-        AtomicInteger stores2 = new AtomicInteger(-1);
-
-        // TODO: not sure why stores2 < stores1 at first run. Probably should be replaced with JMX statistics
-        Retry.execute(() -> {
-            stores2.set(getRemoteCacheStats(0).getGlobalStores());
-            log.infof("stores1=%d, stores2=%d", stores1.get(), stores2.get());
-            Assert.assertEquals(stores1.get(), stores2.get());
-        }, 50, 50);
-
-        // assert that lastSessionRefresh on DC0 updated, but on DC1 still the same
-        AtomicInteger lsr01 = new AtomicInteger(-1);
-        AtomicInteger lsr11 = new AtomicInteger(-1);
-        Retry.execute(() -> {
-            lsr01.set(getTestingClientForStartedNodeInDc(0).testing("test").getLastSessionRefresh("test", sessionId));
-            lsr11.set(getTestingClientForStartedNodeInDc(1).testing("test").getLastSessionRefresh("test", sessionId));
-            log.infof("lsr01: %d, lsr11: %d", lsr01.get(), lsr11.get());
-            Assert.assertTrue(lsr01.get() > lsr00);
-        }, 50, 100);
-        Assert.assertEquals(lsr10, lsr11.get());
-
-        // assert that lastSessionRefresh still the same on remoteCache
-        int lsrr1 = getTestingClientForStartedNodeInDc(0).testing("test").cache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).getRemoteCacheLastSessionRefresh(sessionId);
-        Assert.assertEquals(lsr00, lsrr1);
-        log.infof("lsrr1: %d", lsrr1);
-
-        // setTimeOffset to greater value
+        // Set time offset
         setTimeOffset(100);
 
-        // refresh token
+        // refresh token on DC1
         tokenResponse = oauth.doRefreshTokenRequest(refreshToken1, "password");
+        String refreshToken3 = tokenResponse.getRefreshToken();
+        Assert.assertNotNull(refreshToken3);
 
-        // assert that lastSessionRefresh on both DC0 and DC1 was updated, but on remoteCache still the same
-        AtomicInteger lsr02 = new AtomicInteger(-1);
-        AtomicInteger lsr12 = new AtomicInteger(-1);
-        AtomicInteger lsrr2 = new AtomicInteger(-1);
-        AtomicInteger stores3 = new AtomicInteger(-1);
-        Retry.execute(() -> {
-            lsr02.set(getTestingClientForStartedNodeInDc(0).testing("test").getLastSessionRefresh("test", sessionId));
-            lsr12.set(getTestingClientForStartedNodeInDc(1).testing("test").getLastSessionRefresh("test", sessionId));
-            log.infof("lsr02: %d, lsr12: %d", lsr02.get(), lsr12.get());
-            Assert.assertEquals(lsr02.get(), lsr12.get());
-            Assert.assertTrue(lsr02.get() > lsr01.get());
-            Assert.assertTrue(lsr12.get() > lsr11.get());
+        // Assert statistics - sessions updated on both DC1 and DC2. RemoteCaches not updated
+        assertStatistics("After refresh at time 100", sessionId, sessionCacheDc1Stats, sessionCacheDc2Stats, clientSessionCacheDc1Stats, clientSessionCacheDc2Stats,
+                sessionStoresDc1, sessionStoresDc2, clientSessionStoresDc1, clientSessionStoresDc2,
+                lsrDc1, lsrDc2, true, true, false, false);
 
-            lsrr2.set(getTestingClientForStartedNodeInDc(0).testing("test").cache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).getRemoteCacheLastSessionRefresh(sessionId));
-            log.infof("lsrr2: %d", lsrr2.get());
-            Assert.assertEquals(lsrr1, lsrr2.get());
 
-            // assert that hotrod statistics were NOT updated on DC0
-            stores3.set(getRemoteCacheStats(0).getGlobalStores());
-            log.infof("stores2=%d, stores3=%d", stores2.get(), stores3.get());
-            Assert.assertEquals(stores2.get(), stores3.get());
-        }, 50, 100);
+        // Set time offset
+        setTimeOffset(110);
 
-        // Increase time offset even more
-        setTimeOffset(1500);
-
-        // refresh token
+        // refresh token on DC1
         tokenResponse = oauth.doRefreshTokenRequest(refreshToken1, "password");
-        Assert.assertNull("Error: " + tokenResponse.getError() + ", error description: " + tokenResponse.getErrorDescription(), tokenResponse.getError());
-        Assert.assertNotNull(tokenResponse.getRefreshToken());
+        String refreshToken2 = tokenResponse.getRefreshToken();
+        Assert.assertNotNull(refreshToken2);
 
-        // assert that lastSessionRefresh updated everywhere including remoteCache
-        AtomicInteger lsr03 = new AtomicInteger(-1);
-        AtomicInteger lsr13 = new AtomicInteger(-1);
-        AtomicInteger lsrr3 = new AtomicInteger(-1);
-        AtomicInteger stores4 = new AtomicInteger(-1);
-        Retry.execute(() -> {
-            lsr03.set(getTestingClientForStartedNodeInDc(0).testing("test").getLastSessionRefresh("test", sessionId));
-            lsr13.set(getTestingClientForStartedNodeInDc(1).testing("test").getLastSessionRefresh("test", sessionId));
-            log.infof("lsr03: %d, lsr13: %d", lsr03.get(), lsr13.get());
-            Assert.assertEquals(lsr03.get(), lsr13.get());
-            Assert.assertTrue(lsr03.get() > lsr02.get());
-            Assert.assertTrue(lsr13.get() > lsr12.get());
+        // Assert statistics - sessions updated just on DC1.
+        // Update of DC2 is postponed (It's just 10 seconds since last message). RemoteCaches not updated
+        assertStatistics("After refresh at time 110", sessionId, sessionCacheDc1Stats, sessionCacheDc2Stats, clientSessionCacheDc1Stats, clientSessionCacheDc2Stats,
+                sessionStoresDc1, sessionStoresDc2, clientSessionStoresDc1, clientSessionStoresDc2,
+                lsrDc1, lsrDc2, true, false, false, false);
 
-            lsrr3.set(getTestingClientForStartedNodeInDc(0).testing("test").cache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).getRemoteCacheLastSessionRefresh(sessionId));
-            log.infof("lsrr3: %d", lsrr3.get());
-            Assert.assertTrue(lsrr3.get() > lsrr2.get());
 
-            // assert that hotrod statistics were NOT updated on DC0
-            stores4.set(getRemoteCacheStats(0).getGlobalStores());
-            log.infof("stores3=%d, stores4=%d", stores3.get(), stores4.get());
-            Assert.assertTrue(stores4.get() > stores3.get());
-        }, 50, 100);
+        // 31 minutes after "100". Session should be still valid and not yet expired (RefreshToken will be invalid due the expiration on the JWT itself. Hence not testing refresh here)
+        setTimeOffset(1960);
+
+        boolean sessionValid = getTestingClientForStartedNodeInDc(1).server("test").fetch((KeycloakSession session) -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
+            return AuthenticationManager.isSessionValid(realm, userSession);
+        }, Boolean.class);
+
+        Assert.assertTrue(sessionValid);
+
+        getTestingClientForStartedNodeInDc(1).testing("test").removeExpired("test");
+
+        // Assert statistics - nothing was updated. No refresh happened and nothing was cleared during "removeExpired"
+        assertStatistics("After checking valid at time 1960", sessionId, sessionCacheDc1Stats, sessionCacheDc2Stats, clientSessionCacheDc1Stats, clientSessionCacheDc2Stats,
+                sessionStoresDc1, sessionStoresDc2, clientSessionStoresDc1, clientSessionStoresDc2,
+                lsrDc1, lsrDc2, false, false, false, false);
+
+
+        // 35 minutes after "100". Session not valid and will be expired by the cleaner
+        setTimeOffset(2200);
+
+        sessionValid = getTestingClientForStartedNodeInDc(1).server("test").fetch((KeycloakSession session) -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
+            return AuthenticationManager.isSessionValid(realm, userSession);
+        }, Boolean.class);
+
+        Assert.assertFalse(sessionValid);
+
+        getTestingClientForStartedNodeInDc(1).testing("test").removeExpired("test");
+
+        // Session should be removed on both DCs
+        try {
+            getTestingClientForStartedNodeInDc(0).testing("test").getLastSessionRefresh("test", sessionId, false);
+            Assert.fail("It wasn't expected to find the session " + sessionId);
+        } catch (NotFoundException nfe) {
+            // Expected
+        }
+        try {
+            getTestingClientForStartedNodeInDc(1).testing("test").getLastSessionRefresh("test", sessionId, false);
+            Assert.fail("It wasn't expected to find the session " + sessionId);
+        } catch (NotFoundException nfe) {
+            // Expected
+        }
     }
 
 
-    private RemoteCacheStats getRemoteCacheStats(int dcIndex) {
-        return getTestingClientForStartedNodeInDc(dcIndex).testing("test")
-                .cache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME)
-                .getRemoteCacheStats();
+    @Test
+    public void testOfflineSessionsLastSessionRefreshUpdate(@JmxInfinispanCacheStatistics(dc=DC.FIRST, managementPortProperty = "cache.server.management.port", cacheName=InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME) InfinispanStatistics sessionCacheDc1Stats,
+                                             @JmxInfinispanCacheStatistics(dc=DC.SECOND, managementPortProperty = "cache.server.2.management.port", cacheName=InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME) InfinispanStatistics sessionCacheDc2Stats,
+                                             @JmxInfinispanCacheStatistics(dc=DC.FIRST, managementPortProperty = "cache.server.management.port", cacheName=InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME) InfinispanStatistics clientSessionCacheDc1Stats,
+                                             @JmxInfinispanCacheStatistics(dc=DC.SECOND, managementPortProperty = "cache.server.2.management.port", cacheName=InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME) InfinispanStatistics clientSessionCacheDc2Stats
+
+    ) throws Exception {
+
+        // TODO:mposolda Disable periodic cleaner now on all Keycloak nodes. Make sure it's re-enabled after finish
+
+        // Ensure to remove all current sessions and offline sessions
+        setTimeOffset(10000000);
+        getTestingClientForStartedNodeInDc(0).testing("test").removeExpired("test");
+        setTimeOffset(0);
+
+        sessionCacheDc1Stats.reset();
+        sessionCacheDc2Stats.reset();
+        clientSessionCacheDc1Stats.reset();
+        clientSessionCacheDc2Stats.reset();
+
+        // Disable DC2 on loadbalancer
+        disableDcOnLoadBalancer(DC.SECOND);
+
+        // Get statistics
+        AtomicLong sessionStoresDc1 = new AtomicLong(getStores(sessionCacheDc1Stats));
+        AtomicLong sessionStoresDc2 = new AtomicLong(getStores(sessionCacheDc2Stats));
+        AtomicLong clientSessionStoresDc1 = new AtomicLong(getStores(clientSessionCacheDc1Stats));
+        AtomicLong clientSessionStoresDc2 = new AtomicLong(getStores(clientSessionCacheDc2Stats));
+        AtomicInteger lsrDc1 = new AtomicInteger(-1);
+        AtomicInteger lsrDc2 = new AtomicInteger(-1);
+
+        // Login
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        OAuthClient.AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
+        String code = response1.getCode();
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        Assert.assertNotNull(tokenResponse.getAccessToken());
+        String sessionId = oauth.verifyToken(tokenResponse.getAccessToken()).getSessionState();
+        String refreshToken1 = tokenResponse.getRefreshToken();
+
+        // Assert statistics - sessions created on both DCs and created on remoteCaches too
+        assertStatistics("After session created", sessionId, sessionCacheDc1Stats, sessionCacheDc2Stats, clientSessionCacheDc1Stats, clientSessionCacheDc2Stats,
+                sessionStoresDc1, sessionStoresDc2, clientSessionStoresDc1, clientSessionStoresDc2,
+                lsrDc1, lsrDc2, true, true, true, true);
+
+
+        // Set time offset
+        setTimeOffset(100);
+
+        // refresh token on DC1
+        tokenResponse = oauth.doRefreshTokenRequest(refreshToken1, "password");
+        String refreshToken3 = tokenResponse.getRefreshToken();
+        Assert.assertNotNull(refreshToken3);
+
+        // Assert statistics - sessions updated on both DC1 and DC2. RemoteCaches not updated
+        assertStatistics("After refresh at time 100", sessionId, sessionCacheDc1Stats, sessionCacheDc2Stats, clientSessionCacheDc1Stats, clientSessionCacheDc2Stats,
+                sessionStoresDc1, sessionStoresDc2, clientSessionStoresDc1, clientSessionStoresDc2,
+                lsrDc1, lsrDc2, true, true, false, true);
+
+
+
+        // Set time offset
+        setTimeOffset(110);
+
+        // refresh token on DC1
+        tokenResponse = oauth.doRefreshTokenRequest(refreshToken1, "password");
+        String refreshToken2 = tokenResponse.getRefreshToken();
+        Assert.assertNotNull(refreshToken2);
+
+        // Assert statistics - sessions updated just on DC1.
+        // Update of DC2 is postponed (It's just 10 seconds since last message). RemoteCaches not updated
+        assertStatistics("After refresh at time 110", sessionId, sessionCacheDc1Stats, sessionCacheDc2Stats, clientSessionCacheDc1Stats, clientSessionCacheDc2Stats,
+                sessionStoresDc1, sessionStoresDc2, clientSessionStoresDc1, clientSessionStoresDc2,
+                lsrDc1, lsrDc2, true, false, false, true);
+
+
+        // Set time offset to 20 days
+        setTimeOffset(1728000);
+
+        // refresh token on DC1
+        tokenResponse = oauth.doRefreshTokenRequest(refreshToken1, "password");
+        String refreshToken4 = tokenResponse.getRefreshToken();
+        Assert.assertNotNull(refreshToken4);
+
+        // Assert statistics - sessions updated on both DC1 and DC2. RemoteCaches updated as well.
+        assertStatistics("After refresh at time 1728000", sessionId, sessionCacheDc1Stats, sessionCacheDc2Stats, clientSessionCacheDc1Stats, clientSessionCacheDc2Stats,
+                sessionStoresDc1, sessionStoresDc2, clientSessionStoresDc1, clientSessionStoresDc2,
+                lsrDc1, lsrDc2, true, true, true, true);
+
+        // Set time offset to 30 days
+        setTimeOffset(2592000);
+
+        // refresh token on DC1
+        tokenResponse = oauth.doRefreshTokenRequest(refreshToken1, "password");
+        String refreshToken5 = tokenResponse.getRefreshToken();
+        Assert.assertNotNull(refreshToken5);
+
+        // Assert statistics - sessions updated on both DC1 and DC2. RemoteCaches won't be updated now due it's just 10 days from the last remoteCache update
+        assertStatistics("After refresh at time 2592000", sessionId, sessionCacheDc1Stats, sessionCacheDc2Stats, clientSessionCacheDc1Stats, clientSessionCacheDc2Stats,
+                sessionStoresDc1, sessionStoresDc2, clientSessionStoresDc1, clientSessionStoresDc2,
+                lsrDc1, lsrDc2, true, true, false, true);
+
+        // Set time offset to 40 days
+        setTimeOffset(3456000);
+
+        // refresh token on DC1
+        tokenResponse = oauth.doRefreshTokenRequest(refreshToken1, "password");
+        String refreshToken6 = tokenResponse.getRefreshToken();
+        Assert.assertNotNull(refreshToken6);
+
+        // Assert statistics - sessions updated on both DC1 and DC2. RemoteCaches will be updated too due it's 20 days from the last remoteCache update
+        assertStatistics("After refresh at time 3456000", sessionId, sessionCacheDc1Stats, sessionCacheDc2Stats, clientSessionCacheDc1Stats, clientSessionCacheDc2Stats,
+                sessionStoresDc1, sessionStoresDc2, clientSessionStoresDc1, clientSessionStoresDc2,
+                lsrDc1, lsrDc2, true, true, true, true);
+
+    }
+
+
+    private void assertStatistics(String messagePrefix, String sessionId,
+                                  InfinispanStatistics sessionCacheDc1Stats, InfinispanStatistics sessionCacheDc2Stats, InfinispanStatistics clientSessionCacheDc1Stats, InfinispanStatistics clientSessionCacheDc2Stats,
+                                  AtomicLong sessionStoresDc1, AtomicLong sessionStoresDc2, AtomicLong clientSessionStoresDc1, AtomicLong clientSessionStoresDc2,
+                                  AtomicInteger lsrDc1, AtomicInteger lsrDc2,
+                                  boolean expectedUpdatedLsrDc1, boolean expectedUpdatedLsrDc2, boolean expectedUpdatedRemoteCache, boolean offline) {
+        Retry.execute(() -> {
+            long newSessionStoresDc1 = getStores(sessionCacheDc1Stats);
+            long newSessionStoresDc2 = getStores(sessionCacheDc2Stats);
+            long newClientSessionStoresDc1 = getStores(clientSessionCacheDc1Stats);
+            long newClientSessionStoresDc2 = getStores(clientSessionCacheDc2Stats);
+
+            int newLsrDc1 = getTestingClientForStartedNodeInDc(0).testing("test").getLastSessionRefresh("test", sessionId, offline);
+            int newLsrDc2 = getTestingClientForStartedNodeInDc(1).testing("test").getLastSessionRefresh("test", sessionId, offline);
+
+            log.infof(messagePrefix + ": sessionStoresDc1: %d, sessionStoresDc2: %d, clientSessionStoresDc1: %d, clientSessionStoresDc2: %d, lsrDc1: %d, lsrDc2: %d",
+                    newSessionStoresDc1, newSessionStoresDc2, newClientSessionStoresDc1, newClientSessionStoresDc2, newLsrDc1, newLsrDc2);
+
+            // Check lastSessionRefresh updated on DC1
+            if (expectedUpdatedLsrDc1) {
+                Assert.assertThat(newLsrDc1, Matchers.greaterThan(lsrDc1.get()));
+            } else {
+                Assert.assertEquals(newLsrDc1, lsrDc1.get());
+            }
+
+            // Check lastSessionRefresh updated on DC2
+            if (expectedUpdatedLsrDc2) {
+                Assert.assertThat(newLsrDc2, Matchers.greaterThan(lsrDc2.get()));
+            } else {
+                Assert.assertEquals(newLsrDc2, lsrDc2.get());
+            }
+
+            // Check store statistics updated on JDG side
+            if (expectedUpdatedRemoteCache) {
+                Assert.assertThat(newSessionStoresDc1, Matchers.greaterThan(sessionStoresDc1.get()));
+                Assert.assertThat(newSessionStoresDc2, Matchers.greaterThan(sessionStoresDc2.get()));
+                Assert.assertThat(newClientSessionStoresDc1, Matchers.greaterThan(clientSessionStoresDc1.get()));
+                Assert.assertThat(newClientSessionStoresDc2, Matchers.greaterThan(clientSessionStoresDc2.get()));
+            } else {
+                Assert.assertEquals(newSessionStoresDc1, sessionStoresDc1.get());
+                Assert.assertEquals(newSessionStoresDc2, sessionStoresDc2.get());
+                Assert.assertEquals(newClientSessionStoresDc1, clientSessionStoresDc1.get());
+                Assert.assertEquals(newClientSessionStoresDc2, clientSessionStoresDc2.get());
+            }
+
+            // Update counter references
+            sessionStoresDc1.set(newSessionStoresDc1);
+            sessionStoresDc2.set(newSessionStoresDc2);
+            clientSessionStoresDc1.set(newClientSessionStoresDc1);
+            clientSessionStoresDc2.set(newClientSessionStoresDc2);
+            lsrDc1.set(newLsrDc1);
+            lsrDc2.set(newLsrDc2);
+        }, 50, 50);
+
+    }
+
+    private long getStores(InfinispanStatistics cacheStats) {
+        return (long) cacheStats.getSingleStatistics(InfinispanStatistics.Constants.STAT_CACHE_STORES);
     }
 
 }

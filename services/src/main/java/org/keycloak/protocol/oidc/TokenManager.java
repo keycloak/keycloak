@@ -132,7 +132,7 @@ public class TokenManager {
             if (userSession != null) {
 
                 // Revoke timeouted offline userSession
-                if (userSession.getLastSessionRefresh() < Time.currentTime() - realm.getOfflineSessionIdleTimeout()) {
+                if (!AuthenticationManager.isOfflineSessionValid(realm, userSession)) {
                     sessionManager.revokeOfflineUserSession(userSession);
                     throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Offline session not active", "Offline session not active");
                 }
@@ -282,9 +282,8 @@ public class TokenManager {
                     clusterStartupTime != validation.clientSession.getTimestamp()) {
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
             }
-        }
 
-        if (realm.isRevokeRefreshToken()) {
+
             if (!refreshToken.getId().equals(validation.clientSession.getCurrentRefreshToken())) {
                 validation.clientSession.setCurrentRefreshToken(refreshToken.getId());
                 validation.clientSession.setCurrentRefreshTokenUseCount(0);
@@ -296,8 +295,6 @@ public class TokenManager {
                         "Maximum allowed refresh token reuse exceeded");
             }
             validation.clientSession.setCurrentRefreshTokenUseCount(currentCount + 1);
-        } else {
-            validation.clientSession.setCurrentRefreshToken(null);
         }
     }
 

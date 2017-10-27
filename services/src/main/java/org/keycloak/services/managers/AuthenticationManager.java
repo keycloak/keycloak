@@ -41,6 +41,7 @@ import org.keycloak.jose.jws.AlgorithmType;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.protocol.oidc.TokenManager;
@@ -107,7 +108,11 @@ public class AuthenticationManager {
         }
         int currentTime = Time.currentTime();
         int max = userSession.getStarted() + realm.getSsoSessionMaxLifespan();
-        return userSession.getLastSessionRefresh() + realm.getSsoSessionIdleTimeout() > currentTime && max > currentTime;
+
+        // Additional time window is added for the case when session was updated in different DC and the update to current DC was postponed
+        int maxIdle = realm.getSsoSessionIdleTimeout() + SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS;
+
+        return userSession.getLastSessionRefresh() + maxIdle > currentTime && max > currentTime;
     }
 
     public static boolean isOfflineSessionValid(RealmModel realm, UserSessionModel userSession) {
@@ -116,7 +121,11 @@ public class AuthenticationManager {
             return false;
         }
         int currentTime = Time.currentTime();
-        return userSession.getLastSessionRefresh() + realm.getOfflineSessionIdleTimeout() > currentTime;
+
+        // Additional time window is added for the case when session was updated in different DC and the update to current DC was postponed
+        int maxIdle = realm.getOfflineSessionIdleTimeout() + SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS;
+
+        return userSession.getLastSessionRefresh() + maxIdle > currentTime;
     }
 
     public static void expireUserSessionCookie(KeycloakSession session, UserSessionModel userSession, RealmModel realm, UriInfo uriInfo, HttpHeaders headers, ClientConnection connection) {

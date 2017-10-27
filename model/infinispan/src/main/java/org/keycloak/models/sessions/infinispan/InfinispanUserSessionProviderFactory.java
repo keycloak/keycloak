@@ -212,7 +212,8 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
         Cache<String, SessionEntityWrapper<UserSessionEntity>> sessionsCache = ispn.getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
         boolean sessionsRemoteCache = checkRemoteCache(session, sessionsCache, (RealmModel realm) -> {
-            return realm.getSsoSessionIdleTimeout() * 1000;
+            // We won't write to the remoteCache during token refresh, so the timeout needs to be longer.
+            return realm.getSsoSessionMaxLifespan() * 1000;
         });
 
         if (sessionsRemoteCache) {
@@ -221,7 +222,8 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
         Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionsCache = ispn.getCache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME);
         checkRemoteCache(session, clientSessionsCache, (RealmModel realm) -> {
-            return realm.getSsoSessionIdleTimeout() * 1000;
+            // We won't write to the remoteCache during token refresh, so the timeout needs to be longer.
+            return realm.getSsoSessionMaxLifespan() * 1000;
         });
 
         Cache<String, SessionEntityWrapper<UserSessionEntity>> offlineSessionsCache = ispn.getCache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME);
