@@ -241,7 +241,7 @@ public final class Permissions {
                 Permission evalPermission = permissions.get(allowedResource.getId());
 
                 if (evalPermission == null) {
-                    evalPermission = new Permission(resourceId, resourceName, scopes);
+                    evalPermission = new Permission(resourceId, resourceName, scopes, permission.getClaims());
                     permissions.put(resourceId, evalPermission);
                 }
 
@@ -261,7 +261,7 @@ public final class Permissions {
                 }
             }
         } else {
-            Permission scopePermission = new Permission(null, null, scopes);
+            Permission scopePermission = new Permission(null, null, scopes, permission.getClaims());
             permissions.put(scopePermission.toString(), scopePermission);
         }
     }

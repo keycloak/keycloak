@@ -23,7 +23,11 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Represents a permission for a given resource.
@@ -35,6 +39,7 @@ public class ResourcePermission {
     private final Resource resource;
     private final List<Scope> scopes;
     private ResourceServer resourceServer;
+    private Map<String, Set<String>> claims;
 
     public ResourcePermission(Resource resource, List<Scope> scopes, ResourceServer resourceServer) {
         this.resource = resource;
@@ -67,5 +72,44 @@ public class ResourcePermission {
      */
     public ResourceServer getResourceServer() {
         return this.resourceServer;
+    }
+
+    /**
+     * Returns all permission claims.
+     *
+     * @return
+     */
+    public Map<String, Set<String>> getClaims() {
+        if (claims == null) {
+            return Collections.emptyMap();
+        }
+        return Collections.unmodifiableMap(claims);
+    }
+
+    /**
+     * <p>Adds a permission claim with the given name and a single value.
+     *
+     * <p>If a claim already exists, the value is added to list of values of the existing claim</p>
+     *
+     * @param name the name of the claim
+     * @param value the value of the claim
+     */
+    public boolean addClaim(String name, String value) {
+        if (claims == null) {
+            claims = new HashMap<>();
+        }
+        return claims.computeIfAbsent(name, key -> new HashSet<>()).add(value);
+    }
+
+    /**
+     * <p>Removes a permission claim.
+     *
+     *
+     * @param name the name of the claim
+     */
+    public void removeClaim(String name) {
+        if (claims != null) {
+            claims.remove(name);
+        }
     }
 }
