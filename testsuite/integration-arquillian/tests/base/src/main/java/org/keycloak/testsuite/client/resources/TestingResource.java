@@ -34,6 +34,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Response;
+
 import java.util.List;
 import java.util.Map;
 
@@ -180,9 +182,9 @@ public interface TestingResource {
     void removeUserSessions(@QueryParam("realm") final String realm);
 
     @GET
-    @Path("/get-user-session")
+    @Path("/get-last-session-refresh")
     @Produces(MediaType.APPLICATION_JSON)
-    Integer getLastSessionRefresh(@QueryParam("realm") final String realm, @QueryParam("session") final String sessionId);
+    Integer getLastSessionRefresh(@QueryParam("realm") final String realm, @QueryParam("session") final String sessionId, @QueryParam("offline") boolean offline);
 
     @POST
     @Path("/remove-expired")
@@ -253,6 +255,17 @@ public interface TestingResource {
     @Path("/set-krb5-conf-file")
     @Consumes(MediaType.APPLICATION_JSON)
     void setKrb5ConfFile(@QueryParam("krb5-conf-file") String krb5ConfFile);
+
+    @POST
+    @Path("/suspend-periodic-tasks")
+    @Produces(MediaType.APPLICATION_JSON)
+    Response suspendPeriodicTasks();
+
+
+    @POST
+    @Path("/restore-periodic-tasks")
+    @Produces(MediaType.APPLICATION_JSON)
+    Response restorePeriodicTasks();
 
     @POST
     @Path("/run-on-server")

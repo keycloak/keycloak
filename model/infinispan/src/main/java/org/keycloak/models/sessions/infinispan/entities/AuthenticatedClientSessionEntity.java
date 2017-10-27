@@ -27,6 +27,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.infinispan.commons.marshall.Externalizer;
 import org.infinispan.commons.marshall.MarshallUtil;
 import org.infinispan.commons.marshall.SerializeWith;
+import org.jboss.logging.Logger;
+import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.util.KeycloakMarshallUtil;
 import java.util.UUID;
 
@@ -36,6 +38,11 @@ import java.util.UUID;
  */
 @SerializeWith(AuthenticatedClientSessionEntity.ExternalizerImpl.class)
 public class AuthenticatedClientSessionEntity extends SessionEntity {
+
+    public static final Logger logger = Logger.getLogger(AuthenticatedClientSessionEntity.class);
+
+    // Metadata attribute, which contains the last timestamp available on remoteCache. Used in decide whether we need to write to remoteCache (DC) or not
+    public static final String LAST_TIMESTAMP_REMOTE = "lstr";
 
     private String authMethod;
     private String redirectUri;
@@ -155,6 +162,31 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
     @Override
     public int hashCode() {
         return id != null ? id.hashCode() : 0;
+    }
+
+    @Override
+    public SessionEntityWrapper mergeRemoteEntityWithLocalEntity(SessionEntityWrapper localEntityWrapper) {
+        int timestampRemote = getTimestamp();
+
+        SessionEntityWrapper entityWrapper;
+        if (localEntityWrapper == null) {
+            entityWrapper = new SessionEntityWrapper<>(this);
+        } else {
+            AuthenticatedClientSessionEntity localClientSession = (AuthenticatedClientSessionEntity) localEntityWrapper.getEntity();
+
+            // local timestamp should always contain the bigger
+            if (timestampRemote < localClientSession.getTimestamp()) {
+                setTimestamp(localClientSession.getTimestamp());
+            }
+
+            entityWrapper = new SessionEntityWrapper<>(localEntityWrapper.getLocalMetadata(), this);
+        }
+
+        entityWrapper.putLocalMetadataNoteInt(LAST_TIMESTAMP_REMOTE, timestampRemote);
+
+        logger.debugf("Updating client session entity %s. timestamp=%d, timestampRemote=%d", getId(), getTimestamp(), timestampRemote);
+
+        return entityWrapper;
     }
 
     public static class ExternalizerImpl implements Externalizer<AuthenticatedClientSessionEntity> {

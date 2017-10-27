@@ -79,9 +79,9 @@ public class LastSessionRefreshListener implements ClusterListener {
                 KeycloakModelUtils.runJobInTransaction(sessionFactory, (kcSession) -> {
 
                     RealmModel realm = kcSession.realms().getRealm(realmId);
-                    UserSessionModel userSession = kcSession.sessions().getUserSession(realm, sessionId);
+                    UserSessionModel userSession = offline ? kcSession.sessions().getOfflineUserSession(realm, sessionId) : kcSession.sessions().getUserSession(realm, sessionId);
                     if (userSession == null) {
-                        logger.debugf("User session %s not available on node %s", sessionId, myAddress);
+                        logger.debugf("User session '%s' not available on node '%s' offline '%b'", sessionId, myAddress, offline);
                     } else {
                         // Update just if lastSessionRefresh from event is bigger than ours
                         if (lastSessionRefresh > userSession.getLastSessionRefresh()) {

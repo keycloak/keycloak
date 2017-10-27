@@ -23,6 +23,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
+import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.timer.TimerProvider;
 
 /**
@@ -30,14 +31,18 @@ import org.keycloak.timer.TimerProvider;
  */
 public class LastSessionRefreshStoreFactory {
 
-    // Timer interval. The store will be checked every 5 seconds whether the message with stored lastSessionRefreshes
+    // Timer interval. The store will be checked every 5 seconds whether the message with stored lastSessionRefreshes should be sent
     public static final long DEFAULT_TIMER_INTERVAL_MS = 5000;
 
     // Max interval between messages. It means that when message is sent to second DC, then another message will be sent at least after 60 seconds.
-    public static final int DEFAULT_MAX_INTERVAL_BETWEEN_MESSAGES_SECONDS = 60;
+    public static final int DEFAULT_MAX_INTERVAL_BETWEEN_MESSAGES_SECONDS = SessionTimeoutHelper.PERIODIC_TASK_INTERVAL_SECONDS;
 
-    // Max count of lastSessionRefreshes. It count of lastSessionRefreshes reach this value, the message is sent to second DC
+    // Max count of lastSessionRefreshes. If count of lastSessionRefreshes reach this value, the message is sent to second DC
     public static final int DEFAULT_MAX_COUNT = 100;
+
+    // Name of periodic tasks to send events to the other DCs
+    public static final String LSR_PERIODIC_TASK_NAME = "lastSessionRefreshes";
+    public static final String LSR_OFFLINE_PERIODIC_TASK_NAME = "lastSessionRefreshes-offline";
 
 
     public LastSessionRefreshStore createAndInit(KeycloakSession kcSession, Cache<String, SessionEntityWrapper<UserSessionEntity>> cache, boolean offline) {
@@ -46,7 +51,7 @@ public class LastSessionRefreshStoreFactory {
 
 
     public LastSessionRefreshStore createAndInit(KeycloakSession kcSession, Cache<String, SessionEntityWrapper<UserSessionEntity>> cache, long timerIntervalMs, int maxIntervalBetweenMessagesSeconds, int maxCount, boolean offline) {
-        String eventKey = offline ? "lastSessionRefreshes-offline" :  "lastSessionRefreshes";
+        String eventKey = offline ? LSR_OFFLINE_PERIODIC_TASK_NAME :  LSR_PERIODIC_TASK_NAME;
         LastSessionRefreshStore store = createStoreInstance(maxIntervalBetweenMessagesSeconds, maxCount, eventKey);
 
         // Register listener
