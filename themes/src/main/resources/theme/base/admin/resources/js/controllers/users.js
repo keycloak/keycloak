@@ -775,6 +775,15 @@ module.controller('GenericUserStorageCtrl', function($scope, $location, Notifica
             if (!instance.config['priority']) {
                 instance.config['priority'] = ['0'];
             }
+            
+            if (providerFactory.properties) {
+                for (var i = 0; i < providerFactory.properties.length; i++) {
+                    var configProperty = providerFactory.properties[i];
+                    if (!instance.config[configProperty.name]) {
+                        instance.config[configProperty.name] = [''];
+                    }
+                }
+            }
 
         }
         if (providerFactory.metadata.synchronizable) {
