@@ -280,12 +280,12 @@ public class IdentityProviderTest extends AbstractAdminTest {
         create(createRep("keycloak-oidc", "keycloak-oidc"));
         provider = realm.identityProviders().get("keycloak-oidc");
         mapperTypes = provider.getMapperTypes();
-        assertMapperTypes(mapperTypes, "keycloak-oidc-role-to-role-idp-mapper", "oidc-user-attribute-idp-mapper", "oidc-role-idp-mapper", "oidc-username-idp-mapper");
+        assertMapperTypes(mapperTypes, "keycloak-oidc-role-to-role-idp-mapper", "oidc-user-attribute-idp-mapper", "oidc-role-idp-mapper", "oidc-username-idp-mapper", "oidc-session-attribute-idp-mapper");
 
         create(createRep("oidc", "oidc"));
         provider = realm.identityProviders().get("oidc");
         mapperTypes = provider.getMapperTypes();
-        assertMapperTypes(mapperTypes, "oidc-user-attribute-idp-mapper", "oidc-role-idp-mapper", "oidc-username-idp-mapper");
+        assertMapperTypes(mapperTypes, "oidc-user-attribute-idp-mapper", "oidc-role-idp-mapper", "oidc-username-idp-mapper", "oidc-session-attribute-idp-mapper");
 
         create(createRep("saml", "saml"));
         provider = realm.identityProviders().get("saml");

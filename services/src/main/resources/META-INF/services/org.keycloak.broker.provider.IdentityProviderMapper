@@ -22,6 +22,7 @@ org.keycloak.broker.oidc.mappers.ClaimToRoleMapper
 org.keycloak.broker.oidc.mappers.ExternalKeycloakRoleToRoleMapper
 org.keycloak.broker.oidc.mappers.UserAttributeMapper
 org.keycloak.broker.oidc.mappers.UsernameTemplateMapper
+org.keycloak.broker.oidc.mappers.SessionAttributeMapper
 org.keycloak.broker.saml.mappers.AttributeToRoleMapper
 org.keycloak.broker.saml.mappers.UserAttributeMapper
 org.keycloak.broker.saml.mappers.UsernameTemplateMapper
