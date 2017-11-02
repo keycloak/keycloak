@@ -127,7 +127,7 @@
             <column name="VALUE" type="VARCHAR(2048)"/>
         </createTable>
         <addColumn tableName="CLIENT">
-            <column name="FRONTCHANNEL_LOGOUT" type="BOOLEAN" defaultValueBoolean="false">
+            <column name="FRONTCHANNEL_LOGOUT" type="BOOLEAN">
                 <constraints nullable="false"/>
             </column>
         </addColumn>
@@ -136,6 +136,11 @@
             <column name="BROKER_SESSION_ID" type="VARCHAR(255)" />
             <column name="BROKER_USER_ID" type="VARCHAR(255)" />
         </addColumn>
+        <addDefaultValue 
+            columnDataType="BOOLEAN"
+            columnName="FRONTCHANNEL_LOGOUT"
+            defaultValueBoolean="false"
+            tableName="CLIENT"/>
         <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_PCM" tableName="PROTOCOL_MAPPER"/>
         <addPrimaryKey columnNames="INTERNAL_ID" constraintName="CONSTRAINT_2B" tableName="IDENTITY_PROVIDER"/>
         <addPrimaryKey columnNames="IDENTITY_PROVIDER, USER_ID" constraintName="CONSTRAINT_40" tableName="FEDERATED_IDENTITY"/>
@@ -155,14 +160,25 @@
         <addUniqueConstraint columnNames="IDENTITY_PROVIDER_ID,CLIENT_ID" constraintName="UK_7CAELWNIBJI49AVXSRTUF6XJ12" tableName="CLIENT_IDENTITY_PROV_MAPPING"/>
         <addColumn tableName="REALM">
             <column name="LOGIN_LIFESPAN" type="INT"/>
-            <column name="INTERNATIONALIZATION_ENABLED" type="BOOLEAN" defaultValueBoolean="false">
+            <column name="INTERNATIONALIZATION_ENABLED" type="BOOLEAN">
                 <constraints nullable="false"/>
             </column>
             <column name="DEFAULT_LOCALE" type="VARCHAR(255)" />
-            <column name="REG_EMAIL_AS_USERNAME" type="BOOLEAN" defaultValueBoolean="false">
+            <column name="REG_EMAIL_AS_USERNAME" type="BOOLEAN">
                 <constraints nullable="false"/>
             </column>
         </addColumn>
+        <addDefaultValue
+            columnDataType="BOOLEAN"
+            columnName="INTERNATIONALIZATION_ENABLED"
+            defaultValueBoolean="false"
+            tableName="REALM"/>
+        <addDefaultValue
+            columnDataType="BOOLEAN"
+            columnName="REG_EMAIL_AS_USERNAME"
+            defaultValueBoolean="false"
+            tableName="REALM"/>
+
 
         <!-- KEYCLOAK-1106 APPLICATION_ID and REALM_ID switched in REALM_APPLICATION table -->
         <dropForeignKeyConstraint baseTableName="REALM_APPLICATION" constraintName="FK_71S3P0DIUXAWWQQSA528UBY2Q" />

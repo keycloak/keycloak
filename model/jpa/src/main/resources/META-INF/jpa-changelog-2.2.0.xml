@@ -49,7 +49,10 @@
             </column>
             <column name="VALUE" type="VARCHAR(4000)"/>
         </createTable>
-        <modifyDataType tableName="CREDENTIAL" columnName="VALUE" newDataType="VARCHAR(4000)"/>
+        <dropColumn columnName="VALUE" tableName="CREDENTIAL"/>
+        <addColumn tableName="CREDENTIAL">
+            <column name="VALUE" type="VARCHAR(4000)"/>
+        </addColumn>
 
         <addForeignKeyConstraint baseColumnNames="CREDENTIAL_ID" baseTableName="FED_CREDENTIAL_ATTRIBUTE" constraintName="FK_FED_CRED_ATTR" referencedColumnNames="ID" referencedTableName="FED_USER_CREDENTIAL"/>
         <addForeignKeyConstraint baseColumnNames="CREDENTIAL_ID" baseTableName="CREDENTIAL_ATTRIBUTE" constraintName="FK_CRED_ATTR" referencedColumnNames="ID" referencedTableName="CREDENTIAL"/>

@@ -33,26 +33,42 @@
         <delete tableName="USER_SESSION"/>
 
         <addColumn tableName="CLIENT">
-            <column name="SERVICE_ACCOUNTS_ENABLED" type="BOOLEAN" defaultValueBoolean="false">
+            <column name="SERVICE_ACCOUNTS_ENABLED" type="BOOLEAN">
                 <constraints nullable="false"/>
             </column>
         </addColumn>
+        <addDefaultValue columnDataType="BOOLEAN"
+            columnName="SERVICE_ACCOUNTS_ENABLED"
+            defaultValueBoolean="false"
+            tableName="CLIENT"/>
         <addColumn tableName="CLIENT_SESSION">
             <column name="CURRENT_ACTION" type="VARCHAR(36)">
                 <constraints nullable="true"/>
             </column>
         </addColumn>
         <addColumn tableName="AUTHENTICATION_FLOW">
-            <column name="PROVIDER_ID" type="VARCHAR(36)" defaultValue="basic-flow">
+            <column name="PROVIDER_ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
-            <column name="TOP_LEVEL" type="BOOLEAN" defaultValueBoolean="false">
+            <column name="TOP_LEVEL" type="BOOLEAN">
                 <constraints nullable="false"/>
             </column>
-            <column name="BUILT_IN" type="BOOLEAN" defaultValueBoolean="false">
+            <column name="BUILT_IN" type="BOOLEAN">
                 <constraints nullable="false"/>
             </column>
         </addColumn>
+        <addDefaultValue columnDataType="VARCHAR(36)"
+            columnName="PROVIDER_ID"
+            defaultValue="basic-flow"
+            tableName="AUTHENTICATION_FLOW"/>
+        <addDefaultValue columnDataType="BOOLEAN"
+            columnName="TOP_LEVEL"
+            defaultValueBoolean="false"
+            tableName="AUTHENTICATION_FLOW"/>
+        <addDefaultValue columnDataType="BOOLEAN"
+            columnName="BUILT_IN"
+            defaultValueBoolean="false"
+            tableName="AUTHENTICATION_FLOW"/>
         <addColumn tableName="AUTHENTICATION_EXECUTION">
             <column name="AUTH_FLOW_ID" type="VARCHAR(36)">
                 <constraints nullable="true"/>
@@ -62,11 +78,14 @@
             </column>
         </addColumn>
         <addColumn tableName="USER_ATTRIBUTE">
-            <column name="ID" type="VARCHAR(36)" defaultValue="sybase-needs-something-here">
+            <column name="ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
         </addColumn>
-
+        <addDefaultValue columnDataType="VARCHAR(36)"
+            columnName="ID"
+            defaultValue="sybase-needs-something-here"
+            tableName="USER_ATTRIBUTE"/>
         <dropColumn tableName="AUTHENTICATOR"  columnName="PROVIDER_ID"/>
         <renameTable oldTableName="AUTHENTICATOR_CONFIG" newTableName="AUTHENTICATOR_CONFIG_ENTRY"/>
         <renameTable oldTableName="AUTHENTICATOR" newTableName="AUTHENTICATOR_CONFIG"/>

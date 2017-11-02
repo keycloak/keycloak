@@ -21,7 +21,10 @@
      <changeSet author="bburke@redhat.com" id="2.5.0">
          <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.MigrateUserFedToComponent"/>
 
-         <modifyDataType tableName="OFFLINE_USER_SESSION" columnName="USER_ID" newDataType="VARCHAR(255)"/>
+         <dropColumn columnName="USER_ID" tableName="OFFLINE_USER_SESSION"/>
+         <addColumn tableName="OFFLINE_USER_SESSION">
+             <column name="USER_ID" type="NVARCHAR(255)"/>
+         </addColumn>
      </changeSet>
 
     <changeSet author="hmlnarik@redhat.com" id="2.5.0-unicode-oracle">
@@ -29,24 +32,71 @@
             <dbms type="oracle" />
         </preConditions>
 
-        <modifyDataType tableName="AUTHENTICATION_FLOW" columnName="DESCRIPTION" newDataType="NVARCHAR(255)"/>
-        <modifyDataType tableName="CLIENT_TEMPLATE" columnName="DESCRIPTION" newDataType="NVARCHAR(255)"/>
-        <modifyDataType tableName="RESOURCE_SERVER_POLICY" columnName="DESCRIPTION" newDataType="NVARCHAR(255)"/>
+        <dropColumn columnName="DESCRIPTION" tableName="AUTHENTICATION_FLOW"/>
+        <addColumn tableName="AUTHENTICATION_FLOW">
+            <column name="DESCRIPTION" type="NVARCHAR(255)"/>
+        </addColumn>
+        
+        <dropColumn columnName="DESCRIPTION" tableName="CLIENT_TEMPLATE"/>
+        <addColumn tableName="CLIENT_TEMPLATE">
+            <column name="DESCRIPTION" type="NVARCHAR(255)"/>
+        </addColumn> 
+        
+        <dropColumn columnName="DESCRIPTION" tableName="RESOURCE_SERVER_POLICY"/>
+        <addColumn tableName="RESOURCE_SERVER_POLICY">
+            <column name="DESCRIPTION" type="NVARCHAR(255)"/>
+        </addColumn>
 
-        <modifyDataType tableName="CLIENT" columnName="DESCRIPTION" newDataType="NVARCHAR(255)"/>
-        <modifyDataType tableName="CLIENT" columnName="NAME" newDataType="NVARCHAR(255)"/>
+        <dropColumn columnName="DESCRIPTION" tableName="CLIENT"/>
+        <addColumn tableName="CLIENT">
+            <column name="DESCRIPTION" type="NVARCHAR(255)"/>
+        </addColumn>
+        
+        <dropColumn columnName="NAME" tableName="CLIENT"/>
+        <addColumn tableName="CLIENT">
+            <column name="NAME" type="NVARCHAR(255)"/>
+        </addColumn>
 
-        <modifyDataType tableName="USER_ENTITY" columnName="FIRST_NAME" newDataType="NVARCHAR(255)"/>
-        <modifyDataType tableName="USER_ENTITY" columnName="LAST_NAME" newDataType="NVARCHAR(255)"/>
-        <modifyDataType tableName="USER_ENTITY" columnName="USERNAME" newDataType="NVARCHAR(255)"/>
+        <dropColumn columnName="FIRST_NAME" tableName="USER_ENTITY"/>
+        <addColumn tableName="USER_ENTITY">
+            <column name="FIRST_NAME" type="NVARCHAR(255)"/>
+        </addColumn>
+        
+        <dropColumn columnName="LAST_NAME" tableName="USER_ENTITY"/>
+        <addColumn tableName="USER_ENTITY">
+            <column name="LAST_NAME" type="NVARCHAR(255)"/>
+        </addColumn>
+        
+        <dropColumn columnName="USERNAME" tableName="USER_ENTITY"/>
+        <addColumn tableName="USER_ENTITY">
+            <column name="USERNAME" type="NVARCHAR(255)"/>
+        </addColumn>
 
-        <modifyDataType tableName="USERNAME_LOGIN_FAILURE" columnName="USERNAME" newDataType="NVARCHAR(255)"/>
+        <dropColumn columnName="USERNAME" tableName="USERNAME_LOGIN_FAILURE"/>
+        <addColumn tableName="USERNAME_LOGIN_FAILURE">
+            <column name="USERNAME" type="NVARCHAR(255)"/>
+        </addColumn>
+ 
+        <dropColumn columnName="NAME" tableName="KEYCLOAK_GROUP"/>
+        <addColumn tableName="KEYCLOAK_GROUP">
+            <column name="NAME" type="NVARCHAR(255)"/>
+        </addColumn>
 
-        <modifyDataType tableName="KEYCLOAK_GROUP" columnName="NAME" newDataType="NVARCHAR(255)"/>
+        <dropColumn columnName="VALUE" tableName="USER_ATTRIBUTE"/>
+        <addColumn tableName="USER_ATTRIBUTE">
+            <column name="VALUE" type="NVARCHAR(255)"/>
+        </addColumn>
 
-        <modifyDataType tableName="USER_ATTRIBUTE" columnName="VALUE" newDataType="NVARCHAR(255)"/>
-        <modifyDataType tableName="GROUP_ATTRIBUTE" columnName="VALUE" newDataType="NVARCHAR(255)"/>
-        <modifyDataType tableName="REALM_ATTRIBUTE" columnName="VALUE" newDataType="NVARCHAR(255)"/>
+        <dropColumn columnName="VALUE" tableName="GROUP_ATTRIBUTE"/>
+        <addColumn tableName="GROUP_ATTRIBUTE">
+            <column name="VALUE" type="NVARCHAR(255)"/>
+        </addColumn>
+      
+        <dropColumn columnName="VALUE" tableName="REALM_ATTRIBUTE"/>
+        <addColumn tableName="REALM_ATTRIBUTE">
+            <column name="VALUE" type="NVARCHAR(255)"/>
+        </addColumn>
+        
         <addColumn tableName="COMPONENT_CONFIG">
             <column name="VALUE_NEW" type="NCLOB" />
         </addColumn>
@@ -56,9 +106,15 @@
 <!--
         <modifyDataType tableName="COMPONENT_CONFIG" columnName="VALUE" newDataType="NVARCHAR(2000)"/>
 -->
-
-        <modifyDataType tableName="KEYCLOAK_ROLE" columnName="NAME" newDataType="NVARCHAR(255)"/>
-        <modifyDataType tableName="KEYCLOAK_ROLE" columnName="DESCRIPTION" newDataType="NVARCHAR(255)"/>
+        
+        <dropColumn columnName="NAME" tableName="KEYCLOAK_ROLE"/>
+        <addColumn tableName="KEYCLOAK_ROLE">
+            <column name="NAME" type="NVARCHAR(255)"/>
+        </addColumn>
+        <dropColumn columnName="DESCRIPTION" tableName="KEYCLOAK_ROLE"/>
+        <addColumn tableName="KEYCLOAK_ROLE">
+            <column name="DESCRIPTION" type="NVARCHAR(255)"/>
+        </addColumn>  
     </changeSet>
 
     <changeSet author="hmlnarik@redhat.com" id="2.5.0-unicode-other-dbs">
@@ -67,47 +123,108 @@
                 <dbms type="oracle" />
             </not>
         </preConditions>
+        
+        <dropColumn columnName="DESCRIPTION" tableName="AUTHENTICATION_FLOW"/>
+        <addColumn tableName="AUTHENTICATION_FLOW">
+            <column name="DESCRIPTION" type="NVARCHAR(255)"/>
+        </addColumn>
+        <dropColumn columnName="DESCRIPTION" tableName="CLIENT_TEMPLATE"/>
+        <addColumn tableName="CLIENT_TEMPLATE">
+            <column name="DESCRIPTION" type="NVARCHAR(255)"/>
+        </addColumn>
+        <dropColumn columnName="DESCRIPTION" tableName="RESOURCE_SERVER_POLICY"/>
+        <addColumn tableName="RESOURCE_SERVER_POLICY">
+            <column name="DESCRIPTION" type="NVARCHAR(255)"/>
+        </addColumn>
 
-        <modifyDataType tableName="AUTHENTICATION_FLOW" columnName="DESCRIPTION" newDataType="NVARCHAR(255)"/>
-        <modifyDataType tableName="CLIENT_TEMPLATE" columnName="DESCRIPTION" newDataType="NVARCHAR(255)"/>
-        <modifyDataType tableName="RESOURCE_SERVER_POLICY" columnName="DESCRIPTION" newDataType="NVARCHAR(255)"/>
-
-        <modifyDataType tableName="CLIENT" columnName="DESCRIPTION" newDataType="NVARCHAR(255)"/>
-        <modifyDataType tableName="CLIENT" columnName="NAME" newDataType="NVARCHAR(255)"/>
+        <dropColumn columnName="DESCRIPTION" tableName="CLIENT"/>
+        <addColumn tableName="CLIENT">
+            <column name="DESCRIPTION" type="NVARCHAR(255)"/>
+        </addColumn>
+        <dropColumn columnName="NAME" tableName="CLIENT"/>
+        <addColumn tableName="CLIENT">
+            <column name="NAME" type="NVARCHAR(255)"/>
+        </addColumn>
 
         <dropUniqueConstraint constraintName="UK_RU8TT6T700S9V50BU18WS5HA6" tableName="USER_ENTITY"/>
-        <modifyDataType tableName="USER_ENTITY" columnName="FIRST_NAME" newDataType="NVARCHAR(255)"/>
-        <modifyDataType tableName="USER_ENTITY" columnName="LAST_NAME" newDataType="NVARCHAR(255)"/>
-        <modifyDataType tableName="USER_ENTITY" columnName="USERNAME" newDataType="NVARCHAR(255)"/>
-        <addUniqueConstraint columnNames="REALM_ID,USERNAME" constraintName="UK_RU8TT6T700S9V50BU18WS5HA6" tableName="USER_ENTITY"/>
 
+        <dropColumn columnName="FIRST_NAME" tableName="USER_ENTITY"/>
+        <addColumn tableName="USER_ENTITY">
+            <column name="FIRST_NAME" type="NVARCHAR(255)"/>
+        </addColumn>
+        <dropColumn columnName="LAST_NAME" tableName="USER_ENTITY"/>
+        <addColumn tableName="USER_ENTITY">
+            <column name="LAST_NAME" type="NVARCHAR(255)"/>
+        </addColumn> 
+        <dropColumn columnName="USERNAME" tableName="USER_ENTITY"/>
+        <addColumn tableName="USER_ENTITY">
+            <column name="USERNAME" type="NVARCHAR(255)"/>
+        </addColumn>
+
+        <addUniqueConstraint columnNames="REALM_ID,USERNAME" constraintName="UK_RU8TT6T700S9V50BU18WS5HA6" tableName="USER_ENTITY"/>
         <dropPrimaryKey constraintName="CONSTRAINT_17" tableName="USERNAME_LOGIN_FAILURE"/>
-        <modifyDataType tableName="USERNAME_LOGIN_FAILURE" columnName="USERNAME" newDataType="NVARCHAR(255)"/>
+
+        <dropColumn columnName="USERNAME" tableName="USERNAME_LOGIN_FAILURE"/>
+        <addColumn tableName="USERNAME_LOGIN_FAILURE">
+            <column name="USERNAME" type="NVARCHAR(255)"/>
+        </addColumn>
+
         <addNotNullConstraint tableName="USERNAME_LOGIN_FAILURE" columnName="USERNAME" columnDataType="NVARCHAR(255)"/>
         <addPrimaryKey columnNames="REALM_ID, USERNAME" constraintName="CONSTRAINT_17-2" tableName="USERNAME_LOGIN_FAILURE"/>
 
-        <modifyDataType tableName="KEYCLOAK_GROUP" columnName="NAME" newDataType="NVARCHAR(255)"/>
-
-        <modifyDataType tableName="USER_ATTRIBUTE" columnName="VALUE" newDataType="NVARCHAR(255)"/>
-        <modifyDataType tableName="GROUP_ATTRIBUTE" columnName="VALUE" newDataType="NVARCHAR(255)"/>
-        <modifyDataType tableName="REALM_ATTRIBUTE" columnName="VALUE" newDataType="NVARCHAR(255)"/>
-        <modifyDataType tableName="COMPONENT_CONFIG" columnName="VALUE" newDataType="NVARCHAR(4000)"/>
+        <dropColumn columnName="NAME" tableName="KEYCLOAK_GROUP"/>
+        <addColumn tableName="KEYCLOAK_GROUP">
+            <column name="NAME" type="NVARCHAR(255)"/>
+        </addColumn>
+                
+        <dropColumn columnName="VALUE" tableName="USER_ATTRIBUTE"/>
+        <addColumn tableName="USER_ATTRIBUTE">
+            <column name="VALUE" type="NVARCHAR(255)"/>
+        </addColumn>
+        <dropColumn columnName="VALUE" tableName="GROUP_ATTRIBUTE"/>
+        <addColumn tableName="GROUP_ATTRIBUTE">
+            <column name="VALUE" type="NVARCHAR(255)"/>
+        </addColumn>
+        <dropColumn columnName="VALUE" tableName="REALM_ATTRIBUTE"/>
+        <addColumn tableName="REALM_ATTRIBUTE">
+            <column name="VALUE" type="NVARCHAR(255)"/>
+        </addColumn>
+        <dropColumn columnName="VALUE" tableName="COMPONENT_CONFIG"/>
+        <addColumn tableName="COMPONENT_CONFIG">
+            <column name="VALUE" type="NVARCHAR(4000)"/>
+        </addColumn>
 
         <dropUniqueConstraint constraintName="UK_J3RWUVD56ONTGSUHOGM184WW2-2" tableName="KEYCLOAK_ROLE"/>
-        <modifyDataType tableName="KEYCLOAK_ROLE" columnName="NAME" newDataType="NVARCHAR(255)"/>
+        
+        <dropColumn columnName="NAME" tableName="KEYCLOAK_ROLE"/>
+        <addColumn tableName="KEYCLOAK_ROLE">
+            <column name="NAME" type="NVARCHAR(255)"/>
+        </addColumn>
+
         <addUniqueConstraint columnNames="NAME,CLIENT_REALM_CONSTRAINT" constraintName="UK_J3RWUVD56ONTGSUHOGM184WW2-2" tableName="KEYCLOAK_ROLE"/>
-        <modifyDataType tableName="KEYCLOAK_ROLE" columnName="DESCRIPTION" newDataType="NVARCHAR(255)"/>
+        <dropColumn columnName="DESCRIPTION" tableName="KEYCLOAK_ROLE"/>
+        <addColumn tableName="KEYCLOAK_ROLE">
+            <column name="DESCRIPTION" type="NVARCHAR(255)"/>
+        </addColumn>
     </changeSet>
     
     <changeSet author="slawomir@dabek.name" id="2.5.0-duplicate-email-support">
         <addColumn tableName="REALM">
-            <column name="LOGIN_WITH_EMAIL_ALLOWED" type="BOOLEAN" defaultValueBoolean="true">
+            <column name="LOGIN_WITH_EMAIL_ALLOWED" type="BOOLEAN">
                 <constraints nullable="false"/>
             </column>
-            <column name="DUPLICATE_EMAILS_ALLOWED" type="BOOLEAN" defaultValueBoolean="false">
+            <column name="DUPLICATE_EMAILS_ALLOWED" type="BOOLEAN">
                 <constraints nullable="false"/>
             </column>
         </addColumn>
+        <addDefaultValue columnDataType="BOOLEAN"
+            columnName="LOGIN_WITH_EMAIL_ALLOWED"
+            defaultValueBoolean="true"
+            tableName="REALM"/>
+        <addDefaultValue columnDataType="BOOLEAN"
+            columnName="DUPLICATE_EMAILS_ALLOWED"
+            defaultValueBoolean="false"
+            tableName="REALM"/>
     </changeSet>
 
     <changeSet author="hmlnarik@redhat.com" id="2.5.0-unique-group-names">

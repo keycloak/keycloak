@@ -119,16 +119,24 @@
 
         <renameColumn tableName="CLIENT" newColumnName="CLIENT_ID" oldColumnName="NAME" columnDataType="VARCHAR(255)"/>
         <addColumn tableName="CLIENT">
-            <column name="CONSENT_REQUIRED" type="BOOLEAN" defaultValueBoolean="false">
+            <column name="CONSENT_REQUIRED" type="BOOLEAN">
                 <constraints nullable="false"/>
             </column>
             <column name="NAME" type="VARCHAR(255)" />
         </addColumn>
+        <addDefaultValue columnDataType="BOOLEAN"
+            columnName="CONSENT_REQUIRED"
+            defaultValueBoolean="false"
+            tableName="CLIENT"/>
         <addColumn tableName="IDENTITY_PROVIDER">
-            <column name="ADD_TOKEN_ROLE" type="BOOLEAN" defaultValueBoolean="true">
+            <column name="ADD_TOKEN_ROLE" type="BOOLEAN">
                 <constraints nullable="false"/>
             </column>
         </addColumn>
+        <addDefaultValue columnDataType="BOOLEAN"
+            columnName="ADD_TOKEN_ROLE"
+            defaultValueBoolean="true"
+            tableName="IDENTITY_PROVIDER"/>
         <update tableName="CLIENT">
             <column name="CONSENT_REQUIRED" valueBoolean="true"/>
             <where>DTYPE = 'OAuthClientEntity'</where>

@@ -20,11 +20,14 @@
 
      <changeSet author="bburke@redhat.com" id="3.0.0">
          <addColumn tableName="IDENTITY_PROVIDER">
-             <column name="LINK_ONLY" type="BOOLEAN" defaultValueBoolean="false">
+             <column name="LINK_ONLY" type="BOOLEAN">
                  <constraints nullable="false" />
              </column>
          </addColumn>
-
+         <addDefaultValue columnDataType="BOOLEAN"
+            columnName="LINK_ONLY"
+            defaultValueBoolean="false"
+            tableName="IDENTITY_PROVIDER"/>
      </changeSet>
 
 </databaseChangeLog>

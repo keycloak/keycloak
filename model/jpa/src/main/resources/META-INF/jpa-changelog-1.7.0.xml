@@ -70,8 +70,9 @@
         </addColumn>
 
         <addColumn tableName="REALM">
-            <column name="ACCESS_TOKEN_LIFE_IMPLICIT" type="INT" defaultValueNumeric="0"/>
+            <column name="ACCESS_TOKEN_LIFE_IMPLICIT" type="INT"/>
         </addColumn>
+        <addDefaultValue columnDataType="INT" columnName="ACCESS_TOKEN_LIFE_IMPLICIT" defaultValueNumeric="0" tableName="REALM"/>
 
         <dropDefaultValue tableName="IDENTITY_PROVIDER" columnName="UPDATE_PROFILE_FIRST_LGN_MD" />
         <dropColumn tableName="IDENTITY_PROVIDER" columnName="UPDATE_PROFILE_FIRST_LGN_MD"/>
@@ -95,17 +96,28 @@
 
         <addColumn tableName="CLIENT">
             <column name="REGISTRATION_TOKEN" type="VARCHAR(255)"/>
-            <column name="STANDARD_FLOW_ENABLED" type="BOOLEAN" defaultValueBoolean="true">
+            <column name="STANDARD_FLOW_ENABLED" type="BOOLEAN">
                 <constraints nullable="false"/>
             </column>
-            <column name="IMPLICIT_FLOW_ENABLED" type="BOOLEAN" defaultValueBoolean="false">
+            <column name="IMPLICIT_FLOW_ENABLED" type="BOOLEAN">
                 <constraints nullable="false"/>
             </column>
-            <column name="DIRECT_ACCESS_GRANTS_ENABLED" type="BOOLEAN" defaultValueBoolean="false">
+            <column name="DIRECT_ACCESS_GRANTS_ENABLED" type="BOOLEAN">
                 <constraints nullable="false"/>
             </column>
         </addColumn>
-
+        <addDefaultValue columnDataType="BOOLEAN"
+            columnName="STANDARD_FLOW_ENABLED"
+            defaultValueBoolean="true"
+            tableName="CLIENT"/>
+        <addDefaultValue columnDataType="BOOLEAN"
+            columnName="IMPLICIT_FLOW_ENABLED"
+            defaultValueBoolean="false"
+            tableName="CLIENT"/>
+        <addDefaultValue columnDataType="BOOLEAN"
+            columnName="DIRECT_ACCESS_GRANTS_ENABLED"
+            defaultValueBoolean="false"
+            tableName="CLIENT"/>
         <update tableName="CLIENT">
             <column name="STANDARD_FLOW_ENABLED" valueBoolean="false"/>
             <column name="DIRECT_ACCESS_GRANTS_ENABLED" valueBoolean="true"/>
@@ -118,7 +130,11 @@
         <dropDefaultValue tableName="CLIENT" columnName="DIRECT_GRANTS_ONLY" />
         <dropColumn tableName="CLIENT" columnName="DIRECT_GRANTS_ONLY"/>
 
-        <modifyDataType tableName="REALM" columnName="PASSWORD_POLICY" newDataType="VARCHAR(2550)"/>
+        <!-- delete old colomn, add new coloumn -->
+        <dropColumn columnName="PASSWORD_POLICY" tableName="REALM"/>        
+        <addColumn tableName="REALM">
+            <column name="PASSWORD_POLICY" type="VARCHAR(2550)"/>
+        </addColumn>
 
         <!-- Sybase specific hacks -->
         <modifySql dbms="sybase">
