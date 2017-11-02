@@ -420,7 +420,7 @@
                     <groupId>org.wildfly.core</groupId>
                     <artifactId>wildfly-cli</artifactId>
                     <scope>test</scope>
-                    <version>2.2.0.Final</version>
+                    <version>${wildfly.core.version}</version>
                 </dependency>
             </dependencies>
         </profile>
