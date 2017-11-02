@@ -90,16 +90,29 @@
             <column name="CLIENT_TEMPLATE_ID" type="VARCHAR(36)">
                 <constraints nullable="true"/>
             </column>
-            <column name="USE_TEMPLATE_CONFIG" type="BOOLEAN" defaultValueBoolean="false">
+            <column name="USE_TEMPLATE_CONFIG" type="BOOLEAN">
                 <constraints nullable="false"/>
             </column>
-            <column name="USE_TEMPLATE_SCOPE" type="BOOLEAN" defaultValueBoolean="false">
+            <column name="USE_TEMPLATE_SCOPE" type="BOOLEAN">
                 <constraints nullable="false"/>
             </column>
-            <column name="USE_TEMPLATE_MAPPERS" type="BOOLEAN" defaultValueBoolean="false">
+            <column name="USE_TEMPLATE_MAPPERS" type="BOOLEAN">
                 <constraints nullable="false"/>
             </column>
         </addColumn>
+        <addDefaultValue columnDataType="BOOLEAN"
+            columnName="USE_TEMPLATE_CONFIG"
+            defaultValueBoolean="false"
+            tableName="CLIENT"/>        
+        <addDefaultValue columnDataType="BOOLEAN"
+            columnName="USE_TEMPLATE_SCOPE"
+            defaultValueBoolean="false"
+            tableName="CLIENT"/>
+        <addDefaultValue columnDataType="BOOLEAN"
+            columnName="USE_TEMPLATE_MAPPERS"
+            defaultValueBoolean="false"
+            tableName="CLIENT"/>
+
         <addColumn tableName="PROTOCOL_MAPPER">
             <column name="CLIENT_TEMPLATE_ID" type="VARCHAR(36)">
                 <constraints nullable="true"/>

@@ -109,16 +109,28 @@
         </createTable>
 
         <addColumn tableName="REALM">
-            <column name="ADMIN_EVENTS_ENABLED" type="BOOLEAN" defaultValueBoolean="false">
+            <column name="ADMIN_EVENTS_ENABLED" type="BOOLEAN">
                 <constraints nullable="false"/>
             </column>
-            <column name="ADMIN_EVENTS_DETAILS_ENABLED" type="BOOLEAN" defaultValueBoolean="false">
+            <column name="ADMIN_EVENTS_DETAILS_ENABLED" type="BOOLEAN">
                 <constraints nullable="false"/>
             </column>
-            <column name="EDIT_USERNAME_ALLOWED" type="BOOLEAN" defaultValueBoolean="false">
+            <column name="EDIT_USERNAME_ALLOWED" type="BOOLEAN">
                 <constraints nullable="false"/>
             </column>
         </addColumn>
+        <addDefaultValue columnDataType="BOOLEAN"
+            columnName="ADMIN_EVENTS_ENABLED"
+            defaultValueBoolean="false"
+            tableName="REALM"/>
+        <addDefaultValue columnDataType="BOOLEAN"
+            columnName="ADMIN_EVENTS_DETAILS_ENABLED"
+            defaultValueBoolean="false"
+            tableName="REALM"/>
+        <addDefaultValue columnDataType="BOOLEAN"
+            columnName="EDIT_USERNAME_ALLOWED"
+            defaultValueBoolean="false"
+            tableName="REALM"/>
         <createTable tableName="CLIENT_SESSION_AUTH_STATUS">
             <column name="AUTHENTICATOR" type="VARCHAR(36)">
                 <constraints nullable="false"/>
@@ -132,13 +144,21 @@
             <column name="AUTH_USER_ID" type="VARCHAR(36)"/>
         </addColumn>
         <addColumn tableName="IDENTITY_PROVIDER">
-            <column name="TRUST_EMAIL" type="BOOLEAN" defaultValueBoolean="false">
+            <column name="TRUST_EMAIL" type="BOOLEAN">
                 <constraints nullable="false"/>
             </column>
-            <column name="UPDATE_PROFILE_FIRST_LGN_MD" type="VARCHAR(255)" defaultValue="on">
+            <column name="UPDATE_PROFILE_FIRST_LGN_MD" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
         </addColumn>
+        <addDefaultValue columnDataType="BOOLEAN"
+            columnName="TRUST_EMAIL"
+            defaultValueBoolean="false"
+            tableName="IDENTITY_PROVIDER"/>
+        <addDefaultValue columnDataType="VARCHAR(255)"
+            columnName="UPDATE_PROFILE_FIRST_LGN_MD"
+            defaultValue="on"
+            tableName="IDENTITY_PROVIDER"/>
         <!-- migrate value from UPDATE_PROFILE_FIRST_LOGIN to UPDATE_PROFILE_FIRST_LGN_MD then drop it -->
         <update tableName="IDENTITY_PROVIDER">
             <column name="UPDATE_PROFILE_FIRST_LGN_MD" value="off"/>
@@ -151,10 +171,14 @@
         <dropColumn tableName="IDENTITY_PROVIDER" columnName="UPDATE_PROFILE_FIRST_LOGIN"/>
         
         <addColumn tableName="USER_REQUIRED_ACTION">
-            <column name="REQUIRED_ACTION" type="VARCHAR(255)" defaultValue=" ">
+            <column name="REQUIRED_ACTION" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
         </addColumn>
+        <addDefaultValue columnDataType="VARCHAR(255)"
+            columnName="REQUIRED_ACTION"
+            defaultValue=" "
+            tableName="USER_REQUIRED_ACTION"/>
         <!-- VERIFY_EMAIL, UPDATE_PROFILE, CONFIGURE_TOTP, UPDATE_PASSWORD -->
         <update tableName="USER_REQUIRED_ACTION">
             <column name="REQUIRED_ACTION" value="VERIFY_EMAIL"/>

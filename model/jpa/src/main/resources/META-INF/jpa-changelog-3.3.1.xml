@@ -17,13 +17,17 @@
   -->
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
-    <changeSet author="keycloak" id="3.3.0">
-        <addColumn tableName="USER_ENTITY">
-            <column name="NOT_BEFORE" type="INT">
-                <constraints nullable="false"/>
-            </column>
-        </addColumn>
-        <addDefaultValue columnDataType="INT" columnName="NOT_BEFORE" defaultValueNumeric="0" tableName="USER_ENTITY"/>
+    <changeSet author="sen.wang@kandy.io" id="3.3.1">
+        <addPrimaryKey 
+            columnNames="client_id, role_id"
+            constraintName="pk_client_default_roles"
+            schemaName="public"
+            tableName="client_default_roles"/>
+        <addPrimaryKey
+            columnNames="realm_id, role_id"
+            constraintName="pk_realm_default_roles"
+            schemaName="public"
+            tableName="realm_default_roles"/>
     </changeSet>
 
 </databaseChangeLog>

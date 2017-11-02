@@ -29,36 +29,43 @@
         <dropDefaultValue tableName="AUTHENTICATION_EXECUTION" columnName="USER_SETUP_ALLOWED" />
         <dropColumn tableName="AUTHENTICATION_EXECUTION" columnName="USER_SETUP_ALLOWED"/>
         <addColumn tableName="CREDENTIAL">
-            <column name="COUNTER" type="INT" defaultValueNumeric="0">
+            <column name="COUNTER" type="INT">
                 <constraints nullable="true"/>
             </column>
-            <column name="DIGITS" type="INT" defaultValueNumeric="6">
+            <column name="DIGITS" type="INT">
                 <constraints nullable="true"/>
             </column>
-            <column name="PERIOD" type="INT" defaultValueNumeric="30">
+            <column name="PERIOD" type="INT">
                 <constraints nullable="true"/>
             </column>
-            <column name="ALGORITHM" type="VARCHAR(36)" defaultValue="HmacSHA1">
+            <column name="ALGORITHM" type="VARCHAR(36)">
                 <constraints nullable="true"/>
             </column>
         </addColumn>
+        <addDefaultValue columnDataType="int" columnName="COUNTER" defaultValueNumeric="0" tableName="CREDENTIAL"/>
+        <addDefaultValue columnDataType="int" columnName="DIGITS" defaultValueNumeric="6" tableName="CREDENTIAL"/>
+        <addDefaultValue columnDataType="int" columnName="PERIOD" defaultValueNumeric="30" tableName="CREDENTIAL"/>
+        <addDefaultValue columnDataType="VARCHAR(36)"
+            columnName="ALGORITHM"
+            defaultValue="HmacSHA1"
+            tableName="CREDENTIAL"/>
         <addColumn tableName="REALM">
-            <column name="OTP_POLICY_COUNTER" type="INT" defaultValueNumeric="0">
+            <column name="OTP_POLICY_COUNTER" type="INT">
                 <constraints nullable="true"/>
             </column>
-            <column name="OTP_POLICY_WINDOW" type="INT" defaultValueNumeric="1">
+            <column name="OTP_POLICY_WINDOW" type="INT">
                 <constraints nullable="true"/>
             </column>
-            <column name="OTP_POLICY_PERIOD" type="INT" defaultValueNumeric="30">
+            <column name="OTP_POLICY_PERIOD" type="INT">
                 <constraints nullable="true"/>
             </column>
-            <column name="OTP_POLICY_DIGITS" type="INT" defaultValueNumeric="6">
+            <column name="OTP_POLICY_DIGITS" type="INT">
                 <constraints nullable="true"/>
             </column>
-            <column name="OTP_POLICY_ALG" type="VARCHAR(36)" defaultValue="HmacSHA1">
+            <column name="OTP_POLICY_ALG" type="VARCHAR(36)">
                 <constraints nullable="true"/>
             </column>
-            <column name="OTP_POLICY_TYPE" type="VARCHAR(36)" defaultValue="totp">
+            <column name="OTP_POLICY_TYPE" type="VARCHAR(36)">
                 <constraints nullable="true"/>
             </column>
             <column name="BROWSER_FLOW" type="VARCHAR(36)">
@@ -77,7 +84,18 @@
                 <constraints nullable="true"/>
             </column>
         </addColumn>
-
+        <addDefaultValue columnDataType="int" columnName="OTP_POLICY_COUNTER" defaultValueNumeric="0" tableName="REALM"/>
+        <addDefaultValue columnDataType="int" columnName="OTP_POLICY_WINDOW" defaultValueNumeric="1" tableName="REALM"/>
+        <addDefaultValue columnDataType="int" columnName="OTP_POLICY_PERIOD" defaultValueNumeric="30" tableName="REALM"/>
+        <addDefaultValue columnDataType="int" columnName="OTP_POLICY_DIGITS" defaultValueNumeric="6" tableName="REALM"/>
+        <addDefaultValue columnDataType="VARCHAR(36)"
+            columnName="OTP_POLICY_ALG"
+            defaultValue="HmacSHA1"
+            tableName="REALM"/>
+        <addDefaultValue columnDataType="VARCHAR(36)"
+            columnName="OTP_POLICY_TYPE"
+            defaultValue="totp"
+            tableName="REALM"/>
         <addColumn tableName="CLIENT">
             <column name="CLIENT_AUTHENTICATOR_TYPE" type="VARCHAR(255)">
                 <constraints nullable="true"/>
