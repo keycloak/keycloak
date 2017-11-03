@@ -101,7 +101,7 @@ public class SAMLResponseWriter extends BaseWriter {
             for (ResponseType.RTChoiceType choiceType : choiceTypes) {
                 AssertionType assertion = choiceType.getAssertion();
                 if (assertion != null) {
-                    assertionWriter.write(assertion);
+                    assertionWriter.write(assertion, forceWriteDsigNamespace);
                 }
 
                 EncryptedAssertionType encryptedAssertion = choiceType.getEncryptedAssertion();

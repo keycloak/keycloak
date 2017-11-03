@@ -4,7 +4,12 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import org.keycloak.broker.saml.mappers.AttributeToRoleMapper;
 import org.keycloak.broker.saml.mappers.UserAttributeMapper;
+import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
+import org.keycloak.services.resources.RealmsResource;
+import java.net.URI;
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriBuilderException;
 
 public class KcSamlBrokerTest extends AbstractBrokerTest {
 
@@ -34,5 +39,11 @@ public class KcSamlBrokerTest extends AbstractBrokerTest {
                 .build());
 
         return Lists.newArrayList(attrMapper1, attrMapper2);
+    }
+
+    protected URI getAuthServerSamlEndpoint(String realm) throws IllegalArgumentException, UriBuilderException {
+        return RealmsResource
+                .protocolUrl(UriBuilder.fromUri(getAuthServerRoot()))
+                .build(realm, SamlProtocol.LOGIN_PROTOCOL);
     }
 }
