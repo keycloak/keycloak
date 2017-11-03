@@ -69,6 +69,7 @@
 
         <dataset>default</dataset>
         <numOfWorkers>1</numOfWorkers>
+        <data-dump.download.site>https://download.jboss.org/keycloak-qe</data-dump.download.site>
 
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.source>1.8</maven.compiler.source>
@@ -249,6 +250,7 @@
                             <files>
                                 <file>${project.basedir}/datasets/${dataset}.properties</file>
                             </files>
+                            <quiet>true</quiet>
                         </configuration>
                     </execution>
                 </executions>
@@ -281,6 +283,7 @@
                                     <files>
                                         <file>${project.basedir}/datasets/${dataset}.properties</file>
                                     </files>
+                                    <quiet>true</quiet>
                                 </configuration>
                             </execution>
                         </executions>
@@ -521,6 +524,31 @@
             <id>import-dump</id>
             <build>
                 <plugins>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>download-dump-file</id>
+                                <phase>generate-test-resources</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <get dest="${project.basedir}/datasets/"
+                                             verbose="false"
+                                             usetimestamp="true">
+                                            <url url="${data-dump.download.site}/${dataset}.properties" />
+                                            <url url="${data-dump.download.site}/${dataset}.sql.gz" />
+                                        </get>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
