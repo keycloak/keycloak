@@ -17,6 +17,8 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 
+import org.keycloak.testsuite.saml.AbstractSamlTest;
+import org.keycloak.testsuite.util.ClientBuilder;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -122,7 +124,18 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
 
     @Override
     public List<ClientRepresentation> createConsumerClients(SuiteContext suiteContext) {
-        return null;
+        return Arrays.asList(
+          ClientBuilder.create()
+            .clientId(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST)
+            .enabled(true)
+            .fullScopeEnabled(true)
+            .protocol(SamlProtocol.LOGIN_PROTOCOL)
+            .baseUrl("http://localhost:8080/sales-post")
+            .addRedirectUri("http://localhost:8080/sales-post/*")
+            .attribute(SamlConfigAttributes.SAML_AUTHNSTATEMENT, SamlProtocol.ATTRIBUTE_TRUE_VALUE)
+            .attribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, SamlProtocol.ATTRIBUTE_FALSE_VALUE)
+            .build()
+        );
     }
 
     @Override

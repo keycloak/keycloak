@@ -43,6 +43,7 @@ import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
+import org.hamcrest.Matchers;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -154,7 +155,9 @@ public class ModifySamlResponseStepBuilder extends SamlDocumentStepBuilder<SAML2
     private HttpUriRequest handlePostBinding(CloseableHttpResponse currentResponse) throws Exception {
         assertThat(currentResponse, statusCodeIsHC(Status.OK));
 
-        org.jsoup.nodes.Document theResponsePage = Jsoup.parse(EntityUtils.toString(currentResponse.getEntity()));
+        final String htmlBody = EntityUtils.toString(currentResponse.getEntity());
+        assertThat(htmlBody, Matchers.containsString("SAML"));
+        org.jsoup.nodes.Document theResponsePage = Jsoup.parse(htmlBody);
         Elements samlResponses = theResponsePage.select("input[name=SAMLResponse]");
         Elements samlRequests = theResponsePage.select("input[name=SAMLRequest]");
         Elements forms = theResponsePage.select("form");

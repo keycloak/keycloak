@@ -17,14 +17,15 @@
 package org.keycloak.testsuite.util.saml;
 
 import org.keycloak.testsuite.util.SamlClientBuilder;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.admin.Users;
 import org.keycloak.testsuite.util.SamlClient.Step;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
+import java.util.Set;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import org.apache.http.NameValuePair;
@@ -37,114 +38,85 @@ import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
-import org.hamcrest.Matchers;
+import org.jboss.logging.Logger;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertThat;
-import static org.keycloak.testsuite.admin.Users.getPasswordOf;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
 
 /**
  *
  * @author hmlnarik
  */
-public class LoginBuilder implements Step {
+public class UpdateProfileBuilder implements Step {
 
     private final SamlClientBuilder clientBuilder;
-    private UserRepresentation user;
-    private boolean sso = false;
-    private String idpAlias;
+    private final Map<String, String> parameters = new HashMap<>();
 
-    public LoginBuilder(SamlClientBuilder clientBuilder) {
+    private static final Logger LOG = Logger.getLogger(UpdateProfileBuilder.class);
+
+    public UpdateProfileBuilder(SamlClientBuilder clientBuilder) {
         this.clientBuilder = clientBuilder;
     }
 
     @Override
     public HttpUriRequest perform(CloseableHttpClient client, URI currentURI, CloseableHttpResponse currentResponse, HttpClientContext context) throws Exception {
-        if (sso) {
-            return null;    // skip this step
-        } else {
-            assertThat(currentResponse, statusCodeIsHC(Response.Status.OK));
-            String loginPageText = EntityUtils.toString(currentResponse.getEntity(), "UTF-8");
-            assertThat(loginPageText, containsString("login"));
+        assertThat(currentResponse, statusCodeIsHC(Response.Status.OK));
+        String loginPageText = EntityUtils.toString(currentResponse.getEntity(), "UTF-8");
+        assertThat(loginPageText, containsString("Update Account Information"));
 
-            return handleLoginPage(loginPageText, currentURI);
-        }
+        return handleUpdateProfile(loginPageText, currentURI);
     }
 
     public SamlClientBuilder build() {
         return this.clientBuilder;
     }
 
-    public LoginBuilder user(UserRepresentation user) {
-        this.user = user;
-        return this;
-    }
-
-    public LoginBuilder user(String userName, String password) {
-        this.user = new UserRepresentation();
-        this.user.setUsername(userName);
-        Users.setPasswordFor(user, password);
-        return this;
-    }
-
-    public LoginBuilder sso(boolean sso) {
-        this.sso = sso;
-        return this;
-    }
-
-    /**
-     * When the step is executed and {@code idpAlias} is not {@code null}, it attempts to find and follow the link to
-     * identity provider with the given alias.
-     * @param idpAlias
-     * @return
-     */
-    public LoginBuilder idp(String idpAlias) {
-        this.idpAlias = idpAlias;
-        return this;
-    }
-
-    /**
-     * Prepares a GET/POST request for logging the given user into the given login page. The login page is expected
-     * to have at least input fields with id "username" and "password".
-     *
-     * @param user
-     * @param loginPage
-     * @return
-     */
-    private HttpUriRequest handleLoginPage(String loginPage, URI currentURI) {
-        if (idpAlias != null) {
-            org.jsoup.nodes.Document theLoginPage = Jsoup.parse(loginPage);
-            Element zocialLink = theLoginPage.getElementById("zocial-" + this.idpAlias);
-            assertThat("Unknown idp: " + this.idpAlias, zocialLink, Matchers.notNullValue());
-            final String link = zocialLink.attr("href");
-            assertThat("Invalid idp link: " + this.idpAlias, link, Matchers.notNullValue());
-            return new HttpGet(currentURI.resolve(link));
+    public UpdateProfileBuilder param(String paramName, String paramValue) {
+        if (paramValue != null) {
+            this.parameters.put(paramName, paramValue);
+        } else {
+            this.parameters.remove(paramName);
         }
-
-        return handleLoginPage(user, loginPage);
+        return this;
     }
 
-    public static HttpUriRequest handleLoginPage(UserRepresentation user, String loginPage) {
-        String username = user.getUsername();
-        String password = getPasswordOf(user);
-        org.jsoup.nodes.Document theLoginPage = Jsoup.parse(loginPage);
+    public UpdateProfileBuilder firstName(String firstName) {
+        return param("firstName", firstName);
+    }
+
+    public UpdateProfileBuilder lastName(String lastName) {
+        return param("lastName", lastName);
+    }
+
+    public UpdateProfileBuilder username(String username) {
+        return param("username", username);
+    }
+
+    public UpdateProfileBuilder email(String email) {
+        return param("email", email);
+    }
+
+    public HttpUriRequest handleUpdateProfile(String loginPage, URI currentURI) {
+        org.jsoup.nodes.Document theUpdateProfilePage = Jsoup.parse(loginPage);
+        Set<String> unusedParams = new HashSet<>(this.parameters.keySet());
 
         List<NameValuePair> parameters = new LinkedList<>();
-        for (Element form : theLoginPage.getElementsByTag("form")) {
+        for (Element form : theUpdateProfilePage.getElementsByTag("form")) {
             String method = form.attr("method");
             String action = form.attr("action");
             boolean isPost = method != null && "post".equalsIgnoreCase(method);
 
             for (Element input : form.getElementsByTag("input")) {
-                if (Objects.equals(input.id(), "username")) {
-                    parameters.add(new BasicNameValuePair(input.attr("name"), username));
-                } else if (Objects.equals(input.id(), "password")) {
-                    parameters.add(new BasicNameValuePair(input.attr("name"), password));
-                } else {
-                    parameters.add(new BasicNameValuePair(input.attr("name"), input.val()));
+                if (this.parameters.containsKey(input.attr("name"))) {
+                    parameters.add(new BasicNameValuePair(input.attr("name"), this.parameters.get(input.attr("name"))));
+                    unusedParams.remove(input.attr("name"));
                 }
+            }
+
+            if (! unusedParams.isEmpty()) {
+                LOG.warnf("Unused parameter names at Update Profile page: %s", unusedParams);
             }
 
             if (isPost) {
@@ -168,7 +140,7 @@ public class LoginBuilder implements Step {
             }
         }
 
-        throw new IllegalArgumentException("Invalid login form: " + loginPage);
+        throw new IllegalArgumentException("Invalid update profile form: " + loginPage);
     }
 
 }

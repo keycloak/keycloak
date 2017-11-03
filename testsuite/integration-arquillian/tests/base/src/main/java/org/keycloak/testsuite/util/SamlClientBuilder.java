@@ -31,13 +31,16 @@ import org.keycloak.testsuite.util.saml.CreateAuthnRequestStepBuilder;
 import org.keycloak.testsuite.util.saml.CreateLogoutRequestStepBuilder;
 import org.keycloak.testsuite.util.saml.IdPInitiatedLoginBuilder;
 import org.keycloak.testsuite.util.saml.LoginBuilder;
+import org.keycloak.testsuite.util.saml.UpdateProfileBuilder;
 import org.keycloak.testsuite.util.saml.ModifySamlResponseStepBuilder;
 import org.keycloak.testsuite.util.saml.RequiredConsentBuilder;
+import javax.ws.rs.core.Response.Status;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.hamcrest.Matcher;
 import org.junit.Assert;
 import org.w3c.dom.Document;
+import static org.hamcrest.Matchers.notNullValue;
 
 /**
  *
@@ -157,6 +160,11 @@ public class SamlClientBuilder {
         return addStepBuilder(new LoginBuilder(this));
     }
 
+    /** Handles update profile page after login */
+    public UpdateProfileBuilder updateProfile() {
+        return addStepBuilder(new UpdateProfileBuilder(this));
+    }
+
     /** Starts IdP-initiated flow for the given client */
     public IdPInitiatedLoginBuilder idpInitiatedLogin(URI authServerSamlUrl, String clientId) {
         return addStepBuilder(new IdPInitiatedLoginBuilder(authServerSamlUrl, clientId, this));
@@ -189,6 +197,16 @@ public class SamlClientBuilder {
     public SamlClientBuilder navigateTo(URI httpGetUri) {
         steps.add((client, currentURI, currentResponse, context) -> new HttpGet(httpGetUri));
         return this;
+    }
+
+    public SamlClientBuilder followOneRedirect() {
+        return
+          doNotFollowRedirects()
+          .addStep((client, currentURI, currentResponse, context) -> {
+            Assert.assertThat(currentResponse, Matchers.statusCodeIsHC(Status.FOUND));
+            Assert.assertThat("Location header not found", currentResponse.getFirstHeader("Location"), notNullValue());
+            return new HttpGet(currentResponse.getFirstHeader("Location").getValue());
+          });
     }
 
 }
