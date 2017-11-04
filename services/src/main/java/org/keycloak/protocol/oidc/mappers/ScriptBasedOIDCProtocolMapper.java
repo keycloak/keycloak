@@ -25,6 +25,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.ScriptModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.representations.IDToken;
@@ -73,6 +74,13 @@ public class ScriptBasedOIDCProtocolMapper extends AbstractOIDCProtocolMapper im
         " * keycloakSession - the current userSession\n" + //
         " */\n\n\n//insert your code here..." //
       )
+      .add()
+      .property()
+      .name(ProtocolMapperUtils.MULTIVALUED)
+      .label(ProtocolMapperUtils.MULTIVALUED_LABEL)
+      .helpText(ProtocolMapperUtils.MULTIVALUED_HELP_TEXT)
+      .type(ProviderConfigProperty.BOOLEAN_TYPE)
+      .defaultValue(false)
       .add()
       .build();
 
@@ -135,15 +143,20 @@ public class ScriptBasedOIDCProtocolMapper extends AbstractOIDCProtocolMapper im
     OIDCAttributeMapperHelper.mapClaim(token, mappingModel, claimValue);
   }
 
-  public static ProtocolMapperModel createClaimMapper(String name,
+  public static ProtocolMapperModel create(String name,
                                                       String userAttribute,
                                                       String tokenClaimName, String claimType,
                                                       boolean consentRequired, String consentText,
-                                                      boolean accessToken, boolean idToken) {
-    return OIDCAttributeMapperHelper.createClaimMapper(name, userAttribute,
+                                                      boolean accessToken, boolean idToken, String script, boolean multiValued) {
+    ProtocolMapperModel mapper = OIDCAttributeMapperHelper.createClaimMapper(name, userAttribute,
       tokenClaimName, claimType,
       consentRequired, consentText,
       accessToken, idToken,
       PROVIDER_ID);
+
+    mapper.getConfig().put(SCRIPT, script);
+    mapper.getConfig().put(ProtocolMapperUtils.MULTIVALUED, String.valueOf(multiValued));
+
+    return mapper;
   }
 }
