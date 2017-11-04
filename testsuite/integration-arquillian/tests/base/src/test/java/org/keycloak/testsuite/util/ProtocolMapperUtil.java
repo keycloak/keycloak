@@ -1,7 +1,6 @@
 package org.keycloak.testsuite.util;
 
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
-import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.mappers.AddressMapper;
 import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
@@ -157,12 +156,12 @@ public class ProtocolMapperUtil {
                                                                   String claimType,
                                                                   boolean accessToken,
                                                                   boolean idToken,
-                                                                  String script) {
+                                                                  String script,
+                                                                  boolean multiValued) {
 
-        ProtocolMapperModel mapper = ScriptBasedOIDCProtocolMapper.createClaimMapper(name, userAttribute, tokenClaimName, claimType, false, null, accessToken, idToken);
-        mapper.getConfig().put("script", script);
-
-        return ModelToRepresentation.toRepresentation(mapper);
+        return ModelToRepresentation.toRepresentation(
+          ScriptBasedOIDCProtocolMapper.create(name, userAttribute, tokenClaimName, claimType, false, null, accessToken, idToken, script, multiValued)
+        );
     }
 
 }
