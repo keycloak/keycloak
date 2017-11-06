@@ -22,6 +22,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import org.infinispan.commons.api.BasicCache;
+import org.jboss.logging.Logger;
+import org.keycloak.common.util.Retry;
 import org.keycloak.models.CodeToTokenStoreProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.sessions.infinispan.entities.ActionTokenValueEntity;
@@ -30,6 +32,8 @@ import org.keycloak.models.sessions.infinispan.entities.ActionTokenValueEntity;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class InfinispanCodeToTokenStoreProvider implements CodeToTokenStoreProvider {
+
+    public static final Logger logger = Logger.getLogger(InfinispanCodeToTokenStoreProvider.class);
 
     private final Supplier<BasicCache<UUID, ActionTokenValueEntity>> codeCache;
     private final KeycloakSession session;
@@ -45,9 +49,24 @@ public class InfinispanCodeToTokenStoreProvider implements CodeToTokenStoreProvi
 
         int lifespanInSeconds = session.getContext().getRealm().getAccessCodeLifespan();
 
-        BasicCache<UUID, ActionTokenValueEntity> cache = codeCache.get();
-        ActionTokenValueEntity existing = cache.putIfAbsent(codeId, tokenValue, lifespanInSeconds, TimeUnit.SECONDS);
-        return existing == null;
+        boolean codeAlreadyExists = Retry.call(() -> {
+
+            try {
+                BasicCache<UUID, ActionTokenValueEntity> cache = codeCache.get();
+                ActionTokenValueEntity existing = cache.putIfAbsent(codeId, tokenValue, lifespanInSeconds, TimeUnit.SECONDS);
+                return existing == null;
+            } catch (RuntimeException re) {
+                if (logger.isDebugEnabled()) {
+                    logger.debugf(re, "Failed when adding code %s", codeId);
+                }
+
+                // Rethrow the exception. Retry will take care of handle the exception and eventually retry the operation.
+                throw re;
+            }
+
+        }, 3, 0);
+
+        return codeAlreadyExists;
     }
 
     @Override

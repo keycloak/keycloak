@@ -187,6 +187,10 @@ public class ConcurrencyJDGSessionsCacheTest {
                 ", successfulListenerWrites: " + successfulListenerWrites.get() + ", successfulListenerWrites2: " + successfulListenerWrites2.get() +
                 ", failedReplaceCounter: " + failedReplaceCounter.get() + ", failedReplaceCounter2: " + failedReplaceCounter2.get());
 
+
+        System.out.println("remoteCache1.notes: " + ((UserSessionEntity) remoteCache1.get("123")).getNotes().size() );
+        System.out.println("remoteCache2.notes: " + ((UserSessionEntity) remoteCache2.get("123")).getNotes().size() );
+
         System.out.println("Histogram: ");
         //histogram.dumpStats();
 
@@ -314,14 +318,26 @@ public class ConcurrencyJDGSessionsCacheTest {
                 // In case it's hardcoded (eg. all the replaces are doing same change, so session is defacto not changed), then histogram may contain bigger value than 1 on some places.
                 //String noteKey = "some";
 
-                boolean replaced = false;
-                while (!replaced) {
+                ReplaceStatus replaced = ReplaceStatus.NOT_REPLACED;
+                while (replaced != ReplaceStatus.REPLACED) {
                     VersionedValue<UserSessionEntity> versioned = remoteCache.getVersioned("123");
                     UserSessionEntity oldSession = versioned.getValue();
                     //UserSessionEntity clone = DistributedCacheConcurrentWritesTest.cloneSession(oldSession);
                     UserSessionEntity clone = oldSession;
 
-                    clone.getNotes().put(noteKey, "someVal");
+                    // In case that exception was thrown (ReplaceStatus.ERROR), the remoteCache may have the note. Seems that transactions are not fully rolled-back on the JDG side
+                    // in case that backup fails
+                    if (replaced == ReplaceStatus.NOT_REPLACED) {
+                        clone.getNotes().put(noteKey, "someVal");
+                    } else if (replaced == ReplaceStatus.ERROR) {
+                        if (clone.getNotes().containsKey(noteKey)) {
+                            System.err.println("I HAVE THE KEY: " + noteKey);
+                        } else {
+                            System.err.println("I DON'T HAVE THE KEY: " + noteKey);
+                            clone.getNotes().put(noteKey, "someVal");
+                        }
+                    }
+
                     //cache.replace("123", clone);
                     replaced = cacheReplace(versioned, clone);
                 }
@@ -336,7 +352,7 @@ public class ConcurrencyJDGSessionsCacheTest {
 
         }
 
-        private boolean cacheReplace(VersionedValue<UserSessionEntity> oldSession, UserSessionEntity newSession) {
+        private ReplaceStatus cacheReplace(VersionedValue<UserSessionEntity> oldSession, UserSessionEntity newSession) {
             try {
                 boolean replaced = remoteCache.replaceWithVersion("123", newSession, oldSession.getVersion());
                 //boolean replaced = true;
@@ -348,14 +364,18 @@ public class ConcurrencyJDGSessionsCacheTest {
                 } else {
                     histogram.increaseSuccessOpsCount(oldSession.getVersion());
                 }
-                return replaced;
+                return replaced ? ReplaceStatus.REPLACED : ReplaceStatus.NOT_REPLACED;
             } catch (Exception re) {
                 failedReplaceCounter2.incrementAndGet();
-                return false;
+                return ReplaceStatus.ERROR;
             }
             //return replaced;
         }
 
+    }
+
+    private enum ReplaceStatus {
+        REPLACED, NOT_REPLACED, ERROR
     }
 /*
     // Worker, which operates on "classic" cache and rely on operations delegated to the second cache

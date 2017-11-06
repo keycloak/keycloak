@@ -433,6 +433,10 @@ public abstract class AbstractKeycloakTest {
         }
     }
 
+    public Logger getLogger() {
+        return log;
+    }
+
     private static void enableHTTPSForAuthServer() throws IOException, CommandFailedException, TimeoutException, InterruptedException, CliException, OperationException {
         OnlineManagementClient client = AuthServerTestEnricher.getManagementClient();
         Administration administration = new Administration(client);

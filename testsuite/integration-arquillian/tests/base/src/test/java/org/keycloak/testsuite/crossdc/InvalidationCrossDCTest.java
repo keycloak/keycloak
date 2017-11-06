@@ -31,7 +31,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.Retry;
+import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.admin.ApiUtil;
 
 /**

@@ -21,12 +21,16 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 
 import javax.ws.rs.NotFoundException;
+
+import org.hamcrest.Matchers;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.TargetsContainer;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
@@ -36,7 +40,8 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.Retry;
+import org.keycloak.common.util.Retry;
+import org.keycloak.testsuite.admin.concurrency.AbstractConcurrencyTest;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -207,6 +212,44 @@ public class BruteForceCrossDCTest extends AbstractAdminCrossDCTest {
         addUserLoginFailure(getTestingClientForStartedNodeInDc(1));
         assertStatistics("After create entry2", 2, 0, 1);
 
+    }
+
+
+    @Test
+    public void testBruteForceConcurrentUpdate() throws Exception {
+        // Enable 1st node on each DC only
+        enableDcOnLoadBalancer(DC.FIRST);
+        enableDcOnLoadBalancer(DC.SECOND);
+
+        // Clear all
+        adminClient.realms().realm(REALM_NAME).attackDetection().clearAllBruteForce();
+        assertStatistics("After brute force cleared", 0, 0, 0);
+
+        // create the entry manually in DC0
+        addUserLoginFailure(getTestingClientForStartedNodeInDc(0));
+        assertStatistics("After create entry1", 1, 0, 1);
+
+        AbstractConcurrencyTest.KeycloakRunnable runnable = new AbstractConcurrencyTest.KeycloakRunnable() {
+
+            @Override
+            public void run(int threadIndex, Keycloak keycloak, RealmResource realm) throws Throwable {
+                createBruteForceFailures(1, "login-test-1");
+            }
+
+        };
+
+        AbstractConcurrencyTest.run(2, 20, this, runnable);
+
+        Retry.execute(() -> {
+            int dc0user1 = (Integer) getAdminClientForStartedNodeInDc(0).realm(REALM_NAME).attackDetection().bruteForceUserStatus("login-test-1").get("numFailures");
+            int dc1user1 = (Integer) getAdminClientForStartedNodeInDc(1).realm(REALM_NAME).attackDetection().bruteForceUserStatus("login-test-1").get("numFailures");
+
+            log.infof("After concurrent update entry1: dc0User1=%d, dc1user1=%d", dc0user1, dc1user1);
+
+            // The numFailures can be actually bigger than 20. Conflicts can increase the numFailures number to bigger value as they may not be fully reverted (listeners etc)
+            Assert.assertThat(dc0user1, Matchers.greaterThan(20));
+            Assert.assertEquals(dc0user1, dc1user1);
+        }, 50, 50);
     }
 
 

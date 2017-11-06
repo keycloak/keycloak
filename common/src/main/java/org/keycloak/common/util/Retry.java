@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,9 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite;
-
-import java.util.function.Supplier;
+package org.keycloak.common.util;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -44,7 +42,9 @@ public class Retry {
                 executionIndex++;
                 if (attemptsCount > 0) {
                     try {
-                        Thread.sleep(intervalMillis);
+                        if (intervalMillis > 0) {
+                            Thread.sleep(intervalMillis);
+                        }
                     } catch (InterruptedException ie) {
                         ie.addSuppressed(e);
                         throw new RuntimeException(ie);
@@ -73,7 +73,9 @@ public class Retry {
                 attemptsCount--;
                 if (attemptsCount > 0) {
                     try {
-                        Thread.sleep(intervalMillis);
+                        if (intervalMillis > 0) {
+                            Thread.sleep(intervalMillis);
+                        }
                     } catch (InterruptedException ie) {
                         ie.addSuppressed(e);
                         throw new RuntimeException(ie);
@@ -84,5 +86,20 @@ public class Retry {
             }
         }
     }
+
+
+    /**
+     * Needed here just because java.util.function.Supplier defined from Java 8
+     */
+    public interface Supplier<T> {
+
+        /**
+         * Gets a result.
+         *
+         * @return a result
+         */
+        T get();
+    }
+
 
 }

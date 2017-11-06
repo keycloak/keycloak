@@ -20,7 +20,7 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.Retry;
+import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.page.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.ErrorPage;

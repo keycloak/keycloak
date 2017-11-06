@@ -22,7 +22,6 @@ import javax.ws.rs.core.Response;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.junit.Test;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.Retry;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.OAuthClient;
 

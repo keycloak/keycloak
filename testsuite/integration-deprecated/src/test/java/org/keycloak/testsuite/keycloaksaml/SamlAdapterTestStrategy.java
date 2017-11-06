@@ -45,7 +45,6 @@ import org.keycloak.saml.common.constants.*;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.KeycloakServer;
-import org.keycloak.testsuite.Retry;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testsuite.rule.ErrorServlet;

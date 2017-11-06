@@ -25,7 +25,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.Retry;
+import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;

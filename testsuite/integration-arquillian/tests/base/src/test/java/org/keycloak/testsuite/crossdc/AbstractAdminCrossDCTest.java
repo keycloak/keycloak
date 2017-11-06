@@ -19,7 +19,7 @@ package org.keycloak.testsuite.crossdc;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.events.log.JBossLoggingEventListenerProviderFactory;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.Retry;
+import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.arquillian.InfinispanStatistics;
 import org.keycloak.testsuite.events.EventsListenerProviderFactory;
 import org.keycloak.testsuite.util.TestCleanup;
