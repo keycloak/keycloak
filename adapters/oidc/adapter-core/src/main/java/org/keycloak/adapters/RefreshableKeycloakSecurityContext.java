@@ -20,6 +20,7 @@ package org.keycloak.adapters;
 import org.jboss.logging.Logger;
 import org.keycloak.AuthorizationContext;
 import org.keycloak.KeycloakSecurityContext;
+import org.keycloak.adapters.exception.RefreshTokenException;
 import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
@@ -94,21 +95,21 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
 
     /**
      * @param checkActive if true, then we won't send refresh request if current accessToken is still active.
-     * @return true if accessToken is active or was successfully refreshed
+     * @throws RefreshTokenException refreshing the token failed, check the error code for why
      */
-    public boolean refreshExpiredToken(boolean checkActive) {
+    public void refreshExpiredToken(boolean checkActive) throws RefreshTokenException {
         if (checkActive) {
             if (log.isTraceEnabled()) {
                 log.trace("checking whether to refresh.");
             }
-            if (isActive() && isTokenTimeToLiveSufficient(this.token)) return true;
+            if (isActive() && isTokenTimeToLiveSufficient(this.token)) return;
         }
 
-        if (this.deployment == null || refreshToken == null) return false; // Might be serialized in HttpSession?
+        if (this.deployment == null || refreshToken == null) throw new RefreshTokenException(RefreshTokenError.UNEXPECTED); // Might be serialized in HttpSession?
 
         if (!this.getRealm().equals(this.deployment.getRealm())) {
             // this should not happen, but let's check it anyway
-            return false;
+            throw new RefreshTokenException(RefreshTokenError.UNEXPECTED);
         }
 
         if (log.isTraceEnabled()) {
@@ -119,10 +120,10 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
             response = ServerRequest.invokeRefresh(deployment, refreshToken);
         } catch (IOException e) {
             log.error("Refresh token failure", e);
-            return false;
+            throw new RefreshTokenException(RefreshTokenError.UNEXPECTED);
         } catch (ServerRequest.HttpFailure httpFailure) {
             log.error("Refresh token failure status: " + httpFailure.getStatus() + " " + httpFailure.getError());
-            return false;
+            throw new RefreshTokenException(RefreshTokenError.convert(httpFailure));
         }
         if (log.isTraceEnabled()) {
             log.trace("received refresh response");
@@ -134,13 +135,13 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
             log.debug("Token Verification succeeded!");
         } catch (VerificationException e) {
             log.error("failed verification of token");
-            return false;
+            throw new RefreshTokenException(RefreshTokenError.VERIFICATION_FAILED);
         }
 
         // If the TTL is greater-or-equal to the expire time on the refreshed token, have to abort or go into an infinite refresh loop
         if (!isTokenTimeToLiveSufficient(token)) {
             log.error("failed to refresh the token with a longer time-to-live than the minimum");
-            return false;
+            throw new RefreshTokenException(RefreshTokenError.TOKEN_TTL_INSUFFICIENT);
         }
 
         if (response.getNotBeforePolicy() > deployment.getNotBefore()) {
@@ -158,7 +159,6 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
         if (tokenStore != null) {
             tokenStore.refreshCallback(this);
         }
-        return true;
     }
 
     public void setAuthorizationContext(AuthorizationContext authorizationContext) {

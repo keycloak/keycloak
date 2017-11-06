@@ -27,6 +27,7 @@ import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.RequestAuthenticator;
+import org.keycloak.adapters.exception.RefreshTokenException;
 import org.keycloak.adapters.spi.HttpFacade;
 
 /**
@@ -109,9 +110,12 @@ public class JettyCookieTokenStore implements AdapterTokenStore {
         RefreshableKeycloakSecurityContext session = principal.getKeycloakSecurityContext();
 
         if (session.isActive() && !session.getDeployment().isAlwaysRefreshToken()) return principal;
-        boolean success = session.refreshExpiredToken(false);
-        if (success && session.isActive()) return principal;
-
+        try {
+            session.refreshExpiredToken(false);
+            if (session.isActive()) return principal;
+        } catch (RefreshTokenException e) {
+            // do nothing
+        }
         log.debugf("Cleanup and expire cookie for user %s after failed refresh", principal.getName());
         CookieTokenStore.removeCookie(facade);
         return null;
