@@ -125,15 +125,10 @@ public class SocialLoginTest extends AbstractKeycloakTest {
 
     private Provider currentTestProvider;
 
-    private static final boolean localConfig = false;
-
     @BeforeClass
     public static void loadConfig() throws Exception {
-        if (localConfig) {
-        } else {
-            assumeTrue(System.getProperties().containsKey(SOCIAL_CONFIG));
-            config.load(new FileInputStream(System.getProperty(SOCIAL_CONFIG)));
-        }
+        assumeTrue(System.getProperties().containsKey(SOCIAL_CONFIG));
+        config.load(new FileInputStream(System.getProperty(SOCIAL_CONFIG)));
     }
     
     @Before
@@ -228,28 +223,12 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         testTokenExchange();
     }
 
-    // disabled as I can't get this to work with automated login
-    //@Test
-    public void gitLabLogin() throws InterruptedException {
+    @Test
+    public void gitlabLogin() throws InterruptedException {
         currentTestProvider = GITLAB;
-        // I can't get automated login to work.  inspected elements in browser, are not found in the GitLabLoginPage.
         performLogin();
         assertAccount();
         testTokenExchange();
-    }
-
-    protected void manualLogin() throws InterruptedException {
-        System.out.println("****** START MANUAL LOGIN ******");
-        System.out.println("****** START MANUAL LOGIN ******");
-        System.out.println("****** START MANUAL LOGIN ******");
-        Thread.sleep(2000);
-        for (int i = 0; i < 60; i++) {
-            List<UserRepresentation> users = adminClient.realm(REALM).users().search(null, null, null);
-            if (users.size() > 0) return;
-            System.out.println("....waiting");
-            Thread.sleep(1000);
-        }
-
     }
 
     @Test
@@ -263,7 +242,6 @@ public class SocialLoginTest extends AbstractKeycloakTest {
 
     @Test
     public void githubLogin() throws InterruptedException {
-        //Thread.sleep(100000000);
         currentTestProvider = GITHUB;
         performLogin();
         assertAccount();

@@ -27,20 +27,24 @@ import org.openqa.selenium.support.FindBy;
  */
 public class GitLabLoginPage extends AbstractSocialLoginPage {
     @FindBy(id = "user_login")
-    //@FindBy(name = "user[login]")
     private WebElement usernameInput;
 
     @FindBy(id = "user_password")
-    //@FindBy(name = "user[password]")
     private WebElement passwordInput;
 
-    @FindBy(name = "commit")
-    private WebElement loginButton;
+    @FindBy(xpath = "//input[@name='commit' and @value='Authorize']")
+    private WebElement authorizeButton;
 
     @Override
     public void login(String user, String password) {
-        usernameInput.sendKeys(user);
-        passwordInput.sendKeys(password);
-        passwordInput.sendKeys(Keys.RETURN);
+        try {
+            usernameInput.sendKeys(user);
+            passwordInput.sendKeys(password);
+            passwordInput.sendKeys(Keys.RETURN);
+        }
+        catch (NoSuchElementException e) {
+            // already logged in
+        }
+        authorizeButton.click();
     }
 }
