@@ -39,6 +39,12 @@ public class AdapterUtils {
     public static Set<String> getRolesFromSecurityContext(RefreshableKeycloakSecurityContext session) {
         Set<String> roles = null;
         AccessToken accessToken = session.getToken();
+        if (null == accessToken) {
+            if (log.isTraceEnabled()) {
+                log.trace("no access token, empty role set returned");
+            }
+            return Collections.emptySet();
+        }
         if (session.getDeployment().isUseResourceRoleMappings()) {
             if (log.isTraceEnabled()) {
                 log.trace("useResourceRoleMappings");
