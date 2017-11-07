@@ -116,9 +116,7 @@ public class WelcomeResource {
                 throw new WebApplicationException(Response.Status.BAD_REQUEST);
             }
 
-            String cookieStateChecker = getCsrfCookie();
-            String formStateChecker = formData.getFirst("stateChecker");
-            csrfCheck(cookieStateChecker, formStateChecker);
+            csrfCheck(formData);
 
             String username = formData.getFirst("username");
             String password = formData.getFirst("password");
@@ -183,7 +181,7 @@ public class WelcomeResource {
                 map.put("localUser", isLocal);
 
                 if (isLocal) {
-                    String stateChecker = updateCsrfChecks();
+                    String stateChecker = setCsrfCookie();
                     map.put("stateChecker", stateChecker);
                 }
             }
@@ -242,25 +240,23 @@ public class WelcomeResource {
         return inetAddress.isAnyLocalAddress() || inetAddress.isLoopbackAddress();
     }
 
-    private String updateCsrfChecks() {
-        String stateChecker = getCsrfCookie();
-        if (stateChecker != null) {
-            return stateChecker;
-        } else {
-            stateChecker = Base64Url.encode(KeycloakModelUtils.generateSecret());
-            String cookiePath = uriInfo.getPath();
-            boolean secureOnly = uriInfo.getRequestUri().getScheme().equalsIgnoreCase("https");
-            CookieHelper.addCookie(KEYCLOAK_STATE_CHECKER, stateChecker, cookiePath, null, null, -1, secureOnly, true);
-            return stateChecker;
-        }
+    private String setCsrfCookie() {
+        String stateChecker = Base64Url.encode(KeycloakModelUtils.generateSecret());
+        String cookiePath = uriInfo.getPath();
+        boolean secureOnly = uriInfo.getRequestUri().getScheme().equalsIgnoreCase("https");
+        CookieHelper.addCookie(KEYCLOAK_STATE_CHECKER, stateChecker, cookiePath, null, null, -1, secureOnly, true);
+        return stateChecker;
     }
 
-    private String getCsrfCookie() {
+    private void csrfCheck(final MultivaluedMap<String, String> formData) {
+        String formStateChecker = formData.getFirst("stateChecker");
         Cookie cookie = headers.getCookies().get(KEYCLOAK_STATE_CHECKER);
-        return cookie==null ? null : cookie.getValue();
-    }
+        if (cookie == null) {
+            throw new ForbiddenException();
+        }
 
-    private void csrfCheck(String cookieStateChecker, String formStateChecker) {
+        String cookieStateChecker = cookie.getValue();
+
         if (cookieStateChecker == null || !cookieStateChecker.equals(formStateChecker)) {
             throw new ForbiddenException();
         }
