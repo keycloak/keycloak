@@ -21,6 +21,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
+import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 import org.infinispan.commons.api.BasicCache;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Retry;
@@ -49,24 +50,20 @@ public class InfinispanCodeToTokenStoreProvider implements CodeToTokenStoreProvi
 
         int lifespanInSeconds = session.getContext().getRealm().getAccessCodeLifespan();
 
-        boolean codeAlreadyExists = Retry.call(() -> {
-
-            try {
-                BasicCache<UUID, ActionTokenValueEntity> cache = codeCache.get();
-                ActionTokenValueEntity existing = cache.putIfAbsent(codeId, tokenValue, lifespanInSeconds, TimeUnit.SECONDS);
-                return existing == null;
-            } catch (RuntimeException re) {
-                if (logger.isDebugEnabled()) {
-                    logger.debugf(re, "Failed when adding code %s", codeId);
-                }
-
-                // Rethrow the exception. Retry will take care of handle the exception and eventually retry the operation.
-                throw re;
+        try {
+            BasicCache<UUID, ActionTokenValueEntity> cache = codeCache.get();
+            ActionTokenValueEntity existing = cache.putIfAbsent(codeId, tokenValue, lifespanInSeconds, TimeUnit.SECONDS);
+            return existing == null;
+        } catch (HotRodClientException re) {
+            // No need to retry. The hotrod (remoteCache) has some retries in itself in case of some random network error happened.
+            // In case of lock conflict, we don't want to retry anyway as there was likely an attempt to use the code from different place.
+            if (logger.isDebugEnabled()) {
+                logger.debugf(re, "Failed when adding code %s", codeId);
             }
 
-        }, 3, 0);
+            return false;
+        }
 
-        return codeAlreadyExists;
     }
 
     @Override
