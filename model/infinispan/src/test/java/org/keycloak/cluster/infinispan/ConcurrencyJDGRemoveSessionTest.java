@@ -121,6 +121,8 @@ public class ConcurrencyJDGRemoveSessionTest {
 
             logger.info("SESSIONS NOT AVAILABLE ON DC2");
 
+            long took = System.currentTimeMillis() - start;
+            logger.infof("took %d ms", took);
 
             //        // Start and join workers
 //        worker1.start();
@@ -136,8 +138,6 @@ public class ConcurrencyJDGRemoveSessionTest {
             cache1.getCacheManager().stop();
             cache2.getCacheManager().stop();
         }
-
-        long took = System.currentTimeMillis() - start;
 
 //        // Output
 //        for (Map.Entry<String, EntryInfo> entry : state.entrySet()) {

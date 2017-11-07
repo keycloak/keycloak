@@ -17,9 +17,11 @@
 
 package org.keycloak.testsuite.admin.concurrency;
 
+import org.jboss.logging.Logger;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import java.util.LinkedList;
 import java.util.Collection;
@@ -54,14 +56,19 @@ public abstract class AbstractConcurrencyTest extends AbstractTestRealmKeycloakT
     }
 
     protected void run(final int numThreads, final int totalNumberOfExecutions, final KeycloakRunnable... runnables) {
+        run(numThreads, totalNumberOfExecutions, this, runnables);
+    }
+
+
+    public static void run(final int numThreads, final int totalNumberOfExecutions, AbstractKeycloakTest testImpl, final KeycloakRunnable... runnables) {
         final ExecutorService service = SYNCHRONIZED
-          ? Executors.newSingleThreadExecutor()
-          : Executors.newFixedThreadPool(numThreads);
+                ? Executors.newSingleThreadExecutor()
+                : Executors.newFixedThreadPool(numThreads);
 
         ThreadLocal<Keycloak> keycloaks = new ThreadLocal<Keycloak>() {
             @Override
             protected Keycloak initialValue() {
-                return Keycloak.getInstance(getAuthServerRoot().toString(), "master", "admin", "admin", org.keycloak.models.Constants.ADMIN_CLI_CLIENT_ID);
+                return Keycloak.getInstance(testImpl.getAuthServerRoot().toString(), "master", "admin", "admin", org.keycloak.models.Constants.ADMIN_CLI_CLIENT_ID);
             }
         };
 
@@ -95,12 +102,13 @@ public abstract class AbstractConcurrencyTest extends AbstractTestRealmKeycloakT
         if (! failures.isEmpty()) {
             RuntimeException ex = new RuntimeException("There were failures in threads. Failures count: " + failures.size());
             failures.forEach(ex::addSuppressed);
-            failures.forEach(e -> log.error(e.getMessage(), e));
+            failures.forEach(e -> testImpl.getLogger().error(e.getMessage(), e));
             throw ex;
         }
     }
 
-    protected interface KeycloakRunnable {
+
+    public interface KeycloakRunnable {
 
         void run(int threadIndex, Keycloak keycloak, RealmResource realm) throws Throwable;
 

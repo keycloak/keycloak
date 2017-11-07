@@ -255,6 +255,10 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
             RemoteCache<K, SessionEntityWrapper<V>> remoteCache = (RemoteCache) remoteStores.iterator().next().getRemoteCache();
 
+            if (remoteCache == null) {
+                throw new IllegalStateException("No remote cache available for the infinispan cache: " + ispnCache.getName());
+            }
+
             remoteCacheInvoker.addRemoteCache(ispnCache.getName(), remoteCache, maxIdleLoader);
 
             RemoteCacheSessionListener hotrodListener = RemoteCacheSessionListener.createListener(session, ispnCache, remoteCache);

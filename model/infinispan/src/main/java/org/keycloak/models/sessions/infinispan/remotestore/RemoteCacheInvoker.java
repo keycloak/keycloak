@@ -17,6 +17,7 @@
 
 package org.keycloak.models.sessions.infinispan.remotestore;
 
+import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,6 +33,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask;
+import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
@@ -71,14 +73,28 @@ public class RemoteCacheInvoker {
             return;
         }
 
-        long maxIdleTimeMs = context.maxIdleTimeLoader.getMaxIdleTimeMs(realm);
+        long loadedMaxIdleTimeMs = context.maxIdleTimeLoader.getMaxIdleTimeMs(realm);
 
         // Double the timeout to ensure that entry won't expire on remoteCache in case that write of some entities to remoteCache is postponed (eg. userSession.lastSessionRefresh)
-        maxIdleTimeMs = maxIdleTimeMs * 2;
+        final long maxIdleTimeMs = loadedMaxIdleTimeMs * 2;
 
         logger.debugf("Running task '%s' on remote cache '%s' . Key is '%s'", operation, cacheName, key);
 
-        runOnRemoteCache(context.remoteCache, maxIdleTimeMs, key, task, sessionWrapper);
+        Retry.execute(() -> {
+
+            try {
+                runOnRemoteCache(context.remoteCache, maxIdleTimeMs, key, task, sessionWrapper);
+            } catch (RuntimeException re) {
+                if (logger.isDebugEnabled()) {
+                    logger.debugf(re, "Failed running task '%s' on remote cache '%s' . Key: '%s' . Will try to retry the task",
+                            operation, cacheName, key);
+                }
+
+                // Rethrow the exception. Retry will take care of handle the exception and eventually retry the operation.
+                throw re;
+            }
+
+        }, 10, 0);
     }
 
 

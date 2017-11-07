@@ -36,7 +36,8 @@
             <xsl:apply-templates select="@* | node()" />
 
             <replicated-cache-configuration name="sessions-cfg" mode="SYNC" start="EAGER" batching="false">
-                <transaction mode="NON_XA" locking="PESSIMISTIC"/>
+                <transaction mode="NON_DURABLE_XA" locking="PESSIMISTIC"/>
+                <locking acquire-timeout="0" />
                 <backups>
                     <backup site="{$remote.site}" failure-policy="FAIL" strategy="SYNC" enabled="true"/>
                 </backups>

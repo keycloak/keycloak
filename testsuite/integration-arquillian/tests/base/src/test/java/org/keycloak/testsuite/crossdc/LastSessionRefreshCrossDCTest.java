@@ -24,7 +24,7 @@ import org.junit.Test;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.Retry;
+import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 import org.keycloak.testsuite.rest.representation.RemoteCacheStats;
 import org.keycloak.testsuite.util.OAuthClient;

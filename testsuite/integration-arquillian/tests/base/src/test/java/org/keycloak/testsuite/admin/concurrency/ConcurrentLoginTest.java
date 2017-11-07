@@ -50,7 +50,7 @@ import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.testsuite.Retry;
+import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -222,9 +222,9 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
 
             oauth1.openLogout();
 
-            // Code should be successfully exchanged for the token just once
-            Assert.assertEquals(1, codeToTokenSuccessCount.get());
-            Assert.assertEquals(DEFAULT_THREADS - 1, codeToTokenErrorsCount.get());
+            // Code should be successfully exchanged for the token at max once. In some cases (EG. Cross-DC) it may not be even successfully exchanged
+            Assert.assertThat(codeToTokenSuccessCount.get(), Matchers.lessThanOrEqualTo(1));
+            Assert.assertThat(codeToTokenErrorsCount.get(), Matchers.greaterThanOrEqualTo(DEFAULT_THREADS - 1));
 
             log.infof("Iteration %d passed successfully", i);
         }

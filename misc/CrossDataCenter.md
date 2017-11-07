@@ -95,7 +95,8 @@ Infinispan Server setup
 <cache-container name="clustered" default-cache="default" statistics="true">
         ...
         <replicated-cache-configuration name="sessions-cfg" mode="SYNC" start="EAGER" batching="false">
-            <transaction mode="NON_XA" locking="PESSIMISTIC"/>
+            <transaction mode="NON_DURABLE_XA" locking="PESSIMISTIC"/>
+            <locking acquire-timeout="0" />
             <backups>
                 <backup site="site2" failure-policy="FAIL" strategy="SYNC" enabled="true"/>
             </backups>
@@ -103,7 +104,9 @@ Infinispan Server setup
 
         <replicated-cache name="work" configuration="sessions-cfg"/>
         <replicated-cache name="sessions" configuration="sessions-cfg"/>
+        <replicated-cache name="clientSessions" configuration="sessions-cfg"/>
         <replicated-cache name="offlineSessions" configuration="sessions-cfg"/>
+        <replicated-cache name="offlineClientSessions" configuration="sessions-cfg"/>
         <replicated-cache name="actionTokens" configuration="sessions-cfg"/>
         <replicated-cache name="loginFailures" configuration="sessions-cfg"/>
                 
