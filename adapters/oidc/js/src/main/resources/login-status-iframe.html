@@ -36,7 +36,7 @@
 
             req.onreadystatechange = function () {
                 if (req.readyState === 4) {
-                    if (req.status === 204) {
+                    if (req.status === 204 || req.status === 1223) {
                         init = {
                             clientId: clientId,
                             origin: origin
