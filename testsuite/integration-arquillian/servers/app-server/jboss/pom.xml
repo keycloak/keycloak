@@ -226,6 +226,7 @@
                                         <JBOSS_HOME>${app.server.jboss.home}</JBOSS_HOME>
                                         <SAML_SUPPORTED>${app.server.saml.adapter.supported}</SAML_SUPPORTED>
                                         <ELYTRON_SUPPORTED>${app.server.elytron.adapter.supported}</ELYTRON_SUPPORTED>
+                                        <CLI_PATH>${common.resources}/cli</CLI_PATH>
                                     </environmentVariables>
                                 </configuration>
                             </execution>
