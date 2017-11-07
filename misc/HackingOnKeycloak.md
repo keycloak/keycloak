@@ -60,6 +60,9 @@ Here's a quick check list for a good pull request (PR):
 * All tests in testsuite pass
 * Do a rebase on upstream master
 * We only accept contributions to the master branch. The exception to this is if the fix is for the latest CR release and Final has not yet been released, in which case you can send the PR to both the corresponding branch and the master branch.
+* PR needs to be accompanied with tests that sufficiently test added/changed functionality
+* Relevant documentation change needs to be submitted to keycloak/keycloak-documentation repository
+* Should a change be requested in a PR that stays without response for 2 weeks, the PR would be closed
 
 Once you're happy with your changes go to GitHub and create a PR to the master branch.
 
