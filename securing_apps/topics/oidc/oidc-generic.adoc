@@ -67,7 +67,7 @@ The certificate endpoint returns the public keys enabled by the realm, encoded a
 /realms/{realm-name}/protocol/openid-connect/token/introspect
 ....
 
-The introspection endpoint is used to retrieve the active state of a token. It is can only be invoked by confidential clients.
+The introspection endpoint is used to retrieve the active state of a token. It can only be invoked by confidential clients.
 
 For more details see https://tools.ietf.org/html/rfc7662[OAuth 2.0 Token Introspection specification].
 
