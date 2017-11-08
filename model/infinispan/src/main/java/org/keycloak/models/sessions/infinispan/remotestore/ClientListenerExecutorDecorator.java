@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
 
 import org.infinispan.client.hotrod.event.ClientCacheEntryCreatedEvent;
 import org.infinispan.client.hotrod.event.ClientCacheEntryModifiedEvent;
@@ -28,6 +29,7 @@ import org.infinispan.client.hotrod.event.ClientCacheEntryRemovedEvent;
 import org.infinispan.client.hotrod.event.ClientEvent;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.Time;
 
 import static org.infinispan.client.hotrod.event.ClientEvent.Type.CLIENT_CACHE_ENTRY_CREATED;
 import static org.infinispan.client.hotrod.event.ClientEvent.Type.CLIENT_CACHE_ENTRY_REMOVED;
@@ -94,24 +96,40 @@ public class ClientListenerExecutorDecorator<K> {
 
     // Assume it's called from the synchronized block
     private void submitImpl(K key, MyClientEvent event, Runnable r) {
-        logger.debugf("Submitting event to the executor: %s", event.toString());
+        logger.debugf("Submitting event to the executor: %s . eventsInProgress size: %d, eventsQueue size: %d", event.toString(), eventsInProgress.size(), eventsQueue.size());
 
         eventsInProgress.put(key, event);
 
         Runnable decoratedRunnable = () -> {
+            Long start = null;
             try {
+                if (logger.isDebugEnabled()) {
+                    start = Time.currentTimeMillis();
+                }
+
                 r.run();
             } finally {
                 synchronized (lock) {
-                    logger.debugf("Finished processing event by the executor: %s", event.toString());
                     eventsInProgress.remove(key);
+
+                    if (logger.isDebugEnabled()) {
+                        long took = Time.currentTimeMillis() - start;
+                        logger.debugf("Finished processing event by the executor: %s, took: %d ms. EventsInProgress size: %d", event.toString(), took, eventsInProgress.size());
+                    }
 
                     pollQueue(key);
                 }
             }
         };
 
-        decorated.submit(decoratedRunnable);
+        try {
+            decorated.submit(decoratedRunnable);
+        } catch (RejectedExecutionException ree) {
+            eventsInProgress.remove(key);
+
+            logger.errorf("Rejected execution of task for the event '%s' . Try to increase the pool size. Pool is '%s'", event.toString(), decorated.toString());
+            throw ree;
+        }
     }
 
 

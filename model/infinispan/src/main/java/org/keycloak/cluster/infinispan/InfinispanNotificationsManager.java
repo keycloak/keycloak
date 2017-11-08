@@ -222,11 +222,8 @@ public class InfinispanNotificationsManager {
 
                 });
             } catch (RejectedExecutionException ree) {
-                logger.warnf("Rejected submitting of the event for key: %s. Probably server going to shutdown", key);
-
-                if (logger.isDebugEnabled()) {
-                    logger.debug(ree.getMessage(), ree);
-                }
+                logger.errorf("Rejected submitting of the event for key: %s. Value: %s, Server going to shutdown or pool exhausted. Pool: %s", key, workCache.get(key), listenersExecutor.toString());
+                throw ree;
             }
         }
 

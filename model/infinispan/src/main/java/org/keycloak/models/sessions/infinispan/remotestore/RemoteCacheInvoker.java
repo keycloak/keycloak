@@ -17,6 +17,7 @@
 
 package org.keycloak.models.sessions.infinispan.remotestore;
 
+import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import java.util.Collections;
@@ -69,7 +70,9 @@ public class RemoteCacheInvoker {
         SessionUpdateTask.CrossDCMessageStatus status = task.getCrossDCMessageStatus(sessionWrapper);
 
         if (status == SessionUpdateTask.CrossDCMessageStatus.NOT_NEEDED) {
-            logger.debugf("Skip writing to remoteCache for entity '%s' of cache '%s' and operation '%s'", key, cacheName, operation);
+            if (logger.isTraceEnabled()) {
+                logger.tracef("Skip writing to remoteCache for entity '%s' of cache '%s' and operation '%s'", key, cacheName, operation);
+            }
             return;
         }
 
@@ -78,23 +81,25 @@ public class RemoteCacheInvoker {
         // Double the timeout to ensure that entry won't expire on remoteCache in case that write of some entities to remoteCache is postponed (eg. userSession.lastSessionRefresh)
         final long maxIdleTimeMs = loadedMaxIdleTimeMs * 2;
 
-        logger.debugf("Running task '%s' on remote cache '%s' . Key is '%s'", operation, cacheName, key);
+        if (logger.isTraceEnabled()) {
+            logger.tracef("Running task '%s' on remote cache '%s' . Key is '%s'", operation, cacheName, key);
+        }
 
-        Retry.execute(() -> {
+        Retry.executeWithBackoff((int iteration) -> {
 
             try {
                 runOnRemoteCache(context.remoteCache, maxIdleTimeMs, key, task, sessionWrapper);
-            } catch (RuntimeException re) {
+            } catch (HotRodClientException re) {
                 if (logger.isDebugEnabled()) {
-                    logger.debugf(re, "Failed running task '%s' on remote cache '%s' . Key: '%s' . Will try to retry the task",
-                            operation, cacheName, key);
+                    logger.debugf(re, "Failed running task '%s' on remote cache '%s' . Key: '%s', iteration '%s'. Will try to retry the task",
+                            operation, cacheName, key, iteration);
                 }
 
                 // Rethrow the exception. Retry will take care of handle the exception and eventually retry the operation.
                 throw re;
             }
 
-        }, 10, 0);
+        }, 10, 10);
     }
 
 
@@ -146,15 +151,17 @@ public class RemoteCacheInvoker {
             // Run task on the remote session
             task.runUpdate(session);
 
-            logger.debugf("Before replaceWithVersion. Entity to write version %d: %s", versioned.getVersion(), session);
+            if (logger.isTraceEnabled()) {
+                logger.tracef("Before replaceWithVersion. Entity to write version %d: %s", versioned.getVersion(), session);
+            }
 
             replaced = remoteCache.replaceWithVersion(key, SessionEntityWrapper.forTransport(session), versioned.getVersion(), lifespanMs, TimeUnit.MILLISECONDS, maxIdleMs, TimeUnit.MILLISECONDS);
 
             if (!replaced) {
                 logger.debugf("Failed to replace entity '%s' version %d. Will retry again", key, versioned.getVersion());
             } else {
-                if (logger.isDebugEnabled()) {
-                    logger.debugf("Replaced entity version %d in remote cache: %s", versioned.getVersion(), session);
+                if (logger.isTraceEnabled()) {
+                    logger.tracef("Replaced entity version %d in remote cache: %s", versioned.getVersion(), session);
                 }
             }
         }

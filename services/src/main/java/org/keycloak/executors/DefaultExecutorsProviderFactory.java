@@ -45,7 +45,7 @@ public class DefaultExecutorsProviderFactory implements ExecutorsProviderFactory
     protected static final Logger logger = Logger.getLogger(DefaultExecutorsProviderFactory.class);
 
     private static final int DEFAULT_MIN_THREADS = 4;
-    private static final int DEFAULT_MAX_THREADS = 16;
+    private static final int DEFAULT_MAX_THREADS = 64;
 
     private static final String MANAGED_EXECUTORS_SERVICE_JNDI_PREFIX = "java:jboss/ee/concurrency/executor/";
 
