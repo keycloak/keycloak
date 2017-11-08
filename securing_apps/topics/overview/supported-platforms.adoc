@@ -33,7 +33,6 @@ endif::[]
 ifeval::[{project_community}==true]
 ===== Node.js
 * https://github.com/keycloak/keycloak-nodejs-connect[{project_name} Connect] (community)
-* https://github.com/keycloak/keycloak-nodejs-auth-utils[{project_name} Auth Utils] (community)
 endif::[]
 
 ifeval::[{project_community}==true]
