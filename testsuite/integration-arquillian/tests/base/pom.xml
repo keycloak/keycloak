@@ -164,7 +164,7 @@
                 <artifactId>maven-resources-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>copy-arquillian-xml</id>
+                        <id>copy-arquillian-xml-and-password-blacklists</id>
                         <phase>generate-resources</phase>
                         <goals>
                             <goal>copy-resources</goal>
@@ -176,6 +176,7 @@
                                     <directory>src/test/resources</directory>
                                     <includes>
                                         <include>arquillian.xml</include>
+                                        <include>password-blacklists/**</include>
                                     </includes>
                                     <!--<filtering>true</filtering>-->
                                 </resource>
