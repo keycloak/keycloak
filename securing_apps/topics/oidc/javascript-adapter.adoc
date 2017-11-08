@@ -41,7 +41,7 @@ If the `keycloak.json` file is in a different location you can specify it:
 
 [source,javascript]
 ----
-var keycloak = Keycloak('http://localhost:8080/myapp/keycloak.json'));
+var keycloak = Keycloak('http://localhost:8080/myapp/keycloak.json');
 ----
 
 Alternatively, you can pass in a JavaScript object with the required configuration instead:
