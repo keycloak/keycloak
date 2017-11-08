@@ -54,6 +54,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -367,16 +368,30 @@ public final class KeycloakModelUtils {
     }
 
 
-    public static List<String> resolveAttribute(UserModel user, String name) {
-        List<String> values = user.getAttribute(name);
-        if (!values.isEmpty()) return values;
-        for (GroupModel group : user.getGroups()) {
-            values = resolveAttribute(group, name);
-            if (values != null) return values;
+    public static void resolveAttribute(GroupModel group, String name, List<String> values) {
+        List<String> extraValues = group.getAttribute(name);
+        if (extraValues != null && !extraValues.isEmpty()) {
+            for(String extraValue : extraValues) {
+                if (!values.contains(extraValue)) {
+                    values.add(extraValue);
+                }
+            }
         }
-        return Collections.emptyList();
+        if (group.getParentId() == null) return;
+        resolveAttribute(group.getParent(), name, values);
     }
 
+    public static List<String> resolveAttribute(UserModel user, String name) {
+        List<String> values = new ArrayList<>();
+        List<String> userAttribute = user.getAttribute(name);
+        if(userAttribute != null && !userAttribute.isEmpty()){
+            values.addAll(userAttribute);
+        }
+        for (GroupModel group : user.getGroups()) {
+            resolveAttribute(group, name,values);
+        }
+        return values;
+    }
 
     private static GroupModel findSubGroup(String[] path, int index, GroupModel parent) {
         for (GroupModel group : parent.getSubGroups()) {
