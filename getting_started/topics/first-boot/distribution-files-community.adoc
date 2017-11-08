@@ -1,7 +1,7 @@
 
 === Installing Distribution Files
 
-The {project_name} Server is contained in one distribution file:
+The {project_name} Server is contained in one http://www.keycloak.org/downloads.html[distribution file]:
 
 * 'keycloak-{project_version}.[zip|tar.gz]'
 
