@@ -39,7 +39,9 @@
                 <transaction mode="NON_DURABLE_XA" locking="PESSIMISTIC"/>
                 <locking acquire-timeout="0" />
                 <backups>
-                    <backup site="{$remote.site}" failure-policy="FAIL" strategy="SYNC" enabled="true"/>
+                    <backup site="{$remote.site}" failure-policy="FAIL" strategy="SYNC" enabled="true">
+                        <take-offline min-wait="60000" after-failures="3" />
+                    </backup>
                 </backups>
             </replicated-cache-configuration>
 
