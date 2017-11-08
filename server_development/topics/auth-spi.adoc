@@ -530,7 +530,7 @@ Your new required action should now be displayed and enabled in the required act
 
 === Modifying/Extending the Registration Form
 
-It is entirely possible for you to implement your own flow with a set of Authenticators to totally change how regisration is done in Keycloak.
+It is entirely possible for you to implement your own flow with a set of Authenticators to totally change how registration is done in Keycloak.
 But what you'll usually want to do is just add a little bit of validation to the out of the box registration page.
 An additional SPI was created to be able to do this.
 It basically allows you to add validation of form elements on the page as well as to initialize UserModel attributes and data after the user has been registered.
