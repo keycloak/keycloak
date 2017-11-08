@@ -49,7 +49,7 @@ directly. Instead create your own theme that extends one of the bundle themes.
 
 A theme consists of:
 
-* HTML templates (http://freemarker.org[Freemarker Templates])
+* HTML templates (http://freemarker.apache.org[Freemarker Templates])
 * Images
 * Message bundles
 * Stylesheets
@@ -255,7 +255,7 @@ usernameOrEmail=....
 
 ==== HTML Templates
 
-{project_name} uses http://freemarker.org[Freemarker Templates] in order to generate HTML. You can override individual templates in your own theme by
+{project_name} uses http://freemarker.apache.org[Freemarker Templates] in order to generate HTML. You can override individual templates in your own theme by
 creating `<THEME TYPE>/<TEMPLATE>.ftl`. For a list of templates used see `themes/base/<THEME TYPE>`.
 
 When creating a custom template it is a good idea to copy the template from the base theme to your own theme, then applying the modifications you need. Bear in
@@ -272,7 +272,7 @@ After the first line (<#import ...>) add `<h1>HELLO WORLD!</h1>` like so:
 ...
 ----
 
-Check out the http://freemarker.org/docs/index.html[FreeMarker Manual] for more details on how to edit templates.
+Check out the http://freemarker.apache.org/docs/index.html[FreeMarker Manual] for more details on how to edit templates.
 
 ==== Emails
 

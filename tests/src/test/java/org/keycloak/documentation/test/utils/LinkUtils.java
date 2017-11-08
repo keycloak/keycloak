@@ -196,8 +196,8 @@ public class LinkUtils {
                 p.load(new FileInputStream(verifiedLinksCacheFile));
                 for(Map.Entry<Object, Object> e : p.entrySet()) {
                     long checked = Long.valueOf((String) e.getValue());
-                    if (checked < System.currentTimeMillis() + Constants.LINK_CHECK_EXPIRATION) {
-                        m.put((String) e.getKey(), System.currentTimeMillis());
+                    if (checked + Constants.LINK_CHECK_EXPIRATION <= System.currentTimeMillis()) {
+                        m.put((String) e.getKey(), checked);
                     }
                 }
             }
