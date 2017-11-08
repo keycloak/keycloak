@@ -37,15 +37,15 @@
     <packaging>pom</packaging>
 
     <properties>
-        <product.rhsso.version>7.2.0.DR4</product.rhsso.version>
+        <product.rhsso.version>7.2.0.ER1</product.rhsso.version>
 
         <product.build-time>${timestamp}</product.build-time>
 
-        <wildfly.version>11.0.0.CR1</wildfly.version>
+        <wildfly.version>11.0.0.Final</wildfly.version>
         <wildfly.build-tools.version>1.2.2.Final</wildfly.build-tools.version>
-        <eap.version>7.1.0.GA-redhat-4</eap.version>
+        <eap.version>7.1.0.GA-redhat-11</eap.version>
         <eap.build-tools.version>1.2.2.Final</eap.build-tools.version>
-        <wildfly.core.version>3.0.1.Final</wildfly.core.version>
+        <wildfly.core.version>3.0.8.Final</wildfly.core.version>
 
         <jboss.as.version>7.2.0.Final</jboss.as.version>
 
