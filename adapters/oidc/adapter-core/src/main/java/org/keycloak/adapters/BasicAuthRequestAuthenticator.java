@@ -71,11 +71,11 @@ public class BasicAuthRequestAuthenticator extends BearerTokenRequestAuthenticat
         AccessTokenResponse atr=null;        
         try {
             String userpw=new String(Base64.decode(tokenString));
+            log.debug("Username and password string for basic auth is: " + userpw);
             int seperatorIndex = userpw.indexOf(":");
             String user = userpw.substring(0, seperatorIndex);
             String pw = userpw.substring(seperatorIndex + 1);
-            log.debug("user: " + user);
-            log.debug("pw: " + pw);
+            log.debug("Username for token  is: " + user + ", password is: " + pw);
             atr = getToken(user, pw);
             tokenString = atr.getToken();
         } catch (Exception e) {
