@@ -102,6 +102,6 @@ public class CookieTokenStore {
         String uri = facade.getRequest().getURI();
         String path = KeycloakUriBuilder.fromUri(uri).getPath();
         int index = path.indexOf("/", 1);
-        return index == -1 ? path : path.substring(0, index);
+        return index == -1 ? path.substring(0, 1) : path.substring(0, index);
     }
 }
