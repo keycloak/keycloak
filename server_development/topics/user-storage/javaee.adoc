@@ -85,3 +85,5 @@ WARNING: When using JPA any additional datasource must be an XA datasource. The 
 
 See the JBoss/Wildfly manual for more details on deploying an XA datasource.
 
+CDI is not supported.
+
