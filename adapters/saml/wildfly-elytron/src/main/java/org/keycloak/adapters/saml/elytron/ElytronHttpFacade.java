@@ -103,9 +103,10 @@ class ElytronHttpFacade implements HttpFacade {
 
             if (anonymousAuthorizationCallback.isAuthorized()) {
                 callbackHandler.handle(new Callback[]{AuthenticationCompleteCallback.SUCCEEDED, new SecurityIdentityCallback()});
+                request.authenticationComplete(response -> response.forward(getRequest().getRelativePath()));
+            } else {
+                request.noAuthenticationInProgress(response -> response.forward(getRequest().getRelativePath()));
             }
-
-            request.authenticationComplete(response -> response.forward(getRequest().getRelativePath()));
         } catch (Exception e) {
             throw new RuntimeException("Unexpected error processing callbacks during logout.", e);
         }
