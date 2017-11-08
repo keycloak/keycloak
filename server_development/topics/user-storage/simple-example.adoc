@@ -122,7 +122,7 @@ Next let's look at the method implementations for `CredentialInputValidator`.
 
 The `isConfiguredFor()` method is called by the runtime to determine if a specific credential type is configured for the user. This method checks to see that the password is set for the user.
 
-The `suportsCredentialType()` method returns whether validation is supported for a specific credential type. We check to see if the credential type is `password`.
+The `supportsCredentialType()` method returns whether validation is supported for a specific credential type. We check to see if the credential type is `password`.
 
 The `isValid()` method is responsible for validating passwords. The `CredentialInput` parameter is really just an abstract interface for all credential types. We make sure that we support the credential type and also that it is an instance of `UserCredentialModel`. When a user logs in through the login page, the plain text of the password input is put into an instance of `UserCredentialModel`. The `isValid()` method checks this value against the plain text password stored in the properties file. A return value of `true` means the password is valid.
 
