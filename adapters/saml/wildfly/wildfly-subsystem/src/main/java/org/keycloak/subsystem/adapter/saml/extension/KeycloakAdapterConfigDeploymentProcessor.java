@@ -25,10 +25,12 @@ import org.jboss.as.web.common.WarMetaData;
 import org.jboss.dmr.ModelNode;
 import org.jboss.metadata.javaee.spec.ParamValueMetaData;
 import org.jboss.metadata.web.jboss.JBossWebMetaData;
+import org.jboss.metadata.web.spec.ListenerMetaData;
 import org.jboss.metadata.web.spec.LoginConfigMetaData;
 import org.jboss.staxmapper.FormattingXMLStreamWriter;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
 import org.keycloak.adapters.saml.AdapterConstants;
+import org.keycloak.adapters.saml.elytron.KeycloakConfigurationServletListener;
 import org.keycloak.subsystem.adapter.saml.extension.logging.KeycloakLogger;
 
 import javax.xml.stream.XMLOutputFactory;
@@ -52,6 +54,8 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
         if (Configuration.INSTANCE.getSecureDeployment(deploymentUnit) != null) {
             addKeycloakSamlAuthData(phaseContext);
         }
+
+        addConfigurationListener(deploymentUnit);
     }
 
     private void addKeycloakSamlAuthData(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
@@ -123,5 +127,31 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
     @Override
     public void undeploy(DeploymentUnit du) {
 
+    }
+
+    private void addConfigurationListener(DeploymentUnit deploymentUnit) {
+        WarMetaData warMetaData = deploymentUnit.getAttachment(WarMetaData.ATTACHMENT_KEY);
+        if (warMetaData == null) {
+            return;
+        }
+
+        JBossWebMetaData webMetaData = warMetaData.getMergedJBossWebMetaData();
+        if (webMetaData == null) {
+            webMetaData = new JBossWebMetaData();
+            warMetaData.setMergedJBossWebMetaData(webMetaData);
+        }
+
+        LoginConfigMetaData loginConfig = webMetaData.getLoginConfig();
+        if (loginConfig == null) {
+            return;
+        }
+        if (!loginConfig.getAuthMethod().equals("KEYCLOAK-SAML")) {
+            return;
+        }
+        ListenerMetaData listenerMetaData = new ListenerMetaData();
+
+        listenerMetaData.setListenerClass(KeycloakConfigurationServletListener.class.getName());
+
+        webMetaData.getListeners().add(listenerMetaData);
     }
 }

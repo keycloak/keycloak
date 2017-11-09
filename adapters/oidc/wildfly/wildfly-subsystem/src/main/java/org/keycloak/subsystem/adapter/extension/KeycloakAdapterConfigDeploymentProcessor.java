@@ -71,10 +71,9 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
         KeycloakAdapterConfigService service = KeycloakAdapterConfigService.getInstance();
         if (service.isSecureDeployment(deploymentUnit) && service.isDeploymentConfigured(deploymentUnit)) {
             addKeycloakAuthData(phaseContext, service);
-        } else if (service.isElytronEnabled(deploymentUnit)) {
-            WarMetaData warMetaData = deploymentUnit.getAttachment(WarMetaData.ATTACHMENT_KEY);
-            addConfigurationListener(warMetaData);
         }
+
+        addConfigurationListener(deploymentUnit);
 
         // FYI, Undertow Extension will find deployments that have auth-method set to KEYCLOAK
 
@@ -104,10 +103,6 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
         loginConfig.setAuthMethod("KEYCLOAK");
         loginConfig.setRealmName(service.getRealmName(deploymentUnit));
         KeycloakLogger.ROOT_LOGGER.deploymentSecured(deploymentUnit.getName());
-
-        if (service.isElytronEnabled(deploymentUnit)) {
-            addConfigurationListener(warMetaData);
-        }
     }
 
     private void addJSONData(String json, WarMetaData warMetaData) {
@@ -130,7 +125,8 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
         webMetaData.setContextParams(contextParams);
     }
 
-    private void addConfigurationListener(WarMetaData warMetaData) {
+    private void addConfigurationListener(DeploymentUnit deploymentUnit) {
+        WarMetaData warMetaData = deploymentUnit.getAttachment(WarMetaData.ATTACHMENT_KEY);
         if (warMetaData == null) {
             return;
         }

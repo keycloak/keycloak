@@ -41,5 +41,6 @@
         <module name="org.jboss.metadata"/>
         <module name="org.apache.httpcomponents"/>
         <module name="org.infinispan.cachestore.remote"/>
+        <module name="org.keycloak.keycloak-saml-wildfly-elytron-adapter"/>
     </dependencies>
 </module>

@@ -50,27 +50,29 @@ public class KeycloakConfigurationServletListener implements ServletContextListe
         ServletContext servletContext = sce.getServletContext();
         String configResolverClass = servletContext.getInitParameter("keycloak.config.resolver");
         KeycloakConfigResolver configResolver;
-        AdapterDeploymentContext deploymentContext;
+        AdapterDeploymentContext deploymentContext = (AdapterDeploymentContext) servletContext.getAttribute(AdapterDeploymentContext.class.getName());
 
-        if (configResolverClass != null) {
-            try {
-                configResolver = (KeycloakConfigResolver) servletContext.getClassLoader().loadClass(configResolverClass).newInstance();
-                deploymentContext = new AdapterDeploymentContext(configResolver);
-            } catch (Exception ex) {
-                deploymentContext = new AdapterDeploymentContext(new KeycloakDeployment());
-            }
-        } else {
-            InputStream is = getConfigInputStream(servletContext);
-
-            KeycloakDeployment deployment;
-
-            if (is == null) {
-                deployment = new KeycloakDeployment();
+        if (deploymentContext == null) {
+            if (configResolverClass != null) {
+                try {
+                    configResolver = (KeycloakConfigResolver) servletContext.getClassLoader().loadClass(configResolverClass).newInstance();
+                    deploymentContext = new AdapterDeploymentContext(configResolver);
+                } catch (Exception ex) {
+                    deploymentContext = new AdapterDeploymentContext(new KeycloakDeployment());
+                }
             } else {
-                deployment = KeycloakDeploymentBuilder.build(is);
-            }
+                InputStream is = getConfigInputStream(servletContext);
 
-            deploymentContext = new AdapterDeploymentContext(deployment);
+                KeycloakDeployment deployment;
+
+                if (is == null) {
+                    deployment = new KeycloakDeployment();
+                } else {
+                    deployment = KeycloakDeploymentBuilder.build(is);
+                }
+
+                deploymentContext = new AdapterDeploymentContext(deployment);
+            }
         }
 
         servletContext.setAttribute(ADAPTER_DEPLOYMENT_CONTEXT_ATTRIBUTE, deploymentContext);
