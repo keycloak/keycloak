@@ -117,9 +117,9 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
         // Remove test realm
         getAdminClient().realm(REALM_NAME).remove();
 
-        // Assert sessions removed on node1 and node2 and on remote caches. Assert that count of messages sent between DCs is not too big.
+        // Assert sessions removed on node1 and node2 and on remote caches
         assertStatisticsExpected("After realm remove", InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, cacheDc1Statistics, cacheDc2Statistics, channelStatisticsCrossDc,
-                sessions01, sessions02, remoteSessions01, remoteSessions02, 100l);
+                sessions01, sessions02, remoteSessions01, remoteSessions02, true);
     }
 
 
@@ -170,7 +170,7 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
 
 
     private void assertStatisticsExpected(String messagePrefix, String cacheName, InfinispanStatistics cacheDc1Statistics, InfinispanStatistics cacheDc2Statistics, InfinispanStatistics channelStatisticsCrossDc,
-                                  int sessions1Expected, int sessions2Expected, int remoteSessions1Expected, int remoteSessions2Expected, long sentMessagesHigherBound) {
+                                  int sessions1Expected, int sessions2Expected, int remoteSessions1Expected, int remoteSessions2Expected, boolean checkSomeMessagesSentBetweenDCs) {
         Retry.execute(() -> {
             int sessions1 = getTestingClientForStartedNodeInDc(0).testing().cache(cacheName).size();
             int sessions2 = getTestingClientForStartedNodeInDc(1).testing().cache(cacheName).size();
@@ -185,11 +185,10 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
             Assert.assertEquals(remoteSessions2, remoteSessions2Expected);
 
             // Workaround...
-            if (sentMessagesHigherBound > 5) {
+            if (checkSomeMessagesSentBetweenDCs) {
                 Assert.assertThat(messagesCount, Matchers.greaterThan(0l));
             }
 
-            Assert.assertThat(messagesCount, Matchers.lessThan(sentMessagesHigherBound));
         }, 50, 50);
     }
 
@@ -207,9 +206,9 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
         // Remove test realm
         getAdminClient().realm(REALM_NAME).remove();
 
-        // Assert sessions removed on node1 and node2 and on remote caches. Assert that count of messages sent between DCs is not too big.
+        // Assert sessions removed on node1 and node2 and on remote caches.
         assertStatisticsExpected("After realm remove", InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME, cacheDc1Statistics, cacheDc2Statistics, channelStatisticsCrossDc,
-                sessions01, sessions02, remoteSessions01, remoteSessions02, 200l); // Might be bigger messages as online sessions removed too.
+                sessions01, sessions02, remoteSessions01, remoteSessions02, true);
     }
 
 
@@ -226,9 +225,9 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
         // Logout all in realm
         getAdminClient().realm(REALM_NAME).logoutAll();
 
-        // Assert sessions removed on node1 and node2 and on remote caches. Assert that count of messages sent between DCs is not too big.
+        // Assert sessions removed on node1 and node2 and on remote caches.
         assertStatisticsExpected("After realm logout", InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, cacheDc1Statistics, cacheDc2Statistics, channelStatisticsCrossDc,
-                sessions01, sessions02, remoteSessions01, remoteSessions02, 100l);
+                sessions01, sessions02, remoteSessions01, remoteSessions02, true);
     }
 
 
@@ -250,9 +249,9 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
         // Remove expired in DC0
         getTestingClientForStartedNodeInDc(0).testing().removeExpired(REALM_NAME);
 
-        // Nothing yet expired. Limit 5 for sent_messages is just if "lastSessionRefresh" periodic thread happened
+        // Nothing yet expired. It may happen that no message sent between DCs
         assertStatisticsExpected("After remove expired - 1", InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, cacheDc1Statistics, cacheDc2Statistics, channelStatisticsCrossDc,
-                sessions01 + SESSIONS_COUNT, sessions02 + SESSIONS_COUNT, remoteSessions01 + SESSIONS_COUNT, remoteSessions02 + SESSIONS_COUNT, 5l);
+                sessions01 + SESSIONS_COUNT, sessions02 + SESSIONS_COUNT, remoteSessions01 + SESSIONS_COUNT, remoteSessions02 + SESSIONS_COUNT, false);
 
 
         // Set time offset
@@ -269,9 +268,9 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
         // Remove expired in DC0
         getTestingClientForStartedNodeInDc(0).testing().removeExpired(REALM_NAME);
 
-        // Assert sessions removed on node1 and node2 and on remote caches. Assert that count of messages sent between DCs is not too big.
+        // Assert sessions removed on node1 and node2 and on remote caches.
         assertStatisticsExpected("After remove expired - 2", InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, cacheDc1Statistics, cacheDc2Statistics, channelStatisticsCrossDc,
-                sessions01, sessions02, remoteSessions01, remoteSessions02, 100l);
+                sessions01, sessions02, remoteSessions01, remoteSessions02, true);
     }
 
 
@@ -293,9 +292,9 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
         ApiUtil.findUserByUsernameId(getAdminClient().realm(REALM_NAME), "login-test").remove();
 
 
-        // Assert sessions removed on node1 and node2 and on remote caches. Assert that count of messages sent between DCs is not too big.
+        // Assert sessions removed on node1 and node2 and on remote caches.
         assertStatisticsExpected("After user remove", InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, cacheDc1Statistics, cacheDc2Statistics, channelStatisticsCrossDc,
-                sessions01, sessions02, remoteSessions01, remoteSessions02, 100l);
+                sessions01, sessions02, remoteSessions01, remoteSessions02, true);
     }
 
 
@@ -315,9 +314,9 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
         ApiUtil.findUserByUsernameId(getAdminClient().realm(REALM_NAME), "login-test").remove();
 
 
-        // Assert sessions removed on node1 and node2 and on remote caches. Assert that count of messages sent between DCs is not too big.
+        // Assert sessions removed on node1 and node2 and on remote caches.
         assertStatisticsExpected("After user remove", InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME, cacheDc1Statistics, cacheDc2Statistics, channelStatisticsCrossDc,
-                sessions01, sessions02, remoteSessions01, remoteSessions02, 100l);
+                sessions01, sessions02, remoteSessions01, remoteSessions02, true);
     }
 
 
@@ -336,16 +335,16 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
         UserSessionRepresentation userSession = user.getUserSessions().get(0);
         getAdminClient().realm(REALM_NAME).deleteSession(userSession.getId());
 
-        // Just one session expired. Limit 5 for sent_messages is just if "lastSessionRefresh" periodic thread happened
+        // Just one session expired.
         assertStatisticsExpected("After logout single session", InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, cacheDc1Statistics, cacheDc2Statistics, channelStatisticsCrossDc,
-                sessions01 + SESSIONS_COUNT - 1, sessions02 + SESSIONS_COUNT - 1, remoteSessions01 + SESSIONS_COUNT - 1, remoteSessions02 + SESSIONS_COUNT - 1, 5l);
+                sessions01 + SESSIONS_COUNT - 1, sessions02 + SESSIONS_COUNT - 1, remoteSessions01 + SESSIONS_COUNT - 1, remoteSessions02 + SESSIONS_COUNT - 1, true);
 
         // Logout all sessions for user now
         user.logout();
 
-        // Assert sessions removed on node1 and node2 and on remote caches. Assert that count of messages sent between DCs is not too big.
+        // Assert sessions removed on node1 and node2 and on remote caches.
         assertStatisticsExpected("After user logout", InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, cacheDc1Statistics, cacheDc2Statistics, channelStatisticsCrossDc,
-                sessions01, sessions02, remoteSessions01, remoteSessions02, 100l);
+                sessions01, sessions02, remoteSessions01, remoteSessions02, true);
     }
 
 
@@ -408,9 +407,9 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
         getTestingClientForStartedNodeInDc(0).testing().removeExpired(REALM_NAME);
         getTestingClientForStartedNodeInDc(1).testing().removeExpired(REALM_NAME);
 
-        // Nothing yet expired. Limit 5 for sent_messages is just if "lastSessionRefresh" periodic thread happened
+        // Nothing yet expired.
         assertAuthSessionsStatisticsExpected("After remove expired auth sessions - 1", channelStatisticsCrossDc,
-                SESSIONS_COUNT, 5l);
+                SESSIONS_COUNT);
 
         // Set time offset
         setTimeOffset(10000000);
@@ -421,9 +420,9 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
         getTestingClientForStartedNodeInDc(0).testing().removeExpired(REALM_NAME);
         getTestingClientForStartedNodeInDc(1).testing().removeExpired(REALM_NAME);
 
-        // Assert sessions removed on node1 and node2 and on remote caches. Assert that count of messages sent between DCs is not too big.
+        // Assert sessions removed on node1 and node2 and on remote caches.
         assertAuthSessionsStatisticsExpected("After remove expired auth sessions - 2", channelStatisticsCrossDc,
-                0, 5l);
+                0);
 
     }
 
@@ -462,7 +461,7 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
 
 
     private void assertAuthSessionsStatisticsExpected(String messagePrefix, InfinispanStatistics channelStatisticsCrossDc,
-                                          int expectedAuthSessionsCountDiff, long sentMessagesHigherBound) {
+                                          int expectedAuthSessionsCountDiff) {
         Retry.execute(() -> {
             int authSessions1 = getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME).size();
             int authSessions2 = getTestingClientForStartedNodeInDc(1).testing().cache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME).size();
@@ -473,13 +472,6 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
             int diff2 = authSessions2 - authSessions02;
 
             Assert.assertEquals(expectedAuthSessionsCountDiff, diff1 + diff2);
-
-            // Workaround...
-            if (sentMessagesHigherBound > 5) {
-                Assert.assertThat(messagesCount, Matchers.greaterThan(0l));
-            }
-
-            Assert.assertThat(messagesCount, Matchers.lessThan(sentMessagesHigherBound));
         }, 50, 50);
     }
 
@@ -495,9 +487,9 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
         // Remove test realm
         getAdminClient().realm(REALM_NAME).remove();
 
-        // Assert sessions removed on node1 and node2 and on remote caches. Assert that count of messages sent between DCs is not too big, however there are some messages due to removed realm
+        // Assert sessions removed on node1 and node2 and on remote caches.
         assertAuthSessionsStatisticsExpected("After realm removed", channelStatisticsCrossDc,
-                0, 100l);
+                0);
     }
 
 
@@ -512,9 +504,9 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
         // Remove test-app client
         ApiUtil.findClientByClientId(getAdminClient().realm(REALM_NAME), "test-app").remove();
 
-        // Assert sessions removed on node1 and node2 and on remote caches. Assert that count of messages sent between DCs is not too big, however there are some messages due to removed client
+        // Assert sessions removed on node1 and node2 and on remote caches.
         assertAuthSessionsStatisticsExpected("After client removed", channelStatisticsCrossDc,
-                0, 5l);
+                0);
     }
 
 
