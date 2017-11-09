@@ -131,6 +131,7 @@ public class OAuthClient {
     private String codeVerifier;
     private String codeChallenge;
     private String codeChallengeMethod;
+    private String origin;
 
     public class LogoutUrlBuilder {
         private final UriBuilder b = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(baseUrl));
@@ -193,6 +194,7 @@ public class OAuthClient {
         codeVerifier = null;
         codeChallenge = null;
         codeChallengeMethod = null;
+        origin = null;
     }
 
     public AuthorizationEndpointResponse doLogin(String username, String password) {
@@ -268,6 +270,9 @@ public class OAuthClient {
             List<NameValuePair> parameters = new LinkedList<NameValuePair>();
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
 
+            if (origin != null) {
+                post.addHeader("Origin", origin);
+            }
             if (code != null) {
                 parameters.add(new BasicNameValuePair(OAuth2Constants.CODE, code));
             }
@@ -562,6 +567,9 @@ public class OAuthClient {
             List<NameValuePair> parameters = new LinkedList<NameValuePair>();
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.REFRESH_TOKEN));
 
+            if (origin != null) {
+                post.addHeader("Origin", origin);
+            }
             if (refreshToken != null) {
                 parameters.add(new BasicNameValuePair(OAuth2Constants.REFRESH_TOKEN, refreshToken));
             }
@@ -873,6 +881,10 @@ public class OAuthClient {
     	this.codeChallengeMethod = codeChallengeMethod;
     	return this;
     }
+    public OAuthClient origin(String origin) {
+        this.origin = origin;
+        return this;
+    }
 
     public static class AuthorizationEndpointResponse {
 
@@ -956,9 +968,17 @@ public class OAuthClient {
         private String error;
         private String errorDescription;
 
+        private Map<String, String> headers;
+
         public AccessTokenResponse(CloseableHttpResponse response) throws Exception {
             try {
                 statusCode = response.getStatusLine().getStatusCode();
+
+                headers = new HashMap<>();
+
+                for (Header h : response.getAllHeaders()) {
+                    headers.put(h.getName(), h.getValue());
+                }
 
                 Header[] contentTypeHeaders = response.getHeaders("Content-Type");
                 String contentType = (contentTypeHeaders != null && contentTypeHeaders.length > 0) ? contentTypeHeaders[0].getValue() : null;
@@ -1032,6 +1052,10 @@ public class OAuthClient {
         // OIDC Financial API Read Only Profile : scope MUST be returned in the response from Token Endpoint
         public String getScope() {
             return scope;
+        }
+
+        public Map<String, String> getHeaders() {
+            return headers;
         }
     }
 
