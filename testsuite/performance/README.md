@@ -98,41 +98,68 @@ Dataset properties are loaded from `datasets/${dataset}.properties` file. Indivi
 
 Dataset data is first generated as a .json file, and then imported into Keycloak via Admin Client REST API.
 
+#### Dataset Properties
+
+| Property | Description | Value in the Default Dataset |
+| --- | --- | --- | 
+| `numOfRealms` | Number of realms to be created. | `1`  |
+| `usersPerRealm` | Number of users per realm. | `100`  |
+| `clientsPerRealm` | Number of clients per realm. | `2`  |
+| `realmRoles` | Number of realm-roles per realm. | `2`  |
+| `realmRolesPerUser` | Number of realm-roles assigned to a created user. Has to be less than or equal to `realmRoles`. | `2`  |
+| `clientRolesPerUser` | Number of client-roles assigned to a created user. Has to be less than or equal to `clientsPerRealm * clientRolesPerClient`. | `2`  |
+| `clientRolesPerClient` | Number of client-roles per created client. | `2`  |
+| `hashIterations` | Number of password hashing iterations. | `27500`  |
+
+
 #### Examples:
 - `mvn verify -Pgenerate-data` - generate default dataset
 - `mvn verify -Pgenerate-data -DusersPerRealm=5` - generate default dataset, override the `usersPerRealm` property
 - `mvn verify -Pgenerate-data -Ddataset=100u` - generate `100u` dataset
 - `mvn verify -Pgenerate-data -Ddataset=100r/default` - generate dataset based on `datasets/100r/default.properties`
 
-The data can also be exported from the database, and stored locally as `datasets/${dataset}.sql.gz`
-`DATASET=100u ./prepare-dump.sh`
+#### Export / Import Database Dump
 
 To speed up dataset initialization part, it is possible to pass `-Dexport-dump` option to have the generated dataset
 exported right after it has been generated. Then, if there is a data dump file available then `-Pimport-dump` 
 can be used to import the data directly into the database, bypassing Keycloak server completely.
 
-Usage: `mvn verify -Pimport-dump [-Ddataset=DATASET]`
+**Usage:** `mvn verify -Pimport-dump [-Ddataset=DATASET]`
 
-#### Example:
-- `mvn verify -Pimport-dump -Ddataset=100u` - import `datasets/100u.sql.gz` dump file created using `prepare-dump.sh`.
+**For example:**
+- `mvn verify -Pgenerate-data -Ddataset=100u -Dexport-dump` will generate data based on `datasets/100u.properties` and export a database dump to a file: `datasets/100u.sql.gz`.
+- `mvn verify -Pimport-dump -Ddataset=100u` will import the database dump from a file: `datasets/100u.sql.gz`, and reboot the server(s)
 
 
 ### Run Tests
 
-Usage: `mvn verify -Ptest [-DrunUsers=N] [-DrampUpPeriod=SECONDS] [-DnumOfIterations=N] [-Ddataset=DATASET] [-D<dataset.property>=<value>]* [-D<test.property>=<value>]* `.
+Usage: `mvn verify -Ptest[,cluster] [-DtestParameter=value]`.
 
-_*Note:* The same dataset properties which were used for data generation/import should be supplied to the `test` phase._
+#### Common Parameters
 
-The default test `keycloak.DefaultSimulation` takes the following additional properties:
+| Parameter | Description | Default Value |
+| --- | --- | --- | 
+| `gatling.simulationClass` | Classname of the simulation to be run. | `keycloak.DefaultSimulation`  |
+| `dataset` | Name of the dataset to use. (Individual dataset properties can be overridden with `-Ddataset.property=value`.) | `default` |
+| `runUsers` | Number of users for the simulation run. | `1` |
+| `rampUpPeriod` | Period during which the users will be ramped up. (seconds) | `0` |
+| `steadyLoadPeriod` | A period of steady load. (seconds) | `30` |
+| `rampDownASAP` | When `true` the test will be checking for ramp-down condition after each *scenario step*. When `false` the check will be done only at the end of a *scenario iteration*. | `false` |
+| `pace` | A dynamic pause after each *scenario iteration*. For example if the pace is 30s and one scenario iteration takes only 20s, the simulation will wait additional 10s before continuing to the next iteration. | `0` |
+| `userThinkTime` | Pause between individual scenario steps. | `5` |
+| `refreshTokenPeriod`| Period after which token should be refreshed. | `10` |
 
-`[-DuserThinkTime=SECONDS] [-DbadLoginAttempts=N] [-DrefreshTokenCount=N] [-DrefreshTokenPeriod=SECONDS]`
+#### Addtional Parameters of `keycloak.DefaultSimulation`
+
+| Parameter | Description | Default Value |
+| --- | --- | --- | 
+| `badLoginAttempts` | | `0`  |
+| `refreshTokenCount` | | `0` |
 
 
-If you want to run a different test you need to specify the test class name using `[-Dgatling.simulationClass=CLASSNAME]`.
+Example:
 
-For example:
-
-`mvn verify -Ptest -DrunUsers=1 -DnumOfIterations=10 -DuserThinkTime=0 -Ddataset=100u -DrefreshTokenPeriod=10 -Dgatling.simulationClass=keycloak.AdminSimulation`
+`mvn verify -Ptest -Dgatling.simulationClass=keycloak.AdminSimulation -Ddataset=100u -DrunUsers=1 -DsteadyLoadPeriod=30 -DuserThinkTime=0 -DrefreshTokenPeriod=15`
 
 
 ## Monitoring
