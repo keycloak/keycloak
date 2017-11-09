@@ -371,42 +371,160 @@ public class UserStorageTest extends AbstractAuthTest {
                 .addPackages(true, "org.keycloak.testsuite");
     }
 
-    @Test
-    public void testDailyEviction() {
-        ApiUtil.findUserByUsername(testRealmResource(), "thor");
-
-        // set eviction to 1 hour from now
-        Calendar eviction = Calendar.getInstance();
-        eviction.add(Calendar.HOUR, 1);
+    private void setDailyEvictionTime(int hour, int minutes) {
+        if (hour < 0 || hour > 23) {
+            throw new IllegalArgumentException("hour == " + hour);
+        }
+        if (minutes < 0 || minutes > 59) {
+            throw new IllegalArgumentException("minutes == " + minutes);
+        }
         ComponentRepresentation propProviderRW = testRealmResource().components().component(propProviderRWId).toRepresentation();
         propProviderRW.getConfig().putSingle(CACHE_POLICY, CachePolicy.EVICT_DAILY.name());
-        propProviderRW.getConfig().putSingle(EVICTION_HOUR, Integer.toString(eviction.get(HOUR_OF_DAY)));
-        propProviderRW.getConfig().putSingle(EVICTION_MINUTE, Integer.toString(eviction.get(MINUTE)));
+        propProviderRW.getConfig().putSingle(EVICTION_HOUR, String.valueOf(hour));
+        propProviderRW.getConfig().putSingle(EVICTION_MINUTE, String.valueOf(minutes));
         testRealmResource().components().component(propProviderRWId).update(propProviderRW);
+    }
 
-        // now
+
+    /**
+     * Test daily eviction behaviour
+     */
+    @Test
+    public void testDailyEviction() {
+
+        // We need to test both cases: eviction the same day, and eviction the next day
+        // Simplest is to take full control of the clock
+
+        // set clock to 23:30 of current day
+        setTimeOfDay(23, 30, 0);
+
+        // test same day eviction behaviour
+        // set eviction at 23:45
+        setDailyEvictionTime(23, 45);
+
+        // there are users in cache already from before-test import
+        // and they didn't use any time offset clock so they may have timestamps in the 'future'
+
+        // let's clear cache
+        testingClient.server().run(session -> {
+            session.userCache().clear();
+        });
+
+
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
             UserModel user = session.users().getUserByUsername("thor", realm);
+            Assert.assertTrue(user instanceof CachedUserModel); // should be newly cached
         });
 
-        // run twice to make sure its in cache.
+
+        setTimeOfDay(23, 40, 0);
+
+        // lookup user again - make sure it's returned from cache
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
             UserModel user = session.users().getUserByUsername("thor", realm);
-            System.out.println("User class: " + user.getClass());
-            Assert.assertTrue(user instanceof CachedUserModel); // should still be cached
+            Assert.assertTrue(user instanceof CachedUserModel); // should be returned from cache
         });
 
-        setTimeOffset(2 * 60 * 60); // 2 hours in future
+
+        setTimeOfDay(23, 50, 0);
 
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
             UserModel user = session.users().getUserByUsername("thor", realm);
-            System.out.println("User class: " + user.getClass());
-            Assert.assertFalse(user instanceof CachedUserModel); // should be evicted
+            Assert.assertFalse(user instanceof CachedUserModel); // should have been invalidated
         });
 
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel user = session.users().getUserByUsername("thor", realm);
+            Assert.assertTrue(user instanceof CachedUserModel); // should have been newly cached
+        });
+
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel user = session.users().getUserByUsername("thor", realm);
+            Assert.assertTrue(user instanceof CachedUserModel); // should be returned from cache
+        });
+
+
+        setTimeOfDay(23, 55, 0);
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel user = session.users().getUserByUsername("thor", realm);
+            Assert.assertTrue(user instanceof CachedUserModel); // should be returned from cache
+        });
+
+
+        // at 00:30
+        // it's next day now. the daily eviction time is now in the future
+        setTimeOfDay(0, 30, 0, 24 * 60 * 60);
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel user = session.users().getUserByUsername("thor", realm);
+            Assert.assertTrue(user instanceof CachedUserModel); // should be returned from cache - it's still good for almost the whole day
+        });
+
+
+        // at 23:30 next day
+        setTimeOfDay(23, 30, 0, 24 * 60 * 60);
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel user = session.users().getUserByUsername("thor", realm);
+            Assert.assertTrue(user instanceof CachedUserModel); // should be returned from cache - it's still good until 23:45
+        });
+
+        // at 23:50
+        setTimeOfDay(23, 50, 0, 24 * 60 * 60);
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel user = session.users().getUserByUsername("thor", realm);
+            Assert.assertFalse(user instanceof CachedUserModel); // should be invalidated
+        });
+
+        setTimeOfDay(23, 55, 0, 24 * 60 * 60);
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel user = session.users().getUserByUsername("thor", realm);
+            Assert.assertTrue(user instanceof CachedUserModel); // should be newly cached
+        });
+
+
+        setTimeOfDay(23, 40, 0, 2 * 24 * 60 * 60);
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel user = session.users().getUserByUsername("thor", realm);
+            Assert.assertTrue(user instanceof CachedUserModel); // should be returned from cache
+        });
+
+        setTimeOfDay(23, 50, 0, 2 * 24 * 60 * 60);
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel user = session.users().getUserByUsername("thor", realm);
+            Assert.assertFalse(user instanceof CachedUserModel); // should be invalidated
+        });
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel user = session.users().getUserByUsername("thor", realm);
+            Assert.assertTrue(user instanceof CachedUserModel); // should be newly cached
+        });
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel user = session.users().getUserByUsername("thor", realm);
+            Assert.assertTrue(user instanceof CachedUserModel); // should be returned from cache
+        });
     }
 
     @Test
