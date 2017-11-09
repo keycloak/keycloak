@@ -50,7 +50,6 @@
                 <exclude>bin/appclient.*</exclude>
                 <exclude>copyright.txt</exclude>
                 <exclude>README.txt</exclude>
-                <exclude>themes/**</exclude>
                 <exclude>version.txt</exclude>
                 <exclude>${profileExcludes}</exclude>
             </excludes>
@@ -62,14 +61,6 @@
                 <include>bin/*.sh</include>
             </includes>
             <fileMode>0755</fileMode>
-        </fileSet>
-        <fileSet>
-            <directory>target/${project.build.finalName}</directory>
-            <outputDirectory/>
-            <includes>
-                <include>themes/**</include>
-            </includes>
-            <fileMode>0444</fileMode>
         </fileSet>
         <fileSet>
             <directory>src/main/welcome-content</directory>
