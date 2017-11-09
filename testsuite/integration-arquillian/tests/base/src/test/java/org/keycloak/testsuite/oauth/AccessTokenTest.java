@@ -611,7 +611,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
 
             Response response = executeGrantAccessTokenRequest(grantTarget);
-            assertEquals(400, response.getStatus());
+            assertEquals(401, response.getStatus());
             response.close();
 
             {
