@@ -52,8 +52,9 @@ public class SessionsPreloadCrossDCTest extends AbstractAdminCrossDCTest {
 
         stopAllCacheServersAndAuthServers();
 
-        // Start DC1 only
+        // Start DC1 and only the cache container from DC2. All Keycloak nodes on DC2 are stopped
         containerController.start(getCacheServer(DC.FIRST).getQualifier());
+        containerController.start(getCacheServer(DC.SECOND).getQualifier());
         startBackendNode(DC.FIRST, 0);
         enableLoadBalancerNode(DC.FIRST, 0);
 
@@ -119,7 +120,6 @@ public class SessionsPreloadCrossDCTest extends AbstractAdminCrossDCTest {
         List<OAuthClient.AccessTokenResponse> tokenResponses = createInitialSessions(false);
 
         // Start 2nd DC.
-        containerController.start(getCacheServer(DC.SECOND).getQualifier());
         startBackendNode(DC.SECOND, 0);
         enableLoadBalancerNode(DC.SECOND, 0);
 
@@ -130,7 +130,7 @@ public class SessionsPreloadCrossDCTest extends AbstractAdminCrossDCTest {
         Assert.assertEquals(sessions01, sessionsBefore + SESSIONS_COUNT);
         Assert.assertEquals(sessions02, sessionsBefore + SESSIONS_COUNT);
 
-        // On DC2 sessions were preloaded from from remoteCache
+        // On DC2 sessions were preloaded from remoteCache
         Assert.assertTrue(getTestingClientForStartedNodeInDc(1).testing().cache(InfinispanConnectionProvider.WORK_CACHE_NAME).contains("distributed::remoteCacheLoad::sessions"));
 
         // Assert refreshing works
@@ -157,13 +157,15 @@ public class SessionsPreloadCrossDCTest extends AbstractAdminCrossDCTest {
         // Stop Everything
         stopAllCacheServersAndAuthServers();
 
-        // Start DC1. Sessions should be preloaded from DB
+        // Start cache containers on both DC1 and DC2
         containerController.start(getCacheServer(DC.FIRST).getQualifier());
+        containerController.start(getCacheServer(DC.SECOND).getQualifier());
+
+        // Start Keycloak on DC1. Sessions should be preloaded from DB
         startBackendNode(DC.FIRST, 0);
         enableLoadBalancerNode(DC.FIRST, 0);
 
-        // Start DC2. Sessions should be preloaded from remoteCache
-        containerController.start(getCacheServer(DC.SECOND).getQualifier());
+        // Start Keycloak on DC2. Sessions should be preloaded from remoteCache
         startBackendNode(DC.SECOND, 0);
         enableLoadBalancerNode(DC.SECOND, 0);
 
@@ -210,7 +212,6 @@ public class SessionsPreloadCrossDCTest extends AbstractAdminCrossDCTest {
         }
 
         // Start 2nd DC.
-        containerController.start(getCacheServer(DC.SECOND).getQualifier());
         startBackendNode(DC.SECOND, 0);
         enableLoadBalancerNode(DC.SECOND, 0);
 

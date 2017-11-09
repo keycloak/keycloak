@@ -276,7 +276,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
 
     private void loadSessionsFromRemoteCache(final KeycloakSessionFactory sessionFactory, String cacheName, final int sessionsPerSegment, final int maxErrors) {
-        log.debugf("Check pre-loading userSessions from remote cache '%s'", cacheName);
+        log.debugf("Check pre-loading sessions from remote cache '%s'", cacheName);
 
         KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
 
@@ -293,7 +293,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
         });
 
-        log.debugf("Pre-loading userSessions from remote cache '%s' finished", cacheName);
+        log.debugf("Pre-loading sessions from remote cache '%s' finished", cacheName);
     }
 
 

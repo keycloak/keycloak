@@ -82,5 +82,17 @@ if [ $1 == "crossdc" ]; then
     cd tests/base
     mvn clean test -B -nsu -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly -Dtest=*.crossdc.**.* 2>&1 |
         java -cp ../../../utils/target/classes org.keycloak.testsuite.LogTrimmer
-    exit ${PIPESTATUS[0]}
+    BASE_TESTS_STATUS=${PIPESTATUS[0]}
+
+    mvn clean test -B -nsu -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly -Dtest=*.crossdc.manual.* -Dmanual.mode=true 2>&1 |
+        java -cp ../../../utils/target/classes org.keycloak.testsuite.LogTrimmer
+    MANUAL_TESTS_STATUS=${PIPESTATUS[0]}
+
+    echo "BASE_TESTS_STATUS=$BASE_TESTS_STATUS, MANUAL_TESTS_STATUS=$MANUAL_TESTS_STATUS";
+    if [ $BASE_TESTS_STATUS -eq 0 -a $MANUAL_TESTS_STATUS -eq 0 ]; then
+        exit 0;
+    else
+        exit 1;
+    fi;
+
 fi

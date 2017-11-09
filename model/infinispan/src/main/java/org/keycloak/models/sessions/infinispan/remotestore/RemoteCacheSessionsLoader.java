@@ -142,7 +142,8 @@ public class RemoteCacheSessionsLoader implements SessionLoader {
                 .getAdvancedCache().withFlags(Flag.SKIP_CACHE_LOAD, Flag.SKIP_CACHE_STORE)
                 .get(OfflinePersistentUserSessionLoader.PERSISTENT_SESSIONS_LOADED_IN_CURRENT_DC);
 
-        if (cacheName.equals(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME) && sessionsLoaded != null && sessionsLoaded) {
+        if ((cacheName.equals(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME) || (cacheName.equals(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME)))
+                && sessionsLoaded != null && sessionsLoaded) {
             log.debugf("Sessions already loaded in current DC. Skip sessions loading from remote cache '%s'", cacheName);
             return true;
         } else {

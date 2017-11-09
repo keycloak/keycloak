@@ -98,7 +98,9 @@ Infinispan Server setup
             <transaction mode="NON_DURABLE_XA" locking="PESSIMISTIC"/>
             <locking acquire-timeout="0" />
             <backups>
-                <backup site="site2" failure-policy="FAIL" strategy="SYNC" enabled="true"/>
+                <backup site="site2" failure-policy="FAIL" strategy="SYNC" enabled="true">
+                    <take-offline min-wait="60000" after-failures="3" />
+                </backup>
             </backups>
         </replicated-cache-configuration>
 
