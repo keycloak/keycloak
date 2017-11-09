@@ -11,8 +11,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 
-import org.jboss.logging.Logger;
-
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
@@ -22,7 +20,6 @@ public class HttpBasicAuthenticator implements Authenticator {
 
     private static final String BASIC = "Basic";
     private static final String BASIC_PREFIX = BASIC + " ";
-    private Logger log = Logger.getLogger(HttpBasicAuthenticator.class);
 
     @Override
     public void authenticate(final AuthenticationFlowContext context) {
@@ -98,12 +95,10 @@ public class HttpBasicAuthenticator implements Authenticator {
 
         try {
             String val = new String(Base64.decode(credentials));
-            log.debug("Username and password string is: " + val);
             int seperatorIndex = val.indexOf(":");
             if(seperatorIndex == -1) return new String[]{val};
             String user = val.substring(0, seperatorIndex);
             String pw = val.substring(seperatorIndex + 1);
-            log.debug("Resolved username is: " + user + ", password is: " + pw);
             return new String[]{user,pw};
         } catch (final IOException e) {
             throw new RuntimeException("Failed to parse credentials.", e);
