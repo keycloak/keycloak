@@ -1051,7 +1051,7 @@
                     },
 
                     redirectUri: function(options) {
-                        return 'http://localhost';
+                        return (config && config.redirectUri) || 'http://localhost';
                     }
                 }
             }
