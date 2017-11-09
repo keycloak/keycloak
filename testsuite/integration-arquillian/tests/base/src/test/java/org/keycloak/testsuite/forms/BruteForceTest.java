@@ -164,7 +164,8 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
             Assert.assertNull(response.getAccessToken());
             Assert.assertNotNull(response.getError());
             Assert.assertEquals("invalid_grant", response.getError());
-            Assert.assertEquals("Account temporarily disabled", response.getErrorDescription());
+            Assert.assertEquals("Invalid user credentials", response.getErrorDescription());
+            assertUserDisabledEvent();
             events.clear();
         }
         clearUserFailures();
@@ -207,7 +208,8 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
             assertTokenNull(response);
             Assert.assertNotNull(response.getError());
             Assert.assertEquals(response.getError(), "invalid_grant");
-            Assert.assertEquals(response.getErrorDescription(), "Account temporarily disabled");
+            Assert.assertEquals("Invalid user credentials", response.getErrorDescription());
+            assertUserDisabledEvent();
             events.clear();
         }
         clearUserFailures();
@@ -254,7 +256,8 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
             assertTokenNull(response);
             Assert.assertNotNull(response.getError());
             Assert.assertEquals(response.getError(), "invalid_grant");
-            Assert.assertEquals(response.getErrorDescription(), "Account temporarily disabled");
+            Assert.assertEquals("Invalid user credentials", response.getErrorDescription());
+            assertUserDisabledEvent();
             events.clear();
         }
         clearUserFailures();
@@ -541,4 +544,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         events.clear();
     }
 
+    private void assertUserDisabledEvent() {
+        events.expect(EventType.LOGIN_ERROR).error(Errors.USER_TEMPORARILY_DISABLED).assertEvent();
+    }
 }
