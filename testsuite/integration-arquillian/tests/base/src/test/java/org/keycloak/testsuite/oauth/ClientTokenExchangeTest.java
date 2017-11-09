@@ -25,6 +25,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
@@ -43,6 +44,7 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.util.BasicAuthHelper;
@@ -213,6 +215,8 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
 
     @Test
     public void testExchange() throws Exception {
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE);
+
         testingClient.server().run(ClientTokenExchangeTest::setupRealm);
 
         oauth.realm(TEST);
@@ -255,6 +259,8 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
     }
     @Test
     public void testImpersonation() throws Exception {
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE);
+
         testingClient.server().run(ClientTokenExchangeTest::setupRealm);
 
         oauth.realm(TEST);
@@ -331,6 +337,8 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
 
     @Test
     public void testBadImpersonator() throws Exception {
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE);
+
         testingClient.server().run(ClientTokenExchangeTest::setupRealm);
 
         oauth.realm(TEST);
@@ -372,6 +380,8 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
 
     @Test
     public void testDirectImpersonation() throws Exception {
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE);
+
         testingClient.server().run(ClientTokenExchangeTest::setupRealm);
         Client httpClient = ClientBuilder.newClient();
 
