@@ -30,6 +30,7 @@ import org.keycloak.authentication.actiontoken.DefaultActionTokenKey;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -477,7 +478,7 @@ public class AuthenticationManager {
     }
 
 
-    public static AccessToken createIdentityToken(RealmModel realm, UserModel user, UserSessionModel session, String issuer) {
+    public static AccessToken createIdentityToken(KeycloakSession keycloakSession, RealmModel realm, UserModel user, UserSessionModel session, String issuer) {
         AccessToken token = new AccessToken();
         token.id(KeycloakModelUtils.generateId());
         token.issuedNow();
@@ -489,13 +490,21 @@ public class AuthenticationManager {
         if (realm.getSsoSessionMaxLifespan() > 0) {
             token.expiration(Time.currentTime() + realm.getSsoSessionMaxLifespan());
         }
+
+        String stateChecker = (String) keycloakSession.getAttribute("state_checker");
+        if (stateChecker == null) {
+            stateChecker = Base64Url.encode(KeycloakModelUtils.generateSecret());
+            keycloakSession.setAttribute("state_checker", stateChecker);
+        }
+        token.getOtherClaims().put("state_checker", stateChecker);
+
         return token;
     }
 
     public static void createLoginCookie(KeycloakSession keycloakSession, RealmModel realm, UserModel user, UserSessionModel session, UriInfo uriInfo, ClientConnection connection) {
         String cookiePath = getIdentityCookiePath(realm, uriInfo);
         String issuer = Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName());
-        AccessToken identityToken = createIdentityToken(realm, user, session, issuer);
+        AccessToken identityToken = createIdentityToken(keycloakSession, realm, user, session, issuer);
         String encoded = encodeToken(keycloakSession, realm, identityToken);
         boolean secureOnly = realm.getSslRequired().isRequired(connection);
         int maxAge = NewCookie.DEFAULT_MAX_AGE;
@@ -1043,6 +1052,8 @@ public class AuthenticationManager {
                 logger.debug("User session not active");
                 return null;
             }
+
+            session.setAttribute("state_checker", token.getOtherClaims().get("state_checker"));
 
             return new AuthResult(user, userSession, token);
         } catch (VerificationException e) {
