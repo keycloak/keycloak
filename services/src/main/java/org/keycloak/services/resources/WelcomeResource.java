@@ -67,7 +67,7 @@ public class WelcomeResource {
 
     protected static final Logger logger = Logger.getLogger(WelcomeResource.class);
 
-    private static final String KEYCLOAK_STATE_CHECKER = "KEYCLOAK_STATE_CHECKER";
+    private static final String KEYCLOAK_STATE_CHECKER = "WELCOME_STATE_CHECKER";
 
     private boolean bootstrap;
 
@@ -133,6 +133,8 @@ public class WelcomeResource {
             if (!password.equals(passwordConfirmation)) {
                 return createWelcomePage(null, "Password and confirmation doesn't match");
             }
+
+            expireCsrfCookie();
 
             ApplianceBootstrap applianceBootstrap = new ApplianceBootstrap(session);
             if (applianceBootstrap.isNoMasterUser()) {
@@ -244,8 +246,14 @@ public class WelcomeResource {
         String stateChecker = Base64Url.encode(KeycloakModelUtils.generateSecret());
         String cookiePath = uriInfo.getPath();
         boolean secureOnly = uriInfo.getRequestUri().getScheme().equalsIgnoreCase("https");
-        CookieHelper.addCookie(KEYCLOAK_STATE_CHECKER, stateChecker, cookiePath, null, null, -1, secureOnly, true);
+        CookieHelper.addCookie(KEYCLOAK_STATE_CHECKER, stateChecker, cookiePath, null, null, 300, secureOnly, true);
         return stateChecker;
+    }
+
+    private void expireCsrfCookie() {
+        String cookiePath = uriInfo.getPath();
+        boolean secureOnly = uriInfo.getRequestUri().getScheme().equalsIgnoreCase("https");
+        CookieHelper.addCookie(KEYCLOAK_STATE_CHECKER, "", cookiePath, null, null, 0, secureOnly, true);
     }
 
     private void csrfCheck(final MultivaluedMap<String, String> formData) {
