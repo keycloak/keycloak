@@ -42,30 +42,40 @@ public class RemoteCacheSessionsLoader implements SessionLoader {
     private static final Logger log = Logger.getLogger(RemoteCacheSessionsLoader.class);
 
 
-    // Javascript to be executed on remote infinispan server (Flag CACHE_MODE_LOCAL assumes that remoteCache is replicated)
+    // Javascript to be executed on remote infinispan server.
+    // Flag CACHE_MODE_LOCAL is optimization used just when remoteCache is replicated as all the entries are available locally. For distributed caches, it can't be used
     private static final String REMOTE_SCRIPT_FOR_LOAD_SESSIONS =
             "function loadSessions() {" +
-            "  var flagClazz = cache.getClass().getClassLoader().loadClass(\"org.infinispan.context.Flag\"); \n" +
-            "  var localFlag = java.lang.Enum.valueOf(flagClazz, \"CACHE_MODE_LOCAL\"); \n" +
-            "  var cacheStream = cache.getAdvancedCache().withFlags([ localFlag ]).entrySet().stream();\n" +
-            "  var result = cacheStream.skip(first).limit(max).collect(java.util.stream.Collectors.toMap(\n" +
-            "    new java.util.function.Function() {\n" +
-            "      apply: function(entry) {\n" +
-            "        return entry.getKey();\n" +
-            "      }\n" +
-            "    },\n" +
-            "    new java.util.function.Function() {\n" +
-            "      apply: function(entry) {\n" +
-            "        return entry.getValue();\n" +
-            "      }\n" +
-            "    }\n" +
-            "  ));\n" +
-            "\n" +
-            "  cacheStream.close();\n" +
-            "  return result;\n" +
-            "};\n" +
-            "\n" +
-            "loadSessions();";
+                    "  var flagClazz = cache.getClass().getClassLoader().loadClass(\"org.infinispan.context.Flag\"); \n" +
+                    "  var localFlag = java.lang.Enum.valueOf(flagClazz, \"CACHE_MODE_LOCAL\"); \n" +
+                    "  var cacheMode = cache.getCacheConfiguration().clustering().cacheMode(); \n" +
+                    "  var canUseLocalFlag = !cacheMode.isClustered() || cacheMode.isReplicated(); \n" +
+
+                    "  var cacheStream; \n" +
+                    "  if (canUseLocalFlag) { \n" +
+                    "      cacheStream = cache.getAdvancedCache().withFlags([ localFlag ]).entrySet().stream();\n" +
+                    "  } else { \n" +
+                    "      cacheStream = cache.getAdvancedCache().withFlags([ ]).entrySet().stream();\n" +
+                    "  }; \n" +
+
+                    "  var result = cacheStream.skip(first).limit(max).collect(java.util.stream.Collectors.toMap(\n" +
+                    "    new java.util.function.Function() {\n" +
+                    "      apply: function(entry) {\n" +
+                    "        return entry.getKey();\n" +
+                    "      }\n" +
+                    "    },\n" +
+                    "    new java.util.function.Function() {\n" +
+                    "      apply: function(entry) {\n" +
+                    "        return entry.getValue();\n" +
+                    "      }\n" +
+                    "    }\n" +
+                    "  ));\n" +
+                    "\n" +
+                    "  cacheStream.close();\n" +
+                    "  return result;\n" +
+                    "};\n" +
+                    "\n" +
+                    "loadSessions();";
 
 
 

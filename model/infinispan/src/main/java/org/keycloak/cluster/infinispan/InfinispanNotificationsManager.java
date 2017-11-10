@@ -52,7 +52,6 @@ import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.ConcurrentMultivaluedHashMap;
 import org.keycloak.executors.ExecutorsProvider;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
 
 /**
  * Impl for sending infinispan messages across cluster and listening to them
@@ -154,8 +153,7 @@ public class InfinispanNotificationsManager {
                     .put(eventKey, wrappedEvent, 120, TimeUnit.SECONDS);
         } else {
             // Add directly to remoteCache. Will notify remote listeners on all nodes in all DCs
-            RemoteCache remoteCache = InfinispanUtil.getRemoteCache(workCache);
-            remoteCache.put(eventKey, wrappedEvent, 120, TimeUnit.SECONDS);
+            workRemoteCache.put(eventKey, wrappedEvent, 120, TimeUnit.SECONDS);
         }
     }
 
