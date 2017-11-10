@@ -56,7 +56,7 @@ public class AuthenticationFlowURLHelper {
 
         logger.debugf("Redirecting to 'page expired' now. Will use last step URL: %s", lastStepUrl);
 
-        return session.getProvider(LoginFormsProvider.class)
+        return session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authSession)
                 .setActionUri(lastStepUrl)
                 .setExecution(getExecutionId(authSession))
                 .createLoginExpiredPage();

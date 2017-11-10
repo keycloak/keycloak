@@ -21,10 +21,17 @@ import java.util.Set;
 
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.cache.infinispan.RealmCacheManager;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import org.infinispan.commons.marshall.Externalizer;
+import org.infinispan.commons.marshall.MarshallUtil;
+import org.infinispan.commons.marshall.SerializeWith;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@SerializeWith(GroupRemovedEvent.ExternalizerImpl.class)
 public class GroupRemovedEvent extends InvalidationEvent implements RealmCacheInvalidationEvent {
 
     private String groupId;
@@ -54,6 +61,39 @@ public class GroupRemovedEvent extends InvalidationEvent implements RealmCacheIn
         realmCache.groupQueriesInvalidations(realmId, invalidations);
         if (parentId != null) {
             invalidations.add(parentId);
+        }
+    }
+
+    public static class ExternalizerImpl implements Externalizer<GroupRemovedEvent> {
+
+        private static final int VERSION_1 = 1;
+
+        @Override
+        public void writeObject(ObjectOutput output, GroupRemovedEvent obj) throws IOException {
+            output.writeByte(VERSION_1);
+
+            MarshallUtil.marshallString(obj.realmId, output);
+            MarshallUtil.marshallString(obj.groupId, output);
+            MarshallUtil.marshallString(obj.parentId, output);
+        }
+
+        @Override
+        public GroupRemovedEvent readObject(ObjectInput input) throws IOException, ClassNotFoundException {
+            switch (input.readByte()) {
+                case VERSION_1:
+                    return readObjectVersion1(input);
+                default:
+                    throw new IOException("Unknown version");
+            }
+        }
+
+        public GroupRemovedEvent readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
+            GroupRemovedEvent res = new GroupRemovedEvent();
+            res.realmId = MarshallUtil.unmarshallString(input);
+            res.groupId = MarshallUtil.unmarshallString(input);
+            res.parentId = MarshallUtil.unmarshallString(input);
+
+            return res;
         }
     }
 }

@@ -1,6 +1,6 @@
 {
   "name": "angular-loader",
-  "version": "1.6.4",
+  "version": "1.6.6",
   "description": "AngularJS module for asynchronously loading modules",
   "main": "angular-loader.js",
   "scripts": {

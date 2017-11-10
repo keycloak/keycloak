@@ -22,6 +22,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
 import org.keycloak.models.cache.infinispan.events.RealmCacheInvalidationEvent;
+import org.keycloak.models.cache.infinispan.stream.GroupListPredicate;
 import org.keycloak.models.cache.infinispan.stream.HasRolePredicate;
 import org.keycloak.models.cache.infinispan.stream.InClientPredicate;
 import org.keycloak.models.cache.infinispan.stream.InRealmPredicate;
@@ -73,7 +74,8 @@ public class RealmCacheManager extends CacheManager {
 
     public void groupQueriesInvalidations(String realmId, Set<String> invalidations) {
         invalidations.add(RealmCacheSession.getGroupsQueryCacheKey(realmId));
-        invalidations.add(RealmCacheSession.getTopGroupsQueryCacheKey(realmId)); // Just easier to always invalidate top-level too. It's not big performance penalty
+        invalidations.add(RealmCacheSession.getTopGroupsQueryCacheKey(realmId));
+        addInvalidations(GroupListPredicate.create().realm(realmId), invalidations);
     }
 
     public void clientAdded(String realmId, String clientUUID, String clientId, Set<String> invalidations) {

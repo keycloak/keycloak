@@ -19,7 +19,7 @@ package org.keycloak.testsuite.crossdc;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.events.log.JBossLoggingEventListenerProviderFactory;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.Retry;
+import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.arquillian.InfinispanStatistics;
 import org.keycloak.testsuite.events.EventsListenerProviderFactory;
 import org.keycloak.testsuite.util.TestCleanup;
@@ -95,8 +95,10 @@ public abstract class AbstractAdminCrossDCTest extends AbstractCrossDCTest {
             T newStat = (T) stats.getSingleStatistics(key);
 
             Matcher<? super T> matcherInstance = matcherOnOldStat.apply(oldStat);
+            
+            log.infof("assertSingleStatistics '%s' : oldStat: %s, newStat: %s", key, oldStat.toString(), newStat.toString());
             assertThat(newStat, matcherInstance);
-        }, 20, 200);
+        }, 50, 200);
     }
 
     protected void assertStatistics(InfinispanStatistics stats, Runnable testedCode, BiConsumer<Map<String, Object>, Map<String, Object>> assertionOnStats) {
@@ -108,7 +110,7 @@ public abstract class AbstractAdminCrossDCTest extends AbstractCrossDCTest {
         Retry.execute(() -> {
             Map<String, Object> newStat = stats.getStatistics();
             assertionOnStats.accept(oldStat, newStat);
-        }, 5, 200);
+        }, 50, 200);
     }
 
 }

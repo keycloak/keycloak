@@ -22,14 +22,12 @@ import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterListener;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ExecutionResult;
+import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 
 import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -143,7 +141,7 @@ public class InfinispanClusterProvider implements ClusterProvider {
     private boolean tryLock(String cacheKey, int taskTimeoutInSeconds) {
         LockEntry myLock = createLockEntry();
 
-        LockEntry existingLock = (LockEntry) crossDCAwareCacheFactory.getCache().putIfAbsent(cacheKey, myLock, taskTimeoutInSeconds, TimeUnit.SECONDS);
+        LockEntry existingLock = InfinispanClusterProviderFactory.putIfAbsentWithRetries(crossDCAwareCacheFactory, cacheKey, myLock, taskTimeoutInSeconds);
         if (existingLock != null) {
             if (logger.isTraceEnabled()) {
                 logger.tracef("Task %s in progress already by node %s. Ignoring task.", cacheKey, existingLock.getNode());
@@ -159,22 +157,15 @@ public class InfinispanClusterProvider implements ClusterProvider {
 
 
     private void removeFromCache(String cacheKey) {
-        // 3 attempts to send the message (it may fail if some node fails in the meantime)
-        int retry = 3;
-        while (true) {
-            try {
-                crossDCAwareCacheFactory.getCache().remove(cacheKey);
-                if (logger.isTraceEnabled()) {
-                    logger.tracef("Task %s removed from the cache", cacheKey);
-                }
-                return;
-            } catch (RuntimeException e) {
-                retry--;
-                if (retry == 0) {
-                    throw e;
-                }
+        // More attempts to send the message (it may fail if some node fails in the meantime)
+        Retry.executeWithBackoff((int iteration) -> {
+
+            crossDCAwareCacheFactory.getCache().remove(cacheKey);
+            if (logger.isTraceEnabled()) {
+                logger.tracef("Task %s removed from the cache", cacheKey);
             }
-        }
+
+        }, 10, 10);
     }
 
 }

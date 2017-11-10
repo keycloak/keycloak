@@ -78,7 +78,7 @@ public abstract class AbstractFuseAdminAdapterTest extends AbstractExampleAdapte
         assertCurrentUrlDoesntStartWith(hawtioPage);
 
         testRealmLoginPage.form().login("root", "password");
-        assertCurrentUrlStartsWith(hawtioPage.getDriver(), hawtioPage.toString() + "/welcome");
+        assertCurrentUrlStartsWith(hawtioPage.toString() + "/welcome", hawtioPage.getDriver());
         hawtioPage.logout();
         assertCurrentUrlStartsWith(testRealmLoginPage);
         

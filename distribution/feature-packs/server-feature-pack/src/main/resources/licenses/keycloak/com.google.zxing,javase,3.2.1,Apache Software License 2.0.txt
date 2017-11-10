@@ -1,0 +1,1 @@
+com.google.zxing,core,3.2.1,Apache Software License 2.0.txt

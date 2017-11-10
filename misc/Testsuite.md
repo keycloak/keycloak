@@ -117,7 +117,7 @@ But additionally you can enable Kerberos authentication in LDAP provider with th
 * KeyTab: $KEYCLOAK_SOURCES/testsuite/integration-arquillian/tests/base/src/test/resources/kerberos/http.keytab (Replace $KEYCLOAK_SOURCES with correct absolute path of your sources)
 
 Once you do this, you should also ensure that your Kerberos client configuration file is properly configured with KEYCLOAK.ORG domain. 
-See [../testsuite/integration-arquillian/src/test/resources/kerberos/test-krb5.conf](../testsuite/integration-arquillian/src/test/resources/kerberos/test-krb5.conf) for inspiration. The location of Kerberos configuration file 
+See [../testsuite/integration-arquillian/tests/base/src/test/resources/kerberos/test-krb5.conf](../testsuite/integration-arquillian/tests/base/src/test/resources/kerberos/test-krb5.conf) for inspiration. The location of Kerberos configuration file 
 is platform dependent (In linux it's file `/etc/krb5.conf` )
 
 Then you need to configure your browser to allow SPNEGO/Kerberos login from `localhost` .

@@ -21,7 +21,12 @@ package org.keycloak.authorization.client;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class AuthorizationDeniedException extends RuntimeException {
+
     public AuthorizationDeniedException(Throwable cause) {
         super(cause);
+    }
+
+    public AuthorizationDeniedException(String message, Throwable cause) {
+        super(message, cause);
     }
 }

@@ -35,6 +35,7 @@ import org.keycloak.authorization.client.representation.EntitlementResponse;
 import org.keycloak.authorization.client.representation.PermissionRequest;
 import org.keycloak.authorization.client.representation.PermissionResponse;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.PathConfig;
 import org.keycloak.representations.idm.authorization.Permission;
 
@@ -50,14 +51,14 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
     }
 
     @Override
-    protected boolean isAuthorized(PathConfig pathConfig, Set<String> requiredScopes, AccessToken accessToken, OIDCHttpFacade httpFacade) {
+    protected boolean isAuthorized(PathConfig pathConfig, PolicyEnforcerConfig.MethodConfig methodConfig, AccessToken accessToken, OIDCHttpFacade httpFacade) {
         AccessToken original = accessToken;
 
-        if (super.isAuthorized(pathConfig, requiredScopes, accessToken, httpFacade)) {
+        if (super.isAuthorized(pathConfig, methodConfig, accessToken, httpFacade)) {
             return true;
         }
 
-        accessToken = requestAuthorizationToken(pathConfig, requiredScopes, httpFacade);
+        accessToken = requestAuthorizationToken(pathConfig, methodConfig, httpFacade);
 
         if (accessToken == null) {
             return false;
@@ -78,11 +79,11 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
 
         original.setAuthorization(authorization);
 
-        return super.isAuthorized(pathConfig, requiredScopes, accessToken, httpFacade);
+        return super.isAuthorized(pathConfig, methodConfig, accessToken, httpFacade);
     }
 
     @Override
-    protected boolean challenge(PathConfig pathConfig, Set<String> requiredScopes, OIDCHttpFacade facade) {
+    protected boolean challenge(PathConfig pathConfig, PolicyEnforcerConfig.MethodConfig methodConfig, OIDCHttpFacade facade) {
         handleAccessDenied(facade);
         return true;
     }
@@ -100,7 +101,7 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
         }
     }
 
-    private AccessToken requestAuthorizationToken(PathConfig pathConfig, Set<String> requiredScopes, OIDCHttpFacade httpFacade) {
+    private AccessToken requestAuthorizationToken(PathConfig pathConfig, PolicyEnforcerConfig.MethodConfig methodConfig, OIDCHttpFacade httpFacade) {
         try {
             String accessToken = httpFacade.getSecurityContext().getTokenString();
             AuthzClient authzClient = getAuthzClient();
@@ -111,7 +112,7 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
                 PermissionRequest permissionRequest = new PermissionRequest();
 
                 permissionRequest.setResourceSetId(pathConfig.getId());
-                permissionRequest.setScopes(requiredScopes);
+                permissionRequest.setScopes(new HashSet<>(methodConfig.getScopes()));
 
                 PermissionResponse permissionResponse = authzClient.protection().permission().forResource(permissionRequest);
                 AuthorizationRequest authzRequest = new AuthorizationRequest(permissionResponse.getTicket());

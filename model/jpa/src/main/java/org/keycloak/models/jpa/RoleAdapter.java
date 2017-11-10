@@ -26,7 +26,6 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 /**

@@ -62,7 +62,7 @@ public class SamlSessionUtils {
             return null;
         }
 
-        return userSession.getAuthenticatedClientSessions().get(parts[1]);
+        return userSession.getAuthenticatedClientSessionByClient(clientUUID);
     }
 
 }

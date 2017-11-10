@@ -40,12 +40,12 @@ public class LastSessionRefreshStoreFactory {
     public static final int DEFAULT_MAX_COUNT = 100;
 
 
-    public LastSessionRefreshStore createAndInit(KeycloakSession kcSession, Cache<String, SessionEntityWrapper> cache, boolean offline) {
+    public LastSessionRefreshStore createAndInit(KeycloakSession kcSession, Cache<String, SessionEntityWrapper<UserSessionEntity>> cache, boolean offline) {
         return createAndInit(kcSession, cache, DEFAULT_TIMER_INTERVAL_MS, DEFAULT_MAX_INTERVAL_BETWEEN_MESSAGES_SECONDS, DEFAULT_MAX_COUNT, offline);
     }
 
 
-    public LastSessionRefreshStore createAndInit(KeycloakSession kcSession, Cache<String, SessionEntityWrapper> cache, long timerIntervalMs, int maxIntervalBetweenMessagesSeconds, int maxCount, boolean offline) {
+    public LastSessionRefreshStore createAndInit(KeycloakSession kcSession, Cache<String, SessionEntityWrapper<UserSessionEntity>> cache, long timerIntervalMs, int maxIntervalBetweenMessagesSeconds, int maxCount, boolean offline) {
         String eventKey = offline ? "lastSessionRefreshes-offline" :  "lastSessionRefreshes";
         LastSessionRefreshStore store = createStoreInstance(maxIntervalBetweenMessagesSeconds, maxCount, eventKey);
 

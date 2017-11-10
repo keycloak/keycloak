@@ -51,6 +51,28 @@
       {
         "name" : "Admin Resources",
         "path" : "/admin/*"
+      },
+      {
+        "name" : "Scope Protected Resource",
+        "path" : "/scope-any",
+        "methods": [
+          {
+            "method": "GET",
+            "scopes": ["scope-a", "scope-b"],
+            "scopes-enforcement-mode": "ANY"
+          }
+        ]
+      },
+      {
+        "name" : "Scope Protected Resource",
+        "path" : "/scope-all",
+        "methods": [
+          {
+            "method": "GET",
+            "scopes": ["scope-a", "scope-b"],
+            "scopes-enforcement-mode": "ALL"
+          }
+        ]
       }
     ]
   }

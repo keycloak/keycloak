@@ -20,6 +20,7 @@ org.keycloak.storage.UserStorageProviderSpi
 org.keycloak.storage.federated.UserFederatedStorageProviderSpi
 org.keycloak.models.RealmSpi
 org.keycloak.models.ActionTokenStoreSpi
+org.keycloak.models.CodeToTokenStoreSpi
 org.keycloak.models.UserSessionSpi
 org.keycloak.models.UserSpi
 org.keycloak.models.session.UserSessionPersisterSpi
@@ -45,6 +46,7 @@ org.keycloak.forms.account.AccountSpi
 org.keycloak.forms.login.LoginFormsSpi
 org.keycloak.email.EmailSenderSpi
 org.keycloak.email.EmailTemplateSpi
+org.keycloak.executors.ExecutorsSpi
 org.keycloak.theme.ThemeSpi
 org.keycloak.truststore.TruststoreSpi
 org.keycloak.connections.httpclient.HttpClientSpi

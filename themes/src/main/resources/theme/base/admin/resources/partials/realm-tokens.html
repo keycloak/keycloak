@@ -7,10 +7,22 @@
             <label class="col-md-2 control-label" for="revokeRefreshToken">{{:: 'revoke-refresh-token' | translate}}</label>
 
             <div class="col-md-6">
-                <input ng-model="realm.revokeRefreshToken" name="revokeRefreshToken" id="revokeRefreshToken" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                <input ng-change="" ng-model="realm.revokeRefreshToken" name="revokeRefreshToken" id="revokeRefreshToken" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
             </div>
 
             <kc-tooltip>{{:: 'revoke-refresh-token.tooltip' | translate}}
+            </kc-tooltip>
+        </div>
+
+        <div class="form-group" data-ng-show="realm.revokeRefreshToken == true">
+            <label class="col-md-2 control-label" for="refreshTokenMaxReuse">{{:: 'refresh-token-max-reuse' | translate}}</label>
+
+            <div class="col-md-6">
+                <input class="form-control" type="number" required min="0" max="31536000" data-ng-model="realm.refreshTokenMaxReuse" id="refreshTokenMaxReuse"
+                       name="refreshTokenMaxReuse"/>
+            </div>
+
+            <kc-tooltip>{{:: 'refresh-token-max-reuse.tooltip' | translate}}
             </kc-tooltip>
         </div>
 

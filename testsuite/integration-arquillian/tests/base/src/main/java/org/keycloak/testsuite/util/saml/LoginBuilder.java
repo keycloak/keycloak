@@ -18,6 +18,7 @@ package org.keycloak.testsuite.util.saml;
 
 import org.keycloak.testsuite.util.SamlClientBuilder;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.admin.Users;
 import org.keycloak.testsuite.util.SamlClient.Step;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -36,6 +37,7 @@ import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
+import org.hamcrest.Matchers;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import static org.hamcrest.Matchers.containsString;
@@ -52,6 +54,7 @@ public class LoginBuilder implements Step {
     private final SamlClientBuilder clientBuilder;
     private UserRepresentation user;
     private boolean sso = false;
+    private String idpAlias;
 
     public LoginBuilder(SamlClientBuilder clientBuilder) {
         this.clientBuilder = clientBuilder;
@@ -66,7 +69,7 @@ public class LoginBuilder implements Step {
             String loginPageText = EntityUtils.toString(currentResponse.getEntity(), "UTF-8");
             assertThat(loginPageText, containsString("login"));
 
-            return handleLoginPage(loginPageText);
+            return handleLoginPage(loginPageText, currentURI);
         }
     }
 
@@ -79,8 +82,26 @@ public class LoginBuilder implements Step {
         return this;
     }
 
+    public LoginBuilder user(String userName, String password) {
+        this.user = new UserRepresentation();
+        this.user.setUsername(userName);
+        Users.setPasswordFor(user, password);
+        return this;
+    }
+
     public LoginBuilder sso(boolean sso) {
         this.sso = sso;
+        return this;
+    }
+
+    /**
+     * When the step is executed and {@code idpAlias} is not {@code null}, it attempts to find and follow the link to
+     * identity provider with the given alias.
+     * @param idpAlias
+     * @return
+     */
+    public LoginBuilder idp(String idpAlias) {
+        this.idpAlias = idpAlias;
         return this;
     }
 
@@ -92,7 +113,16 @@ public class LoginBuilder implements Step {
      * @param loginPage
      * @return
      */
-    private HttpUriRequest handleLoginPage(String loginPage) {
+    private HttpUriRequest handleLoginPage(String loginPage, URI currentURI) {
+        if (idpAlias != null) {
+            org.jsoup.nodes.Document theLoginPage = Jsoup.parse(loginPage);
+            Element zocialLink = theLoginPage.getElementById("zocial-" + this.idpAlias);
+            assertThat("Unknown idp: " + this.idpAlias, zocialLink, Matchers.notNullValue());
+            final String link = zocialLink.attr("href");
+            assertThat("Invalid idp link: " + this.idpAlias, link, Matchers.notNullValue());
+            return new HttpGet(currentURI.resolve(link));
+        }
+
         return handleLoginPage(user, loginPage);
     }
 

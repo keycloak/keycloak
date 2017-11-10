@@ -18,15 +18,18 @@
 package org.keycloak.models.sessions.infinispan.initializer;
 
 import org.infinispan.Cache;
+import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 import org.infinispan.context.Flag;
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.common.util.Retry;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -101,10 +104,24 @@ public class OfflinePersistentUserSessionLoader implements SessionLoader, Serial
     public void afterAllSessionsLoaded(BaseCacheInitializer initializer) {
         Cache<String, Serializable> workCache = initializer.getWorkCache();
 
-        // Cross-DC aware flag
-        workCache
-                .getAdvancedCache().withFlags(Flag.SKIP_REMOTE_LOOKUP)
-                .put(PERSISTENT_SESSIONS_LOADED, true);
+        // Will retry few times for the case when backup site not available in cross-dc environment.
+        // The site might be taken offline automatically if "take-offline" properly configured
+        Retry.executeWithBackoff((int iteration) -> {
+
+            try {
+                // Cross-DC aware flag
+                workCache
+                        .getAdvancedCache().withFlags(Flag.SKIP_REMOTE_LOOKUP)
+                        .put(PERSISTENT_SESSIONS_LOADED, true);
+
+            } catch (HotRodClientException re) {
+                log.warnf(re, "Failed to write flag PERSISTENT_SESSIONS_LOADED in iteration '%d' . Retrying", iteration);
+
+                // Rethrow the exception. Retry will take care of handle the exception and eventually retry the operation.
+                throw re;
+            }
+
+        }, 10, 10);
 
         // Just local-DC aware flag
         workCache

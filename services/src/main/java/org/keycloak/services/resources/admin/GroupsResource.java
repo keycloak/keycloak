@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.apache.http.HttpStatus;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
@@ -34,10 +35,14 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import twitter4j.JSONException;
+import twitter4j.JSONObject;
 
 /**
  * @resource Groups
@@ -110,16 +115,19 @@ public class GroupsResource {
      */
     @GET
     @NoCache
-    @Path("/count")
-    public Response getGroupCount(@QueryParam("search") String search) {
-        auth.requireView();
+    @Path("count")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String, Long> getGroupCount(@QueryParam("search") String search,
+                                           @QueryParam("top") @DefaultValue("false") boolean onlyTopGroups) {
         Long results;
+        Map<String, Long> map = new HashMap<>();
         if (Objects.nonNull(search)) {
             results = realm.getGroupsCountByNameContaining(search);
         } else {
-            results = realm.getGroupsCount();
+            results = realm.getGroupsCount(onlyTopGroups);
         }
-        return Response.ok(results).build();
+        map.put("count", results);
+        return map;
     }
 
     /**

@@ -536,7 +536,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
         OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
 
-        assertError(response, "client1", "invalid_client", Errors.CLIENT_DISABLED);
+        assertError(response, "client1", "unauthorized_client", Errors.CLIENT_DISABLED);
 
         ClientManager.realm(adminClient.realm("test")).clientId("client1").enabled(true);
     }

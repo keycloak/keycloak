@@ -94,7 +94,7 @@ public class SpringSecurityRequestAuthenticator extends RequestAuthenticator {
 
         logger.debug("Completing bearer authentication. Bearer roles: {} ",roles);
 
-        SecurityContextHolder.getContext().setAuthentication(new KeycloakAuthenticationToken(account));
+        SecurityContextHolder.getContext().setAuthentication(new KeycloakAuthenticationToken(account, false));
         request.setAttribute(KeycloakSecurityContext.class.getName(), securityContext);
     }
 

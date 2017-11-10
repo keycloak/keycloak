@@ -16,12 +16,16 @@
  */
 package org.keycloak.testsuite.admin.client.authorization;
 
+import static com.sun.org.apache.xerces.internal.util.PropertyState.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.NotFoundException;
@@ -146,6 +150,45 @@ public class UserPolicyManagementTest extends AbstractPolicyManagementTest {
         UserRepresentation user = getRealm().users().search("User A").get(0);
 
         assertTrue(genericConfig.getConfig().get("users").contains(user.getId()));
+    }
+
+    @Test
+    public void failInvalidUser() {
+        AuthorizationResource authorization = getClient().authorization();
+
+        PolicyRepresentation policy = new PolicyRepresentation();
+
+        policy.setName("User Policy-Malformed");
+        policy.setDescription("Description of a malformed user Policy");
+        policy.setDecisionStrategy(DecisionStrategy.UNANIMOUS);
+        policy.setType("user");
+
+        Map<String, String> config = new HashMap<>();
+
+        // here we put something invalid ... a user ID would be needed
+        config.put("users", "[\"doesnotexist\"]");
+
+        policy.setConfig(config);
+
+        Response response = authorization.policies().create(policy);
+        assertEquals(Response.Status.INTERNAL_SERVER_ERROR, response.getStatusInfo());
+        response.close();
+
+        config.put("users", "");
+
+        policy.setConfig(config);
+
+        response = authorization.policies().create(policy);
+        assertEquals(Response.Status.INTERNAL_SERVER_ERROR, response.getStatusInfo());
+        response.close();
+
+        config.clear();
+
+        policy.setConfig(config);
+
+        response = authorization.policies().create(policy);
+        assertEquals(Response.Status.INTERNAL_SERVER_ERROR, response.getStatusInfo());
+        response.close();
     }
 
     private void assertCreated(AuthorizationResource authorization, UserPolicyRepresentation representation) {

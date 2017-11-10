@@ -451,4 +451,8 @@ public interface ServicesLogger extends BasicLogger {
     @Message(id=102, value= "URL '%s' doesn't match any trustedHost or trustedDomain")
     void urlDoesntMatch(String url);
 
+    @LogMessage(level = DEBUG)
+    @Message(id=103, value="Failed to reset password. User is temporarily disabled")
+    void passwordResetFailed(@Cause Throwable t);
+
 }

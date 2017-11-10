@@ -51,6 +51,8 @@ public interface Attributes {
     String SECRET_KEY = "secret";
 
     String SECRET_SIZE_KEY = "secretSize";
-    ProviderConfigProperty SECRET_SIZE_PROPERTY = new ProviderConfigProperty(SECRET_SIZE_KEY, "Secret size", "Size in bytes for the generated secret", LIST_TYPE, "32", "32", "64", "128", "256", "512");
+    ProviderConfigProperty SECRET_SIZE_PROPERTY = new ProviderConfigProperty(SECRET_SIZE_KEY, "Secret size", "Size in bytes for the generated secret", LIST_TYPE,
+            String.valueOf(GeneratedHmacKeyProviderFactory.DEFAULT_HMAC_KEY_SIZE),
+            "16", "24", "32", "64", "128", "256", "512");
 
 }

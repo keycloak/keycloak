@@ -168,7 +168,7 @@ public class GeneratedHmacKeyProviderTest extends AbstractKeycloakTest {
         rep.getConfig().putSingle("secretSize", "1234");
 
         Response response = adminClient.realm("test").components().add(rep);
-        assertErrror(response, "'Secret size' should be 32, 64, 128, 256 or 512");
+        assertErrror(response, "'Secret size' should be 16, 24, 32, 64, 128, 256 or 512");
     }
 
     protected void assertErrror(Response response, String error) {

@@ -91,6 +91,8 @@
                 <local-cache name="sessions"/>
                 <local-cache name="authenticationSessions"/>
                 <local-cache name="offlineSessions"/>
+                <local-cache name="clientSessions"/>
+                <local-cache name="offlineClientSessions"/>
                 <local-cache name="loginFailures"/>
                 <local-cache name="authorization">
                     <eviction max-entries="10000" strategy="LRU"/>

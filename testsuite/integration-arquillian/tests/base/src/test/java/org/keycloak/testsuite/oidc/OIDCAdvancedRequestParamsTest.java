@@ -17,17 +17,24 @@
 
 package org.keycloak.testsuite.oidc;
 
+import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.jose.jws.Algorithm;
+import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.IDToken;
@@ -49,10 +56,16 @@ import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
+import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.util.JsonSerialization;
 
+import com.google.common.collect.ImmutableMap;
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -83,6 +96,10 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
     @Page
     protected ErrorPage errorPage;
 
+    @Deployment
+    public static WebArchive deploy() {
+        return RunOnServerDeployment.create(OIDCAdvancedRequestParamsTest.class, AbstractTestRealmKeycloakTest.class);
+    }
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -477,6 +494,79 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+    }
+    
+    // CLAIMS
+    // included in the session client notes, so custom providers can make use of it
+    
+    @Test
+    public void processClaimsQueryParam() throws IOException {
+        Map<String, Object> claims = ImmutableMap.of(
+                "id_token", ImmutableMap.of(
+                        "test_claim", ImmutableMap.of(
+                                "essential", true)));
+
+        String claimsJson = JsonSerialization.writeValueAsString(claims);
+
+        driver.navigate().to(oauth.getLoginFormUrl() + "&" + OIDCLoginProtocol.CLAIMS_PARAM + "=" + claimsJson);
+        
+        // need to login so session id can be read from event
+        loginPage.assertCurrent();
+        loginPage.login("test-user@localhost", "password");
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        String sessionId = loginEvent.getSessionId();
+        String clientId = loginEvent.getClientId();
+        
+        testingClient.server("test").run(session -> {
+            RealmModel realmModel = session.getContext().getRealm();
+            String clientUuid = realmModel.getClientByClientId(clientId).getId();
+            UserSessionModel userSession = session.sessions().getUserSession(realmModel, sessionId);
+            AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(clientUuid);
+            
+            String claimsInSession = clientSession.getNote(OIDCLoginProtocol.CLAIMS_PARAM);
+            assertEquals(claimsJson, claimsInSession);
+        });
+    }
+    
+    @Test
+    public void processClaimsRequestParam() throws Exception {
+        Map<String, Object> claims = ImmutableMap.of(
+                "id_token", ImmutableMap.of(
+                        "test_claim", ImmutableMap.of(
+                                "essential", true)));
+        
+        String claimsJson = JsonSerialization.writeValueAsString(claims);
+
+        Map<String, Object> oidcRequest = new HashMap<>();
+        oidcRequest.put(OIDCLoginProtocol.CLIENT_ID_PARAM, "test-app");
+        oidcRequest.put(OIDCLoginProtocol.RESPONSE_TYPE_PARAM, OAuth2Constants.CODE);
+        oidcRequest.put(OIDCLoginProtocol.REDIRECT_URI_PARAM, oauth.getRedirectUri());
+        oidcRequest.put(OIDCLoginProtocol.CLAIMS_PARAM, claims);
+
+        String request = new JWSBuilder().jsonContent(oidcRequest).none();
+        
+        driver.navigate().to(oauth.getLoginFormUrl() + "&" + OIDCLoginProtocol.REQUEST_PARAM + "=" + request);
+        
+        // need to login so session id can be read from event
+        loginPage.assertCurrent();
+        loginPage.login("test-user@localhost", "password");
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        String sessionId = loginEvent.getSessionId();
+        String clientId = loginEvent.getClientId();
+        
+        testingClient.server("test").run(session -> {
+            RealmModel realmModel = session.getContext().getRealm();
+            String clientUuid = realmModel.getClientByClientId(clientId).getId();
+            UserSessionModel userSession = session.sessions().getUserSession(realmModel, sessionId);
+            AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(clientUuid);
+            
+            String claimsInSession = clientSession.getNote(OIDCLoginProtocol.CLAIMS_PARAM);
+            assertEquals(claimsJson, claimsInSession);
+        });
     }
 
 }

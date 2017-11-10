@@ -166,7 +166,7 @@ public class UserInfoEndpoint {
 
 
         // Existence of authenticatedClientSession for our client already handled before
-        AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(clientModel.getId());
+        AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(clientModel.getId());
 
         AccessToken userInfo = new AccessToken();
         tokenManager.transformUserInfoAccessToken(session, userInfo, realm, clientModel, userModel, userSession, clientSession);

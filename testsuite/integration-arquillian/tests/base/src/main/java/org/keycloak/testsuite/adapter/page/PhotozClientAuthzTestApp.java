@@ -160,6 +160,18 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
         pause(WAIT_AFTER_OPERATION);
     }
 
+    public void requestResourceProtectedAnyScope() throws InterruptedException {
+        navigateTo();
+        this.driver.findElement(By.id("requestPathWithAnyProtectedScope")).click();
+        pause(WAIT_AFTER_OPERATION);
+    }
+
+    public void requestResourceProtectedAllScope() throws InterruptedException {
+        navigateTo();
+        this.driver.findElement(By.id("requestPathWithAllProtectedScope")).click();
+        pause(WAIT_AFTER_OPERATION);
+    }
+
     public WebElement getOutput() {
         return output;
     }

@@ -30,6 +30,7 @@ import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.crossdc.AbstractAdminCrossDCTest;
 import org.keycloak.testsuite.crossdc.DC;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.junit.Assume;
 
 /**
  * Tests userSessions and offline sessions preloading at startup
@@ -47,12 +48,13 @@ public class SessionsPreloadCrossDCTest extends AbstractAdminCrossDCTest {
     @Override
     public void beforeAbstractKeycloakTest() throws Exception {
         // Doublecheck we are in manual mode
-        Assert.assertTrue("The test requires to be executed with manual.mode=true", suiteContext.getCacheServersInfo().get(0).isManual());
+        Assume.assumeTrue("The test requires to be executed with manual.mode=true", suiteContext.getCacheServersInfo().get(0).isManual());
 
         stopAllCacheServersAndAuthServers();
 
-        // Start DC1 only
+        // Start DC1 and only the cache container from DC2. All Keycloak nodes on DC2 are stopped
         containerController.start(getCacheServer(DC.FIRST).getQualifier());
+        containerController.start(getCacheServer(DC.SECOND).getQualifier());
         startBackendNode(DC.FIRST, 0);
         enableLoadBalancerNode(DC.FIRST, 0);
 
@@ -111,25 +113,24 @@ public class SessionsPreloadCrossDCTest extends AbstractAdminCrossDCTest {
 
     @Test
     public void sessionsPreloadTest() throws Exception {
-        int sessionsBefore = getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.SESSION_CACHE_NAME).size();
+        int sessionsBefore = getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).size();
         log.infof("sessionsBefore: %d", sessionsBefore);
 
         // Create initial sessions
         List<OAuthClient.AccessTokenResponse> tokenResponses = createInitialSessions(false);
 
         // Start 2nd DC.
-        containerController.start(getCacheServer(DC.SECOND).getQualifier());
         startBackendNode(DC.SECOND, 0);
         enableLoadBalancerNode(DC.SECOND, 0);
 
         // Ensure sessions are loaded in both 1st DC and 2nd DC
-        int sessions01 = getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.SESSION_CACHE_NAME).size();
-        int sessions02 = getTestingClientForStartedNodeInDc(1).testing().cache(InfinispanConnectionProvider.SESSION_CACHE_NAME).size();
+        int sessions01 = getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).size();
+        int sessions02 = getTestingClientForStartedNodeInDc(1).testing().cache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).size();
         log.infof("sessions01: %d, sessions02: %d", sessions01, sessions02);
         Assert.assertEquals(sessions01, sessionsBefore + SESSIONS_COUNT);
         Assert.assertEquals(sessions02, sessionsBefore + SESSIONS_COUNT);
 
-        // On DC2 sessions were preloaded from from remoteCache
+        // On DC2 sessions were preloaded from remoteCache
         Assert.assertTrue(getTestingClientForStartedNodeInDc(1).testing().cache(InfinispanConnectionProvider.WORK_CACHE_NAME).contains("distributed::remoteCacheLoad::sessions"));
 
         // Assert refreshing works
@@ -143,32 +144,34 @@ public class SessionsPreloadCrossDCTest extends AbstractAdminCrossDCTest {
 
     @Test
     public void offlineSessionsPreloadTest() throws Exception {
-        int offlineSessionsBefore = getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME).size();
+        int offlineSessionsBefore = getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME).size();
         log.infof("offlineSessionsBefore: %d", offlineSessionsBefore);
 
         // Create initial sessions
         List<OAuthClient.AccessTokenResponse> tokenResponses = createInitialSessions(true);
 
-        int offlineSessions01 = getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME).size();
+        int offlineSessions01 = getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME).size();
         Assert.assertEquals(offlineSessions01, offlineSessionsBefore + SESSIONS_COUNT);
         log.infof("offlineSessions01: %d", offlineSessions01);
 
         // Stop Everything
         stopAllCacheServersAndAuthServers();
 
-        // Start DC1. Sessions should be preloaded from DB
+        // Start cache containers on both DC1 and DC2
         containerController.start(getCacheServer(DC.FIRST).getQualifier());
+        containerController.start(getCacheServer(DC.SECOND).getQualifier());
+
+        // Start Keycloak on DC1. Sessions should be preloaded from DB
         startBackendNode(DC.FIRST, 0);
         enableLoadBalancerNode(DC.FIRST, 0);
 
-        // Start DC2. Sessions should be preloaded from remoteCache
-        containerController.start(getCacheServer(DC.SECOND).getQualifier());
+        // Start Keycloak on DC2. Sessions should be preloaded from remoteCache
         startBackendNode(DC.SECOND, 0);
         enableLoadBalancerNode(DC.SECOND, 0);
 
         // Ensure sessions are loaded in both 1st DC and 2nd DC
-        int offlineSessions11 = getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME).size();
-        int offlineSessions12 = getTestingClientForStartedNodeInDc(1).testing().cache(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME).size();
+        int offlineSessions11 = getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME).size();
+        int offlineSessions12 = getTestingClientForStartedNodeInDc(1).testing().cache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME).size();
         log.infof("offlineSessions11: %d, offlineSessions12: %d", offlineSessions11, offlineSessions12);
         Assert.assertEquals(offlineSessions11, offlineSessionsBefore + SESSIONS_COUNT);
         Assert.assertEquals(offlineSessions12, offlineSessionsBefore + SESSIONS_COUNT);
@@ -209,7 +212,6 @@ public class SessionsPreloadCrossDCTest extends AbstractAdminCrossDCTest {
         }
 
         // Start 2nd DC.
-        containerController.start(getCacheServer(DC.SECOND).getQualifier());
         startBackendNode(DC.SECOND, 0);
         enableLoadBalancerNode(DC.SECOND, 0);
 

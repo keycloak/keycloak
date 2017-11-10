@@ -17,7 +17,7 @@
  */
 package org.keycloak.adapters.authorization;
 
-import java.util.Set;
+import java.util.HashSet;
 
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.OIDCHttpFacade;
@@ -26,6 +26,7 @@ import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.representation.PermissionRequest;
 import org.keycloak.authorization.client.resource.PermissionResource;
 import org.keycloak.authorization.client.resource.ProtectionResource;
+import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.PathConfig;
 
 /**
@@ -40,9 +41,9 @@ public class BearerTokenPolicyEnforcer extends AbstractPolicyEnforcer {
     }
 
     @Override
-    protected boolean challenge(PathConfig pathConfig, Set<String> requiredScopes, OIDCHttpFacade facade) {
+    protected boolean challenge(PathConfig pathConfig, PolicyEnforcerConfig.MethodConfig methodConfig, OIDCHttpFacade facade) {
         if (getEnforcerConfig().getUserManagedAccess() != null) {
-            challengeUmaAuthentication(pathConfig, requiredScopes, facade);
+            challengeUmaAuthentication(pathConfig, methodConfig, facade);
         } else {
             challengeEntitlementAuthentication(facade);
         }
@@ -61,10 +62,10 @@ public class BearerTokenPolicyEnforcer extends AbstractPolicyEnforcer {
         }
     }
 
-    private void challengeUmaAuthentication(PathConfig pathConfig, Set<String> requiredScopes, OIDCHttpFacade facade) {
+    private void challengeUmaAuthentication(PathConfig pathConfig, PolicyEnforcerConfig.MethodConfig methodConfig, OIDCHttpFacade facade) {
         HttpFacade.Response response = facade.getResponse();
         AuthzClient authzClient = getAuthzClient();
-        String ticket = getPermissionTicket(pathConfig, requiredScopes, authzClient);
+        String ticket = getPermissionTicket(pathConfig, methodConfig, authzClient);
         String clientId = authzClient.getConfiguration().getResource();
         String authorizationServerUri = authzClient.getServerConfiguration().getIssuer().toString() + "/authz/authorize";
         response.setStatus(401);
@@ -74,12 +75,12 @@ public class BearerTokenPolicyEnforcer extends AbstractPolicyEnforcer {
         }
     }
 
-    private String getPermissionTicket(PathConfig pathConfig, Set<String> requiredScopes, AuthzClient authzClient) {
+    private String getPermissionTicket(PathConfig pathConfig, PolicyEnforcerConfig.MethodConfig methodConfig, AuthzClient authzClient) {
         ProtectionResource protection = authzClient.protection();
         PermissionResource permission = protection.permission();
         PermissionRequest permissionRequest = new PermissionRequest();
         permissionRequest.setResourceSetId(pathConfig.getId());
-        permissionRequest.setScopes(requiredScopes);
+        permissionRequest.setScopes(new HashSet<>(methodConfig.getScopes()));
         return permission.forResource(permissionRequest).getTicket();
     }
 }

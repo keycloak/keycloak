@@ -25,6 +25,7 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
+import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
 
 import java.net.MalformedURLException;
@@ -53,23 +54,39 @@ public class LinkedInIdentityProvider extends AbstractOAuth2IdentityProvider imp
 	}
 
 	@Override
+	protected boolean supportsExternalExchange() {
+		return true;
+	}
+
+	@Override
+	protected String getProfileEndpointForValidation(EventBuilder event) {
+		return PROFILE_URL;
+	}
+
+	@Override
+	protected BrokeredIdentityContext extractIdentityFromProfile(EventBuilder event, JsonNode profile) {
+		BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "id"));
+
+		String username = extractUsernameFromProfileURL(getJsonProperty(profile, "publicProfileUrl"));
+		user.setUsername(username);
+		user.setName(getJsonProperty(profile, "formattedName"));
+		user.setEmail(getJsonProperty(profile, "emailAddress"));
+		user.setIdpConfig(getConfig());
+		user.setIdp(this);
+
+		AbstractJsonUserAttributeMapper.storeUserProfileForMapper(user, profile, getConfig().getAlias());
+
+		return user;
+
+	}
+
+
+	@Override
 	protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
 		log.debug("doGetFederatedIdentity()");
 		try {
 			JsonNode profile = SimpleHttp.doGet(PROFILE_URL, session).header("Authorization", "Bearer " + accessToken).asJson();
-
-			BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "id"));
-
-			String username = extractUsernameFromProfileURL(getJsonProperty(profile, "publicProfileUrl"));
-			user.setUsername(username);
-			user.setName(getJsonProperty(profile, "formattedName"));
-			user.setEmail(getJsonProperty(profile, "emailAddress"));
-			user.setIdpConfig(getConfig());
-			user.setIdp(this);
-
-			AbstractJsonUserAttributeMapper.storeUserProfileForMapper(user, profile, getConfig().getAlias());
-
-			return user;
+			return extractIdentityFromProfile(null, profile);
 		} catch (Exception e) {
 			throw new IdentityBrokerException("Could not obtain user profile from linkedIn.", e);
 		}

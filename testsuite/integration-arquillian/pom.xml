@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-testsuite-pom</artifactId>
-        <version>3.4.0.CR1-SNAPSHOT</version>
+        <version>3.4.1.Final-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     
@@ -42,19 +42,21 @@
 
         <!--component versions-->
         <arquillian-core.version>1.1.13.Final</arquillian-core.version>
-        <selenium.version>3.5.1</selenium.version>
-        <arquillian-drone.version>2.4.0</arquillian-drone.version>
+        <selenium.version>3.5.3</selenium.version>
+        <arquillian-drone.version>2.4.2</arquillian-drone.version>
         <arquillian-graphene.version>2.3.1</arquillian-graphene.version>
-        <arquillian-wildfly-container.version>2.1.0.Beta1</arquillian-wildfly-container.version>
+        <arquillian-wildfly-container.version>2.1.0.Final</arquillian-wildfly-container.version>
         <arquillian-wls-container.version>1.0.1.Final</arquillian-wls-container.version>
         <arquillian-infinispan-container.version>1.2.0.Beta2</arquillian-infinispan-container.version>
         <version.shrinkwrap.resolvers>2.2.6</version.shrinkwrap.resolvers>
         <undertow-embedded.version>1.0.0.Alpha2</undertow-embedded.version>
+        <version.org.wildfly.extras.creaper>1.6.1</version.org.wildfly.extras.creaper>
 
         <!--migration properties-->
         <migration.70.version>1.9.8.Final</migration.70.version>
         <migration.70.authz.version>2.2.1.Final</migration.70.authz.version>
         <migration.71.version>2.5.5.Final</migration.71.version>
+        <google.guava.version>23.0</google.guava.version>
         
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.source>1.8</maven.compiler.source>

@@ -37,6 +37,18 @@
           "name": "urn:photoz.com:scopes:album:admin:manage"
         }
       ]
+    },
+    {
+      "name": "Scope Protected Resource",
+      "uri": "/scope-any",
+      "scopes": [
+        {
+          "name": "scope-a"
+        },
+        {
+          "name": "scope-b"
+        }
+      ]
     }
   ],
   "policies": [
@@ -165,6 +177,37 @@
       "config": {
         "applyPolicies": "[\"Only Owner and Administrators Policy\"]",
         "scopes": "[\"urn:photoz.com:scopes:album:delete\"]"
+      }
+    },
+    {
+      "name": "Deny Policy",
+      "type": "js",
+      "logic": "POSITIVE",
+      "decisionStrategy": "UNANIMOUS",
+      "config": {
+        "code": "// by default, grants any permission associated with this policy\n$evaluation.deny();"
+      }
+    },
+    {
+      "name": "Protected Scope A Permission",
+      "type": "scope",
+      "logic": "POSITIVE",
+      "decisionStrategy": "UNANIMOUS",
+      "config": {
+        "resources": "[\"Scope Protected Resource\"]",
+        "scopes": "[\"scope-a\"]",
+        "applyPolicies": "[\"Any User Policy\"]"
+      }
+    },
+    {
+      "name": "Protected Scope B Permission",
+      "type": "scope",
+      "logic": "POSITIVE",
+      "decisionStrategy": "UNANIMOUS",
+      "config": {
+        "resources": "[\"Scope Protected Resource\"]",
+        "scopes": "[\"scope-b\"]",
+        "applyPolicies": "[\"Deny Policy\"]"
       }
     }
   ],

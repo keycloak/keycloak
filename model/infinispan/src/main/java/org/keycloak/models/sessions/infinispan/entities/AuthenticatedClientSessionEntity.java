@@ -20,7 +20,6 @@ package org.keycloak.models.sessions.infinispan.entities;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,22 +28,36 @@ import org.infinispan.commons.marshall.Externalizer;
 import org.infinispan.commons.marshall.MarshallUtil;
 import org.infinispan.commons.marshall.SerializeWith;
 import org.keycloak.models.sessions.infinispan.util.KeycloakMarshallUtil;
+import java.util.UUID;
 
 /**
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @SerializeWith(AuthenticatedClientSessionEntity.ExternalizerImpl.class)
-public class AuthenticatedClientSessionEntity implements Serializable {
+public class AuthenticatedClientSessionEntity extends SessionEntity {
 
     private String authMethod;
     private String redirectUri;
-    private int timestamp;
+    private volatile int timestamp;
     private String action;
 
     private Set<String> roles;
     private Set<String> protocolMappers;
     private Map<String, String> notes = new ConcurrentHashMap<>();
+
+    private String currentRefreshToken;
+    private int currentRefreshTokenUseCount;
+
+    private final UUID id;
+
+    private AuthenticatedClientSessionEntity(UUID id) {
+        this.id = id;
+    }
+
+    public AuthenticatedClientSessionEntity() {
+        this.id = UUID.randomUUID();
+    }
 
     public String getAuthMethod() {
         return authMethod;
@@ -102,11 +115,54 @@ public class AuthenticatedClientSessionEntity implements Serializable {
         this.notes = notes;
     }
 
+    public String getCurrentRefreshToken() {
+        return currentRefreshToken;
+    }
+
+    public void setCurrentRefreshToken(String currentRefreshToken) {
+        this.currentRefreshToken = currentRefreshToken;
+    }
+
+    public int getCurrentRefreshTokenUseCount() {
+        return currentRefreshTokenUseCount;
+    }
+
+    public void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount) {
+        this.currentRefreshTokenUseCount = currentRefreshTokenUseCount;
+    }
+
+    public UUID getId() {
+        return id;
+    }
+
+    @Override
+    public String toString() {
+        return "AuthenticatedClientSessionEntity [" + "id=" + id + ']';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof AuthenticatedClientSessionEntity)) return false;
+
+        AuthenticatedClientSessionEntity that = (AuthenticatedClientSessionEntity) o;
+
+        if (id != null ? !id.equals(that.id) : that.id != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return id != null ? id.hashCode() : 0;
+    }
 
     public static class ExternalizerImpl implements Externalizer<AuthenticatedClientSessionEntity> {
 
         @Override
         public void writeObject(ObjectOutput output, AuthenticatedClientSessionEntity session) throws IOException {
+            MarshallUtil.marshallUUID(session.id, output, false);
+            MarshallUtil.marshallString(session.getRealmId(), output);
             MarshallUtil.marshallString(session.getAuthMethod(), output);
             MarshallUtil.marshallString(session.getRedirectUri(), output);
             MarshallUtil.marshallInt(output, session.getTimestamp());
@@ -117,12 +173,17 @@ public class AuthenticatedClientSessionEntity implements Serializable {
 
             KeycloakMarshallUtil.writeCollection(session.getProtocolMappers(), KeycloakMarshallUtil.STRING_EXT, output);
             KeycloakMarshallUtil.writeCollection(session.getRoles(), KeycloakMarshallUtil.STRING_EXT, output);
+
+            MarshallUtil.marshallString(session.getCurrentRefreshToken(), output);
+            MarshallUtil.marshallInt(output, session.getCurrentRefreshTokenUseCount());
         }
 
 
         @Override
         public AuthenticatedClientSessionEntity readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-            AuthenticatedClientSessionEntity sessionEntity = new AuthenticatedClientSessionEntity();
+            AuthenticatedClientSessionEntity sessionEntity = new AuthenticatedClientSessionEntity(MarshallUtil.unmarshallUUID(input, false));
+
+            sessionEntity.setRealmId(MarshallUtil.unmarshallString(input));
 
             sessionEntity.setAuthMethod(MarshallUtil.unmarshallString(input));
             sessionEntity.setRedirectUri(MarshallUtil.unmarshallString(input));
@@ -138,6 +199,9 @@ public class AuthenticatedClientSessionEntity implements Serializable {
 
             Set<String> roles = KeycloakMarshallUtil.readCollection(input, KeycloakMarshallUtil.STRING_EXT, new KeycloakMarshallUtil.HashSetBuilder<>());
             sessionEntity.setRoles(roles);
+
+            sessionEntity.setCurrentRefreshToken(MarshallUtil.unmarshallString(input));
+            sessionEntity.setCurrentRefreshTokenUseCount(MarshallUtil.unmarshallInt(input));
 
             return sessionEntity;
         }

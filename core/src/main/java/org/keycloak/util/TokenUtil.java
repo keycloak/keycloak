@@ -18,11 +18,18 @@
 package org.keycloak.util;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.jose.jwe.JWE;
+import org.keycloak.jose.jwe.JWEConstants;
+import org.keycloak.jose.jwe.JWEException;
+import org.keycloak.jose.jwe.JWEHeader;
+import org.keycloak.jose.jwe.JWEKeyStorage;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
 
 import java.io.IOException;
+import java.security.Key;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -113,6 +120,54 @@ public class TokenUtil {
     public static boolean isOfflineToken(String refreshToken) throws JWSInputException {
         RefreshToken token = getRefreshToken(refreshToken);
         return token.getType().equals(TOKEN_TYPE_OFFLINE);
+    }
+
+
+    public static String jweDirectEncode(Key aesKey, Key hmacKey, JsonWebToken jwt) throws JWEException {
+        int keyLength = aesKey.getEncoded().length;
+        String encAlgorithm;
+        switch (keyLength) {
+            case 16: encAlgorithm = JWEConstants.A128CBC_HS256;
+                break;
+            case 24: encAlgorithm = JWEConstants.A192CBC_HS384;
+                break;
+            case 32: encAlgorithm = JWEConstants.A256CBC_HS512;
+                break;
+            default: throw new IllegalArgumentException("Bad size for Encryption key: " + aesKey + ". Valid sizes are 16, 24, 32.");
+        }
+
+        try {
+            byte[] contentBytes = JsonSerialization.writeValueAsBytes(jwt);
+
+            JWEHeader jweHeader = new JWEHeader(JWEConstants.DIR, encAlgorithm, null);
+            JWE jwe = new JWE()
+                    .header(jweHeader)
+                    .content(contentBytes);
+
+            jwe.getKeyStorage()
+                    .setCEKKey(aesKey, JWEKeyStorage.KeyUse.ENCRYPTION)
+                    .setCEKKey(hmacKey, JWEKeyStorage.KeyUse.SIGNATURE);
+
+            return jwe.encodeJwe();
+        } catch (IOException ioe) {
+            throw new JWEException(ioe);
+        }
+    }
+
+
+    public static <T extends JsonWebToken> T jweDirectVerifyAndDecode(Key aesKey, Key hmacKey, String jweStr, Class<T> expectedClass) throws JWEException {
+        JWE jwe = new JWE();
+        jwe.getKeyStorage()
+                .setCEKKey(aesKey, JWEKeyStorage.KeyUse.ENCRYPTION)
+                .setCEKKey(hmacKey, JWEKeyStorage.KeyUse.SIGNATURE);
+
+        jwe.verifyAndDecodeJwe(jweStr);
+
+        try {
+            return JsonSerialization.readValue(jwe.getContent(), expectedClass);
+        } catch (IOException ioe) {
+            throw new JWEException(ioe);
+        }
     }
 
 }

@@ -1,7 +1,6 @@
 package org.keycloak.models.cache.infinispan.authorization.entities;
 
 import org.keycloak.models.cache.infinispan.entities.AbstractRevisioned;
-import org.keycloak.models.cache.infinispan.entities.RealmQuery;
 
 import java.util.HashSet;
 import java.util.Set;

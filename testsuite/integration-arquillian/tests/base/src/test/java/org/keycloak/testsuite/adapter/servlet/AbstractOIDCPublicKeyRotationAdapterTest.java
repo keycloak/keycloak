@@ -127,7 +127,7 @@ public abstract class AbstractOIDCPublicKeyRotationAdapterTest extends AbstractS
         testRealmLoginPage.form().waitForUsernameInputPresent();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
-        URLAssert.assertCurrentUrlStartsWith(driver, tokenMinTTLPage.getInjectedUrl().toString());
+        URLAssert.assertCurrentUrlStartsWith(tokenMinTTLPage.getInjectedUrl().toString());
         Assert.assertNull(tokenMinTTLPage.getAccessToken());
 
         driver.navigate().to(logoutUri);

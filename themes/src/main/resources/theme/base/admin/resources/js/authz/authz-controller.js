@@ -2544,7 +2544,6 @@ module.controller('RealmRolePermissionsCtrl', function($scope, $http, $route, $l
         $scope.permissions = data;
         $scope.$watch('permissions.enabled', function(newVal, oldVal) {
             if (newVal != oldVal) {
-                console.log('Changing permissions enabled to: ' + $scope.permissions.enabled);
                 var param = {enabled: $scope.permissions.enabled};
                 $scope.permissions= RoleManagementPermissions.update({realm: realm.realm, role:role.id}, param);
             }
@@ -2563,7 +2562,6 @@ module.controller('ClientRolePermissionsCtrl', function($scope, $http, $route, $
         $scope.permissions = data;
         $scope.$watch('permissions.enabled', function(newVal, oldVal) {
             if (newVal != oldVal) {
-                console.log('Changing permissions enabled to: ' + $scope.permissions.enabled);
                 var param = {enabled: $scope.permissions.enabled};
                 $scope.permissions = RoleManagementPermissions.update({realm: realm.realm, role:role.id}, param);
             }
@@ -2582,7 +2580,6 @@ module.controller('UsersPermissionsCtrl', function($scope, $http, $route, $locat
         $scope.permissions = data;
         $scope.$watch('permissions.enabled', function(newVal, oldVal) {
             if (newVal != oldVal) {
-                console.log('Changing permissions enabled to: ' + $scope.permissions.enabled);
                 var param = {enabled: $scope.permissions.enabled};
                 $scope.permissions = UsersManagementPermissions.update({realm: realm.realm}, param);
 
@@ -2605,9 +2602,25 @@ module.controller('ClientPermissionsCtrl', function($scope, $http, $route, $loca
         $scope.permissions = data;
         $scope.$watch('permissions.enabled', function(newVal, oldVal) {
             if (newVal != oldVal) {
-                console.log('Changing permissions enabled to: ' + $scope.permissions.enabled);
                 var param = {enabled: $scope.permissions.enabled};
                 $scope.permissions = ClientManagementPermissions.update({realm: realm.realm, client: client.id}, param);
+            }
+        }, true);
+    });
+    Client.query({realm: realm.realm, clientId: getManageClientId(realm)}, function(data) {
+        $scope.realmManagementClientId = data[0].id;
+    });
+});
+
+module.controller('IdentityProviderPermissionCtrl', function($scope, $http, $route, $location, realm, identityProvider, Client, IdentityProviderManagementPermissions, Notifications) {
+    $scope.identityProvider = identityProvider;
+    $scope.realm = realm;
+    IdentityProviderManagementPermissions.get({realm: realm.realm, alias: identityProvider.alias}, function(data) {
+        $scope.permissions = data;
+        $scope.$watch('permissions.enabled', function(newVal, oldVal) {
+            if (newVal != oldVal) {
+                var param = {enabled: $scope.permissions.enabled};
+                $scope.permissions = IdentityProviderManagementPermissions.update({realm: realm.realm, alias: identityProvider.alias}, param);
             }
         }, true);
     });
@@ -2626,7 +2639,6 @@ module.controller('GroupPermissionsCtrl', function($scope, $http, $route, $locat
         $scope.permissions = data;
         $scope.$watch('permissions.enabled', function(newVal, oldVal) {
             if (newVal != oldVal) {
-                console.log('Changing permissions enabled to: ' + $scope.permissions.enabled);
                 var param = {enabled: $scope.permissions.enabled};
                 $scope.permissions = GroupManagementPermissions.update({realm: realm.realm, group: group.id}, param);
             }

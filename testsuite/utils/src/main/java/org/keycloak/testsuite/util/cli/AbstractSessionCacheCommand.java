@@ -31,19 +31,28 @@ import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public abstract class AbstractSessionCacheCommand extends AbstractCommand {
 
+    private static final Set<String> SUPPORTED_CACHE_NAMES = new TreeSet<>(Arrays.asList(
+      InfinispanConnectionProvider.USER_SESSION_CACHE_NAME,
+      InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME,
+      InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME,
+      InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME
+    ));
+
     @Override
     protected void doRunCommand(KeycloakSession session) {
         InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
         String cacheName = getArg(0);
-        if (!cacheName.equals(InfinispanConnectionProvider.SESSION_CACHE_NAME) && !cacheName.equals(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME)) {
-            log.errorf("Invalid cache name: '%s', Only cache names '%s' or '%s' are supported", cacheName, InfinispanConnectionProvider.SESSION_CACHE_NAME,
-                    InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME);
+        if (! SUPPORTED_CACHE_NAMES.contains(cacheName)) {
+            log.errorf("Invalid cache name: '%s', Only cache names '%s' are supported", cacheName, SUPPORTED_CACHE_NAMES);
             throw new HandledException();
         }
 
@@ -73,7 +82,7 @@ public abstract class AbstractSessionCacheCommand extends AbstractCommand {
 
     protected String toString(UserSessionEntity userSession) {
         int clientSessionsSize = userSession.getAuthenticatedClientSessions()==null ? 0 : userSession.getAuthenticatedClientSessions().size();
-        return "ID: " + userSession.getId() + ", realm: " + userSession.getRealm() + ", lastAccessTime: " + Time.toDate(userSession.getLastSessionRefresh()) +
+        return "ID: " + userSession.getId() + ", realm: " + userSession.getRealmId()+ ", lastAccessTime: " + Time.toDate(userSession.getLastSessionRefresh()) +
                 ", authenticatedClientSessions: " + clientSessionsSize;
     }
 
@@ -100,7 +109,7 @@ public abstract class AbstractSessionCacheCommand extends AbstractCommand {
             String id = getArg(1);
 
             userSession.setId(id);
-            userSession.setRealm(getArg(2));
+            userSession.setRealmId(getArg(2));
 
             userSession.setLastSessionRefresh(Time.currentTime());
             cache.put(id, new SessionEntityWrapper(userSession));
@@ -287,7 +296,7 @@ public abstract class AbstractSessionCacheCommand extends AbstractCommand {
                     String id = KeycloakModelUtils.generateId();
 
                     userSession.setId(id);
-                    userSession.setRealm(realmName);
+                    userSession.setRealmId(realmName);
 
                     userSession.setLastSessionRefresh(Time.currentTime());
                     cache.put(id, new SessionEntityWrapper(userSession));

@@ -18,11 +18,11 @@
 package org.keycloak.cluster.infinispan;
 
 import org.infinispan.Cache;
+import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.notifications.Listener;
 import org.infinispan.notifications.cachemanagerlistener.annotation.ViewChanged;
 import org.infinispan.notifications.cachemanagerlistener.event.ViewChangedEvent;
-import org.infinispan.persistence.manager.PersistenceManager;
 import org.infinispan.persistence.remote.RemoteStore;
 import org.infinispan.remoting.transport.Address;
 import org.infinispan.remoting.transport.Transport;
@@ -30,7 +30,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ClusterProviderFactory;
-import org.keycloak.common.util.HostUtils;
+import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
@@ -44,6 +44,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -97,7 +99,7 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory 
                     String myAddress = InfinispanUtil.getMyAddress(session);
                     String mySite = InfinispanUtil.getMySite(session);
 
-                    notificationsManager = InfinispanNotificationsManager.create(workCache, myAddress, mySite, remoteStores);
+                    notificationsManager = InfinispanNotificationsManager.create(session, workCache, myAddress, mySite, remoteStores);
                 }
             }
         }
@@ -113,7 +115,7 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory 
             // clusterStartTime not yet initialized. Let's try to put our startupTime
             int serverStartTime = (int) (session.getKeycloakSessionFactory().getServerStartupTimestamp() / 1000);
 
-            existingClusterStartTime = (Integer) crossDCAwareCacheFactory.getCache().putIfAbsent(InfinispanClusterProvider.CLUSTER_STARTUP_TIME_KEY, serverStartTime);
+            existingClusterStartTime = putIfAbsentWithRetries(crossDCAwareCacheFactory, InfinispanClusterProvider.CLUSTER_STARTUP_TIME_KEY, serverStartTime, -1);
             if (existingClusterStartTime == null) {
                 logger.debugf("Initialized cluster startup time to %s", Time.toDate(serverStartTime).toString());
                 return serverStartTime;
@@ -122,6 +124,35 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory 
                 return existingClusterStartTime;
             }
         }
+    }
+
+
+    // Will retry few times for the case when backup site not available in cross-dc environment.
+    // The site might be taken offline automatically if "take-offline" properly configured
+    static <V extends Serializable> V putIfAbsentWithRetries(CrossDCAwareCacheFactory crossDCAwareCacheFactory, String key, V value, int taskTimeoutInSeconds) {
+        AtomicReference<V> resultRef = new AtomicReference<>();
+
+        Retry.executeWithBackoff((int iteration) -> {
+
+            try {
+                V result;
+                if (taskTimeoutInSeconds > 0) {
+                    result = (V) crossDCAwareCacheFactory.getCache().putIfAbsent(key, value);
+                } else {
+                    result = (V) crossDCAwareCacheFactory.getCache().putIfAbsent(key, value, taskTimeoutInSeconds, TimeUnit.SECONDS);
+                }
+                resultRef.set(result);
+
+            } catch (HotRodClientException re) {
+                logger.warnf(re, "Failed to write key '%s' and value '%s' in iteration '%d' . Retrying", key, value, iteration);
+
+                // Rethrow the exception. Retry will take care of handle the exception and eventually retry the operation.
+                throw re;
+            }
+
+        }, 10, 10);
+
+        return resultRef.get();
     }
 
 

@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ Copyright 2017 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet author="keycloak" id="3.4.0">
+        <addPrimaryKey columnNames="REALM_ID,ROLE_ID" constraintName="CONSTRAINT_REALM_DEFAULT_ROLES" tableName="REALM_DEFAULT_ROLES"/>
+        <addPrimaryKey columnNames="COMPOSITE,CHILD_ROLE" constraintName="CONSTRAINT_COMPOSITE_ROLE" tableName="COMPOSITE_ROLE"/>
+        <addPrimaryKey columnNames="REALM_ID,GROUP_ID" constraintName="CONSTR_REALM_DEFAULT_GROUPS" tableName="REALM_DEFAULT_GROUPS"/>
+        <addPrimaryKey columnNames="CLIENT_ID,IDENTITY_PROVIDER_ID" constraintName="CONSTR_CLIENT_IDEN_PROV_MAP" tableName="CLIENT_IDENTITY_PROV_MAPPING"/>
+
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_ADMIN_EVENT_ENTITY" tableName="ADMIN_EVENT_ENTITY"/>
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_CREDENTIAL_ATTR" tableName="CREDENTIAL_ATTRIBUTE"/>
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_FED_CREDENTIAL_ATTR" tableName="FED_CREDENTIAL_ATTRIBUTE"/>
+
+        <dropForeignKeyConstraint baseTableName="CLIENT_DEFAULT_ROLES" constraintName="FK_NUILTS7KLWQW2H8M2B5JOYTKY" />
+        <addPrimaryKey columnNames="CLIENT_ID,ROLE_ID" constraintName="CONSTR_CLIENT_DEFAULT_ROLES" tableName="CLIENT_DEFAULT_ROLES"/>
+        <addForeignKeyConstraint baseColumnNames="CLIENT_ID" baseTableName="CLIENT_DEFAULT_ROLES" constraintName="FK_NUILTS7KLWQW2H8M2B5JOYTKY" referencedColumnNames="ID" referencedTableName="CLIENT"/>
+
+        <addNotNullConstraint tableName="REALM_ENABLED_EVENT_TYPES" columnName="VALUE" columnDataType="VARCHAR(255)" />
+        <addPrimaryKey columnNames="REALM_ID,VALUE" constraintName="CONSTR_REALM_ENABL_EVENT_TYPES" tableName="REALM_ENABLED_EVENT_TYPES"/>
+        
+        <addNotNullConstraint tableName="REALM_EVENTS_LISTENERS" columnName="VALUE" columnDataType="VARCHAR(255)" />
+        <addPrimaryKey columnNames="REALM_ID,VALUE" constraintName="CONSTR_REALM_EVENTS_LISTENERS" tableName="REALM_EVENTS_LISTENERS"/>
+        
+        <addNotNullConstraint tableName="REALM_SUPPORTED_LOCALES" columnName="VALUE" columnDataType="VARCHAR(255)" />
+        <addPrimaryKey columnNames="REALM_ID,VALUE" constraintName="CONSTR_REALM_SUPPORTED_LOCALES" tableName="REALM_SUPPORTED_LOCALES"/>
+        
+        <addNotNullConstraint tableName="REDIRECT_URIS" columnName="VALUE" columnDataType="VARCHAR(255)" />
+        <addPrimaryKey columnNames="CLIENT_ID,VALUE" constraintName="CONSTRAINT_REDIRECT_URIS" tableName="REDIRECT_URIS"/>
+        
+        <addNotNullConstraint tableName="WEB_ORIGINS" columnName="VALUE" columnDataType="VARCHAR(255)" />
+        <addPrimaryKey columnNames="CLIENT_ID,VALUE" constraintName="CONSTRAINT_WEB_ORIGINS" tableName="WEB_ORIGINS"/>
+    </changeSet>
+
+    <changeSet author="hmlnarik@redhat.com" id="3.4.0-KEYCLOAK-5230">
+
+        <createIndex tableName="FED_USER_ATTRIBUTE" indexName="IDX_FU_ATTRIBUTE">
+            <column name="USER_ID" type="VARCHAR(255)" />
+            <column name="REALM_ID" type="VARCHAR(36)" />
+            <column name="NAME" type="VARCHAR(255)" />
+        </createIndex>
+
+        <createIndex tableName="FED_USER_CONSENT" indexName="IDX_FU_CONSENT">
+            <column name="USER_ID" type="VARCHAR(255)" />
+            <column name="CLIENT_ID" type="VARCHAR(36)" />
+        </createIndex>
+
+        <createIndex tableName="FED_USER_CONSENT" indexName="IDX_FU_CONSENT_RU">
+            <column name="REALM_ID" type="VARCHAR(36)" />
+            <column name="USER_ID" type="VARCHAR(255)" />
+        </createIndex>
+
+        <createIndex tableName="FED_USER_CREDENTIAL" indexName="IDX_FU_CREDENTIAL">
+            <column name="USER_ID" type="VARCHAR(255)" />
+            <column name="TYPE" type="VARCHAR(255)" />
+        </createIndex>
+
+        <createIndex tableName="FED_USER_CREDENTIAL" indexName="IDX_FU_CREDENTIAL_RU">
+            <column name="REALM_ID" type="VARCHAR(36)" />
+            <column name="USER_ID" type="VARCHAR(255)" />
+        </createIndex>
+
+        <createIndex tableName="FED_USER_GROUP_MEMBERSHIP" indexName="IDX_FU_GROUP_MEMBERSHIP">
+            <column name="USER_ID" type="VARCHAR(255)" />
+            <column name="GROUP_ID" type="VARCHAR(36)" />
+        </createIndex>
+
+        <createIndex tableName="FED_USER_GROUP_MEMBERSHIP" indexName="IDX_FU_GROUP_MEMBERSHIP_RU">
+            <column name="REALM_ID" type="VARCHAR(36)" />
+            <column name="USER_ID" type="VARCHAR(255)" />
+        </createIndex>
+
+        <createIndex tableName="FED_USER_REQUIRED_ACTION" indexName="IDX_FU_REQUIRED_ACTION">
+            <column name="USER_ID" type="VARCHAR(255)" />
+            <column name="REQUIRED_ACTION" type="VARCHAR(255)" />
+        </createIndex>
+
+        <createIndex tableName="FED_USER_REQUIRED_ACTION" indexName="IDX_FU_REQUIRED_ACTION_RU">
+            <column name="REALM_ID" type="VARCHAR(36)" />
+            <column name="USER_ID" type="VARCHAR(255)" />
+        </createIndex>
+
+        <createIndex tableName="FED_USER_ROLE_MAPPING" indexName="IDX_FU_ROLE_MAPPING">
+            <column name="USER_ID" type="VARCHAR(255)" />
+            <column name="ROLE_ID" type="VARCHAR(36)" />
+        </createIndex>
+
+        <createIndex tableName="FED_USER_ROLE_MAPPING" indexName="IDX_FU_ROLE_MAPPING_RU">
+            <column name="REALM_ID" type="VARCHAR(36)" />
+            <column name="USER_ID" type="VARCHAR(255)" />
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

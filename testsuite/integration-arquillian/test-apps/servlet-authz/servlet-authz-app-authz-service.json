@@ -46,6 +46,18 @@
           "name": "urn:servlet-authz:page:main:actionForPremiumUser"
         }
       ]
+    },
+    {
+      "name": "Resource A",
+      "uri": "/protected/scopes.jsp",
+      "scopes": [
+        {
+          "name": "read"
+        },
+        {
+          "name": "write"
+        }
+      ]
     }
   ],
   "policies": [
@@ -141,6 +153,37 @@
       "config": {
         "scopes": "[\"urn:servlet-authz:page:main:actionForPremiumUser\"]",
         "applyPolicies": "[\"Only Premium User Policy\"]"
+      }
+    },
+    {
+      "name": "Deny Policy",
+      "type": "js",
+      "logic": "POSITIVE",
+      "decisionStrategy": "UNANIMOUS",
+      "config": {
+        "code": "// by default, grants any permission associated with this policy\n$evaluation.deny();"
+      }
+    },
+    {
+      "name": "Resource A Read Permission",
+      "type": "scope",
+      "logic": "POSITIVE",
+      "decisionStrategy": "UNANIMOUS",
+      "config": {
+        "resources": "[\"Resource A\"]",
+        "scopes": "[\"read\"]",
+        "applyPolicies": "[\"Any User Policy\"]"
+      }
+    },
+    {
+      "name": "Resource A Write Permission",
+      "type": "scope",
+      "logic": "POSITIVE",
+      "decisionStrategy": "UNANIMOUS",
+      "config": {
+        "resources": "[\"Resource A\"]",
+        "scopes": "[\"write\"]",
+        "applyPolicies": "[\"Deny Policy\"]"
       }
     }
   ]

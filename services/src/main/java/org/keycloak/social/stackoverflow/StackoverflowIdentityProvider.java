@@ -24,12 +24,15 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
+import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
 
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.HashMap;
 
 /**
@@ -54,6 +57,41 @@ public class StackoverflowIdentityProvider extends AbstractOAuth2IdentityProvide
 	}
 
 	@Override
+	protected boolean supportsExternalExchange() {
+		return true;
+	}
+
+	@Override
+	protected String getProfileEndpointForValidation(EventBuilder event) {
+		return PROFILE_URL;
+	}
+
+	@Override
+	protected SimpleHttp buildUserInfoRequest(String subjectToken, String userInfoUrl) {
+		String URL = PROFILE_URL + "&access_token=" + subjectToken + "&key=" + getConfig().getKey();
+		return SimpleHttp.doGet(URL, session);
+	}
+
+	@Override
+	protected BrokeredIdentityContext extractIdentityFromProfile(EventBuilder event, JsonNode node) {
+		JsonNode profile = node.get("items").get(0);
+
+		BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "user_id"));
+
+		String username = extractUsernameFromProfileURL(getJsonProperty(profile, "link"));
+		user.setUsername(username);
+		user.setName(unescapeHtml3(getJsonProperty(profile, "display_name")));
+		// email is not provided
+		// user.setEmail(getJsonProperty(profile, "email"));
+		user.setIdpConfig(getConfig());
+		user.setIdp(this);
+
+		AbstractJsonUserAttributeMapper.storeUserProfileForMapper(user, profile, getConfig().getAlias());
+
+		return user;
+	}
+
+	@Override
 	protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
 		log.debug("doGetFederatedIdentity()");
 		try {
@@ -62,21 +100,7 @@ public class StackoverflowIdentityProvider extends AbstractOAuth2IdentityProvide
 			if (log.isDebugEnabled()) {
 				log.debug("StackOverflow profile request to: " + URL);
 			}
-			JsonNode profile = SimpleHttp.doGet(URL, session).asJson().get("items").get(0);
-
-			BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "user_id"));
-
-			String username = extractUsernameFromProfileURL(getJsonProperty(profile, "link"));
-			user.setUsername(username);
-			user.setName(unescapeHtml3(getJsonProperty(profile, "display_name")));
-			// email is not provided
-			// user.setEmail(getJsonProperty(profile, "email"));
-			user.setIdpConfig(getConfig());
-			user.setIdp(this);
-
-			AbstractJsonUserAttributeMapper.storeUserProfileForMapper(user, profile, getConfig().getAlias());
-
-			return user;
+			return extractIdentityFromProfile(null, SimpleHttp.doGet(URL, session).asJson());
 		} catch (Exception e) {
 			throw new IdentityBrokerException("Could not obtain user profile from Stackoverflow: " + e.getMessage(), e);
 		}

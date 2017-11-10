@@ -338,13 +338,18 @@ public class JpaRealmProvider implements RealmProvider {
 
         return ref.getGroups().stream()
                 .map(g -> session.realms().getGroupById(g.getId(), realm))
+                .sorted(Comparator.comparing(GroupModel::getName))
                 .collect(Collectors.collectingAndThen(
                         Collectors.toList(), Collections::unmodifiableList));
     }
 
     @Override
-    public Long getGroupsCount(RealmModel realm) {
-        Long count = em.createNamedQuery("getGroupCount", Long.class)
+    public Long getGroupsCount(RealmModel realm, Boolean onlyTopGroups) {
+        String query = "getGroupCount";
+        if(Objects.equals(onlyTopGroups, Boolean.TRUE)) {
+            query = "getTopLevelGroupCount";
+        }
+        Long count = em.createNamedQuery(query, Long.class)
                 .setParameter("realm", realm.getId())
                 .getSingleResult();
 
@@ -353,12 +358,7 @@ public class JpaRealmProvider implements RealmProvider {
 
     @Override
     public Long getGroupsCountByNameContaining(RealmModel realm, String search) {
-        Long count = em.createNamedQuery("getGroupCountByNameContaining", Long.class)
-                .setParameter("realm", realm.getId())
-                .setParameter("name", search)
-                .getSingleResult();
-
-        return count;
+        return (long) searchForGroupByName(realm, search, null, null).size();
     }
 
     @Override
@@ -368,6 +368,7 @@ public class JpaRealmProvider implements RealmProvider {
         return ref.getGroups().stream()
                 .filter(g -> g.getParent() == null)
                 .map(g -> session.realms().getGroupById(g.getId(), realm))
+                .sorted(Comparator.comparing(GroupModel::getName))
                 .collect(Collectors.collectingAndThen(
                         Collectors.toList(), Collections::unmodifiableList));
     }
@@ -386,6 +387,8 @@ public class JpaRealmProvider implements RealmProvider {
                 list.add(group);
             }
         }
+
+        list.sort(Comparator.comparing(GroupModel::getName));
 
         return Collections.unmodifiableList(list);
     }
@@ -589,10 +592,18 @@ public class JpaRealmProvider implements RealmProvider {
         }
         List<String> groups =  query.getResultList();
         if (Objects.isNull(groups)) return Collections.EMPTY_LIST;
-        List<GroupModel> list = new LinkedList<>();
+        List<GroupModel> list = new ArrayList<>();
         for (String id : groups) {
-            list.add(session.realms().getGroupById(id, realm));
+            GroupModel groupById = session.realms().getGroupById(id, realm);
+            while(Objects.nonNull(groupById.getParentId())) {
+                groupById = session.realms().getGroupById(groupById.getParentId(), realm);
+            }
+            if(!list.contains(groupById)) {
+                list.add(groupById);
+            }
         }
+        list.sort(Comparator.comparing(GroupModel::getName));
+
         return Collections.unmodifiableList(list);
     }
 
@@ -644,7 +655,7 @@ public class JpaRealmProvider implements RealmProvider {
         List<ClientInitialAccessEntity> entities = query.getResultList();
 
         return entities.stream()
-                .map(entity -> entityToModel(entity))
+                .map(this::entityToModel)
                 .collect(Collectors.toList());
     }
 

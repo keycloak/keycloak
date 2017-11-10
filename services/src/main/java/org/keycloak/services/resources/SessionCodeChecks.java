@@ -123,17 +123,17 @@ public class SessionCodeChecks {
         // Basic realm checks
         if (!checkSsl()) {
             event.error(Errors.SSL_REQUIRED);
-            response = ErrorPage.error(session, Messages.HTTPS_REQUIRED);
+            response = ErrorPage.error(session, null, Messages.HTTPS_REQUIRED);
             return null;
         }
         if (!realm.isEnabled()) {
             event.error(Errors.REALM_DISABLED);
-            response = ErrorPage.error(session, Messages.REALM_NOT_ENABLED);
+            response = ErrorPage.error(session, null, Messages.REALM_NOT_ENABLED);
             return null;
         }
 
         // object retrieve
-        AuthenticationSessionModel authSession = ClientSessionCode.getClientSession(code, session, realm, AuthenticationSessionModel.class);
+        AuthenticationSessionModel authSession = ClientSessionCode.getClientSession(code, session, realm, event, AuthenticationSessionModel.class);
         if (authSession != null) {
             return authSession;
         }
@@ -154,7 +154,7 @@ public class SessionCodeChecks {
             UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
             if (userSession != null) {
 
-                LoginFormsProvider loginForm = session.getProvider(LoginFormsProvider.class)
+                LoginFormsProvider loginForm = session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authSession)
                         .setSuccess(Messages.ALREADY_LOGGED_IN);
 
                 if (client == null) {
@@ -190,7 +190,7 @@ public class SessionCodeChecks {
         ClientModel client = authSession.getClient();
         if (client == null) {
             event.error(Errors.CLIENT_NOT_FOUND);
-            response = ErrorPage.error(session, Messages.UNKNOWN_LOGIN_REQUESTER);
+            response = ErrorPage.error(session, authSession, Messages.UNKNOWN_LOGIN_REQUESTER);
             clientCode.removeExpiredClientSession();
             return false;
         }
@@ -200,7 +200,7 @@ public class SessionCodeChecks {
 
         if (!client.isEnabled()) {
             event.error(Errors.CLIENT_DISABLED);
-            response = ErrorPage.error(session, Messages.LOGIN_REQUESTER_NOT_ENABLED);
+            response = ErrorPage.error(session,authSession, Messages.LOGIN_REQUESTER_NOT_ENABLED);
             clientCode.removeExpiredClientSession();
             return false;
         }
@@ -240,7 +240,7 @@ public class SessionCodeChecks {
                 return false;
             }
         } else {
-            ClientSessionCode.ParseResult<AuthenticationSessionModel> result = ClientSessionCode.parseResult(code, session, realm, AuthenticationSessionModel.class);
+            ClientSessionCode.ParseResult<AuthenticationSessionModel> result = ClientSessionCode.parseResult(code, session, realm, event, AuthenticationSessionModel.class);
             clientCode = result.getCode();
             if (clientCode == null) {
 
@@ -285,7 +285,7 @@ public class SessionCodeChecks {
                 return false;
             } else {
                 logger.errorf("Bad action. Expected action '%s', current action '%s'", expectedAction, authSession.getAction());
-                response = ErrorPage.error(session, Messages.EXPIRED_CODE);
+                response = ErrorPage.error(session, authSession, Messages.EXPIRED_CODE);
                 return false;
             }
         }
@@ -370,7 +370,7 @@ public class SessionCodeChecks {
         } else {
             // Finally need to show error as all the fallbacks failed
             event.error(Errors.INVALID_CODE);
-            return ErrorPage.error(session, Messages.INVALID_CODE);
+            return ErrorPage.error(session, authSession, Messages.INVALID_CODE);
         }
     }
 

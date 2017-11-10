@@ -1,0 +1,67 @@
+<div class="page-header">
+    <h1>{{'editAccountHtmlTitle' | translate}}</h1>
+</div>
+
+<div class="col-sm-9 content-area">
+
+    <div class="row">
+        <div class="col-md-10">
+        </div>
+        <div class="col-md-2 subtitle">
+            <span class="subtitle"><span class="required">*</span> {{'requiredFields' | translate}}</span>
+        </div>
+        <hr/>
+    </div>
+
+    <form #formGroup="ngForm" (ngSubmit)="saveAccount()" class="form-horizontal">
+
+        <div class="form-group ">
+            <div class="col-sm-2 col-md-2">
+                <label for="username" class="control-label">{{'username' | translate}}</label>
+            </div>
+
+            <div class="col-sm-10 col-md-10">
+                <input type="text" class="form-control" id="username" name="username" disabled value="{{username}}" >
+            </div>
+        </div>
+
+        <div class="form-group ">
+            <div class="col-sm-2 col-md-2">
+                <label for="email" class="control-label">{{'email' | translate }}</label> <span class="required">*</span>
+            </div>
+
+            <div class="col-sm-10 col-md-10">
+                <input type="email" class="form-control" id="email" name="email" required autofocus="" ngModel type="text">
+            </div>
+        </div>
+
+        <div class="form-group ">
+            <div class="col-sm-2 col-md-2">
+                <label for="firstName" class="control-label">{{'firstName' | translate}}</label> <span class="required">*</span>
+            </div>
+
+            <div class="col-sm-10 col-md-10">
+                <input class="form-control" id="firstName" required name="firstName" ngModel type="text">
+            </div>
+        </div>
+
+        <div class="form-group ">
+            <div class="col-sm-2 col-md-2">
+                <label for="lastName" class="control-label">{{'lastName' | translate}}</label> <span class="required">*</span>
+            </div>
+
+            <div class="col-sm-10 col-md-10">
+                <input class="form-control" id="lastName" required name="lastName" ngModel type="text">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div id="kc-form-buttons" class="col-md-offset-2 col-md-10 submit">
+                <div class="">
+                    <button type="submit" [disabled]="!formGroup.valid || !formGroup.dirty" class="btn btn-primary btn-lg" name="submitAction">{{'doSave' | translate}}</button>
+                </div>
+            </div>
+        </div>
+    </form>
+
+</div>

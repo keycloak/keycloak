@@ -31,6 +31,7 @@ import org.junit.rules.TemporaryFolder;
 import org.keycloak.Config;
 import org.keycloak.adapters.KeycloakConfigResolver;
 import org.keycloak.adapters.servlet.KeycloakOIDCFilter;
+import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
@@ -41,7 +42,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.KeycloakServer;
-import org.keycloak.testsuite.Retry;
 import org.keycloak.util.JsonSerialization;
 
 import javax.servlet.DispatcherType;

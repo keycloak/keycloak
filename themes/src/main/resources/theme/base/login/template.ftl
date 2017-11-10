@@ -66,7 +66,7 @@
                                 <#if message.type = 'warning'><span class="${properties.kcFeedbackWarningIcon!}"></span></#if>
                                 <#if message.type = 'error'><span class="${properties.kcFeedbackErrorIcon!}"></span></#if>
                                 <#if message.type = 'info'><span class="${properties.kcFeedbackInfoIcon!}"></span></#if>
-                                <span class="kc-feedback-text">${message.summary}</span>
+                                <span class="kc-feedback-text">${message.summary?no_esc}</span>
                             </div>
                         </div>
                     </#if>

@@ -20,13 +20,11 @@ package org.keycloak.models.cache.infinispan.authorization.entities;
 
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
-import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.models.cache.infinispan.entities.AbstractRevisioned;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;

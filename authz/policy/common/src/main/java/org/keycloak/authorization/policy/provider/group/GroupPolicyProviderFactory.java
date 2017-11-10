@@ -30,15 +30,12 @@ import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
-import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.util.JsonSerialization;
 
 /**
@@ -46,7 +43,7 @@ import org.keycloak.util.JsonSerialization;
  */
 public class GroupPolicyProviderFactory implements PolicyProviderFactory<GroupPolicyRepresentation> {
 
-    private GroupPolicyProvider provider = new GroupPolicyProvider(policy -> toRepresentation(policy, new GroupPolicyRepresentation()));
+    private GroupPolicyProvider provider = new GroupPolicyProvider(policy -> toRepresentation(policy));
 
     @Override
     public String getId() {
@@ -74,8 +71,11 @@ public class GroupPolicyProviderFactory implements PolicyProviderFactory<GroupPo
     }
 
     @Override
-    public GroupPolicyRepresentation toRepresentation(Policy policy, GroupPolicyRepresentation representation) {
+    public GroupPolicyRepresentation toRepresentation(Policy policy) {
+        GroupPolicyRepresentation representation = new GroupPolicyRepresentation();
+
         representation.setGroupsClaim(policy.getConfig().get("groupsClaim"));
+
         try {
             representation.setGroups(getGroupsDefinition(policy.getConfig()));
         } catch (IOException cause) {
@@ -111,7 +111,7 @@ public class GroupPolicyProviderFactory implements PolicyProviderFactory<GroupPo
     @Override
     public void onExport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorizationProvider) {
         Map<String, String> config = new HashMap<>();
-        GroupPolicyRepresentation groupPolicy = toRepresentation(policy, new GroupPolicyRepresentation());
+        GroupPolicyRepresentation groupPolicy = toRepresentation(policy);
         Set<GroupPolicyRepresentation.GroupDefinition> groups = groupPolicy.getGroups();
 
         for (GroupPolicyRepresentation.GroupDefinition definition: groups) {

@@ -20,11 +20,33 @@ package org.keycloak.testsuite.util;
 import org.jboss.arquillian.graphene.context.GrapheneContext;
 import org.openqa.selenium.WebDriver;
 
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.Stack;
+
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public final class DroneUtils {
+    private static Queue<WebDriver> driverQueue = new LinkedList<>();
+
     public static WebDriver getCurrentDriver() {
-        return GrapheneContext.lastContext().getWebDriver();
+        if (driverQueue.isEmpty()) {
+            return GrapheneContext.lastContext().getWebDriver();
+        }
+
+        return driverQueue.peek();
+    }
+
+    public static void addWebDriver(WebDriver driver) {
+        driverQueue.add(driver);
+    }
+
+    public static void removeWebDriver() {
+        driverQueue.poll();
+    }
+
+    public static void resetQueue() {
+        driverQueue = new LinkedList<>();
     }
 }

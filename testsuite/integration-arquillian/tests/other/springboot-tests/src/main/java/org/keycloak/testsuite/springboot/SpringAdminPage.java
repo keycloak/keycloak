@@ -19,4 +19,8 @@ public class SpringAdminPage extends AbstractPage {
     public void open() throws Exception {
 
     }
+
+    public String getTestDivString() {
+        return testDiv.getText();
+    }
 }

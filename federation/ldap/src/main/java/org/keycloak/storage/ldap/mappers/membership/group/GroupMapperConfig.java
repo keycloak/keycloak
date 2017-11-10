@@ -44,6 +44,9 @@ public class GroupMapperConfig extends CommonLDAPGroupMapperConfig {
     // Flag whether group inheritance from LDAP should be propagated to Keycloak group inheritance.
     public static final String PRESERVE_GROUP_INHERITANCE = "preserve.group.inheritance";
 
+    // Flag whether missing groups should be ignored.
+    public static final String IGNORE_MISSING_GROUPS = "ignore.missing.groups";
+
     // Customized LDAP filter which is added to the whole LDAP query
     public static final String GROUPS_LDAP_FILTER = "groups.ldap.filter";
 
@@ -88,6 +91,10 @@ public class GroupMapperConfig extends CommonLDAPGroupMapperConfig {
 
     public boolean isPreserveGroupsInheritance() {
         return AbstractLDAPStorageMapper.parseBooleanParameter(mapperModel, PRESERVE_GROUP_INHERITANCE);
+    }
+
+    public boolean isIgnoreMissingGroups() {
+        return AbstractLDAPStorageMapper.parseBooleanParameter(mapperModel, IGNORE_MISSING_GROUPS);
     }
 
     public Collection<String> getGroupObjectClasses(LDAPStorageProvider ldapProvider) {

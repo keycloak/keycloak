@@ -358,6 +358,18 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public int getRefreshTokenMaxReuse() {
+        if (isUpdated()) return updated.getRefreshTokenMaxReuse();
+        return cached.getRefreshTokenMaxReuse();
+    }
+
+    @Override
+    public void setRefreshTokenMaxReuse(int refreshTokenMaxReuse) {
+        getDelegateForUpdate();
+        updated.setRefreshTokenMaxReuse(refreshTokenMaxReuse);
+    }
+
+    @Override
     public int getSsoSessionIdleTimeout() {
         if (isUpdated()) return updated.getSsoSessionIdleTimeout();
         return cached.getSsoSessionIdleTimeout();
@@ -1213,8 +1225,8 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
-    public Long getGroupsCount() {
-        return cacheSession.getGroupsCount(this);
+    public Long getGroupsCount(Boolean onlyTopGroups) {
+        return cacheSession.getGroupsCount(this, onlyTopGroups);
     }
 
     @Override

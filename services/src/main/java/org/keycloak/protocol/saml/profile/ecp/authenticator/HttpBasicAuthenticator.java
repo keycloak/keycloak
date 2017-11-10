@@ -94,7 +94,12 @@ public class HttpBasicAuthenticator implements Authenticator {
         }
 
         try {
-            return new String(Base64.decode(credentials)).split(":");
+            String val = new String(Base64.decode(credentials));
+            int seperatorIndex = val.indexOf(":");
+            if(seperatorIndex == -1) return new String[]{val};
+            String user = val.substring(0, seperatorIndex);
+            String pw = val.substring(seperatorIndex + 1);
+            return new String[]{user,pw};
         } catch (final IOException e) {
             throw new RuntimeException("Failed to parse credentials.", e);
         }

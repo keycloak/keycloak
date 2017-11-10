@@ -33,8 +33,7 @@ public class InitializerStateTest {
 
     @Test
     public void testComputationState() {
-        InitializerState state = new InitializerState();
-        state.init(28, 5);
+        InitializerState state = new InitializerState(28, 5);
 
         Assert.assertFalse(state.isFinished());
         List<Integer> segments = state.getUnfinishedSegments(3);

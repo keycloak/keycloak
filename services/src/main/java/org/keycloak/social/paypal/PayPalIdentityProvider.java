@@ -25,6 +25,7 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
+import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
 
 /**
@@ -46,21 +47,36 @@ public class PayPalIdentityProvider extends AbstractOAuth2IdentityProvider<PayPa
 	}
 
 	@Override
+	protected boolean supportsExternalExchange() {
+		return true;
+	}
+
+	@Override
+	protected String getProfileEndpointForValidation(EventBuilder event) {
+		return getConfig().getUserInfoUrl();
+	}
+
+	@Override
+	protected BrokeredIdentityContext extractIdentityFromProfile(EventBuilder event, JsonNode profile) {
+		BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "user_id"));
+
+		user.setUsername(getJsonProperty(profile, "email"));
+		user.setName(getJsonProperty(profile, "name"));
+		user.setEmail(getJsonProperty(profile, "email"));
+		user.setIdpConfig(getConfig());
+		user.setIdp(this);
+
+		AbstractJsonUserAttributeMapper.storeUserProfileForMapper(user, profile, getConfig().getAlias());
+		return user;
+	}
+
+
+	@Override
 	protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
 		try {
 			JsonNode profile = SimpleHttp.doGet(getConfig().getUserInfoUrl(), session).header("Authorization", "Bearer " + accessToken).asJson();
 
-			BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "user_id"));
-
-			user.setUsername(getJsonProperty(profile, "email"));
-			user.setName(getJsonProperty(profile, "name"));
-			user.setEmail(getJsonProperty(profile, "email"));
-			user.setIdpConfig(getConfig());
-			user.setIdp(this);
-
-			AbstractJsonUserAttributeMapper.storeUserProfileForMapper(user, profile, getConfig().getAlias());
-
-			return user;
+			return extractIdentityFromProfile(null, profile);
 		} catch (Exception e) {
 			throw new IdentityBrokerException("Could not obtain user profile from paypal.", e);
 		}

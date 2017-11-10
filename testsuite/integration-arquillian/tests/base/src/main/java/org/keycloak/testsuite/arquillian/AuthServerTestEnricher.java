@@ -36,6 +36,9 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.LogChecker;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.wildfly.extras.creaper.core.ManagementClient;
+import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
+import org.wildfly.extras.creaper.core.online.OnlineOptions;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -117,6 +120,27 @@ public class AuthServerTestEnricher {
         return String.format("%s://%s:%s", scheme, host, port + clusterPortOffset);
     }
 
+    public static OnlineManagementClient getManagementClient() {
+        OnlineManagementClient managementClient;
+        try {
+            managementClient = ManagementClient.online(OnlineOptions
+                    .standalone()
+                    .hostAndPort(System.getProperty("auth.server.host", "localhost"), Integer.parseInt(System.getProperty("auth.server.management.port", "10090")))
+                    .build()
+            );
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+
+        return managementClient;
+    }
+    
+    public void distinguishContainersInConsoleOutput(@Observes(precedence = 5) StartContainer event) {
+        log.info("*****************************************************************"
+                + "*****************************************************************************");
+    }
+
     public void initializeSuiteContext(@Observes(precedence = 2) BeforeSuite event) {
         Set<ContainerInfo> containers = containerRegistry.get().getContainers().stream()
           .map(ContainerInfo::new)
@@ -146,15 +170,16 @@ public class AuthServerTestEnricher {
             }
 
             containers.stream()
-              .filter(c -> c.getQualifier().startsWith(AUTH_SERVER_CONTAINER + "-cross-dc-"))
-              .sorted((a, b) -> a.getQualifier().compareTo(b.getQualifier()))
-              .forEach(c -> {
-                String portOffsetString = c.getArquillianContainer().getContainerConfiguration().getContainerProperties().getOrDefault("bindHttpPortOffset", "0");
-                String dcString = c.getArquillianContainer().getContainerConfiguration().getContainerProperties().getOrDefault("dataCenter", "0");
-                updateWithAuthServerInfo(c, Integer.valueOf(portOffsetString));
-                suiteContext.addAuthServerBackendsInfo(Integer.valueOf(dcString), c);
-              });
+                    .filter(c -> c.getQualifier().startsWith("auth-server-" + System.getProperty("node.name") + "-"))
+                    .sorted((a, b) -> a.getQualifier().compareTo(b.getQualifier()))
+                    .forEach(c -> {
+                        String portOffsetString = c.getArquillianContainer().getContainerConfiguration().getContainerProperties().getOrDefault("bindHttpPortOffset", "0");
+                        updateWithAuthServerInfo(c, Integer.valueOf(portOffsetString));
 
+                        String dcString = c.getArquillianContainer().getContainerConfiguration().getContainerProperties().getOrDefault("dataCenter", "0");
+                        suiteContext.addAuthServerBackendsInfo(Integer.valueOf(dcString), c);
+                    });
+            
             containers.stream()
                     .filter(c -> c.getQualifier().startsWith("cache-server-cross-dc-"))
                     .sorted((a, b) -> a.getQualifier().compareTo(b.getQualifier()))

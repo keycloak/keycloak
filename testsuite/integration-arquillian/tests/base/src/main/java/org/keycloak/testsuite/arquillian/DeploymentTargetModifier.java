@@ -22,6 +22,7 @@ import org.jboss.arquillian.container.spi.client.deployment.TargetDescription;
 import org.jboss.arquillian.container.test.impl.client.deployment.AnnotationDeploymentScenarioGenerator;
 import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.StringPropertyReplacer;
 
 import java.util.List;
 
@@ -73,12 +74,23 @@ public class DeploymentTargetModifier extends AnnotationDeploymentScenarioGenera
             if (deployment.getTarget() != null) {
                 String containerQualifier = deployment.getTarget().getName();
                 if (AUTH_SERVER_CURRENT.equals(containerQualifier)) {
-                    String authServerQualifier = AuthServerTestEnricher.AUTH_SERVER_CONTAINER;
-                    log.infof("Setting target container for deployment %s.%s: %s", testClass.getName(), deployment.getName(), authServerQualifier);
-                    deployment.setTarget(new TargetDescription(authServerQualifier));
+                    String newAuthServerQualifier = AuthServerTestEnricher.AUTH_SERVER_CONTAINER;
+                    updateAuthServerQualifier(deployment, testClass, newAuthServerQualifier);
+                } else {
+                    String newAuthServerQualifier = StringPropertyReplacer.replaceProperties(containerQualifier);
+                    if (!newAuthServerQualifier.equals(containerQualifier)) {
+                        updateAuthServerQualifier(deployment, testClass, newAuthServerQualifier);
+                    }
                 }
+
+
             }
         }
+    }
+
+    private void updateAuthServerQualifier(DeploymentDescription deployment, TestClass testClass, String newAuthServerQualifier) {
+        log.infof("Setting target container for deployment %s.%s: %s", testClass.getName(), deployment.getName(), newAuthServerQualifier);
+        deployment.setTarget(new TargetDescription(newAuthServerQualifier));
     }
 
 }

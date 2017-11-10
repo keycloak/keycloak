@@ -23,45 +23,74 @@
     <xsl:output method="xml" version="1.0" encoding="UTF-8" indent="yes" xalan:indent-amount="4" standalone="no"/>
     <xsl:strip-space elements="*"/>
 
+    <xsl:param name="local.site" />
+    <xsl:param name="remote.site" />
+
     <xsl:variable name="nsCacheServer" select="'urn:infinispan:server:core:'"/>
+    <xsl:variable name="nsJGroups" select="'urn:infinispan:server:jgroups:'"/>
 
-    <xsl:template match="//*[local-name()='subsystem' and starts-with(namespace-uri(), $nsCacheServer)]
-                        /*[local-name()='cache-container' and starts-with(namespace-uri(), $nsCacheServer) and @name='local']">
-        <xsl:copy>
-            <xsl:apply-templates select="@* | node()" />
-
-            <local-cache-configuration name="sessions-cfg" start="EAGER" batching="false">
-                <transaction mode="NON_XA" locking="PESSIMISTIC"/>
-            </local-cache-configuration>
-
-            <local-cache name="sessions" configuration="sessions-cfg" />
-            <local-cache name="offlineSessions" configuration="sessions-cfg" />
-            <local-cache name="loginFailures" configuration="sessions-cfg" />
-            <local-cache name="actionTokens" configuration="sessions-cfg" />
-            <local-cache name="work" configuration="sessions-cfg" />
-            <local-cache name="employee-distributable-cache.ssoCache" configuration="sessions-cfg"/>
-            <local-cache name="employee-distributable-cache" configuration="sessions-cfg"/>
-        </xsl:copy>
-    </xsl:template>
-
+    <!-- Configuration of infinispan caches in infinispan-subsystem -->
     <xsl:template match="//*[local-name()='subsystem' and starts-with(namespace-uri(), $nsCacheServer)]
                         /*[local-name()='cache-container' and starts-with(namespace-uri(), $nsCacheServer) and @name='clustered']">
         <xsl:copy>
             <xsl:apply-templates select="@* | node()" />
 
-            <replicated-cache-configuration name="sessions-cfg" mode="ASYNC" start="EAGER" batching="false">
-                <transaction mode="NON_XA" locking="PESSIMISTIC"/>
+            <replicated-cache-configuration name="sessions-cfg" mode="SYNC" start="EAGER" batching="false">
+                <transaction mode="NON_DURABLE_XA" locking="PESSIMISTIC"/>
+                <locking acquire-timeout="0" />
+                <backups>
+                    <backup site="{$remote.site}" failure-policy="FAIL" strategy="SYNC" enabled="true">
+                        <take-offline min-wait="60000" after-failures="3" />
+                    </backup>
+                </backups>
             </replicated-cache-configuration>
-
 
             <replicated-cache name="sessions" configuration="sessions-cfg" />
             <replicated-cache name="offlineSessions" configuration="sessions-cfg" />
+            <replicated-cache name="clientSessions" configuration="sessions-cfg" />
+            <replicated-cache name="offlineClientSessions" configuration="sessions-cfg" />
             <replicated-cache name="loginFailures" configuration="sessions-cfg" />
             <replicated-cache name="actionTokens" configuration="sessions-cfg" />
             <replicated-cache name="work" configuration="sessions-cfg" />
             <replicated-cache name="employee-distributable-cache.ssoCache" configuration="sessions-cfg"/>
             <replicated-cache name="employee-distributable-cache" configuration="sessions-cfg"/>
         </xsl:copy>
+    </xsl:template>
+
+    <!-- Add "xsite" channel in JGroups subsystem -->
+    <xsl:template match="//*[local-name()='subsystem' and starts-with(namespace-uri(), $nsJGroups)]
+                        /*[local-name()='channels' and starts-with(namespace-uri(), $nsJGroups) and @default='cluster']">
+        <xsl:copy>
+            <xsl:apply-templates select="@* | node()" />
+
+            <channel name="xsite" stack="tcp"/>
+        </xsl:copy>
+    </xsl:template>
+
+    <!-- Add "relay" to JGroups stack "udp" -->
+    <xsl:template match="//*[local-name()='subsystem' and starts-with(namespace-uri(), $nsJGroups)]
+                        /*[local-name()='stacks' and starts-with(namespace-uri(), $nsJGroups)]
+                        /*[local-name()='stack' and @name='udp']">
+        <xsl:copy>
+            <xsl:apply-templates select="@* | node()" />
+
+            <relay site="{$local.site}">
+                <remote-site name="{$remote.site}" channel="xsite"/>
+            </relay>
+        </xsl:copy>
+    </xsl:template>
+
+    <!-- Replace MPING with TCPPING in JGroups stack "tcp" -->
+    <xsl:template match="//*[local-name()='subsystem' and starts-with(namespace-uri(), $nsJGroups)]
+                        /*[local-name()='stacks' and starts-with(namespace-uri(), $nsJGroups)]
+                        /*[local-name()='stack' and @name='tcp']
+                        /*[local-name()='protocol' and @type='MPING']">
+
+        <protocol type="TCPPING">
+            <property name="initial_hosts">localhost[8610],localhost[9610]</property>
+            <property name="ergonomics">false</property>
+        </protocol>
+
     </xsl:template>
 
     <xsl:template match="@*|node()">

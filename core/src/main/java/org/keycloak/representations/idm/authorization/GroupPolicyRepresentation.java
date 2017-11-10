@@ -18,8 +18,6 @@ package org.keycloak.representations.idm.authorization;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

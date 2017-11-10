@@ -1,6 +1,6 @@
 {
     "providers": [
-        "classpath:${jboss.home.dir}/providers/*"
+        "classpath:${jboss.server.config.dir}/providers/*"
     ],
 
     "admin": {
@@ -22,17 +22,7 @@
         "provider": "jpa"
     },
 
-    "userCache": {
-        "default" : {
-            "enabled": true
-        }
-    },
-
     "userSessionPersister": {
-        "provider": "jpa"
-    },
-
-    "authorizationPersister": {
         "provider": "jpa"
     },
 
@@ -41,11 +31,12 @@
     },
 
     "theme": {
+        "default": "keycloak",
         "staticMaxAge": 2592000,
         "cacheTemplates": true,
         "cacheThemes": true,
         "folder": {
-          "dir": "${jboss.home.dir}/themes"
+          "dir": "${jboss.server.config.dir}/themes"
         }
     },
 
@@ -64,15 +55,8 @@
         }
     },
 
-    "realmCache": {
-        "default" : {
-            "enabled": true
-        }
-    },
-
     "connectionsInfinispan": {
-        "provider": "default",
-        "default": {
+        "default" : {
             "cacheContainer" : "java:comp/env/infinispan/Keycloak"
         }
     }

@@ -17,6 +17,8 @@
 
 package org.keycloak.storage.ldap.mappers.membership.group;
 
+import org.jboss.logging.Logger;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -31,6 +33,8 @@ import java.util.TreeSet;
  */
 public class GroupTreeResolver {
 
+    private static final Logger logger = Logger.getLogger(GroupTreeResolver.class);
+
 
     /**
      * Fully resolves list of group trees to be used in Keycloak. The input is group info (usually from LDAP) where each "Group" object contains
@@ -39,12 +43,13 @@ public class GroupTreeResolver {
      * The operation also performs validation as rules for LDAP are less strict than for Keycloak (In LDAP, the recursion is possible and multiple parents of single group is also allowed)
      *
      * @param groups
+     * @param ignoreMissingGroups
      * @return
      * @throws GroupTreeResolveException
      */
-    public List<GroupTreeEntry> resolveGroupTree(List<Group> groups) throws GroupTreeResolveException {
+    public List<GroupTreeEntry> resolveGroupTree(List<Group> groups, boolean ignoreMissingGroups) throws GroupTreeResolveException {
         // 1- Get parents of each group
-        Map<String, List<String>> parentsTree = getParentsTree(groups);
+        Map<String, List<String>> parentsTree = getParentsTree(groups, ignoreMissingGroups);
 
         // 2 - Get rootGroups (groups without parent) and check if there is no group with multiple parents
         List<String> rootGroups = new LinkedList<>();
@@ -96,7 +101,7 @@ public class GroupTreeResolver {
         return finalResult;
     }
 
-    private Map<String, List<String>> getParentsTree(List<Group> groups) throws GroupTreeResolveException {
+    private Map<String, List<String>> getParentsTree(List<Group> groups, boolean ignoreMissingGroups) throws GroupTreeResolveException {
         Map<String, List<String>> result = new TreeMap<>();
 
         for (Group group : groups) {
@@ -106,10 +111,15 @@ public class GroupTreeResolver {
         for (Group group : groups) {
             for (String child : group.getChildrenNames()) {
                 List<String> list = result.get(child);
-                if (list == null) {
+                if (list != null) {
+                    list.add(group.getGroupName());
+                } else if(ignoreMissingGroups){
+                    // Need to remove the missing group
+                    group.getChildrenNames().remove(child);
+                    logger.debug("Group '" + child + "' referenced as member of group '" + group.getGroupName() + "' doesn't exists. Ignoring.");
+                } else {
                     throw new GroupTreeResolveException("Group '" + child + "' referenced as member of group '" + group.getGroupName() + "' doesn't exists");
                 }
-                list.add(group.getGroupName());
             }
         }
         return result;

@@ -22,6 +22,7 @@ import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
+import org.keycloak.common.util.reflections.Types;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
@@ -61,7 +62,6 @@ public class PolicyTypeResourceService extends PolicyResourceService {
 
     @Override
     protected AbstractPolicyRepresentation toRepresentation(Policy policy, AuthorizationProvider authorization) {
-        PolicyProviderFactory providerFactory = authorization.getProviderFactory(policy.getType());
-        return ModelToRepresentation.toRepresentation(policy, providerFactory.getRepresentationType(), authorization);
+        return ModelToRepresentation.toRepresentation(policy, authorization, false, false);
     }
 }

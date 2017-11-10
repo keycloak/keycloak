@@ -169,14 +169,38 @@ public class UserSessionProviderTest {
         int time = clientSession.getTimestamp();
         assertEquals(null, clientSession.getAction());
 
-        clientSession.setAction(AuthenticatedClientSessionModel.Action.CODE_TO_TOKEN.name());
+        clientSession.setAction(AuthenticatedClientSessionModel.Action.LOGGED_OUT.name());
         clientSession.setTimestamp(time + 10);
 
         kc.stopSession(session, true);
         session = kc.startSession();
 
         AuthenticatedClientSessionModel updated = session.sessions().getUserSession(realm, userSessionId).getAuthenticatedClientSessions().get(clientUUID);
-        assertEquals(AuthenticatedClientSessionModel.Action.CODE_TO_TOKEN.name(), updated.getAction());
+        assertEquals(AuthenticatedClientSessionModel.Action.LOGGED_OUT.name(), updated.getAction());
+        assertEquals(time + 10, updated.getTimestamp());
+    }
+
+    @Test
+    public void testUpdateClientSessionWithGetByClientId() {
+        UserSessionModel[] sessions = createSessions();
+
+        String userSessionId = sessions[0].getId();
+        String clientUUID = realm.getClientByClientId("test-app").getId();
+
+        UserSessionModel userSession = session.sessions().getUserSession(realm, userSessionId);
+        AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(clientUUID);
+
+        int time = clientSession.getTimestamp();
+        assertEquals(null, clientSession.getAction());
+
+        clientSession.setAction(AuthenticatedClientSessionModel.Action.LOGGED_OUT.name());
+        clientSession.setTimestamp(time + 10);
+
+        kc.stopSession(session, true);
+        session = kc.startSession();
+
+        AuthenticatedClientSessionModel updated = session.sessions().getUserSession(realm, userSessionId).getAuthenticatedClientSessionByClient(clientUUID);
+        assertEquals(AuthenticatedClientSessionModel.Action.LOGGED_OUT.name(), updated.getAction());
         assertEquals(time + 10, updated.getTimestamp());
     }
 
@@ -188,13 +212,13 @@ public class UserSessionProviderTest {
         String clientUUID = realm.getClientByClientId("test-app").getId();
 
         UserSessionModel userSession = session.sessions().getUserSession(realm, userSessionId);
-        AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(clientUUID);
+        AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(clientUUID);
 
-        clientSession.setAction(AuthenticatedClientSessionModel.Action.CODE_TO_TOKEN.name());
+        clientSession.setAction(AuthenticatedClientSessionModel.Action.LOGGED_OUT.name());
         clientSession.setNote("foo", "bar");
 
-        AuthenticatedClientSessionModel updated = session.sessions().getUserSession(realm, userSessionId).getAuthenticatedClientSessions().get(clientUUID);
-        assertEquals(AuthenticatedClientSessionModel.Action.CODE_TO_TOKEN.name(), updated.getAction());
+        AuthenticatedClientSessionModel updated = session.sessions().getUserSession(realm, userSessionId).getAuthenticatedClientSessionByClient(clientUUID);
+        assertEquals(AuthenticatedClientSessionModel.Action.LOGGED_OUT.name(), updated.getAction());
         assertEquals("bar", updated.getNote("foo"));
     }
 
@@ -360,7 +384,6 @@ public class UserSessionProviderTest {
                 Time.setOffset(i);
                 UserSessionModel userSession = session.sessions().createUserSession(KeycloakModelUtils.generateId(), realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0." + i, "form", false, null, null);
                 AuthenticatedClientSessionModel clientSession = session.sessions().createClientSession(realm, realm.getClientByClientId("test-app"), userSession);
-                clientSession.setUserSession(userSession);
                 clientSession.setRedirectUri("http://redirect");
                 clientSession.setRoles(new HashSet<String>());
                 clientSession.setNote(OIDCLoginProtocol.STATE_PARAM, "state");
@@ -450,7 +473,7 @@ public class UserSessionProviderTest {
 
         // remove session
         clientSession1 = userSession.getAuthenticatedClientSessions().get(client1.getId());
-        clientSession1.setUserSession(null);
+        clientSession1.detachFromUserSession();
 
         // Commit and ensure removed
         resetSession();

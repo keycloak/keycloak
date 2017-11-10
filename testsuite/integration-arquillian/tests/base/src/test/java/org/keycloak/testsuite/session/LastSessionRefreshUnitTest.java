@@ -34,9 +34,10 @@ import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.changes.sessions.LastSessionRefreshStore;
 import org.keycloak.models.sessions.infinispan.changes.sessions.LastSessionRefreshStoreFactory;
 import org.keycloak.models.sessions.infinispan.changes.sessions.SessionData;
+import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.Retry;
+import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 
@@ -168,7 +169,7 @@ public class LastSessionRefreshUnitTest extends AbstractKeycloakTest {
 
             };
 
-            Cache<String, SessionEntityWrapper> cache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.SESSION_CACHE_NAME);
+            Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
             return factory.createAndInit(session, cache, timerIntervalMs, maxIntervalBetweenMessagesSeconds, 10, false);
         }
 

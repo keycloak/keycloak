@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.4.0.CR1-SNAPSHOT</version>
+        <version>3.4.1.Final-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -30,6 +30,10 @@
 
     <artifactId>keycloak-distribution-parent</artifactId>
     <packaging>pom</packaging>
+
+    <properties>
+        <keycloak.provisioning.xml>server-provisioning.xml</keycloak.provisioning.xml>
+    </properties>
 
     <modules>
         <module>adapters</module>

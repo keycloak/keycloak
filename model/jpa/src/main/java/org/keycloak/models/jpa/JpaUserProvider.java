@@ -496,6 +496,20 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         }
         return users;
     }
+    
+    @Override
+    public List<UserModel> getRoleMembers(RealmModel realm, RoleModel role) {
+        TypedQuery<UserEntity> query = em.createNamedQuery("usersInRole", UserEntity.class);
+        query.setParameter("roleId", role.getId());
+        List<UserEntity> results = query.getResultList();
+
+        List<UserModel> users = new ArrayList<UserModel>();
+        for (UserEntity user : results) {
+            users.add(new UserAdapter(session, realm, em, user));
+        }
+        return users;
+    }
+
 
     @Override
     public void preRemove(RealmModel realm, GroupModel group) {
@@ -621,6 +635,25 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
         TypedQuery<UserEntity> query = em.createNamedQuery("groupMembership", UserEntity.class);
         query.setParameter("groupId", group.getId());
+        if (firstResult != -1) {
+            query.setFirstResult(firstResult);
+        }
+        if (maxResults != -1) {
+            query.setMaxResults(maxResults);
+        }
+        List<UserEntity> results = query.getResultList();
+
+        List<UserModel> users = new LinkedList<>();
+        for (UserEntity user : results) {
+            users.add(new UserAdapter(session, realm, em, user));
+        }
+        return users;
+    }
+    
+    @Override
+    public List<UserModel> getRoleMembers(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
+        TypedQuery<UserEntity> query = em.createNamedQuery("usersInRole", UserEntity.class);
+        query.setParameter("roleId", role.getId());
         if (firstResult != -1) {
             query.setFirstResult(firstResult);
         }

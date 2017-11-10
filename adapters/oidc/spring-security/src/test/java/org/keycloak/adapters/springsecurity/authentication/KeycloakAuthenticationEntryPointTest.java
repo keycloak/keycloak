@@ -24,6 +24,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
+import static junit.framework.TestCase.assertNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import org.keycloak.adapters.AdapterDeploymentContext;
@@ -86,8 +87,8 @@ public class KeycloakAuthenticationEntryPointTest {
     public void testCommenceWithUnauthorizedWithAccept() throws Exception {
         request.addHeader(HttpHeaders.ACCEPT, "application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         authenticationEntryPoint.commence(request, response, null);
-        assertEquals(HttpStatus.UNAUTHORIZED.value(), response.getStatus());
-        assertNotNull(response.getHeader(HttpHeaders.WWW_AUTHENTICATE));
+        assertEquals(HttpStatus.FOUND.value(), response.getStatus());
+        assertNull(response.getHeader(HttpHeaders.WWW_AUTHENTICATE));
     }
 
     @Test

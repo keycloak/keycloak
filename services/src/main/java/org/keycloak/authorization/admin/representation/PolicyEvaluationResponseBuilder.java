@@ -23,6 +23,7 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.policy.evaluation.Result;
 import org.keycloak.authorization.util.Permissions;
+import org.keycloak.models.ClientModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.DecisionEffect;
 import org.keycloak.representations.idm.authorization.PolicyEvaluationResponse;
@@ -54,6 +55,12 @@ public class PolicyEvaluationResponseBuilder {
 
         authorizationData.setPermissions(Permissions.permits(results, null, authorization, resourceServer));
         accessToken.setAuthorization(authorizationData);
+
+        ClientModel clientModel = authorization.getRealm().getClientById(resourceServer.getId());
+
+        if (!accessToken.hasAudience(clientModel.getClientId())) {
+            accessToken.audience(clientModel.getClientId());
+        }
 
         response.setRpt(accessToken);
 

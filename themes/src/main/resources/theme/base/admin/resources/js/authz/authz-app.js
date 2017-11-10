@@ -470,6 +470,18 @@ module.config(['$routeProvider', function ($routeProvider) {
             },
             controller : 'GroupPermissionsCtrl'
         })
+        .when('/realms/:realm/identity-provider-settings/provider/:provider_id/:alias/permissions', {
+            templateUrl : function(params){ return resourceUrl + '/partials/authz/mgmt/broker-permissions.html'; },
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                identityProvider : function(IdentityProviderLoader) {
+                    return IdentityProviderLoader();
+                }
+             },
+            controller : 'IdentityProviderPermissionCtrl'
+        })
     ;
 }]);
 

@@ -9,6 +9,8 @@ embed-server --server-config=standalone-ha.xml
 /subsystem=infinispan/cache-container=keycloak/distributed-cache=sessions:add(mode="SYNC",owners="1")
 /subsystem=infinispan/cache-container=keycloak/distributed-cache=authenticationSessions:add(mode="SYNC",owners="1")
 /subsystem=infinispan/cache-container=keycloak/distributed-cache=offlineSessions:add(mode="SYNC",owners="1")
+/subsystem=infinispan/cache-container=keycloak/distributed-cache=clientSessions:add(mode="SYNC",owners="1")
+/subsystem=infinispan/cache-container=keycloak/distributed-cache=offlineClientSessions:add(mode="SYNC",owners="1")
 /subsystem=infinispan/cache-container=keycloak/distributed-cache=loginFailures:add(mode="SYNC",owners="1")
 /subsystem=infinispan/cache-container=keycloak/local-cache=authorization:add()
 /subsystem=infinispan/cache-container=keycloak/local-cache=authorization/eviction=EVICTION:add(max-entries=10000,strategy=LRU)

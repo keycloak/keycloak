@@ -2,24 +2,42 @@ package org.keycloak.testsuite.broker;
 
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
+import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.util.DocumentUtil;
+import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
+import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 
+import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
+import org.keycloak.testsuite.util.SamlClient;
+import org.keycloak.testsuite.util.SamlClient.Binding;
+import org.keycloak.testsuite.util.SamlClientBuilder;
 import java.io.Closeable;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import java.util.Map.Entry;
+import java.util.Set;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.*;
 import static org.keycloak.testsuite.broker.BrokerTestTools.encodeUrl;
+import static org.keycloak.testsuite.util.Matchers.isSamlResponse;
 
 public class KcSamlSignedBrokerTest extends KcSamlBrokerTest {
 
@@ -138,4 +156,80 @@ public class KcSamlSignedBrokerTest extends KcSamlBrokerTest {
             errorPage.assertCurrent();
         }
     }
+
+    private Document extractNamespacesToTopLevelElement(Document original) {
+        HashMap<String, String> namespaces = new HashMap<>();
+        enumerateAndRemoveNamespaces(original.getDocumentElement(), namespaces);
+
+        log.infof("Namespaces: %s", namespaces);
+        log.infof("Document: %s", DocumentUtil.asString(original));
+
+        Element rootNode = original.getDocumentElement();
+        for (Entry<String, String> me : namespaces.entrySet()) {
+            rootNode.setAttribute(me.getKey(), me.getValue());
+        }
+
+        log.infof("Updated document: %s", DocumentUtil.asString(original));
+
+        return original;
+    }
+
+    private void enumerateAndRemoveNamespaces(Element documentElement, HashMap<String, String> namespaces) {
+        final NamedNodeMap attrs = documentElement.getAttributes();
+        if (attrs != null) {
+            final Set<String> found = new HashSet<>();
+
+            for (int i = attrs.getLength() - 1; i >= 0; i--) {
+                Node item = attrs.item(i);
+                String nodeName = item.getNodeName();
+                if (nodeName != null && nodeName.startsWith("xmlns:")) {
+                    namespaces.put(nodeName, item.getNodeValue());
+                    found.add(nodeName);
+                }
+            }
+
+            found.forEach(documentElement::removeAttribute);
+        }
+
+        NodeList childNodes = documentElement.getChildNodes();
+        for (int i = 0; i < childNodes.getLength(); i ++) {
+            Node childNode = childNodes.item(i);
+            if (childNode instanceof Element) {
+                enumerateAndRemoveNamespaces((Element) childNode, namespaces);
+            }
+        }
+    }
+
+    // KEYCLOAK-5581
+    @Test
+    public void loginUserAllNamespacesInTopElement() throws Exception {
+        AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST, AbstractSamlTest.SAML_ASSERTION_CONSUMER_URL_SALES_POST, null);
+
+        Document doc = extractNamespacesToTopLevelElement(SAML2Request.convert(loginRep));
+
+        SAMLDocumentHolder samlResponse = new SamlClientBuilder()
+          .authnRequest(getAuthServerSamlEndpoint(bc.consumerRealmName()), doc, Binding.POST).build()   // Request to consumer IdP
+          .login().idp(bc.getIDPAlias()).build()
+
+          .processSamlResponse(Binding.POST)    // AuthnRequest to producer IdP
+            .targetAttributeSamlRequest()
+            .transformDocument(this::extractNamespacesToTopLevelElement)
+            .build()
+
+          .login().user(bc.getUserLogin(), bc.getUserPassword()).build()
+
+          .processSamlResponse(Binding.POST)    // Response from producer IdP
+            .transformDocument(this::extractNamespacesToTopLevelElement)
+            .build()
+
+          // first-broker flow
+          .updateProfile().firstName("a").lastName("b").email(bc.getUserEmail()).username(bc.getUserLogin()).build()
+          .followOneRedirect()
+
+          .getSamlResponse(Binding.POST);       // Response from consumer IdP
+
+        Assert.assertThat(samlResponse, Matchers.notNullValue());
+        Assert.assertThat(samlResponse.getSamlObject(), isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+    }
+
 }

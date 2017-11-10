@@ -116,6 +116,10 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
     }
 
     @Override
+    public void detachFromUserSession() {
+        setUserSession(null);
+    }
+
     public void setUserSession(UserSessionModel userSession) {
         this.userSession = userSession;
     }
@@ -138,6 +142,26 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
     @Override
     public void setTimestamp(int timestamp) {
         model.setTimestamp(timestamp);
+    }
+
+    @Override
+    public String getCurrentRefreshToken() {
+        return null; // Information not persisted.
+    }
+
+    @Override
+    public void setCurrentRefreshToken(String currentRefreshToken) {
+        // Information not persisted.
+    }
+
+    @Override
+    public int getCurrentRefreshTokenUseCount() {
+        return 0; // Information not persisted.
+    }
+
+    @Override
+    public void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount) {
+        // Information not persisted.
     }
 
     @Override

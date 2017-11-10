@@ -1,0 +1,71 @@
+<nav class="nav-pf-vertical {{this.sideNavClasses}}"> <!-- {{this.sideNavClasses}} collapsed hidden show-mobile-nav -->
+    <ul class="list-group">
+        <li *ngFor="let item of navItems" class="list-group-item {{item.active}}">
+            <a [routerLink]="[item.link]">
+                <span class="{{item.icon.getClasses()}}" title="{{item.tooltip}}" data-toggle="tooltip" data-placement="right"></span>
+                <span class="list-group-item-value">{{item.displayName}}</span>
+            </a>
+        </li>
+        <li *ngIf="referrer.exists()" class="list-group-item hidden-sm hidden-md hidden-lg">
+            <a href="{{referrer.getUri()}}">
+                <span class="pficon-arrow" title="{{'backTo' | translate:referrer.getName()}}"></span>
+                <span class="list-group-item-value">{{'backTo' | translate:referrer.getName()}}</span>
+            </a>
+        </li>
+        <li class="list-group-item hidden-sm hidden-md hidden-lg">
+            <a href="#" (click)="logout()">
+                <span class="fa fa-sign-out" title="{{'doSignOut' | translate}}"></span>
+                <span class="list-group-item-value">{{'doSignOut' | translate}}</span>
+            </a>
+        </li>
+    </ul>
+</nav>
+<!--        <li class="list-group-item active">
+            <a href="#">
+                <span class="pficon pficon-user" title="Dashboard" data-toggle="tooltip" data-placement="right"></span>
+                <span class="list-group-item-value">Personal information</span>
+            </a>
+        </li>
+        <li class="list-group-item">
+            <a href="#">
+                <span class="fa fa-link" title="My Services" data-toggle="tooltip" data-placement="right"></span>
+                <span class="list-group-item-value">Connected Devices</span>
+            </a>
+        </li>
+        <li class="list-group-item">
+            <a href="#">
+                <span class="fa fa-cubes" title="My Requests" data-toggle="tooltip" data-placement="right"></span>
+                <span class="list-group-item-value">Applications</span>
+            </a>
+        </li>
+        <li class="list-group-item">
+            <a href="#">
+                <span class="pficon pficon-history" title="My Items" data-toggle="tooltip" data-placement="right"></span>
+                <span class="list-group-item-value">History</span>
+            </a>
+        </li>
+        <li class="list-group-item hidden-sm hidden-md hidden">
+            <a href="#">
+                <span class="pficon pficon-help" title="Help"></span>
+                <span class="list-group-item-value">Help</span>
+            </a>
+        </li>
+        <li class="list-group-item hidden-sm hidden-md hidden-lg">
+            <a href="#">
+                <span class="fa fa-info-circle" title="About"></span>
+                <span class="list-group-item-value">About</span>
+            </a>
+        </li>
+        <li class="list-group-item hidden-sm hidden-md hidden-lg">
+            <a href="#">
+                <span class="pficon pficon-user" title="Preferences"></span>
+                <span class="list-group-item-value">Preferences</span>
+            </a>
+        </li>
+        <li class="list-group-item hidden-sm hidden-md hidden-lg">
+            <a href="#">
+                <span class="fa fa-sign-out" title="Log Out"></span>
+                <span class="list-group-item-value">Log Out</span>
+            </a>
+        </li>-->
+

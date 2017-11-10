@@ -15,7 +15,7 @@ module.factory('Loader', function($q) {
 			});
 			return delay.promise;
 		};
-	}
+	};
 	loader.query = function(service, id) {
 		return function() {
 			var i = id && id();
@@ -27,7 +27,7 @@ module.factory('Loader', function($q) {
 			});
 			return delay.promise;
 		};
-	}
+	};
 	return loader;
 });
 
@@ -491,6 +491,15 @@ module.factory('GroupListLoader', function(Loader, Groups, $route, $q) {
     return Loader.query(Groups, function() {
         return {
             realm : $route.current.params.realm
+        }
+    });
+});
+
+module.factory('GroupCountLoader', function(Loader, GroupsCount, $route, $q) {
+    return Loader.query(GroupsCount, function() {
+        return {
+            realm : $route.current.params.realm,
+            top : true
         }
     });
 });

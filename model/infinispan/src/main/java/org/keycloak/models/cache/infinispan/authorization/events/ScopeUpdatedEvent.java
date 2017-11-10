@@ -20,11 +20,18 @@ package org.keycloak.models.cache.infinispan.authorization.events;
 import org.keycloak.models.cache.infinispan.authorization.StoreFactoryCacheManager;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.Set;
+import org.infinispan.commons.marshall.Externalizer;
+import org.infinispan.commons.marshall.MarshallUtil;
+import org.infinispan.commons.marshall.SerializeWith;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@SerializeWith(ScopeUpdatedEvent.ExternalizerImpl.class)
 public class ScopeUpdatedEvent extends InvalidationEvent implements AuthorizationCacheInvalidationEvent {
 
     private String id;
@@ -52,5 +59,38 @@ public class ScopeUpdatedEvent extends InvalidationEvent implements Authorizatio
     @Override
     public void addInvalidations(StoreFactoryCacheManager cache, Set<String> invalidations) {
         cache.scopeUpdated(id, name, serverId, invalidations);
+    }
+
+    public static class ExternalizerImpl implements Externalizer<ScopeUpdatedEvent> {
+
+        private static final int VERSION_1 = 1;
+
+        @Override
+        public void writeObject(ObjectOutput output, ScopeUpdatedEvent obj) throws IOException {
+            output.writeByte(VERSION_1);
+
+            MarshallUtil.marshallString(obj.id, output);
+            MarshallUtil.marshallString(obj.name, output);
+            MarshallUtil.marshallString(obj.serverId, output);
+        }
+
+        @Override
+        public ScopeUpdatedEvent readObject(ObjectInput input) throws IOException, ClassNotFoundException {
+            switch (input.readByte()) {
+                case VERSION_1:
+                    return readObjectVersion1(input);
+                default:
+                    throw new IOException("Unknown version");
+            }
+        }
+
+        public ScopeUpdatedEvent readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
+            ScopeUpdatedEvent res = new ScopeUpdatedEvent();
+            res.id = MarshallUtil.unmarshallString(input);
+            res.name = MarshallUtil.unmarshallString(input);
+            res.serverId = MarshallUtil.unmarshallString(input);
+
+            return res;
+        }
     }
 }

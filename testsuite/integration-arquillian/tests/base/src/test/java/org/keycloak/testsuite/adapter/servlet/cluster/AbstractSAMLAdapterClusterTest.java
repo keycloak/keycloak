@@ -18,7 +18,7 @@ package org.keycloak.testsuite.adapter.servlet.cluster;
 
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.*;
-import org.keycloak.testsuite.Retry;
+import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.adapter.page.EmployeeServletDistributable;
 import org.keycloak.testsuite.adapter.page.SAMLServlet;
 import org.keycloak.testsuite.auth.page.AuthRealm;

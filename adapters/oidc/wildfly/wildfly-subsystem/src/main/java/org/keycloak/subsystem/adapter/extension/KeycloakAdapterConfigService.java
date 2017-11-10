@@ -276,11 +276,13 @@ public final class KeycloakAdapterConfigService {
     }
 
     private void setJSONValues(ModelNode json, ModelNode values) {
-        for (Property prop : new ArrayList<>(values.asPropertyList())) {
-            String name = prop.getName();
-            ModelNode value = prop.getValue();
-            if (value.isDefined()) {
-                json.get(name).set(value);
+        synchronized (values) {
+            for (Property prop : new ArrayList<>(values.asPropertyList())) {
+                String name = prop.getName();
+                ModelNode value = prop.getValue();
+                if (value.isDefined()) {
+                    json.get(name).set(value);
+                }
             }
         }
     }

@@ -35,6 +35,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.*;
 import static org.keycloak.testsuite.auth.page.login.Login.OIDC;
 import static org.keycloak.testsuite.console.clients.AbstractClientTest.createClientRep;
@@ -374,5 +376,24 @@ public class ClientMappersOIDCTest extends AbstractClientTest {
         createClientMappersPage.form().setName("email");
         createClientMappersPage.form().save();
         assertAlertDanger();
+    }
+
+    @Test
+    public void testUpdateTokenClaimName() {
+        clientMappersPage.mapperTable().createMapper();
+
+        createClientMappersPage.form().setName("test");
+        createClientMappersPage.form().setTokenClaimName("test");
+        createClientMappersPage.form().save();
+        assertAlertSuccess();
+
+        createClientMappersPage.form().setTokenClaimName("test2");
+        createClientMappersPage.form().save();
+        assertAlertSuccess();
+
+        ProtocolMapperRepresentation mapper = testRealmResource().clients().get(id).getProtocolMappers().getMappers()
+                .stream().filter(m -> m.getName().equals("test")).findFirst().get();
+
+        assertThat(mapper.getConfig().get("claim.name"), is(equalTo("test2")));
     }
 }

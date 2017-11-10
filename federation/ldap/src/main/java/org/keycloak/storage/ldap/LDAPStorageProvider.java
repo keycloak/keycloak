@@ -44,6 +44,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
+import org.keycloak.policy.PasswordPolicyManagerProvider;
+import org.keycloak.policy.PolicyError;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
@@ -533,7 +536,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
         // Check here if user already exists
         String ldapUsername = LDAPUtils.getUsername(ldapUser, ldapIdentityStore.getConfig());
         UserModel user = session.userLocalStorage().getUserByUsername(ldapUsername, realm);
-        
+
         if (user != null) {
             LDAPUtils.checkUuid(ldapUser, ldapIdentityStore.getConfig());
             // If email attribute mapper is set to "Always Read Value From LDAP" the user may be in Keycloak DB with an old email address
@@ -599,7 +602,10 @@ public class LDAPStorageProvider implements UserStorageProvider,
             PasswordUserCredentialModel cred = (PasswordUserCredentialModel)input;
             String password = cred.getValue();
             LDAPObject ldapUser = loadAndValidateUser(realm, user);
-
+            if (ldapIdentityStore.getConfig().isValidatePasswordPolicy()) {
+		PolicyError error = session.getProvider(PasswordPolicyManagerProvider.class).validate(realm, user, password);
+		if (error != null) throw new ModelException(error.getMessage(), error.getParameters());
+            }
             try {
                 LDAPOperationDecorator operationDecorator = null;
                 if (updater != null) {

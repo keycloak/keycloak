@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -36,14 +37,18 @@ public class Permission {
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private Set<String> scopes;
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    private final Map<String, Set<String>> claims;
+
     public Permission() {
-        this(null, null, null);
+        this(null, null, null, null);
     }
 
-    public Permission(final String resourceSetId, String resourceSetName, final Set<String> scopes) {
+    public Permission(final String resourceSetId, String resourceSetName, final Set<String> scopes, Map<String, Set<String>> claims) {
         this.resourceSetId = resourceSetId;
         this.resourceSetName = resourceSetName;
         this.scopes = scopes;
+        this.claims = claims;
     }
 
     public String getResourceSetId() {
@@ -60,6 +65,10 @@ public class Permission {
         }
 
         return this.scopes;
+    }
+
+    public Map<String, Set<String>> getClaims() {
+        return claims;
     }
 
     @Override

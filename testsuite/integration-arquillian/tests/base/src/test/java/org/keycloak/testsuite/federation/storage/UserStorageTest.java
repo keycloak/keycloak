@@ -388,6 +388,12 @@ public class UserStorageTest extends AbstractAuthTest {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
             UserModel user = session.users().getUserByUsername("thor", realm);
+        });
+
+        // run twice to make sure its in cache.
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel user = session.users().getUserByUsername("thor", realm);
             System.out.println("User class: " + user.getClass());
             Assert.assertTrue(user instanceof CachedUserModel); // should still be cached
         });

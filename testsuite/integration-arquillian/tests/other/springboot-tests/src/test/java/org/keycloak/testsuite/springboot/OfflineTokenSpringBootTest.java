@@ -7,8 +7,10 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.Urls;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.ClientManager;
@@ -22,7 +24,7 @@ import java.util.List;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
-    private static final String SERVLET_URI = APPLICATION_URL + "/admin/TokenServlet";
+    private static final String SERVLET_URL = BASE_URL + "/TokenServlet";
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -35,7 +37,7 @@ public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
 
     @Test
     public void testTokens() {
-        String servletUri = UriBuilder.fromUri(SERVLET_URI)
+        String servletUri = UriBuilder.fromUri(SERVLET_URL)
                 .queryParam(OAuth2Constants.SCOPE, OAuth2Constants.OFFLINE_ACCESS)
                 .build().toString();
         driver.navigate().to(servletUri);
@@ -45,31 +47,31 @@ public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
 
         WaitUtils.waitUntilElement(By.tagName("body")).is().visible();
 
-        Assert.assertTrue(tokenPage.isCurrent());
+        Assert.assertTrue("Must be on tokens page", tokenPage.isCurrent());
 
-        Assert.assertEquals(tokenPage.getRefreshToken().getType(), TokenUtil.TOKEN_TYPE_OFFLINE);
-        Assert.assertEquals(tokenPage.getRefreshToken().getExpiration(), 0);
+        Assert.assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, tokenPage.getRefreshToken().getType());
+        Assert.assertEquals(0, tokenPage.getRefreshToken().getExpiration());
 
         String accessTokenId = tokenPage.getAccessToken().getId();
         String refreshTokenId = tokenPage.getRefreshToken().getId();
 
-        setAdapterAndServerTimeOffset(9999, SERVLET_URI);
+        setAdapterAndServerTimeOffset(9999, SERVLET_URL);
 
-        driver.navigate().to(SERVLET_URI);
+        driver.navigate().to(SERVLET_URL);
         Assert.assertTrue("Must be on tokens page", tokenPage.isCurrent());
-        Assert.assertNotEquals(tokenPage.getRefreshToken().getId(), refreshTokenId);
-        Assert.assertNotEquals(tokenPage.getAccessToken().getId(), accessTokenId);
+        Assert.assertNotEquals(refreshTokenId, tokenPage.getRefreshToken().getId());
+        Assert.assertNotEquals(accessTokenId, tokenPage.getAccessToken().getId());
 
-        setAdapterAndServerTimeOffset(0, SERVLET_URI);
+        setAdapterAndServerTimeOffset(0, SERVLET_URL);
 
-        driver.navigate().to(logoutPage(SERVLET_URI));
+        driver.navigate().to(logoutPage(SERVLET_URL));
         Assert.assertTrue("Must be on login page", loginPage.isCurrent());
     }
 
     @Test
     public void testRevoke() {
         // Login to servlet first with offline token
-        String servletUri = UriBuilder.fromUri(SERVLET_URI)
+        String servletUri = UriBuilder.fromUri(SERVLET_URL)
                 .queryParam(OAuth2Constants.SCOPE, OAuth2Constants.OFFLINE_ACCESS)
                 .build().toString();
         driver.navigate().to(servletUri);
@@ -81,10 +83,10 @@ public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
         Assert.assertEquals(tokenPage.getRefreshToken().getType(), TokenUtil.TOKEN_TYPE_OFFLINE);
 
         // Assert refresh works with increased time
-        setAdapterAndServerTimeOffset(9999, SERVLET_URI);
-        driver.navigate().to(SERVLET_URI);
+        setAdapterAndServerTimeOffset(9999, SERVLET_URL);
+        driver.navigate().to(SERVLET_URL);
         Assert.assertTrue("Must be on token page", tokenPage.isCurrent());
-        setAdapterAndServerTimeOffset(0, SERVLET_URI);
+        setAdapterAndServerTimeOffset(0, SERVLET_URL);
 
         events.clear();
 
@@ -98,14 +100,18 @@ public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
         pause(500);
         Assert.assertEquals(accountAppPage.getApplications().get(CLIENT_ID).getAdditionalGrants().size(), 0);
 
-        events.expect(EventType.REVOKE_GRANT).realm(REALM_ID).user(getCorrectUserId())
+        UserRepresentation userRepresentation =
+                ApiUtil.findUserByUsername(realmsResouce().realm(REALM_NAME), USER_LOGIN);
+        Assert.assertNotNull("User should exist", userRepresentation);
+
+        events.expect(EventType.REVOKE_GRANT).realm(REALM_ID).user(userRepresentation.getId())
                 .client("account").detail(Details.REVOKED_CLIENT, CLIENT_ID).assertEvent();
 
         // Assert refresh doesn't work now (increase time one more time)
-        setAdapterAndServerTimeOffset(9999, SERVLET_URI);
-        driver.navigate().to(SERVLET_URI);
+        setAdapterAndServerTimeOffset(9999, SERVLET_URL);
+        driver.navigate().to(SERVLET_URL);
         loginPage.assertCurrent();
-        setAdapterAndServerTimeOffset(0, SERVLET_URI);
+        setAdapterAndServerTimeOffset(0, SERVLET_URL);
     }
 
     @Test
@@ -113,17 +119,15 @@ public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
         ClientManager.realm(adminClient.realm(REALM_NAME)).clientId(CLIENT_ID).consentRequired(true);
 
         // Assert grant page doesn't have 'Offline Access' role when offline token is not requested
-        driver.navigate().to(SERVLET_URI);
+        driver.navigate().to(SERVLET_URL);
         loginPage.login(USER_LOGIN, USER_PASSWORD);
         oauthGrantPage.assertCurrent();
         WaitUtils.waitUntilElement(By.xpath("//body")).text().not().contains("Offline access");
         oauthGrantPage.cancel();
 
-        // Assert grant page has 'Offline Access' role now
-        String servletUri = UriBuilder.fromUri(SERVLET_URI)
+        driver.navigate().to(UriBuilder.fromUri(SERVLET_URL)
                 .queryParam(OAuth2Constants.SCOPE, OAuth2Constants.OFFLINE_ACCESS)
-                .build().toString();
-        driver.navigate().to(servletUri);
+                .build().toString());
         WaitUtils.waitUntilElement(By.tagName("body")).is().visible();
 
         loginPage.login(USER_LOGIN, USER_PASSWORD);
@@ -143,7 +147,7 @@ public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
         Assert.assertTrue(offlineClient.getAdditionalGrants().contains("Offline Token"));
 
         //This was necessary to be introduced, otherwise other testcases will fail
-        driver.navigate().to(logoutPage(SERVLET_URI));
+        driver.navigate().to(logoutPage(SERVLET_URL));
         loginPage.assertCurrent();
 
         events.clear();

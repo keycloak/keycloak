@@ -159,6 +159,9 @@ public interface RealmModel extends RoleContainerModel {
     boolean isRevokeRefreshToken();
     void setRevokeRefreshToken(boolean revokeRefreshToken);
 
+    int getRefreshTokenMaxReuse();
+    void setRefreshTokenMaxReuse(int revokeRefreshTokenCount);
+
     int getSsoSessionIdleTimeout();
     void setSsoSessionIdleTimeout(int seconds);
 
@@ -400,7 +403,7 @@ public interface RealmModel extends RoleContainerModel {
 
     GroupModel getGroupById(String id);
     List<GroupModel> getGroups();
-    Long getGroupsCount();
+    Long getGroupsCount(Boolean onlyTopGroups);
     Long getGroupsCountByNameContaining(String search);
     List<GroupModel> getTopLevelGroups();
     List<GroupModel> getTopLevelGroups(Integer first, Integer max);

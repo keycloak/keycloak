@@ -24,6 +24,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.KeycloakDeployment;
@@ -36,6 +37,7 @@ import org.keycloak.adapters.springsecurity.authentication.KeycloakAuthenticatio
 import org.keycloak.adapters.springsecurity.authentication.SpringSecurityRequestAuthenticator;
 import org.keycloak.adapters.springsecurity.facade.SimpleHttpFacade;
 import org.keycloak.adapters.springsecurity.token.AdapterTokenStoreFactory;
+import org.keycloak.adapters.springsecurity.token.KeycloakAuthenticationToken;
 import org.keycloak.adapters.springsecurity.token.SpringSecurityAdapterTokenStoreFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,19 +63,19 @@ import org.springframework.util.Assert;
  * @version $Revision: 1 $
  */
 public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticationProcessingFilter implements ApplicationContextAware {
-
     public static final String DEFAULT_LOGIN_URL = "/sso/login";
     public static final String AUTHORIZATION_HEADER = "Authorization";
-    public static final String SCHEME_BEARER = "bearer ";
-    public static final String SCHEME_BASIC = "basic ";
-
 
     /**
      * Request matcher that matches requests to the {@link KeycloakAuthenticationEntryPoint#DEFAULT_LOGIN_URI default login URI}
      * and any request with a <code>Authorization</code> header.
      */
     public static final RequestMatcher DEFAULT_REQUEST_MATCHER =
-            new OrRequestMatcher(new AntPathRequestMatcher(DEFAULT_LOGIN_URL), new RequestHeaderRequestMatcher(AUTHORIZATION_HEADER));
+            new OrRequestMatcher(
+                    new AntPathRequestMatcher(DEFAULT_LOGIN_URL),
+                    new RequestHeaderRequestMatcher(AUTHORIZATION_HEADER),
+                    new QueryParamPresenceRequestMatcher(OAuth2Constants.ACCESS_TOKEN)
+            );
 
     private static final Logger log = LoggerFactory.getLogger(KeycloakAuthenticationProcessingFilter.class);
 
@@ -181,36 +183,10 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
         }
     }
 
-    /**
-     * Returns true if the request was made with a bearer token authorization header.
-     *
-     * @param request the current <code>HttpServletRequest</code>
-     *
-     * @return <code>true</code> if the <code>request</code> was made with a bearer token authorization header;
-     * <code>false</code> otherwise.
-     */
-    protected boolean isBearerTokenRequest(HttpServletRequest request) {
-        String authValue = request.getHeader(AUTHORIZATION_HEADER);
-        return authValue != null && authValue.toLowerCase().startsWith(SCHEME_BEARER);
-    }
-
-    /**
-     * Returns true if the request was made with a Basic authentication authorization header.
-     *
-     * @param request the current <code>HttpServletRequest</code>
-     * @return <code>true</code> if the <code>request</code> was made with a Basic authentication authorization header;
-     * <code>false</code> otherwise.
-     */
-    protected boolean isBasicAuthRequest(HttpServletRequest request) {
-        String authValue = request.getHeader(AUTHORIZATION_HEADER);
-        return authValue != null && authValue.toLowerCase().startsWith(SCHEME_BASIC);
-    }
-
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
                                             Authentication authResult) throws IOException, ServletException {
-
-        if (!(this.isBearerTokenRequest(request) || this.isBasicAuthRequest(request))) {
+        if (authResult instanceof KeycloakAuthenticationToken && ((KeycloakAuthenticationToken) authResult).isInteractive()) {
             super.successfulAuthentication(request, response, chain, authResult);
             return;
         }
@@ -231,7 +207,6 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
         } finally {
             SecurityContextHolder.clearContext();
         }
-
     }
 
     @Override

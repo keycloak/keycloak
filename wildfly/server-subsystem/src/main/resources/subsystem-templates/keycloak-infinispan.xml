@@ -34,6 +34,8 @@
                 <local-cache name="sessions"/>
                 <local-cache name="authenticationSessions"/>
                 <local-cache name="offlineSessions"/>
+                <local-cache name="clientSessions"/>
+                <local-cache name="offlineClientSessions"/>
                 <local-cache name="loginFailures"/>
                 <local-cache name="work"/>
                 <local-cache name="authorization">
@@ -94,6 +96,8 @@
                 <distributed-cache name="sessions" mode="SYNC" owners="1"/>
                 <distributed-cache name="authenticationSessions" mode="SYNC" owners="1"/>
                 <distributed-cache name="offlineSessions" mode="SYNC" owners="1"/>
+                <distributed-cache name="clientSessions" mode="SYNC" owners="1"/>
+                <distributed-cache name="offlineClientSessions" mode="SYNC" owners="1"/>
                 <distributed-cache name="loginFailures" mode="SYNC" owners="1"/>
                 <local-cache name="authorization">
                     <eviction max-entries="10000" strategy="LRU"/>

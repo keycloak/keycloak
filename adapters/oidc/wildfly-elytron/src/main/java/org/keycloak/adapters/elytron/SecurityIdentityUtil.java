@@ -30,8 +30,10 @@ import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.wildfly.security.auth.callback.AuthenticationCompleteCallback;
 import org.wildfly.security.auth.callback.EvidenceVerifyCallback;
+import org.wildfly.security.auth.callback.IdentityCredentialCallback;
 import org.wildfly.security.auth.callback.SecurityIdentityCallback;
 import org.wildfly.security.auth.server.SecurityIdentity;
+import org.wildfly.security.credential.BearerTokenCredential;
 import org.wildfly.security.evidence.Evidence;
 import org.wildfly.security.http.HttpAuthenticationException;
 
@@ -63,8 +65,9 @@ final class SecurityIdentityUtil {
                 }
 
                 SecurityIdentityCallback securityIdentityCallback = new SecurityIdentityCallback();
+                IdentityCredentialCallback credentialCallback = new IdentityCredentialCallback(new BearerTokenCredential(KeycloakPrincipal.class.cast(principal).getKeycloakSecurityContext().getTokenString()), true);
 
-                callbackHandler.handle(new Callback[]{AuthenticationCompleteCallback.SUCCEEDED, securityIdentityCallback});
+                callbackHandler.handle(new Callback[]{credentialCallback, AuthenticationCompleteCallback.SUCCEEDED, securityIdentityCallback});
 
                 SecurityIdentity securityIdentity = securityIdentityCallback.getSecurityIdentity();
 

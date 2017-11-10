@@ -27,6 +27,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.sessions.infinispan.CacheDecorators;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
 
@@ -44,9 +45,9 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
 
     private final Map<K, SessionUpdatesList<V>> updates = new HashMap<>();
 
-    public InfinispanChangelogBasedTransaction(KeycloakSession kcSession, String cacheName, Cache<K, SessionEntityWrapper<V>> cache, RemoteCacheInvoker remoteCacheInvoker) {
+    public InfinispanChangelogBasedTransaction(KeycloakSession kcSession, Cache<K, SessionEntityWrapper<V>> cache, RemoteCacheInvoker remoteCacheInvoker) {
         this.kcSession = kcSession;
-        this.cacheName = cacheName;
+        this.cacheName = cache.getName();
         this.cache = cache;
         this.remoteCacheInvoker = remoteCacheInvoker;
     }
@@ -62,7 +63,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
                 return;
             }
 
-            RealmModel realm = kcSession.realms().getRealm(wrappedEntity.getEntity().getRealm());
+            RealmModel realm = kcSession.realms().getRealm(wrappedEntity.getEntity().getRealmId());
 
             myUpdates = new SessionUpdatesList<>(realm, wrappedEntity);
             updates.put(key, myUpdates);
@@ -80,7 +81,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
             throw new IllegalArgumentException("Null entity not allowed");
         }
 
-        RealmModel realm = kcSession.realms().getRealm(entity.getRealm());
+        RealmModel realm = kcSession.realms().getRealm(entity.getRealmId());
         SessionEntityWrapper<V> wrappedEntity = new SessionEntityWrapper<>(entity);
         SessionUpdatesList<V> myUpdates = new SessionUpdatesList<>(realm, wrappedEntity);
         updates.put(key, myUpdates);
@@ -120,7 +121,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
                 return null;
             }
 
-            RealmModel realm = kcSession.realms().getRealm(wrappedEntity.getEntity().getRealm());
+            RealmModel realm = kcSession.realms().getRealm(wrappedEntity.getEntity().getRealmId());
 
             myUpdates = new SessionUpdatesList<>(realm, wrappedEntity);
             updates.put(key, myUpdates);
@@ -172,17 +173,17 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
         switch (operation) {
             case REMOVE:
                 // Just remove it
-                cache
+                CacheDecorators.skipCacheStore(cache)
                         .getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES)
                         .remove(key);
                 break;
             case ADD:
-                cache
+                CacheDecorators.skipCacheStore(cache)
                         .getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES)
                         .put(key, sessionWrapper, task.getLifespanMs(), TimeUnit.MILLISECONDS);
                 break;
             case ADD_IF_ABSENT:
-                SessionEntityWrapper<V> existing = cache.putIfAbsent(key, sessionWrapper);
+                SessionEntityWrapper<V> existing = CacheDecorators.skipCacheStore(cache).putIfAbsent(key, sessionWrapper);
                 if (existing != null) {
                     logger.debugf("Existing entity in cache for key: %s . Will update it", key);
 
@@ -210,11 +211,13 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
             SessionEntityWrapper<V> newVersionEntity = generateNewVersionAndWrapEntity(session, oldVersionEntity.getLocalMetadata());
 
             // Atomic cluster-aware replace
-            replaced = cache.replace(key, oldVersionEntity, newVersionEntity);
+            replaced = CacheDecorators.skipCacheStore(cache).replace(key, oldVersionEntity, newVersionEntity);
 
             // Replace fail. Need to load latest entity from cache, apply updates again and try to replace in cache again
             if (!replaced) {
-                logger.debugf("Replace failed for entity: %s . Will try again", key);
+                if (logger.isDebugEnabled()) {
+                    logger.debugf("Replace failed for entity: %s, old version %s, new version %s. Will try again", key, oldVersionEntity.getVersion(), newVersionEntity.getVersion());
+                }
 
                 oldVersionEntity = cache.get(key);
 

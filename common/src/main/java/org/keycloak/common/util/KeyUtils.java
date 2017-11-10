@@ -40,8 +40,8 @@ public class KeyUtils {
     private KeyUtils() {
     }
 
-    public static SecretKey loadSecretKey(byte[] secret) {
-        return new SecretKeySpec(secret, "HmacSHA256");
+    public static SecretKey loadSecretKey(byte[] secret, String javaAlgorithmName) {
+        return new SecretKeySpec(secret, javaAlgorithmName);
     }
 
     public static KeyPair generateRsaKeyPair(int keysize) {

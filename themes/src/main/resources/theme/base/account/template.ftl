@@ -20,7 +20,7 @@
     </#if>
 </head>
 <body class="admin-console user ${bodyClass}">
-
+        
     <header class="navbar navbar-default navbar-pf navbar-main header">
         <nav class="navbar" role="navigation">
             <div class="navbar-header">
@@ -43,8 +43,8 @@
                                 </div>
                             <li>
                         </#if>
-                        <#if referrer?has_content && referrer.url?has_content><li><a href="${referrer.url?html}" id="referrer">${msg("backTo",referrer.name?html)}</a></li></#if>
-                        <li><a href="${url.logoutUrl?html}">${msg("doSignOut")}</a></li>
+                        <#if referrer?has_content && referrer.url?has_content><li><a href="${referrer.url}" id="referrer">${msg("backTo",referrer.name)}</a></li></#if>
+                        <li><a href="${url.logoutUrl}">${msg("doSignOut")}</a></li>
                     </ul>
                 </div>
             </div>

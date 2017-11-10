@@ -22,22 +22,20 @@ import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.annotation.ClientCacheEntryCreated;
 import org.infinispan.client.hotrod.annotation.ClientCacheEntryModified;
 import org.infinispan.client.hotrod.annotation.ClientCacheEntryRemoved;
-import org.infinispan.client.hotrod.annotation.ClientCacheFailover;
 import org.infinispan.client.hotrod.annotation.ClientListener;
 import org.infinispan.client.hotrod.event.ClientCacheEntryCreatedEvent;
 import org.infinispan.client.hotrod.event.ClientCacheEntryModifiedEvent;
 import org.infinispan.client.hotrod.event.ClientCacheEntryRemovedEvent;
-import org.infinispan.client.hotrod.event.ClientCacheFailoverEvent;
 import org.infinispan.client.hotrod.event.ClientEvent;
 import org.infinispan.context.Flag;
 import org.jboss.logging.Logger;
+import org.keycloak.executors.ExecutorsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
-import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
 import java.util.Random;
-import java.util.logging.Level;
+import java.util.concurrent.ExecutorService;
 import org.infinispan.client.hotrod.VersionedValue;
 
 /**
@@ -49,16 +47,17 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
     protected static final Logger logger = Logger.getLogger(RemoteCacheSessionListener.class);
 
     private Cache<K, SessionEntityWrapper<V>> cache;
-    private RemoteCache<K, V> remoteCache;
+    private RemoteCache<K, SessionEntityWrapper<V>> remoteCache;
     private boolean distributed;
     private String myAddress;
+    private ClientListenerExecutorDecorator<K> executor;
 
 
     protected RemoteCacheSessionListener() {
     }
 
 
-    protected void init(KeycloakSession session, Cache<K, SessionEntityWrapper<V>> cache, RemoteCache<K, V> remoteCache) {
+    protected void init(KeycloakSession session, Cache<K, SessionEntityWrapper<V>> cache, RemoteCache<K, SessionEntityWrapper<V>> remoteCache) {
         this.cache = cache;
         this.remoteCache = remoteCache;
 
@@ -68,6 +67,9 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
         } else {
             this.myAddress = null;
         }
+
+        ExecutorService executor = session.getProvider(ExecutorsProvider.class).getExecutor("client-listener-" + cache.getName());
+        this.executor = new ClientListenerExecutorDecorator<>(executor);
     }
 
 
@@ -76,8 +78,12 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
         K key = (K) event.getKey();
 
         if (shouldUpdateLocalCache(event.getType(), key, event.isCommandRetried())) {
-            // Should load it from remoteStore
-            cache.get(key);
+            this.executor.submit(event, () -> {
+
+                // Should load it from remoteStore
+                cache.get(key);
+
+            });
         }
     }
 
@@ -88,7 +94,11 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
 
         if (shouldUpdateLocalCache(event.getType(), key, event.isCommandRetried())) {
 
-            replaceRemoteEntityInCache(key, event.getVersion());
+            this.executor.submit(event, () -> {
+
+                replaceRemoteEntityInCache(key, event.getVersion());
+
+            });
         }
     }
 
@@ -103,11 +113,19 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
             replaceRetries++;
             
             SessionEntityWrapper<V> localEntityWrapper = cache.get(key);
-            VersionedValue<V> remoteSessionVersioned = remoteCache.getVersioned(key);
-            if (remoteSessionVersioned == null || remoteSessionVersioned.getVersion() < eventVersion) {
+            VersionedValue<SessionEntityWrapper<V>> remoteSessionVersioned = remoteCache.getVersioned(key);
+
+            // Probably already removed
+            if (remoteSessionVersioned == null || remoteSessionVersioned.getValue() == null) {
+                logger.debugf("Entity '%s' not present in remoteCache. Ignoring replace",
+                        key.toString());
+                return;
+            }
+
+            if (remoteSessionVersioned.getVersion() < eventVersion) {
                 try {
-                    logger.debugf("Got replace remote entity event prematurely, will try again. Event version: %d, got: %d",
-                      eventVersion, remoteSessionVersioned == null ? -1 : remoteSessionVersioned.getVersion());
+                    logger.debugf("Got replace remote entity event prematurely for entity '%s', will try again. Event version: %d, got: %d",
+                      key.toString(), eventVersion, remoteSessionVersioned == null ? -1 : remoteSessionVersioned.getVersion());
                     Thread.sleep(new Random().nextInt(sleepInterval));  // using exponential backoff
                     continue;
                 } catch (InterruptedException ex) {
@@ -116,9 +134,9 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
                     sleepInterval = sleepInterval << 1;
                 }
             }
-            SessionEntity remoteSession = (SessionEntity) remoteCache.get(key);
+            SessionEntity remoteSession = remoteSessionVersioned.getValue().getEntity();
 
-            logger.debugf("Read session%s. Entity read from remote cache: %s", replaceRetries > 1 ? "" : " again", remoteSession);
+            logger.debugf("Read session entity from the remote cache: %s . replaceRetries=%d", remoteSession.toString(), replaceRetries);
 
             SessionEntityWrapper<V> sessionWrapper = remoteSession.mergeRemoteEntityWithLocalEntity(localEntityWrapper);
 
@@ -127,7 +145,7 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
                     .replace(key, localEntityWrapper, sessionWrapper);
 
             if (! replaced) {
-                logger.debugf("Did not succeed in merging sessions, will try again: %s", remoteSession);
+                logger.debugf("Did not succeed in merging sessions, will try again: %s", remoteSession.toString());
             }
         } while (replaceRetries < MAXIMUM_REPLACE_RETRIES && ! replaced);
     }
@@ -138,16 +156,15 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
         K key = (K) event.getKey();
 
         if (shouldUpdateLocalCache(event.getType(), key, event.isCommandRetried())) {
-            // We received event from remoteCache, so we won't update it back
-            cache.getAdvancedCache().withFlags(Flag.SKIP_CACHE_STORE, Flag.SKIP_CACHE_LOAD, Flag.IGNORE_RETURN_VALUES)
-                    .remove(key);
+
+            this.executor.submit(event, () -> {
+
+                // We received event from remoteCache, so we won't update it back
+                cache.getAdvancedCache().withFlags(Flag.SKIP_CACHE_STORE, Flag.SKIP_CACHE_LOAD, Flag.IGNORE_RETURN_VALUES)
+                        .remove(key);
+
+            });
         }
-    }
-
-
-    @ClientCacheFailover
-    public void failover(ClientCacheFailoverEvent event) {
-        logger.infof("Received failover event: " + event.toString());
     }
 
 
@@ -184,7 +201,7 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
     }
 
 
-    public static <K, V extends SessionEntity> RemoteCacheSessionListener createListener(KeycloakSession session, Cache<K, SessionEntityWrapper<V>> cache, RemoteCache<K, V> remoteCache) {
+    public static <K, V extends SessionEntity> RemoteCacheSessionListener createListener(KeycloakSession session, Cache<K, SessionEntityWrapper<V>> cache, RemoteCache<K, SessionEntityWrapper<V>> remoteCache) {
         /*boolean isCoordinator = InfinispanUtil.isCoordinator(cache);
 
         // Just cluster coordinator will fetch userSessions from remote cache.

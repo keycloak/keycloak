@@ -29,7 +29,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
-import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.initializer.BaseCacheInitializer;
 import org.keycloak.models.sessions.infinispan.initializer.OfflinePersistentUserSessionLoader;
 import org.keycloak.models.sessions.infinispan.initializer.SessionLoader;
@@ -43,30 +42,40 @@ public class RemoteCacheSessionsLoader implements SessionLoader {
     private static final Logger log = Logger.getLogger(RemoteCacheSessionsLoader.class);
 
 
-    // Javascript to be executed on remote infinispan server (Flag CACHE_MODE_LOCAL assumes that remoteCache is replicated)
+    // Javascript to be executed on remote infinispan server.
+    // Flag CACHE_MODE_LOCAL is optimization used just when remoteCache is replicated as all the entries are available locally. For distributed caches, it can't be used
     private static final String REMOTE_SCRIPT_FOR_LOAD_SESSIONS =
             "function loadSessions() {" +
-            "  var flagClazz = cache.getClass().getClassLoader().loadClass(\"org.infinispan.context.Flag\"); \n" +
-            "  var localFlag = java.lang.Enum.valueOf(flagClazz, \"CACHE_MODE_LOCAL\"); \n" +
-            "  var cacheStream = cache.getAdvancedCache().withFlags([ localFlag ]).entrySet().stream();\n" +
-            "  var result = cacheStream.skip(first).limit(max).collect(java.util.stream.Collectors.toMap(\n" +
-            "    new java.util.function.Function() {\n" +
-            "      apply: function(entry) {\n" +
-            "        return entry.getKey();\n" +
-            "      }\n" +
-            "    },\n" +
-            "    new java.util.function.Function() {\n" +
-            "      apply: function(entry) {\n" +
-            "        return entry.getValue();\n" +
-            "      }\n" +
-            "    }\n" +
-            "  ));\n" +
-            "\n" +
-            "  cacheStream.close();\n" +
-            "  return result;\n" +
-            "};\n" +
-            "\n" +
-            "loadSessions();";
+                    "  var flagClazz = cache.getClass().getClassLoader().loadClass(\"org.infinispan.context.Flag\"); \n" +
+                    "  var localFlag = java.lang.Enum.valueOf(flagClazz, \"CACHE_MODE_LOCAL\"); \n" +
+                    "  var cacheMode = cache.getCacheConfiguration().clustering().cacheMode(); \n" +
+                    "  var canUseLocalFlag = !cacheMode.isClustered() || cacheMode.isReplicated(); \n" +
+
+                    "  var cacheStream; \n" +
+                    "  if (canUseLocalFlag) { \n" +
+                    "      cacheStream = cache.getAdvancedCache().withFlags([ localFlag ]).entrySet().stream();\n" +
+                    "  } else { \n" +
+                    "      cacheStream = cache.getAdvancedCache().withFlags([ ]).entrySet().stream();\n" +
+                    "  }; \n" +
+
+                    "  var result = cacheStream.skip(first).limit(max).collect(java.util.stream.Collectors.toMap(\n" +
+                    "    new java.util.function.Function() {\n" +
+                    "      apply: function(entry) {\n" +
+                    "        return entry.getKey();\n" +
+                    "      }\n" +
+                    "    },\n" +
+                    "    new java.util.function.Function() {\n" +
+                    "      apply: function(entry) {\n" +
+                    "        return entry.getValue();\n" +
+                    "      }\n" +
+                    "    }\n" +
+                    "  ));\n" +
+                    "\n" +
+                    "  cacheStream.close();\n" +
+                    "  return result;\n" +
+                    "};\n" +
+                    "\n" +
+                    "loadSessions();";
 
 
 
@@ -116,9 +125,7 @@ public class RemoteCacheSessionsLoader implements SessionLoader {
         for (Map.Entry<byte[], byte[]> entry : remoteObjects.entrySet()) {
             try {
                 Object key = marshaller.objectFromByteBuffer(entry.getKey());
-                SessionEntity entity = (SessionEntity) marshaller.objectFromByteBuffer(entry.getValue());
-
-                SessionEntityWrapper entityWrapper = new SessionEntityWrapper(entity);
+                SessionEntityWrapper entityWrapper = (SessionEntityWrapper) marshaller.objectFromByteBuffer(entry.getValue());
 
                 decoratedCache.putAsync(key, entityWrapper);
             } catch (Exception e) {
@@ -145,7 +152,8 @@ public class RemoteCacheSessionsLoader implements SessionLoader {
                 .getAdvancedCache().withFlags(Flag.SKIP_CACHE_LOAD, Flag.SKIP_CACHE_STORE)
                 .get(OfflinePersistentUserSessionLoader.PERSISTENT_SESSIONS_LOADED_IN_CURRENT_DC);
 
-        if (cacheName.equals(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME) && sessionsLoaded != null && sessionsLoaded) {
+        if ((cacheName.equals(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME) || (cacheName.equals(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME)))
+                && sessionsLoaded != null && sessionsLoaded) {
             log.debugf("Sessions already loaded in current DC. Skip sessions loading from remote cache '%s'", cacheName);
             return true;
         } else {

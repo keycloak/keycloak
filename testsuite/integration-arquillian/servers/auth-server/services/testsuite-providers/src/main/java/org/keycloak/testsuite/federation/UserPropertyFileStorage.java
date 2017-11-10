@@ -137,7 +137,6 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
         }
     }
 
-
     @Override
     public int getUsersCount(RealmModel realm) {
         return userPasswords.size();

@@ -26,7 +26,7 @@
             </div>
         </#if>
 
-        <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker?html}">
+        <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker}">
 
         <div class="form-group">
             <div class="col-sm-2 col-md-2">
