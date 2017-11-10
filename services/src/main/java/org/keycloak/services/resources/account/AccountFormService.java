@@ -120,8 +120,8 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
         AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm);
         if (authResult != null) {
+            stateChecker = (String) session.getAttribute("state_checker");
             auth = new Auth(realm, authResult.getToken(), authResult.getUser(), client, authResult.getSession(), true);
-            updateCsrfChecks();
             account.setStateChecker(stateChecker);
         }
 
@@ -797,5 +797,13 @@ public class AccountFormService extends AbstractSecuredLocalService {
             user.setUsername(email);
         }
     }
+
+    private void csrfCheck(final MultivaluedMap<String, String> formData) {
+        String formStateChecker = formData.getFirst("stateChecker");
+        if (formStateChecker == null || !formStateChecker.equals(this.stateChecker)) {
+            throw new ForbiddenException();
+        }
+    }
+
 
 }
