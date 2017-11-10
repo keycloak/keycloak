@@ -79,6 +79,7 @@ public interface OAuth2Constants {
     String UI_LOCALES_PARAM = "ui_locales";
 
     String PROMPT = "prompt";
+    String ACR_VALUES = "acr_values";
 
     String MAX_AGE = "max_age";
 
@@ -95,11 +96,13 @@ public interface OAuth2Constants {
 
     String TOKEN_EXCHANGE_GRANT_TYPE="urn:ietf:params:oauth:grant-type:token-exchange";
     String AUDIENCE="audience";
+    String REQUESTED_SUBJECT="requested_subject";
     String SUBJECT_TOKEN="subject_token";
     String SUBJECT_TOKEN_TYPE="subject_token_type";
     String REQUESTED_TOKEN_TYPE="requested_token_type";
     String ISSUED_TOKEN_TYPE="issued_token_type";
     String REQUESTED_ISSUER="requested_issuer";
+    String SUBJECT_ISSUER="subject_issuer";
     String ACCESS_TOKEN_TYPE="urn:ietf:params:oauth:token-type:access_token";
     String REFRESH_TOKEN_TYPE="urn:ietf:params:oauth:token-type:refresh_token";
     String JWT_TOKEN_TYPE="urn:ietf:params:oauth:token-type:jwt";

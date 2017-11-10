@@ -34,6 +34,7 @@ import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.user.SynchronizationResult;
 
 import javax.ws.rs.BadRequestException;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -77,6 +78,36 @@ public class UserStorageProviderResource {
         this.realm = realm;
         this.adminEvent = adminEvent;
     }
+
+    /**
+     * Need this for admin console to display simple name of provider when displaying user detail
+     *
+     * KEYCLOAK-4328
+     *
+     * @param id
+     * @return
+     */
+    @GET
+    @Path("{id}/name")
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String, String> getSimpleName(@PathParam("id") String id) {
+        auth.users().requireQuery();
+
+        ComponentModel model = realm.getComponent(id);
+        if (model == null) {
+            throw new NotFoundException("Could not find component");
+        }
+        if (!model.getProviderType().equals(UserStorageProvider.class.getName())) {
+            throw new NotFoundException("found, but not a UserStorageProvider");
+        }
+
+        Map<String, String> data = new HashMap<>();
+        data.put("id", model.getId());
+        data.put("name", model.getName());
+        return data;
+    }
+
 
     /**
      * Trigger sync of users

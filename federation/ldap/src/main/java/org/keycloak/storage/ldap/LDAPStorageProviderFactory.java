@@ -142,6 +142,10 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .defaultValue("1")
                 .add()
+                .property().name(LDAPConstants.VALIDATE_PASSWORD_POLICY)
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .defaultValue("false")
+                .add()
                 .property().name(LDAPConstants.USE_TRUSTSTORE_SPI)
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .defaultValue("ldapsOnly")
@@ -536,7 +540,7 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                                     LDAPStorageMapper ldapMapper = ldapFedProvider.getMapperManager().getMapper(mapperModel);
                                     ldapMapper.onImportUserFromLDAP(ldapUser, currentUser, currentRealm, false);
                                 }
-
+                                session.userCache().evict(currentRealm, currentUser);
                                 logger.debugf("Updated user from LDAP: %s", currentUser.getUsername());
                                 syncResult.increaseUpdated();
                             } else {

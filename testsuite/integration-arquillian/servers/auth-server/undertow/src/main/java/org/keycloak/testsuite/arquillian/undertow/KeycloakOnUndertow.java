@@ -41,23 +41,21 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.descriptor.api.Descriptor;
 import org.jboss.shrinkwrap.undertow.api.UndertowWebArchive;
 import org.keycloak.common.util.reflections.Reflections;
-import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.services.filters.KeycloakSessionServletFilter;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.resources.KeycloakApplication;
-
+import org.keycloak.testsuite.KeycloakServer;
 import org.keycloak.util.JsonSerialization;
-import java.io.IOException;
+
 import javax.servlet.DispatcherType;
 import javax.servlet.ServletException;
-
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
 
 public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUndertowConfiguration> {
 
@@ -170,6 +168,8 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
             log.info("Skip bootstrap undertow. We are in remote mode");
             return;
         }
+
+        KeycloakServer.configureDataDirectory();
 
         log.infof("Starting auth server on embedded Undertow on: http://%s:%d", configuration.getBindAddress(), configuration.getBindHttpPort());
         long start = System.currentTimeMillis();

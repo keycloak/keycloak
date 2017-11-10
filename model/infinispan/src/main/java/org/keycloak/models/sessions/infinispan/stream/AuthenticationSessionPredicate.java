@@ -17,18 +17,25 @@
 
 package org.keycloak.models.sessions.infinispan.stream;
 
-import java.io.Serializable;
 import java.util.Map;
 import java.util.function.Predicate;
 
 import org.keycloak.models.sessions.infinispan.entities.AuthenticationSessionEntity;
+import org.keycloak.models.sessions.infinispan.util.KeycloakMarshallUtil;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import org.infinispan.commons.marshall.Externalizer;
+import org.infinispan.commons.marshall.MarshallUtil;
+import org.infinispan.commons.marshall.SerializeWith;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class AuthenticationSessionPredicate implements Predicate<Map.Entry<String, AuthenticationSessionEntity>>, Serializable {
+@SerializeWith(AuthenticationSessionPredicate.ExternalizerImpl.class)
+public class AuthenticationSessionPredicate implements Predicate<Map.Entry<String, AuthenticationSessionEntity>> {
 
-    private String realm;
+    private final String realm;
 
     private String client;
 
@@ -76,7 +83,7 @@ public class AuthenticationSessionPredicate implements Predicate<Map.Entry<Strin
     public boolean test(Map.Entry<String, AuthenticationSessionEntity> entry) {
         AuthenticationSessionEntity entity = entry.getValue();
 
-        if (!realm.equals(entity.getRealm())) {
+        if (!realm.equals(entity.getRealmId())) {
             return false;
         }
 
@@ -101,5 +108,39 @@ public class AuthenticationSessionPredicate implements Predicate<Map.Entry<Strin
         }
 
         return true;
+    }
+
+    public static class ExternalizerImpl implements Externalizer<AuthenticationSessionPredicate> {
+
+        private static final int VERSION_1 = 1;
+
+        @Override
+        public void writeObject(ObjectOutput output, AuthenticationSessionPredicate obj) throws IOException {
+            output.writeByte(VERSION_1);
+
+            MarshallUtil.marshallString(obj.realm, output);
+            MarshallUtil.marshallString(obj.user, output);
+            MarshallUtil.marshallString(obj.client, output);
+            KeycloakMarshallUtil.marshall(obj.expired, output);
+
+        }
+
+        @Override
+        public AuthenticationSessionPredicate readObject(ObjectInput input) throws IOException, ClassNotFoundException {
+            switch (input.readByte()) {
+                case VERSION_1:
+                    return readObjectVersion1(input);
+                default:
+                    throw new IOException("Unknown version");
+            }
+        }
+
+        public AuthenticationSessionPredicate readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
+            AuthenticationSessionPredicate res = new AuthenticationSessionPredicate(MarshallUtil.unmarshallString(input));
+            res.user(MarshallUtil.unmarshallString(input));
+            res.client(MarshallUtil.unmarshallString(input));
+            res.expired(KeycloakMarshallUtil.unmarshallInteger(input));
+            return res;
+        }
     }
 }

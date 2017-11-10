@@ -17,6 +17,7 @@
 package org.keycloak.services.resources;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -82,6 +83,11 @@ public class Cors {
         return new Cors(request);
     }
 
+    public Cors builder(ResponseBuilder builder) {
+        this.builder = builder;
+        return this;
+    }
+
     public Cors preflight() {
         preflight = true;
         return this;
@@ -89,6 +95,11 @@ public class Cors {
 
     public Cors auth() {
         auth = true;
+        return this;
+    }
+
+    public Cors allowAllOrigins() {
+        allowedOrigins = Collections.singleton(ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD);
         return this;
     }
 

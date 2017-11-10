@@ -1700,6 +1700,13 @@ module.factory('GroupMembership', function($resource) {
     });
 });
 
+module.factory('RoleMembership', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/roles/:role/users', {
+        realm : '@realm',
+        role : '@role'
+    });
+});
+
 
 module.factory('UserGroupMembership', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/users/:userId/groups', {
@@ -1779,6 +1786,10 @@ module.factory('UserStorageOperations', function($resource) {
         componentId : '@componentId'
     });
     object.unlinkUsers = $resource(authUrl + '/admin/realms/:realm/user-storage/:componentId/unlink-users', {
+        realm : '@realm',
+        componentId : '@componentId'
+    });
+    object.simpleName = $resource(authUrl + '/admin/realms/:realm/user-storage/:componentId/name', {
         realm : '@realm',
         componentId : '@componentId'
     });

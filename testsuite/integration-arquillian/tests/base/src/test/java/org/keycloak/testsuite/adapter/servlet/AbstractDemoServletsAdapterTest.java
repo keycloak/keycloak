@@ -194,7 +194,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
 
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
-        assertCurrentUrlEquals(driver, inputPortal + "/secured/post");
+        assertCurrentUrlEquals(inputPortal + "/secured/post");
         waitForPageToLoad();
         String pageSource = driver.getPageSource();
         assertThat(pageSource, containsString("parameter=hello"));

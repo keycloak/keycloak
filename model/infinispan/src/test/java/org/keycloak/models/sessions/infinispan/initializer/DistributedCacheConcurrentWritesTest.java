@@ -19,7 +19,6 @@ package org.keycloak.models.sessions.infinispan.initializer;
 
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -39,6 +38,7 @@ import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
+import java.util.UUID;
 
 /**
  * Test concurrent writes to distributed cache with usage of atomic replace
@@ -53,6 +53,8 @@ public class DistributedCacheConcurrentWritesTest {
     private static final AtomicInteger failedReplaceCounter = new AtomicInteger(0);
     private static final AtomicInteger failedReplaceCounter2 = new AtomicInteger(0);
 
+    private static final UUID CLIENT_1_UUID = UUID.randomUUID();
+
     public static void main(String[] args) throws Exception {
         CacheWrapper<String, UserSessionEntity> cache1 = createCache("node1");
         CacheWrapper<String, UserSessionEntity> cache2 = createCache("node2");
@@ -60,7 +62,7 @@ public class DistributedCacheConcurrentWritesTest {
         // Create initial item
         UserSessionEntity session = new UserSessionEntity();
         session.setId("123");
-        session.setRealm("foo");
+        session.setRealmId("foo");
         session.setBrokerSessionId("!23123123");
         session.setBrokerUserId(null);
         session.setUser("foo");
@@ -75,7 +77,7 @@ public class DistributedCacheConcurrentWritesTest {
         clientSession.setTimestamp(1234);
         clientSession.setProtocolMappers(new HashSet<>(Arrays.asList("mapper1", "mapper2")));
         clientSession.setRoles(new HashSet<>(Arrays.asList("role1", "role2")));
-        session.getAuthenticatedClientSessions().put("client1", clientSession);
+        session.getAuthenticatedClientSessions().put(CLIENT_1_UUID.toString(), clientSession.getId());
 
         cache1.put("123", session);
 
@@ -170,7 +172,7 @@ public class DistributedCacheConcurrentWritesTest {
     private static UserSessionEntity cloneSession(UserSessionEntity session) {
         UserSessionEntity clone = new UserSessionEntity();
         clone.setId(session.getId());
-        clone.setRealm(session.getRealm());
+        clone.setRealmId(session.getRealmId());
         clone.setNotes(new ConcurrentHashMap<>(session.getNotes()));
         return clone;
     }
@@ -212,7 +214,7 @@ public class DistributedCacheConcurrentWritesTest {
 
     public static CacheWrapper<String, UserSessionEntity> createCache(String nodeName) {
         EmbeddedCacheManager mgr = createManager(nodeName);
-        Cache<String, SessionEntityWrapper<UserSessionEntity>> wrapped = mgr.getCache(InfinispanConnectionProvider.SESSION_CACHE_NAME);
+        Cache<String, SessionEntityWrapper<UserSessionEntity>> wrapped = mgr.getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
         return new CacheWrapper<>(wrapped);
     }
 
@@ -246,7 +248,7 @@ public class DistributedCacheConcurrentWritesTest {
         }
         Configuration distConfig = distConfigBuilder.build();
 
-        cacheManager.defineConfiguration(InfinispanConnectionProvider.SESSION_CACHE_NAME, distConfig);
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, distConfig);
         return cacheManager;
 
     }

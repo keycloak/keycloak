@@ -36,11 +36,18 @@ public class AuthorizationEndpointRequest {
     String nonce;
     Integer maxAge;
     String idpHint;
+    String claims;
     Map<String, String> additionalReqParams = new HashMap<>();
 
     // https://tools.ietf.org/html/rfc7636#section-6.1
     String codeChallenge;
     String codeChallengeMethod;
+
+    String acr;
+
+    public String getAcr() {
+        return acr;
+    }
 
     public String getClientId() {
         return clientId;
@@ -84,6 +91,10 @@ public class AuthorizationEndpointRequest {
 
     public String getIdpHint() {
         return idpHint;
+    }
+
+    public String getClaims() {
+        return claims;
     }
 
     public Map<String, String> getAdditionalReqParams() {

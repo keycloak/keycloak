@@ -63,7 +63,7 @@ public class UserSessionManager {
         }
 
         // Create and persist clientSession
-        AuthenticatedClientSessionModel offlineClientSession = offlineUserSession.getAuthenticatedClientSessions().get(clientSession.getClient().getId());
+        AuthenticatedClientSessionModel offlineClientSession = offlineUserSession.getAuthenticatedClientSessionByClient(clientSession.getClient().getId());
         if (offlineClientSession == null) {
             createOfflineClientSession(user, clientSession, offlineUserSession);
         }
@@ -97,14 +97,14 @@ public class UserSessionManager {
         List<UserSessionModel> userSessions = kcSession.sessions().getOfflineUserSessions(realm, user);
         boolean anyRemoved = false;
         for (UserSessionModel userSession : userSessions) {
-            AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(client.getId());
+            AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
             if (clientSession != null) {
                 if (logger.isTraceEnabled()) {
                     logger.tracef("Removing existing offline token for user '%s' and client '%s' .",
                             user.getUsername(), client.getClientId());
                 }
 
-                clientSession.setUserSession(null);
+                clientSession.detachFromUserSession();
                 persister.removeClientSession(userSession.getId(), client.getId(), true);
                 checkOfflineUserSessionHasClientSessions(realm, user, userSession);
                 anyRemoved = true;
@@ -154,7 +154,8 @@ public class UserSessionManager {
 
     // Check if userSession has any offline clientSessions attached to it. Remove userSession if not
     private void checkOfflineUserSessionHasClientSessions(RealmModel realm, UserModel user, UserSessionModel userSession) {
-        if (userSession.getAuthenticatedClientSessions().size() > 0) {
+        // TODO: Might need optimization to prevent loading client sessions from cache
+        if (! userSession.getAuthenticatedClientSessions().isEmpty()) {
             return;
         }
 

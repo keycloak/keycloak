@@ -20,10 +20,17 @@ package org.keycloak.models.cache.infinispan.events;
 import java.util.Set;
 
 import org.keycloak.models.cache.infinispan.RealmCacheManager;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import org.infinispan.commons.marshall.Externalizer;
+import org.infinispan.commons.marshall.MarshallUtil;
+import org.infinispan.commons.marshall.SerializeWith;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@SerializeWith(RoleUpdatedEvent.ExternalizerImpl.class)
 public class RoleUpdatedEvent extends InvalidationEvent implements RealmCacheInvalidationEvent {
 
     private String roleId;
@@ -51,5 +58,38 @@ public class RoleUpdatedEvent extends InvalidationEvent implements RealmCacheInv
     @Override
     public void addInvalidations(RealmCacheManager realmCache, Set<String> invalidations) {
         realmCache.roleUpdated(containerId, roleName, invalidations);
+    }
+
+    public static class ExternalizerImpl implements Externalizer<RoleUpdatedEvent> {
+
+        private static final int VERSION_1 = 1;
+
+        @Override
+        public void writeObject(ObjectOutput output, RoleUpdatedEvent obj) throws IOException {
+            output.writeByte(VERSION_1);
+
+            MarshallUtil.marshallString(obj.roleId, output);
+            MarshallUtil.marshallString(obj.roleName, output);
+            MarshallUtil.marshallString(obj.containerId, output);
+        }
+
+        @Override
+        public RoleUpdatedEvent readObject(ObjectInput input) throws IOException, ClassNotFoundException {
+            switch (input.readByte()) {
+                case VERSION_1:
+                    return readObjectVersion1(input);
+                default:
+                    throw new IOException("Unknown version");
+            }
+        }
+
+        public RoleUpdatedEvent readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
+            RoleUpdatedEvent res = new RoleUpdatedEvent();
+            res.roleId = MarshallUtil.unmarshallString(input);
+            res.roleName = MarshallUtil.unmarshallString(input);
+            res.containerId = MarshallUtil.unmarshallString(input);
+
+            return res;
+        }
     }
 }

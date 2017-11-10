@@ -19,20 +19,25 @@ package org.keycloak.testsuite.adapter.example.hal;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.IOUtil.loadRealm;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractAdapterTest;
+import org.keycloak.testsuite.arquillian.AppServerTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppServerWelcomePage;
 import org.keycloak.testsuite.util.WaitUtils;
-import org.wildfly.extras.creaper.core.ManagementClient;
+import org.wildfly.extras.creaper.core.online.CliException;
 import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
-import org.wildfly.extras.creaper.core.online.OnlineOptions;
+import org.wildfly.extras.creaper.core.online.operations.Address;
+import org.wildfly.extras.creaper.core.online.operations.OperationException;
+import org.wildfly.extras.creaper.core.online.operations.Operations;
 
 /**
  *
@@ -54,14 +59,13 @@ public class WildflyConsoleProtectionTest extends AbstractAdapterTest {
     }
 
     @Before
-    public void beforeAuthTest() {
-        super.beforeAuthTest();
+    public void beforeConsoleProtectionTest() throws IOException, OperationException {
 
-        try {
-            OnlineManagementClient clientWorkerNodeClient = ManagementClient.online(OnlineOptions
-                    .standalone()
-                    .hostAndPort("localhost", 10190)
-                    .build());
+        try (OnlineManagementClient clientWorkerNodeClient = AppServerTestEnricher.getManagementClient()) {
+
+            Operations operations = new Operations(clientWorkerNodeClient);
+
+            Assume.assumeTrue(operations.exists(Address.subsystem("elytron")));
 
             // Create a realm for both wildfly console and mgmt interface
             clientWorkerNodeClient.execute("/subsystem=keycloak/realm=jboss-infra:add(auth-server-url=http://localhost:8180/auth,realm-public-key=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB)");
@@ -84,7 +88,7 @@ public class WildflyConsoleProtectionTest extends AbstractAdapterTest {
 
             // reload
             clientWorkerNodeClient.execute("reload");
-        } catch (Exception cause) {
+        } catch (CliException cause) {
             throw new RuntimeException("Failed to configure app server", cause);
         }
     }

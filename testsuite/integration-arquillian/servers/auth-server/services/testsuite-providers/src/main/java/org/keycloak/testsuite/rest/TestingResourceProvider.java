@@ -185,6 +185,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
             throw new NotFoundException("Session not found");
         }
 
+        // TODO: Might need optimization to prevent loading client sessions from cache
         return sessionModel.getAuthenticatedClientSessions().size();
     }
 

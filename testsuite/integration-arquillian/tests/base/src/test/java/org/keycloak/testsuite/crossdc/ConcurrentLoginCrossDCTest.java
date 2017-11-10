@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.crossdc;
 
+import org.junit.Assert;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import java.util.List;
@@ -66,6 +67,7 @@ public class ConcurrentLoginCrossDCTest extends ConcurrentLoginTest {
                 .forEach(loadBalancerCtrl::enableBackendNodeByName);
     }
 
+
     @Test
     public void concurrentLoginWithRandomDcFailures() throws Throwable {
         log.info("*********************************************");
@@ -75,7 +77,7 @@ public class ConcurrentLoginCrossDCTest extends ConcurrentLoginTest {
         LoginTask loginTask = null;
 
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().setRedirectStrategy(new LaxRedirectStrategy()).build()) {
-            loginTask = new LoginTask(httpClient, userSessionId, LOGIN_TASK_DELAY_MS, LOGIN_TASK_RETRIES, Arrays.asList(
+            loginTask = new LoginTask(httpClient, userSessionId, LOGIN_TASK_DELAY_MS, LOGIN_TASK_RETRIES, false, Arrays.asList(
               createHttpClientContextForUser(httpClient, "test-user@localhost", "password")
             ));
             HttpUriRequest request = handleLogin(getPageContent(oauth.getLoginFormUrl(), httpClient, HttpClientContext.create()), "test-user@localhost", "password");
@@ -104,8 +106,10 @@ public class ConcurrentLoginCrossDCTest extends ConcurrentLoginTest {
                 int failureIndex = currentInvocarion / INVOCATIONS_BEFORE_SIMULATING_DC_FAILURE;
                 int dcToEnable = failureIndex % 2;
                 int dcToDisable = (failureIndex + 1) % 2;
-                suiteContext.getDcAuthServerBackendsInfo().get(dcToDisable).forEach(c -> loadBalancerCtrl.disableBackendNodeByName(c.getQualifier()));
+
+                // Ensure nodes from dcToEnable are available earlier then previous nodes from dcToDisable are disabled.
                 suiteContext.getDcAuthServerBackendsInfo().get(dcToEnable).forEach(c -> loadBalancerCtrl.enableBackendNodeByName(c.getQualifier()));
+                suiteContext.getDcAuthServerBackendsInfo().get(dcToDisable).forEach(c -> loadBalancerCtrl.disableBackendNodeByName(c.getQualifier()));
             }
         }
     }

@@ -17,8 +17,45 @@
 
 package org.keycloak.models.sessions.infinispan.events;
 
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import org.infinispan.commons.marshall.Externalizer;
+import org.infinispan.commons.marshall.SerializeWith;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@SerializeWith(RemoveAllUserLoginFailuresEvent.ExternalizerImpl.class)
 public class RemoveAllUserLoginFailuresEvent extends SessionClusterEvent {
+
+    public static class ExternalizerImpl implements Externalizer<RemoveAllUserLoginFailuresEvent> {
+
+        private static final int VERSION_1 = 1;
+
+        @Override
+        public void writeObject(ObjectOutput output, RemoveAllUserLoginFailuresEvent obj) throws IOException {
+            output.writeByte(VERSION_1);
+
+            obj.marshallTo(output);
+        }
+
+        @Override
+        public RemoveAllUserLoginFailuresEvent readObject(ObjectInput input) throws IOException, ClassNotFoundException {
+            switch (input.readByte()) {
+                case VERSION_1:
+                    return readObjectVersion1(input);
+                default:
+                    throw new IOException("Unknown version");
+            }
+        }
+
+        public RemoveAllUserLoginFailuresEvent readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
+            RemoveAllUserLoginFailuresEvent res = new RemoveAllUserLoginFailuresEvent();
+            res.unmarshallFrom(input);
+
+            return res;
+        }
+    }
+
 }

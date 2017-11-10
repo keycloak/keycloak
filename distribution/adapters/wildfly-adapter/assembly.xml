@@ -66,6 +66,15 @@
                 <include>layers.conf</include>
             </includes>
         </fileSet>
+        <!-- License Data -->
+        <fileSet>
+            <directory>src/main/resources/licenses/${product.slot}</directory>
+            <outputDirectory>docs/licenses-${product.slot}-adapter</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>target/licenses</directory>
+            <outputDirectory>docs/licenses-${product.slot}-adapter</outputDirectory>
+        </fileSet>
     </fileSets>
     <files>
         <file>

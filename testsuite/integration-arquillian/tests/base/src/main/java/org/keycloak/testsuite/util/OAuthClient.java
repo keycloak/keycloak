@@ -19,6 +19,7 @@ package org.keycloak.testsuite.util;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.apache.http.Header;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -130,6 +131,7 @@ public class OAuthClient {
     private String codeVerifier;
     private String codeChallenge;
     private String codeChallengeMethod;
+    private String origin;
 
     public class LogoutUrlBuilder {
         private final UriBuilder b = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(baseUrl));
@@ -192,6 +194,7 @@ public class OAuthClient {
         codeVerifier = null;
         codeChallenge = null;
         codeChallengeMethod = null;
+        origin = null;
     }
 
     public AuthorizationEndpointResponse doLogin(String username, String password) {
@@ -267,6 +270,9 @@ public class OAuthClient {
             List<NameValuePair> parameters = new LinkedList<NameValuePair>();
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
 
+            if (origin != null) {
+                post.addHeader("Origin", origin);
+            }
             if (code != null) {
                 parameters.add(new BasicNameValuePair(OAuth2Constants.CODE, code));
             }
@@ -404,7 +410,7 @@ public class OAuthClient {
     }
 
     public AccessTokenResponse doTokenExchange(String realm, String token, String targetAudience,
-                                                         String clientId, String clientSecret) throws Exception {
+                                               String clientId, String clientSecret) throws Exception {
         CloseableHttpClient client = newCloseableHttpClient();
         try {
             HttpPost post = new HttpPost(getResourceOwnerPasswordCredentialGrantUrl(realm));
@@ -434,6 +440,40 @@ public class OAuthClient {
             }
 
             UrlEncodedFormEntity formEntity;
+            try {
+                formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
+            post.setEntity(formEntity);
+
+            return new AccessTokenResponse(client.execute(post));
+        } finally {
+            closeClient(client);
+        }
+    }
+
+    public AccessTokenResponse doTokenExchange(String realm, String clientId, String clientSecret, Map<String, String> params) throws Exception {
+        CloseableHttpClient client = newCloseableHttpClient();
+        try {
+            HttpPost post = new HttpPost(getResourceOwnerPasswordCredentialGrantUrl(realm));
+
+            List<NameValuePair> parameters = new LinkedList<NameValuePair>();
+            parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE));
+            for (Map.Entry<String, String> entry : params.entrySet()) {
+                parameters.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
+
+            }
+
+            if (clientSecret != null) {
+                String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
+                post.setHeader("Authorization", authorization);
+            } else {
+                parameters.add(new BasicNameValuePair("client_id", clientId));
+
+            }
+
+           UrlEncodedFormEntity formEntity;
             try {
                 formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
             } catch (UnsupportedEncodingException e) {
@@ -527,6 +567,9 @@ public class OAuthClient {
             List<NameValuePair> parameters = new LinkedList<NameValuePair>();
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.REFRESH_TOKEN));
 
+            if (origin != null) {
+                post.addHeader("Origin", origin);
+            }
             if (refreshToken != null) {
                 parameters.add(new BasicNameValuePair(OAuth2Constants.REFRESH_TOKEN, refreshToken));
             }
@@ -838,6 +881,10 @@ public class OAuthClient {
     	this.codeChallengeMethod = codeChallengeMethod;
     	return this;
     }
+    public OAuthClient origin(String origin) {
+        this.origin = origin;
+        return this;
+    }
 
     public static class AuthorizationEndpointResponse {
 
@@ -915,15 +962,28 @@ public class OAuthClient {
         private int expiresIn;
         private int refreshExpiresIn;
         private String refreshToken;
+        // OIDC Financial API Read Only Profile : scope MUST be returned in the response from Token Endpoint
+        private String scope;
 
         private String error;
         private String errorDescription;
 
+        private Map<String, String> headers;
+
         public AccessTokenResponse(CloseableHttpResponse response) throws Exception {
             try {
                 statusCode = response.getStatusLine().getStatusCode();
-                if (!"application/json".equals(response.getHeaders("Content-Type")[0].getValue())) {
-                    Assert.fail("Invalid content type");
+
+                headers = new HashMap<>();
+
+                for (Header h : response.getAllHeaders()) {
+                    headers.put(h.getName(), h.getValue());
+                }
+
+                Header[] contentTypeHeaders = response.getHeaders("Content-Type");
+                String contentType = (contentTypeHeaders != null && contentTypeHeaders.length > 0) ? contentTypeHeaders[0].getValue() : null;
+                if (!"application/json".equals(contentType)) {
+                    Assert.fail("Invalid content type. Status: " + statusCode + ", contentType: " + contentType);
                 }
 
                 String s = IOUtils.toString(response.getEntity().getContent());
@@ -935,6 +995,11 @@ public class OAuthClient {
                     tokenType = (String) responseJson.get("token_type");
                     expiresIn = (Integer) responseJson.get("expires_in");
                     refreshExpiresIn = (Integer) responseJson.get("refresh_expires_in");
+
+                    // OIDC Financial API Read Only Profile : scope MUST be returned in the response from Token Endpoint
+                    if (responseJson.containsKey(OAuth2Constants.SCOPE)) {
+                        scope = (String) responseJson.get(OAuth2Constants.SCOPE);
+                    }
 
                     if (responseJson.containsKey(OAuth2Constants.REFRESH_TOKEN)) {
                         refreshToken = (String) responseJson.get(OAuth2Constants.REFRESH_TOKEN);
@@ -982,6 +1047,15 @@ public class OAuthClient {
 
         public String getTokenType() {
             return tokenType;
+        }
+
+        // OIDC Financial API Read Only Profile : scope MUST be returned in the response from Token Endpoint
+        public String getScope() {
+            return scope;
+        }
+
+        public Map<String, String> getHeaders() {
+            return headers;
         }
     }
 

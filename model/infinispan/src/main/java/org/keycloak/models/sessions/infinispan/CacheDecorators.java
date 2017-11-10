@@ -26,13 +26,31 @@ import org.infinispan.context.Flag;
  */
 public class CacheDecorators {
 
+    /**
+     * Adds {@link Flag#CACHE_MODE_LOCAL} flag to the cache.
+     * @param cache
+     * @return Cache with the flag applied.
+     */
     public static <K, V> AdvancedCache<K, V> localCache(Cache<K, V> cache) {
         return cache.getAdvancedCache().withFlags(Flag.CACHE_MODE_LOCAL);
     }
 
+    /**
+     * Adds {@link Flag#SKIP_CACHE_LOAD} and {@link Flag#SKIP_CACHE_STORE} flags to the cache.
+     * @param cache
+     * @return Cache with the flags applied.
+     */
     public static <K, V> AdvancedCache<K, V> skipCacheLoaders(Cache<K, V> cache) {
         return cache.getAdvancedCache().withFlags(Flag.SKIP_CACHE_LOAD, Flag.SKIP_CACHE_STORE);
     }
 
+    /**
+     * Adds {@link Flag#SKIP_CACHE_STORE} flag to the cache.
+     * @param cache
+     * @return Cache with the flags applied.
+     */
+    public static <K, V> AdvancedCache<K, V> skipCacheStore(Cache<K, V> cache) {
+        return cache.getAdvancedCache().withFlags(Flag.SKIP_CACHE_STORE);
+    }
 
 }

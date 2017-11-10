@@ -20,11 +20,18 @@ package org.keycloak.models.cache.infinispan.authorization.events;
 import org.keycloak.models.cache.infinispan.authorization.StoreFactoryCacheManager;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.Set;
+import org.infinispan.commons.marshall.Externalizer;
+import org.infinispan.commons.marshall.MarshallUtil;
+import org.infinispan.commons.marshall.SerializeWith;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@SerializeWith(ResourceServerRemovedEvent.ExternalizerImpl.class)
 public class ResourceServerRemovedEvent extends InvalidationEvent implements AuthorizationCacheInvalidationEvent {
 
     private String id;
@@ -50,5 +57,36 @@ public class ResourceServerRemovedEvent extends InvalidationEvent implements Aut
     @Override
     public void addInvalidations(StoreFactoryCacheManager cache, Set<String> invalidations) {
         cache.resourceServerRemoval(id, invalidations);
+    }
+
+    public static class ExternalizerImpl implements Externalizer<ResourceServerRemovedEvent> {
+
+        private static final int VERSION_1 = 1;
+
+        @Override
+        public void writeObject(ObjectOutput output, ResourceServerRemovedEvent obj) throws IOException {
+            output.writeByte(VERSION_1);
+
+            MarshallUtil.marshallString(obj.id, output);
+            MarshallUtil.marshallString(obj.clientId, output);
+        }
+
+        @Override
+        public ResourceServerRemovedEvent readObject(ObjectInput input) throws IOException, ClassNotFoundException {
+            switch (input.readByte()) {
+                case VERSION_1:
+                    return readObjectVersion1(input);
+                default:
+                    throw new IOException("Unknown version");
+            }
+        }
+
+        public ResourceServerRemovedEvent readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
+            ResourceServerRemovedEvent res = new ResourceServerRemovedEvent();
+            res.id = MarshallUtil.unmarshallString(input);
+            res.clientId = MarshallUtil.unmarshallString(input);
+
+            return res;
+        }
     }
 }

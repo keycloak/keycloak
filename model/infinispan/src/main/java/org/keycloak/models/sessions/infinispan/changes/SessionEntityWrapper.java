@@ -20,7 +20,6 @@ package org.keycloak.models.sessions.infinispan.changes;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -29,8 +28,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.infinispan.commons.marshall.Externalizer;
 import org.infinispan.commons.marshall.MarshallUtil;
 import org.infinispan.commons.marshall.SerializeWith;
-import org.keycloak.models.sessions.infinispan.changes.sessions.SessionData;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
+import java.util.HashMap;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -38,10 +38,11 @@ import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 @SerializeWith(SessionEntityWrapper.ExternalizerImpl.class)
 public class SessionEntityWrapper<S extends SessionEntity> {
 
+    private static final Logger log = Logger.getLogger(SessionEntityWrapper.class);
+
     private UUID version;
     private final S entity;
     private final Map<String, String> localMetadata;
-
 
     protected SessionEntityWrapper(UUID version, Map<String, String> localMetadata, S entity) {
         if (version == null) {
@@ -54,13 +55,34 @@ public class SessionEntityWrapper<S extends SessionEntity> {
     }
 
     public SessionEntityWrapper(Map<String, String> localMetadata, S entity) {
-        this(UUID.randomUUID(),localMetadata, entity);
+        this(UUID.randomUUID(), localMetadata, entity);
     }
 
     public SessionEntityWrapper(S entity) {
         this(new ConcurrentHashMap<>(), entity);
     }
 
+    private SessionEntityWrapper(S entity, boolean forTransport) {
+        if (! forTransport) {
+            throw new IllegalArgumentException("This constructor is only for transport entities");
+        }
+
+        this.version = null;
+        this.localMetadata = null;
+        this.entity = entity;
+    }
+
+    public static <S extends SessionEntity> SessionEntityWrapper<S> forTransport(S entity) {
+        return new SessionEntityWrapper<>(entity, true);
+    }
+
+    public SessionEntityWrapper<S> forTransport() {
+        return new SessionEntityWrapper<>(this.entity, true);
+    }
+
+    private boolean isForTransport() {
+        return this.version == null;
+    }
 
     public UUID getVersion() {
         return version;
@@ -70,16 +92,21 @@ public class SessionEntityWrapper<S extends SessionEntity> {
         this.version = version;
     }
 
-
     public S getEntity() {
         return entity;
     }
 
     public String getLocalMetadataNote(String key) {
+        if (isForTransport()) {
+            throw new IllegalStateException("This entity is only intended for transport");
+        }
         return localMetadata.get(key);
     }
 
     public void putLocalMetadataNote(String key, String value) {
+        if (isForTransport()) {
+            throw new IllegalStateException("This entity is only intended for transport");
+        }
         localMetadata.put(key, value);
     }
 
@@ -89,6 +116,9 @@ public class SessionEntityWrapper<S extends SessionEntity> {
     }
 
     public void putLocalMetadataNoteInt(String key, int value) {
+        if (isForTransport()) {
+            throw new IllegalStateException("This entity is only intended for transport");
+        }
         localMetadata.put(key, String.valueOf(value));
     }
 
@@ -124,31 +154,48 @@ public class SessionEntityWrapper<S extends SessionEntity> {
 
     public static class ExternalizerImpl implements Externalizer<SessionEntityWrapper> {
 
+        private static final int VERSION_1 = 1;
 
         @Override
         public void writeObject(ObjectOutput output, SessionEntityWrapper obj) throws IOException {
-            MarshallUtil.marshallUUID(obj.version, output, false);
-            MarshallUtil.marshallMap(obj.localMetadata, output);
-            output.writeObject(obj.getEntity());
+            output.writeByte(VERSION_1);
+
+            final boolean forTransport = obj.isForTransport();
+            output.writeBoolean(forTransport);
+
+            if (! forTransport) {
+                output.writeLong(obj.getVersion().getMostSignificantBits());
+                output.writeLong(obj.getVersion().getLeastSignificantBits());
+                MarshallUtil.marshallMap(obj.localMetadata, output);
+            }
+
+            output.writeObject(obj.entity);
         }
 
 
         @Override
         public SessionEntityWrapper readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-            UUID objVersion = MarshallUtil.unmarshallUUID(input, false);
+            byte version = input.readByte();
 
-            Map<String, String> localMetadata = MarshallUtil.unmarshallMap(input, new MarshallUtil.MapBuilder<String, String, Map<String, String>>() {
+            if (version != VERSION_1) {
+                throw new IOException("Invalid version: " + version);
+            }
+            final boolean forTransport = input.readBoolean();
 
-                @Override
-                public Map<String, String> build(int size) {
-                    return new ConcurrentHashMap<>(size);
+            if (forTransport) {
+                final SessionEntity entity = (SessionEntity) input.readObject();
+                final SessionEntityWrapper res = new SessionEntityWrapper(entity);
+                if (log.isDebugEnabled()) {
+                    log.debugf("Loaded entity from remote store: %s, version=%s, metadata=%s", entity, res.version, res.localMetadata);
                 }
-
-            });
-
-            SessionEntity entity = (SessionEntity) input.readObject();
-
-            return new SessionEntityWrapper<>(objVersion, localMetadata, entity);
+                return res;
+            } else {
+                UUID sessionVersion = new UUID(input.readLong(), input.readLong());
+                HashMap<String, String> map = MarshallUtil.unmarshallMap(input, HashMap::new);
+                final SessionEntity entity = (SessionEntity) input.readObject();
+                log.debugf("Found entity locally: entity=%s, version=%s, metadata=%s", entity, sessionVersion, map);
+                return new SessionEntityWrapper(sessionVersion, map, entity);
+            }
         }
 
     }

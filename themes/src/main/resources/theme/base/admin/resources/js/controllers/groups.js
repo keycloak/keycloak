@@ -1,25 +1,28 @@
-module.controller('GroupListCtrl', function($scope, $route, $q, realm, groups, groupsCount, Groups, GroupsCount, Group, GroupChildren, Notifications, $location, Dialog) {
+module.controller('GroupListCtrl', function($scope, $route, $q, realm, Groups, GroupsCount, Group, GroupChildren, Notifications, $location, Dialog) {
     $scope.realm = realm;
     $scope.groupList = [
         {
             "id" : "realm",
             "name": "Groups",
-            "subGroups" : groups
+            "subGroups" : []
         }
     ];
+
 
     $scope.searchTerms = '';
     $scope.currentPage = 1;
     $scope.currentPageInput = $scope.currentPage;
-    $scope.pageSize = groups.length;
-    $scope.numberOfPages = Math.ceil(groupsCount.count/$scope.pageSize);
-
+    $scope.pageSize = 20;
     $scope.tree = [];
 
     var refreshGroups = function (search) {
+        console.log('refreshGroups');
+
+        var first = ($scope.currentPage * $scope.pageSize) - $scope.pageSize;
+        console.log('first:' + first);
         var queryParams = {
             realm : realm.id,
-            first : ($scope.currentPage * $scope.pageSize) - $scope.pageSize,
+            first : first,
             max : $scope.pageSize
         };
         var countParams = {
@@ -38,8 +41,9 @@ module.controller('GroupListCtrl', function($scope, $route, $q, realm, groups, g
         }, function() {
             promiseGetGroups.reject('Unable to fetch ' + queryParams);
         });
-        var promiseGetGroupsChain   = promiseGetGroups.promise.then(function(entry) {
-            groups = entry;
+        var promiseGetGroupsChain   = promiseGetGroups.promise.then(function(groups) {
+            console.log('*** group call groups size: ' + groups.length);
+            console.log('*** group call groups size: ' + groups.length);
             $scope.groupList = [
                 {
                     "id" : "realm",
@@ -55,11 +59,11 @@ module.controller('GroupListCtrl', function($scope, $route, $q, realm, groups, g
         }, function() {
             promiseCount.reject('Unable to fetch ' + countParams);
         });
-        var promiseCountChain   = promiseCount.promise.then(function(entry) {
-            groupsCount = entry;
+        var promiseCountChain   = promiseCount.promise.then(function(groupsCount) {
             $scope.numberOfPages = Math.ceil(groupsCount.count/$scope.pageSize);
-        });
+         });
     };
+    refreshGroups();
 
     $scope.$watch('currentPage', function(newValue, oldValue) {
         if(newValue !== oldValue) {

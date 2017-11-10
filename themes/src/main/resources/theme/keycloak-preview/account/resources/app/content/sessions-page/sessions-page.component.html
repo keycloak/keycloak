@@ -1,0 +1,60 @@
+<div class="cards-pf">
+    <toolbar #toolbar [filterProps]="filterLabels" [sortProps]="sortLabels" [actionButtons]="actionButtons"></toolbar>
+
+    <div *ngIf="toolbar.activeView === 'LargeCards'" class="container-fluid container-cards-pf">
+        <div class="row row-cards-pf">
+            <large-session-card *ngFor="let session of (sessions | filterby:toolbar.filterBy.prop:toolbar.filterText | orderby:toolbar.sortBy.prop:toolbar.isSortAscending )"
+                    class="col-xs-12 col-sm-6 col-md-4 col-lg-3"
+                    [session]="session">
+            </large-session-card>
+        </div>
+    </div>
+
+    <div *ngIf="toolbar.activeView === 'SmallCards'" class="container-fluid container-cards-pf">
+        <div class="row row-cards-pf">
+            <small-session-card *ngFor="let session of (sessions | filterby:toolbar.filterBy.prop:toolbar.filterText | orderby:toolbar.sortBy.prop:toolbar.isSortAscending )"
+                    class="col-xs-12 col-sm-3 col-md-2"
+                    [session]="session">
+            </small-session-card>
+        </div>
+    </div>
+
+    <div *ngIf="toolbar.activeView === 'List'" class="container-fluid">
+        <div class="page-header">
+            <h1>{{'sessionsHtmlTitle' | translate}}</h1>
+        </div>
+
+        <div class="col-sm-9 content-area">
+
+            <table class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <td>{{'ip' | translate}}</td>
+                        <td>{{'started' | translate}}</td>
+                        <td>{{'lastAccess' | translate}}</td>
+                        <td>{{'expires' | translate}}</td>
+                        <td>{{'clients' | translate}}</td>
+                    </tr>
+                </thead>
+
+                <tbody *ngFor="let item of response">
+                    <tr>
+                        <td>{{item.ipAddress}}</td>
+                        <td>{{item.started * 1000 | date:'medium'}}</td>
+                        <td>{{item.lastAccess * 1000 | date: 'medium'}}</td>
+                        <td>{{item.expires * 1000 | date: 'medium'}}</td>
+                        <td>
+                            <span *ngFor="let client of item.clients">
+                                {{client.clientId}}<br>
+                            </span>
+                        </td>
+                    </tr>
+                </tbody>
+
+            </table>
+
+            <a (click)="logoutAllSessions()" id="logout-all-sessions" href="#/sessions">{{'doLogOutAllSessions' | translate}}</a>
+        </div>
+    </div>
+
+</div>

@@ -130,7 +130,7 @@ class KeycloakHttpServerAuthenticationMechanism implements HttpServerAuthenticat
 
     private SamlDeploymentContext getDeploymentContext(HttpServerRequest request) {
         if (this.deploymentContext == null) {
-            return (SamlDeploymentContext) request.getScope(Scope.APPLICATION).getAttachment(SamlDeploymentContext.class.getName());
+            return (SamlDeploymentContext) request.getScope(Scope.APPLICATION).getAttachment(KeycloakConfigurationServletListener.ADAPTER_DEPLOYMENT_CONTEXT_ATTRIBUTE);
         }
 
         return this.deploymentContext;

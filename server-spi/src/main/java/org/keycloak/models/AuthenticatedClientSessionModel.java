@@ -27,8 +27,17 @@ import org.keycloak.sessions.CommonClientSessionModel;
  */
 public interface AuthenticatedClientSessionModel extends CommonClientSessionModel {
 
-    void setUserSession(UserSessionModel userSession);
+    /**
+     * Detaches the client session from its user session.
+     */
+    void detachFromUserSession();
     UserSessionModel getUserSession();
+
+    String getCurrentRefreshToken();
+    void setCurrentRefreshToken(String currentRefreshToken);
+
+    int getCurrentRefreshTokenUseCount();
+    void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount);
 
     String getNote(String name);
     void setNote(String name, String value);

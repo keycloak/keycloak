@@ -1,0 +1,2 @@
+embed-server --server-config=standalone.xml
+/subsystem=undertow/server=default-server/http-listener=default:write-attribute(name=max-connections,value=${env.HTTP_MAX_CONNECTIONS:500})

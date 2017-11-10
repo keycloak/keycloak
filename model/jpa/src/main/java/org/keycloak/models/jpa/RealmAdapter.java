@@ -391,6 +391,16 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
+    public int getRefreshTokenMaxReuse() {
+        return realm.getRefreshTokenMaxReuse();
+    }
+
+    @Override
+    public void setRefreshTokenMaxReuse(int revokeRefreshTokenReuseCount) {
+        realm.setRefreshTokenMaxReuse(revokeRefreshTokenReuseCount);
+    }
+
+    @Override
     public int getAccessTokenLifespan() {
         return realm.getAccessTokenLifespan();
     }

@@ -1001,7 +1001,7 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
         } else {
             IdentityProvider.update({
                 realm: $scope.realm.realm,
-                id: $scope.identityProvider.internalId
+                alias: $scope.identityProvider.alias
             }, $scope.identityProvider, function () {
                 $route.reload();
                 Notifications.success("The " + $scope.identityProvider.alias + " provider has been updated.");
@@ -1087,6 +1087,10 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
             $scope.changed = true;
         }
     }, true);
+
+    $scope.changeRevokeRefreshToken = function() {
+
+    };
 
     $scope.save = function() {
         $scope.realm.accessTokenLifespan = $scope.realm.accessTokenLifespan.toSeconds();
@@ -1905,6 +1909,9 @@ module.controller('IdentityProviderMapperCreateCtrl', function($scope, realm, id
     $scope.create = true;
     $scope.mapper = { identityProviderAlias: identityProvider.alias, config: {}};
     $scope.mapperTypes = mapperTypes;
+    
+    // make first type the default
+    $scope.mapperType = mapperTypes[Object.keys(mapperTypes)[0]];
 
     $scope.$watch(function() {
         return $location.path();

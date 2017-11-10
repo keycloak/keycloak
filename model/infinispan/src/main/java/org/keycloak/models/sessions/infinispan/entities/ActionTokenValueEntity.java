@@ -45,6 +45,11 @@ public class ActionTokenValueEntity implements ActionTokenValueModel {
         return notes.get(name);
     }
 
+    @Override
+    public String toString() {
+        return String.format("ActionTokenValueEntity [ notes=%s ]", notes.toString());
+    }
+
     public static class ExternalizerImpl implements Externalizer<ActionTokenValueEntity> {
 
         private static final int VERSION_1 = 1;

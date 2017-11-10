@@ -50,6 +50,8 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
 
     // Keep the following constants in sync with arquillian
     public static final String QUALIFIER_NODE_BALANCER = "auth-server-balancer-cross-dc";
+    public static final String QUALIFIER_AUTH_SERVER_DC_0_NODE_1 = "auth-server-${node.name}-cross-dc-0_1";
+    public static final String QUALIFIER_AUTH_SERVER_DC_1_NODE_1 = "auth-server-${node.name}-cross-dc-1_1";
 
     @ArquillianResource
     @LoadBalancer(value = QUALIFIER_NODE_BALANCER)
@@ -208,17 +210,19 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
 
     /**
      * Disables routing requests to the given data center in the load balancer.
-     * @param dcIndex
+     * @param dc
      */
     public void disableDcOnLoadBalancer(DC dc) {
         int dcIndex = dc.ordinal();
         log.infof("Disabling load balancer for dc=%d", dcIndex);
-        this.suiteContext.getDcAuthServerBackendsInfo().get(dcIndex).forEach(c -> loadBalancerCtrl.disableBackendNodeByName(c.getQualifier()));
+        this.suiteContext.getDcAuthServerBackendsInfo().get(dcIndex).forEach(containerInfo -> {
+            loadBalancerCtrl.disableBackendNodeByName(containerInfo.getQualifier());
+        });
     }
 
     /**
      * Enables routing requests to all started nodes to the given data center in the load balancer.
-     * @param dcIndex
+     * @param dc
      */
     public void enableDcOnLoadBalancer(DC dc) {
         int dcIndex = dc.ordinal();
@@ -229,13 +233,15 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
         } else {
             dcNodes.stream()
               .filter(ContainerInfo::isStarted)
-              .forEach(c -> loadBalancerCtrl.enableBackendNodeByName(c.getQualifier()));
+              .forEach(containerInfo -> {
+                  loadBalancerCtrl.enableBackendNodeByName(containerInfo.getQualifier());
+              });
         }
     }
 
     /**
      * Disables routing requests to the given node within the given data center in the load balancer.
-     * @param dcIndex
+     * @param dc
      * @param nodeIndex
      */
     public void disableLoadBalancerNode(DC dc, int nodeIndex) {
@@ -246,7 +252,7 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
 
     /**
      * Enables routing requests to the given node within the given data center in the load balancer.
-     * @param dcIndex
+     * @param dc
      * @param nodeIndex
      */
     public void enableLoadBalancerNode(DC dc, int nodeIndex) {
@@ -264,7 +270,7 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
 
     /**
      * Starts a manually-controlled backend auth-server node in cross-DC scenario.
-     * @param dcIndex
+     * @param dc
      * @param nodeIndex
      * @return Started instance descriptor.
      */
@@ -275,6 +281,8 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
         assertThat((Integer) nodeIndex, lessThan(dcNodes.size()));
         ContainerInfo dcNode = dcNodes.get(nodeIndex);
         assertTrue("Node " + dcNode.getQualifier() + " has to be controlled manually", dcNode.isManual());
+        
+        log.infof("Starting backend node: %s (dcIndex: %d, nodeIndex: %d)", dcNode.getQualifier(), dcIndex, nodeIndex);
         containerController.start(dcNode.getQualifier());
 
         createRESTClientsForNode(dcNode);
@@ -284,7 +292,7 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
 
     /**
      * Stops a manually-controlled backend auth-server node in cross-DC scenario.
-     * @param dcIndex
+     * @param dc
      * @param nodeIndex
      * @return Stopped instance descriptor.
      */
@@ -298,13 +306,15 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
         removeRESTClientsForNode(dcNode);
 
         assertTrue("Node " + dcNode.getQualifier() + " has to be controlled manually", dcNode.isManual());
+        
+        log.infof("Stopping backend node: %s (dcIndex: %d, nodeIndex: %d)", dcNode.getQualifier(), dcIndex, nodeIndex);
         containerController.stop(dcNode.getQualifier());
         return dcNode;
     }
 
     /**
      * Returns stream of all nodes in the given dc that are started manually.
-     * @param dcIndex
+     * @param dc
      * @return
      */
     public Stream<ContainerInfo> getManuallyStartedBackendNodes(DC dc) {
@@ -315,7 +325,7 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
 
     /**
      * Returns stream of all nodes in the given dc that are started automatically.
-     * @param dcIndex
+     * @param dc
      * @return
      */
     public Stream<ContainerInfo> getAutomaticallyStartedBackendNodes(DC dc) {
@@ -378,10 +388,8 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
     private void setTimeOffsetOnAllStartedContainers(int offset) {
         backendTestingClients.entrySet().stream()
                 .filter(testingClientEntry -> testingClientEntry.getKey().isStarted())
-                .forEach(testingClientEntry -> {
-                    KeycloakTestingClient testingClient = testingClientEntry.getValue();
-                    testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(offset)));
-                });
+                .map(testingClientEntry -> testingClientEntry.getValue())
+                .forEach(testingClient -> testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(offset))));
     }
 
     /**

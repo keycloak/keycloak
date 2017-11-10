@@ -26,6 +26,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -161,7 +162,7 @@ public class PersistentUserSessionAdapter implements UserSessionModel {
     }
 
     @Override
-    public void removeAuthenticatedClientSessions(Iterable<String> removedClientUUIDS) {
+    public void removeAuthenticatedClientSessions(Collection<String> removedClientUUIDS) {
         if (removedClientUUIDS == null || ! removedClientUUIDS.iterator().hasNext()) {
             return;
         }

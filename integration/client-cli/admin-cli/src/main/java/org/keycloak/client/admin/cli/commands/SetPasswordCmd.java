@@ -138,7 +138,7 @@ public class SetPasswordCmd extends AbstractAuthOptionsCmd {
     public static String usage() {
         StringWriter sb = new StringWriter();
         PrintWriter out = new PrintWriter(sb);
-        out.println("Usage: " + CMD + " set-password (--username USERNAME | --userid ID) [--password PASSWORD] [ARGUMENTS]");
+        out.println("Usage: " + CMD + " set-password (--username USERNAME | --userid ID) [--new-password PASSWORD] [ARGUMENTS]");
         out.println();
         out.println("Command to reset user's password.");
         out.println();
@@ -167,7 +167,7 @@ public class SetPasswordCmd extends AbstractAuthOptionsCmd {
         out.println("Examples:");
         out.println();
         out.println("Set new temporary password for the user:");
-        out.println("  " + PROMPT + " " + CMD + " set-password -r demorealm --username testuser --password NEWPASS -t");
+        out.println("  " + PROMPT + " " + CMD + " set-password -r demorealm --username testuser --new-password NEWPASS -t");
         out.println();
         out.println();
         out.println("Use '" + CMD + " help' for general information and a list of commands");

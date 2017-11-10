@@ -17,6 +17,8 @@
 
 package org.keycloak.models.sessions.infinispan.remotestore;
 
+import org.infinispan.client.hotrod.exceptions.HotRodClientException;
+import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,6 +34,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask;
+import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
@@ -67,38 +70,55 @@ public class RemoteCacheInvoker {
         SessionUpdateTask.CrossDCMessageStatus status = task.getCrossDCMessageStatus(sessionWrapper);
 
         if (status == SessionUpdateTask.CrossDCMessageStatus.NOT_NEEDED) {
-            logger.debugf("Skip writing to remoteCache for entity '%s' of cache '%s' and operation '%s'", key, cacheName, operation);
+            if (logger.isTraceEnabled()) {
+                logger.tracef("Skip writing to remoteCache for entity '%s' of cache '%s' and operation '%s'", key, cacheName, operation);
+            }
             return;
         }
 
-        long maxIdleTimeMs = context.maxIdleTimeLoader.getMaxIdleTimeMs(realm);
+        long loadedMaxIdleTimeMs = context.maxIdleTimeLoader.getMaxIdleTimeMs(realm);
 
         // Double the timeout to ensure that entry won't expire on remoteCache in case that write of some entities to remoteCache is postponed (eg. userSession.lastSessionRefresh)
-        maxIdleTimeMs = maxIdleTimeMs * 2;
+        final long maxIdleTimeMs = loadedMaxIdleTimeMs * 2;
 
-        logger.debugf("Running task '%s' on remote cache '%s' . Key is '%s'", operation, cacheName, key);
+        if (logger.isTraceEnabled()) {
+            logger.tracef("Running task '%s' on remote cache '%s' . Key is '%s'", operation, cacheName, key);
+        }
 
-        runOnRemoteCache(context.remoteCache, maxIdleTimeMs, key, task, sessionWrapper);
+        Retry.executeWithBackoff((int iteration) -> {
+
+            try {
+                runOnRemoteCache(context.remoteCache, maxIdleTimeMs, key, task, sessionWrapper);
+            } catch (HotRodClientException re) {
+                if (logger.isDebugEnabled()) {
+                    logger.debugf(re, "Failed running task '%s' on remote cache '%s' . Key: '%s', iteration '%s'. Will try to retry the task",
+                            operation, cacheName, key, iteration);
+                }
+
+                // Rethrow the exception. Retry will take care of handle the exception and eventually retry the operation.
+                throw re;
+            }
+
+        }, 10, 10);
     }
 
 
-    private <K, V extends SessionEntity> void runOnRemoteCache(RemoteCache<K, V> remoteCache, long maxIdleMs, K key, SessionUpdateTask<V> task, SessionEntityWrapper<V> sessionWrapper) {
-        V session = sessionWrapper.getEntity();
+    private <K, V extends SessionEntity> void runOnRemoteCache(RemoteCache<K, SessionEntityWrapper<V>> remoteCache, long maxIdleMs, K key, SessionUpdateTask<V> task, SessionEntityWrapper<V> sessionWrapper) {
+        final V session = sessionWrapper.getEntity();
         SessionUpdateTask.CacheOperation operation = task.getOperation(session);
 
         switch (operation) {
             case REMOVE:
-                // REMOVE already handled at remote cache store level
-                //remoteCache.remove(key);
+                remoteCache.remove(key);
                 break;
             case ADD:
-                remoteCache.put(key, session, task.getLifespanMs(), TimeUnit.MILLISECONDS, maxIdleMs, TimeUnit.MILLISECONDS);
+                remoteCache.put(key, sessionWrapper.forTransport(), task.getLifespanMs(), TimeUnit.MILLISECONDS, maxIdleMs, TimeUnit.MILLISECONDS);
                 break;
             case ADD_IF_ABSENT:
                 final int currentTime = Time.currentTime();
-                SessionEntity existing = remoteCache
+                SessionEntityWrapper<V> existing = remoteCache
                         .withFlags(Flag.FORCE_RETURN_VALUE)
-                        .putIfAbsent(key, session, -1, TimeUnit.MILLISECONDS, maxIdleMs, TimeUnit.MILLISECONDS);
+                        .putIfAbsent(key, sessionWrapper.forTransport(), -1, TimeUnit.MILLISECONDS, maxIdleMs, TimeUnit.MILLISECONDS);
                 if (existing != null) {
                     logger.debugf("Existing entity in remote cache for key: %s . Will update it", key);
 
@@ -116,29 +136,32 @@ public class RemoteCacheInvoker {
     }
 
 
-    private <K, V extends SessionEntity> void replace(RemoteCache<K, V> remoteCache, long lifespanMs, long maxIdleMs, K key, SessionUpdateTask<V> task) {
+    private <K, V extends SessionEntity> void replace(RemoteCache<K, SessionEntityWrapper<V>> remoteCache, long lifespanMs, long maxIdleMs, K key, SessionUpdateTask<V> task) {
         boolean replaced = false;
         while (!replaced) {
-            VersionedValue<V> versioned = remoteCache.getVersioned(key);
+            VersionedValue<SessionEntityWrapper<V>> versioned = remoteCache.getVersioned(key);
             if (versioned == null) {
                 logger.warnf("Not found entity to replace for key '%s'", key);
                 return;
             }
 
-            V session = versioned.getValue();
+            SessionEntityWrapper<V> sessionWrapper = versioned.getValue();
+            final V session = sessionWrapper.getEntity();
 
             // Run task on the remote session
             task.runUpdate(session);
 
-            logger.debugf("Before replaceWithVersion. Entity to write version %d: %s", versioned.getVersion(), session);
+            if (logger.isTraceEnabled()) {
+                logger.tracef("Before replaceWithVersion. Entity to write version %d: %s", versioned.getVersion(), session);
+            }
 
-            replaced = remoteCache.replaceWithVersion(key, session, versioned.getVersion(), lifespanMs, TimeUnit.MILLISECONDS, maxIdleMs, TimeUnit.MILLISECONDS);
+            replaced = remoteCache.replaceWithVersion(key, SessionEntityWrapper.forTransport(session), versioned.getVersion(), lifespanMs, TimeUnit.MILLISECONDS, maxIdleMs, TimeUnit.MILLISECONDS);
 
             if (!replaced) {
                 logger.debugf("Failed to replace entity '%s' version %d. Will retry again", key, versioned.getVersion());
             } else {
-                if (logger.isDebugEnabled()) {
-                    logger.debugf("Replaced entity version %d in remote cache: %s", versioned.getVersion(), session);
+                if (logger.isTraceEnabled()) {
+                    logger.tracef("Replaced entity version %d in remote cache: %s", versioned.getVersion(), session);
                 }
             }
         }

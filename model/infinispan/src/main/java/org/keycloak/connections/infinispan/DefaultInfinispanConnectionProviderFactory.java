@@ -30,7 +30,6 @@ import org.infinispan.eviction.EvictionStrategy;
 import org.infinispan.eviction.EvictionType;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
-import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
 import org.infinispan.remoting.transport.Transport;
 import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
 import org.infinispan.transaction.LockingMode;
@@ -42,9 +41,9 @@ import org.keycloak.Config;
 import org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.sessions.infinispan.remotestore.KeycloakRemoteStoreConfigurationBuilder;
 
 import javax.naming.InitialContext;
+import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -158,7 +157,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                 this.nodeName = generateNodeName();
             }
 
-            logger.debugv("Using container managed Infinispan cache container, lookup={1}", cacheContainerLookup);
+            logger.debugv("Using container managed Infinispan cache container, lookup={0}", cacheContainerLookup);
         } catch (Exception e) {
             throw new RuntimeException("Failed to retrieve cache container", e);
         }
@@ -246,23 +245,39 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         if (jdgEnabled) {
             sessionConfigBuilder = new ConfigurationBuilder();
             sessionConfigBuilder.read(sessionCacheConfigurationBase);
-            configureRemoteCacheStore(sessionConfigBuilder, async, InfinispanConnectionProvider.SESSION_CACHE_NAME, KeycloakRemoteStoreConfigurationBuilder.class);
+            configureRemoteCacheStore(sessionConfigBuilder, async, InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, true);
         }
         Configuration sessionCacheConfiguration = sessionConfigBuilder.build();
-        cacheManager.defineConfiguration(InfinispanConnectionProvider.SESSION_CACHE_NAME, sessionCacheConfiguration);
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, sessionCacheConfiguration);
 
         if (jdgEnabled) {
             sessionConfigBuilder = new ConfigurationBuilder();
             sessionConfigBuilder.read(sessionCacheConfigurationBase);
-            configureRemoteCacheStore(sessionConfigBuilder, async, InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME, KeycloakRemoteStoreConfigurationBuilder.class);
+            configureRemoteCacheStore(sessionConfigBuilder, async, InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME, true);
         }
         sessionCacheConfiguration = sessionConfigBuilder.build();
-        cacheManager.defineConfiguration(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME, sessionCacheConfiguration);
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME, sessionCacheConfiguration);
 
         if (jdgEnabled) {
             sessionConfigBuilder = new ConfigurationBuilder();
             sessionConfigBuilder.read(sessionCacheConfigurationBase);
-            configureRemoteCacheStore(sessionConfigBuilder, async, InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME, KeycloakRemoteStoreConfigurationBuilder.class);
+            configureRemoteCacheStore(sessionConfigBuilder, async, InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME, true);
+        }
+        sessionCacheConfiguration = sessionConfigBuilder.build();
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME, sessionCacheConfiguration);
+
+        if (jdgEnabled) {
+            sessionConfigBuilder = new ConfigurationBuilder();
+            sessionConfigBuilder.read(sessionCacheConfigurationBase);
+            configureRemoteCacheStore(sessionConfigBuilder, async, InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME, true);
+        }
+        sessionCacheConfiguration = sessionConfigBuilder.build();
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME, sessionCacheConfiguration);
+
+        if (jdgEnabled) {
+            sessionConfigBuilder = new ConfigurationBuilder();
+            sessionConfigBuilder.read(sessionCacheConfigurationBase);
+            configureRemoteCacheStore(sessionConfigBuilder, async, InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME, true);
         }
         sessionCacheConfiguration = sessionConfigBuilder.build();
         cacheManager.defineConfiguration(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME, sessionCacheConfiguration);
@@ -270,8 +285,10 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         cacheManager.defineConfiguration(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME, sessionCacheConfigurationBase);
 
         // Retrieve caches to enforce rebalance
-        cacheManager.getCache(InfinispanConnectionProvider.SESSION_CACHE_NAME, true);
-        cacheManager.getCache(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME, true);
+        cacheManager.getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, true);
+        cacheManager.getCache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME, true);
+        cacheManager.getCache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME, true);
+        cacheManager.getCache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME, true);
         cacheManager.getCache(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME, true);
         cacheManager.getCache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME, true);
 
@@ -281,7 +298,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         }
 
         if (jdgEnabled) {
-            configureRemoteCacheStore(replicationConfigBuilder, async, InfinispanConnectionProvider.WORK_CACHE_NAME, RemoteStoreConfigurationBuilder.class);
+            configureRemoteCacheStore(replicationConfigBuilder, async, InfinispanConnectionProvider.WORK_CACHE_NAME, false);
         }
 
         Configuration replicationEvictionCacheConfiguration = replicationConfigBuilder.build();
@@ -349,13 +366,13 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     }
 
     // Used for cross-data centers scenario. Usually integration with external JDG server, which itself handles communication between DCs.
-    private void configureRemoteCacheStore(ConfigurationBuilder builder, boolean async, String cacheName, Class<? extends RemoteStoreConfigurationBuilder> configBuilderClass) {
-        String jdgServer = config.get("remoteStoreServer", "localhost");
+    private void configureRemoteCacheStore(ConfigurationBuilder builder, boolean async, String cacheName, boolean sessionCache) {
+        String jdgServer = config.get("remoteStoreHost", "localhost");
         Integer jdgPort = config.getInt("remoteStorePort", 11222);
 
         builder.persistence()
                 .passivation(false)
-                .addStore(configBuilderClass)
+                .addStore(RemoteStoreConfigurationBuilder.class)
                     .fetchPersistentState(false)
                     .ignoreModifications(false)
                     .purgeOnStartup(false)
@@ -377,7 +394,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     }
 
     private void configureRemoteActionTokenCacheStore(ConfigurationBuilder builder, boolean async) {
-        String jdgServer = config.get("remoteStoreServer", "localhost");
+        String jdgServer = config.get("remoteStoreHost", "localhost");
         Integer jdgPort = config.getInt("remoteStorePort", 11222);
 
         builder.persistence()

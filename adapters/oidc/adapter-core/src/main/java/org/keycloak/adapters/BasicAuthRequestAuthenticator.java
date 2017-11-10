@@ -71,9 +71,10 @@ public class BasicAuthRequestAuthenticator extends BearerTokenRequestAuthenticat
         AccessTokenResponse atr=null;        
         try {
             String userpw=new String(Base64.decode(tokenString));
-            String[] parts=userpw.split(":");
-            
-            atr = getToken(parts[0], parts[1]);
+            int seperatorIndex = userpw.indexOf(":");
+            String user = userpw.substring(0, seperatorIndex);
+            String pw = userpw.substring(seperatorIndex + 1);
+            atr = getToken(user, pw);
             tokenString = atr.getToken();
         } catch (Exception e) {
             log.debug("Failed to obtain token", e);
@@ -82,8 +83,8 @@ public class BasicAuthRequestAuthenticator extends BearerTokenRequestAuthenticat
         }
 
         return authenticateToken(exchange, atr.getToken());
-    }
-    
+    } 
+ 
     private AccessTokenResponse getToken(String username, String password) throws Exception {
     	AccessTokenResponse tokenResponse=null;
     	HttpClient client = deployment.getClient();

@@ -339,7 +339,7 @@ public class UserResource {
             UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(session);
 
             // Update lastSessionRefresh with the timestamp from clientSession
-            AuthenticatedClientSessionModel clientSession = session.getAuthenticatedClientSessions().get(clientId);
+            AuthenticatedClientSessionModel clientSession = session.getAuthenticatedClientSessionByClient(clientId);
 
             // Skip if userSession is not for this client
             if (clientSession == null) {

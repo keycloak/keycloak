@@ -28,7 +28,6 @@ import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.cache.VersioningScheme;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
-import org.infinispan.context.Flag;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
@@ -36,32 +35,34 @@ import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.infinispan.util.concurrent.IsolationLevel;
 import org.jgroups.JChannel;
-import org.junit.Ignore;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
+import java.util.UUID;
 
 /**
  * Test concurrent writes to distributed cache with usage of write skew
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@Ignore
+//@Ignore
 public class DistributedCacheWriteSkewTest {
 
     private static final int ITERATION_PER_WORKER = 1000;
 
     private static final AtomicInteger failedReplaceCounter = new AtomicInteger(0);
 
+    private static final UUID CLIENT_1_UUID = UUID.randomUUID();
+
     public static void main(String[] args) throws Exception {
-        Cache<String, UserSessionEntity> cache1 = createManager("node1").getCache(InfinispanConnectionProvider.SESSION_CACHE_NAME);
-        Cache<String, UserSessionEntity> cache2 = createManager("node2").getCache(InfinispanConnectionProvider.SESSION_CACHE_NAME);
+        Cache<String, UserSessionEntity> cache1 = createManager("node1").getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
+        Cache<String, UserSessionEntity> cache2 = createManager("node2").getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
 
         // Create initial item
         UserSessionEntity session = new UserSessionEntity();
         session.setId("123");
-        session.setRealm("foo");
+        session.setRealmId("foo");
         session.setBrokerSessionId("!23123123");
         session.setBrokerUserId(null);
         session.setUser("foo");
@@ -76,7 +77,7 @@ public class DistributedCacheWriteSkewTest {
         clientSession.setTimestamp(1234);
         clientSession.setProtocolMappers(new HashSet<>(Arrays.asList("mapper1", "mapper2")));
         clientSession.setRoles(new HashSet<>(Arrays.asList("role1", "role2")));
-        session.getAuthenticatedClientSessions().put("client1", clientSession);
+        session.getAuthenticatedClientSessions().put(CLIENT_1_UUID.toString(), clientSession.getId());
 
         cache1.put("123", session);
 
@@ -150,6 +151,7 @@ public class DistributedCacheWriteSkewTest {
                         replaced = true;
                     } catch (Exception e) {
                         System.out.println(e);
+                        e.printStackTrace();
                         failedReplaceCounter.incrementAndGet();
                     }
 
@@ -209,7 +211,7 @@ public class DistributedCacheWriteSkewTest {
         }
         Configuration distConfig = distConfigBuilder.build();
 
-        cacheManager.defineConfiguration(InfinispanConnectionProvider.SESSION_CACHE_NAME, distConfig);
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, distConfig);
         return cacheManager;
 
     }

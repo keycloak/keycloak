@@ -50,7 +50,7 @@ public class KeycloakAuthenticationProvider implements AuthenticationProvider {
         for (String role : token.getAccount().getRoles()) {
             grantedAuthorities.add(new KeycloakRole(role));
         }
-        return new KeycloakAuthenticationToken(token.getAccount(), mapAuthorities(grantedAuthorities));
+        return new KeycloakAuthenticationToken(token.getAccount(), token.isInteractive(), mapAuthorities(grantedAuthorities));
     }
 
     private Collection<? extends GrantedAuthority> mapAuthorities(

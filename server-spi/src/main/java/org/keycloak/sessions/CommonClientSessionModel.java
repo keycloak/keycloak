@@ -56,7 +56,6 @@ public interface CommonClientSessionModel {
 
     public static enum Action {
         OAUTH_GRANT,
-        CODE_TO_TOKEN,
         AUTHENTICATE,
         LOGGED_OUT,
         LOGGING_OUT,

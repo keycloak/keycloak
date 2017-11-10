@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-distribution-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.4.0.CR1-SNAPSHOT</version>
+        <version>3.4.1.Final-SNAPSHOT</version>
     </parent>
 
     <artifactId>keycloak-server-dist</artifactId>
@@ -68,7 +68,27 @@
                         </goals>
                         <phase>compile</phase>
                         <configuration>
-                            <config-file>../server-provisioning.xml</config-file>
+                            <config-file>../${keycloak.provisioning.xml}</config-file>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack-server-feature-pack-licenses</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>unpack-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <includeGroupIds>org.keycloak</includeGroupIds>
+                            <includeArtifactIds>keycloak-server-feature-pack</includeArtifactIds>
+                            <includeTypes>zip</includeTypes>
+                            <includes>content/docs/licenses-${product.slot}/**</includes>
+                            <outputDirectory>${project.build.directory}/licenses</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>

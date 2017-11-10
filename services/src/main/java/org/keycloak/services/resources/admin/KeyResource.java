@@ -20,7 +20,7 @@ package org.keycloak.services.resources.admin;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.jose.jws.AlgorithmType;
-import org.keycloak.keys.HmacKeyMetadata;
+import org.keycloak.keys.SecretKeyMetadata;
 import org.keycloak.keys.RsaKeyMetadata;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeyManager;
@@ -65,6 +65,7 @@ public class KeyResource {
         Map<String, String> active = new HashMap<>();
         active.put(AlgorithmType.RSA.name(), keystore.getActiveRsaKey(realm).getKid());
         active.put(AlgorithmType.HMAC.name(), keystore.getActiveHmacKey(realm).getKid());
+        active.put(AlgorithmType.AES.name(), keystore.getActiveAesKey(realm).getKid());
         keys.setActive(active);
 
         List<KeysMetadataRepresentation.KeyMetadataRepresentation> l = new LinkedList<>();
@@ -79,13 +80,22 @@ public class KeyResource {
             r.setCertificate(PemUtils.encodeCertificate(m.getCertificate()));
             l.add(r);
         }
-        for (HmacKeyMetadata m : session.keys().getHmacKeys(realm, true)) {
+        for (SecretKeyMetadata m : session.keys().getHmacKeys(realm, true)) {
             KeysMetadataRepresentation.KeyMetadataRepresentation r = new KeysMetadataRepresentation.KeyMetadataRepresentation();
             r.setProviderId(m.getProviderId());
             r.setProviderPriority(m.getProviderPriority());
             r.setKid(m.getKid());
             r.setStatus(m.getStatus() != null ? m.getStatus().name() : null);
             r.setType(AlgorithmType.HMAC.name());
+            l.add(r);
+        }
+        for (SecretKeyMetadata m : session.keys().getAesKeys(realm, true)) {
+            KeysMetadataRepresentation.KeyMetadataRepresentation r = new KeysMetadataRepresentation.KeyMetadataRepresentation();
+            r.setProviderId(m.getProviderId());
+            r.setProviderPriority(m.getProviderPriority());
+            r.setKid(m.getKid());
+            r.setStatus(m.getStatus() != null ? m.getStatus().name() : null);
+            r.setType(AlgorithmType.AES.name());
             l.add(r);
         }
 

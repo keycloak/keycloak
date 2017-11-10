@@ -328,7 +328,12 @@ public class UserStorageManager implements UserProvider, OnUserCache, OnCreateCo
     public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group) {
         return getGroupMembers(realm, group, -1, -1);
     }
-
+    
+    @Override
+    public List<UserModel> getRoleMembers(RealmModel realm, RoleModel role) {
+        return getRoleMembers(realm, role, -1, -1);
+    }
+    
     @Override
     public UserModel getUserByUsername(String username, RealmModel realm) {
         UserModel user = localStorage().getUserByUsername(username, realm);
@@ -572,6 +577,17 @@ public class UserStorageManager implements UserProvider, OnUserCache, OnCreateCo
                 return rs;
 
             }
+            return Collections.EMPTY_LIST;
+        }, realm, firstResult, maxResults);
+        return importValidation(realm, results);
+    }
+
+    @Override
+    public List<UserModel> getRoleMembers(final RealmModel realm, final RoleModel role, int firstResult, int maxResults) {
+        List<UserModel> results = query((provider, first, max) -> {
+            if (provider instanceof UserQueryProvider) {
+                return ((UserQueryProvider)provider).getRoleMembers(realm, role, first, max);
+            } 
             return Collections.EMPTY_LIST;
         }, realm, firstResult, maxResults);
         return importValidation(realm, results);

@@ -358,6 +358,18 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public int getRefreshTokenMaxReuse() {
+        if (isUpdated()) return updated.getRefreshTokenMaxReuse();
+        return cached.getRefreshTokenMaxReuse();
+    }
+
+    @Override
+    public void setRefreshTokenMaxReuse(int refreshTokenMaxReuse) {
+        getDelegateForUpdate();
+        updated.setRefreshTokenMaxReuse(refreshTokenMaxReuse);
+    }
+
+    @Override
     public int getSsoSessionIdleTimeout() {
         if (isUpdated()) return updated.getSsoSessionIdleTimeout();
         return cached.getSsoSessionIdleTimeout();

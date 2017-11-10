@@ -46,46 +46,84 @@ import static org.keycloak.testsuite.util.URLUtils.currentUrlStartWith;
  */
 public class URLAssert {
 
-    public static void assertCurrentUrlEquals(AbstractPage page) {
-        assertCurrentUrlEquals(page.getDriver(), page);
+    public static void assertCurrentUrlEquals(final AbstractPage page, WebDriver driver) {
+        assertCurrentUrlEquals(page.toString(), driver);
     }
 
-    public static void assertCurrentUrlEquals(WebDriver driver, final AbstractPage page) {
-        String expected = page.toString();
-        assertTrue("Expected URL: " + expected + "; actual: " + driver.getCurrentUrl(),
-                currentUrlEqual(page.toString()));
+    public static void assertCurrentUrlEquals(final String url, WebDriver driver) {
+        DroneUtils.addWebDriver(driver);
+        assertCurrentUrlEquals(url);
+        DroneUtils.removeWebDriver();
     }
 
-    public static void assertCurrentUrlEquals(WebDriver driver, final String url) {
-        assertTrue("Expected URL: " + url + "; actual: " + driver.getCurrentUrl(),
+    public static void assertCurrentUrlEquals(final AbstractPage page) {
+        assertCurrentUrlEquals(page.toString());
+    }
+
+    public static void assertCurrentUrlEquals(final String url) {
+        assertTrue("Expected URL: " + url + "; actual: " + DroneUtils.getCurrentDriver().getCurrentUrl(),
                 currentUrlEqual(url));
     }
 
-    public static void assertCurrentUrlStartsWith(AbstractPage page) {
-        assertCurrentUrlStartsWith(page.getDriver(), page.toString());
+
+    public static void assertCurrentUrlStartsWith(final AbstractPage page, WebDriver driver) {
+        assertCurrentUrlStartsWith(page.toString(), driver);
     }
 
-    public static void assertCurrentUrlStartsWith(WebDriver driver, final String url) {
-        assertTrue("URL expected to begin with:" + url + "; actual URL: " + driver.getCurrentUrl(),
-                currentUrlStartWith(url));
+    public static void assertCurrentUrlStartsWith(final String url, WebDriver driver) {
+        DroneUtils.addWebDriver(driver);
+        assertCurrentUrlStartsWith(url);
+        DroneUtils.removeWebDriver();
+    }
+
+   public static void assertCurrentUrlStartsWith(final AbstractPage page) {
+        assertCurrentUrlStartsWith(page.toString());
+   }
+
+    public static void assertCurrentUrlStartsWith(final String url){
+        assertTrue("URL expected to begin with:" + url + "; actual URL: " + DroneUtils.getCurrentDriver().getCurrentUrl(),
+        currentUrlStartWith(url));
+    }
+
+
+    public static void assertCurrentUrlDoesntStartWith(final AbstractPage page, WebDriver driver) {
+        assertCurrentUrlDoesntStartWith(page.toString(), driver);
+    }
+
+    public static void assertCurrentUrlDoesntStartWith(final String url, WebDriver driver) {
+        DroneUtils.addWebDriver(driver);
+        assertCurrentUrlDoesntStartWith(url);
+        DroneUtils.removeWebDriver();
     }
 
     public static void assertCurrentUrlDoesntStartWith(AbstractPage page) {
-        assertCurrentUrlDoesntStartWith(page.getDriver(), page.toString());
+        assertCurrentUrlDoesntStartWith(page.toString());
     }
 
-    public static void assertCurrentUrlDoesntStartWith(WebDriver driver, final String url) {
-        assertTrue("URL expected NOT to begin with:" + url + "; actual URL: " + driver.getCurrentUrl(),
+    public static void assertCurrentUrlDoesntStartWith(final String url) {
+        assertTrue("URL expected NOT to begin with:" + url + "; actual URL: " + DroneUtils.getCurrentDriver().getCurrentUrl(),
                 currentUrlDoesntStartWith(url));
     }
 
-    public static void assertCurrentUrlStartsWithLoginUrlOf(PageWithLoginUrl page) {
-        assertCurrentUrlStartsWithLoginUrlOf(page.getDriver(), page);
+
+    public static void assertCurrentUrlStartsWithLoginUrlOf(final PageWithLoginUrl page, WebDriver driver) {
+        assertCurrentUrlStartsWithLoginUrlOf(page.getOIDCLoginUrl().toString(), driver);
     }
 
-    public static void assertCurrentUrlStartsWithLoginUrlOf(WebDriver driver, PageWithLoginUrl page) {
-        assertCurrentUrlStartsWith(driver, page.getOIDCLoginUrl().toString());
+    public static void assertCurrentUrlStartsWithLoginUrlOf(final String url, WebDriver driver) {
+        DroneUtils.addWebDriver(driver);
+        assertCurrentUrlStartsWithLoginUrlOf(url);
+        DroneUtils.removeWebDriver();
     }
+
+    public static void assertCurrentUrlStartsWithLoginUrlOf(final PageWithLoginUrl page) {
+        assertCurrentUrlStartsWithLoginUrlOf(page.getOIDCLoginUrl().toString());
+    }
+
+    public static void assertCurrentUrlStartsWithLoginUrlOf(final String url) {
+        assertCurrentUrlStartsWith(url);
+    }
+
 
     public static void assertGetURL(URI url, String accessToken, AssertResponseHandler handler) {
         CloseableHttpClient httpclient = HttpClients.createDefault();

@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.client.hotrod.VersionedValue;
 import org.infinispan.client.hotrod.annotation.ClientCacheEntryCreated;
 import org.infinispan.client.hotrod.annotation.ClientCacheEntryModified;
 import org.infinispan.client.hotrod.annotation.ClientListener;
@@ -112,9 +113,13 @@ public class ConcurrencyJDGRemoteCacheClientListenersTest {
                 Assert.assertEquals(info.val.get(), info.dc2Created.get());
                 Assert.assertEquals(info.val.get() * 2, info.dc1Updated.get());
                 Assert.assertEquals(info.val.get() * 2, info.dc2Updated.get());
-                worker1.cache.remove(entry.getKey());
             }
         } finally {
+            // Remove items
+            for (Map.Entry<String, EntryInfo> entry : state.entrySet()) {
+                worker1.cache.remove(entry.getKey());
+            }
+
             // Finish JVM
             worker1.cache.getCacheManager().stop();
             worker2.cache.getCacheManager().stop();
@@ -151,7 +156,7 @@ public class ConcurrencyJDGRemoteCacheClientListenersTest {
         @ClientCacheEntryCreated
         public void created(ClientCacheEntryCreatedEvent event) {
             String cacheKey = (String) event.getKey();
-            event(cacheKey, true);
+            event(cacheKey, event.getVersion(), true);
 
         }
 
@@ -159,17 +164,25 @@ public class ConcurrencyJDGRemoteCacheClientListenersTest {
         @ClientCacheEntryModified
         public void updated(ClientCacheEntryModifiedEvent event) {
             String cacheKey = (String) event.getKey();
-            event(cacheKey, false);
+            event(cacheKey, event.getVersion(), false);
         }
 
 
-        private void event(String cacheKey, boolean created) {
+        private void event(String cacheKey, long version, boolean created) {
             EntryInfo entryInfo = state.get(cacheKey);
             entryInfo.successfulListenerWrites.incrementAndGet();
 
             totalListenerCalls.incrementAndGet();
 
-            Integer val = remoteCache.get(cacheKey);
+            VersionedValue<Integer> versionedVal = remoteCache.getVersioned(cacheKey);
+
+            if (versionedVal.getVersion() < version) {
+                System.err.println("INCOMPATIBLE VERSION. event version: " + version + ", entity version: " + versionedVal.getVersion());
+                totalErrors.incrementAndGet();
+                return;
+            }
+
+            Integer val = versionedVal.getValue();
             if (val != null) {
                 AtomicInteger dcVal;
                 if (created) {
@@ -187,6 +200,17 @@ public class ConcurrencyJDGRemoteCacheClientListenersTest {
     }
 
 
+    private static void createItems(Cache<String, Integer> cache, int myThreadId) {
+        for (Map.Entry<String, EntryInfo> entry : state.entrySet()) {
+            String cacheKey = entry.getKey();
+            Integer value = entry.getValue().val.get();
+
+            cache.put(cacheKey, value);
+        }
+
+        System.out.println("Worker creating finished: " + myThreadId);
+    }
+
     private static class Worker extends Thread {
 
         private final Cache<String, Integer> cache;
@@ -200,14 +224,7 @@ public class ConcurrencyJDGRemoteCacheClientListenersTest {
 
         @Override
         public void run() {
-            for (Map.Entry<String, EntryInfo> entry : state.entrySet()) {
-                String cacheKey = entry.getKey();
-                Integer value = entry.getValue().val.get();
-
-                this.cache.put(cacheKey, value);
-            }
-
-            System.out.println("Worker creating finished: " + myThreadId);
+            createItems(cache, myThreadId);
 
             for (Map.Entry<String, EntryInfo> entry : state.entrySet()) {
                 String cacheKey = entry.getKey();

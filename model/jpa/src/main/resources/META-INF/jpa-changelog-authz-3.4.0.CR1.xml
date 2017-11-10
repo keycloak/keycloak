@@ -112,4 +112,10 @@
                                  baseTableName="RESOURCE_SERVER_SCOPE" baseColumnNames="RESOURCE_SERVER_ID"
                                  referencedTableName="RESOURCE_SERVER" referencedColumnNames="ID"/>
     </changeSet>
+
+    <changeSet author="glavoie@gmail.com" id="authn-3.4.0.CR1-refresh-token-max-reuse">
+        <addColumn tableName="REALM">
+            <column name="REFRESH_TOKEN_MAX_REUSE" type="INT" defaultValueNumeric="0"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

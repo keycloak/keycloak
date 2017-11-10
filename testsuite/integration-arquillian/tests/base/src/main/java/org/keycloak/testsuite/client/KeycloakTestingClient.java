@@ -90,14 +90,14 @@ public class KeycloakTestingClient {
 
         public <T> T fetch(FetchOnServer function, Class<T> clazz) throws RunOnServerException {
             try {
-                String s = fetch(function);
+                String s = fetchString(function);
                 return JsonSerialization.readValue(s, clazz);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         }
 
-        public String fetch(FetchOnServer function) throws RunOnServerException {
+        public String fetchString(FetchOnServer function) throws RunOnServerException {
             String encoded = SerializationUtil.encode(function);
 
             String result = testing(realm != null ? realm : "master").runOnServer(encoded);

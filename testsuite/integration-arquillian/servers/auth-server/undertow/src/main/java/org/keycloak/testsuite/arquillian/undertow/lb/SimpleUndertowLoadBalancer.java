@@ -17,7 +17,12 @@
 
 package org.keycloak.testsuite.arquillian.undertow.lb;
 
+import java.lang.reflect.Field;
 import java.net.URI;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -34,6 +39,7 @@ import io.undertow.server.handlers.proxy.ProxyHandler;
 import io.undertow.util.AttachmentKey;
 import io.undertow.util.Headers;
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.reflections.Reflections;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import java.util.LinkedHashMap;
 import java.util.StringTokenizer;
@@ -94,7 +100,7 @@ public class SimpleUndertowLoadBalancer {
                     .build();
             undertow.start();
 
-            log.infof("Loadbalancer started and ready to serve requests on http://%s:%d", host, port);
+            log.infof("#### Loadbalancer started and ready to serve requests on http://%s:%d ####", host, port);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -110,11 +116,12 @@ public class SimpleUndertowLoadBalancer {
             lb.removeHost(uri);
             lb.addHost(uri, route);
         });
+        log.infof("Load balancer: enable all nodes. All enabled nodes: %s", lb.toString());
     }
 
     public void disableAllBackendNodes() {
-        log.debugf("Load balancer: disabling all nodes");
         backendNodes.values().forEach(lb::removeHost);
+        log.infof("Load balancer: disabling all nodes");
     }
 
     public void enableBackendNodeByName(String nodeName) {
@@ -122,8 +129,8 @@ public class SimpleUndertowLoadBalancer {
         if (uri == null) {
             throw new IllegalArgumentException("Invalid node: " + nodeName);
         }
-        log.debugf("Load balancer: enabling node %s", nodeName);
         lb.addHost(uri, nodeName);
+        log.infof("Load balancer: enabled node '%s', All enabled nodes: %s", nodeName, lb.toString());
     }
 
     public void disableBackendNodeByName(String nodeName) {
@@ -131,8 +138,8 @@ public class SimpleUndertowLoadBalancer {
         if (uri == null) {
             throw new IllegalArgumentException("Invalid node: " + nodeName);
         }
-        log.debugf("Load balancer: disabling node %s", nodeName);
         lb.removeHost(uri);
+        log.infof("Load balancer: disabled node '%s', All enabled nodes: %s", nodeName, lb.toString());
     }
 
     static Map<String, URI> parseNodes(String nodes) {
@@ -225,6 +232,19 @@ public class SimpleUndertowLoadBalancer {
         }
 
 
+        // For now, overriden just this "addHost" method to avoid adding duplicates
+        @Override
+        public synchronized LoadBalancingProxyClient addHost(URI host, String jvmRoute) {
+            List<String> current = getCurrentHostRoutes();
+            if (current.contains(jvmRoute)) {
+                log.infof("Route '%s' already present. Skip adding", jvmRoute);
+                return this;
+            } else {
+                return super.addHost(host, jvmRoute);
+            }
+        }
+
+
         @Override
         public void getConnection(ProxyTarget target, HttpServerExchange exchange, ProxyCallback<ProxyConnection> callback, long timeout, TimeUnit timeUnit) {
             long timeoutMs = timeUnit.toMillis(timeout);
@@ -233,6 +253,31 @@ public class SimpleUndertowLoadBalancer {
             super.getConnection(target, exchange, callbackDelegate, timeout, timeUnit);
         }
 
+
+        @Override
+        public String toString() {
+            return getCurrentHostRoutes().toString();
+        }
+
+
+        private List<String> getCurrentHostRoutes() {
+            Field hostsField = Reflections.findDeclaredField(LoadBalancingProxyClient.class, "hosts");
+            hostsField.setAccessible(true);
+            Host[] hosts = (Host[]) Reflections.getFieldValue(hostsField, this);
+
+            if (hosts == null) {
+                return Collections.emptyList();
+            }
+
+            List<String> hostRoutes = new LinkedList<>();
+            for (Host host : hosts) {
+                Field hostField = Reflections.findDeclaredField(Host.class, "jvmRoute");
+                hostField.setAccessible(true);
+                String route = Reflections.getFieldValue(hostField, host).toString();
+                hostRoutes.add(route);
+            }
+            return hostRoutes;
+        }
     }
 
 
@@ -308,6 +353,7 @@ public class SimpleUndertowLoadBalancer {
 
         @Override
         public void couldNotResolveBackend(HttpServerExchange exchange) {
+            log.warnf("Could not resolve backend when request to: %s", exchange.getRequestURI());
             delegate.couldNotResolveBackend(exchange);
         }
 

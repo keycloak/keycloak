@@ -30,7 +30,7 @@ import org.keycloak.util.JsonSerialization;
 
 public class ClientPolicyProviderFactory implements PolicyProviderFactory<ClientPolicyRepresentation> {
 
-    private ClientPolicyProvider provider = new ClientPolicyProvider(policy -> toRepresentation(policy, new ClientPolicyRepresentation()));
+    private ClientPolicyProvider provider = new ClientPolicyProvider(policy -> toRepresentation(policy));
 
     @Override
     public String getName() {
@@ -48,7 +48,8 @@ public class ClientPolicyProviderFactory implements PolicyProviderFactory<Client
     }
 
     @Override
-    public ClientPolicyRepresentation toRepresentation(Policy policy, ClientPolicyRepresentation representation) {
+    public ClientPolicyRepresentation toRepresentation(Policy policy) {
+        ClientPolicyRepresentation representation = new ClientPolicyRepresentation();
         representation.setClients(new HashSet<>(Arrays.asList(getClients(policy))));
         return representation;
     }
@@ -75,7 +76,7 @@ public class ClientPolicyProviderFactory implements PolicyProviderFactory<Client
 
     @Override
     public void onExport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorizationProvider) {
-        ClientPolicyRepresentation userRep = toRepresentation(policy, new ClientPolicyRepresentation());
+        ClientPolicyRepresentation userRep = toRepresentation(policy);
         Map<String, String> config = new HashMap<>();
 
         try {

@@ -307,4 +307,14 @@ public abstract class AbstractServletAuthzFunctionalAdapterTest extends Abstract
             assertFalse(wasDenied());
         });
     }
+
+    @Test
+    public void testAccessResourceWithAnyScope() throws Exception {
+        performTests(() -> {
+            login("jdoe", "jdoe");
+            driver.navigate().to(getResourceServerUrl() + "/protected/scopes.jsp");
+            WaitUtils.waitForPageToLoad();
+            assertTrue(hasText("Granted"));
+        });
+    }
 }

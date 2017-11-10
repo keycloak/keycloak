@@ -7,7 +7,7 @@
     <#elseif section = "form">
 <ol id="kc-totp-settings">
     <li>
-        <p>${msg("loginTotpStep1")}</p>
+        <p>${msg("loginTotpStep1")?no_esc}</p>
         </li>
     <li>
         <p>${msg("loginTotpStep2")}</p>

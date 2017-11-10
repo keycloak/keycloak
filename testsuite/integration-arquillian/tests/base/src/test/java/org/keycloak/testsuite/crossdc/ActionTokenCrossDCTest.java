@@ -20,7 +20,7 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.Retry;
+import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.page.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -42,6 +42,8 @@ import org.keycloak.testsuite.arquillian.annotation.JmxInfinispanChannelStatisti
 import org.keycloak.testsuite.arquillian.InfinispanStatistics;
 import org.keycloak.testsuite.arquillian.InfinispanStatistics.Constants;
 import org.keycloak.testsuite.pages.ProceedPage;
+
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.hamcrest.Matchers;
 import static org.hamcrest.Matchers.greaterThan;
@@ -104,8 +106,6 @@ public class ActionTokenCrossDCTest extends AbstractAdminCrossDCTest {
 
         String link = MailUtils.getPasswordResetEmailLink(message);
 
-        Retry.execute(() -> channelStatisticsCrossDc.reset(), 3, 100);
-
         assertSingleStatistics(cacheDc0Node0Statistics, Constants.STAT_CACHE_NUMBER_OF_ENTRIES,
           () -> driver.navigate().to(link),
           Matchers::is
@@ -115,10 +115,21 @@ public class ActionTokenCrossDCTest extends AbstractAdminCrossDCTest {
         proceedPage.clickProceedLink();
         passwordUpdatePage.assertCurrent();
 
-        // Verify that there was at least one message sent via the channel
-        assertSingleStatistics(channelStatisticsCrossDc, Constants.STAT_CHANNEL_SENT_MESSAGES,
-          () -> passwordUpdatePage.changePassword("new-pass", "new-pass"),
-          old -> greaterThan((Comparable) 0l)
+        // Verify that there was at least one message sent via the channel - Even if we did the change on DC0, the message may be sent either from DC0 or DC1. Seems it depends on the actionTokens key ownership.
+        // In case that it was sent from DC1, we will receive it in DC0.
+        assertStatistics(channelStatisticsCrossDc,
+                () -> {
+                    passwordUpdatePage.changePassword("new-pass", "new-pass");
+                },
+                (Map<String, Object> oldStats, Map<String, Object> newStats) -> {
+                    int oldSent = ((Number) oldStats.get(Constants.STAT_CHANNEL_SENT_MESSAGES)).intValue();
+                    int newSent = ((Number) newStats.get(Constants.STAT_CHANNEL_SENT_MESSAGES)).intValue();
+                    int oldReceived = ((Number) oldStats.get(Constants.STAT_CHANNEL_RECEIVED_MESSAGES)).intValue();
+                    int newReceived = ((Number) newStats.get(Constants.STAT_CHANNEL_RECEIVED_MESSAGES)).intValue();
+
+                    log.infof("oldSent: %d, newSent: %d, oldReceived: %d, newReceived: %d", oldSent, newSent, oldReceived, newReceived);
+                    Assert.assertTrue(newSent - oldSent > 0 || newReceived - oldReceived > 0);
+                }
         );
 
         assertEquals("Your account has been updated.", driver.getTitle());

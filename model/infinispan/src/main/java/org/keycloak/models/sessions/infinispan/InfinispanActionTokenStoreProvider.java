@@ -16,11 +16,10 @@
  */
 package org.keycloak.models.sessions.infinispan;
 
-import org.keycloak.cluster.ClusterProvider;
+import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.*;
 
-import org.keycloak.models.cache.infinispan.events.RemoveActionTokensSpecificEvent;
 import org.keycloak.models.sessions.infinispan.entities.ActionTokenValueEntity;
 import org.keycloak.models.sessions.infinispan.entities.ActionTokenReducedKey;
 import java.util.*;
@@ -32,6 +31,8 @@ import org.infinispan.Cache;
  * @author hmlnarik
  */
 public class InfinispanActionTokenStoreProvider implements ActionTokenStoreProvider {
+
+    private static final Logger LOG = Logger.getLogger(InfinispanActionTokenStoreProvider.class);
 
     private final Cache<ActionTokenReducedKey, ActionTokenValueEntity> actionKeyCache;
     private final InfinispanKeycloakTransaction tx;
@@ -58,6 +59,8 @@ public class InfinispanActionTokenStoreProvider implements ActionTokenStoreProvi
         ActionTokenReducedKey tokenKey = new ActionTokenReducedKey(key.getUserId(), key.getActionId(), key.getActionVerificationNonce());
         ActionTokenValueEntity tokenValue = new ActionTokenValueEntity(notes);
 
+        LOG.debugf("Adding used action token to actionTokens cache: %s", tokenKey.toString());
+
         this.tx.put(actionKeyCache, tokenKey, tokenValue, key.getExpiration() - Time.currentTime(), TimeUnit.SECONDS);
     }
 
@@ -68,7 +71,15 @@ public class InfinispanActionTokenStoreProvider implements ActionTokenStoreProvi
         }
 
         ActionTokenReducedKey key = new ActionTokenReducedKey(actionTokenKey.getUserId(), actionTokenKey.getActionId(), actionTokenKey.getActionVerificationNonce());
-        return this.actionKeyCache.getAdvancedCache().get(key);
+
+        ActionTokenValueModel value = this.actionKeyCache.getAdvancedCache().get(key);
+        if (value == null) {
+            LOG.debugf("Not found any value in actionTokens cache for key: %s", key.toString());
+        } else {
+            LOG.debugf("Found value in actionTokens cache for key: %s", key.toString());
+        }
+
+        return value;
     }
     
     @Override
@@ -85,15 +96,5 @@ public class InfinispanActionTokenStoreProvider implements ActionTokenStoreProvi
         }
 
         return value;
-    }
-
-    @Override
-    public void removeAll(String userId, String actionId) {
-        if (userId == null || actionId == null) {
-            return;
-        }
-
-        ClusterProvider cluster = session.getProvider(ClusterProvider.class);
-        this.tx.notify(cluster, InfinispanActionTokenStoreProviderFactory.ACTION_TOKEN_EVENTS, new RemoveActionTokensSpecificEvent(userId, actionId), false);
     }
 }

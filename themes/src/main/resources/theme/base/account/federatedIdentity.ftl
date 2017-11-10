@@ -7,26 +7,36 @@
         </div>
     </div>
 
-    <form action="${url.passwordUrl}" class="form-horizontal" method="post">
-        <#list federatedIdentity.identities as identity>
-            <div class="form-group">
-                <div class="col-sm-2 col-md-2">
-                    <label for="${identity.providerId!}" class="control-label">${identity.displayName!}</label>
-                </div>
-                <div class="col-sm-5 col-md-5">
-                    <input disabled="true" class="form-control" value="${identity.userName!}">
-                </div>
-                <div class="col-sm-5 col-md-5">
-                    <#if identity.connected>
-                        <#if federatedIdentity.removeLinkPossible>
-                            <a href="${identity.actionUrl}" type="submit" id="remove-${identity.providerId!}" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}">${msg("doRemove")}</a>
-                        </#if>
-                    <#else>
-                        <a href="${identity.actionUrl}" type="submit" id="add-${identity.providerId!}" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}">${msg("doAdd")}</a>
-                    </#if>
-                </div>
+    <div id="federated-identities">
+    <#list federatedIdentity.identities as identity>
+        <div class="row margin-bottom">
+            <div class="col-sm-2 col-md-2">
+                <label for="${identity.providerId!}" class="control-label">${identity.displayName!}</label>
             </div>
-        </#list>
-    </form>
+            <div class="col-sm-5 col-md-5">
+                <input disabled="true" class="form-control" value="${identity.userName!}">
+            </div>
+            <div class="col-sm-5 col-md-5">
+                <#if identity.connected>
+                    <#if federatedIdentity.removeLinkPossible>
+                        <form action="${url.socialUrl}" method="post" class="form-inline">
+                            <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker}">
+                            <input type="hidden" id="action" name="action" value="remove">
+                            <input type="hidden" id="providerId" name="providerId" value="${identity.providerId!}">
+                            <button id="remove-link-${identity.providerId!}" class="btn btn-default">${msg("doRemove")}</button>
+                        </form>
+                    </#if>
+                <#else>
+                    <form action="${url.socialUrl}" method="post" class="form-inline">
+                        <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker}">
+                        <input type="hidden" id="action" name="action" value="add">
+                        <input type="hidden" id="providerId" name="providerId" value="${identity.providerId!}">
+                        <button id="add-link-${identity.providerId!}" class="btn btn-default">${msg("doAdd")}</button>
+                    </form>
+                </#if>
+            </div>
+        </div>
+    </#list>
+    </div>
 
 </@layout.mainLayout>

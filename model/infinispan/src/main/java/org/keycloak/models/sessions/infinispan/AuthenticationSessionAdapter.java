@@ -323,7 +323,7 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
         String id = entity.getId();
         entity = new AuthenticationSessionEntity();
         entity.setId(id);
-        entity.setRealm(realm.getId());
+        entity.setRealmId(realm.getId());
         entity.setClientUuid(client.getId());
         entity.setTimestamp(Time.currentTime());
         update();

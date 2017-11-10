@@ -131,6 +131,7 @@ public class MigrationTest extends AbstractKeycloakTest {
         testMigrationTo3_0_0();
         testMigrationTo3_2_0();
         testMigrationTo3_3_0();
+        testMigrationTo3_4_0();
     }
     @Test
     @Migration(versionFrom = "2.2.1.Final")
@@ -213,6 +214,16 @@ public class MigrationTest extends AbstractKeycloakTest {
         if (securityHeaders != null) {
             assertEquals("frame-src 'self'; frame-ancestors 'self'; object-src 'none';",
                     securityHeaders.get("contentSecurityPolicy"));
+        } else {
+            fail("Browser security headers not found");
+        }
+    }
+
+    private void testMigrationTo3_4_0() {
+        Map<String, String> securityHeaders = masterRealm.toRepresentation().getBrowserSecurityHeaders();
+        if (securityHeaders != null) {
+            assertEquals("max-age=31536000; includeSubDomains",
+                    securityHeaders.get("strictTransportSecurity"));
         } else {
             fail("Browser security headers not found");
         }

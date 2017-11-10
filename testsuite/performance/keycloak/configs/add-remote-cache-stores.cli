@@ -1,0 +1,20 @@
+embed-server --server-config=standalone-ha.xml
+
+/subsystem=jgroups/stack=udp/transport=UDP:write-attribute(name=site, value=${env.SITE:dc1})
+/socket-binding-group=standard-sockets/remote-destination-outbound-socket-binding=remote-cache:add(host=${env.INFINISPAN_HOST:localhost}, port=${env.INFINISPAN_PORT:11222})
+
+
+/subsystem=infinispan/cache-container=keycloak:write-attribute(name=module, value=org.keycloak.keycloak-model-infinispan)
+
+/subsystem=infinispan/cache-container=keycloak/replicated-cache=work/store=remote:add(cache=work, fetch-state=false, passivation=false, preload=false, purge=false, remote-servers=["remote-cache"], shared=true)
+/subsystem=infinispan/cache-container=keycloak/replicated-cache=work/store=remote:write-attribute(name=properties, value={rawValues=true, marshaller=org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory})
+
+/subsystem=infinispan/cache-container=keycloak/distributed-cache=sessions/store=custom:add(class=org.keycloak.models.sessions.infinispan.remotestore.KeycloakRemoteStoreConfigurationBuilder, fetch-state=false, passivation=false, preload=false, purge=false, shared=true)
+/subsystem=infinispan/cache-container=keycloak/distributed-cache=sessions/store=custom:write-attribute(name=properties, value={remoteCacheName=sessions, useConfigTemplateFromCache=work})
+
+/subsystem=infinispan/cache-container=keycloak/distributed-cache=offlineSessions/store=custom:add(class=org.keycloak.models.sessions.infinispan.remotestore.KeycloakRemoteStoreConfigurationBuilder, fetch-state=false, passivation=false, preload=false, purge=false, shared=true)
+/subsystem=infinispan/cache-container=keycloak/distributed-cache=offlineSessions/store=custom:write-attribute(name=properties, value={remoteCacheName=offlineSessions, useConfigTemplateFromCache=work})
+
+/subsystem=infinispan/cache-container=keycloak/distributed-cache=loginFailures/store=custom:add(class=org.keycloak.models.sessions.infinispan.remotestore.KeycloakRemoteStoreConfigurationBuilder, fetch-state=false, passivation=false, preload=false, purge=false, shared=true)
+/subsystem=infinispan/cache-container=keycloak/distributed-cache=loginFailures/store=custom:write-attribute(name=properties, value={remoteCacheName=loginFailures, useConfigTemplateFromCache=work})
+

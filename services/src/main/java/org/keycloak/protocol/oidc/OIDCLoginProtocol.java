@@ -29,7 +29,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol;
-import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.oidc.utils.OIDCRedirectUriBuilder;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
@@ -39,7 +38,6 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.ResourceAdminManager;
-import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 
@@ -71,6 +69,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public static final String REQUEST_URI_PARAM = "request_uri";
     public static final String UI_LOCALES_PARAM = OAuth2Constants.UI_LOCALES_PARAM;
     public static final String CLAIMS_PARAM = "claims";
+    public static final String ACR_PARAM = "acr_values";
 
     public static final String LOGOUT_REDIRECT_URI = "OIDC_LOGOUT_REDIRECT_URI";
     public static final String ISSUER = "iss";
@@ -185,9 +184,10 @@ public class OIDCLoginProtocol implements LoginProtocol {
             redirectUri.addParam(OAuth2Constants.STATE, state);
 
         // Standard or hybrid flow
+        String code = null;
         if (responseType.hasResponseType(OIDCResponseType.CODE)) {
-            accessCode.setAction(CommonClientSessionModel.Action.CODE_TO_TOKEN.name());
-            redirectUri.addParam(OAuth2Constants.CODE, accessCode.getCode());
+            code = accessCode.getOrGenerateCode();
+            redirectUri.addParam(OAuth2Constants.CODE, code);
         }
 
         // Implicit or hybrid flow
@@ -205,7 +205,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
                 }
 
                 if (responseType.hasResponseType(OIDCResponseType.CODE)) {
-                    responseBuilder.generateCodeHash(accessCode.getCode());
+                    responseBuilder.generateCodeHash(code);
                 }
 
             }

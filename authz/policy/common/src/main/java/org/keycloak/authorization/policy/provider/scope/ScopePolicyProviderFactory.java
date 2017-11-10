@@ -42,8 +42,8 @@ public class ScopePolicyProviderFactory implements PolicyProviderFactory<ScopePe
     }
 
     @Override
-    public ScopePermissionRepresentation toRepresentation(Policy policy, ScopePermissionRepresentation representation) {
-        return representation;
+    public ScopePermissionRepresentation toRepresentation(Policy policy) {
+        return new ScopePermissionRepresentation();
     }
 
     @Override

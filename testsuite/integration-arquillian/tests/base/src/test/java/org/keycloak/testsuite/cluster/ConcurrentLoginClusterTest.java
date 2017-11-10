@@ -76,7 +76,7 @@ public class ConcurrentLoginClusterTest extends ConcurrentLoginTest {
     @Override
     public void concurrentLoginSingleUser() throws Throwable {
         super.concurrentLoginSingleUser();
-        JGroupsStats stats = testingClient.testing().cache(InfinispanConnectionProvider.SESSION_CACHE_NAME).getJgroupsStats();
+        JGroupsStats stats = testingClient.testing().cache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).getJgroupsStats();
         log.info("JGroups statistics: " + stats.statsAsString());
     }
 

@@ -19,12 +19,9 @@
 package org.keycloak.models.cache.infinispan.authorization.entities;
 
 import org.keycloak.authorization.model.Resource;
-import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.models.cache.infinispan.entities.AbstractRevisioned;
 
-import java.io.Serializable;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 

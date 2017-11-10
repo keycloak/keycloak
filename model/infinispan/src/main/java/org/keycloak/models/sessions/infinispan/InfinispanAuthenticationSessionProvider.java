@@ -22,7 +22,6 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.infinispan.Cache;
-import org.infinispan.context.Flag;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
@@ -72,7 +71,7 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
     public AuthenticationSessionModel createAuthenticationSession(String id, RealmModel realm, ClientModel client) {
         AuthenticationSessionEntity entity = new AuthenticationSessionEntity();
         entity.setId(id);
-        entity.setRealm(realm.getId());
+        entity.setRealmId(realm.getId());
         entity.setTimestamp(Time.currentTime());
         entity.setClientUuid(client.getId());
 

@@ -14,7 +14,10 @@
         <tr>
             <td class="provider">${msg("mobile")}</td>
             <td class="action">
-                <a id="remove-mobile" href="${url.totpRemoveUrl}"><i class="pficon pficon-delete"></i></a>
+                <form action="${url.totpRemoveUrl}" method="post" class="form-inline">
+                    <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker}">
+                    <button id="remove-mobile" class="btn btn-default"><i class="pficon pficon-delete"></i></button>
+                </form>
                 </td>
             </tr>
         </tbody>
@@ -26,7 +29,7 @@
 
 <ol>
     <li>
-        <p>${msg("totpStep1")}</p>
+        <p>${msg("totpStep1")?no_esc}</p>
     </li>
     <li>
         <p>${msg("totpStep2")}</p>
@@ -41,7 +44,7 @@
 <hr/>
 
 <form action="${url.totpUrl}" class="form-horizontal" method="post">
-    <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker?html}">
+    <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker}">
     <div class="form-group">
         <div class="col-sm-2 col-md-2">
             <label for="totp" class="control-label">${msg("authenticatorCode")}</label>

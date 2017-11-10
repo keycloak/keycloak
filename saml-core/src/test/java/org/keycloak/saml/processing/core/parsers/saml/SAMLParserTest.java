@@ -16,25 +16,34 @@
  */
 package org.keycloak.saml.processing.core.parsers.saml;
 
-import org.keycloak.common.util.Base64;
-import org.keycloak.common.util.DerUtils;
-import org.keycloak.dom.saml.v2.assertion.AssertionType;
-import org.keycloak.dom.saml.v2.assertion.NameIDType;
-import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
-import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.security.PrivateKey;
 
+import org.junit.Before;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
-import static org.hamcrest.CoreMatchers.*;
-
+import org.keycloak.common.util.Base64;
+import org.keycloak.common.util.DerUtils;
+import org.keycloak.dom.saml.v2.assertion.AssertionType;
+import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
+import org.keycloak.dom.saml.v2.assertion.AttributeType;
+import org.keycloak.dom.saml.v2.assertion.NameIDType;
+import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
-
-import org.junit.Before;
+import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
 import org.w3c.dom.Element;
 
 /**
@@ -216,4 +225,106 @@ public class SAMLParserTest {
             assertThat(parsedObject, instanceOf(ResponseType.class));
         }
     }
+
+    @Test
+    public void testSaml20AssertionsAnyTypeAttributeValue() throws Exception {
+
+        String[] xmlSamples = {
+                "saml20-assertion-anytype-attribute-value.xml",
+                "saml20-assertion-example.xml"
+        };
+
+        for (String fileName: xmlSamples) {
+            try (InputStream st = SAMLParserTest.class.getResourceAsStream(fileName)) {
+                Object parsedObject = parser.parse(st);
+                assertThat("Problem detected in " + fileName + " sample.", parsedObject, instanceOf(AssertionType.class));
+                checkCheckParsedResult(fileName, (AssertionType)parsedObject);
+            } catch (Exception e) {
+                throw new Exception("Problem detected in " + fileName + " sample.", e);
+            }
+        }
+    }
+
+    private void checkCheckParsedResult(String fileName, AssertionType assertion) throws Exception {
+        AttributeStatementType attributeStatementType = assertion.getAttributeStatements().iterator().next();
+        if ("saml20-assertion-anytype-attribute-value.xml".equals(fileName)) {
+            assertTrue("There has to be 3 attributes", attributeStatementType.getAttributes().size() == 3);
+            for (AttributeStatementType.ASTChoiceType choiceType: attributeStatementType.getAttributes()) {
+                AttributeType attr = choiceType.getAttribute();
+                String attrName = attr.getName();
+                String attrValueStatement = "unexpected value of attribute " + attrName + " of " + fileName;
+                String attrTypeStatement = "unexpected type of attribute " + attrName + " of " + fileName;
+                // test selected attributes
+                if (attrName.equals("attr:type:string")) {
+                    assertEquals(attrValueStatement, attr.getAttributeValue().get(0), "CITIZEN");
+                } else if (attrName.equals("attr:notype:string")) {
+                    assertThat(attrTypeStatement, attr.getAttributeValue().get(0), instanceOf(String.class));
+                    String value = (String)attr.getAttributeValue().get(0);
+                    assertEquals(attrValueStatement, value, "CITIZEN");
+                } else if (attrName.equals("attr:notype:element")) {
+                    assertThat(attrTypeStatement, attr.getAttributeValue().get(0), instanceOf(String.class));
+                    String value = (String)attr.getAttributeValue().get(0);
+                    assertThat(attrValueStatement, value, containsString("hospitaal x"));
+                    value = (String)attr.getAttributeValue().get(1);
+                    assertThat(attrValueStatement, value, containsString("hopital x"));
+                }
+            }
+        } else if ("saml20-assertion-example.xml".equals(fileName)) {
+            assertThat("There has to be 9 attributes", attributeStatementType.getAttributes().size(), is(9));
+            for (AttributeStatementType.ASTChoiceType choiceType: attributeStatementType.getAttributes()) {
+                AttributeType attr = choiceType.getAttribute();
+                String attrName = attr.getName();
+                String attrValueStatement = "unexpected value of attribute " + attrName + " of " + fileName;
+                String attrTypeStatement = "unexpected type of attribute " + attrName + " of " + fileName;
+                // test selected attributes
+                if (attrName.equals("portal_id")) {
+                    assertEquals(attrValueStatement, attr.getAttributeValue().get(0), "060D00000000SHZ");
+                } else if (attrName.equals("organization_id")) {
+                    assertThat(attrTypeStatement, attr.getAttributeValue().get(0), instanceOf(String.class));
+                    String value = (String)attr.getAttributeValue().get(0);
+                    assertThat(attrValueStatement, value, containsString("<n3:stuff xmlns:n3=\"ftp://example.org\">00DD0000000F7L5</n3:stuff>"));
+                } else if (attrName.equals("has_sub_organization")) {
+                    assertThat(attrTypeStatement, attr.getAttributeValue().get(0), instanceOf(String.class));
+                    String value = (String)attr.getAttributeValue().get(0);
+                    assertThat(attrValueStatement, value, containsString("true"));
+                } else if (attrName.equals("anytype_test")) {
+                    assertThat(attrTypeStatement, attr.getAttributeValue().get(0), instanceOf(String.class));
+                    String value = (String)attr.getAttributeValue().get(0);
+                    assertThat(attrValueStatement, value, containsString("<elem2>val2</elem2>"));
+                } else if (attrName.equals("anytype_no_xml_test")) {
+                    assertThat(attrTypeStatement, attr.getAttributeValue().get(0), instanceOf(String.class));
+                    String value = (String)attr.getAttributeValue().get(0);
+                    assertEquals(attrValueStatement, value, "value_no_xml");
+                } else if (attrName.equals("logouturl")) {
+                    assertThat(attrTypeStatement, attr.getAttributeValue().get(0), instanceOf(String.class));
+                    String value = (String)attr.getAttributeValue().get(0);
+                    assertEquals(attrValueStatement, value, "http://www.salesforce.com/security/del_auth/SsoLogoutPage.html");
+                } else if (attrName.equals("nil_value_attribute")) {
+                    assertNull(attrValueStatement, attr.getAttributeValue().get(0));
+                } else if (attrName.equals("status")) {
+                    assertThat(attrTypeStatement, attr.getAttributeValue().get(0), instanceOf(String.class));
+                    String value = (String)attr.getAttributeValue().get(0);
+                    assertThat(attrValueStatement, value, containsString("<status><code><status>XYZ</status></code></status>"));
+                }
+            }
+        } else {
+            throw new RuntimeException("test error: wrong file name to check");
+        }
+    }
+
+    @Test(expected = ParsingException.class)
+    public void testSaml20AssertionsNil1() throws IOException, ParsingException {
+        try (InputStream st = SAMLParserTest.class.getResourceAsStream("saml20-assertion-nil-wrong-1.xml")) {
+            parser.parse(st);
+        }
+    }
+
+    @Test(expected = ParsingException.class)
+    public void testSaml20AssertionsNil2() throws IOException, ParsingException {
+        try (InputStream st = SAMLParserTest.class.getResourceAsStream("saml20-assertion-nil-wrong-2.xml")) {
+            parser.parse(st);
+        }
+    }
+
+
 }

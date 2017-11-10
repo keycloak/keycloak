@@ -395,7 +395,7 @@ public class AuthenticationManager {
     public static void backchannelLogoutUserFromClient(KeycloakSession session, RealmModel realm, UserModel user, ClientModel client, UriInfo uriInfo, HttpHeaders headers) {
         List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
         for (UserSessionModel userSession : userSessions) {
-            AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(client.getId());
+            AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
             if (clientSession != null) {
                 AuthenticationManager.backchannelLogoutClientSession(session, realm, clientSession, null, uriInfo, headers);
                 clientSession.setAction(AuthenticationSessionModel.Action.LOGGED_OUT.name());
@@ -572,6 +572,11 @@ public class AuthenticationManager {
         return uri.getRawPath();
     }
 
+    public static String getAccountCookiePath(RealmModel realm, UriInfo uriInfo) {
+        URI uri = RealmsResource.accountUrl(uriInfo.getBaseUriBuilder()).build(realm.getName());
+        return uri.getRawPath();
+    }
+
     public static void expireCookie(RealmModel realm, String cookieName, String path, boolean httpOnly, ClientConnection connection) {
         logger.debugv("Expiring cookie: {0} path: {1}", cookieName, path);
         boolean secureOnly = realm.getSslRequired().isRequired(connection);;
@@ -710,7 +715,7 @@ public class AuthenticationManager {
         }
 
         if (authSession.getAuthNote(END_AFTER_REQUIRED_ACTIONS) != null) {
-            LoginFormsProvider infoPage = session.getProvider(LoginFormsProvider.class)
+            LoginFormsProvider infoPage = session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authSession)
                     .setSuccess(Messages.ACCOUNT_UPDATED);
             if (authSession.getAuthNote(SET_REDIRECT_URI_AFTER_REQUIRED_ACTIONS) != null) {
                 if (authSession.getRedirectUri() != null) {
@@ -848,8 +853,9 @@ public class AuthenticationManager {
                 authSession.setAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION, execution);
 
                 return session.getProvider(LoginFormsProvider.class)
+                        .setAuthenticationSession(authSession)
                         .setExecution(execution)
-                        .setClientSessionCode(accessCode.getCode())
+                        .setClientSessionCode(accessCode.getOrGenerateCode())
                         .setAccessRequest(realmRoles, resourceRoles, protocolMappers)
                         .createOAuthGrant();
             } else {

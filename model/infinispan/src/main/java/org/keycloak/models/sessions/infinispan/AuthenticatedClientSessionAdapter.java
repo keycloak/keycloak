@@ -24,71 +24,69 @@ import java.util.Set;
 
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.changes.InfinispanChangelogBasedTransaction;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
+import org.keycloak.models.sessions.infinispan.changes.ClientSessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask;
-import org.keycloak.models.sessions.infinispan.changes.UserSessionClientSessionUpdateTask;
+import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask.CacheOperation;
+import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask.CrossDCMessageStatus;
+import org.keycloak.models.sessions.infinispan.changes.Tasks;
 import org.keycloak.models.sessions.infinispan.changes.UserSessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
+import java.util.UUID;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSessionModel {
 
-    private final AuthenticatedClientSessionEntity entity;
+    private AuthenticatedClientSessionEntity entity;
     private final ClientModel client;
-    private final InfinispanUserSessionProvider provider;
-    private final InfinispanChangelogBasedTransaction updateTx;
-    private UserSessionAdapter userSession;
+    private final InfinispanChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx;
+    private final InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx;
+    private UserSessionModel userSession;
 
-    public AuthenticatedClientSessionAdapter(AuthenticatedClientSessionEntity entity, ClientModel client, UserSessionAdapter userSession,
-                                             InfinispanUserSessionProvider provider, InfinispanChangelogBasedTransaction updateTx) {
-        this.provider = provider;
+    public AuthenticatedClientSessionAdapter(AuthenticatedClientSessionEntity entity, ClientModel client,
+                                             UserSessionModel userSession,
+                                             InfinispanChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx,
+                                             InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx) {
+        if (userSession == null) {
+            throw new NullPointerException("userSession must not be null");
+        }
+
         this.entity = entity;
-        this.client = client;
-        this.updateTx = updateTx;
         this.userSession = userSession;
+        this.client = client;
+        this.userSessionUpdateTx = userSessionUpdateTx;
+        this.clientSessionUpdateTx = clientSessionUpdateTx;
     }
 
     private void update(UserSessionUpdateTask task) {
-        updateTx.addTask(userSession.getId(), task);
+        userSessionUpdateTx.addTask(userSession.getId(), task);
     }
 
+    private void update(ClientSessionUpdateTask task) {
+        clientSessionUpdateTx.addTask(entity.getId(), task);
+    }
 
+    /**
+     * Detaches the client session from its user session.
+     * <p>
+     * <b>This method does not delete the client session from user session records, it only removes the client session.</b>
+     * The list of client sessions within user session is updated lazily for performance reasons.
+     */
     @Override
-    public void setUserSession(UserSessionModel userSession) {
-        String clientUUID = client.getId();
-        UserSessionEntity sessionEntity = this.userSession.getEntity();
+    public void detachFromUserSession() {
+        // Intentionally do not remove the clientUUID from the user session, invalid session is handled
+        // as nonexistent in org.keycloak.models.sessions.infinispan.UserSessionAdapter.getAuthenticatedClientSessions()
+        this.userSession = null;
 
-        // Dettach userSession
-        if (userSession == null) {
-            UserSessionUpdateTask task = new UserSessionUpdateTask() {
+        SessionUpdateTask<AuthenticatedClientSessionEntity> removeTask = Tasks.removeSync();
 
-                @Override
-                public void runUpdate(UserSessionEntity sessionEntity) {
-                    sessionEntity.getAuthenticatedClientSessions().remove(clientUUID);
-                }
-
-            };
-            update(task);
-            this.userSession = null;
-        } else {
-            this.userSession = (UserSessionAdapter) userSession;
-            UserSessionUpdateTask task = new UserSessionUpdateTask() {
-
-                @Override
-                public void runUpdate(UserSessionEntity sessionEntity) {
-                    sessionEntity.getAuthenticatedClientSessions().put(clientUUID, entity);
-                }
-
-            };
-            update(task);
-        }
+        clientSessionUpdateTx.addTask(entity.getId(), removeTask);
     }
 
     @Override
@@ -103,10 +101,10 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
 
     @Override
     public void setRedirectUri(String uri) {
-        UserSessionClientSessionUpdateTask task = new UserSessionClientSessionUpdateTask(client.getId()) {
+        ClientSessionUpdateTask task = new ClientSessionUpdateTask() {
 
             @Override
-            protected void runClientSessionUpdate(AuthenticatedClientSessionEntity entity) {
+            public void runUpdate(AuthenticatedClientSessionEntity entity) {
                 entity.setRedirectUri(uri);
             }
 
@@ -137,19 +135,48 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
 
     @Override
     public void setTimestamp(int timestamp) {
-        UserSessionClientSessionUpdateTask task = new UserSessionClientSessionUpdateTask(client.getId()) {
+        ClientSessionUpdateTask task = new ClientSessionUpdateTask() {
 
             @Override
-            protected void runClientSessionUpdate(AuthenticatedClientSessionEntity entity) {
+            public void runUpdate(AuthenticatedClientSessionEntity entity) {
                 entity.setTimestamp(timestamp);
             }
+        };
+
+        update(task);
+    }
+
+    @Override
+    public int getCurrentRefreshTokenUseCount() {
+        return entity.getCurrentRefreshTokenUseCount();
+    }
+
+    @Override
+    public void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount) {
+        ClientSessionUpdateTask task = new ClientSessionUpdateTask() {
 
             @Override
-            public CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<UserSessionEntity> sessionWrapper) {
-                // We usually update lastSessionRefresh at the same time. That would handle it.
-                return CrossDCMessageStatus.NOT_NEEDED;
+            public void runUpdate(AuthenticatedClientSessionEntity entity) {
+                entity.setCurrentRefreshTokenUseCount(currentRefreshTokenUseCount);
             }
+        };
 
+        update(task);
+    }
+
+    @Override
+    public String getCurrentRefreshToken() {
+        return entity.getCurrentRefreshToken();
+    }
+
+    @Override
+    public void setCurrentRefreshToken(String currentRefreshToken) {
+        ClientSessionUpdateTask task = new ClientSessionUpdateTask() {
+
+            @Override
+            public void runUpdate(AuthenticatedClientSessionEntity entity) {
+                entity.setCurrentRefreshToken(currentRefreshToken);
+            }
         };
 
         update(task);
@@ -162,10 +189,10 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
 
     @Override
     public void setAction(String action) {
-        UserSessionClientSessionUpdateTask task = new UserSessionClientSessionUpdateTask(client.getId()) {
+        ClientSessionUpdateTask task = new ClientSessionUpdateTask() {
 
             @Override
-            protected void runClientSessionUpdate(AuthenticatedClientSessionEntity entity) {
+            public void runUpdate(AuthenticatedClientSessionEntity entity) {
                 entity.setAction(action);
             }
 
@@ -181,10 +208,10 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
 
     @Override
     public void setProtocol(String method) {
-        UserSessionClientSessionUpdateTask task = new UserSessionClientSessionUpdateTask(client.getId()) {
+        ClientSessionUpdateTask task = new ClientSessionUpdateTask() {
 
             @Override
-            protected void runClientSessionUpdate(AuthenticatedClientSessionEntity entity) {
+            public void runUpdate(AuthenticatedClientSessionEntity entity) {
                 entity.setAuthMethod(method);
             }
 
@@ -200,10 +227,10 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
 
     @Override
     public void setRoles(Set<String> roles) {
-        UserSessionClientSessionUpdateTask task = new UserSessionClientSessionUpdateTask(client.getId()) {
+        ClientSessionUpdateTask task = new ClientSessionUpdateTask() {
 
             @Override
-            protected void runClientSessionUpdate(AuthenticatedClientSessionEntity entity) {
+            public void runUpdate(AuthenticatedClientSessionEntity entity) {
                 entity.setRoles(roles); // TODO not thread-safe. But we will remove setRoles anyway...?
             }
 
@@ -219,10 +246,10 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
 
     @Override
     public void setProtocolMappers(Set<String> protocolMappers) {
-        UserSessionClientSessionUpdateTask task = new UserSessionClientSessionUpdateTask(client.getId()) {
+        ClientSessionUpdateTask task = new ClientSessionUpdateTask() {
 
             @Override
-            protected void runClientSessionUpdate(AuthenticatedClientSessionEntity entity) {
+            public void runUpdate(AuthenticatedClientSessionEntity entity) {
                 entity.setProtocolMappers(protocolMappers); // TODO not thread-safe. But we will remove setProtocolMappers anyway...?
             }
 
@@ -238,10 +265,10 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
 
     @Override
     public void setNote(String name, String value) {
-        UserSessionClientSessionUpdateTask task = new UserSessionClientSessionUpdateTask(client.getId()) {
+        ClientSessionUpdateTask task = new ClientSessionUpdateTask() {
 
             @Override
-            protected void runClientSessionUpdate(AuthenticatedClientSessionEntity entity) {
+            public void runUpdate(AuthenticatedClientSessionEntity entity) {
                 entity.getNotes().put(name, value);
             }
 
@@ -252,10 +279,10 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
 
     @Override
     public void removeNote(String name) {
-        UserSessionClientSessionUpdateTask task = new UserSessionClientSessionUpdateTask(client.getId()) {
+        ClientSessionUpdateTask task = new ClientSessionUpdateTask() {
 
             @Override
-            protected void runClientSessionUpdate(AuthenticatedClientSessionEntity entity) {
+            public void runUpdate(AuthenticatedClientSessionEntity entity) {
                 entity.getNotes().remove(name);
             }
 

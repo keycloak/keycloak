@@ -17,9 +17,17 @@
 
 package org.keycloak.models.sessions.infinispan.entities;
 
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import org.infinispan.commons.marshall.Externalizer;
+import org.infinispan.commons.marshall.MarshallUtil;
+import org.infinispan.commons.marshall.SerializeWith;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@SerializeWith(LoginFailureEntity.ExternalizerImpl.class)
 public class LoginFailureEntity extends SessionEntity {
 
     private String userId;
@@ -27,6 +35,18 @@ public class LoginFailureEntity extends SessionEntity {
     private int numFailures;
     private long lastFailure;
     private String lastIPFailure;
+
+    public LoginFailureEntity() {
+    }
+
+    private LoginFailureEntity(String realmId, String userId, int failedLoginNotBefore, int numFailures, long lastFailure, String lastIPFailure) {
+        super(realmId);
+        this.userId = userId;
+        this.failedLoginNotBefore = failedLoginNotBefore;
+        this.numFailures = numFailures;
+        this.lastFailure = lastFailure;
+        this.lastIPFailure = lastIPFailure;
+    }
 
     public String getUserId() {
         return userId;
@@ -83,7 +103,7 @@ public class LoginFailureEntity extends SessionEntity {
         LoginFailureEntity that = (LoginFailureEntity) o;
 
         if (userId != null ? !userId.equals(that.userId) : that.userId != null) return false;
-        if (getRealm() != null ? !getRealm().equals(that.getRealm()) : that.getRealm() != null) return false;
+        if (getRealmId() != null ? !getRealmId().equals(that.getRealmId()) : that.getRealmId() != null) return false;
 
 
         return true;
@@ -91,13 +111,51 @@ public class LoginFailureEntity extends SessionEntity {
 
     @Override
     public int hashCode() {
-        int hashCode = getRealm() != null ? getRealm().hashCode() : 0;
+        int hashCode = getRealmId() != null ? getRealmId().hashCode() : 0;
         hashCode = hashCode * 13 + (userId != null ? userId.hashCode() : 0);
         return hashCode;
     }
 
     @Override
     public String toString() {
-        return String.format("LoginFailureEntity [ userId=%s, realm=%s, numFailures=%d ]", userId, getRealm(), numFailures);
+        return String.format("LoginFailureEntity [ userId=%s, realm=%s, numFailures=%d ]", userId, getRealmId(), numFailures);
+    }
+
+    public static class ExternalizerImpl implements Externalizer<LoginFailureEntity> {
+
+        private static final int VERSION_1 = 1;
+
+        @Override
+        public void writeObject(ObjectOutput output, LoginFailureEntity value) throws IOException {
+            output.writeByte(VERSION_1);
+
+            MarshallUtil.marshallString(value.getRealmId(), output);
+            MarshallUtil.marshallString(value.userId, output);
+            output.writeInt(value.failedLoginNotBefore);
+            output.writeInt(value.numFailures);
+            output.writeLong(value.lastFailure);
+            MarshallUtil.marshallString(value.lastIPFailure, output);
+        }
+
+        @Override
+        public LoginFailureEntity readObject(ObjectInput input) throws IOException {
+            switch (input.readByte()) {
+                case VERSION_1:
+                    return readObjectVersion1(input);
+                default:
+                    throw new IOException("Unknown version");
+            }
+        }
+
+        public LoginFailureEntity readObjectVersion1(ObjectInput input) throws IOException {
+            return new LoginFailureEntity(
+              MarshallUtil.unmarshallString(input),
+              MarshallUtil.unmarshallString(input),
+              input.readInt(),
+              input.readInt(),
+              input.readLong(),
+              MarshallUtil.unmarshallString(input)
+            );
+        }
     }
 }

@@ -34,7 +34,7 @@ module.config(function ($httpProvider, $routeProvider) {
         controller: 'AdminAlbumCtrl',
     }).when('/profile', {
         templateUrl: 'partials/profile.html',
-        controller: 'ProfileCtrl',
+        controller: 'ProfileCtrl'
     });
 });
 
@@ -48,6 +48,16 @@ module.controller('GlobalCtrl', function ($scope, $http, $route, $location, Albu
     $scope.deleteAlbum = function (album) {
         new Album(album).$delete({id: album.id}, function () {
             $route.reload();
+        });
+    }
+
+    $scope.requestPathWithAnyProtectedScope = function() {
+        $http.get(apiUrl + '/scope-any').success(function (data) {
+        });
+    }
+
+    $scope.requestPathWithAllProtectedScope = function() {
+        $http.get(apiUrl + '/scope-all').success(function (data) {
         });
     }
 });

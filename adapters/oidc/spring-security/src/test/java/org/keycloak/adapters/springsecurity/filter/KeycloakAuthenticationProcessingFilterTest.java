@@ -53,7 +53,6 @@ import java.util.UUID;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -125,34 +124,6 @@ public class KeycloakAuthenticationProcessingFilterTest {
     }
 
     @Test
-    public void testIsBearerTokenRequest() throws Exception {
-        assertFalse(filter.isBearerTokenRequest(request));
-        this.setBearerAuthHeader(request);
-        assertTrue(filter.isBearerTokenRequest(request));
-    }
-
-    @Test
-    public void testIsBearerTokenRequestCaseInsensitive() throws Exception {
-        assertFalse(filter.isBearerTokenRequest(request));
-        this.setAuthorizationHeader(request, "bearer");
-        assertTrue(filter.isBearerTokenRequest(request));
-    }
-
-    @Test
-    public void testIsBasicAuthRequest() throws Exception {
-        assertFalse(filter.isBasicAuthRequest(request));
-        this.setBasicAuthHeader(request);
-        assertTrue(filter.isBasicAuthRequest(request));
-    }
-
-    @Test
-    public void testIsBasicAuthRequestCaseInsensitive() throws Exception {
-        assertFalse(filter.isBasicAuthRequest(request));
-        this.setAuthorizationHeader(request, "basic");
-        assertTrue(filter.isBasicAuthRequest(request));
-    }
-
-    @Test
     public void testAttemptAuthenticationExpectRedirect() throws Exception {
         when(keycloakDeployment.getAuthUrl()).thenReturn(KeycloakUriBuilder.fromUri("http://localhost:8080/auth"));
         when(keycloakDeployment.getResourceName()).thenReturn("resource-name");
@@ -180,7 +151,7 @@ public class KeycloakAuthenticationProcessingFilterTest {
 
     @Test
     public void testSuccessfulAuthenticationInteractive() throws Exception {
-        Authentication authentication = new KeycloakAuthenticationToken(keycloakAccount, authorities);
+        Authentication authentication = new KeycloakAuthenticationToken(keycloakAccount, true, authorities);
         filter.successfulAuthentication(request, response, chain, authentication);
 
         verify(successHandler).onAuthenticationSuccess(eq(request), eq(response), eq(authentication));
@@ -189,7 +160,7 @@ public class KeycloakAuthenticationProcessingFilterTest {
 
     @Test
     public void testSuccessfulAuthenticationBearer() throws Exception {
-        Authentication authentication = new KeycloakAuthenticationToken(keycloakAccount, authorities);
+        Authentication authentication = new KeycloakAuthenticationToken(keycloakAccount, false, authorities);
         this.setBearerAuthHeader(request);
         filter.successfulAuthentication(request, response, chain, authentication);
 
@@ -200,7 +171,7 @@ public class KeycloakAuthenticationProcessingFilterTest {
 
     @Test
     public void testSuccessfulAuthenticationBasicAuth() throws Exception {
-        Authentication authentication = new KeycloakAuthenticationToken(keycloakAccount, authorities);
+        Authentication authentication = new KeycloakAuthenticationToken(keycloakAccount, false, authorities);
         this.setBasicAuthHeader(request);
         filter.successfulAuthentication(request, response, chain, authentication);
 

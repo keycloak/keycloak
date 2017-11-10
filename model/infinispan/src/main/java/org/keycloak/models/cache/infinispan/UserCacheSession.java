@@ -108,6 +108,8 @@ public class UserCacheSession implements UserCache {
 
     @Override
     public void evict(RealmModel realm, UserModel user) {
+        if (!transactionActive) throw new IllegalStateException("Cannot call evict() without a transaction");
+        getDelegate(); // invalidations need delegate set
         if (user instanceof CachedUserModel) {
             ((CachedUserModel)user).invalidate();
         } else {
@@ -510,6 +512,17 @@ public class UserCacheSession implements UserCache {
     public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group) {
         return getDelegate().getGroupMembers(realm, group);
     }
+
+    @Override
+    public List<UserModel> getRoleMembers(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
+        return getDelegate().getRoleMembers(realm, role, firstResult, maxResults);
+    }
+
+    @Override
+    public List<UserModel> getRoleMembers(RealmModel realm, RoleModel role) {
+        return getDelegate().getRoleMembers(realm, role);
+    }    
+    
 
     @Override
     public UserModel getServiceAccount(ClientModel client) {

@@ -284,6 +284,7 @@ public class ModelToRepresentation {
         rep.setResetPasswordAllowed(realm.isResetPasswordAllowed());
         rep.setEditUsernameAllowed(realm.isEditUsernameAllowed());
         rep.setRevokeRefreshToken(realm.isRevokeRefreshToken());
+        rep.setRefreshTokenMaxReuse(realm.getRefreshTokenMaxReuse());
         rep.setAccessTokenLifespan(realm.getAccessTokenLifespan());
         rep.setAccessTokenLifespanForImplicitFlow(realm.getAccessTokenLifespanForImplicitFlow());
         rep.setSsoSessionIdleTimeout(realm.getSsoSessionIdleTimeout());
@@ -776,20 +777,27 @@ public class ModelToRepresentation {
         return server;
     }
 
-    public static <R extends AbstractPolicyRepresentation> R toRepresentation(Policy policy, Class<R> representationType, AuthorizationProvider authorization) {
-        return toRepresentation(policy, representationType, authorization, false);
+    public static <R extends AbstractPolicyRepresentation> R toRepresentation(Policy policy, AuthorizationProvider authorization) {
+        return toRepresentation(policy, authorization, false, true);
     }
 
-    public static <R extends AbstractPolicyRepresentation> R toRepresentation(Policy policy, Class<R> representationType, AuthorizationProvider authorization, boolean export) {
+    public static <R extends AbstractPolicyRepresentation> R toRepresentation(Policy policy, AuthorizationProvider authorization, boolean genericRepresentation, boolean export) {
+        PolicyProviderFactory providerFactory = authorization.getProviderFactory(policy.getType());
         R representation;
 
-        try {
-            representation = representationType.newInstance();
-        } catch (Exception cause) {
-            throw new RuntimeException("Could not create policy [" + policy.getType() + "] representation", cause);
+        if (genericRepresentation || export) {
+            representation = (R) new PolicyRepresentation();
+            PolicyRepresentation.class.cast(representation).setConfig(policy.getConfig());
+            if (export) {
+                providerFactory.onExport(policy, PolicyRepresentation.class.cast(representation), authorization);
+            }
+        } else {
+            try {
+                representation = (R) providerFactory.toRepresentation(policy);
+            } catch (Exception cause) {
+                throw new RuntimeException("Could not create policy [" + policy.getType() + "] representation", cause);
+            }
         }
-
-        PolicyProviderFactory providerFactory = authorization.getProviderFactory(policy.getType());
 
         representation.setId(policy.getId());
         representation.setName(policy.getName());
@@ -797,16 +805,6 @@ public class ModelToRepresentation {
         representation.setType(policy.getType());
         representation.setDecisionStrategy(policy.getDecisionStrategy());
         representation.setLogic(policy.getLogic());
-
-        if (representation instanceof PolicyRepresentation) {
-            if (providerFactory != null && export) {
-                providerFactory.onExport(policy, PolicyRepresentation.class.cast(representation), authorization);
-            } else {
-                PolicyRepresentation.class.cast(representation).setConfig(policy.getConfig());
-            }
-        } else {
-            representation = (R) providerFactory.toRepresentation(policy, representation);
-        }
 
         return representation;
     }

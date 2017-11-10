@@ -44,6 +44,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.ServicesLogger;
@@ -141,7 +142,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
         if (authResult != null) {
             UserSessionModel userSession = authResult.getSession();
             if (userSession != null) {
-                AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(client.getId());
+                AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
                 if (clientSession == null) {
                     clientSession = session.sessions().createClientSession(userSession.getRealm(), client, userSession);
                 }
@@ -343,15 +344,15 @@ public class AccountFormService extends AbstractSecuredLocalService {
     }
 
     @Path("totp-remove")
-    @GET
-    public Response processTotpRemove(@QueryParam("stateChecker") String stateChecker) {
+    @POST
+    public Response processTotpRemove(final MultivaluedMap<String, String> formData) {
         if (auth == null) {
             return login("totp");
         }
 
         auth.require(AccountRoles.MANAGE_ACCOUNT);
 
-        csrfCheck(stateChecker);
+        csrfCheck(formData);
 
         UserModel user = auth.getUser();
         session.userCredentialManager().disableCredentialType(realm, user, CredentialModel.OTP);
@@ -364,14 +365,14 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
 
     @Path("sessions-logout")
-    @GET
-    public Response processSessionsLogout(@QueryParam("stateChecker") String stateChecker) {
+    @POST
+    public Response processSessionsLogout(final MultivaluedMap<String, String> formData) {
         if (auth == null) {
             return login("sessions");
         }
 
         auth.require(AccountRoles.MANAGE_ACCOUNT);
-        csrfCheck(stateChecker);
+        csrfCheck(formData);
 
         UserModel user = auth.getUser();
 
@@ -588,18 +589,20 @@ public class AccountFormService extends AbstractSecuredLocalService {
         return account.setPasswordSet(true).setSuccess(Messages.ACCOUNT_PASSWORD_UPDATED).createResponse(AccountPages.PASSWORD);
     }
 
-    @Path("federated-identity-update")
-    @GET
-    public Response processFederatedIdentityUpdate(@QueryParam("action") String action,
-                                                   @QueryParam("provider_id") String providerId,
-                                                   @QueryParam("stateChecker") String stateChecker) {
+    @Path("identity")
+    @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response processFederatedIdentityUpdate(final MultivaluedMap<String, String> formData) {
         if (auth == null) {
             return login("identity");
         }
 
         auth.require(AccountRoles.MANAGE_ACCOUNT);
-        csrfCheck(stateChecker);
+        csrfCheck(formData);
         UserModel user = auth.getUser();
+
+        String action = formData.getFirst("action");
+        String providerId = formData.getFirst("providerId");
 
         if (Validation.isEmpty(providerId)) {
             setReferrerOnPage();

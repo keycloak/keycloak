@@ -21,10 +21,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -35,13 +33,13 @@ import java.util.Set;
 public class Profile {
 
     public enum Feature {
-        AUTHORIZATION, IMPERSONATION, SCRIPTS, DOCKER
+        AUTHORIZATION, IMPERSONATION, SCRIPTS, DOCKER, ACCOUNT2, TOKEN_EXCHANGE
     }
 
     private enum ProfileValue {
-        PRODUCT(Feature.AUTHORIZATION, Feature.SCRIPTS, Feature.DOCKER),
-        PREVIEW,
-        COMMUNITY(Feature.DOCKER);
+        PRODUCT(Feature.AUTHORIZATION, Feature.SCRIPTS, Feature.DOCKER, Feature.ACCOUNT2, Feature.TOKEN_EXCHANGE),
+        PREVIEW(Feature.ACCOUNT2),
+        COMMUNITY(Feature.DOCKER, Feature.ACCOUNT2);
 
         private List<Feature> disabled;
 

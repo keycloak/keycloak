@@ -102,6 +102,8 @@ public class RealmEntity {
 
     @Column(name="REVOKE_REFRESH_TOKEN")
     private boolean revokeRefreshToken;
+    @Column(name="REFRESH_TOKEN_MAX_REUSE")
+    private int refreshTokenMaxReuse;
     @Column(name="SSO_IDLE_TIMEOUT")
     private int ssoSessionIdleTimeout;
     @Column(name="SSO_MAX_LIFESPAN")
@@ -338,6 +340,14 @@ public class RealmEntity {
 
     public void setRevokeRefreshToken(boolean revokeRefreshToken) {
         this.revokeRefreshToken = revokeRefreshToken;
+    }
+
+    public int getRefreshTokenMaxReuse() {
+        return refreshTokenMaxReuse;
+    }
+
+    public void setRefreshTokenMaxReuse(int revokeRefreshTokenCount) {
+        this.refreshTokenMaxReuse = revokeRefreshTokenCount;
     }
 
     public int getSsoSessionIdleTimeout() {

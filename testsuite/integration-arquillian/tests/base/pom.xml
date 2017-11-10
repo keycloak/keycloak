@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests</artifactId>
-        <version>3.4.0.CR1-SNAPSHOT</version>
+        <version>3.4.1.Final-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -164,7 +164,7 @@
                 <artifactId>maven-resources-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>copy-arquillian-xml</id>
+                        <id>copy-arquillian-xml-and-password-blacklists</id>
                         <phase>generate-resources</phase>
                         <goals>
                             <goal>copy-resources</goal>
@@ -176,6 +176,7 @@
                                     <directory>src/test/resources</directory>
                                     <includes>
                                         <include>arquillian.xml</include>
+                                        <include>password-blacklists/**</include>
                                     </includes>
                                     <!--<filtering>true</filtering>-->
                                 </resource>
@@ -228,8 +229,25 @@
                     </execution>
                 </executions>
             </plugin>
+
         </plugins>
 
     </build>
-    
+
+    <profiles>
+        <profile>
+            <id>auth-servers-crossdc-undertow</id>
+            <properties>
+                <skip.clean.second.cache>false</skip.clean.second.cache>
+            </properties>
+        </profile>
+        <profile>
+            <id>auth-servers-crossdc-jboss</id>
+            <properties>
+                <skip.clean.second.cache>false</skip.clean.second.cache>
+                <skip.copy.auth.crossdc.nodes>false</skip.copy.auth.crossdc.nodes>
+            </properties>
+        </profile>
+    </profiles>
+
 </project>

@@ -22,21 +22,35 @@ import java.io.Serializable;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 
 /**
+ * Represents an entity containing data about a session, i.e. an object that is stored in infinispan cache and can be
+ * potentially shared across DCs. Due to conflict management in {@code RemoteCacheInvoker} and
+ * {@code InfinispanChangelogBasedTransaction} that use Infinispan's {@code replace()} method, overriding {@link #hashCode()}
+ * and {@link #equals(java.lang.Object)} is <b>mandatory</b> in descendants.
+ *
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public abstract class SessionEntity implements Serializable {
 
-    private String realm;
+    private String realmId;
 
-
-    public String getRealm() {
-        return realm;
+    /**
+     * Returns realmId ID.
+     * @return
+     */
+    public String getRealmId() {
+        return realmId;
     }
 
-    public void setRealm(String realm) {
-        this.realm = realm;
+    public void setRealmId(String realmId) {
+        this.realmId = realmId;
     }
 
+    public SessionEntity() {
+    }
+
+    protected SessionEntity(String realmId) {
+        this.realmId = realmId;
+    }
 
     public SessionEntityWrapper mergeRemoteEntityWithLocalEntity(SessionEntityWrapper localEntityWrapper) {
         if (localEntityWrapper == null) {
@@ -45,5 +59,11 @@ public abstract class SessionEntity implements Serializable {
             return new SessionEntityWrapper<>(localEntityWrapper.getLocalMetadata(), this);
         }
     };
+
+    @Override
+    public abstract boolean equals(Object obj);
+
+    @Override
+    public abstract int hashCode();
 
 }

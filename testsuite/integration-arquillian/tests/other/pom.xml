@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests</artifactId>
-        <version>3.4.0.CR1-SNAPSHOT</version>
+        <version>3.4.1.Final-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-other</artifactId>
@@ -42,6 +42,10 @@
         <module>springboot-tests</module>
     </modules>
 
+    <properties>
+        <skip.unpack.test.resources>false</skip.unpack.test.resources>
+    </properties>
+
     <build>
         <pluginManagement>
             <plugins>
@@ -55,13 +59,14 @@
                                 <goal>unpack</goal>
                             </goals>
                             <configuration>
+                                <skip>${skip.unpack.test.resources}</skip>
                                 <artifactItems>
                                     <artifactItem>
                                         <groupId>org.keycloak.testsuite</groupId>
                                         <artifactId>integration-arquillian-tests-base</artifactId>
                                         <version>${project.version}</version>
                                         <type>test-jar</type>
-                                        <includes>arquillian.xml,keycloak-add-user.json,test-constants.properties,kerberos/*,keystore/keycloak.truststore</includes>
+                                        <includes>arquillian.xml,keycloak-add-user.json,test-constants.properties,kerberos/*,keystore/keycloak.truststore,password-blacklists/*</includes>
                                     </artifactItem>
                                 </artifactItems>
                             </configuration>
@@ -78,6 +83,7 @@
                                 <goal>copy-resources</goal>
                             </goals>
                             <configuration>
+                                <skip>${skip.add.user.json}</skip>
                                 <outputDirectory>${auth.server.config.dir}</outputDirectory>
                                 <resources>
                                     <resource>

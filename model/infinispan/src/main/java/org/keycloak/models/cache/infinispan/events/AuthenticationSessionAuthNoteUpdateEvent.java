@@ -17,19 +17,33 @@
 package org.keycloak.models.cache.infinispan.events;
 
 import org.keycloak.cluster.ClusterEvent;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.infinispan.commons.marshall.Externalizer;
+import org.infinispan.commons.marshall.MarshallUtil;
+import org.infinispan.commons.marshall.SerializeWith;
 
 /**
  *
  * @author hmlnarik
  */
+@SerializeWith(AuthenticationSessionAuthNoteUpdateEvent.ExternalizerImpl.class)
 public class AuthenticationSessionAuthNoteUpdateEvent implements ClusterEvent {
 
     private String authSessionId;
 
     private Map<String, String> authNotesFragment;
 
+    /**
+     * Creates an instance of the event.
+     * @param authSessionId
+     * @param authNotesFragment
+     * @return Event. Note that {@code authNotesFragment} property is not thread safe which is fine for now.
+     */
     public static AuthenticationSessionAuthNoteUpdateEvent create(String authSessionId, Map<String, String> authNotesFragment) {
         AuthenticationSessionAuthNoteUpdateEvent event = new AuthenticationSessionAuthNoteUpdateEvent();
         event.authSessionId = authSessionId;
@@ -50,4 +64,34 @@ public class AuthenticationSessionAuthNoteUpdateEvent implements ClusterEvent {
         return String.format("AuthenticationSessionAuthNoteUpdateEvent [ authSessionId=%s, authNotesFragment=%s ]", authSessionId, authNotesFragment);
     }
 
+    public static class ExternalizerImpl implements Externalizer<AuthenticationSessionAuthNoteUpdateEvent> {
+
+        private static final int VERSION_1 = 1;
+
+        @Override
+        public void writeObject(ObjectOutput output, AuthenticationSessionAuthNoteUpdateEvent value) throws IOException {
+            output.writeByte(VERSION_1);
+
+            MarshallUtil.marshallString(value.authSessionId, output);
+            MarshallUtil.marshallMap(value.authNotesFragment, output);
+        }
+
+        @Override
+        public AuthenticationSessionAuthNoteUpdateEvent readObject(ObjectInput input) throws IOException, ClassNotFoundException {
+            switch (input.readByte()) {
+                case VERSION_1:
+                    return readObjectVersion1(input);
+                default:
+                    throw new IOException("Unknown version");
+            }
+        }
+
+        public AuthenticationSessionAuthNoteUpdateEvent readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
+            return create(
+              MarshallUtil.unmarshallString(input),
+              MarshallUtil.unmarshallMap(input, HashMap::new)
+            );
+        }
+
+    }
 }
