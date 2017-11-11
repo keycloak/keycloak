@@ -195,7 +195,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
 
         }
         Resource usersResource = authz.getStoreFactory().getResourceStore().findByName(USERS_RESOURCE, server.getId());
-        if (usersResource == null) {
+        if (usersResource != null) {
             authz.getStoreFactory().getResourceStore().delete(usersResource.getId());
         }
     }
