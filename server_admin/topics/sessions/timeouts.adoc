@@ -48,4 +48,7 @@ Let's walk through each of the items on this page.
 
 |Default Admin-Initiated Action Lifespan
 |Maximum time before an action permit sent to a user by an admin is expired. This value is recommended to be long to allow admins send e-mails for users that are currently offline. The default timeout can be overridden right before issuing the token.
+
+|Override User-Initiated Action Lifespan
+|Permits the possibility of having independent timeouts per operation (e.g. e-mail verification, forgot password, user actions and Identity Provider E-mail Verification). This field is non mandatory and if nothing is specified it defaults to the value configured at _User-Initiated Action Lifespan_.
 |===
