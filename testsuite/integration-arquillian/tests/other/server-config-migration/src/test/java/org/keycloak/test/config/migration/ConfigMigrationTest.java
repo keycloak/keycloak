@@ -64,6 +64,10 @@ public class ConfigMigrationTest {
     public void testDomain() throws IOException {
         compareConfigs("master-domain-standalone.txt", "migrated-domain-standalone.txt");
         compareConfigs("master-domain-clustered.txt", "migrated-domain-clustered.txt");
+        
+        compareConfigs("master-domain-core-service.txt", "migrated-domain-core-service.txt");
+        compareConfigs("master-domain-extension.txt", "migrated-domain-extension.txt");
+        compareConfigs("master-domain-interface.txt", "migrated-domain-interface.txt");
     }
     
     private void compareConfigs(String masterConfig, String migratedConfig) throws IOException {

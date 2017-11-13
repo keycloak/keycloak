@@ -210,6 +210,51 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <id>read-master-domain-core-service</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>./jboss-cli.sh</executable>
+                            <workingDirectory>${jbossHome}/bin</workingDirectory>
+                            <arguments>
+                                <argument>--file=${project.build.directory}/classes/cli/read-domain-core-service.cli</argument>
+                            </arguments>
+                            <outputFile>${project.build.directory}/master-domain-core-service.txt</outputFile>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>read-master-domain-extension</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>./jboss-cli.sh</executable>
+                            <workingDirectory>${jbossHome}/bin</workingDirectory>
+                            <arguments>
+                                <argument>--file=${project.build.directory}/classes/cli/read-domain-extension.cli</argument>
+                            </arguments>
+                            <outputFile>${project.build.directory}/master-domain-extension.txt</outputFile>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>read-master-domain-interface</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>./jboss-cli.sh</executable>
+                            <workingDirectory>${jbossHome}/bin</workingDirectory>
+                            <arguments>
+                                <argument>--file=${project.build.directory}/classes/cli/read-domain-interface.cli</argument>
+                            </arguments>
+                            <outputFile>${project.build.directory}/master-domain-interface.txt</outputFile>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>read-master-domain-standalone</id>
                         <phase>process-classes</phase>
                         <goals>
@@ -361,6 +406,51 @@
                                 <argument>--file=${project.build.directory}/classes/cli/read-standalone-ha.cli</argument>
                             </arguments>
                             <outputFile>${project.build.directory}/migrated-standalone-ha.txt</outputFile>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>read-migrated-domain-core-service</id>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>./jboss-cli.sh</executable>
+                            <workingDirectory>${jbossHome}/bin</workingDirectory>
+                            <arguments>
+                                <argument>--file=${project.build.directory}/classes/cli/read-domain-core-service.cli</argument>
+                            </arguments>
+                            <outputFile>${project.build.directory}/migrated-domain-core-service.txt</outputFile>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>read-migrated-domain-extension</id>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>./jboss-cli.sh</executable>
+                            <workingDirectory>${jbossHome}/bin</workingDirectory>
+                            <arguments>
+                                <argument>--file=${project.build.directory}/classes/cli/read-domain-extension.cli</argument>
+                            </arguments>
+                            <outputFile>${project.build.directory}/migrated-domain-extension.txt</outputFile>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>read-migrated-domain-interface</id>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>./jboss-cli.sh</executable>
+                            <workingDirectory>${jbossHome}/bin</workingDirectory>
+                            <arguments>
+                                <argument>--file=${project.build.directory}/classes/cli/read-domain-interface.cli</argument>
+                            </arguments>
+                            <outputFile>${project.build.directory}/migrated-domain-interface.txt</outputFile>
                         </configuration>
                     </execution>
                     <execution>
