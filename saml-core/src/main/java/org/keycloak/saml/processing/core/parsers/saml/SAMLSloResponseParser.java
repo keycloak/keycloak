@@ -75,6 +75,6 @@ public class SAMLSloResponseParser extends SAMLStatusResponseTypeParser implemen
      */
     public boolean supports(QName qname) {
         return JBossSAMLURIConstants.PROTOCOL_NSURI.get().equals(qname.getNamespaceURI())
-                && LOGOUT_RESPONSE.equals(qname.getLocalPart());
+                && LOGOUT_RESPONSE.get().equals(qname.getLocalPart());
     }
 }
