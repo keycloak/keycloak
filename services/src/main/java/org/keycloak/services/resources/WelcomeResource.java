@@ -105,6 +105,7 @@ public class WelcomeResource {
 
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.TEXT_HTML_UTF_8)
     public Response createUser(final MultivaluedMap<String, String> formData) {
         checkBootstrap();
 
