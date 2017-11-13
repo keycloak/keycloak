@@ -352,7 +352,7 @@ function genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $l
             $scope.changed = true;
         }
     }, true);
-
+    
     $scope.save = function() {
         var realmCopy = angular.copy($scope.realm);
         console.log('updating realm...');
@@ -391,6 +391,13 @@ module.controller('DefenseHeadersCtrl', function($scope, Current, Realm, realm, 
 });
 
 module.controller('RealmLoginSettingsCtrl', function($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications) {
+    // KEYCLOAK-5474: Make sure duplicateEmailsAllowed is disabled if loginWithEmailAllowed
+    $scope.$watch('realm.loginWithEmailAllowed', function() {
+        if ($scope.realm.loginWithEmailAllowed) {
+            $scope.realm.duplicateEmailsAllowed = false;
+        }
+    });
+    
     genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications, "/realms/" + realm.realm + "/login-settings");
 });
 
