@@ -71,6 +71,7 @@ import org.keycloak.testsuite.util.TestEventsLogger;
 import org.openqa.selenium.WebDriver;
 import org.wildfly.extras.creaper.commands.undertow.AddUndertowListener;
 import org.wildfly.extras.creaper.commands.undertow.RemoveUndertowListener;
+import org.wildfly.extras.creaper.commands.undertow.SslVerifyClient;
 import org.wildfly.extras.creaper.commands.undertow.UndertowListenerType;
 import org.wildfly.extras.creaper.core.CommandFailedException;
 import org.wildfly.extras.creaper.core.online.CliException;
@@ -445,6 +446,7 @@ public abstract class AbstractKeycloakTest {
         if(!operations.exists(Address.coreService("management").and("security-realm", "UndertowRealm"))) {
             client.execute("/core-service=management/security-realm=UndertowRealm:add()");
             client.execute("/core-service=management/security-realm=UndertowRealm/server-identity=ssl:add(keystore-relative-to=jboss.server.config.dir,keystore-password=secret,keystore-path=keycloak.jks");
+            client.execute("/core-service=management/security-realm=UndertowRealm/authentication=truststore:add(keystore-relative-to=jboss.server.config.dir,keystore-password=secret,keystore-path=keycloak.truststore");
         }
 
         client.apply(new RemoveUndertowListener.Builder(UndertowListenerType.HTTPS_LISTENER, "https")
@@ -454,6 +456,7 @@ public abstract class AbstractKeycloakTest {
 
         client.apply(new AddUndertowListener.HttpsBuilder("https", "default-server", "https")
                 .securityRealm("UndertowRealm")
+                .verifyClient(SslVerifyClient.REQUESTED)
                 .build());
 
         administration.reloadIfRequired();
