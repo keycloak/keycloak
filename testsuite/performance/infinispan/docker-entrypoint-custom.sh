@@ -4,7 +4,7 @@ cat $INFINISPAN_SERVER_HOME/standalone/configuration/$CONFIGURATION
 
 . get-ips.sh
 
-PARAMS="-b $PUBLIC_IP -bmanagement $PUBLIC_IP -bprivate $PRIVATE_IP -Djgroups.bind_addr=$PRIVATE_IP -c $CONFIGURATION $@"
+PARAMS="-b $PUBLIC_IP -bmanagement $PUBLIC_IP -bprivate $PRIVATE_IP -Djgroups.bind_addr=$PUBLIC_IP -c $CONFIGURATION $@"
 echo "Server startup params: $PARAMS"
 
 # Note: External container connectivity is always provided by eth0 -- irrespective of which is considered public/private by KC.

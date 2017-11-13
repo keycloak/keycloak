@@ -1,0 +1,8 @@
+embed-server --server-config=standalone-ha.xml
+
+cd subsystem=logging
+
+./logger=org.keycloak.cluster.infinispan:add(level=DEBUG)
+./logger=org.keycloak.connections.infinispan:add(level=DEBUG)
+./logger=org.keycloak.models.cache.infinispan:add(level=DEBUG)
+./logger=org.keycloak.models.sessions.infinispan:add(level=DEBUG)

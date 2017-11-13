@@ -30,8 +30,12 @@ networks:
 services:
 
     infinispan_dc1:
-        build: infinispan
-        image: keycloak_test_infinispan:${KEYCLOAK_VERSION:-latest}
+        build: 
+            context: infinispan
+            args:
+                LOCAL_SITE: dc1
+                REMOTE_SITE: dc2
+        image: keycloak_test_infinispan_dc1:${KEYCLOAK_VERSION:-latest}
         cpus: 1
         networks:
             - ispn_replication
@@ -41,16 +45,18 @@ services:
             PRIVATE_SUBNET: 10.0.4.0/24
             MGMT_USER: admin
             MGMT_USER_PASSWORD: admin
-#            APP_USER: keycloak
-#            APP_USER_PASSWORD: keycloak
-#            APP_USER_GROUPS: keycloak
+            TCP_PING_INITIAL_HOSTS: infinispan_dc1[7600]
             JAVA_OPTS: ${INFINISPAN_JVM_MEMORY:--Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -XX:+DisableExplicitGC} -Djava.net.preferIPv4Stack=true -Djboss.modules.system.pkgs=org.jboss.byteman -Djava.awt.headless=true
         ports:
             - "9991:9990"
 
     infinispan_dc2:
-        build: infinispan
-        image: keycloak_test_infinispan:${KEYCLOAK_VERSION:-latest}
+        build: 
+            context: infinispan
+            args:
+                LOCAL_SITE: dc2
+                REMOTE_SITE: dc1
+        image: keycloak_test_infinispan_dc2:${KEYCLOAK_VERSION:-latest}
         depends_on:
             infinispan_dc1:
                 condition: service_healthy
@@ -63,9 +69,7 @@ services:
             PRIVATE_SUBNET: 10.0.4.0/24
             MGMT_USER: admin
             MGMT_USER_PASSWORD: admin
-#            APP_USER: keycloak
-#            APP_USER_PASSWORD: keycloak
-#            APP_USER_GROUPS: keycloak
+            TCP_PING_INITIAL_HOSTS: infinispan_dc1[7600],infinispan_dc2[7600]
             JAVA_OPTS: ${INFINISPAN_JVM_MEMORY:--Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -XX:+DisableExplicitGC} -Djava.net.preferIPv4Stack=true -Djboss.modules.system.pkgs=org.jboss.byteman -Djava.awt.headless=true
         ports:
             - "9992:9990"
