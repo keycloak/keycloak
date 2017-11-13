@@ -155,6 +155,12 @@ public class AuthenticationManager {
         );
     }
 
+    public static void backchannelLogout(KeycloakSession session, RealmModel realm,
+                                         UserSessionModel userSession, UriInfo uriInfo,
+                                         ClientConnection connection, HttpHeaders headers,
+                                         boolean logoutBroker) {
+        backchannelLogout(session, realm, userSession, uriInfo, connection, headers, logoutBroker, false);
+    }
 
     /**
      * Do not logout broker
@@ -169,7 +175,8 @@ public class AuthenticationManager {
     public static void backchannelLogout(KeycloakSession session, RealmModel realm,
                                          UserSessionModel userSession, UriInfo uriInfo,
                                          ClientConnection connection, HttpHeaders headers,
-                                         boolean logoutBroker) {
+                                         boolean logoutBroker,
+                                         boolean offlineSession) {
         if (userSession == null) return;
         UserModel user = userSession.getUser();
         if (userSession.getState() != UserSessionModel.State.LOGGING_OUT) {
@@ -190,7 +197,12 @@ public class AuthenticationManager {
         }
 
         userSession.setState(UserSessionModel.State.LOGGED_OUT);
-        session.sessions().removeUserSession(realm, userSession);
+
+        if (offlineSession) {
+            session.sessions().removeOfflineUserSession(realm, userSession);
+        } else {
+            session.sessions().removeUserSession(realm, userSession);
+        }
     }
 
     private static AuthenticationSessionModel createOrJoinLogoutSession(RealmModel realm, final AuthenticationSessionManager asm, boolean browserCookie) {
