@@ -762,7 +762,14 @@ module.controller('ClientListCtrl', function($scope, realm, Client, serverInfo, 
     };
 
     $scope.exportClient = function(client) {
-        saveAs(new Blob([angular.toJson(client, 4)], { type: 'application/json' }), client.clientId + '.json');
+        var clientCopy = angular.copy(client);
+        delete clientCopy.id;
+
+        for (var i = 0; i < clientCopy.protocolMappers.length; i++) {
+            delete clientCopy.protocolMappers[i].id;
+        }
+
+        saveAs(new Blob([angular.toJson(clientCopy, 4)], { type: 'application/json' }), clientCopy.clientId + '.json');
     }
 });
 
