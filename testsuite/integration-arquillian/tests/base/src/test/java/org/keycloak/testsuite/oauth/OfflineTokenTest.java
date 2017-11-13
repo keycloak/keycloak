@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.oauth;
 
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
@@ -58,11 +59,10 @@ import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.TokenUtil;
 
+import javax.ws.rs.NotFoundException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
-import javax.ws.rs.NotFoundException;
 
 import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
@@ -550,4 +550,22 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         List<Map<String, Object>> consents = user.getConsents();
         Assert.assertTrue(consents.isEmpty());
     }
+
+    @Test
+    public void offlineTokenLogout() throws Exception {
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.clientId("offline-client");
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret1", "test-user@localhost", "password");
+        assertEquals(200, response.getStatusCode());
+
+        response = oauth.doRefreshTokenRequest(response.getRefreshToken(), "secret1");
+        assertEquals(200, response.getStatusCode());
+
+        CloseableHttpResponse logoutResponse = oauth.doLogout(response.getRefreshToken(), "secret1");
+        assertEquals(204, logoutResponse.getStatusLine().getStatusCode());
+
+        response = oauth.doRefreshTokenRequest(response.getRefreshToken(), "secret1");
+        assertEquals(400, response.getStatusCode());
+    }
+
 }
