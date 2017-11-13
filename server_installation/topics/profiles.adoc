@@ -83,7 +83,7 @@ To enable a specific feature start the server with:
 
 [source]
 ----
-bin/standalone.sh|bat -Dkeycloak.profile.feature.<feature name>=disabled
+bin/standalone.sh|bat -Dkeycloak.profile.feature.<feature name>=enabled
 ----
 
 For example to enable Docker use `-Dkeycloak.profile.feature.docker=enabled`.
