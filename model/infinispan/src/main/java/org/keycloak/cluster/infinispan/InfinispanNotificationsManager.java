@@ -215,7 +215,7 @@ public class InfinispanNotificationsManager {
             try {
                 listenersExecutor.submit(() -> {
 
-                    Object value = workCache.get(key);
+                    Object value = remoteCache.get(key);
                     eventReceived(key, (Serializable) value);
 
                 });
