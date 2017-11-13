@@ -576,24 +576,24 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     @Test
     public void testBasicAuth() {
         String value = "hello";
-        Client client = ClientBuilder.newClient();
+        Client client = ClientBuilder.newBuilder().newClient();
 
         //pause(1000000);
 
         Response response = client.target(basicAuthPage
-                .setTemplateValues("mposolda", "password", value).buildUri()).request().get();
+                .setTemplateValues(value).buildUri()).request().header("Authorization", BasicAuthHelper.createHeader("mposolda", "password")).get();
 
         assertThat(response, Matchers.statusCodeIs(Status.OK));
         assertEquals(value, response.readEntity(String.class));
         response.close();
 
         response = client.target(basicAuthPage
-                .setTemplateValues("invalid-user", "password", value).buildUri()).request().get();
+                .setTemplateValues(value).buildUri()).request().header("Authorization", BasicAuthHelper.createHeader("invalid-user", "password")).get();
         assertThat(response, Matchers.statusCodeIs(Status.UNAUTHORIZED));
         assertThat(response, Matchers.body(anyOf(containsString("Unauthorized"), containsString("Status 401"))));
 
         response = client.target(basicAuthPage
-                .setTemplateValues("admin", "invalid-password", value).buildUri()).request().get();
+                .setTemplateValues(value).buildUri()).request().header("Authorization", BasicAuthHelper.createHeader("admin", "invalid-password")).get();
         assertThat(response, Matchers.statusCodeIs(Status.UNAUTHORIZED));
         assertThat(response, Matchers.body(anyOf(containsString("Unauthorized"), containsString("Status 401"))));
 
