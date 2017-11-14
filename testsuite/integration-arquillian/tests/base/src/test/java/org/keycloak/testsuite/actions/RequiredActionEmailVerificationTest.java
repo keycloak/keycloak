@@ -27,14 +27,12 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.Constants;
-import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ProceedPage;
@@ -45,16 +43,19 @@ import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
+import org.keycloak.testsuite.util.UserActionTokenBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
 import javax.mail.internet.MimeMessage;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.hamcrest.Matchers;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -445,6 +446,95 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
                     .assertEvent();
         } finally {
             setTimeOffset(0);
+        }
+    }
+
+    @Test
+    public void verifyEmailExpiredCodedPerActionLifespan() throws IOException, MessagingException {
+        RealmRepresentation realmRep = testRealm().toRepresentation();
+        Map<String, String> originalAttributes = Collections.unmodifiableMap(new HashMap<>(realmRep.getAttributes()));
+
+        realmRep.setAttributes(UserActionTokenBuilder.create().verifyEmailLifespan(60).build());
+        testRealm().update(realmRep);
+
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+
+        verifyEmailPage.assertCurrent();
+
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+
+        MimeMessage message = greenMail.getLastReceivedMessage();
+
+        String verificationUrl = getPasswordResetEmailLink(message);
+
+        events.poll();
+
+        try {
+            setTimeOffset(70);
+
+            driver.navigate().to(verificationUrl.trim());
+
+            loginPage.assertCurrent();
+            assertEquals("Action expired. Please start again.", loginPage.getError());
+
+            events.expectRequiredAction(EventType.EXECUTE_ACTION_TOKEN_ERROR)
+                    .error(Errors.EXPIRED_CODE)
+                    .client((String)null)
+                    .user(testUserId)
+                    .session((String)null)
+                    .clearDetails()
+                    .detail(Details.ACTION, VerifyEmailActionToken.TOKEN_TYPE)
+                    .assertEvent();
+        } finally {
+            setTimeOffset(0);
+            realmRep.setAttributes(originalAttributes);
+            testRealm().update(realmRep);
+        }
+    }
+
+    @Test
+    public void verifyEmailExpiredCodedPerActionMultipleTimeouts() throws IOException, MessagingException {
+        RealmRepresentation realmRep = testRealm().toRepresentation();
+        Map<String, String> originalAttributes = Collections.unmodifiableMap(new HashMap<>(realmRep.getAttributes()));
+
+        //Make sure that one attribute settings won't affect the other
+        realmRep.setAttributes(UserActionTokenBuilder.create().verifyEmailLifespan(60).resetCredentialsLifespan(300).build());
+        testRealm().update(realmRep);
+
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+
+        verifyEmailPage.assertCurrent();
+
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+
+        MimeMessage message = greenMail.getLastReceivedMessage();
+
+        String verificationUrl = getPasswordResetEmailLink(message);
+
+        events.poll();
+
+        try {
+            setTimeOffset(70);
+
+            driver.navigate().to(verificationUrl.trim());
+
+            loginPage.assertCurrent();
+            assertEquals("Action expired. Please start again.", loginPage.getError());
+
+            events.expectRequiredAction(EventType.EXECUTE_ACTION_TOKEN_ERROR)
+                    .error(Errors.EXPIRED_CODE)
+                    .client((String)null)
+                    .user(testUserId)
+                    .session((String)null)
+                    .clearDetails()
+                    .detail(Details.ACTION, VerifyEmailActionToken.TOKEN_TYPE)
+                    .assertEvent();
+        } finally {
+            setTimeOffset(0);
+            realmRep.setAttributes(originalAttributes);
+            testRealm().update(realmRep);
         }
     }
 

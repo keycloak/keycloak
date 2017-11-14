@@ -61,12 +61,30 @@ public class TokenSettings extends RealmSettings {
         @FindBy(name = "ssoSessionMaxLifespanUnit")
         private Select sessionLifespanTimeoutUnit;
 
+        @FindBy(name = "actionTokenAttributeSelect")
+        private Select actionTokenAttributeSelect;
+
+        @FindBy(name = "actionTokenAttributeUnit")
+        private Select actionTokenAttributeUnit;
+
+        @FindBy(id = "actionTokenAttributeTime")
+        private WebElement actionTokenAttributeTime;
+
+        @FindBy(xpath = "//button[@data-ng-click='resetToDefaultToken(actionTokenId)']")
+        private WebElement resetButton;
+
         public void setSessionTimeout(int timeout, TimeUnit unit) {
             setTimeout(sessionTimeoutUnit, sessionTimeout, timeout, unit);
         }
 
         public void setSessionTimeoutLifespan(int time, TimeUnit unit) {
             setTimeout(sessionLifespanTimeoutUnit, sessionLifespanTimeout, time, unit);
+        }
+
+        public void setOperation(String tokenType, int time, TimeUnit unit) {
+            waitUntilElement(sessionTimeout).is().present();
+            actionTokenAttributeSelect.selectByValue(tokenType.toLowerCase());
+            setTimeout(actionTokenAttributeUnit, actionTokenAttributeTime, time, unit);
         }
 
         private void setTimeout(Select timeoutElement, WebElement unitElement,
@@ -77,5 +95,25 @@ public class TokenSettings extends RealmSettings {
             unitElement.sendKeys(valueOf(timeout));
         }
 
+        public boolean isOperationEquals(String tokenType, int timeout, TimeUnit unit) {
+            selectOperation(tokenType);
+
+            waitUntilElement(sessionTimeout).is().present();
+            actionTokenAttributeSelect.selectByValue(tokenType.toLowerCase());
+
+            return actionTokenAttributeTime.getAttribute("value").equals(Integer.toString(timeout)) &&
+                    actionTokenAttributeUnit.getFirstSelectedOption().getText().equals(capitalize(unit.name().toLowerCase()));
+        }
+
+        public void resetActionToken(String tokenType) {
+            selectOperation(tokenType);
+            waitUntilElement(resetButton).is().visible();
+            resetButton.click();
+        }
+
+        public void selectOperation(String tokenType) {
+            waitUntilElement(sessionTimeout).is().present();
+            actionTokenAttributeSelect.selectByValue(tokenType.toLowerCase());
+        }
     }
 }

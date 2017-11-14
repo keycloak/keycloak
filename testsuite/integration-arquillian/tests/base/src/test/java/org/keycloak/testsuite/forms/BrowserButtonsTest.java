@@ -47,6 +47,7 @@ import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserBuilder;
 
@@ -337,7 +338,7 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
         // Receive email
         MimeMessage message = greenMail.getReceivedMessages()[greenMail.getReceivedMessages().length - 1];
 
-        String changePasswordUrl = ResetPasswordTest.getPasswordResetEmailLink(message);
+        String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
 
         driver.navigate().to(changePasswordUrl.trim());
 

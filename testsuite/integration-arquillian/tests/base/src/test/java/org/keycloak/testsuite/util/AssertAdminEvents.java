@@ -39,7 +39,6 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.util.JsonSerialization;
 
-import javax.ws.rs.core.Response;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -251,7 +250,7 @@ public class AssertAdminEvents implements TestRule {
 
                             // Reflection-based comparing for other types - compare the non-null fields of "expected" representation with the "actual" representation from the event
                             for (Method method : Reflections.getAllDeclaredMethods(expectedRep.getClass())) {
-                                if (method.getName().startsWith("get") || method.getName().startsWith("is")) {
+                                if (method.getParameterCount() == 0 && (method.getName().startsWith("get") || method.getName().startsWith("is"))) {
                                     Object expectedValue = Reflections.invokeMethod(method, expectedRep);
                                     if (expectedValue != null) {
                                         Object actualValue = Reflections.invokeMethod(method, actualRep);
