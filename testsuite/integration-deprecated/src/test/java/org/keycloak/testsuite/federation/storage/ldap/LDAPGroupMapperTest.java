@@ -384,6 +384,72 @@ public class LDAPGroupMapperTest {
         }
     }
 
+
+    // KEYCLOAK-5848
+    // Test GET_GROUPS_FROM_USER_MEMBEROF_ATTRIBUTE with custom 'Member-Of LDAP Attribute'. As a workaround, we are testing this with custom attribute "street"
+    // just because it's available on all the LDAP servers
+    @Test
+    public void test05_getGroupsFromUserMemberOfStrategyTest() throws Exception {
+        KeycloakSession session = keycloakRule.startSession();
+        MultivaluedHashMap<String, String> oldGroupMapperCfg;
+        try {
+            LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+            RealmModel appRealm = session.realms().getRealmByName("test");
+
+            // Create street attribute mapper
+            LDAPTestUtils.addUserAttributeMapper(appRealm, ldapModel, "streetMapper", "street", LDAPConstants.STREET);
+
+            // Find DN of "group1"
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm,ldapModel, "groupsMapper");
+            oldGroupMapperCfg = new MultivaluedHashMap<>(mapperModel.getConfig());
+            GroupLDAPStorageMapper groupMapper = LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, appRealm);
+            LDAPObject ldapGroup = groupMapper.loadLDAPGroupByName("group1");
+            String ldapGroupDN = ldapGroup.getDn().toString();
+
+            // Create new user in LDAP. Add him some "street" referencing existing LDAP Group
+            LDAPObject carlos = LDAPTestUtils.addLDAPUser(ldapProvider, appRealm, "carloskeycloak", "Carlos", "Doel", "carlos.doel@email.org", ldapGroupDN, "1234");
+            LDAPTestUtils.updateLDAPPassword(ldapProvider, carlos, "Password1");
+
+            // Update group mapper
+            LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel,
+                    GroupMapperConfig.USER_ROLES_RETRIEVE_STRATEGY, GroupMapperConfig.GET_GROUPS_FROM_USER_MEMBEROF_ATTRIBUTE,
+                    GroupMapperConfig.MEMBEROF_LDAP_ATTRIBUTE, LDAPConstants.STREET);
+            appRealm.updateComponent(mapperModel);
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+        session = keycloakRule.startSession();
+        try {
+            RealmModel appRealm = session.realms().getRealmByName("test");
+
+            // Get user in Keycloak. Ensure that he is member of requested group
+            UserModel carlos = session.users().getUserByUsername("carloskeycloak", appRealm);
+            Set<GroupModel> carlosGroups = carlos.getGroups();
+
+            GroupModel group1 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1");
+            GroupModel group11 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1/group11");
+            GroupModel group12 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1/group12");
+
+            Assert.assertTrue(carlosGroups.contains(group1));
+            Assert.assertFalse(carlosGroups.contains(group11));
+            Assert.assertFalse(carlosGroups.contains(group12));
+
+            Assert.assertEquals(1, carlosGroups.size());
+
+            // Revert mappers
+            ComponentModel streetMapper = LDAPTestUtils.getSubcomponentByName(appRealm,ldapModel, "streetMapper");
+            appRealm.removeComponent(streetMapper);
+
+            ComponentModel groupMapper = LDAPTestUtils.getSubcomponentByName(appRealm,ldapModel, "groupsMapper");
+            groupMapper.setConfig(oldGroupMapperCfg);
+            appRealm.updateComponent(groupMapper);
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+    }
+
+
     private void deleteGroupMappingsInLDAP(GroupLDAPStorageMapper groupMapper, LDAPObject ldapUser, String groupName) {
         LDAPObject ldapGroup = groupMapper.loadLDAPGroupByName(groupName);
         groupMapper.deleteGroupMappingInLDAP(ldapUser, ldapGroup);

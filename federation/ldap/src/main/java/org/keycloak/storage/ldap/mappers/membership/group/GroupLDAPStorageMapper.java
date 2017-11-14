@@ -522,7 +522,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
     public void beforeLDAPQuery(LDAPQuery query) {
         String strategyKey = config.getUserGroupsRetrieveStrategy();
         UserRolesRetrieveStrategy strategy = factory.getUserGroupsRetrieveStrategy(strategyKey);
-        strategy.beforeUserLDAPQuery(query);
+        strategy.beforeUserLDAPQuery(this, query);
     }
 
     @Override
