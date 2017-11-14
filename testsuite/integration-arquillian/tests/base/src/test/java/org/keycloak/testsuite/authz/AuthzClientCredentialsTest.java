@@ -52,6 +52,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
@@ -73,6 +74,7 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
                 .authenticatorType(JWTClientAuthenticator.PROVIDER_ID))
                 .build());
         testRealms.add(configureRealm(RealmBuilder.create().name("authz-test"), ClientBuilder.create().secret("secret")).build());
+        testRealms.add(configureRealm(RealmBuilder.create().name("authz-test-session").accessTokenLifespan(1), ClientBuilder.create().secret("secret")).build());
     }
 
     @Before
@@ -166,6 +168,31 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
     public void testSuccessfulClientSecret() {
         ProtectionResource protection = getAuthzClient("default-keycloak.json").protection();
         assertAccessProtectionAPI(protection);
+    }
+
+    @Test
+    public void testReusingAccessAndRefreshTokens() throws Exception {
+        ClientsResource clients = getAdminClient().realm("authz-test-session").clients();
+        ClientRepresentation clientRepresentation = clients.findByClientId("resource-server-test").get(0);
+        List<UserSessionRepresentation> userSessions = clients.get(clientRepresentation.getId()).getUserSessions(-1, -1);
+
+        assertEquals(0, userSessions.size());
+
+        AuthzClient authzClient = getAuthzClient("default-session-keycloak.json");
+        ProtectionResource protection = authzClient.protection();
+
+        protection.resource().findByFilter("name=Default Resource");
+        userSessions = clients.get(clientRepresentation.getId()).getUserSessions(null, null);
+
+        assertEquals(1, userSessions.size());
+
+        Thread.sleep(2000);
+        protection = authzClient.protection();
+        protection.resource().findByFilter("name=Default Resource");
+
+        userSessions = clients.get(clientRepresentation.getId()).getUserSessions(null, null);
+
+        assertEquals(1, userSessions.size());
     }
 
     private RealmBuilder configureRealm(RealmBuilder builder, ClientBuilder clientBuilder) {
