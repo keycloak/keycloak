@@ -11,9 +11,8 @@ Resource servers can obtain a PAT from {project_name} like any other OAuth2 acce
 
 ```bash
 curl -X POST \
-    -H "Authorization: Basic aGVsbG8td29ybGQtYXV0aHotc2VydmljZTpwYXNzd29yZA==" \
     -H "Content-Type: application/x-www-form-urlencoded" \
-    -d 'grant_type=client_credentials' \
+    -d 'grant_type=client_credentials&client_id=${client_id}&client_secret=${client_secret}' \
     "http://localhost:8080/auth/realms/${realm_name}/protocol/openid-connect/token"
 ```
 
