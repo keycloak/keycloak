@@ -125,7 +125,7 @@ public class AuthorizationTokenService {
                         .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
             }
         } catch (Exception cause) {
-            logger.error(cause);
+            logger.error("Failed to evaluate permissions", cause);
             throw new ErrorResponseException(OAuthErrorException.SERVER_ERROR, "Error while evaluating permissions.", Status.INTERNAL_SERVER_ERROR);
         }
 

@@ -19,6 +19,8 @@ package org.keycloak.authorization.client.resource;
 
 import static org.keycloak.authorization.client.util.Throwables.handleAndWrapException;
 
+import java.util.function.Supplier;
+
 import org.keycloak.authorization.client.representation.PermissionRequest;
 import org.keycloak.authorization.client.representation.PermissionResponse;
 import org.keycloak.authorization.client.util.Http;
@@ -30,9 +32,9 @@ import org.keycloak.util.JsonSerialization;
 public class PermissionResource {
 
     private final Http http;
-    private final String pat;
+    private final Supplier<String> pat;
 
-    public PermissionResource(Http http, String pat) {
+    public PermissionResource(Http http, Supplier<String> pat) {
         this.http = http;
         this.pat = pat;
     }
@@ -40,7 +42,7 @@ public class PermissionResource {
     public PermissionResponse forResource(PermissionRequest request) {
         try {
             return this.http.<PermissionResponse>post("/authz/protection/permission")
-                    .authorizationBearer(this.pat)
+                    .authorizationBearer(this.pat.get())
                     .json(JsonSerialization.writeValueAsBytes(request))
                     .response().json(PermissionResponse.class).execute();
         } catch (Exception cause) {
