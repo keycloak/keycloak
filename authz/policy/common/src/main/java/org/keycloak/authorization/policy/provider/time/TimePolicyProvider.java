@@ -32,21 +32,16 @@ public class TimePolicyProvider implements PolicyProvider {
 
     static String DEFAULT_DATE_PATTERN = "yyyy-MM-dd hh:mm:ss";
 
-    private final SimpleDateFormat dateFormat;
-
-    public TimePolicyProvider() {
-        this.dateFormat = new SimpleDateFormat(DEFAULT_DATE_PATTERN);
-    }
-
     @Override
     public void evaluate(Evaluation evaluation) {
         Policy policy = evaluation.getPolicy();
+        SimpleDateFormat dateFormat = new SimpleDateFormat(DEFAULT_DATE_PATTERN);
         Date actualDate = new Date();
 
         try {
             String notBefore = policy.getConfig().get("nbf");
             if (notBefore != null && !"".equals(notBefore)) {
-                if (actualDate.before(this.dateFormat.parse(format(notBefore)))) {
+                if (actualDate.before(dateFormat.parse(format(notBefore)))) {
                     evaluation.deny();
                     return;
                 }
@@ -54,7 +49,7 @@ public class TimePolicyProvider implements PolicyProvider {
 
             String notOnOrAfter = policy.getConfig().get("noa");
             if (notOnOrAfter != null && !"".equals(notOnOrAfter)) {
-                if (actualDate.after(this.dateFormat.parse(format(notOnOrAfter)))) {
+                if (actualDate.after(dateFormat.parse(format(notOnOrAfter)))) {
                     evaluation.deny();
                     return;
                 }
