@@ -29,19 +29,23 @@
     <artifactId>performance-tests</artifactId>
     <name>Keycloak Performance TestSuite - Tests</name>
 
-    <description>
-    </description>
-
     <properties>
-        <compose.file>docker-compose.yml</compose.file>
-        <compose.up.params/>
-        <compose.restart.params>keycloak</compose.restart.params>
-        <keycloak.server.uris>http://localhost:8080/auth</keycloak.server.uris>
-        <db.url>jdbc:mariadb://keycloak:keycloak@localhost:3306/keycloak</db.url>
+        <provisioner>docker-compose</provisioner>
+        <deployment>singlenode</deployment>
+        
+        <provisioned.system.properties.file>${project.build.directory}/provisioned-system.properties</provisioned.system.properties.file>
 
+        <!-- Keycloak Server Settings -->
+        <keycloak.scale/>
+        <keycloak.dc1.scale/>
+        <keycloak.dc2.scale/>
+        <keycloak.docker.cpusets>2-3</keycloak.docker.cpusets>
+        <keycloak.dc1.docker.cpusets>2</keycloak.dc1.docker.cpusets>
+        <keycloak.dc2.docker.cpusets>3</keycloak.dc2.docker.cpusets>
+        <keycloak.docker.memlimit>2500m</keycloak.docker.memlimit>
         <keycloak.jvm.memory>-Xms64m -Xmx2g -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m</keycloak.jvm.memory>
-        <keycloak.http.max-connections>500</keycloak.http.max-connections>
-        <keycloak.ajp.max-connections>500</keycloak.ajp.max-connections>
+        <keycloak.http.max-connections>50000</keycloak.http.max-connections>
+        <keycloak.ajp.max-connections>50000</keycloak.ajp.max-connections>
         <keycloak.worker.io-threads>2</keycloak.worker.io-threads>
         <keycloak.worker.task-max-threads>16</keycloak.worker.task-max-threads>
         <keycloak.ds.min-pool-size>10</keycloak.ds.min-pool-size>
@@ -49,24 +53,32 @@
         <keycloak.ds.pool-prefill>true</keycloak.ds.pool-prefill>
         <keycloak.ds.ps-cache-size>100</keycloak.ds.ps-cache-size>
 
-        <keycloak-lb.jvm.memory>-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m</keycloak-lb.jvm.memory>
-        <keycloak-lb.http.max-connections>500</keycloak-lb.http.max-connections>
-        <keycloak-lb.worker.io-threads>2</keycloak-lb.worker.io-threads>
-        <keycloak-lb.worker.task-max-threads>16</keycloak-lb.worker.task-max-threads>
-
-        <!-- Docker-related properties -->
-        <db.docker.cpuset>1</db.docker.cpuset>
-        <keycloak.docker.cpuset>2-3</keycloak.docker.cpuset>
-        <keycloak.dc1.docker.cpuset>2</keycloak.dc1.docker.cpuset>
-        <keycloak.dc2.docker.cpuset>3</keycloak.dc2.docker.cpuset>
-        <monitoring.docker.cpuset>0</monitoring.docker.cpuset>
-
+        <!-- Database Settings -->
+        <db.docker.cpusets>1</db.docker.cpusets>
+        <db.dc1.docker.cpusets>1</db.dc1.docker.cpusets>
+        <db.dc2.docker.cpusets>1</db.dc2.docker.cpusets>
         <db.docker.memlimit>2g</db.docker.memlimit>
-        <keycloak.docker.memlimit>2g</keycloak.docker.memlimit>
-        <!-- End of docker-related properties -->
 
-        <infinispan.jvm.memory>-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -XX:+DisableExplicitGC</infinispan.jvm.memory>
+        <!-- Load Balancer Settings -->
+        <lb.docker.cpusets>1</lb.docker.cpusets>
+        <lb.dc1.docker.cpusets>1</lb.dc1.docker.cpusets>
+        <lb.dc2.docker.cpusets>1</lb.dc2.docker.cpusets>
+        <lb.docker.memlimit>1g</lb.docker.memlimit>
+        <lb.jvm.memory>-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m</lb.jvm.memory>
+        <lb.http.max-connections>500</lb.http.max-connections>
+        <lb.worker.io-threads>2</lb.worker.io-threads>
+        <lb.worker.task-max-threads>16</lb.worker.task-max-threads>
 
+        <!-- Infinispan Settings -->
+        <infinispan.dc1.docker.cpusets>1</infinispan.dc1.docker.cpusets>
+        <infinispan.dc2.docker.cpusets>1</infinispan.dc2.docker.cpusets>
+        <infinispan.docker.memlimit>1500m</infinispan.docker.memlimit>
+        <infinispan.jvm.memory>-Xms64m -Xmx1g -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -XX:+DisableExplicitGC</infinispan.jvm.memory>
+        
+        <!-- Monitoring Settings -->
+        <monitoring.docker.cpusets>0</monitoring.docker.cpusets>
+
+        <!-- Other -->
         <dataset>default</dataset>
         <numOfWorkers>1</numOfWorkers>
 
@@ -156,6 +168,58 @@
             </testResource>
         </testResources>
         <plugins>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>enforce-teardown-before-clean</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <phase>pre-clean</phase>
+                        <configuration>
+                            <rules>
+                                <requireFilesDontExist>
+                                    <message><![CDATA[
+                                        WARNING: A previously provisioned system still appears to be running.
+         Please tear it down with `mvn verify -P teardown [-Pcluster|crossdc]` before runing `mvn clean`, 
+         or delete the `provisioned-system.properties` file manually.
+                                    ]]></message>
+                                    <files>
+                                        <file>${provisioned.system.properties.file}</file>
+                                    </files>
+                                </requireFilesDontExist>
+                            </rules>
+                            <fail>true</fail>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            
+            
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>properties-maven-plugin</artifactId>
+                <version>1.0.0</version>
+                <executions>            
+                    <execution>
+                        <id>read-existing-provisioned-system-properties</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>read-project-properties</goal>
+                        </goals>
+                        <configuration>
+                            <files>
+                                <file>${project.build.directory}/provisioned-system.properties</file>
+                            </files>
+                            <quiet>true</quiet>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            
             <plugin>
                 <groupId>net.alchim31.maven</groupId>
                 <artifactId>scala-maven-plugin</artifactId>
@@ -191,12 +255,11 @@
                 </executions>
             </plugin>
 
-
             <plugin>
                 <!--
                 Execute test directly by using:
 
-                    mvn gatling:execute -f testsuite/performance/gatling -Dgatling.simulationClass=keycloak.DemoSimulation2
+                mvn gatling:execute -Ptest -f testsuite/performance/gatling -Dgatling.simulationClass=keycloak.DemoSimulation2
 
                 For more usage info see: http://gatling.io/docs/current/extensions/maven_plugin/
                 -->
@@ -213,6 +276,7 @@
                         <include>keycloak.DemoSimulation2</include>
                     </includes-->
                     <jvmArgs>
+                        <param>-Dkeycloak.server.uris=${keycloak.frontend.servers}</param>
                         <param>-DnumOfRealms=${numOfRealms}</param>
                         <param>-DusersPerRealm=${usersPerRealm}</param>
                         <param>-DclientsPerRealm=${clientsPerRealm}</param>
@@ -233,30 +297,163 @@
                     </execution>
                 </executions>
             </plugin>
-            
+
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
-                <artifactId>properties-maven-plugin</artifactId>
-                <version>1.0.0</version>
-                <executions>
-                    <execution>
-                        <id>read-dataset-properties</id>
-                        <phase>initialize</phase>
-                        <goals>
-                            <goal>read-project-properties</goal>
-                        </goals>
-                        <configuration>
-                            <files>
-                                <file>${project.basedir}/datasets/${dataset}.properties</file>
-                            </files>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>                    
+                <artifactId>exec-maven-plugin</artifactId>
+                <configuration>
+                    <workingDirectory>${project.basedir}</workingDirectory>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
     <profiles>
+        
+        <profile>
+            <id>docker-compose</id>
+            <activation>
+                <property>
+                    <name>!provisioner</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-dockerfiles-etc</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <copy todir="${project.build.directory}/docker-compose" overwrite="false" >
+                                            <fileset dir="${project.basedir}/src/main/docker-compose"/>
+                                        </copy>
+                                        <copy todir="${project.build.directory}/docker-compose" overwrite="false" >
+                                            <fileset dir="${project.basedir}/..">
+                                                <include name="db/**"/>
+                                                <include name="infinispan/**"/>
+                                                <include name="load-balancer/**"/>
+                                                <include name="monitoring/**"/>
+                                            </fileset>
+                                        </copy>
+                                        <copy todir="${project.build.directory}/docker-compose/keycloak" overwrite="false" >
+                                            <fileset dir="${project.basedir}/../keycloak/target/docker"/>
+                                        </copy>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        
+        <profile>
+            <id>cluster</id>
+            <properties>
+                <deployment>cluster</deployment>
+                <keycloak.docker.cpusets>2 3</keycloak.docker.cpusets>
+            </properties>
+        </profile>
+        <profile>
+            <id>crossdc</id>
+            <properties>
+                <deployment>crossdc</deployment>
+            </properties>
+        </profile>
+        
+        <profile>
+            <id>provision</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>provision</id>
+                                <phase>process-test-resources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>./${provisioner}.sh</executable>
+                                    <environmentVariables>
+                                        <PROVISIONER>${provisioner}</PROVISIONER>
+                                        <DEPLOYMENT>${deployment}</DEPLOYMENT>
+                                        <OPERATION>provision</OPERATION>
+
+                                        <KEYCLOAK_VERSION>${project.version}</KEYCLOAK_VERSION>
+                                        
+                                        <KEYCLOAK_SCALE>${keycloak.scale}</KEYCLOAK_SCALE>
+                                        <KEYCLOAK_DC1_SCALE>${keycloak.dc1.scale}</KEYCLOAK_DC1_SCALE>
+                                        <KEYCLOAK_DC2_SCALE>${keycloak.dc2.scale}</KEYCLOAK_DC2_SCALE>
+                                        <KEYCLOAK_CPUSETS>${keycloak.docker.cpusets}</KEYCLOAK_CPUSETS>
+                                        <KEYCLOAK_DC1_CPUSETS>${keycloak.dc1.docker.cpusets}</KEYCLOAK_DC1_CPUSETS>
+                                        <KEYCLOAK_DC2_CPUSETS>${keycloak.dc2.docker.cpusets}</KEYCLOAK_DC2_CPUSETS>
+                                        <KEYCLOAK_MEMLIMIT>${keycloak.docker.memlimit}</KEYCLOAK_MEMLIMIT>
+                                        <KEYCLOAK_JVM_MEMORY>${keycloak.jvm.memory}</KEYCLOAK_JVM_MEMORY>
+                                        <KEYCLOAK_HTTP_MAX_CONNECTIONS>${keycloak.http.max-connections}</KEYCLOAK_HTTP_MAX_CONNECTIONS>
+                                        <KEYCLOAK_AJP_MAX_CONNECTIONS>${keycloak.ajp.max-connections}</KEYCLOAK_AJP_MAX_CONNECTIONS>
+                                        <KEYCLOAK_WORKER_IO_THREADS>${keycloak.worker.io-threads}</KEYCLOAK_WORKER_IO_THREADS>
+                                        <KEYCLOAK_WORKER_TASK_MAX_THREADS>${keycloak.worker.task-max-threads}</KEYCLOAK_WORKER_TASK_MAX_THREADS>
+                                        <KEYCLOAK_DS_MIN_POOL_SIZE>${keycloak.ds.min-pool-size}</KEYCLOAK_DS_MIN_POOL_SIZE>
+                                        <KEYCLOAK_DS_MAX_POOL_SIZE>${keycloak.ds.max-pool-size}</KEYCLOAK_DS_MAX_POOL_SIZE>
+                                        <KEYCLOAK_DS_POOL_PREFILL>${keycloak.ds.pool-prefill}</KEYCLOAK_DS_POOL_PREFILL>
+                                        <KEYCLOAK_DS_PS_CACHE_SIZE>${keycloak.ds.ps-cache-size}</KEYCLOAK_DS_PS_CACHE_SIZE>
+
+                                        <DB_CPUSETS>${db.docker.cpusets}</DB_CPUSETS>
+                                        <DB_DC1_CPUSETS>${db.dc1.docker.cpusets}</DB_DC1_CPUSETS>
+                                        <DB_DC2_CPUSETS>${db.dc2.docker.cpusets}</DB_DC2_CPUSETS>
+                                        <DB_MEMLIMIT>${db.docker.memlimit}</DB_MEMLIMIT>
+
+                                        <LB_CPUSETS>${lb.docker.cpusets}</LB_CPUSETS>
+                                        <LB_DC1_CPUSETS>${lb.dc1.docker.cpusets}</LB_DC1_CPUSETS>
+                                        <LB_DC2_CPUSETS>${lb.dc2.docker.cpusets}</LB_DC2_CPUSETS>
+                                        <LB_MEMLIMIT>${lb.docker.memlimit}</LB_MEMLIMIT>
+                                        <LB_JVM_MEMORY>${lb.jvm.memory}</LB_JVM_MEMORY>
+                                        <LB_HTTP_MAX_CONNECTIONS>${lb.http.max-connections}</LB_HTTP_MAX_CONNECTIONS>
+                                        <LB_WORKER_IO_THREADS>${lb.worker.io-threads}</LB_WORKER_IO_THREADS>
+                                        <LB_WORKER_TASK_MAX_THREADS>${lb.worker.task-max-threads}</LB_WORKER_TASK_MAX_THREADS>
+                                        
+                                        <INFINISPAN_DC1_CPUSETS>${infinispan.dc1.docker.cpusets}</INFINISPAN_DC1_CPUSETS>
+                                        <INFINISPAN_DC2_CPUSETS>${infinispan.dc2.docker.cpusets}</INFINISPAN_DC2_CPUSETS>
+                                        <INFINISPAN_MEMLIMIT>${infinispan.docker.memlimit}</INFINISPAN_MEMLIMIT>
+                                        <INFINISPAN_JVM_MEMORY>${infinispan.jvm.memory}</INFINISPAN_JVM_MEMORY>
+                                    </environmentVariables>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>properties-maven-plugin</artifactId>
+                        <version>1.0.0</version>
+                        <executions>
+                            <execution>
+                                <id>read-new-provisioned-system-properties</id>
+                                <goals>
+                                    <goal>read-project-properties</goal>
+                                </goals>
+                                <phase>pre-integration-test</phase>
+                                <configuration>
+                                    <files>
+                                        <file>${project.build.directory}/provisioned-system.properties</file>
+                                    </files>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        
         <profile>
             <id>initialize-dataset-properties</id>
             <activation>
@@ -273,127 +470,19 @@
                         <executions>
                             <execution>
                                 <id>initialize-dataset-properties</id>
-                                <phase>initialize</phase>
+                                <phase>pre-integration-test</phase>
                                 <goals>
                                     <goal>read-project-properties</goal>
                                 </goals>
                                 <configuration>
                                     <files>
-                                        <file>${project.basedir}/datasets/${dataset}.properties</file>
+                                        <file>${project.basedir}/../datasets/${dataset}.properties</file>
                                     </files>
+                                    <quiet>true</quiet>
                                 </configuration>
                             </execution>
                         </executions>
                     </plugin>                    
-
-                </plugins>
-            </build>
-        </profile>
-        
-        <profile>
-            <id>cluster</id>
-            <properties>
-                <compose.file>docker-compose-cluster.yml</compose.file>
-                <keycloak.scale>1</keycloak.scale>
-                <compose.up.params>--scale keycloak=${keycloak.scale}</compose.up.params>
-                <keycloak.server.uris>http://localhost:8080/auth</keycloak.server.uris>
-            </properties>
-        </profile>
-        <profile>
-            <id>crossdc</id>
-            <properties>
-                <compose.file>docker-compose-crossdc.yml</compose.file>
-                <keycloak.dc1.scale>1</keycloak.dc1.scale>
-                <keycloak.dc2.scale>1</keycloak.dc2.scale>
-                <compose.up.params>--scale keycloak_dc1=${keycloak.dc1.scale} --scale keycloak_dc2=${keycloak.dc2.scale}</compose.up.params>
-                <compose.restart.params>keycloak_dc1 keycloak_dc2</compose.restart.params>
-                <keycloak.server.uris>http://localhost:8081/auth http://localhost:8082/auth</keycloak.server.uris>
-            </properties>
-        </profile>
-        
-        
-        <profile>
-            <id>provision</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>exec-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>docker-compose-up</id>
-                                <phase>pre-integration-test</phase>
-                                <goals>
-                                    <goal>exec</goal>
-                                </goals>
-                                <configuration>
-                                    <workingDirectory>${project.basedir}/..</workingDirectory>
-                                    <executable>docker-compose</executable>
-                                    <commandlineArgs>-f ${compose.file} up -d --build ${compose.up.params}</commandlineArgs>
-                                    <environmentVariables>
-                                        <KEYCLOAK_VERSION>${project.version}</KEYCLOAK_VERSION>
-
-                                        <KEYCLOAK_CPUSET>${keycloak.docker.cpuset}</KEYCLOAK_CPUSET>
-                                        <KEYCLOAK_DC1_CPUSET>${keycloak.dc1.docker.cpuset}</KEYCLOAK_DC1_CPUSET>
-                                        <KEYCLOAK_DC2_CPUSET>${keycloak.dc2.docker.cpuset}</KEYCLOAK_DC2_CPUSET>
-                                        <KEYCLOAK_MEMLIMIT>${keycloak.docker.memlimit}</KEYCLOAK_MEMLIMIT>
-                                        <DB_CPUSET>${db.docker.cpuset}</DB_CPUSET>
-                                        <DB_MEMLIMIT>${db.docker.memlimit}</DB_MEMLIMIT>
-                                        
-                                        <KEYCLOAK_JVM_MEMORY>${keycloak.jvm.memory}</KEYCLOAK_JVM_MEMORY>
-                                        <KEYCLOAK_HTTP_MAX_CONNECTIONS>${keycloak.http.max-connections}</KEYCLOAK_HTTP_MAX_CONNECTIONS>
-                                        <KEYCLOAK_AJP_MAX_CONNECTIONS>${keycloak.ajp.max-connections}</KEYCLOAK_AJP_MAX_CONNECTIONS>
-                                        <KEYCLOAK_WORKER_IO_THREADS>${keycloak.worker.io-threads}</KEYCLOAK_WORKER_IO_THREADS>
-                                        <KEYCLOAK_WORKER_TASK_MAX_THREADS>${keycloak.worker.task-max-threads}</KEYCLOAK_WORKER_TASK_MAX_THREADS>
-                                        <KEYCLOAK_DS_MIN_POOL_SIZE>${keycloak.ds.min-pool-size}</KEYCLOAK_DS_MIN_POOL_SIZE>
-                                        <KEYCLOAK_DS_MAX_POOL_SIZE>${keycloak.ds.max-pool-size}</KEYCLOAK_DS_MAX_POOL_SIZE>
-                                        <KEYCLOAK_DS_POOL_PREFILL>${keycloak.ds.pool-prefill}</KEYCLOAK_DS_POOL_PREFILL>
-                                        <KEYCLOAK_DS_PS_CACHE_SIZE>${keycloak.ds.ps-cache-size}</KEYCLOAK_DS_PS_CACHE_SIZE>
-                                        
-                                        <KEYCLOAK_LB_JVM_MEMORY>${keycloak-lb.jvm.memory}</KEYCLOAK_LB_JVM_MEMORY>
-                                        <KEYCLOAK_LB_HTTP_MAX_CONNECTIONS>${keycloak-lb.http.max-connections}</KEYCLOAK_LB_HTTP_MAX_CONNECTIONS>
-                                        <KEYCLOAK_LB_WORKER_IO_THREADS>${keycloak-lb.worker.io-threads}</KEYCLOAK_LB_WORKER_IO_THREADS>
-                                        <KEYCLOAK_LB_WORKER_TASK_MAX_THREADS>${keycloak-lb.worker.task-max-threads}</KEYCLOAK_LB_WORKER_TASK_MAX_THREADS>
-                                        
-                                        <INFINISPAN_JVM_MEMORY>${infinispan.jvm.memory}</INFINISPAN_JVM_MEMORY>
-                                    </environmentVariables>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>healthcheck</id>
-                                <phase>pre-integration-test</phase>
-                                <goals>
-                                    <goal>exec</goal>
-                                </goals>
-                                <configuration>
-                                    <executable>./healthcheck.sh</executable>
-                                    <workingDirectory>${project.basedir}/..</workingDirectory>
-                                    <environmentVariables>
-                                        <KEYCLOAK_SERVER_URIS>${keycloak.server.uris}</KEYCLOAK_SERVER_URIS>
-                                    </environmentVariables>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-antrun-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>write-provisioned-system-properties</id>
-                                <phase>pre-integration-test</phase>
-                                <goals>
-                                    <goal>run</goal>
-                                </goals>
-                                <configuration>
-                                    <target>
-                                        <propertyfile file="${project.build.directory}/provisioned-system.properties">
-                                            <entry key="keycloak.server.uris" value="${keycloak.server.uris}"/>
-                                        </propertyfile>
-                                    </target>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
                 </plugins>
             </build>
         </profile>
@@ -442,36 +531,11 @@
                                     <arguments>
                                         <argument>-classpath</argument>
                                         <classpath/>
+                                        <argument>-Dkeycloak.server.uris=${keycloak.frontend.servers}</argument>
                                         <argument>-DnumOfWorkers=${numOfWorkers}</argument>
                                         <argument>org.keycloak.performance.RealmsConfigurationLoader</argument>
                                         <argument>benchmark-realms.json</argument>
                                     </arguments>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-antrun-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>write-imported-dataset-properties</id>
-                                <phase>pre-integration-test</phase>
-                                <goals>
-                                    <goal>run</goal>
-                                </goals>
-                                <configuration>
-                                    <target>
-                                        <propertyfile file="${project.build.directory}/imported-dataset.properties">
-                                            <entry key="numOfRealms" value="${numOfRealms}"/>
-                                            <entry key="usersPerRealm" value="${usersPerRealm}"/>
-                                            <entry key="clientsPerRealm" value="${clientsPerRealm}"/>
-                                            <entry key="realmRoles" value="${realmRoles}"/>
-                                            <entry key="realmRolesPerUser" value="${realmRolesPerUser}"/>
-                                            <entry key="clientRolesPerUser" value="${clientRolesPerUser}"/>
-                                            <entry key="clientRolesPerClient" value="${clientRolesPerClient}"/>
-                                            <entry key="hashIterations" value="${hashIterations}"/>
-                                        </propertyfile>
-                                    </target>
                                 </configuration>
                             </execution>
                         </executions>
@@ -481,17 +545,29 @@
         </profile>
 
         <profile>
-            <id>export-dump-after-generation</id>
-
-            <activation>
-                <activeByDefault>false</activeByDefault>
-                <property>
-                    <name>export-dump</name>
-                </property>
-            </activation>
-
+            <id>export-dump</id>
             <build>
                 <plugins>
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>enforce-nondefault-dataset</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireProperty>
+                                            <property>dataset</property>
+                                            <regex>(?!default).*</regex>
+                                            <regexMessage>For the "export-dump" task property "dataset" cannot be set to "default".</regexMessage>
+                                        </requireProperty>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
@@ -503,10 +579,11 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <workingDirectory>${project.basedir}/..</workingDirectory>
-                                    <executable>./prepare-dump.sh</executable>
-
+                                    <executable>./${provisioner}.sh</executable>
                                     <environmentVariables>
+                                        <PROVISIONER>${provisioner}</PROVISIONER>
+                                        <DEPLOYMENT>${deployment}</DEPLOYMENT>
+                                        <OPERATION>export-dump</OPERATION>
                                         <DATASET>${dataset}</DATASET>
                                     </environmentVariables>
                                 </configuration>
@@ -526,43 +603,18 @@
                         <artifactId>exec-maven-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>load-dump</id>
+                                <id>import-dump</id>
                                 <phase>pre-integration-test</phase>
                                 <goals>
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <workingDirectory>${project.basedir}/..</workingDirectory>
-                                    <executable>./load-dump.sh</executable>
-
+                                    <executable>./${provisioner}.sh</executable>
                                     <environmentVariables>
+                                        <PROVISIONER>${provisioner}</PROVISIONER>
+                                        <DEPLOYMENT>${deployment}</DEPLOYMENT>
+                                        <OPERATION>import-dump</OPERATION>
                                         <DATASET>${dataset}</DATASET>
-                                    </environmentVariables>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>restart-keycloak</id>
-                                <phase>pre-integration-test</phase>
-                                <goals>
-                                    <goal>exec</goal>
-                                </goals>
-                                <configuration>
-                                    <workingDirectory>${project.basedir}/..</workingDirectory>
-                                    <executable>docker-compose</executable>
-                                    <commandlineArgs>-f ${compose.file} restart ${compose.restart.params}</commandlineArgs>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>healthcheck</id>
-                                <phase>pre-integration-test</phase>
-                                <goals>
-                                    <goal>exec</goal>
-                                </goals>
-                                <configuration>
-                                    <executable>./healthcheck.sh</executable>
-                                    <workingDirectory>${project.basedir}/..</workingDirectory>
-                                    <environmentVariables>
-                                        <KEYCLOAK_SERVER_URIS>${keycloak.server.uris}</KEYCLOAK_SERVER_URIS>
                                     </environmentVariables>
                                 </configuration>
                             </execution>
@@ -582,7 +634,7 @@
         <profile>
             <id>teardown</id>
             <properties>
-                <volumes.arg>-v</volumes.arg>
+                <delete.data>true</delete.data>
             </properties>
             <build>
                 <plugins>
@@ -591,29 +643,30 @@
                         <artifactId>exec-maven-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>docker-compose-down</id>
+                                <id>teardown</id>
                                 <phase>post-integration-test</phase>
                                 <goals>
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <workingDirectory>${project.basedir}/..</workingDirectory>
-                                    <executable>docker-compose</executable>
-                                    <commandlineArgs>-f ${compose.file} down ${volumes.arg}</commandlineArgs>
+                                    <executable>./${provisioner}.sh</executable>
                                     <environmentVariables>
-                                        <KEYCLOAK_VERSION>${project.version}</KEYCLOAK_VERSION>
+                                        <PROVISIONER>${provisioner}</PROVISIONER>
+                                        <DEPLOYMENT>${deployment}</DEPLOYMENT>
+                                        <OPERATION>teardown</OPERATION>
+                                        <DELETE_DATA>${delete.data}</DELETE_DATA>
                                     </environmentVariables>
                                 </configuration>
                             </execution>
                         </executions>
-                    </plugin>
+                    </plugin>                    
                 </plugins>
             </build>
         </profile>
         <profile>
             <id>keep-data</id>
             <properties>
-                <volumes.arg/>
+                <delete.data>false</delete.data>
             </properties>
         </profile>
         
@@ -627,29 +680,29 @@
                         <artifactId>exec-maven-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>monitoring-docker-compose-up</id>
+                                <id>monitoring-on</id>
                                 <phase>pre-integration-test</phase>
                                 <goals>
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <workingDirectory>${project.basedir}/..</workingDirectory>
-                                    <executable>docker-compose</executable>
-                                    <commandlineArgs>-f docker-compose-monitoring.yml up -d --build</commandlineArgs>
+                                    <executable>./${provisioner}.sh</executable>
                                     <environmentVariables>
-                                        <MONITORING_CPUSET>${monitoring.docker.cpuset}</MONITORING_CPUSET>
+                                        <PROVISIONER>${provisioner}</PROVISIONER>
+                                        <DEPLOYMENT>monitoring</DEPLOYMENT>
+                                        <OPERATION>provision</OPERATION>
                                     </environmentVariables>
                                 </configuration>
                             </execution>
                         </executions>
-                    </plugin>
+                    </plugin> 
                 </plugins>
             </build>
         </profile>
         <profile>
             <id>monitoring-off</id>
             <properties>
-                <monitoring.volumes.arg/>
+                <delete.monitoring.data>false</delete.monitoring.data>
             </properties>
             <build>
                 <plugins>
@@ -658,15 +711,19 @@
                         <artifactId>exec-maven-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>monitoring-docker-compose-down</id>
+                                <id>monitoring-off</id>
                                 <phase>post-integration-test</phase>
                                 <goals>
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <workingDirectory>${project.basedir}/..</workingDirectory>
-                                    <executable>docker-compose</executable>
-                                    <commandlineArgs>-f docker-compose-monitoring.yml down ${monitoring.volumes.arg}</commandlineArgs>
+                                    <executable>./${provisioner}.sh</executable>
+                                    <environmentVariables>
+                                        <PROVISIONER>${provisioner}</PROVISIONER>
+                                        <DEPLOYMENT>monitoring</DEPLOYMENT>
+                                        <OPERATION>teardown</OPERATION>
+                                        <DELETE_DATA>${delete.monitoring.data}</DELETE_DATA>
+                                    </environmentVariables>
                                 </configuration>
                             </execution>
                         </executions>
@@ -677,7 +734,7 @@
         <profile>
             <id>delete-monitoring-data</id>
             <properties>
-                <monitoring.volumes.arg>-v</monitoring.volumes.arg>
+                <delete.monitoring.data>true</delete.monitoring.data>
             </properties>
         </profile>
 

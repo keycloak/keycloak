@@ -18,8 +18,8 @@ LOG_DIR=$HOME/devel/keycloak/keycloak/testsuite/performance/tests/target/gatling
 
 Get general statistics about the run to help with deciding about the interval to extract:
 ```
-./log-tool.sh -s -f $LOG_DIR/simulation.log 
-./log-tool.sh -s -f $LOG_DIR/simulation.log --lastRequest "Browser logout"
+tests/log-tool.sh -s -f $LOG_DIR/simulation.log 
+tests/log-tool.sh -s -f $LOG_DIR/simulation.log --lastRequest "Browser logout"
 ```
 
 Set start and end times for the extraction, and create new directory for results:
@@ -34,9 +34,9 @@ mkdir $RESULT_DIR
 
 Extract a portion of the original log, and inspect statistics of resulting log:
 ```
-./log-tool.sh -f $LOG_DIR/simulation.log -o $RESULT_DIR/simulation-$FROM\_$TO.log -e --start $FROM --end $TO 
+tests/log-tool.sh -f $LOG_DIR/simulation.log -o $RESULT_DIR/simulation-$FROM\_$TO.log -e --start $FROM --end $TO 
 
-./log-tool.sh -f $RESULT_DIR/simulation-$FROM\_$TO.log -s
+tests/log-tool.sh -f $RESULT_DIR/simulation-$FROM\_$TO.log -s
 ```
 
 Generate another set of reports from extracted log: 

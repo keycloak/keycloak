@@ -37,24 +37,43 @@
     <properties>
         <server.groupId>org.keycloak</server.groupId>
         <server.artifactId>keycloak-server-dist</server.artifactId>
-        <server.unpacked.folder>keycloak-${product.version}</server.unpacked.folder>
+        <server.unpacked.home>${project.build.directory}/keycloak-${product.version}</server.unpacked.home>
+        
+        <jdbc.driver.groupId>org.mariadb.jdbc</jdbc.driver.groupId>
+        <jdbc.driver.artifactId>mariadb-java-client</jdbc.driver.artifactId>
+        <jdbc.driver.version>2.0.3</jdbc.driver.version>
+        <jdbc.driver.module.path>org/mariadb/jdbc</jdbc.driver.module.path>
+
+        <script.extension>sh</script.extension>
+        <jboss.cli.script>jboss-cli.${script.extension}</jboss.cli.script>
+        <add.user.script>add-user.${script.extension}</add.user.script>
+        
+        <skip.crossdc.configuration>true</skip.crossdc.configuration>
+        
+        <skip.configuration>false</skip.configuration>
+        <skip.keycloak.docker>false</skip.keycloak.docker>
+        
+        <keycloak.debug.user>admin</keycloak.debug.user>
+        <keycloak.debug.user.password>admin</keycloak.debug.user.password>
+        
+        <scripts.dir>${project.build.scriptSourceDirectory}</scripts.dir>
+        <resources.dir>${project.basedir}/src/main/resources</resources.dir>
     </properties>
 
     <build>
-
+        
         <plugins>
             <plugin>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
                     <execution>
-                        <!--=============================-->
                         <id>unpack-keycloak-server-dist</id>
-                        <!--=============================-->
                         <phase>generate-resources</phase>
                         <goals>
                             <goal>unpack</goal>
                         </goals>
                         <configuration>
+                            <overWriteIfNewer>true</overWriteIfNewer>
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>${server.groupId}</groupId>
@@ -66,6 +85,25 @@
                             </artifactItems>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>copy-jdbc-driver</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <overWriteIfNewer>true</overWriteIfNewer>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>${jdbc.driver.groupId}</groupId>
+                                    <artifactId>${jdbc.driver.artifactId}</artifactId>
+                                    <version>${jdbc.driver.version}</version>
+                                    <type>jar</type>
+                                    <outputDirectory>${server.unpacked.home}/modules/system/layers/base/${jdbc.driver.module.path}/main</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -73,18 +111,40 @@
                 <artifactId>maven-antrun-plugin</artifactId>
                 <executions>
                     <execution>
-                        <!--=============================-->
-                        <id>rename-keycloak-folder</id>
-                        <!--=============================-->
+                        <id>keycloak-performance-configuration</id>
                         <phase>process-resources</phase>
                         <goals>
                             <goal>run</goal>
                         </goals>
                         <configuration>
                             <target>
-                                <move todir="${project.build.directory}/keycloak" failonerror="false">
-                                    <fileset dir="${project.build.directory}/${server.unpacked.folder}"/>
-                                </move>
+                                <ant antfile="configure.xml" target="keycloak-performance-configuration" />
+                            </target>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>keycloak-crossdc-configuration</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skip.crossdc.configuration}</skip>
+                            <target>
+                                <ant antfile="configure.xml" target="keycloak-crossdc-configuration" />
+                            </target>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>keycloak-docker</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skip.keycloak.docker}</skip>
+                            <target>
+                                <ant antfile="configure.xml" target="keycloak-docker" />
                             </target>
                         </configuration>
                     </execution>
@@ -95,14 +155,34 @@
     
     <profiles>
         
+        <profile>        
+            <id>windows</id>
+            <activation>
+                <os>
+                    <family>windows</family>
+                </os>
+            </activation>
+            <properties>
+                <script.extension>ps1</script.extension>
+            </properties>
+        </profile>
+        
+        <profile>
+            <id>crossdc</id>
+            <properties>
+                <skip.crossdc.configuration>false</skip.crossdc.configuration>
+            </properties>
+        </profile>
+        
         <profile>
             <id>integration-testsuite-server</id>
             <properties>
                 <server.groupId>org.keycloak.testsuite</server.groupId>
                 <server.artifactId>integration-arquillian-servers-auth-server-wildfly</server.artifactId>
-                <server.unpacked.folder>auth-server-wildfly</server.unpacked.folder>
+                <server.unpacked.home>auth-server-wildfly</server.unpacked.home>
             </properties>
         </profile>
+
     </profiles>
     
 </project>

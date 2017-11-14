@@ -58,6 +58,7 @@ public class RealmsConfigurationLoader {
     static boolean realmCreated;
 
     public static void main(String [] args) throws IOException {
+        System.out.println("Keycloak servers: "+TestConfig.serverUrisList);
 
         if (args.length == 0) {
             args = new String[] {EXPORT_FILENAME};

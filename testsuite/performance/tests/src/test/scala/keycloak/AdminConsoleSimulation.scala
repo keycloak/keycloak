@@ -14,7 +14,7 @@ import SimulationsHelper._
 class AdminConsoleSimulation extends Simulation {
 
   println()
-  println("Using server: " + TestConfig.serverUrisList.get(0))
+  println("Target server: " + TestConfig.serverUrisList.get(0))
   println()
   println("Using test parameters:")
   println("  runUsers: " + TestConfig.runUsers)
