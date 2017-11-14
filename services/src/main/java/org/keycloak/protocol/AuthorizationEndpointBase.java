@@ -154,14 +154,14 @@ public abstract class AuthorizationEndpointBase {
     protected void checkSsl() {
         if (!uriInfo.getBaseUri().getScheme().equals("https") && realm.getSslRequired().isRequired(clientConnection)) {
             event.error(Errors.SSL_REQUIRED);
-            throw new ErrorPageException(session, Messages.HTTPS_REQUIRED);
+            throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.HTTPS_REQUIRED);
         }
     }
 
     protected void checkRealm() {
         if (!realm.isEnabled()) {
             event.error(Errors.REALM_DISABLED);
-            throw new ErrorPageException(session, Messages.REALM_NOT_ENABLED);
+            throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.REALM_NOT_ENABLED);
         }
     }
 

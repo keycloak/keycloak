@@ -173,7 +173,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
             try {
                 auth.require(AccountRoles.MANAGE_ACCOUNT);
             } catch (ForbiddenException e) {
-                return session.getProvider(LoginFormsProvider.class).setError(Messages.NO_ACCESS).createErrorPage();
+                return session.getProvider(LoginFormsProvider.class).setError(Messages.NO_ACCESS).createErrorPage(Response.Status.FORBIDDEN);
             }
 
             setReferrerOnPage();
@@ -185,7 +185,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
                 if (forwardedError != null) {
                     try {
                         FormMessage errorMessage = JsonSerialization.readValue(forwardedError, FormMessage.class);
-                        account.setError(errorMessage.getMessage(), errorMessage.getParameters());
+                        account.setError(Response.Status.INTERNAL_SERVER_ERROR, errorMessage.getMessage(), errorMessage.getParameters());
                         authSession.removeAuthNote(ACCOUNT_MGMT_FORWARDED_ERROR_NOTE);
                     } catch (IOException ioe) {
                         throw new RuntimeException(ioe);
@@ -318,7 +318,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
         List<FormMessage> errors = Validation.validateUpdateProfileForm(realm.isEditUsernameAllowed(), formData);
         if (errors != null && !errors.isEmpty()) {
             setReferrerOnPage();
-            return account.setErrors(errors).setProfileFormData(formData).createResponse(AccountPages.ACCOUNT);
+            return account.setErrors(Response.Status.BAD_REQUEST, errors).setProfileFormData(formData).createResponse(AccountPages.ACCOUNT);
         }
 
         try {
@@ -336,10 +336,10 @@ public class AccountFormService extends AbstractSecuredLocalService {
             return account.setSuccess(Messages.ACCOUNT_UPDATED).createResponse(AccountPages.ACCOUNT);
         } catch (ReadOnlyException roe) {
             setReferrerOnPage();
-            return account.setError(Messages.READ_ONLY_USER).setProfileFormData(formData).createResponse(AccountPages.ACCOUNT);
+            return account.setError(Response.Status.BAD_REQUEST, Messages.READ_ONLY_USER).setProfileFormData(formData).createResponse(AccountPages.ACCOUNT);
         } catch (ModelDuplicateException mde) {
             setReferrerOnPage();
-            return account.setError(mde.getMessage()).setProfileFormData(formData).createResponse(AccountPages.ACCOUNT);
+            return account.setError(Response.Status.CONFLICT, mde.getMessage()).setProfileFormData(formData).createResponse(AccountPages.ACCOUNT);
         }
     }
 
@@ -408,11 +408,11 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
         String clientId = formData.getFirst("clientId");
         if (clientId == null) {
-            return account.setError(Messages.CLIENT_NOT_FOUND).createResponse(AccountPages.APPLICATIONS);
+            return account.setError(Response.Status.BAD_REQUEST, Messages.CLIENT_NOT_FOUND).createResponse(AccountPages.APPLICATIONS);
         }
         ClientModel client = realm.getClientById(clientId);
         if (client == null) {
-            return account.setError(Messages.CLIENT_NOT_FOUND).createResponse(AccountPages.APPLICATIONS);
+            return account.setError(Response.Status.BAD_REQUEST, Messages.CLIENT_NOT_FOUND).createResponse(AccountPages.APPLICATIONS);
         }
 
         // Revoke grant in UserModel
@@ -472,10 +472,10 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
         if (Validation.isBlank(totp)) {
             setReferrerOnPage();
-            return account.setError(Messages.MISSING_TOTP).createResponse(AccountPages.TOTP);
+            return account.setError(Response.Status.BAD_REQUEST, Messages.MISSING_TOTP).createResponse(AccountPages.TOTP);
         } else if (!CredentialValidation.validOTP(realm, totp, totpSecret)) {
             setReferrerOnPage();
-            return account.setError(Messages.INVALID_TOTP).createResponse(AccountPages.TOTP);
+            return account.setError(Response.Status.BAD_REQUEST, Messages.INVALID_TOTP).createResponse(AccountPages.TOTP);
         }
 
         UserCredentialModel credentials = new UserCredentialModel();
@@ -535,27 +535,27 @@ public class AccountFormService extends AbstractSecuredLocalService {
             if (Validation.isBlank(password)) {
                 setReferrerOnPage();
                 errorEvent.error(Errors.PASSWORD_MISSING);
-                return account.setError(Messages.MISSING_PASSWORD).createResponse(AccountPages.PASSWORD);
+                return account.setError(Response.Status.BAD_REQUEST, Messages.MISSING_PASSWORD).createResponse(AccountPages.PASSWORD);
             }
 
             UserCredentialModel cred = UserCredentialModel.password(password);
             if (!session.userCredentialManager().isValid(realm, user, cred)) {
                 setReferrerOnPage();
                 errorEvent.error(Errors.INVALID_USER_CREDENTIALS);
-                return account.setError(Messages.INVALID_PASSWORD_EXISTING).createResponse(AccountPages.PASSWORD);
+                return account.setError(Response.Status.BAD_REQUEST, Messages.INVALID_PASSWORD_EXISTING).createResponse(AccountPages.PASSWORD);
             }
         }
 
         if (Validation.isBlank(passwordNew)) {
             setReferrerOnPage();
             errorEvent.error(Errors.PASSWORD_MISSING);
-            return account.setError(Messages.MISSING_PASSWORD).createResponse(AccountPages.PASSWORD);
+            return account.setError(Response.Status.BAD_REQUEST, Messages.MISSING_PASSWORD).createResponse(AccountPages.PASSWORD);
         }
 
         if (!passwordNew.equals(passwordConfirm)) {
             setReferrerOnPage();
             errorEvent.error(Errors.PASSWORD_CONFIRM_ERROR);
-            return account.setError(Messages.INVALID_PASSWORD_CONFIRM).createResponse(AccountPages.PASSWORD);
+            return account.setError(Response.Status.BAD_REQUEST, Messages.INVALID_PASSWORD_CONFIRM).createResponse(AccountPages.PASSWORD);
         }
 
         try {
@@ -563,17 +563,17 @@ public class AccountFormService extends AbstractSecuredLocalService {
         } catch (ReadOnlyException mre) {
             setReferrerOnPage();
             errorEvent.error(Errors.NOT_ALLOWED);
-            return account.setError(Messages.READ_ONLY_PASSWORD).createResponse(AccountPages.PASSWORD);
+            return account.setError(Response.Status.BAD_REQUEST, Messages.READ_ONLY_PASSWORD).createResponse(AccountPages.PASSWORD);
         } catch (ModelException me) {
             ServicesLogger.LOGGER.failedToUpdatePassword(me);
             setReferrerOnPage();
             errorEvent.detail(Details.REASON, me.getMessage()).error(Errors.PASSWORD_REJECTED);
-            return account.setError(me.getMessage(), me.getParameters()).createResponse(AccountPages.PASSWORD);
+            return account.setError(Response.Status.INTERNAL_SERVER_ERROR, me.getMessage(), me.getParameters()).createResponse(AccountPages.PASSWORD);
         } catch (Exception ape) {
             ServicesLogger.LOGGER.failedToUpdatePassword(ape);
             setReferrerOnPage();
             errorEvent.detail(Details.REASON, ape.getMessage()).error(Errors.PASSWORD_REJECTED);
-            return account.setError(ape.getMessage()).createResponse(AccountPages.PASSWORD);
+            return account.setError(Response.Status.INTERNAL_SERVER_ERROR, ape.getMessage()).createResponse(AccountPages.PASSWORD);
         }
 
         List<UserSessionModel> sessions = session.sessions().getUserSessions(realm, user);
@@ -606,12 +606,12 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
         if (Validation.isEmpty(providerId)) {
             setReferrerOnPage();
-            return account.setError(Messages.MISSING_IDENTITY_PROVIDER).createResponse(AccountPages.FEDERATED_IDENTITY);
+            return account.setError(Response.Status.BAD_REQUEST, Messages.MISSING_IDENTITY_PROVIDER).createResponse(AccountPages.FEDERATED_IDENTITY);
         }
         AccountSocialAction accountSocialAction = AccountSocialAction.getAction(action);
         if (accountSocialAction == null) {
             setReferrerOnPage();
-            return account.setError(Messages.INVALID_FEDERATED_IDENTITY_ACTION).createResponse(AccountPages.FEDERATED_IDENTITY);
+            return account.setError(Response.Status.BAD_REQUEST, Messages.INVALID_FEDERATED_IDENTITY_ACTION).createResponse(AccountPages.FEDERATED_IDENTITY);
         }
 
         boolean hasProvider = false;
@@ -624,12 +624,12 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
         if (!hasProvider) {
             setReferrerOnPage();
-            return account.setError(Messages.IDENTITY_PROVIDER_NOT_FOUND).createResponse(AccountPages.FEDERATED_IDENTITY);
+            return account.setError(Response.Status.BAD_REQUEST, Messages.IDENTITY_PROVIDER_NOT_FOUND).createResponse(AccountPages.FEDERATED_IDENTITY);
         }
 
         if (!user.isEnabled()) {
             setReferrerOnPage();
-            return account.setError(Messages.ACCOUNT_DISABLED).createResponse(AccountPages.FEDERATED_IDENTITY);
+            return account.setError(Response.Status.BAD_REQUEST, Messages.ACCOUNT_DISABLED).createResponse(AccountPages.FEDERATED_IDENTITY);
         }
 
         switch (accountSocialAction) {
@@ -653,7 +653,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
                             .build();
                 } catch (Exception spe) {
                     setReferrerOnPage();
-                    return account.setError(Messages.IDENTITY_PROVIDER_REDIRECT_ERROR).createResponse(AccountPages.FEDERATED_IDENTITY);
+                    return account.setError(Response.Status.INTERNAL_SERVER_ERROR, Messages.IDENTITY_PROVIDER_REDIRECT_ERROR).createResponse(AccountPages.FEDERATED_IDENTITY);
                 }
             case REMOVE:
                 FederatedIdentityModel link = session.users().getFederatedIdentity(user, providerId, realm);
@@ -675,11 +675,11 @@ public class AccountFormService extends AbstractSecuredLocalService {
                         return account.setSuccess(Messages.IDENTITY_PROVIDER_REMOVED).createResponse(AccountPages.FEDERATED_IDENTITY);
                     } else {
                         setReferrerOnPage();
-                        return account.setError(Messages.FEDERATED_IDENTITY_REMOVING_LAST_PROVIDER).createResponse(AccountPages.FEDERATED_IDENTITY);
+                        return account.setError(Response.Status.BAD_REQUEST, Messages.FEDERATED_IDENTITY_REMOVING_LAST_PROVIDER).createResponse(AccountPages.FEDERATED_IDENTITY);
                     }
                 } else {
                     setReferrerOnPage();
-                    return account.setError(Messages.FEDERATED_IDENTITY_NOT_ACTIVE).createResponse(AccountPages.FEDERATED_IDENTITY);
+                    return account.setError(Response.Status.BAD_REQUEST, Messages.FEDERATED_IDENTITY_NOT_ACTIVE).createResponse(AccountPages.FEDERATED_IDENTITY);
                 }
             default:
                 throw new IllegalArgumentException();

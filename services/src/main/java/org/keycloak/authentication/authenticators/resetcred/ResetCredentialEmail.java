@@ -111,7 +111,7 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
             ServicesLogger.LOGGER.failedToSendPwdResetEmail(e);
             Response challenge = context.form()
                     .setError(Messages.EMAIL_SENT_ERROR)
-                    .createErrorPage();
+                    .createErrorPage(Response.Status.INTERNAL_SERVER_ERROR);
             context.failure(AuthenticationFlowError.INTERNAL_ERROR, challenge);
         }
     }

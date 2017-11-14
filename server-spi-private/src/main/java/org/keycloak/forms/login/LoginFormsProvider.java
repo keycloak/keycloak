@@ -48,40 +48,40 @@ public interface LoginFormsProvider extends Provider {
      */
     void addScript(String scriptUrl);
 
-    public Response createResponse(UserModel.RequiredAction action);
+    Response createResponse(UserModel.RequiredAction action);
 
     Response createForm(String form);
 
-    public Response createLogin();
+    Response createLogin();
 
-    public Response createPasswordReset();
+    Response createPasswordReset();
 
-    public Response createLoginTotp();
+    Response createLoginTotp();
 
-    public Response createRegistration();
+    Response createRegistration();
 
-    public Response createInfoPage();
+    Response createInfoPage();
 
-    public Response createUpdateProfilePage();
+    Response createUpdateProfilePage();
 
-    public Response createIdpLinkConfirmLinkPage();
+    Response createIdpLinkConfirmLinkPage();
 
-    public Response createIdpLinkEmailPage();
+    Response createIdpLinkEmailPage();
 
-    public Response createLoginExpiredPage();
+    Response createLoginExpiredPage();
 
-    public Response createErrorPage();
+    Response createErrorPage(Response.Status status);
 
-    public Response createOAuthGrant();
+    Response createOAuthGrant();
 
-    public Response createCode();
+    Response createCode();
     
-    public LoginFormsProvider setAuthenticationSession(AuthenticationSessionModel authenticationSession);
+    LoginFormsProvider setAuthenticationSession(AuthenticationSessionModel authenticationSession);
 
-    public LoginFormsProvider setClientSessionCode(String accessCode);
+    LoginFormsProvider setClientSessionCode(String accessCode);
 
-    public LoginFormsProvider setAccessRequest(List<RoleModel> realmRolesRequested, MultivaluedMap<String,RoleModel> resourceRolesRequested, List<ProtocolMapperModel> protocolMappers);
-    public LoginFormsProvider setAccessRequest(String message);
+    LoginFormsProvider setAccessRequest(List<RoleModel> realmRolesRequested, MultivaluedMap<String,RoleModel> resourceRolesRequested, List<ProtocolMapperModel> protocolMappers);
+    LoginFormsProvider setAccessRequest(String message);
 
     /**
      * Set one global error message.
@@ -89,14 +89,14 @@ public interface LoginFormsProvider extends Provider {
      * @param message key of message
      * @param parameters to be formatted into message
      */
-    public LoginFormsProvider setError(String message, Object ... parameters);
+    LoginFormsProvider setError(String message, Object ... parameters);
     
     /**
      * Set multiple error messages.
      * 
      * @param messages to be set
      */
-    public LoginFormsProvider setErrors(List<FormMessage> messages);
+    LoginFormsProvider setErrors(List<FormMessage> messages);
 
     LoginFormsProvider addError(FormMessage errorMessage);
 
@@ -108,19 +108,19 @@ public interface LoginFormsProvider extends Provider {
      */
     LoginFormsProvider addSuccess(FormMessage errorMessage);
 
-    public LoginFormsProvider setSuccess(String message, Object ... parameters);
+    LoginFormsProvider setSuccess(String message, Object ... parameters);
 
-    public LoginFormsProvider setInfo(String message, Object ... parameters);
+    LoginFormsProvider setInfo(String message, Object ... parameters);
 
-    public LoginFormsProvider setUser(UserModel user);
+    LoginFormsProvider setUser(UserModel user);
 
-    public LoginFormsProvider setResponseHeader(String headerName, String headerValue);
+    LoginFormsProvider setResponseHeader(String headerName, String headerValue);
 
-    public LoginFormsProvider setFormData(MultivaluedMap<String, String> formData);
+    LoginFormsProvider setFormData(MultivaluedMap<String, String> formData);
 
     LoginFormsProvider setAttribute(String name, Object value);
 
-    public LoginFormsProvider setStatus(Response.Status status);
+    LoginFormsProvider setStatus(Response.Status status);
 
     LoginFormsProvider setActionUri(URI requestUri);
 

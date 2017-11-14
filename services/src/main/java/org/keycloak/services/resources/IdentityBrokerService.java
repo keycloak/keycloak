@@ -156,14 +156,14 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     private void checkRealm() {
         if (!realmModel.isEnabled()) {
             event.error(Errors.REALM_DISABLED);
-            throw new ErrorPageException(session, Messages.REALM_NOT_ENABLED);
+            throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.REALM_NOT_ENABLED);
         }
     }
 
     private ClientModel checkClient(String clientId) {
         if (clientId == null) {
             event.error(Errors.INVALID_REQUEST);
-            throw new ErrorPageException(session, Messages.MISSING_PARAMETER, OIDCLoginProtocol.CLIENT_ID_PARAM);
+            throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.MISSING_PARAMETER, OIDCLoginProtocol.CLIENT_ID_PARAM);
         }
 
         event.client(clientId);
@@ -171,12 +171,12 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         ClientModel client = realmModel.getClientByClientId(clientId);
         if (client == null) {
             event.error(Errors.CLIENT_NOT_FOUND);
-            throw new ErrorPageException(session, Messages.INVALID_REQUEST);
+            throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
         }
 
         if (!client.isEnabled()) {
             event.error(Errors.CLIENT_DISABLED);
-            throw new ErrorPageException(session, Messages.INVALID_REQUEST);
+            throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
         }
         return client;
 
@@ -210,14 +210,14 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         redirectUri = RedirectUtils.verifyRedirectUri(uriInfo, redirectUri, realmModel, client);
         if (redirectUri == null) {
             event.error(Errors.INVALID_REDIRECT_URI);
-            throw new ErrorPageException(session, Messages.INVALID_REQUEST);
+            throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
         }
 
         event.detail(Details.REDIRECT_URI, redirectUri);
 
         if (nonce == null || hash == null) {
             event.error(Errors.INVALID_REDIRECT_URI);
-            throw new ErrorPageException(session, Messages.INVALID_REQUEST);
+            throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
 
         }
 
@@ -245,7 +245,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                 try {
                     md = MessageDigest.getInstance("SHA-256");
                 } catch (NoSuchAlgorithmException e) {
-                    throw new ErrorPageException(session, Messages.UNEXPECTED_ERROR_HANDLING_REQUEST);
+                    throw new ErrorPageException(session, Response.Status.INTERNAL_SERVER_ERROR, Messages.UNEXPECTED_ERROR_HANDLING_REQUEST);
                 }
                 String input = nonce + cookieResult.getSession().getId() + clientId + providerId;
                 byte[] check = md.digest(input.getBytes(StandardCharsets.UTF_8));
@@ -257,7 +257,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         }
         if (clientSession == null) {
             event.error(Errors.INVALID_TOKEN);
-            throw new ErrorPageException(session, Messages.INVALID_REQUEST);
+            throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
         }
 
         event.detail(Details.IDENTITY_PROVIDER, providerId);
@@ -371,13 +371,12 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                 return response;
             }
         } catch (IdentityBrokerException e) {
-            e.printStackTrace();
-            return redirectToErrorPage(Messages.COULD_NOT_SEND_AUTHENTICATION_REQUEST, e, providerId);
+            return redirectToErrorPage(Response.Status.BAD_GATEWAY, Messages.COULD_NOT_SEND_AUTHENTICATION_REQUEST, e, providerId);
         } catch (Exception e) {
-            return redirectToErrorPage(Messages.UNEXPECTED_ERROR_HANDLING_REQUEST, e, providerId);
+            return redirectToErrorPage(Response.Status.INTERNAL_SERVER_ERROR, Messages.UNEXPECTED_ERROR_HANDLING_REQUEST, e, providerId);
         }
 
-        return redirectToErrorPage(Messages.COULD_NOT_PROCEED_WITH_AUTHENTICATION_REQUEST);
+        return redirectToErrorPage(Response.Status.INTERNAL_SERVER_ERROR, Messages.COULD_NOT_PROCEED_WITH_AUTHENTICATION_REQUEST);
     }
 
     @Path("{provider_id}/endpoint")
@@ -458,9 +457,9 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
             return badRequest("Invalid token.");
         } catch (IdentityBrokerException e) {
-            return redirectToErrorPage(Messages.COULD_NOT_OBTAIN_TOKEN, e, providerId);
+            return redirectToErrorPage(Response.Status.BAD_GATEWAY, Messages.COULD_NOT_OBTAIN_TOKEN, e, providerId);
         }  catch (Exception e) {
-            return redirectToErrorPage(Messages.UNEXPECTED_ERROR_RETRIEVING_TOKEN, e, providerId);
+            return redirectToErrorPage(Response.Status.BAD_GATEWAY, Messages.UNEXPECTED_ERROR_RETRIEVING_TOKEN, e, providerId);
         }
     }
 
@@ -562,12 +561,12 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     public Response validateUser(AuthenticationSessionModel authSession, UserModel user, RealmModel realm) {
         if (!user.isEnabled()) {
             event.error(Errors.USER_DISABLED);
-            return ErrorPage.error(session, authSession, Messages.ACCOUNT_DISABLED);
+            return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.ACCOUNT_DISABLED);
         }
         if (realm.isBruteForceProtected()) {
             if (session.getProvider(BruteForceProtector.class).isTemporarilyDisabled(session, realm, user)) {
                 event.error(Errors.USER_TEMPORARILY_DISABLED);
-                return ErrorPage.error(session, authSession, Messages.ACCOUNT_DISABLED);
+                return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.ACCOUNT_DISABLED);
             }
         }
         return null;
@@ -847,7 +846,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             authSession.removeAuthNote(LINKING_IDENTITY_PROVIDER);
             return true;
         } else {
-            throw new ErrorPageException(session, Messages.BROKER_LINKING_SESSION_EXPIRED);
+            throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.BROKER_LINKING_SESSION_EXPIRED);
         }
     }
 
@@ -964,7 +963,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     private ParsedCodeContext parseSessionCode(String code, String clientId) {
         if (code == null || clientId == null) {
             logger.debugf("Invalid request. Authorization code or clientId was null. Code=" + code + ", clientId=" + clientId);
-            Response staleCodeError = redirectToErrorPage(Messages.INVALID_REQUEST);
+            Response staleCodeError = redirectToErrorPage(Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             return ParsedCodeContext.response(staleCodeError);
         }
 
@@ -1015,7 +1014,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
         if (! oClient.isPresent()) {
             event.error(Errors.CLIENT_NOT_FOUND);
-            return ParsedCodeContext.response(redirectToErrorPage(Messages.CLIENT_NOT_FOUND));
+            return ParsedCodeContext.response(redirectToErrorPage(Response.Status.BAD_REQUEST, Messages.CLIENT_NOT_FOUND));
         }
 
         LoginProtocolFactory factory = (LoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, SamlProtocol.LOGIN_PROTOCOL);
@@ -1062,11 +1061,11 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         return redirectToErrorPage(authSession, message, null, parameters);
     }
     
-    private Response redirectToErrorPage(String message, Object ... parameters) {
-        return redirectToErrorPage(null, message, null, parameters);
+    private Response redirectToErrorPage(Response.Status status, String message, Object ... parameters) {
+        return redirectToErrorPage(null, status, message, null, parameters);
     }
 
-    private Response redirectToErrorPage(AuthenticationSessionModel authSession, String message, Throwable throwable, Object ... parameters) {
+    private Response redirectToErrorPage(AuthenticationSessionModel authSession, Response.Status status, String message, Throwable throwable, Object ... parameters) {
         if (message == null) {
             message = Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR;
         }
@@ -1078,7 +1077,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             return webEx.getResponse();
         }
 
-        return ErrorPage.error(this.session, authSession, message, parameters);
+        return ErrorPage.error(this.session, authSession, status, message, parameters);
     }
 
     private Response redirectToAccountErrorPage(AuthenticationSessionModel authSession, String message, Object ... parameters) {

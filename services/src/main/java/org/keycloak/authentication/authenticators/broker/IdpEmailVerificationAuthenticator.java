@@ -152,7 +152,7 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
             ServicesLogger.LOGGER.confirmBrokerEmailFailed(e);
             Response challenge = context.form()
                     .setError(Messages.EMAIL_SENT_ERROR)
-                    .createErrorPage();
+                    .createErrorPage(Response.Status.INTERNAL_SERVER_ERROR);
             context.failure(AuthenticationFlowError.INTERNAL_ERROR, challenge);
             return;
         }

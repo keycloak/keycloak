@@ -144,7 +144,7 @@ public class BasicSamlTest extends AbstractSamlTest {
 
         try (CloseableHttpClient client = HttpClientBuilder.create().setRedirectStrategy(new RedirectStrategyWithSwitchableFollowRedirect()).build();
           CloseableHttpResponse response = client.execute(post)) {
-            assertThat(response, statusCodeIsHC(Response.Status.INTERNAL_SERVER_ERROR));
+            assertThat(response, statusCodeIsHC(Status.BAD_REQUEST));
         }
     }
 
@@ -161,7 +161,7 @@ public class BasicSamlTest extends AbstractSamlTest {
 
     @Test
     public void testWrongPortInDestination() throws Exception {
-        testWithOverriddenPort(123, Response.Status.INTERNAL_SERVER_ERROR, containsString("Invalid Request"));
+        testWithOverriddenPort(123, Status.BAD_REQUEST, containsString("Invalid Request"));
     }
 
     private void testWithOverriddenPort(int port, Response.Status expectedHttpCode, Matcher<String> pageTextMatcher) throws Exception {

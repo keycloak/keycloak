@@ -340,7 +340,7 @@ public class LoginActionsService {
             if (!realm.isResetPasswordAllowed()) {
                 event.event(EventType.RESET_PASSWORD);
                 event.error(Errors.NOT_ALLOWED);
-                return ErrorPage.error(session, authSession, Messages.RESET_CREDENTIAL_NOT_ALLOWED);
+                return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.RESET_CREDENTIAL_NOT_ALLOWED);
 
             }
             authSession = createAuthenticationSessionForClient();
@@ -384,7 +384,7 @@ public class LoginActionsService {
 
         if (!realm.isResetPasswordAllowed()) {
             event.error(Errors.NOT_ALLOWED);
-            return ErrorPage.error(session, authSession, Messages.RESET_CREDENTIAL_NOT_ALLOWED);
+            return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.RESET_CREDENTIAL_NOT_ALLOWED);
 
         }
 
@@ -553,7 +553,7 @@ public class LoginActionsService {
         } else if (RESET_CREDENTIALS_PATH.equals(flowPath)) {
             return processResetCredentials(false, null, authSession, errorMessage);
         } else {
-            return ErrorPage.error(session, authSession, errorMessage == null ? Messages.INVALID_REQUEST : errorMessage);
+            return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, errorMessage == null ? Messages.INVALID_REQUEST : errorMessage);
         }
     }
 
@@ -577,7 +577,7 @@ public class LoginActionsService {
         event
           .detail(Details.REASON, ex == null ? "<unknown>" : ex.getMessage())
           .error(eventError == null ? Errors.INVALID_CODE : eventError);
-        return ErrorPage.error(session, null, errorMessage == null ? Messages.INVALID_CODE : errorMessage);
+        return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, errorMessage == null ? Messages.INVALID_CODE : errorMessage);
     }
 
     protected Response processResetCredentials(boolean actionRequest, String execution, AuthenticationSessionModel authSession, String errorMessage) {
@@ -626,7 +626,7 @@ public class LoginActionsService {
         event.event(EventType.REGISTER);
         if (!realm.isRegistrationAllowed()) {
             event.error(Errors.REGISTRATION_DISABLED);
-            return ErrorPage.error(session, null, Messages.REGISTRATION_NOT_ALLOWED);
+            return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.REGISTRATION_NOT_ALLOWED);
         }
 
         SessionCodeChecks checks = checksForCode(code, execution, clientId, REGISTRATION_PATH);
@@ -692,7 +692,7 @@ public class LoginActionsService {
         SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromAuthenticationSession(authSession, noteKey);
         if (serializedCtx == null) {
             ServicesLogger.LOGGER.notFoundSerializedCtxInClientSession(noteKey);
-            throw new WebApplicationException(ErrorPage.error(session, authSession, "Not found serialized context in authenticationSession."));
+            throw new WebApplicationException(ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, "Not found serialized context in authenticationSession."));
         }
         BrokeredIdentityContext brokerContext = serializedCtx.deserialize(session, authSession);
         final String identityProviderAlias = brokerContext.getIdpConfig().getAlias();
@@ -700,12 +700,12 @@ public class LoginActionsService {
         String flowId = firstBrokerLogin ? brokerContext.getIdpConfig().getFirstBrokerLoginFlowId() : brokerContext.getIdpConfig().getPostBrokerLoginFlowId();
         if (flowId == null) {
             ServicesLogger.LOGGER.flowNotConfigForIDP(identityProviderAlias);
-            throw new WebApplicationException(ErrorPage.error(session, authSession, "Flow not configured for identity provider"));
+            throw new WebApplicationException(ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, "Flow not configured for identity provider"));
         }
         AuthenticationFlowModel brokerLoginFlow = realm.getAuthenticationFlowById(flowId);
         if (brokerLoginFlow == null) {
             ServicesLogger.LOGGER.flowNotFoundForIDP(flowId, identityProviderAlias);
-            throw new WebApplicationException(ErrorPage.error(session, authSession, "Flow not found for identity provider"));
+            throw new WebApplicationException(ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, "Flow not found for identity provider"));
         }
 
         event.detail(Details.IDENTITY_PROVIDER, identityProviderAlias)
@@ -886,7 +886,7 @@ public class LoginActionsService {
         if (factory == null) {
             ServicesLogger.LOGGER.actionProviderNull();
             event.error(Errors.INVALID_CODE);
-            throw new WebApplicationException(ErrorPage.error(session, authSession, Messages.INVALID_CODE));
+            throw new WebApplicationException(ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_CODE));
         }
         RequiredActionProvider provider = factory.create(session);
 
