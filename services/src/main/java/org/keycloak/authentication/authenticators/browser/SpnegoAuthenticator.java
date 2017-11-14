@@ -122,7 +122,7 @@ public class SpnegoAuthenticator extends AbstractUsernameFormAuthenticator imple
                     .setAuthenticationSession(context.getAuthenticationSession())
                     .setStatus(Response.Status.UNAUTHORIZED)
                     .setResponseHeader(HttpHeaders.WWW_AUTHENTICATE, negotiateHeader)
-                    .setError(Messages.KERBEROS_NOT_ENABLED).createErrorPage();
+                    .setError(Messages.KERBEROS_NOT_ENABLED).createErrorPage(Response.Status.BAD_REQUEST);
         } else {
             return optionalChallengeRedirect(context, negotiateHeader);
         }

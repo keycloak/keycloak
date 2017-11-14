@@ -29,6 +29,7 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
 
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
 import java.io.InputStream;
 
 /**
@@ -63,7 +64,7 @@ public class AuthorizationEndpointRequestParserProcessor {
         } catch (Exception e) {
             ServicesLogger.LOGGER.invalidRequest(e);
             event.error(Errors.INVALID_REQUEST);
-            throw new ErrorPageException(session, Messages.INVALID_REQUEST);
+            throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
         }
     }
 }

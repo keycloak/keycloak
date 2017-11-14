@@ -284,7 +284,8 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     }
 
     @Override
-    public AccountProvider setErrors(List<FormMessage> messages) {
+    public AccountProvider setErrors(Response.Status status, List<FormMessage> messages) {
+        this.status = status;
         this.messageType = MessageType.ERROR;
         this.messages = new ArrayList<>(messages);
         return this;
@@ -292,7 +293,8 @@ public class FreeMarkerAccountProvider implements AccountProvider {
 
 
     @Override
-    public AccountProvider setError(String message, Object ... parameters) {
+    public AccountProvider setError(Response.Status status, String message, Object ... parameters) {
+        this.status = status;
         setMessage(MessageType.ERROR, message, parameters);
         return this;
     }
@@ -324,12 +326,6 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     @Override
     public AccountProvider setRealm(RealmModel realm) {
         this.realm = realm;
-        return this;
-    }
-
-    @Override
-    public AccountProvider setStatus(Response.Status status) {
-        this.status = status;
         return this;
     }
 

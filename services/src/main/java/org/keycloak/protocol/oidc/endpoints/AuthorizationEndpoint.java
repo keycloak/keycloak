@@ -153,7 +153,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         action = Action.REGISTER;
 
         if (!realm.isRegistrationAllowed()) {
-            throw new ErrorPageException(session, authenticationSession, Messages.REGISTRATION_NOT_ALLOWED);
+            throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.REGISTRATION_NOT_ALLOWED);
         }
 
         return this;
@@ -164,7 +164,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         action = Action.FORGOT_CREDENTIALS;
 
         if (!realm.isResetPasswordAllowed()) {
-            throw new ErrorPageException(session, authenticationSession, Messages.RESET_CREDENTIAL_NOT_ALLOWED);
+            throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.RESET_CREDENTIAL_NOT_ALLOWED);
         }
 
         return this;
@@ -173,7 +173,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
     private void checkClient(String clientId) {
         if (clientId == null) {
             event.error(Errors.INVALID_REQUEST);
-            throw new ErrorPageException(session, authenticationSession, Messages.MISSING_PARAMETER, OIDCLoginProtocol.CLIENT_ID_PARAM);
+            throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.MISSING_PARAMETER, OIDCLoginProtocol.CLIENT_ID_PARAM);
         }
 
         event.client(clientId);
@@ -181,17 +181,17 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         client = realm.getClientByClientId(clientId);
         if (client == null) {
             event.error(Errors.CLIENT_NOT_FOUND);
-            throw new ErrorPageException(session, authenticationSession, Messages.CLIENT_NOT_FOUND);
+            throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.CLIENT_NOT_FOUND);
         }
 
         if (!client.isEnabled()) {
             event.error(Errors.CLIENT_DISABLED);
-            throw new ErrorPageException(session, authenticationSession, Messages.CLIENT_DISABLED);
+            throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.CLIENT_DISABLED);
         }
 
         if (client.isBearerOnly()) {
             event.error(Errors.NOT_ALLOWED);
-            throw new ErrorPageException(session, authenticationSession, Messages.BEARER_ONLY);
+            throw new ErrorPageException(session, authenticationSession, Response.Status.FORBIDDEN, Messages.BEARER_ONLY);
         }
 
         session.getContext().setClient(client);
@@ -354,7 +354,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         redirectUri = RedirectUtils.verifyRedirectUri(uriInfo, redirectUriParam, realm, client, isOIDCRequest);
         if (redirectUri == null) {
             event.error(Errors.INVALID_REDIRECT_URI);
-            throw new ErrorPageException(session, authenticationSession, Messages.INVALID_PARAMETER, OIDCLoginProtocol.REDIRECT_URI_PARAM);
+            throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.REDIRECT_URI_PARAM);
         }
     }
 

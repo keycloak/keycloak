@@ -152,11 +152,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     @SuppressWarnings("incomplete-switch")
     protected Response createResponse(LoginFormsPages page) {
-
-        if (status == null) {
-            status = Response.Status.OK;
-        }
-
         Theme theme;
         try {
             theme = getTheme();
@@ -206,20 +201,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 break;
         }
 
-        if (status == null) {
-            status = Response.Status.OK;
-        }
-
         return processTemplate(theme, Templates.getTemplate(page), locale);
     }
 
     @Override
     public Response createForm(String form) {
-
-        if (status == null) {
-            status = Response.Status.OK;
-        }
-
         Theme theme;
         try {
             theme = getTheme();
@@ -394,7 +380,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     protected Response processTemplate(Theme theme, String templateName, Locale locale) {
         try {
             String result = freeMarker.processTemplate(attributes, templateName, theme);
-            Response.ResponseBuilder builder = Response.status(status).type(MediaType.TEXT_HTML_UTF_8_TYPE).language(locale).entity(result);
+            Response.ResponseBuilder builder = Response.status(status == null ? Response.Status.OK : status).type(MediaType.TEXT_HTML_UTF_8_TYPE).language(locale).entity(result);
             BrowserSecurityHeaderSetup.headers(builder, realm);
             for (Map.Entry<String, String> entry : httpResponseHeaders.entrySet()) {
                 builder.header(entry.getKey(), entry.getValue());
@@ -462,10 +448,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     }
 
     @Override
-    public Response createErrorPage() {
-        if (status == null) {
-            status = Response.Status.INTERNAL_SERVER_ERROR;
-        }
+    public Response createErrorPage(Response.Status status) {
+        this.status = status;
         return createResponse(LoginFormsPages.ERROR);
     }
 
