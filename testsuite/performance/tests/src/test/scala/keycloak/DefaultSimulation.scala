@@ -25,6 +25,9 @@ class DefaultSimulation extends Simulation {
 
 
 
+  println()
+  println("Taget servers: " + TestConfig.serverUrisList)
+  println()
   println("Using test parameters:")
   println("  runUsers: " + TestConfig.runUsers)
   println("  numOfIterations: " + TestConfig.numOfIterations)

@@ -1,0 +1,79 @@
+<project name="keycloak-server-configuration" basedir="." >
+
+    <target name="check-if-performance-configured">
+        <available property="performance.configured" file="${project.build.directory}/performance-configured"/>
+        <echo>performance.configured: ${performance.configured}</echo>
+    </target>                            
+    
+    <target name="keycloak-performance-configuration" unless="performance.configured" depends="check-if-performance-configured">
+        <echo>keycloak-performance-configuration</echo>
+        <chmod perm="ug+x">
+            <fileset dir="${server.unpacked.home}/bin">
+                <include name="*.sh"/>
+            </fileset>
+        </chmod>
+        <filter token="MODULE_NAME" value="${jdbc.driver.groupId}"/>
+        <filter token="RESOURCE_ROOT_PATH" value="${jdbc.driver.artifactId}-${jdbc.driver.version}.jar"/>
+        <copy file="${resources.dir}/module.xml"
+              todir="${server.unpacked.home}/modules/system/layers/base/${jdbc.driver.module.path}/main"
+              filtering="true"
+        />
+        <copy todir="${server.unpacked.home}/bin" >
+            <fileset dir="${scripts.dir}/jboss-cli"/>
+        </copy>
+        <exec executable="./${jboss.cli.script}" dir="${server.unpacked.home}/bin" failonerror="true">
+            <arg value="--file=set-keycloak-ds.cli"/>
+        </exec>
+        <exec executable="./${jboss.cli.script}" dir="${server.unpacked.home}/bin" failonerror="true">
+            <arg value="--file=io-worker-threads.cli"/>
+        </exec>
+        <exec executable="./${jboss.cli.script}" dir="${server.unpacked.home}/bin" failonerror="true">
+            <arg value="--file=undertow.cli"/>
+        </exec>
+        <exec executable="./${jboss.cli.script}" dir="${server.unpacked.home}/bin" failonerror="true">
+            <arg value="--file=modcluster-simple-load-provider.cli"/>
+        </exec>
+        <exec executable="./${jboss.cli.script}" dir="${server.unpacked.home}/bin" failonerror="true">
+            <arg value="--file=io-worker-threads.cli"/>
+        </exec>
+        <exec executable="./${add.user.script}" dir="${server.unpacked.home}/bin" failonerror="true">
+            <arg value="-u"/>
+            <arg value="${keycloak.debug.user}"/>
+            <arg value="-p"/>
+            <arg value="${keycloak.debug.user.password}"/>
+        </exec>
+        <delete dir="${server.unpacked.home}/standalone/configuration/standalone_xml_history"/>
+        <touch file="${project.build.directory}/performance-configured"/>
+    </target>
+
+        
+    <target name="check-if-crossdc-configured">
+        <available property="crossdc.configured" file="${project.build.directory}/crossdc-configured"/>
+        <echo>crossdc.configured: ${crossdc.configured}</echo>
+    </target>         
+    
+    <target name="keycloak-crossdc-configuration" unless="crossdc.configured" depends="check-if-crossdc-configured">
+        <echo>keycloak-crossdc-configuration</echo>
+        <exec executable="./${jboss.cli.script}" dir="${server.unpacked.home}/bin" failonerror="true">
+            <arg value="--file=add-remote-cache-stores.cli"/>
+        </exec>
+        <delete dir="${server.unpacked.home}/standalone/configuration/standalone_xml_history"/>
+        <touch file="${project.build.directory}/crossdc-configured"/>
+    </target>
+
+
+    <target name="keycloak-docker">
+        <copy todir="${project.build.directory}/docker" overwrite="false">
+            <fileset dir="${scripts.dir}">
+                <include name="Dockerfile"/>
+                <include name="*.sh"/>
+            </fileset>
+        </copy>
+        <copy todir="${project.build.directory}/docker/keycloak" overwrite="false">
+            <fileset dir="${server.unpacked.home}">
+                <exclude name="bin/*.cli"/>
+            </fileset>
+        </copy>
+    </target>
+
+</project>

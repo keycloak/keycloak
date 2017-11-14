@@ -71,7 +71,7 @@ services:
 
 
     keycloak:
-        build: keycloak
+        build: keycloak/target/docker
         image: keycloak_test_keycloak:${KEYCLOAK_VERSION:-latest}
         networks:
             - keycloak

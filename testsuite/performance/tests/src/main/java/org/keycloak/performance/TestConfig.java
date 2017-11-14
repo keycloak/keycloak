@@ -4,6 +4,7 @@ import org.keycloak.performance.util.FilteredIterator;
 import org.keycloak.performance.util.LoopingIterator;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -77,21 +78,17 @@ public class TestConfig {
 
     static {
         // if KEYCLOAK_SERVER_URIS env var is set, and system property serverUris is not set
-        String servers = System.getProperty("serverUris");
-        if (servers == null) {
-            String env = System.getenv("KEYCLOAK_SERVER_URIS");
-            serverUris = env != null ? env : "http://localhost:8080/auth";
+        String serversProp = System.getProperty("keycloak.server.uris");
+        if (serversProp == null) {
+            String serversEnv = System.getenv("KEYCLOAK_SERVERS");
+            serverUris = serversEnv != null ? serversEnv : "http://localhost:8080/auth";
         } else {
-            serverUris = servers;
+            serverUris = serversProp;
         }
 
         // initialize serverUrisList and serverUrisIterator
-        ArrayList<String> uris = new ArrayList<>();
-        for (String uri: serverUris.split(" ")) {
-            uris.add(uri);
-        }
-        serverUrisList = uris;
-        serverUrisIterator = new LoopingIterator<>(uris);
+        serverUrisList = Arrays.asList(serverUris.split(" "));
+        serverUrisIterator = new LoopingIterator<>(serverUrisList);
     }
 
     // Users iterators by realm

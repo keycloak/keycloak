@@ -20,9 +20,9 @@
   ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
-<module xmlns="urn:jboss:module:1.0" name="org.mariadb.jdbc">
+<module xmlns="urn:jboss:module:1.0" name="@MODULE_NAME@">
    <resources>
-      <resource-root path="mariadb-java-client-2.0.3.jar"/>
+      <resource-root path="@RESOURCE_ROOT_PATH@"/>
    </resources>
    <dependencies>
       <module name="javax.api"/>

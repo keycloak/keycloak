@@ -1,11 +1,13 @@
 # Keycloak Performance Testsuite
 
 ## Requirements:
+- Bash 2.05+
 - Maven 3.1.1+
 - Keycloak server distribution installed in the local Maven repository. To do this run `mvn install -Pdistribution` from the root of the Keycloak project.
+
+### Docker Compose Provisioner
 - Docker 1.13+
 - Docker Compose 1.14+
-- Bash
 
 ## Getting started for the impatient
 
@@ -47,30 +49,50 @@ Keep reading for more information.
 
 ## Provisioning
 
+### Available provisioners:
+
+- `docker-compose` **Default.** See [`README.docker-compose.md`](README.docker-compose.md) for more details.
+
 ### Provision
 
-Usage: `mvn verify -Pprovision[,cluster] [-D<PARAM>=<VALUE> ...]`. 
+Usage: `mvn verify -Pprovision [-Dprovisioner=<PROVISIONER>] [-D<PARAMETER>=<VALUE>] …`. 
 
-- Single node deployment: `mvn verify -Pprovision`
-- Cluster deployment: `mvn verify -Pprovision,cluster [-Dkeycloak.scale=N]`. Default `N=1`.
+#### Deployment Types
 
-Available parameters are described in [README.provisioning-parameters](README.provisioning-parameters.md).
+- Single node: `mvn verify -Pprovision`
+- Cluster: `mvn verify -Pprovision,cluster [-Dkeycloak.scale=N] [-Dkeycloak.cpusets="cpuset1 cpuset2 … cpusetM"]`. `N ∈ {1 .. M}`.
+- Cross-DC: `mvn verify -Pprovision,crossdc [-Dkeycloak.dc1.scale=K] [-Dkeycloak.dc2.scale=L] [-Dkeycloak.dc1.cpusets=…] [-Dkeycloak.dc2.cpusets=…]`
+
+All available parameters are described in [`README.provisioning-parameters.md`](README.provisioning-parameters.md).
+
+#### Provisioned System
+
+The `provision` operation will produce a `provisioned-system.properties` inside the `tests/target` directory 
+with information about the provisioned system such as the type of deployment and URLs of Keycloak servers and load balancers.
+This information is then used by operations `generate-data`, `import-dump`, `test`, `teardown`.
+
+Provisioning can be run multiple times with different parameters. The system will be updated/reprovisioned based on the new parameters.
+However when switching between different deployment types (e.g. from `singlenode` to `cluster`) it is always necessary 
+to tear down the currently running system.
+
+**Note:** When switching deployment type from `singlenode` or `cluster` to `crossdc` (or the other way around) 
+it is necessary to update the generated Keycloak server configuration (inside `keycloak/target` directory) by 
+adding a `clean` goal to the provisioning command like so: `mvn clean verify -Pprovision …`. It is *not* necessary to update this configuration 
+when switching between `singlenode` and `cluster` deployments.
 
 ### Teardown
 
-Usage: `mvn verify -Pteardown[,cluster]`
+Usage: `mvn verify -Pteardown [-Dprovisioner=<PROVISIONER>]`
 
-- Single node deployment: `mvn verify -Pteardown`
-- Cluster deployment: `mvn verify -Pteardown,cluster`
-
-Provisioning/teardown is performed via `docker-compose` tool. More details in [README.docker-compose](README.docker-compose.md).
+**Note:** Unless the provisioned system has been properly torn down the maven build will not allow a cleanup of the `tests/target` directory
+because it contains the `provisioned-system.properties` with information about the still-running system.
 
 
 ## Testing
 
 ### Generate Test Data
 
-Usage: `mvn verify -Pgenerate-data[,cluster] [-Ddataset=DATASET] [-Dexport-dump] [-D<dataset.property>=<value>]`.
+Usage: `mvn verify -Pgenerate-data [-Ddataset=DATASET] [-D<dataset.property>=<value>]`.
 
 Dataset properties are loaded from `datasets/${dataset}.properties` file. Individual properties can be overriden by specifying `-D` params.
 
@@ -97,7 +119,7 @@ Usage: `mvn verify -Pimport-dump [-Ddataset=DATASET]`
 
 ### Run Tests
 
-Usage: `mvn verify -Ptest[,cluster] [-DrunUsers=N] [-DrampUpPeriod=SECONDS] [-DnumOfIterations=N] [-Ddataset=DATASET] [-D<dataset.property>=<value>]* [-D<test.property>=<value>]* `.
+Usage: `mvn verify -Ptest [-DrunUsers=N] [-DrampUpPeriod=SECONDS] [-DnumOfIterations=N] [-Ddataset=DATASET] [-D<dataset.property>=<value>]* [-D<test.property>=<value>]* `.
 
 _*Note:* The same dataset properties which were used for data generation/import should be supplied to the `test` phase._
 

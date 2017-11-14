@@ -12,7 +12,7 @@ services:
         build: db/mariadb
         image: keycloak_test_mariadb:${KEYCLOAK_VERSION:-latest}
         cpuset: ${DB_CPUSET:-1}
-        mem_limit: ${DB_MEMLIMIT:-1g}
+        mem_limit: ${DB_MEMLIMIT:-2g}
         networks:
             - keycloak
         environment:
@@ -43,7 +43,7 @@ services:
             KEYCLOAK_PASSWORD: admin
             # docker-compose syntax note: ${ENV_VAR:-<DEFAULT_VALUE>}
             JAVA_OPTS: ${KEYCLOAK_JVM_MEMORY:--Xms64m -Xmx2g -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m} -Djava.net.preferIPv4Stack=true -Djboss.modules.system.pkgs=org.jboss.byteman -Djava.awt.headless=true
-            HTTP_MAX_CONNECTIONS: ${KEYCLOAK_HTTP_MAX_CONNECTIONS:-500}
+            HTTP_MAX_CONNECTIONS: ${KEYCLOAK_HTTP_MAX_CONNECTIONS:-50000}
             WORKER_IO_THREADS: ${KEYCLOAK_WORKER_IO_THREADS:-2}
             WORKER_TASK_MAX_THREADS: ${KEYCLOAK_WORKER_TASK_MAX_THREADS:-16}
             DS_MIN_POOL_SIZE: ${KEYCLOAK_DS_MIN_POOL_SIZE:-10}
