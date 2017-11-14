@@ -188,6 +188,8 @@
                 "http://localhost:8080/sales-post/*"
             ],
             "attributes": {
+                "saml_assertion_consumer_url_post": "http://localhost:8080/sales-post/saml",
+                "saml_single_logout_service_url_post": "http://localhost:8080/sales-post/saml",
                 "saml.authnstatement": "true",
                 "saml_idp_initiated_sso_url_name": "sales-post"
             }
