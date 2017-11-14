@@ -20,12 +20,14 @@ To unpack the current Keycloak server distribution into `keycloak/target` folder
 - Stop services: `docker-compose down -v`. If you wish to keep the container volumes skip the `-v` option.
 
 ### Keycloak Cluster Deployment
+- Generate docker-compose-cluster.yml file: `./generate-docker-compose-cluster.sh`. Use `export CPUSETS="set1 set2 setN"` to customize.
 - Build / rebuild: `docker-compose -f docker-compose-cluster.yml build`
 - Start services: `docker-compose -f docker-compose-cluster.yml up -d --build`
 - Scaling KC nodes: `docker-compose -f docker-compose-cluster.yml up -d --build --scale keycloak=2`
 - Stop services: `docker-compose -f docker-compose-cluster.yml down -v`. If you wish to keep the container volumes skip the `-v` option.
 
 ### Cross-DC Deployment
+- Generate docker-compose-crossdc.yml file: `./generate-docker-compose-crossdc.sh`. Use `export CPUSETS_DC1="set1 set2 setN"; export CPUSETS_DC2="set3 set4 setL"` to customize.
 - Build / rebuild: `docker-compose -f docker-compose-crossdc.yml build`
 - Start services: `docker-compose -f docker-compose-crossdc.yml up -d --build`
 - Scaling KC nodes: `docker-compose -f docker-compose-crossdc.yml up -d --build --scale keycloak_dc1=2 --scale keycloak_dc2=3`

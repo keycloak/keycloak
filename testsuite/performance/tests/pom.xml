@@ -35,7 +35,7 @@
     <properties>
         <compose.file>docker-compose.yml</compose.file>
         <compose.up.params/>
-        <compose.restart.params>keycloak</compose.restart.params>
+        <mariadb.service>mariadb</mariadb.service>
         <keycloak.server.uris>http://localhost:8080/auth</keycloak.server.uris>
         <db.url>jdbc:mariadb://keycloak:keycloak@localhost:3306/keycloak</db.url>
 
@@ -56,14 +56,16 @@
 
         <!-- Docker-related properties -->
         <db.docker.cpuset>1</db.docker.cpuset>
-        <keycloak.docker.cpuset>2-3</keycloak.docker.cpuset>
-        <keycloak.dc1.docker.cpuset>2</keycloak.dc1.docker.cpuset>
-        <keycloak.dc2.docker.cpuset>3</keycloak.dc2.docker.cpuset>
+        <keycloak.docker.cpusets>2-3</keycloak.docker.cpusets>
+        <keycloak.dc1.docker.cpusets>2</keycloak.dc1.docker.cpusets>
+        <keycloak.dc2.docker.cpusets>3</keycloak.dc2.docker.cpusets>
         <monitoring.docker.cpuset>0</monitoring.docker.cpuset>
 
         <db.docker.memlimit>2g</db.docker.memlimit>
         <keycloak.docker.memlimit>2g</keycloak.docker.memlimit>
         <!-- End of docker-related properties -->
+
+        <skip.generating.docker-compose-file>true</skip.generating.docker-compose-file>
 
         <infinispan.jvm.memory>-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -XX:+DisableExplicitGC</infinispan.jvm.memory>
 
@@ -253,6 +255,13 @@
                     </execution>
                 </executions>
             </plugin>                    
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <configuration>
+                    <workingDirectory>${project.basedir}/..</workingDirectory>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
@@ -297,6 +306,8 @@
                 <keycloak.scale>1</keycloak.scale>
                 <compose.up.params>--scale keycloak=${keycloak.scale}</compose.up.params>
                 <keycloak.server.uris>http://localhost:8080/auth</keycloak.server.uris>
+                <skip.generating.docker-compose-file>false</skip.generating.docker-compose-file>
+                <topology>cluster</topology>
             </properties>
         </profile>
         <profile>
@@ -305,9 +316,11 @@
                 <compose.file>docker-compose-crossdc.yml</compose.file>
                 <keycloak.dc1.scale>1</keycloak.dc1.scale>
                 <keycloak.dc2.scale>1</keycloak.dc2.scale>
-                <compose.up.params>--scale keycloak_dc1=${keycloak.dc1.scale} --scale keycloak_dc2=${keycloak.dc2.scale}</compose.up.params>
-                <compose.restart.params>keycloak_dc1 keycloak_dc2</compose.restart.params>
+                <compose.up.params>--scale keycloak_dc1_1=${keycloak.dc1.scale} --scale keycloak_dc2_1=${keycloak.dc2.scale}</compose.up.params>
+                <mariadb.service>mariadb_dc1</mariadb.service>
                 <keycloak.server.uris>http://localhost:8081/auth http://localhost:8082/auth</keycloak.server.uris>
+                <skip.generating.docker-compose-file>false</skip.generating.docker-compose-file>
+                <topology>crossdc</topology>
             </properties>
         </profile>
         
@@ -321,6 +334,22 @@
                         <artifactId>exec-maven-plugin</artifactId>
                         <executions>
                             <execution>
+                                <id>generate-docker-compose-file</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>generate-docker-compose-${topology}.sh</executable>
+                                    <environmentVariables>
+                                        <CPUSETS>${keycloak.docker.cpusets}</CPUSETS>
+                                        <CPUSETS_DC1>${keycloak.dc1.docker.cpusets}</CPUSETS_DC1>
+                                        <CPUSETS_DC2>${keycloak.dc2.docker.cpusets}</CPUSETS_DC2>
+                                    </environmentVariables>
+                                    <skip>${skip.generating.docker-compose-file}</skip>
+                                </configuration>
+                            </execution>
+                            <execution>
                                 <id>docker-compose-up</id>
                                 <phase>pre-integration-test</phase>
                                 <goals>
@@ -333,9 +362,6 @@
                                     <environmentVariables>
                                         <KEYCLOAK_VERSION>${project.version}</KEYCLOAK_VERSION>
 
-                                        <KEYCLOAK_CPUSET>${keycloak.docker.cpuset}</KEYCLOAK_CPUSET>
-                                        <KEYCLOAK_DC1_CPUSET>${keycloak.dc1.docker.cpuset}</KEYCLOAK_DC1_CPUSET>
-                                        <KEYCLOAK_DC2_CPUSET>${keycloak.dc2.docker.cpuset}</KEYCLOAK_DC2_CPUSET>
                                         <KEYCLOAK_MEMLIMIT>${keycloak.docker.memlimit}</KEYCLOAK_MEMLIMIT>
                                         <DB_CPUSET>${db.docker.cpuset}</DB_CPUSET>
                                         <DB_MEMLIMIT>${db.docker.memlimit}</DB_MEMLIMIT>
@@ -526,30 +552,50 @@
                         <artifactId>exec-maven-plugin</artifactId>
                         <executions>
                             <execution>
+                                <id>stop-all-services</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>docker-compose</executable>
+                                    <commandlineArgs>-f ${compose.file} stop</commandlineArgs>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>start-db-only</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>docker-compose</executable>
+                                    <commandlineArgs>-f ${compose.file} start ${mariadb.service}</commandlineArgs>
+                                </configuration>
+                            </execution>
+                            <execution>
                                 <id>load-dump</id>
                                 <phase>pre-integration-test</phase>
                                 <goals>
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <workingDirectory>${project.basedir}/..</workingDirectory>
                                     <executable>./load-dump.sh</executable>
-
                                     <environmentVariables>
                                         <DATASET>${dataset}</DATASET>
+                                        <MARIADB_SERVICE>${mariadb.service}</MARIADB_SERVICE>
                                     </environmentVariables>
                                 </configuration>
                             </execution>
                             <execution>
-                                <id>restart-keycloak</id>
+                                <id>start-remaining-services</id>
                                 <phase>pre-integration-test</phase>
                                 <goals>
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <workingDirectory>${project.basedir}/..</workingDirectory>
                                     <executable>docker-compose</executable>
-                                    <commandlineArgs>-f ${compose.file} restart ${compose.restart.params}</commandlineArgs>
+                                    <commandlineArgs>-f ${compose.file} up -d</commandlineArgs>
                                 </configuration>
                             </execution>
                             <execution>
@@ -560,7 +606,6 @@
                                 </goals>
                                 <configuration>
                                     <executable>./healthcheck.sh</executable>
-                                    <workingDirectory>${project.basedir}/..</workingDirectory>
                                     <environmentVariables>
                                         <KEYCLOAK_SERVER_URIS>${keycloak.server.uris}</KEYCLOAK_SERVER_URIS>
                                     </environmentVariables>
