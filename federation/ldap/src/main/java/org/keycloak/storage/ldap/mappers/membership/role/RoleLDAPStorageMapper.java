@@ -294,7 +294,7 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
     public void beforeLDAPQuery(LDAPQuery query) {
         String strategyKey = config.getUserRolesRetrieveStrategy();
         UserRolesRetrieveStrategy strategy = factory.getUserRolesRetrieveStrategy(strategyKey);
-        strategy.beforeUserLDAPQuery(query);
+        strategy.beforeUserLDAPQuery(this, query);
     }
 
 

@@ -34,6 +34,7 @@ import org.keycloak.storage.ldap.mappers.AbstractLDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.membership.LDAPGroupMapperMode;
 import org.keycloak.storage.ldap.mappers.membership.MembershipType;
 import org.keycloak.storage.ldap.mappers.membership.UserRolesRetrieveStrategy;
+import org.keycloak.storage.ldap.mappers.membership.group.GroupMapperConfig;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -160,11 +161,19 @@ public class RoleLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFacto
         config.property().name(RoleMapperConfig.USER_ROLES_RETRIEVE_STRATEGY)
                 .label("User Roles Retrieve Strategy")
                 .helpText("Specify how to retrieve roles of user. LOAD_ROLES_BY_MEMBER_ATTRIBUTE means that roles of user will be retrieved by sending LDAP query to retrieve all roles where 'member' is our user. " +
-                        "GET_ROLES_FROM_USER_MEMBEROF_ATTRIBUTE means that roles of user will be retrieved from 'memberOf' attribute of our user. " +
+                        "GET_ROLES_FROM_USER_MEMBEROF_ATTRIBUTE means that roles of user will be retrieved from 'memberOf' attribute of our user. Or from the other attribute specified by 'Member-Of LDAP Attribute' . " +
                         "LOAD_ROLES_BY_MEMBER_ATTRIBUTE_RECURSIVELY is applicable just in Active Directory and it means that roles of user will be retrieved recursively with usage of LDAP_MATCHING_RULE_IN_CHAIN Ldap extension.")
                 .type(ProviderConfigProperty.LIST_TYPE)
                 .options(roleRetrievers)
                 .defaultValue(RoleMapperConfig.LOAD_ROLES_BY_MEMBER_ATTRIBUTE)
+                .add()
+                .property().name(GroupMapperConfig.MEMBEROF_LDAP_ATTRIBUTE)
+                .label("Member-Of LDAP Attribute")
+                .helpText("Used just when 'User Roles Retrieve Strategy' is GET_ROLES_FROM_USER_MEMBEROF_ATTRIBUTE . " +
+                        "It specifies the name of the LDAP attribute on the LDAP user, which contains the roles (LDAP Groups), which the user is member of. " +
+                        "Usually it will be 'memberOf' and that's also the default value.")
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .defaultValue(LDAPConstants.MEMBER_OF)
                 .add()
                 .property().name(RoleMapperConfig.USE_REALM_ROLES_MAPPING)
                 .label("Use Realm Roles Mapping")
