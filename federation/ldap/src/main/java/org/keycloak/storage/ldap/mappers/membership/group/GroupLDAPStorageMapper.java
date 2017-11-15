@@ -76,7 +76,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
 
     @Override
     public LDAPQuery createLDAPGroupQuery() {
-        return createGroupQuery();
+        return createGroupQuery(false);
     }
 
     @Override
@@ -88,7 +88,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
 
     // LDAP Group CRUD operations
 
-    public LDAPQuery createGroupQuery() {
+    public LDAPQuery createGroupQuery(boolean includeMemberAttribute) {
         LDAPQuery ldapQuery = new LDAPQuery(ldapProvider);
 
         // For now, use same search scope, which is configured "globally" and used for user's search.
@@ -107,7 +107,11 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         }
 
         ldapQuery.addReturningLdapAttribute(config.getGroupNameLdapAttribute());
-        ldapQuery.addReturningLdapAttribute(config.getMembershipLdapAttribute());
+
+        // Performance improvement
+        if (includeMemberAttribute) {
+            ldapQuery.addReturningLdapAttribute(config.getMembershipLdapAttribute());
+        }
 
         for (String groupAttr : config.getGroupAttributes()) {
             ldapQuery.addReturningLdapAttribute(groupAttr);
@@ -125,7 +129,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
     }
 
     public LDAPObject loadLDAPGroupByName(String groupName) {
-        LDAPQuery ldapQuery = createGroupQuery();
+        LDAPQuery ldapQuery = createGroupQuery(true);
         Condition roleNameCondition = new LDAPQueryConditionsBuilder().equal(config.getGroupNameLdapAttribute(), groupName);
         ldapQuery.addWhereCondition(roleNameCondition);
         return ldapQuery.getFirstResult();
@@ -153,7 +157,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         logger.debugf("Syncing groups from LDAP into Keycloak DB. Mapper is [%s], LDAP provider is [%s]", mapperModel.getName(), ldapProvider.getModel().getName());
 
         // Get all LDAP groups
-        List<LDAPObject> ldapGroups = getAllLDAPGroups();
+        List<LDAPObject> ldapGroups = getAllLDAPGroups(config.isPreserveGroupsInheritance());
 
         // Convert to internal format
         Map<String, LDAPObject> ldapGroupsMap = new HashMap<>();
@@ -163,12 +167,15 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         for (LDAPObject ldapGroup : ldapGroups) {
             String groupName = ldapGroup.getAttributeAsString(groupsRdnAttr);
 
-            Set<String> subgroupNames = new HashSet<>();
-            for (LDAPDn groupDn : getLDAPSubgroups(ldapGroup)) {
-                subgroupNames.add(groupDn.getFirstRdnAttrValue());
+            if (config.isPreserveGroupsInheritance()) {
+                Set<String> subgroupNames = new HashSet<>();
+                for (LDAPDn groupDn : getLDAPSubgroups(ldapGroup)) {
+                    subgroupNames.add(groupDn.getFirstRdnAttrValue());
+                }
+
+                ldapGroupsRep.add(new GroupTreeResolver.Group(groupName, subgroupNames));
             }
 
-            ldapGroupsRep.add(new GroupTreeResolver.Group(groupName, subgroupNames));
             ldapGroupsMap.put(groupName, ldapGroup);
         }
 
@@ -342,8 +349,8 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
     }
 
     // Send LDAP query to retrieve all groups
-    protected List<LDAPObject> getAllLDAPGroups() {
-        LDAPQuery ldapGroupQuery = createGroupQuery();
+    protected List<LDAPObject> getAllLDAPGroups(boolean includeMemberAttribute) {
+        LDAPQuery ldapGroupQuery = createGroupQuery(includeMemberAttribute);
         return LDAPUtils.loadAllLDAPObjects(ldapGroupQuery, ldapProvider);
     }
 
@@ -368,7 +375,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         logger.debugf("Syncing groups from Keycloak into LDAP. Mapper is [%s], LDAP provider is [%s]", mapperModel.getName(), ldapProvider.getModel().getName());
 
         // Query existing LDAP groups
-        LDAPQuery ldapQuery = createGroupQuery();
+        LDAPQuery ldapQuery = createGroupQuery(config.isPreserveGroupsInheritance());
         List<LDAPObject> ldapGroups = ldapQuery.getResultList();
 
         // Convert them to Map<String, LDAPObject>
@@ -615,7 +622,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
 
         @Override
         public void leaveGroup(GroupModel group) {
-            LDAPQuery ldapQuery = createGroupQuery();
+            LDAPQuery ldapQuery = createGroupQuery(true);
             LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
             Condition roleNameCondition = conditionsBuilder.equal(config.getGroupNameLdapAttribute(), group.getName());
 

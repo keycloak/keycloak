@@ -92,7 +92,7 @@ public class LDAPUtils {
     }
 
     // ldapUser has filled attributes, but doesn't have filled dn.
-    private static void computeAndSetDn(LDAPConfig config, LDAPObject ldapUser) {
+    public static void computeAndSetDn(LDAPConfig config, LDAPObject ldapUser) {
         String rdnLdapAttrName = config.getRdnLdapAttribute();
         String rdnLdapAttrValue = ldapUser.getAttributeAsString(rdnLdapAttrName);
         if (rdnLdapAttrValue == null) {
