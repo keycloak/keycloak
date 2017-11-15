@@ -281,7 +281,7 @@ public class LDAPTestUtils {
     public static void removeAllLDAPRoles(KeycloakSession session, RealmModel appRealm, ComponentModel ldapModel, String mapperName) {
         ComponentModel mapperModel = getSubcomponentByName(appRealm, ldapModel, mapperName);
         LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
-        LDAPQuery roleQuery = getRoleMapper(mapperModel, ldapProvider, appRealm).createRoleQuery();
+        LDAPQuery roleQuery = getRoleMapper(mapperModel, ldapProvider, appRealm).createRoleQuery(false);
         List<LDAPObject> ldapRoles = roleQuery.getResultList();
         for (LDAPObject ldapRole : ldapRoles) {
             ldapProvider.getLdapIdentityStore().remove(ldapRole);
@@ -291,7 +291,7 @@ public class LDAPTestUtils {
     public static void removeAllLDAPGroups(KeycloakSession session, RealmModel appRealm, ComponentModel ldapModel, String mapperName) {
         ComponentModel mapperModel = getSubcomponentByName(appRealm, ldapModel, mapperName);
         LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
-        LDAPQuery roleQuery = getGroupMapper(mapperModel, ldapProvider, appRealm).createGroupQuery();
+        LDAPQuery roleQuery = getGroupMapper(mapperModel, ldapProvider, appRealm).createGroupQuery(false);
         List<LDAPObject> ldapRoles = roleQuery.getResultList();
         for (LDAPObject ldapRole : ldapRoles) {
             ldapProvider.getLdapIdentityStore().remove(ldapRole);
