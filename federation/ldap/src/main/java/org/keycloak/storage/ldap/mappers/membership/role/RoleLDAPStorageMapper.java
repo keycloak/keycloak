@@ -214,9 +214,7 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
             ldapQuery.addWhereCondition(customFilterCondition);
         }
 
-        String membershipAttr = config.getMembershipLdapAttribute();
         ldapQuery.addReturningLdapAttribute(rolesRdnAttr);
-        ldapQuery.addReturningLdapAttribute(membershipAttr);
 
         return ldapQuery;
     }

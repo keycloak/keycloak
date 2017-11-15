@@ -107,7 +107,6 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         }
 
         ldapQuery.addReturningLdapAttribute(config.getGroupNameLdapAttribute());
-        ldapQuery.addReturningLdapAttribute(config.getMembershipLdapAttribute());
 
         for (String groupAttr : config.getGroupAttributes()) {
             ldapQuery.addReturningLdapAttribute(groupAttr);
