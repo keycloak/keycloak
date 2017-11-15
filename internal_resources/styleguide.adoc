@@ -9,8 +9,10 @@
 
 == Style Guidelines
 
-* Use title case for headings
+* Use title case for headings.
 ** Unsure of the proper capitalization? See link:http://titlecase.com/[http://titlecase.com/]  
+* Write clear, short sentences.
+* Use definite and indefinite articles like _an_ and _the_.
 * Keep headings inside their associated topic file rather than
   outside, at the site of the include.
 * Use `++[[this_style_of_thing]]++` for document IDs, not
