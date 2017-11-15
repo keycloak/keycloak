@@ -356,7 +356,6 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <workingDirectory>${project.basedir}/..</workingDirectory>
                                     <executable>docker-compose</executable>
                                     <commandlineArgs>-f ${compose.file} up -d --build ${compose.up.params}</commandlineArgs>
                                     <environmentVariables>
@@ -393,7 +392,6 @@
                                 </goals>
                                 <configuration>
                                     <executable>./healthcheck.sh</executable>
-                                    <workingDirectory>${project.basedir}/..</workingDirectory>
                                     <environmentVariables>
                                         <KEYCLOAK_SERVER_URIS>${keycloak.server.uris}</KEYCLOAK_SERVER_URIS>
                                     </environmentVariables>
@@ -529,9 +527,7 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <workingDirectory>${project.basedir}/..</workingDirectory>
                                     <executable>./prepare-dump.sh</executable>
-
                                     <environmentVariables>
                                         <DATASET>${dataset}</DATASET>
                                     </environmentVariables>
@@ -642,7 +638,6 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <workingDirectory>${project.basedir}/..</workingDirectory>
                                     <executable>docker-compose</executable>
                                     <commandlineArgs>-f ${compose.file} down ${volumes.arg}</commandlineArgs>
                                     <environmentVariables>
@@ -678,7 +673,6 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <workingDirectory>${project.basedir}/..</workingDirectory>
                                     <executable>docker-compose</executable>
                                     <commandlineArgs>-f docker-compose-monitoring.yml up -d --build</commandlineArgs>
                                     <environmentVariables>
@@ -709,7 +703,6 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <workingDirectory>${project.basedir}/..</workingDirectory>
                                     <executable>docker-compose</executable>
                                     <commandlineArgs>-f docker-compose-monitoring.yml down ${monitoring.volumes.arg}</commandlineArgs>
                                 </configuration>
