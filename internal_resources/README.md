@@ -6,12 +6,12 @@ This folder contains guidelines for writers.
 Contributor's Guide
 -------------------
 
-See our [Contributor's Guide](contributing.adoc) to learn how the procedure for making contributions to documentation.
+See our [Contributor's Guide](contributing.adoc) to learn the procedure for making contributions to documentation.
 
 Templates
 ---------
 
-We have templates that we you use for your new content. When:
+We have templates that we ask you to please use for your new content. When:
 
 * I want to do X
   * Use the [brief task template](template_task_brief.adoc). The [detailed task template](template_task.adoc) has a wealth of resources and tips that you may find useful.
