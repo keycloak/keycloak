@@ -1433,7 +1433,7 @@ module.controller('RoleListCtrl', function($scope, $route, Dialog, Notifications
 
 module.controller('RoleDetailCtrl', function($scope, realm, role, roles, clients,
                                              Role, ClientRole, RoleById, RoleRealmComposites, RoleClientComposites,
-                                             $http, $location, Dialog, Notifications) {
+                                             $http, $location, Dialog, Notifications, RealmRoleRemover) {
     $scope.realm = realm;
     $scope.role = angular.copy(role);
     $scope.create = !role.name;
@@ -1460,16 +1460,8 @@ module.controller('RoleDetailCtrl', function($scope, realm, role, roles, clients
         }
     };
 
-    $scope.remove = function () {
-        Dialog.confirmDelete($scope.role.name, 'role', function () {
-            $scope.role.$remove({
-                realm: realm.realm,
-                role: $scope.role.id
-            }, function () {
-                $location.url("/realms/" + realm.realm + "/roles");
-                Notifications.success("The role has been deleted.");
-            });
-        });
+    $scope.remove = function() {
+        RealmRoleRemover.remove($scope.role, realm, Dialog, $location, Notifications);
     };
 
     $scope.cancel = function () {
