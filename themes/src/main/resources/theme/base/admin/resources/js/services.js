@@ -461,6 +461,20 @@ module.service('LastFlowSelected', function() {
     this.alias = null;
 });
 
+module.service('RealmRoleRemover', function() {
+   this.remove = function (role, realm, Dialog, $location, Notifications) {
+        Dialog.confirmDelete(role.name, 'role', function () {
+            role.$remove({
+                realm: realm.realm,
+                role: role.id
+            }, function () {
+                $location.url("/realms/" + realm.realm + "/roles");
+                Notifications.success("The role has been deleted.");
+            });
+        });
+    };
+});
+
 module.factory('UserSessionStats', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/users/:user/session-stats', {
         realm : '@realm',

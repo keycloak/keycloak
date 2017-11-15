@@ -2536,10 +2536,15 @@ getManageClientId = function(realm) {
     }
 }
 
-module.controller('RealmRolePermissionsCtrl', function($scope, $http, $route, $location, realm, role, RoleManagementPermissions, Client, Notifications) {
+module.controller('RealmRolePermissionsCtrl', function($scope, $http, $route, $location, realm, role, RoleManagementPermissions, Client, Notifications, Dialog, RealmRoleRemover) {
     console.log('RealmRolePermissionsCtrl');
     $scope.role = role;
     $scope.realm = realm;
+    
+    $scope.remove = function() {
+        RealmRoleRemover.remove($scope.role, realm, Dialog, $location, Notifications);
+    };
+    
     RoleManagementPermissions.get({realm: realm.realm, role: role.id}, function(data) {
         $scope.permissions = data;
         $scope.$watch('permissions.enabled', function(newVal, oldVal) {
