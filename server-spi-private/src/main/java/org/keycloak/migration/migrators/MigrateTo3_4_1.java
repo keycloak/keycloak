@@ -25,26 +25,27 @@ import org.keycloak.models.RealmModel;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author <a href="mailto:bruno@abstractj.org">Bruno Oliveira</a>
  */
-public class MigrateTo3_3_0 implements Migration {
+public class MigrateTo3_4_1 implements Migration {
 
-    public static final ModelVersion VERSION = new ModelVersion("3.3.0");
+    public static final ModelVersion VERSION = new ModelVersion("3.4.1");
 
     @Override
     public void migrate(KeycloakSession session) {
-        for (RealmModel realm : session.realms().getRealms()) {
-            Map<String, String> securityHeaders = realm.getBrowserSecurityHeaders();
-            if (securityHeaders != null && securityHeaders.containsValue("frame-src 'self';")) {
-
-                Map<String, String> browserSecurityHeaders = new HashMap<>(securityHeaders);
-                browserSecurityHeaders.put("contentSecurityPolicy", "frame-src 'self'; frame-ancestors 'self'; object-src 'none';");
-
-                realm.setBrowserSecurityHeaders(Collections.unmodifiableMap(browserSecurityHeaders));
-            }
-        }
+        session.realms().getRealms().stream().forEach(
+                r -> {
+                    Map<String, String> securityHeaders = new HashMap<>(r.getBrowserSecurityHeaders());
+                    securityHeaders.entrySet().stream()
+                            .filter(Objects::nonNull)
+                            .filter(entry -> entry.getValue().equals("frame-src 'self'"))
+                            .forEach(entry -> entry.setValue("frame-src 'self'; frame-ancestors 'self'; object-src 'none';"));
+                    r.setBrowserSecurityHeaders(Collections.unmodifiableMap(securityHeaders));
+                }
+        );
     }
 
     @Override

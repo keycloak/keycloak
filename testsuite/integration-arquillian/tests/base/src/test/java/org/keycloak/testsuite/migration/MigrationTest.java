@@ -116,7 +116,7 @@ public class MigrationTest extends AbstractKeycloakTest {
     public void migration2_5_5Test() {
         testMigratedData();
         testMigrationTo3_0_0();
-        testMigrationTo3_3_0();
+        testMigrationTo3_4_1();
     }
     @Test
     @Migration(versionFrom = "1.9.8.Final")
@@ -130,8 +130,8 @@ public class MigrationTest extends AbstractKeycloakTest {
         testMigrationTo2_5_1();
         testMigrationTo3_0_0();
         testMigrationTo3_2_0();
-        testMigrationTo3_3_0();
         testMigrationTo3_4_0();
+        testMigrationTo3_4_1();
     }
     @Test
     @Migration(versionFrom = "2.2.1.Final")
@@ -209,21 +209,21 @@ public class MigrationTest extends AbstractKeycloakTest {
         testDockerAuthenticationFlow(masterRealm, migrationRealm);
     }
 
-    private void testMigrationTo3_3_0() {
-        Map<String, String> securityHeaders = masterRealm.toRepresentation().getBrowserSecurityHeaders();
-        if (securityHeaders != null) {
-            assertEquals("frame-src 'self'; frame-ancestors 'self'; object-src 'none';",
-                    securityHeaders.get("contentSecurityPolicy"));
-        } else {
-            fail("Browser security headers not found");
-        }
-    }
-
     private void testMigrationTo3_4_0() {
         Map<String, String> securityHeaders = masterRealm.toRepresentation().getBrowserSecurityHeaders();
         if (securityHeaders != null) {
             assertEquals("max-age=31536000; includeSubDomains",
                     securityHeaders.get("strictTransportSecurity"));
+        } else {
+            fail("Browser security headers not found");
+        }
+    }
+
+    private void testMigrationTo3_4_1() {
+        Map<String, String> securityHeaders = masterRealm.toRepresentation().getBrowserSecurityHeaders();
+        if (securityHeaders != null) {
+            assertEquals("frame-src 'self'; frame-ancestors 'self'; object-src 'none';",
+                    securityHeaders.get("contentSecurityPolicy"));
         } else {
             fail("Browser security headers not found");
         }
