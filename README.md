@@ -6,6 +6,12 @@ Open Source Identity and Access Management for modern Applications and Services.
 For more information about Keycloak visit [Keycloak homepage](http://keycloak.org) and [Keycloak blog](http://blog.keycloak.org).
 
 
+Contributing to Keycloak Documentation
+--------------------------------------
+
+See our [Contributor's Guide](internal_resources/contributing.adoc). The directory also includes a set of templates and other resources to help you get started.
+
+
 Building Keycloak Documentation
 -------------------------------
 
