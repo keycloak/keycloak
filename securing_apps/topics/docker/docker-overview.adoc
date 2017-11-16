@@ -5,7 +5,7 @@ NOTE: Docker authentication is disabled by default. To enable see link:{installg
 
 This section describes how you can configure a Docker registry to use {project_name} as its authentication server.
 
-Fore more information on how to set up and configure a Docker registry, see the link:https://docs.docker.com/registry/configuration/[Docker Registry Configuration Guide].
+For more information on how to set up and configure a Docker registry, see the link:https://docs.docker.com/registry/configuration/[Docker Registry Configuration Guide].
 
 
 
@@ -26,7 +26,7 @@ WARNING: Don't forget to configure the `rootcertbundle` field with the location 
 
 === Docker Registry Environment Variable Override Installation
 
-Often times it is appropriate to use a simple environment variable override for develop or POC Docker registries.  While this apporach is usually not recommended for production use, it can be helpful when one requires quick-and-dirty way to stand up a registry.  Simply use the _Variable Override_ Format Option from the client installation tab, and an output should appear like the one below:
+Often times it is appropriate to use a simple environment variable override for develop or POC Docker registries.  While this approach is usually not recommended for production use, it can be helpful when one requires quick-and-dirty way to stand up a registry.  Simply use the _Variable Override_ Format Option from the client installation tab, and an output should appear like the one below:
 
     REGISTRY_AUTH_TOKEN_REALM: http://localhost:8080/auth/auth/realms/master/protocol/docker-v2/auth
     REGISTRY_AUTH_TOKEN_SERVICE: docker-test

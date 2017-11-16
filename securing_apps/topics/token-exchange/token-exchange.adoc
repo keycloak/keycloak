@@ -99,7 +99,7 @@ an additional `account-link-url` claim if the user does not have a link to an id
 for a client initiated link request.
 
 NOTE: Token exchange setup requires knowledge of fine grain admin permissions (See the link:{adminguide_link}[{adminguide_name}] for more information).  You will need to grant clients
-      permission to exchange.  This is discusssed more later in this chapter.
+      permission to exchange.  This is discussed more later in this chapter.
 
 The rest of this chapter discusses the setup requirements and provides examples for different exchange scenarios.
 For simplicity's sake, let's call a token minted by the current realm as an _internal_ token and a token minted by
@@ -212,7 +212,7 @@ image:{project_images}/exchange-idp-permission-unset.png[]
 
 Toggle the `Permissions Enabled` switch to true.
 
-.Identity Provier Permission
+.Identity Provider Permission
 image:{project_images}/exchange-idp-permission-set.png[]
 
 You should see a `token-exchange` link on the page.  Click that to start defining the permission.  It will bring you
@@ -284,7 +284,7 @@ this JSON document:
 
 The `error` claim will be either `token_expired` or `not_linked`.  The `account-link-url` claim is provided
 so that the client can perform link:{developerguide_link}[Client Initiated Account Linking].  Most (all?)
-providers requiring linking through browser OAuth protocol.  With the `account-link-url` just add a `redirect_uri`
+providers are requiring linking through browser OAuth protocol.  With the `account-link-url` just add a `redirect_uri`
 query parameter to it and you can forward browsers to perform the link.
 
 === External Token to Internal Token Exchange
@@ -407,7 +407,7 @@ WARNING: It is very risky to enable direct naked impersonation for a client.  If
 If the `audience` parameter is provided, then the calling client must have permission to exchange to the client.  How
 to set this up is discussed earlier in this chapter.
 
-Additionaly, the calling client must be granted permission to impersonate users.  In the admin console, go to the
+Additionally, the calling client must be granted permission to impersonate users.  In the admin console, go to the
 `Users` screen and click on the `Permissions` tab.
 
 .Users Permission
@@ -415,7 +415,7 @@ image:{project_images}/exchange-users-permission-unset.png[]
 
 Toggle the `Permissions Enabled` switch to true.
 
-.Identity Provier Permission
+.Identity Provider Permission
 image:{project_images}/exchange-users-permission-set.png[]
 
 You should see a `impersonation` link on the page.  Click that to start defining the permission.  It will bring you

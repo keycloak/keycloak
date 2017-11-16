@@ -6,7 +6,7 @@ You must first install the `keycloak` feature in the JBoss Fuse environment. The
 
 ====== Installing from the Maven Repository
 
-As a prequisite, you must be online and have access to the Maven repository.
+As a prerequisite, you must be online and have access to the Maven repository.
 
 ifeval::[{project_community}==true]
 For community it's sufficient to be online as all the artifacts and 3rd party dependencies should be available in the maven central repository.

@@ -10,7 +10,7 @@ domains or realms. An existing account can be linked with one or more identities
 based on the identity information obtained from them.
 
 An identity provider is usually based on a specific protocol that is used to authenticate and communicate authentication and authorization information to their users.
-It can be a social provider such as Facebook, Google or Twitter.  It can be a business partner whose users need to access your services. Or it an be a cloud-based identity
+It can be a social provider such as Facebook, Google or Twitter.  It can be a business partner whose users need to access your services. Or it can be a cloud-based identity
 service that you want to integrate with.
 
 Usually, identity providers are based on the following protocols: 

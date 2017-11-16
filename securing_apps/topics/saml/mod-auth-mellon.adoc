@@ -191,7 +191,7 @@ To configure the IdP to supply the user's groups as as a SAML attribute, complet
 . From the Mapper Type drop-down list select *Group list*. 
 . Set Name to "group list."
 . Set the SAML attribute name to "groups."
-. Click *Save.*
+. Click *Save*.
 
 The remaining steps are performed on $sp_host.
 

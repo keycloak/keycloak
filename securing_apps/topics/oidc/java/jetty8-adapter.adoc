@@ -9,7 +9,7 @@ Let's go over these steps.
 [[_jetty8_adapter_installation]]
 ===== Adapter Installation
 
-Adapters are no longer included with the appliance or war distribution.Each adapter is a separate download on the Keycloak download site.
+Adapters are no longer included with the appliance or war distribution. Each adapter is a separate download on the Keycloak download site.
 They are also available as a maven artifact. 
 
 You must unzip the Jetty 8.1.x  distro into Jetty 8.1.x's root directory.
