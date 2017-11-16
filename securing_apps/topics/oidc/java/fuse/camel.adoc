@@ -2,7 +2,7 @@
 
 ===== Securing an Apache Camel Application
 
-You can secure Apache camel endpoints implemented with the http://camel.apache.org/jetty.html[camel-jetty] component by adding securityHandler with `KeycloakJettyAuthenticator` and the proper security constraints injected. You can add the `OSGI-INF/blueprint/blueprint.xml` file to your camel application with a similar configuration as below. The roles, security constraint mappings, and {project_name} adapter configuration might differ slightly depending on your environment and needs.
+You can secure Apache Camel endpoints implemented with the http://camel.apache.org/jetty.html[camel-jetty] component by adding securityHandler with `KeycloakJettyAuthenticator` and the proper security constraints injected. You can add the `OSGI-INF/blueprint/blueprint.xml` file to your Camel application with a similar configuration as below. The roles, security constraint mappings, and {project_name} adapter configuration might differ slightly depending on your environment and needs.
 
 For example:
 
@@ -99,7 +99,7 @@ Camel RestDSL is a Camel feature used to define your REST endpoints in a fluent 
 
 The way to configure the integration mechanism depends on the Camel component for which you configure your RestDSL-defined routes.
 
-The following example shows how to configure integration using the jetty component, with references to some of the beans defined in previous Blueprint example.
+The following example shows how to configure integration using the Jetty component, with references to some of the beans defined in previous Blueprint example.
 
 [source,xml]
 ----

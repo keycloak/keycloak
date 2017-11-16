@@ -34,7 +34,7 @@ which enables a smooth Web based SSO experience.
 The client eventually receives the tokens (access_token, refresh_token, 
 id_token) which can then be used to call backend services.
 
-The `KeycloakInstalled` adapter provides support for reneval of stale tokens.
+The `KeycloakInstalled` adapter provides support for renewal of stale tokens.
 
 [[_installed_adapter_installation]]
 ===== Adapter Installation
@@ -54,7 +54,7 @@ The `KeycloakInstalled` adapter provides support for reneval of stale tokens.
 
 ===== Client Configuration
 
-The application needs to be configured as a `public` openid connect client with
+The application needs to be configured as a `public` OpenID Connect client with
 `Standard Flow Enabled` and pass:[http://localhost:*] as an allowed `Valid Redirect URI`.
 
 ===== Usage

@@ -5,7 +5,7 @@ Keycloak has a separate SAML adapter for Jetty 8.1.x that you will have to insta
 You then have to provide some extra configuration in each WAR you deploy to Jetty.
 Let's go over these steps.
 
-Adapters are no longer included with the appliance or war distribution.Each adapter is a separate download on the Keycloak download site.
+Adapters are no longer included with the appliance or war distribution. Each adapter is a separate download on the Keycloak download site.
 They are also available as a maven artifact. 
 
 You must unzip the Jetty 8.1.x  distro into Jetty 8.1.x's root directory.
