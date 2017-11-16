@@ -59,7 +59,7 @@ endif::[]
 
 ifeval::[{project_community}==true]
 ===== Apache HTTP Server
-* https://github.com/pingidentity/mod_auth_openidc[mod_auth_openidc]
+* https://github.com/zmartzone/mod_auth_openidc[mod_auth_openidc]
 endif::[]
 
 ==== SAML
