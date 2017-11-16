@@ -500,7 +500,11 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     static String getTopGroupsQueryCacheKey(String realm) {
-        return realm + ".top.groups";
+        return getTopGroupsQueryCacheKey(realm, null, null);
+    }
+
+    static String getTopGroupsQueryCacheKey(String realm, Integer first, Integer max) {
+        return realm + ".top.groups" + ((first!=null)?"." + first:"") + ((max!=null)?"." + max:"");
     }
 
     static String getRolesCacheKey(String container) {
@@ -893,7 +897,7 @@ public class RealmCacheSession implements CacheRealmProvider {
 
     @Override
     public List<GroupModel> getTopLevelGroups(RealmModel realm, Integer first, Integer max) {
-        String cacheKey = getTopGroupsQueryCacheKey(realm.getId() + first + max);
+        String cacheKey = getTopGroupsQueryCacheKey(realm.getId(), first, max);
         boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(realm.getId() + first + max);
         if (queryDB) {
             return getDelegate().getTopLevelGroups(realm, first, max);

@@ -34,7 +34,7 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.*;
+import org.keycloak.services.ForbiddenException;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;

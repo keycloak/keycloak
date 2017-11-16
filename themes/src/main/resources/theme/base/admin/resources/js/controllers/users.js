@@ -229,16 +229,16 @@ module.controller('UserOfflineSessionsCtrl', function($scope, $location, realm, 
 
 
 module.controller('UserListCtrl', function($scope, realm, User, UserSearchState, UserImpersonation, BruteForce, Notifications, $route, Dialog) {
-    
+
     $scope.init = function() {
         $scope.realm = realm;
-        
+
         UserSearchState.query.realm = realm.realm;
         $scope.query = UserSearchState.query;
-        
+
         if (!UserSearchState.isFirstSearch) $scope.searchQuery();
     };
-    
+
     $scope.impersonate = function(userId) {
         UserImpersonation.save({realm : realm.realm, user: userId}, function (data) {
             if (data.sameRealm) {
@@ -292,11 +292,11 @@ module.controller('UserListCtrl', function($scope, realm, User, UserSearchState,
                 userId : user.id
             }, function() {
                 $route.reload();
-                
+
                 if ($scope.users.length === 1 && $scope.query.first > 0) {
                     $scope.previousPage();
-                } 
-                
+                }
+
                 Notifications.success("The user has been deleted.");
             }, function() {
                 Notifications.error("User couldn't be deleted");
@@ -532,7 +532,7 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, $route, R
     $scope.resetPassword = function() {
         // hit enter without entering both fields - ignore
         if (!$scope.passwordAndConfirmPasswordEntered()) return;
-        
+
         if ($scope.pwdChange) {
             if ($scope.password != $scope.confirmPassword) {
                 Notifications.error("Password and confirmation does not match.");
@@ -558,7 +558,7 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, $route, R
     $scope.passwordAndConfirmPasswordEntered = function() {
         return $scope.password && $scope.confirmPassword;
     }
-    
+
     $scope.disableCredentialTypes = function() {
         Dialog.confirm('Disable credentials', 'Are you sure you want to disable these the users credentials?', function() {
             UserCredentials.disableCredentialTypes({ realm: realm.realm, userId: user.id }, $scope.disableableCredentialTypes, function() {
@@ -630,7 +630,7 @@ module.controller('UserFederationCtrl', function($scope, $location, $route, real
     $scope.instancesLoaded = false;
 
     if (!$scope.providers) $scope.providers = [];
-    
+
     $scope.addProvider = function(provider) {
         console.log('Add provider: ' + provider.id);
         $location.url("/create/user-storage/" + realm.realm + "/providers/" + provider.id);
@@ -775,7 +775,7 @@ module.controller('GenericUserStorageCtrl', function($scope, $location, Notifica
             if (!instance.config['priority']) {
                 instance.config['priority'] = ['0'];
             }
-            
+
             if (providerFactory.properties) {
                 for (var i = 0; i < providerFactory.properties.length; i++) {
                     var configProperty = providerFactory.properties[i];
@@ -919,32 +919,113 @@ function removeGroupMember(groups, member) {
         }
     }
 }
-module.controller('UserGroupMembershipCtrl', function($scope, $route, realm, groups, user, UserGroupMembership, UserGroupMapping, Notifications, $location, Dialog) {
+module.controller('UserGroupMembershipCtrl', function($scope, $q, realm, groups, groupsCount, user, UserGroupMembership, UserGroupMapping, Notifications, Groups, GroupsCount) {
     $scope.realm = realm;
     $scope.user = user;
     $scope.groupList = groups;
     $scope.selectedGroup = null;
     $scope.tree = [];
 
-    UserGroupMembership.query({realm: realm.realm, userId: user.id}, function(data) {
-        $scope.groupMemberships = data;
-        for (var i = 0; i < data.length; i++) {
-            var member = data[i];
-            removeGroupMember(groups, member);
+    $scope.searchCriteria = '';
+    $scope.currentPage = 1;
+    $scope.currentPageInput = $scope.currentPage;
+    $scope.pageSize = 20;
+    $scope.numberOfPages = 1;
+
+    var refreshUserGroupMembership = function () {
+        UserGroupMembership.query({realm: realm.realm, userId: user.id}, function(data) {
+            $scope.groupMemberships = data;
+            for (var i = 0; i < data.length; i++) {
+                var member = data[i];
+                removeGroupMember(groups, member);
+            }
+
+        });
+    };
+
+    var refreshAvailableGroups = function (search) {
+        var first = ($scope.currentPage * $scope.pageSize) - $scope.pageSize;
+        var queryParams = {
+            realm : realm.id,
+            first : first,
+            max : $scope.pageSize
+        };
+        var countParams = {
+            realm : realm.id,
+            top : 'true'
+        };
+
+        if(angular.isDefined(search) && search !== '') {
+            queryParams.search = search;
+            countParams.search = search;
         }
 
+        var promiseGetGroups = $q.defer();
+        Groups.query(queryParams, function(entry) {
+            promiseGetGroups.resolve(entry);
+        }, function() {
+            promiseGetGroups.reject('Unable to fetch ' + queryParams);
+        });
+
+        promiseGetGroups.promise.then(function(groups) {
+            $scope.groupList = [
+                {
+                    "id" : "realm",
+                    "name": "Groups",
+                    "subGroups" : groups
+                }
+            ];
+        }, function (failed) {
+            Notifications.error(failed);
+        });
+
+        var promiseCount = $q.defer();
+        GroupsCount.query(countParams, function(entry) {
+            promiseCount.resolve(entry);
+        }, function() {
+            promiseCount.reject('Unable to fetch ' + countParams);
+        });
+        promiseCount.promise.then(function(entry) {
+            if(angular.isDefined(groupsCount.count) && groupsCount.count > $scope.pageSize) {
+                $scope.numberOfPages = Math.ceil(groupsCount.count/$scope.pageSize);
+            }
+        }, function (failed) {
+            Notifications.error(failed);
+        });
+    };
+
+    if(angular.isDefined(groupsCount.count) && groupsCount.count > $scope.pageSize) {
+        $scope.numberOfPages = Math.ceil(groupsCount.count/$scope.pageSize);
+    }
+
+    refreshAvailableGroups();
+    refreshUserGroupMembership();
+
+    $scope.$watch('currentPage', function(newValue, oldValue) {
+        if(newValue !== oldValue) {
+            refreshAvailableGroups($scope.searchCriteria);
+        }
     });
 
+    $scope.clearSearch = function() {
+        $scope.searchCriteria = '';
+        $scope.currentPage = 1;
+        refreshAvailableGroups();
+    };
 
+    $scope.searchGroup = function() {
+        $scope.currentPage = 1;
+        refreshAvailableGroups($scope.searchCriteria);
+    };
 
     $scope.joinGroup = function() {
         if (!$scope.tree.currentNode) {
             Notifications.error('Please select a group to add');
             return;
-        };
+        }
         UserGroupMapping.update({realm: realm.realm, userId: user.id, groupId: $scope.tree.currentNode.id}, function() {
+            refreshUserGroupMembership();
             Notifications.success('Added group membership');
-            $route.reload();
         });
 
     };
@@ -955,18 +1036,18 @@ module.controller('UserGroupMembershipCtrl', function($scope, $route, realm, gro
 
         }
         UserGroupMapping.remove({realm: realm.realm, userId: user.id, groupId: $scope.selectedGroup.id}, function() {
+            refreshUserGroupMembership();
             Notifications.success('Removed group membership');
-            $route.reload();
         });
 
     };
 
     var isLeaf = function(node) {
-        return node.id != "realm" && (!node.subGroups || node.subGroups.length == 0);
+        return node.id !== 'realm' && (!node.subGroups || node.subGroups.length === 0);
     };
 
     $scope.getGroupClass = function(node) {
-        if (node.id == "realm") {
+        if (node.id === 'realm') {
             return 'pficon pficon-users';
         }
         if (isLeaf(node)) {
@@ -976,16 +1057,16 @@ module.controller('UserGroupMembershipCtrl', function($scope, $route, realm, gro
         if (node.subGroups.length && !node.collapsed) return 'expanded';
         return 'collapsed';
 
-    }
+    };
 
     $scope.getSelectedClass = function(node) {
         if (node.selected) {
             return 'selected';
-        } else if ($scope.cutNode && $scope.cutNode.id == node.id) {
+        } else if ($scope.cutNode && $scope.cutNode.id === node.id) {
             return 'cut';
         }
         return undefined;
-    }
+    };
 
 });
 
@@ -1265,7 +1346,7 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
         console.log('GenericCtrl: triggerChangedUsersSync');
         triggerSync('triggerChangedUsersSync');
     }
-    
+
 
     function triggerSync(action) {
         UserStorageOperations.sync.save({ action: action, realm: $scope.realm.realm, componentId: $scope.instance.id }, {}, function(syncResult) {
