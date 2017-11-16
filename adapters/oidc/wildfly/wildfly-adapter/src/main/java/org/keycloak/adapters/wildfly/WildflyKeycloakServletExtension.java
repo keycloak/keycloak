@@ -21,6 +21,7 @@ import io.undertow.servlet.api.DeploymentInfo;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.NodesRegistrationManagement;
+import org.keycloak.adapters.spi.KeycloakAccount;
 import org.keycloak.adapters.undertow.KeycloakServletExtension;
 import org.keycloak.adapters.undertow.ServletKeycloakAuthMech;
 import org.keycloak.adapters.undertow.UndertowUserSessionManagement;
@@ -39,4 +40,10 @@ public class WildflyKeycloakServletExtension extends KeycloakServletExtension {
         return new WildflyAuthenticationMechanism(deploymentContext, userSessionManagement, nodesRegistrationManagement, deploymentInfo.getConfidentialPortManager(), getErrorPage(deploymentInfo));
 
     }
+
+    @Override
+    protected void propagateKeycloakContext(KeycloakAccount account) {
+        SecurityInfoHelper.propagateSessionInfo(account);
+    }
+
 }
