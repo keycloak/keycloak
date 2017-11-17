@@ -1678,7 +1678,7 @@ public class RepresentationToModel {
         model.setConsentText(rep.getConsentText());
         model.setProtocol(rep.getProtocol());
         model.setProtocolMapper(rep.getProtocolMapper());
-        model.setConfig(rep.getConfig());
+        model.setConfig(removeEmptyString(rep.getConfig()));
         return model;
     }
 
