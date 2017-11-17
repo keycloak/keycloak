@@ -82,6 +82,9 @@ public class UserStorageManager implements UserProvider, OnUserCache, OnCreateCo
         UserStorageProvider instance = (UserStorageProvider)session.getAttribute(model.getId());
         if (instance != null) return instance;
         instance = factory.create(session, model);
+        if (instance == null) {
+            throw new IllegalStateException("UserStorageProvideFactory (of type " + factory.getClass().getName() + ") produced a null instance");
+        }
         session.enlistForClose(instance);
         session.setAttribute(model.getId(), instance);
         return instance;
