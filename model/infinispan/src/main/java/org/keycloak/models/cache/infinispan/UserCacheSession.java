@@ -611,7 +611,7 @@ public class UserCacheSession implements UserCache {
 
     @Override
     public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
-        return getUsers(realm, firstResult, maxResults, false);
+         return getUsers(realm, firstResult, maxResults, false);
     }
 
     @Override
