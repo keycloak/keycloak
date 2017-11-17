@@ -36,6 +36,8 @@ public class BaseRealmConfig {
     protected String authServerUrl;
     @JsonProperty("ssl-required")
     protected String sslRequired;
+    @JsonProperty("confidential-port")
+    protected int confidentialPort;
 
     public String getSslRequired() {
         return sslRequired;
@@ -67,5 +69,13 @@ public class BaseRealmConfig {
 
     public void setAuthServerUrl(String authServerUrl) {
         this.authServerUrl = authServerUrl;
+    }
+
+    public int getConfidentialPort() {
+        return confidentialPort;
+    }
+
+    public void setConfidentialPort(int confidentialPort) {
+        this.confidentialPort = confidentialPort;
     }
 }

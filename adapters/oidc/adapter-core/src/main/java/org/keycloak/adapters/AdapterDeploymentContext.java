@@ -278,6 +278,16 @@ public class AdapterDeploymentContext {
         }
 
         @Override
+        public int getConfidentialPort() {
+            return delegate.getConfidentialPort();
+        }
+
+        @Override
+        public void setConfidentialPort(int confidentialPort) {
+            delegate.setConfidentialPort(confidentialPort);
+        }
+
+        @Override
         public TokenStore getTokenStore() {
             return delegate.getTokenStore();
         }

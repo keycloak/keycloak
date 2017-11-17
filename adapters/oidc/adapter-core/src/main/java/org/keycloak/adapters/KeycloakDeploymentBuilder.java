@@ -78,6 +78,11 @@ public class KeycloakDeploymentBuilder {
         } else {
             deployment.setSslRequired(SslRequired.EXTERNAL);
         }
+
+        if (adapterConfig.getConfidentialPort() != -1) {
+            deployment.setConfidentialPort(adapterConfig.getConfidentialPort());
+        }
+
         if (adapterConfig.getTokenStore() != null) {
             deployment.setTokenStore(TokenStore.valueOf(adapterConfig.getTokenStore().toUpperCase()));
         } else {

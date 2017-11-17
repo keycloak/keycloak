@@ -66,7 +66,7 @@ public class OAuthRequestAuthenticator {
         this.reqAuthenticator = requestAuthenticator;
         this.facade = facade;
         this.deployment = deployment;
-        this.sslRedirectPort = sslRedirectPort;
+        this.sslRedirectPort = deployment.getConfidentialPort() != -1 ? deployment.getConfidentialPort() : sslRedirectPort;
         this.tokenStore = tokenStore;
     }
 
