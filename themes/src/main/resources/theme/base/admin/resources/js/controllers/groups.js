@@ -1,4 +1,4 @@
-module.controller('GroupListCtrl', function($scope, $q, realm, groups, groupsCount, Groups, GroupsCount, Group, GroupChildren, Notifications, $location, Dialog) {
+module.controller('GroupListCtrl', function($scope, $q, realm, groups, Groups, Group, GroupsCount, GroupChildren, Notifications, $location, Dialog) {
     $scope.realm = realm;
     $scope.groupList = [
         {
@@ -57,17 +57,15 @@ module.controller('GroupListCtrl', function($scope, $q, realm, groups, groupsCou
             promiseCount.reject('Unable to fetch ' + countParams);
         });
         promiseCount.promise.then(function(entry) {
-            if(angular.isDefined(groupsCount.count) && groupsCount.count > $scope.pageSize) {
-                $scope.numberOfPages = Math.ceil(groupsCount.count/$scope.pageSize);
+            if(angular.isDefined(entry.count) && entry.count > $scope.pageSize) {
+                $scope.numberOfPages = Math.ceil(entry.count/$scope.pageSize);
+            } else {
+                $scope.numberOfPages = 1;
             }
         }, function (failed) {
             Notifications.error(failed);
         });
     };
-
-    if(angular.isDefined(groupsCount.count) && groupsCount.count > $scope.pageSize) {
-        $scope.numberOfPages = Math.ceil(groupsCount.count/$scope.pageSize);
-    }
 
     refreshGroups();
 
@@ -446,7 +444,7 @@ module.controller('GroupMembersCtrl', function($scope, realm, group, GroupMember
 
 });
 
-module.controller('DefaultGroupsCtrl', function($scope, $q, realm, groups, groupsCount, Groups, GroupsCount, DefaultGroups, Notifications) {
+module.controller('DefaultGroupsCtrl', function($scope, $q, realm, groups, Groups, GroupsCount, DefaultGroups, Notifications) {
     $scope.realm = realm;
     $scope.groupList = groups;
     $scope.selectedGroup = null;
@@ -506,17 +504,13 @@ module.controller('DefaultGroupsCtrl', function($scope, $q, realm, groups, group
             promiseCount.reject('Unable to fetch ' + countParams);
         });
         promiseCount.promise.then(function(entry) {
-            if(angular.isDefined(groupsCount.count) && groupsCount.count > $scope.pageSize) {
-                $scope.numberOfPages = Math.ceil(groupsCount.count/$scope.pageSize);
+            if(angular.isDefined(entry.count) && entry.count > $scope.pageSize) {
+                $scope.numberOfPages = Math.ceil(entry.count/$scope.pageSize);
             }
         }, function (failed) {
             Notifications.success(failed);
         });
     };
-
-    if(angular.isDefined(groupsCount.count) && groupsCount.count > $scope.pageSize) {
-        $scope.numberOfPages = Math.ceil(groupsCount.count/$scope.pageSize);
-    }
 
     refreshAvailableGroups();
 

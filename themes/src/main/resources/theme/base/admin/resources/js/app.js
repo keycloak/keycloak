@@ -642,9 +642,6 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 groups : function(GroupListLoader) {
                     return GroupListLoader();
-                },
-                groupsCount : function(GroupCountLoader) {
-                    return GroupCountLoader();
                 }
             },
             controller : 'UserGroupMembershipCtrl'
@@ -805,9 +802,6 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 groups : function(GroupListLoader) {
                     return GroupListLoader();
-                },
-                groupsCount : function(GroupCountLoader) {
-                    return GroupCountLoader();
                 }
             },
             controller : 'GroupListCtrl'
@@ -886,9 +880,6 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 groups : function(GroupListLoader) {
                     return GroupListLoader();
-                },
-                groupsCount : function(GroupCountLoader) {
-                    return GroupCountLoader();
                 }
             },
             controller : 'DefaultGroupsCtrl'

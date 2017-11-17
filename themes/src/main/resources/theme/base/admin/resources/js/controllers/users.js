@@ -919,7 +919,7 @@ function removeGroupMember(groups, member) {
         }
     }
 }
-module.controller('UserGroupMembershipCtrl', function($scope, $q, realm, groups, groupsCount, user, UserGroupMembership, UserGroupMapping, Notifications, Groups, GroupsCount) {
+module.controller('UserGroupMembershipCtrl', function($scope, $q, realm, groups, user, UserGroupMembership, UserGroupMapping, Notifications, Groups, GroupsCount) {
     $scope.realm = realm;
     $scope.user = user;
     $scope.groupList = groups;
@@ -986,17 +986,15 @@ module.controller('UserGroupMembershipCtrl', function($scope, $q, realm, groups,
             promiseCount.reject('Unable to fetch ' + countParams);
         });
         promiseCount.promise.then(function(entry) {
-            if(angular.isDefined(groupsCount.count) && groupsCount.count > $scope.pageSize) {
-                $scope.numberOfPages = Math.ceil(groupsCount.count/$scope.pageSize);
+            if(angular.isDefined(entry.count) && entry.count > $scope.pageSize) {
+                $scope.numberOfPages = Math.ceil(entry.count/$scope.pageSize);
+            } else {
+                $scope.numberOfPages = 1;
             }
         }, function (failed) {
             Notifications.error(failed);
         });
     };
-
-    if(angular.isDefined(groupsCount.count) && groupsCount.count > $scope.pageSize) {
-        $scope.numberOfPages = Math.ceil(groupsCount.count/$scope.pageSize);
-    }
 
     refreshAvailableGroups();
     refreshUserGroupMembership();

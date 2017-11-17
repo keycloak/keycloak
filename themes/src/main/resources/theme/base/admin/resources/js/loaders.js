@@ -495,15 +495,6 @@ module.factory('GroupListLoader', function(Loader, Groups, $route, $q) {
     });
 });
 
-module.factory('GroupCountLoader', function(Loader, GroupsCount, $route, $q) {
-    return Loader.query(GroupsCount, function() {
-        return {
-            realm : $route.current.params.realm,
-            top : true
-        }
-    });
-});
-
 module.factory('GroupLoader', function(Loader, Group, $route, $q) {
     return Loader.get(Group, function() {
         return {
