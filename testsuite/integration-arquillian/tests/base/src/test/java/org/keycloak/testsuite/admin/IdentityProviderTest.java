@@ -20,6 +20,7 @@ package org.keycloak.testsuite.admin;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
+import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.dom.saml.v2.metadata.EndpointType;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.IndexedEndpointType;
@@ -29,11 +30,13 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.representations.idm.AdminEventRepresentation;
+import org.keycloak.representations.idm.ClientTemplateRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.util.StaxParserUtil;
 import org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLEntityDescriptorParser;
@@ -447,6 +450,40 @@ public class IdentityProviderTest extends AbstractAdminTest {
         } catch (NotFoundException e) {
             // Expected
         }
+    }
+
+    // KEYCLOAK-4962
+    @Test
+    public void testUpdateProtocolMappers() {
+        create(createRep("google", "google"));
+
+        IdentityProviderResource provider = realm.identityProviders().get("google");
+
+        IdentityProviderMapperRepresentation mapper = new IdentityProviderMapperRepresentation();
+        mapper.setIdentityProviderAlias("google");
+        mapper.setName("my_mapper");
+        mapper.setIdentityProviderMapper("oidc-hardcoded-role-idp-mapper");
+        Map<String, String> config = new HashMap<>();
+        config.put("role", "");
+        mapper.setConfig(config);
+
+        Response response = provider.addMapper(mapper);
+        String mapperId = ApiUtil.getCreatedId(response);
+
+
+        List<IdentityProviderMapperRepresentation> mappers = provider.getMappers();
+        assertEquals(1, mappers.size());
+        assertEquals(0, mappers.get(0).getConfig().size());
+
+        mapper = provider.getMapperById(mapperId);
+        mapper.getConfig().put("role", "offline_access");
+
+        provider.update(mapperId, mapper);
+
+        mappers = provider.getMappers();
+        assertEquals(1, mappers.size());
+        assertEquals(1, mappers.get(0).getConfig().size());
+        assertEquals("role", mappers.get(0).getConfig().get("offline_access"));
     }
 
     @Test
