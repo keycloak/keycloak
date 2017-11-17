@@ -639,9 +639,6 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 user : function(UserLoader) {
                     return UserLoader();
-                },
-                groups : function(GroupListLoader) {
-                    return GroupListLoader();
                 }
             },
             controller : 'UserGroupMembershipCtrl'
@@ -799,9 +796,6 @@ module.config([ '$routeProvider', function($routeProvider) {
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
-                },
-                groups : function(GroupListLoader) {
-                    return GroupListLoader();
                 }
             },
             controller : 'GroupListCtrl'
@@ -877,9 +871,6 @@ module.config([ '$routeProvider', function($routeProvider) {
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
-                },
-                groups : function(GroupListLoader) {
-                    return GroupListLoader();
                 }
             },
             controller : 'DefaultGroupsCtrl'

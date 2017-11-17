@@ -1,4 +1,4 @@
-module.controller('GroupListCtrl', function($scope, $q, realm, groups, Groups, Group, GroupsCount, GroupChildren, Notifications, $location, Dialog) {
+module.controller('GroupListCtrl', function($scope, $q, realm, Groups, Group, GroupsCount, GroupChildren, Notifications, $location, Dialog) {
     $scope.realm = realm;
     $scope.groupList = [
         {
@@ -444,9 +444,9 @@ module.controller('GroupMembersCtrl', function($scope, realm, group, GroupMember
 
 });
 
-module.controller('DefaultGroupsCtrl', function($scope, $q, realm, groups, Groups, GroupsCount, DefaultGroups, Notifications) {
+module.controller('DefaultGroupsCtrl', function($scope, $q, realm, Groups, GroupsCount, DefaultGroups, Notifications) {
     $scope.realm = realm;
-    $scope.groupList = groups;
+    $scope.groupList = [];
     $scope.selectedGroup = null;
     $scope.tree = [];
 
@@ -486,13 +486,7 @@ module.controller('DefaultGroupsCtrl', function($scope, $q, realm, groups, Group
             promiseGetGroups.reject('Unable to fetch ' + queryParams);
         });
         promiseGetGroups.promise.then(function(groups) {
-            $scope.groupList = [
-                {
-                    "id" : "realm",
-                    "name": "Groups",
-                    "subGroups" : groups
-                }
-            ];
+            $scope.groupList = groups;
         }, function (failed) {
             Notifications.success(failed);
         });

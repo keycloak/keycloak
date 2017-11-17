@@ -919,10 +919,10 @@ function removeGroupMember(groups, member) {
         }
     }
 }
-module.controller('UserGroupMembershipCtrl', function($scope, $q, realm, groups, user, UserGroupMembership, UserGroupMapping, Notifications, Groups, GroupsCount) {
+module.controller('UserGroupMembershipCtrl', function($scope, $q, realm, user, UserGroupMembership, UserGroupMapping, Notifications, Groups, GroupsCount) {
     $scope.realm = realm;
     $scope.user = user;
-    $scope.groupList = groups;
+    $scope.groupList = [];
     $scope.selectedGroup = null;
     $scope.tree = [];
 
@@ -968,13 +968,7 @@ module.controller('UserGroupMembershipCtrl', function($scope, $q, realm, groups,
         });
 
         promiseGetGroups.promise.then(function(groups) {
-            $scope.groupList = [
-                {
-                    "id" : "realm",
-                    "name": "Groups",
-                    "subGroups" : groups
-                }
-            ];
+            $scope.groupList = groups;
         }, function (failed) {
             Notifications.error(failed);
         });
