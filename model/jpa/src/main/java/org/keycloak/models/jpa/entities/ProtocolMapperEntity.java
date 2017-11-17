@@ -29,6 +29,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.Table;
+import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -107,6 +108,14 @@ public class ProtocolMapperEntity {
     }
 
     public void setConfig(Map<String, String> config) {
+        if (config != null) {
+            for (Iterator<Map.Entry<String, String>> itr = config.entrySet().iterator(); itr.hasNext(); ) {
+                Map.Entry<String, String> e = itr.next();
+                if (e.getValue() == null || e.getValue().equals("")) {
+                    itr.remove();
+                }
+            }
+        }
         this.config = config;
     }
 
