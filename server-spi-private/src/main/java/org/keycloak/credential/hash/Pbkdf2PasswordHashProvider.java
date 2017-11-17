@@ -74,6 +74,16 @@ public class Pbkdf2PasswordHashProvider implements PasswordHashProvider {
     }
 
     @Override
+    public String encode(String rawPassword, int iterations) {
+        if (iterations == -1) {
+            iterations = defaultIterations;
+        }
+
+        byte[] salt = getSalt();
+        return encode(rawPassword, iterations, salt);
+    }
+
+    @Override
     public boolean verify(String rawPassword, CredentialModel credential) {
         return encode(rawPassword, credential.getHashIterations(), credential.getSalt()).equals(credential.getValue());
     }

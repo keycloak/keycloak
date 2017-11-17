@@ -611,6 +611,8 @@ public class UserCacheSession implements UserCache {
 
     @Override
     public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
+        // NOTE: If we ever end up caching this query, or the users returned by this query.  The UsersResource.getUsers
+        // method must be reimplemented when "localOnly" query parameter is true.
         return getUsers(realm, firstResult, maxResults, false);
     }
 
@@ -621,6 +623,8 @@ public class UserCacheSession implements UserCache {
 
     @Override
     public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
+        // NOTE: If we ever end up caching this query, or the users returned by this query.  The UsersResource.getUsers
+        // method must be reimplemented when "localOnly" query parameter is true.
         return getDelegate().searchForUser(search, realm, firstResult, maxResults);
     }
 
@@ -631,6 +635,8 @@ public class UserCacheSession implements UserCache {
 
     @Override
     public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
+        // NOTE: If we ever end up caching this query, or the users returned by this query.  The UsersResource.getUsers
+        // method must be reimplemented when "localOnly" query parameter is true.
         return getDelegate().searchForUser(attributes, realm, firstResult, maxResults);
     }
 

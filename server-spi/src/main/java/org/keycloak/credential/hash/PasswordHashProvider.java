@@ -29,5 +29,10 @@ public interface PasswordHashProvider extends Provider {
 
     void encode(String rawPassword, int iterations, CredentialModel credential);
 
+    default
+    String encode(String rawPassword, int iterations) {
+        return rawPassword;
+    }
+
     boolean verify(String rawPassword, CredentialModel credential);
 }
