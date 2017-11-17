@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -1689,7 +1690,7 @@ public class RepresentationToModel {
         model.setName(rep.getName());
         model.setIdentityProviderAlias(rep.getIdentityProviderAlias());
         model.setIdentityProviderMapper(rep.getIdentityProviderMapper());
-        model.setConfig(rep.getConfig());
+        model.setConfig(removeEmptyString(rep.getConfig()));
         return model;
     }
 
@@ -2437,4 +2438,20 @@ public class RepresentationToModel {
 
         }
     }
+
+    private static Map<String, String> removeEmptyString(Map<String, String> map) {
+        if (map == null) {
+            return null;
+        }
+
+        Map<String, String> m = new HashMap<>(map);
+        for (Iterator<Map.Entry<String, String>> itr = m.entrySet().iterator(); itr.hasNext(); ) {
+            Map.Entry<String, String> e = itr.next();
+            if (e.getValue() == null || e.getValue().equals("")) {
+                itr.remove();
+            }
+        }
+        return m;
+    }
+
 }
