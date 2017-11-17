@@ -2065,7 +2065,7 @@ module.controller('ClientTemplateProtocolMapperListCtrl', function($scope, realm
     updateMappers();
 });
 
-module.controller('ClientTemplateProtocolMapperCtrl', function($scope, realm, serverInfo, template, mapper, clients, ClientTemplateProtocolMapper, Notifications, Dialog, $location) {
+module.controller('ClientTemplateProtocolMapperCtrl', function($scope, realm, serverInfo, template, mapper, clients, ClientTemplateProtocolMapper, Notifications, Dialog, $location, $route) {
     $scope.realm = realm;
     $scope.clients = clients;
 
@@ -2106,9 +2106,7 @@ module.controller('ClientTemplateProtocolMapperCtrl', function($scope, realm, se
             template: template.id,
             id : mapper.id
         }, $scope.model.mapper, function() {
-            $scope.model.changed = false;
-            mapper = angular.copy($scope.mapper);
-            $location.url("/realms/" + realm.realm + '/client-templates/' + template.id + "/mappers/" + $scope.model.mapper.id);
+            $route.reload();
             Notifications.success("Your changes have been saved.");
         });
     };
