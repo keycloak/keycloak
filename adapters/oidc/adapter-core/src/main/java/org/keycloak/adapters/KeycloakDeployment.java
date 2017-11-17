@@ -68,6 +68,7 @@ public class KeycloakDeployment {
 
     protected String scope;
     protected SslRequired sslRequired = SslRequired.ALL;
+    protected int confidentialPort = -1;
     protected TokenStore tokenStore = TokenStore.SESSION;
     protected String stateCookieName = "OAuth_Token_Request_State";
     protected boolean useResourceRoleMappings;
@@ -275,6 +276,14 @@ public class KeycloakDeployment {
 
     public void setSslRequired(SslRequired sslRequired) {
         this.sslRequired = sslRequired;
+    }
+
+    public int getConfidentialPort() {
+        return confidentialPort;
+    }
+
+    public void setConfidentialPort(int confidentialPort) {
+        this.confidentialPort = confidentialPort;
     }
 
     public TokenStore getTokenStore() {
