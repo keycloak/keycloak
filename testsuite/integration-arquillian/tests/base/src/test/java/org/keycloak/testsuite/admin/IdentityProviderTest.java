@@ -455,12 +455,12 @@ public class IdentityProviderTest extends AbstractAdminTest {
     // KEYCLOAK-4962
     @Test
     public void testUpdateProtocolMappers() {
-        create(createRep("google", "google"));
+        create(createRep("google2", "google"));
 
-        IdentityProviderResource provider = realm.identityProviders().get("google");
+        IdentityProviderResource provider = realm.identityProviders().get("google2");
 
         IdentityProviderMapperRepresentation mapper = new IdentityProviderMapperRepresentation();
-        mapper.setIdentityProviderAlias("google");
+        mapper.setIdentityProviderAlias("google2");
         mapper.setName("my_mapper");
         mapper.setIdentityProviderMapper("oidc-hardcoded-role-idp-mapper");
         Map<String, String> config = new HashMap<>();
