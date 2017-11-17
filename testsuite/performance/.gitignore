@@ -1,0 +1,7 @@
+# Dynamically generated based on CPUSETS parameter.
+# See:
+# generate-docker-compose-cluster.sh
+# generate-docker-compose-crossdc.sh
+#
+docker-compose-cluster.yml
+docker-compose-crossdc.yml
