@@ -16,33 +16,30 @@
   -->
 
 <assembly>
-    <id>fuse-adapter-dist</id>
+    <id>licenses-common</id>
 
     <formats>
         <format>zip</format>
-        <format>tar.gz</format>
     </formats>
-    <includeBaseDirectory>false</includeBaseDirectory>
+
+    <baseDirectory>${artifactId}</baseDirectory>
 
     <fileSets>
         <fileSet>
-            <directory>${project.build.directory}/system</directory>
+            <directory>src/main/resources</directory>
+            <outputDirectory/>
             <includes>
-                <include>*/**</include>
+                <include>**</include>
             </includes>
-            <outputDirectory>system</outputDirectory>
-        </fileSet>
-        <!-- License Data -->
-        <fileSet>
-            <directory>src/main/resources/licenses/${product.slot}</directory>
-            <outputDirectory>docs/licenses-${product.slot}-adapter</outputDirectory>
-            <excludes>
-                <exclude>licenses.xml</exclude>
-            </excludes>
-        </fileSet>
-        <fileSet>
-            <directory>target/licenses</directory>
-            <outputDirectory>docs/licenses-${product.slot}-adapter</outputDirectory>
         </fileSet>
     </fileSets>
+
+    <files>
+        <file>
+            <source>../../License.html</source>
+            <destName>keycloak-components-license.html</destName>
+            <fileMode>0664</fileMode>
+        </file>
+    </files>
+
 </assembly>

@@ -1535,112 +1535,17 @@
                     <artifactId>frontend-maven-plugin</artifactId>
                     <version>${frontend.plugin.version}</version>
                 </plugin>
-                <!-- License Data -->
                 <plugin>
-                    <artifactId>maven-resources-plugin</artifactId>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-distribution-licenses-maven-plugin</artifactId>
+                    <version>${project.version}</version>
                     <executions>
                         <execution>
-                            <id>licenses-copy-common</id>
+                            <id>process-licenses</id>
                             <goals>
-                                <goal>copy-resources</goal>
+                                <goal>process</goal>
                             </goals>
-                            <!-- When needed in a child pom, bind to process-resources phase -->
-                            <phase>none</phase>
-                            <configuration>
-                                <outputDirectory>${project.build.directory}/licenses</outputDirectory>
-                                <resources>
-                                    <!-- Commmon -->
-                                    <resource>
-                                        <directory>${project.basedir}/src/main/resources/licenses/common</directory>
-                                        <includes>
-                                            <include>licenses.xsl</include>
-                                            <include>licenses.css</include>
-                                        </includes>
-                                    </resource>
-                                    <!-- Slot-specific XML -->
-                                    <resource>
-                                        <directory>${project.basedir}/src/main/resources/licenses/${product.slot}</directory>
-                                        <includes>
-                                            <include>licenses.xml</include>
-                                            <!-- Do not use maven-resources-plugin to copy symlinks! -->
-                                        </includes>
-                                    </resource>
-                                </resources>
-                            </configuration>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
-                    <groupId>org.codehaus.gmaven</groupId>
-                    <artifactId>groovy-maven-plugin</artifactId>
-                    <version>2.0</version>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.codehaus.groovy</groupId>
-                            <artifactId>groovy-all</artifactId>
-                            <version>2.4.12</version>
-                        </dependency>
-                    </dependencies>
-                    <executions>
-                        <execution>
-                            <id>licenses-append-product</id>
-                            <goals>
-                                <goal>execute</goal>
-                            </goals>
-                            <!-- When needed in a child pom, bind to process-resources phase -->
-                            <phase>none</phase>
-                            <configuration>
-                                <source>${project.basedir}/src/main/resources/licenses/common/append-product-licenses.groovy</source>
-                                <properties>
-                                    <groupId>org.keycloak</groupId>
-                                    <xmlFile>${project.build.directory}/licenses/licenses.xml</xmlFile>
-                                    <licenseName>Apache Software License 2.0</licenseName>
-                                    <licenseUrl>https://raw.githubusercontent.com/keycloak/keycloak/${project.version}/License.html</licenseUrl>
-                                    <licenseFile>${project.basedir}/src/main/resources/licenses/common/keycloak-components-license.html</licenseFile>
-                                </properties>
-                            </configuration>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>xml-maven-plugin</artifactId>
-                    <version>1.0.1</version>
-                    <executions>
-                        <execution>
-                            <id>licenses-generate-html</id>
-                            <goals>
-                                <goal>transform</goal>
-                            </goals>
-                            <!-- When needed in a child pom, bind to process-resources phase -->
-                            <phase>none</phase>
-                            <configuration>
-                                <transformationSets>
-                                    <transformationSet>
-                                        <dir>${project.build.directory}/licenses</dir>
-                                        <includes>
-                                            <include>licenses.xml</include>
-                                        </includes>
-                                        <stylesheet>${project.build.directory}/licenses/licenses.xsl</stylesheet>
-                                        <outputDir>${project.build.directory}/licenses</outputDir>
-                                        <fileMappers>
-                                            <fileMapper implementation="org.codehaus.plexus.components.io.filemappers.FileExtensionMapper">
-                                                <targetExtension>.html</targetExtension>
-                                            </fileMapper>
-                                        </fileMappers>
-                                        <parameters>
-                                            <parameter>
-                                                <name>productname</name>
-                                                <value>${product.name.full}</value>
-                                            </parameter>
-                                            <parameter>
-                                                <name>version</name>
-                                                <value>${project.version}</value>
-                                            </parameter>
-                                        </parameters>
-                                    </transformationSet>
-                                </transformationSets>
-                            </configuration>
+                            <phase>process-resources</phase>
                         </execution>
                     </executions>
                 </plugin>
