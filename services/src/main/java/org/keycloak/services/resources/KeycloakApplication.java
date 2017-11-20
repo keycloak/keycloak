@@ -435,7 +435,7 @@ public class KeycloakApplication extends Application {
                             } else {
                                 UserModel user = session.users().addUser(realm, userRep.getUsername());
                                 user.setEnabled(userRep.isEnabled());
-                                RepresentationToModel.createCredentials(userRep, session, realm, user);
+                                RepresentationToModel.createCredentials(userRep, session, realm, user, false);
                                 RepresentationToModel.createRoleMappings(userRep, user, realm);
                             }
 
