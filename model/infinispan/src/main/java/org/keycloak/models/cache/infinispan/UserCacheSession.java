@@ -290,7 +290,9 @@ public class UserCacheSession implements UserCache {
             return null;
         }
 
-        StorageId storageId = new StorageId(cached.getId());
+        StorageId storageId = cached.getFederationLink() != null ?
+                new StorageId(cached.getFederationLink(), cached.getId()) : new StorageId(cached.getId());
+
         if (!storageId.isLocal()) {
             ComponentModel component = realm.getComponent(storageId.getProviderId());
             UserStorageProviderModel model = new UserStorageProviderModel(component);
@@ -338,7 +340,8 @@ public class UserCacheSession implements UserCache {
     protected UserModel cacheUser(RealmModel realm, UserModel delegate, Long revision) {
         int notBefore = getDelegate().getNotBeforeOfUser(realm, delegate);
 
-        StorageId storageId = new StorageId(delegate.getId());
+        StorageId storageId = delegate.getFederationLink() != null ?
+                new StorageId(delegate.getFederationLink(), delegate.getId()) : new StorageId(delegate.getId());
         CachedUser cached = null;
         if (!storageId.isLocal()) {
             ComponentModel component = realm.getComponent(storageId.getProviderId());
