@@ -48,7 +48,6 @@ public class PropertyFileUserStorageProviderFactory
                 .label("Path")
                 .defaultValue("${jboss.server.config.dir}/example-users.properties")
                 .helpText("File path to properties file")
-                .default
                 .add().build();
     }
 
