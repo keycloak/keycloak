@@ -294,8 +294,18 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         clientConfigurePolicy.addAssociatedPolicy(userPolicy);
 
 
+        UserModel groupViewer = session.users().addUser(realm, "groupViewer");
+        groupViewer.grantRole(queryGroupsRole);
+        groupViewer.grantRole(queryUsersRole);
+        groupViewer.setEnabled(true);
+        session.userCredentialManager().updateCredential(realm, groupViewer, UserCredentialModel.password("password"));
 
-
+        UserPolicyRepresentation groupViewMembersRep = new UserPolicyRepresentation();
+        groupViewMembersRep.setName("groupMemberViewers");
+        groupViewMembersRep.addUser("groupViewer");
+        Policy groupViewMembersPolicy = permissions.authz().getStoreFactory().getPolicyStore().create(groupViewMembersRep, server);
+        Policy groupViewMembersPermission = permissions.groups().viewMembersPermission(group);
+        groupViewMembersPermission.addAssociatedPolicy(groupViewMembersPolicy);
 
 
     }
@@ -600,7 +610,19 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             }
         }
 
+        // KEYCLOAK-5878
 
+        {
+            Keycloak realmClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
+                    TEST, "groupViewer", "password", Constants.ADMIN_CLI_CLIENT_ID, null);
+            // Should only return the list of users that belong to "top" group
+            List<UserRepresentation> queryUsers = realmClient.realm(TEST).users().list();
+            Assert.assertEquals(queryUsers.size(), 1);
+            Assert.assertEquals("groupmember", queryUsers.get(0).getUsername());
+            for (UserRepresentation user : queryUsers) {
+                System.out.println(user.getUsername());
+            }
+        }
     }
 
     @Test
