@@ -580,7 +580,7 @@
         <profile>
             <id>auth-servers-crossdc-jboss</id>
             <properties>
-                <crossdc.jboss.jdbc.url>jdbc:h2:tcp://localhost:9092/mem:keycloak-dc-shared;DB_CLOSE_DELAY=-1</crossdc.jboss.jdbc.url>
+                <crossdc.jboss.jdbc.url>jdbc:h2:tcp://localhost:9092/mem:keycloak-dc-shared;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE</crossdc.jboss.jdbc.url>
             </properties>
             <build>
                 <plugins>
