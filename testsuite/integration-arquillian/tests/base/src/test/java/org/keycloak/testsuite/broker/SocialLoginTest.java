@@ -1,7 +1,9 @@
 package org.keycloak.testsuite.broker;
 
+import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.Graphene;
 import org.jboss.arquillian.graphene.page.Page;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -11,6 +13,7 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -26,6 +29,7 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.social.openshift.OpenshiftV3IdentityProvider;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.auth.page.login.UpdateAccount;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.social.AbstractSocialLoginPage;
@@ -39,6 +43,7 @@ import org.keycloak.testsuite.pages.social.MicrosoftLoginPage;
 import org.keycloak.testsuite.pages.social.PayPalLoginPage;
 import org.keycloak.testsuite.pages.social.StackOverflowLoginPage;
 import org.keycloak.testsuite.pages.social.TwitterLoginPage;
+import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -121,6 +126,11 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         public Class<? extends AbstractSocialLoginPage> pageObjectClazz() {
             return pageObjectClazz;
         }
+    }
+
+    @Deployment
+    public static WebArchive deploy() {
+        return RunOnServerDeployment.create();
     }
 
     private Provider currentTestProvider;
@@ -369,6 +379,8 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     }
 
     protected void testTokenExchange() {
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE);
+
         testingClient.server().run(SocialLoginTest::setupClientExchangePermissions);
 
         List<UserRepresentation> users = adminClient.realm(REALM).users().search(null, null, null);
