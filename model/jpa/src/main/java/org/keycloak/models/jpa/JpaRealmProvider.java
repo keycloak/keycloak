@@ -26,6 +26,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleContainerModel;
@@ -183,11 +184,14 @@ public class JpaRealmProvider implements RealmProvider {
 
     @Override
     public RoleModel addRealmRole(RealmModel realm, String name) {
-        return addRealmRole(realm, KeycloakModelUtils.generateId(), name);
+       return addRealmRole(realm, KeycloakModelUtils.generateId(), name);
 
     }
     @Override
     public RoleModel addRealmRole(RealmModel realm, String id, String name) {
+        if (getRealmRole(realm, name) != null) {
+            throw new ModelDuplicateException();
+        }
         RoleEntity entity = new RoleEntity();
         entity.setId(id);
         entity.setName(name);
@@ -217,6 +221,9 @@ public class JpaRealmProvider implements RealmProvider {
     }
     @Override
     public RoleModel addClientRole(RealmModel realm, ClientModel client, String id, String name) {
+        if (getClientRole(realm, client, name) != null) {
+            throw new ModelDuplicateException();
+        }
         ClientEntity clientEntity = em.getReference(ClientEntity.class, client.getId());
         RoleEntity roleEntity = new RoleEntity();
         roleEntity.setId(id);

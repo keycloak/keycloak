@@ -39,6 +39,8 @@ import org.keycloak.migration.migrators.MigrateTo3_4_0;
 import org.keycloak.migration.migrators.MigrateTo3_4_1;
 import org.keycloak.migration.migrators.Migration;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.representations.idm.RealmRepresentation;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -90,5 +92,49 @@ public class MigrationModelManager {
         }
 
         model.setStoredVersion(latest.toString());
+    }
+
+    public static final ModelVersion RHSSO_VERSION_7_0_KEYCLOAK_VERSION = new ModelVersion("1.9.8");
+    public static final ModelVersion RHSSO_VERSION_7_1_KEYCLOAK_VERSION = new ModelVersion("2.5.0");
+    public static final ModelVersion RHSSO_VERSION_7_2_KEYCLOAK_VERSION = new ModelVersion("3.4.2");
+
+
+    public static void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
+        ModelVersion latest = migrations[migrations.length-1].getVersion();
+        ModelVersion stored = migrations[0].getVersion();
+        if (rep.getKeycloakVersion() != null) {
+            stored = new ModelVersion(rep.getKeycloakVersion());
+            // hack for importing RH-SSO json export
+            // NOTE!!!!! We need to do something once we reach community version 7.  If community version is 7 or higher, look for the GA qualifier to identify it as RH SSO
+            if (latest.getMajor() < 7 || (stored.getMajor() == 7 && stored.getQualifier().equals("GA"))) {
+                if (stored.getMajor() == 7) {
+                    if (stored.getMinor() == 0) {
+                        stored = RHSSO_VERSION_7_0_KEYCLOAK_VERSION;
+                    } else if (stored.getMinor() == 1) {
+                        stored = RHSSO_VERSION_7_1_KEYCLOAK_VERSION;
+                    } else if (stored.getMinor() == 2) {
+                        stored = RHSSO_VERSION_7_2_KEYCLOAK_VERSION;
+                    }
+                }
+            }
+            // strip out qualifier
+            stored = new ModelVersion(stored.major, stored.minor, stored.micro);
+            if (latest.equals(stored) || latest.lessThan(stored)) {
+                return;
+            }
+        }
+
+        for (Migration m : migrations) {
+            if (stored == null || stored.lessThan(m.getVersion())) {
+                if (stored != null) {
+                    logger.debugf("Migrating older json representation to %s", m.getVersion());
+                }
+                try {
+                    m.migrateImport(session, realm, rep, skipUserDependent);
+                } catch (Exception e) {
+                    logger.error("Failed to migrate json representation for version: " + m.getVersion(), e);
+                }
+            }
+        }
     }
 }
