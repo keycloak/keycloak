@@ -533,7 +533,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         String refreshId = oauth.verifyRefreshToken(tokenResponse.getRefreshToken()).getId();
 
-        int last = testingClient.testing().getLastSessionRefresh("test", sessionId);
+        int last = testingClient.testing().getLastSessionRefresh("test", sessionId, false);
 
         setTimeOffset(2);
 
@@ -544,7 +544,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         assertEquals(200, tokenResponse.getStatusCode());
 
-        int next = testingClient.testing().getLastSessionRefresh("test", sessionId);
+        int next = testingClient.testing().getLastSessionRefresh("test", sessionId, false);
 
         Assert.assertNotEquals(last, next);
 
@@ -555,7 +555,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         setTimeOffset(4);
         tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
 
-        next = testingClient.testing().getLastSessionRefresh("test", sessionId);
+        next = testingClient.testing().getLastSessionRefresh("test", sessionId, false);
 
         // lastSEssionRefresh should be updated because access code lifespan is higher than sso idle timeout
         Assert.assertThat(next, allOf(greaterThan(last), lessThan(last + 50)));

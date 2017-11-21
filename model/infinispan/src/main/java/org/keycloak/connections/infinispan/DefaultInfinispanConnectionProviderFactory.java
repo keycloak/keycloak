@@ -304,12 +304,6 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         Configuration replicationEvictionCacheConfiguration = replicationConfigBuilder.build();
         cacheManager.defineConfiguration(InfinispanConnectionProvider.WORK_CACHE_NAME, replicationEvictionCacheConfiguration);
 
-        ConfigurationBuilder counterConfigBuilder = new ConfigurationBuilder();
-        counterConfigBuilder.invocationBatching().enable()
-                .transaction().transactionMode(TransactionMode.TRANSACTIONAL);
-        counterConfigBuilder.transaction().transactionManagerLookup(new DummyTransactionManagerLookup());
-        counterConfigBuilder.transaction().lockingMode(LockingMode.PESSIMISTIC);
-
         long realmRevisionsMaxEntries = cacheManager.getCache(InfinispanConnectionProvider.REALM_CACHE_NAME).getCacheConfiguration().eviction().maxEntries();
         realmRevisionsMaxEntries = realmRevisionsMaxEntries > 0
                 ? 2 * realmRevisionsMaxEntries

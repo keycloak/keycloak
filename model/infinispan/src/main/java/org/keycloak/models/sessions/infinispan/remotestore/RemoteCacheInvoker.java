@@ -19,7 +19,6 @@ package org.keycloak.models.sessions.infinispan.remotestore;
 
 import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 import org.keycloak.common.util.Retry;
-import org.keycloak.common.util.Time;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,9 +33,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask;
-import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
-import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -78,8 +75,8 @@ public class RemoteCacheInvoker {
 
         long loadedMaxIdleTimeMs = context.maxIdleTimeLoader.getMaxIdleTimeMs(realm);
 
-        // Double the timeout to ensure that entry won't expire on remoteCache in case that write of some entities to remoteCache is postponed (eg. userSession.lastSessionRefresh)
-        final long maxIdleTimeMs = loadedMaxIdleTimeMs * 2;
+        // Increase the timeout to ensure that entry won't expire on remoteCache in case that write of some entities to remoteCache is postponed (eg. userSession.lastSessionRefresh)
+        final long maxIdleTimeMs = loadedMaxIdleTimeMs + 1800000;
 
         if (logger.isTraceEnabled()) {
             logger.tracef("Running task '%s' on remote cache '%s' . Key is '%s'", operation, cacheName, key);
@@ -115,7 +112,6 @@ public class RemoteCacheInvoker {
                 remoteCache.put(key, sessionWrapper.forTransport(), task.getLifespanMs(), TimeUnit.MILLISECONDS, maxIdleMs, TimeUnit.MILLISECONDS);
                 break;
             case ADD_IF_ABSENT:
-                final int currentTime = Time.currentTime();
                 SessionEntityWrapper<V> existing = remoteCache
                         .withFlags(Flag.FORCE_RETURN_VALUE)
                         .putIfAbsent(key, sessionWrapper.forTransport(), -1, TimeUnit.MILLISECONDS, maxIdleMs, TimeUnit.MILLISECONDS);
@@ -123,8 +119,6 @@ public class RemoteCacheInvoker {
                     logger.debugf("Existing entity in remote cache for key: %s . Will update it", key);
 
                     replace(remoteCache, task.getLifespanMs(), maxIdleMs, key, task);
-                } else {
-                    sessionWrapper.putLocalMetadataNoteInt(UserSessionEntity.LAST_SESSION_REFRESH_REMOTE, currentTime);
                 }
                 break;
             case REPLACE:

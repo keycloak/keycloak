@@ -24,16 +24,16 @@ import java.util.Set;
 
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.changes.InfinispanChangelogBasedTransaction;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.changes.ClientSessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask;
-import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask.CacheOperation;
-import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask.CrossDCMessageStatus;
 import org.keycloak.models.sessions.infinispan.changes.Tasks;
 import org.keycloak.models.sessions.infinispan.changes.UserSessionUpdateTask;
+import org.keycloak.models.sessions.infinispan.changes.sessions.LastSessionRefreshChecker;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import java.util.UUID;
@@ -43,25 +43,31 @@ import java.util.UUID;
  */
 public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSessionModel {
 
+    private final KeycloakSession kcSession;
+    private final InfinispanUserSessionProvider provider;
     private AuthenticatedClientSessionEntity entity;
     private final ClientModel client;
     private final InfinispanChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx;
     private final InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx;
     private UserSessionModel userSession;
+    private boolean offline;
 
-    public AuthenticatedClientSessionAdapter(AuthenticatedClientSessionEntity entity, ClientModel client,
-                                             UserSessionModel userSession,
+    public AuthenticatedClientSessionAdapter(KeycloakSession kcSession, InfinispanUserSessionProvider provider,
+                                             AuthenticatedClientSessionEntity entity, ClientModel client, UserSessionModel userSession,
                                              InfinispanChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx,
-                                             InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx) {
+                                             InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx, boolean offline) {
         if (userSession == null) {
             throw new NullPointerException("userSession must not be null");
         }
 
+        this.kcSession = kcSession;
+        this.provider = provider;
         this.entity = entity;
         this.userSession = userSession;
         this.client = client;
         this.userSessionUpdateTx = userSessionUpdateTx;
         this.clientSessionUpdateTx = clientSessionUpdateTx;
+        this.offline = offline;
     }
 
     private void update(UserSessionUpdateTask task) {
@@ -141,6 +147,18 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
             public void runUpdate(AuthenticatedClientSessionEntity entity) {
                 entity.setTimestamp(timestamp);
             }
+
+            @Override
+            public CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<AuthenticatedClientSessionEntity> sessionWrapper) {
+                return new LastSessionRefreshChecker(provider.getLastSessionRefreshStore(), provider.getOfflineLastSessionRefreshStore())
+                        .shouldSaveClientSessionToRemoteCache(kcSession, client.getRealm(), sessionWrapper, userSession, offline, timestamp);
+            }
+
+            @Override
+            public String toString() {
+                return "setTimestamp(" + timestamp + ')';
+            }
+
         };
 
         update(task);
