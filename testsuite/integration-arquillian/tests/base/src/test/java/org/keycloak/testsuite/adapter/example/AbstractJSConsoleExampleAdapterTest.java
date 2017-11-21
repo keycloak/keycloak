@@ -35,6 +35,7 @@ import org.keycloak.testsuite.auth.page.account.Applications;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
 import org.keycloak.testsuite.console.page.events.Config;
 import org.keycloak.testsuite.console.page.events.LoginEvents;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.openqa.selenium.By;
 import org.openqa.selenium.TimeoutException;
@@ -483,8 +484,11 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         oauth.doLogin("user", "password");
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        String token = oauth.doAccessTokenRequest(code, "password").getAccessToken();
-        String refreshToken = oauth.doRefreshTokenRequest(token, "password").getRefreshToken();
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        String token = tokenResponse.getAccessToken();
+        String refreshToken = tokenResponse.getRefreshToken();
+
+        //String refreshToken = oauth.doRefreshTokenRequest(token, "password").getRefreshToken();
 
         jsConsoleTestAppPage.navigateTo();
         jsConsoleTestAppPage.setInput(token);
@@ -507,8 +511,9 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         oauth.doLogin("user", "password");
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        String token = oauth.doAccessTokenRequest(code, "password").getAccessToken();
-        String refreshToken = oauth.doRefreshTokenRequest(token, "password").getRefreshToken();
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        String token = tokenResponse.getAccessToken();
+        String refreshToken = tokenResponse.getRefreshToken();
 
         jsConsoleTestAppPage.navigateTo();
         jsConsoleTestAppPage.setInput(token);
