@@ -66,7 +66,6 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
         Assert.assertTrue(loginConfirmationPage.getSubjectDistinguishedNameText().startsWith("EMAILADDRESS=test-user@localhost"));
         Assert.assertEquals(username, loginConfirmationPage.getUsernameText());
-        Assert.assertTrue(loginConfirmationPage.getLoginDelayCounterText().startsWith("The form will be submitted"));
 
         loginConfirmationPage.confirm();
 
@@ -97,7 +96,6 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
         Assert.assertTrue(loginConfirmationPage.getSubjectDistinguishedNameText().startsWith("EMAILADDRESS=test-user@localhost"));
         Assert.assertEquals("test-user@localhost", loginConfirmationPage.getUsernameText());
-        Assert.assertTrue(loginConfirmationPage.getLoginDelayCounterText().startsWith("The form will be submitted"));
 
         loginConfirmationPage.ignore();
         loginPage.login("test-user@localhost", "password");
@@ -263,7 +261,6 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
         Assert.assertTrue(loginConfirmationPage.getSubjectDistinguishedNameText().startsWith("EMAILADDRESS=test-user@localhost"));
         Assert.assertEquals("test-user@localhost", loginConfirmationPage.getUsernameText());
-        Assert.assertTrue(loginConfirmationPage.getLoginDelayCounterText().startsWith("The form will be submitted"));
 
         loginConfirmationPage.confirm();
 

@@ -10,7 +10,7 @@
             <div class="${properties.kcFormGroupClass!}">
 
                 <div class="${properties.kcLabelWrapperClass!}">
-                    <label for="certificate_subjectDN" class="${properties.kcLabelClass!}">X509 client certificate: </label>
+                    <label for="certificate_subjectDN" class="${properties.kcLabelClass!}">${msg("clientCertificate")}</label>
                 </div>
                 <#if subjectDN??>
                     <div class="${properties.kcLabelWrapperClass!}">
@@ -18,7 +18,7 @@
                     </div>
                 <#else>
                     <div class="${properties.kcLabelWrapperClass!}">
-                        <label id="certificate_subjectDN" class="${properties.kcLabelClass!}">[No Certificate]</label>
+                        <label id="certificate_subjectDN" class="${properties.kcLabelClass!}">${msg("noCertificate")}</label>
                     </div>
                 </#if>
            </div>
@@ -27,7 +27,7 @@
 
                     <#if isUserEnabled>
                           <div class="${properties.kcLabelWrapperClass!}">
-                             <label for="username" class="${properties.kcLabelClass!}">You will be logged in as:</label>
+                             <label for="username" class="${properties.kcLabelClass!}">${msg("doX509Login")}</label>
                           </div>
                           <div class="${properties.kcLabelWrapperClass!}">
                              <label id="username" class="${properties.kcLabelClass!}">${(username!'')}</label>
@@ -50,29 +50,8 @@
                         </#if>
                     </div>
                 </div>
-		<span id="counter">The form will be submitted in -- seconds</span>
             </div>
         </form>
-<script>
-
-var n = 10;
-function autoSubmitCountdown(){
-    var c=n;
-    setInterval(function(){
-        if(c>=0){
-    	     document.getElementById("counter").textContent = "The form will be submitted in " + c + " seconds";
-        }
-        if(c==0){
-	    document.forms[0].submit();
-        }
-        c--;
-    },1000);
-}
-
-// Start
-autoSubmitCountdown();
-
-</script>
     </#if>
 
 </@layout.registrationLayout>
