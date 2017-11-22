@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.migration;
 
+import org.junit.After;
 import org.junit.Before;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
@@ -31,6 +32,7 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
  */
 public abstract class AbstractJsonFileImportMigrationTest extends AbstractMigrationTest {
     protected RealmRepresentation masterRep;
+    protected String masterTestClientId;
 
     @Before
     public void beforeMigrationTest() {
@@ -41,7 +43,8 @@ public abstract class AbstractJsonFileImportMigrationTest extends AbstractMigrat
 
 
 
-        // hack to reuse AbstractMigrationTest
+        // hack to reuse AbstractMigrationTest  need to create a bunch of stuff in master realm for tests to work
+        
         RoleRepresentation newRole = new RoleRepresentation();
         newRole.setName("master-test-realm-role");
 
@@ -61,5 +64,16 @@ public abstract class AbstractJsonFileImportMigrationTest extends AbstractMigrat
             user.setId(null);
             if (!user.getUsername().equals("admin")) masterRealm.users().create(user);
         }
+    }
+
+    @After
+    public void afterMigrationTest() {
+        masterRealm.clients().get(masterTestClientId).remove();
+        masterRealm.roles().get("master-test-realm-role").remove();
+        GroupRepresentation group = masterRealm.getGroupByPath("/migration-test-group");
+        masterRealm.groups().group(group.getId()).remove();
+        UserRepresentation user = masterRealm.users().search("master-test-user").get(0);
+        masterRealm.users().get(user.getId()).remove();
+
     }
 }
