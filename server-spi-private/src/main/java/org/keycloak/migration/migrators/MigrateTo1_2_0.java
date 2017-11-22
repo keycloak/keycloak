@@ -24,6 +24,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.idm.RealmRepresentation;
 
 import java.util.List;
 
@@ -48,7 +49,9 @@ public class MigrateTo1_2_0 implements Migration {
             client.setFullScopeAllowed(false);
 
             for (String role : Constants.BROKER_SERVICE_ROLES) {
-                RoleModel roleModel = client.addRole(role);
+                RoleModel roleModel = client.getRole(role);
+                if (roleModel != null) continue;
+                roleModel = client.addRole(role);
                 roleModel.setDescription("${role_" + role.toLowerCase().replaceAll("_", "-") + "}");
                 roleModel.setScopeParamRequired(false);
             }
@@ -72,5 +75,11 @@ public class MigrateTo1_2_0 implements Migration {
             setupClientNames(realm);
         }
 
+    }
+
+    @Override
+    public void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
+        setupBrokerService(realm);
+        setupClientNames(realm);
     }
 }

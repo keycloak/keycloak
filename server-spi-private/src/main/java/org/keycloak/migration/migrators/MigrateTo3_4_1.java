@@ -21,6 +21,7 @@ package org.keycloak.migration.migrators;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.representations.idm.RealmRepresentation;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,14 +39,23 @@ public class MigrateTo3_4_1 implements Migration {
     public void migrate(KeycloakSession session) {
         session.realms().getRealms().stream().forEach(
                 r -> {
-                    Map<String, String> securityHeaders = new HashMap<>(r.getBrowserSecurityHeaders());
-                    securityHeaders.entrySet().stream()
-                            .filter(Objects::nonNull)
-                            .filter(entry -> entry.getValue().equals("frame-src 'self'"))
-                            .forEach(entry -> entry.setValue("frame-src 'self'; frame-ancestors 'self'; object-src 'none';"));
-                    r.setBrowserSecurityHeaders(Collections.unmodifiableMap(securityHeaders));
+                    migrateRealm(r);
                 }
         );
+    }
+
+    @Override
+    public void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
+        migrateRealm(realm);
+    }
+
+    protected void migrateRealm(RealmModel r) {
+        Map<String, String> securityHeaders = new HashMap<>(r.getBrowserSecurityHeaders());
+        securityHeaders.entrySet().stream()
+                .filter(Objects::nonNull)
+                .filter(entry -> entry.getValue().equals("frame-src 'self'"))
+                .forEach(entry -> entry.setValue("frame-src 'self'; frame-ancestors 'self'; object-src 'none';"));
+        r.setBrowserSecurityHeaders(Collections.unmodifiableMap(securityHeaders));
     }
 
     @Override

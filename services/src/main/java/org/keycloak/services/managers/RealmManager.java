@@ -18,6 +18,7 @@ package org.keycloak.services.managers;
 
 import org.keycloak.Config;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.migration.MigrationModelManager;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.BrowserSecurityHeaders;
@@ -533,6 +534,10 @@ public class RealmManager {
 
         setupAuthorizationServices(realm);
         setupClientRegistrations(realm);
+
+        if (rep.getKeycloakVersion() != null) {
+            MigrationModelManager.migrateImport(session, realm, rep, skipUserDependent);
+        }
 
         fireRealmPostCreate(realm);
 

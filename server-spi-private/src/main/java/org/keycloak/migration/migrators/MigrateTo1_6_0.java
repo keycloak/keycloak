@@ -27,6 +27,7 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.idm.RealmRepresentation;
 
 import java.util.List;
 
@@ -58,48 +59,70 @@ public class MigrateTo1_6_0 implements Migration {
 
         List<RealmModel> realms = session.realms().getRealms();
         for (RealmModel realm : realms) {
-            realm.setOfflineSessionIdleTimeout(Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT);
+            migrateRealm(session, localeMapper, realm);
+        }
+    }
 
-            if (realm.getRole(Constants.OFFLINE_ACCESS_ROLE) == null) {
-                for (RoleModel realmRole : realm.getRoles()) {
-                    realmRole.setScopeParamRequired(false);
+    @Override
+    public void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
+        MigrationProvider provider = session.getProvider(MigrationProvider.class);
+        List<ProtocolMapperModel> builtinMappers = provider.getBuiltinMappers("openid-connect");
+        ProtocolMapperModel localeMapper = null;
+        for (ProtocolMapperModel m : builtinMappers) {
+            if (m.getName().equals("locale")) {
+                localeMapper = m;
+            }
+        }
+        if (localeMapper == null) {
+            throw new RuntimeException("Can't find default locale mapper");
+        }
+        migrateRealm(session, localeMapper, realm);
+
+
+    }
+
+    protected void migrateRealm(KeycloakSession session, ProtocolMapperModel localeMapper, RealmModel realm) {
+        realm.setOfflineSessionIdleTimeout(Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT);
+
+        if (realm.getRole(Constants.OFFLINE_ACCESS_ROLE) == null) {
+            for (RoleModel realmRole : realm.getRoles()) {
+                realmRole.setScopeParamRequired(false);
+            }
+            for (ClientModel client : realm.getClients()) {
+                for (RoleModel clientRole : client.getRoles()) {
+                    clientRole.setScopeParamRequired(false);
                 }
-                for (ClientModel client : realm.getClients()) {
-                    for (RoleModel clientRole : client.getRoles()) {
-                        clientRole.setScopeParamRequired(false);
-                    }
-                }
-
-                KeycloakModelUtils.setupOfflineTokens(realm);
-                RoleModel role = realm.getRole(Constants.OFFLINE_ACCESS_ROLE);
-
-                // Bulk grant of offline_access role to all users
-                session.users().grantToAllUsers(realm, role);
             }
 
-            ClientModel adminConsoleClient = realm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
-            if ((adminConsoleClient != null) && !localeMapperAdded(adminConsoleClient)) {
-                adminConsoleClient.addProtocolMapper(localeMapper);
-            }
+            KeycloakModelUtils.setupOfflineTokens(realm);
+            RoleModel role = realm.getRole(Constants.OFFLINE_ACCESS_ROLE);
 
-            ClientModel client = realm.getMasterAdminClient();
+            // Bulk grant of offline_access role to all users
+            session.users().grantToAllUsers(realm, role);
+        }
+
+        ClientModel adminConsoleClient = realm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
+        if ((adminConsoleClient != null) && !localeMapperAdded(adminConsoleClient)) {
+            adminConsoleClient.addProtocolMapper(localeMapper);
+        }
+
+        ClientModel client = realm.getMasterAdminClient();
+        if (client.getRole(AdminRoles.CREATE_CLIENT) == null) {
+            RoleModel role = client.addRole(AdminRoles.CREATE_CLIENT);
+            role.setDescription("${role_" + AdminRoles.CREATE_CLIENT + "}");
+            role.setScopeParamRequired(false);
+
+            client.getRealm().getRole(AdminRoles.ADMIN).addCompositeRole(role);
+        }
+
+        if (!realm.getName().equals(Config.getAdminRealm())) {
+            client = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
             if (client.getRole(AdminRoles.CREATE_CLIENT) == null) {
                 RoleModel role = client.addRole(AdminRoles.CREATE_CLIENT);
                 role.setDescription("${role_" + AdminRoles.CREATE_CLIENT + "}");
                 role.setScopeParamRequired(false);
 
-                client.getRealm().getRole(AdminRoles.ADMIN).addCompositeRole(role);
-            }
-
-            if (!realm.getName().equals(Config.getAdminRealm())) {
-                client = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
-                if (client.getRole(AdminRoles.CREATE_CLIENT) == null) {
-                    RoleModel role = client.addRole(AdminRoles.CREATE_CLIENT);
-                    role.setDescription("${role_" + AdminRoles.CREATE_CLIENT + "}");
-                    role.setScopeParamRequired(false);
-
-                    client.getRole(AdminRoles.REALM_ADMIN).addCompositeRole(role);
-                }
+                client.getRole(AdminRoles.REALM_ADMIN).addCompositeRole(role);
             }
         }
     }
