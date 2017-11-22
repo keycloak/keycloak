@@ -44,7 +44,7 @@ public abstract class AbstractJsonFileImportMigrationTest extends AbstractMigrat
 
 
         // hack to reuse AbstractMigrationTest  need to create a bunch of stuff in master realm for tests to work
-        
+
         RoleRepresentation newRole = new RoleRepresentation();
         newRole.setName("master-test-realm-role");
 
@@ -54,7 +54,8 @@ public abstract class AbstractJsonFileImportMigrationTest extends AbstractMigrat
         masterRealm.clients().create(newClient);
         newClient = masterRealm.clients().findByClientId("master-test-client").get(0);
         newRole.setName("master-test-client-role");
-        masterRealm.clients().get(newClient.getId()).roles().create(newRole);
+        masterTestClientId = newClient.getId();
+        masterRealm.clients().get(masterTestClientId).roles().create(newRole);
 
         for (GroupRepresentation group : masterRep.getGroups()) {
             group.setId(null);
@@ -70,7 +71,7 @@ public abstract class AbstractJsonFileImportMigrationTest extends AbstractMigrat
     public void afterMigrationTest() {
         masterRealm.clients().get(masterTestClientId).remove();
         masterRealm.roles().get("master-test-realm-role").remove();
-        GroupRepresentation group = masterRealm.getGroupByPath("/migration-test-group");
+        GroupRepresentation group = masterRealm.getGroupByPath("/master-test-group");
         masterRealm.groups().group(group.getId()).remove();
         UserRepresentation user = masterRealm.users().search("master-test-user").get(0);
         masterRealm.users().get(user.getId()).remove();
