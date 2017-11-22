@@ -78,6 +78,21 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     protected void testMigratedData() {
         log.info("testing migrated data");
         //master realm
+        testMigratedMasterData();
+        //migrationRealm
+        testMigratedMigrationData();
+    }
+
+    protected void testMigratedMigrationData() {
+        assertNames(migrationRealm.roles().list(), "offline_access", "uma_authorization", "migration-test-realm-role");
+        assertNames(migrationRealm.clients().findAll(), "account", "admin-cli", "broker", "migration-test-client", "realm-management", "security-admin-console");
+        String id2 = migrationRealm.clients().findByClientId("migration-test-client").get(0).getId();
+        assertNames(migrationRealm.clients().get(id2).roles().list(), "migration-test-client-role");
+        assertNames(migrationRealm.users().search("", 0, 5), "migration-test-user");
+        assertNames(migrationRealm.groups().groups(), "migration-test-group");
+    }
+
+    protected void testMigratedMasterData() {
         assertNames(masterRealm.roles().list(), "offline_access", "uma_authorization", "create-realm", "master-test-realm-role", "admin");
         assertNames(masterRealm.clients().findAll(), "admin-cli", "security-admin-console", "broker", "account",
                 "master-realm", "master-test-client", "Migration-realm", "Migration2-realm");
@@ -85,13 +100,6 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         assertNames(masterRealm.clients().get(id).roles().list(), "master-test-client-role");
         assertNames(masterRealm.users().search("", 0, 5), "admin", "master-test-user");
         assertNames(masterRealm.groups().groups(), "master-test-group");
-        //migrationRealm
-        assertNames(migrationRealm.roles().list(), "offline_access", "uma_authorization", "migration-test-realm-role");
-        assertNames(migrationRealm.clients().findAll(), "account", "admin-cli", "broker", "migration-test-client", "realm-management", "security-admin-console");
-        String id2 = migrationRealm.clients().findByClientId("migration-test-client").get(0).getId();
-        assertNames(migrationRealm.clients().get(id2).roles().list(), "migration-test-client-role");
-        assertNames(migrationRealm.users().search("", 0, 5), "migration-test-user");
-        assertNames(migrationRealm.groups().groups(), "migration-test-group");
     }
 
     /**

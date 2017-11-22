@@ -52,7 +52,7 @@ public class JsonFileImport198MigrationTest extends AbstractJsonFileImportMigrat
 
     @Test
     public void migration1_9_8Test() throws Exception {
-        testMigratedData();
+        testMigratedMigrationData();
         testMigrationTo2_0_0();
         testMigrationTo2_1_0();
         testMigrationTo2_2_0();

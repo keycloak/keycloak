@@ -40,7 +40,9 @@ public abstract class AbstractJsonFileImportMigrationTest extends AbstractMigrat
         migrationRealm2 = adminClient.realms().realm(MIGRATION2);
         migrationRealm3 = adminClient.realms().realm("authorization");
         masterRealm = adminClient.realms().realm(MASTER);
+    }
 
+    /*
 
 
         // hack to reuse AbstractMigrationTest  need to create a bunch of stuff in master realm for tests to work
@@ -77,4 +79,5 @@ public abstract class AbstractJsonFileImportMigrationTest extends AbstractMigrat
         masterRealm.users().get(user.getId()).remove();
 
     }
+    */
 }
