@@ -32,6 +32,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.common.util.Retry;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
 
 /**
@@ -181,6 +182,8 @@ public class InvalidationCrossDCTest extends AbstractAdminCrossDCTest {
 
     @Test
     public void authzResourceInvalidationTest() throws Exception {
+        ProfileAssume.assumePreview();
+        
         enableDcOnLoadBalancer(DC.FIRST);
         enableDcOnLoadBalancer(DC.SECOND);
 
