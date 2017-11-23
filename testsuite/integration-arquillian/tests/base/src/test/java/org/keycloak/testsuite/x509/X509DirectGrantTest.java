@@ -177,6 +177,28 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
         }
     }
 
+    @Test
+    public void loginCertificateRevoked() throws Exception {
+        X509AuthenticatorConfigModel config =
+                new X509AuthenticatorConfigModel()
+                        .setCRLEnabled(true)
+                        .setCRLRelativePath(CLIENT_CRL_PATH)
+                        .setConfirmationPageAllowed(true)
+                        .setMappingSourceType(SUBJECTDN_EMAIL)
+                        .setUserIdentityMapperType(USERNAME_EMAIL);
+        AuthenticatorConfigRepresentation cfg = newConfig("x509-directgrant-config", config.getConfig());
+        String cfgId = createConfig(directGrantExecution.getId(), cfg);
+        Assert.assertNotNull(cfgId);
+
+        oauth.clientId("resource-owner");
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "", null);
+
+        assertEquals(401, response.getStatusCode());
+        assertEquals("invalid_request", response.getError());
+        Assert.assertThat(response.getErrorDescription(), containsString("Certificate has been revoked, certificate's subject:"));
+
+    }
+
     private void loginForceTemporaryAccountLock() throws Exception {
         X509AuthenticatorConfigModel config = new X509AuthenticatorConfigModel()
                 .setMappingSourceType(ISSUERDN)
