@@ -301,6 +301,16 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
                 .setUserIdentityMapperType(USERNAME_EMAIL);
     }
 
+    protected static X509AuthenticatorConfigModel createLoginSubjectEmailWithKeyUsage(String keyUsage) {
+        return createLoginSubjectEmail2UsernameOrEmailConfig()
+                .setKeyUsage(keyUsage);
+    }
+
+    protected static X509AuthenticatorConfigModel createLoginSubjectEmailWithExtendedKeyUsage(String extendedKeyUsage) {
+        return createLoginSubjectEmail2UsernameOrEmailConfig()
+                .setExtendedKeyUsage(extendedKeyUsage);
+    }
+
     protected static X509AuthenticatorConfigModel createLoginSubjectCN2UsernameOrEmailConfig() {
         return new X509AuthenticatorConfigModel()
                 .setConfirmationPageAllowed(true)

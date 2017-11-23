@@ -115,6 +115,37 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
     }
 
     @Test
+    public void loginWithNonSupportedCertKeyUsage() throws Exception {
+        // Set the X509 authenticator configuration
+        AuthenticatorConfigRepresentation cfg = newConfig("x509-directgrant-config",
+                createLoginSubjectEmailWithKeyUsage("dataEncipherment").getConfig());
+        String cfgId = createConfig(directGrantExecution.getId(), cfg);
+        Assert.assertNotNull(cfgId);
+
+        oauth.clientId("resource-owner");
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "", null);
+
+        assertEquals(401, response.getStatusCode());
+        assertEquals("invalid_request", response.getError());
+        Assert.assertThat(response.getErrorDescription(), containsString("Key Usage bit 'dataEncipherment' is not set."));
+        events.clear();
+    }
+
+    @Test
+    public void loginWithNonSupportedCertExtendedKeyUsage() throws Exception {
+        // Set the X509 authenticator configuration
+        AuthenticatorConfigRepresentation cfg = newConfig("x509-directgrant-config",
+                createLoginSubjectEmailWithExtendedKeyUsage("serverAuth").getConfig());
+        String cfgId = createConfig(directGrantExecution.getId(), cfg);
+        Assert.assertNotNull(cfgId);
+
+        oauth.clientId("resource-owner");
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "", null);
+
+        assertEquals(200, response.getStatusCode());
+    }
+
+    @Test
     public void loginFailedDisabledUser() throws Exception {
         setUserEnabled("test-user@localhost", false);
 
