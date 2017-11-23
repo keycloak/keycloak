@@ -87,6 +87,25 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
     }
 
     @Test
+    public void loginWithNonSupportedCertKeyUsage() throws Exception {
+        // Set the X509 authenticator configuration
+        AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config",
+                createLoginSubjectEmailWithKeyUsage("dataEncipherment").getConfig());
+        String cfgId = createConfig(browserExecution.getId(), cfg);
+        Assert.assertNotNull(cfgId);
+
+        loginConfirmationPage.open();
+
+        Assert.assertThat(loginPage.getError(), containsString("Certificate validation's failed.\n" +
+                "Key Usage bit 'dataEncipherment' is not set."));
+    }
+
+    @Test
+    public void loginWithNonSupportedCertExtendedKeyUsage() throws Exception {
+        login(createLoginSubjectEmailWithExtendedKeyUsage("serverAuth"), userId, "test-user@localhost", "test-user@localhost");
+    }
+
+    @Test
     public void loginIgnoreX509IdentityContinueToFormLogin() throws Exception {
         // Set the X509 authenticator configuration
         AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", createLoginSubjectEmail2UsernameOrEmailConfig().getConfig());
