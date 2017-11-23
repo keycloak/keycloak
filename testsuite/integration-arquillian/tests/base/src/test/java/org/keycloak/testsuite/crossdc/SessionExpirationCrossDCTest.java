@@ -20,6 +20,8 @@ package org.keycloak.testsuite.crossdc;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.ws.rs.NotFoundException;
@@ -454,6 +456,75 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
 
             log.infof("Passed the testLogoutUserWithFailover in the iteration: %d", i.get());
         }, 50, 50);
+    }
+
+
+    @Test
+    public void testLogoutWithAllStartedNodes(
+            @JmxInfinispanCacheStatistics(dc=DC.FIRST, managementPortProperty = "cache.server.management.port", cacheName=InfinispanConnectionProvider.USER_SESSION_CACHE_NAME) InfinispanStatistics cacheDc1Statistics,
+            @JmxInfinispanCacheStatistics(dc=DC.SECOND, managementPortProperty = "cache.server.2.management.port", cacheName=InfinispanConnectionProvider.USER_SESSION_CACHE_NAME) InfinispanStatistics cacheDc2Statistics,
+            @JmxInfinispanChannelStatistics() InfinispanStatistics channelStatisticsCrossDc) throws Exception {
+
+        // Start node2 on every DC
+        startBackendNode(DC.FIRST, 1);
+        startBackendNode(DC.SECOND, 1);
+
+        // Create sessions. Don't include remote stats. Size is smaller because of distributed cache
+        List<OAuthClient.AccessTokenResponse> responses = createInitialSessions(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME,
+                false, cacheDc1Statistics, cacheDc2Statistics, false);
+
+        // Simulate displaying sessions in admin console
+        Retry.execute(() -> {
+            assertTestAppActiveSessionsCount(SESSIONS_COUNT);
+        }, 50, 50);
+
+
+        // Logout realm and check sessions not anymore in admin console
+        getAdminClient().realm(REALM_NAME).logoutAll();
+
+        Retry.execute(() -> {
+            assertTestAppActiveSessionsCount(0);
+        }, 50, 50);
+
+
+        // Login again and check sessions back in
+        responses = createInitialSessions(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME,
+                false, cacheDc1Statistics, cacheDc2Statistics, false);
+
+        Retry.execute(() -> {
+            assertTestAppActiveSessionsCount(SESSIONS_COUNT);
+        }, 50, 50);
+
+
+        // Logout user and check sessions not anymore in admin console
+        ApiUtil.findUserByUsernameId(getAdminClient().realm(REALM_NAME), "login-test").logout();
+
+        Retry.execute(() -> {
+            assertTestAppActiveSessionsCount(0);
+        }, 50, 50);
+
+        // Stop both nodes
+        stopBackendNode(DC.FIRST, 1);
+        stopBackendNode(DC.SECOND, 1);
+    }
+
+    private void assertTestAppActiveSessionsCount(int expectedSessionsCount) {
+        List<Map<String, String>> sessions = getAdminClient().realm(REALM_NAME).getClientSessionStats();
+
+        Optional<Map<String, String>> optional = sessions.stream().filter((Map<String, String> map) -> {
+            return map.get("clientId").equals("test-app");
+        }).findFirst();
+
+        if (expectedSessionsCount == 0) {
+            // No sessions present. Statistics for the client not included
+            Assert.assertFalse(optional.isPresent());
+        } else {
+            Map<String, String> testAppSessions = optional.get();
+            Assert.assertEquals(expectedSessionsCount, Integer.parseInt(testAppSessions.get("active")));
+        }
+
+        List<UserSessionRepresentation> userSessions = ApiUtil.findClientByClientId(getAdminClient().realm(REALM_NAME), "test-app").getUserSessions(0, 100);
+        Assert.assertEquals(expectedSessionsCount, userSessions.size());
     }
 
 
