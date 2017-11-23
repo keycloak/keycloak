@@ -10,7 +10,7 @@ import org.openqa.selenium.support.FindBy;
  *
  * @author tkyjovsk
  */
-public class RoleForm extends Form {
+public class RoleDetailsForm extends Form {
 
     @FindBy(id = "name")
     private WebElement nameInput;
