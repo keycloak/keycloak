@@ -56,6 +56,7 @@ import org.keycloak.models.sessions.infinispan.util.FuturesHelper;
 import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 
+import java.io.Serializable;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -294,11 +295,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         Stream<UserSessionEntity> stream = cache.entrySet().stream()
                 .filter(UserSessionPredicate.create(realm.getId()).client(clientUuid))
                 .map(Mappers.userSessionEntity())
-                // Filter out client sessions that have been invalidated in the meantime
-                .filter(userSession -> {
-                    final UUID clientSessionId = userSession.getAuthenticatedClientSessions().get(clientUuid);
-                    return clientSessionId != null && clientSessionCacheDecorated.containsKey(clientSessionId);
-                })
                 .sorted(Comparators.userSessionLastSessionRefresh());
 
         if (firstResult > 0) {
@@ -393,19 +389,10 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getCache(offline);
         cache = CacheDecorators.skipCacheLoaders(cache);
 
-        Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache = getClientSessionCache(offline);
-        Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCacheDecorated = CacheDecorators.skipCacheLoaders(clientSessionCache);
-
         final String clientUuid = client.getId();
 
         return cache.entrySet().stream()
                 .filter(UserSessionPredicate.create(realm.getId()).client(clientUuid))
-                // Filter out client sessions that have been invalidated in the meantime
-                .map(Mappers.userSessionEntity())
-                .filter(userSession -> {
-                    final UUID clientSessionId = userSession.getAuthenticatedClientSessions().get(clientUuid);
-                    return clientSessionId != null && clientSessionCacheDecorated.containsKey(clientSessionId);
-                })
                 .count();
     }
 

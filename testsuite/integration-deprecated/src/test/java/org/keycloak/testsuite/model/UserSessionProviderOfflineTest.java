@@ -140,14 +140,13 @@ public class UserSessionProviderOfflineTest {
         // Assert userSession revoked
         testApp = realm.getClientByClientId("test-app");
         thirdparty = realm.getClientByClientId("third-party");
-        Assert.assertEquals(1, session.sessions().getOfflineSessionsCount(realm, testApp));
+
+        // Still 2 sessions. The count of sessions by client may not be accurate after revoke due the
+        // performance optimizations (the "127.0.0.1" session still has another client "thirdparty" in it)
+        Assert.assertEquals(2, session.sessions().getOfflineSessionsCount(realm, testApp));
         Assert.assertEquals(1, session.sessions().getOfflineSessionsCount(realm, thirdparty));
 
-        List<UserSessionModel> testAppSessions = session.sessions().getOfflineUserSessions(realm, testApp, 0, 10);
         List<UserSessionModel> thirdpartySessions = session.sessions().getOfflineUserSessions(realm, thirdparty, 0, 10);
-        Assert.assertEquals(1, testAppSessions.size());
-        Assert.assertEquals("127.0.0.3", testAppSessions.get(0).getIpAddress());
-        Assert.assertEquals("user2", testAppSessions.get(0).getUser().getUsername());
         Assert.assertEquals(1, thirdpartySessions.size());
         Assert.assertEquals("127.0.0.1", thirdpartySessions.get(0).getIpAddress());
         Assert.assertEquals("user1", thirdpartySessions.get(0).getUser().getUsername());
@@ -160,6 +159,27 @@ public class UserSessionProviderOfflineTest {
         clients = sessionManager.findClientsWithOfflineToken(realm, user2);
         Assert.assertEquals(1, clients.size());
         Assert.assertEquals("test-app", clients.iterator().next().getClientId());
+
+        // Revoke the second session for user1 too.
+        sessionManager.revokeOfflineToken(user1, thirdparty);
+
+        resetSession();
+
+        testApp = realm.getClientByClientId("test-app");
+        thirdparty = realm.getClientByClientId("third-party");
+
+        // Accurate count now. All sessions of user1 cleared
+        Assert.assertEquals(1, session.sessions().getOfflineSessionsCount(realm, testApp));
+        Assert.assertEquals(0, session.sessions().getOfflineSessionsCount(realm, thirdparty));
+
+        List<UserSessionModel> testAppSessions = session.sessions().getOfflineUserSessions(realm, testApp, 0, 10);
+
+        Assert.assertEquals(1, testAppSessions.size());
+        Assert.assertEquals("127.0.0.3", testAppSessions.get(0).getIpAddress());
+        Assert.assertEquals("user2", testAppSessions.get(0).getUser().getUsername());
+
+        clients = sessionManager.findClientsWithOfflineToken(realm, user1);
+        Assert.assertEquals(0, clients.size());
     }
 
     @Test
