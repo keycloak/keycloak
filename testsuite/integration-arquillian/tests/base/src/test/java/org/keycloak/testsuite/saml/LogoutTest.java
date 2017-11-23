@@ -23,20 +23,30 @@ import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.saml.SAML2LogoutResponseBuilder;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.SamlClientBuilder;
+
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.xml.transform.dom.DOMSource;
 import org.junit.Before;
 import org.junit.Test;
+
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.util.Matchers.*;
 import static org.keycloak.testsuite.util.SamlClient.Binding.*;
@@ -67,6 +77,8 @@ public class LogoutTest extends AbstractSamlTest {
 
         nameIdRef.set(null);
         sessionIndexRef.set(null);
+
+        adminClient.realm(REALM_NAME).clearEvents();
     }
 
     @Override
@@ -145,6 +157,7 @@ public class LogoutTest extends AbstractSamlTest {
           .getSamlResponse(POST);
 
         assertThat(samlResponse.getSamlObject(), isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+        assertLogoutEvent(SAML_CLIENT_ID_SALES_POST);
     }
 
     @Test
@@ -260,6 +273,22 @@ public class LogoutTest extends AbstractSamlTest {
         // Expect final successful logout response from auth server signalling final successful logout
         assertThat(samlResponse.getSamlObject(), isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
         assertThat(((StatusResponseType) samlResponse.getSamlObject()).getDestination(), is("http://url"));
+        assertLogoutEvent(SAML_CLIENT_ID_SALES_POST2);
     }
 
+    private void assertLogoutEvent(String clientId) {
+        List<EventRepresentation> logoutEvents = adminClient.realm(REALM_NAME)
+                .getEvents(Arrays.asList(EventType.LOGOUT.name()), clientId, null, null, null, null, null, null);
+
+        assertFalse(logoutEvents.isEmpty());
+        assertEquals(1, logoutEvents.size());
+
+        EventRepresentation logoutEvent = logoutEvents.get(0);
+
+        assertEquals("http://url", logoutEvent.getDetails().get(Details.REDIRECT_URI));
+        assertEquals(bburkeUser.getUsername(), logoutEvent.getDetails().get(Details.USERNAME));
+        assertEquals(SamlProtocol.SAML_POST_BINDING, logoutEvent.getDetails().get(Details.RESPONSE_MODE));
+        assertEquals("saml", logoutEvent.getDetails().get(Details.AUTH_METHOD));
+        assertNotNull(logoutEvent.getDetails().get(SamlProtocol.SAML_LOGOUT_REQUEST_ID));
+    }
 }

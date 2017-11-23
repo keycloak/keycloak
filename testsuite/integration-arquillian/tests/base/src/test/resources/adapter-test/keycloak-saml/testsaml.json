@@ -15,6 +15,9 @@
         "host": "localhost",
         "port":"3025"
     },
+    "eventsEnabled" : true,
+    "eventsListeners" : [ "jboss-logging" ],
+    "enabledEventTypes" : [ ],
     "users" : [
         {
             "username" : "bburke",
