@@ -177,10 +177,10 @@ Defines whether to check the certificate revocation status using Online Certific
 Allows to override a value of the OCSP responder URI in the certificate.
 
 `Validate Key Usage` (optional)::
-Verifies whether the certificate's KeyUsage extension bits are set. For example, "digitalSignature,KeyEncipherment" will verify if  bits 0 and 2 in the KeyUsage extension are asserted. Leave the parameter empty to disable the Key Usage validaion. See link:https://tools.ietf.org/html/rfc5280#section-4.2.1.3[RFC5280, Section-4.2.1.3]
+Verifies whether the certificate's KeyUsage extension bits are set. For example, "digitalSignature,KeyEncipherment" will verify if  bits 0 and 2 in the KeyUsage extension are asserted. Leave the parameter empty to disable the Key Usage validaion. See link:https://tools.ietf.org/html/rfc5280#section-4.2.1.3[RFC5280, Section-4.2.1.3]. The server will raise an error only when flagged as critical by the issuing CA and there is a key usage extension mismatch. 
 
 `Validate Extended Key Usage` (optional)::
-Verifies one or more purposes as defined in the Extended Key Usage extension. See link:https://tools.ietf.org/html/rfc5280#section-4.2.1.12[RFC5280, Section-4.2.1.12]. Leave the parameter empty to disable the Extended Key Usage validation.
+Verifies one or more purposes as defined in the Extended Key Usage extension. See link:https://tools.ietf.org/html/rfc5280#section-4.2.1.12[RFC5280, Section-4.2.1.12]. Leave the parameter empty to disable the Extended Key Usage validation. The server will raise an error only when flagged as critical by the issuing CA and there is a key usage extension mismatch.
 
 `Bypass identity confirmation`::
 If set, X.509 client certificate authentication will not prompt the user to confirm the certificate identity and will automatiocally sign in the user upon successful authentication.
