@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.adapter.servlet;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
@@ -64,12 +65,17 @@ import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.*;
 
@@ -574,6 +580,56 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
 
         // Revert times
         setAdapterAndServerTimeOffset(0, tokenMinTTLPage.toString());
+    }
+
+    private static Map<String, String> getQueryFromUrl(String url) {
+        try {
+            return URLEncodedUtils.parse(new URI(url), StandardCharsets.UTF_8).stream()
+                .collect(Collectors.toMap(p -> p.getName(), p -> p.getValue()));
+        } catch (URISyntaxException e) {
+            return null;
+        }
+    }
+
+    @Test
+    public void testOIDCUiLocalesParamForwarding() {
+        RealmRepresentation demoRealmRep = testRealmResource().toRepresentation();
+        boolean enabled = demoRealmRep.isInternationalizationEnabled();
+        String defaultLocale = demoRealmRep.getDefaultLocale();
+        Set<String> locales = demoRealmRep.getSupportedLocales();
+        demoRealmRep.setInternationalizationEnabled(true);
+        demoRealmRep.setDefaultLocale("en");
+        demoRealmRep.setSupportedLocales(Stream.of("en", "de").collect(Collectors.toSet()));
+        testRealmResource().update(demoRealmRep);
+
+        // test login with ui_locales to de+en
+        String portalUri = securePortal.getUriBuilder().build().toString();
+        String appUri = securePortal.getUriBuilder().queryParam(OAuth2Constants.UI_LOCALES_PARAM, "de en").build().toString();
+        URLUtils.navigateToUri(appUri, true);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        // check the ui_locales param is there
+        Map<String, String> parameters = getQueryFromUrl(driver.getCurrentUrl());
+        assertEquals("de en", parameters.get(OAuth2Constants.UI_LOCALES_PARAM));
+        // check that the page is in german
+        String pageSource = driver.getPageSource();
+        assertTrue(pageSource.contains("Passwort"));
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
+        // check no ui_locales in the final url adapter url
+        assertCurrentUrlEquals(portalUri);
+        pageSource = driver.getPageSource();
+        assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
+        // logout
+        String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder())
+                .queryParam(OAuth2Constants.REDIRECT_URI, securePortal.toString()).build("demo").toString();
+        driver.navigate().to(logoutUri);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        securePortal.navigateTo();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+
+        demoRealmRep.setInternationalizationEnabled(enabled);
+        demoRealmRep.setDefaultLocale(defaultLocale);
+        demoRealmRep.setSupportedLocales(locales);
+        testRealmResource().update(demoRealmRep);
     }
 
     @Test

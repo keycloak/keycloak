@@ -170,6 +170,9 @@ public class OAuthRequestAuthenticator {
         String maxAge = getQueryParamValue(OAuth2Constants.MAX_AGE);
         url = UriUtils.stripQueryParam(url, OAuth2Constants.MAX_AGE);
 
+        String uiLocales = getQueryParamValue(OAuth2Constants.UI_LOCALES_PARAM);
+        url = UriUtils.stripQueryParam(url, OAuth2Constants.UI_LOCALES_PARAM);
+
         KeycloakUriBuilder redirectUriBuilder = deployment.getAuthUrl().clone()
                 .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE)
                 .queryParam(OAuth2Constants.CLIENT_ID, deployment.getResourceName())
@@ -187,6 +190,9 @@ public class OAuthRequestAuthenticator {
         }
         if (maxAge != null && maxAge.length() > 0) {
             redirectUriBuilder.queryParam(OAuth2Constants.MAX_AGE, maxAge);
+        }
+        if (uiLocales != null && uiLocales.length() > 0) {
+            redirectUriBuilder.queryParam(OAuth2Constants.UI_LOCALES_PARAM, uiLocales);
         }
 
         scope = TokenUtil.attachOIDCScope(scope);
