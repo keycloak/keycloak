@@ -20,6 +20,7 @@ package org.keycloak.testsuite.authorization;
 
 import org.junit.Test;
 import org.keycloak.authorization.model.Resource;
+import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 
 import javax.ws.rs.client.Entity;
@@ -38,7 +39,7 @@ import static org.junit.Assert.assertNull;
 public class ResourceManagementTest extends AbstractPhotozAdminTest {
 
     @Test
-    public void testCreate() throws Exception {
+    public void testCreateWithoutOwner() throws Exception {
         ResourceRepresentation newResource = new ResourceRepresentation();
 
         newResource.setName("New Resource");
@@ -52,17 +53,88 @@ public class ResourceManagementTest extends AbstractPhotozAdminTest {
 
         ResourceRepresentation resource = response.readEntity(ResourceRepresentation.class);
 
-        onAuthorizationSession(authorizationProvider -> {
-            Resource resourceModel = authorizationProvider.getStoreFactory().getResourceStore().findById(resource.getId(), resourceServer.getId());
+        response = newResourceRequest(resource.getId()).get();
 
-            assertNotNull(resourceModel);
-            assertEquals(resource.getId(), resourceModel.getId());
-            assertEquals("New Resource", resourceModel.getName());
-            assertEquals("Resource Type", resourceModel.getType());
-            assertEquals("Resource Icon URI", resourceModel.getIconUri());
-            assertEquals("Resource URI", resourceModel.getUri());
-            assertEquals(resourceServer.getId(), resourceModel.getResourceServer().getId());
-        });
+        assertEquals(Status.OK.getStatusCode(), response.getStatus());
+
+        resource = response.readEntity(ResourceRepresentation.class);
+
+        assertEquals("New Resource", resource.getName());
+        assertEquals("Resource Type", resource.getType());
+        assertEquals("Resource Icon URI", resource.getIconUri());
+        assertEquals("Resource URI", resource.getUri());
+        assertEquals(resourceServer.getId(), resource.getOwner().getId());
+        assertEquals("photoz-restful-api", resource.getOwner().getName());
+    }
+
+    @Test
+    public void testCreateWithOwnerUser() throws Exception {
+        ResourceRepresentation newResource = new ResourceRepresentation();
+
+        newResource.setName("New Resource");
+        newResource.setType("Resource Type");
+        newResource.setIconUri("Resource Icon URI");
+        newResource.setUri("Resource URI");
+
+        ResourceOwnerRepresentation owner = new ResourceOwnerRepresentation();
+
+        owner.setId("alice");
+
+        newResource.setOwner(owner);
+
+        Response response = newResourceRequest().post(Entity.entity(newResource, MediaType.APPLICATION_JSON_TYPE));
+
+        assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+
+        ResourceRepresentation resource = response.readEntity(ResourceRepresentation.class);
+
+        response = newResourceRequest(resource.getId()).get();
+
+        assertEquals(Status.OK.getStatusCode(), response.getStatus());
+
+        resource = response.readEntity(ResourceRepresentation.class);
+
+        assertEquals("New Resource", resource.getName());
+        assertEquals("Resource Type", resource.getType());
+        assertEquals("Resource Icon URI", resource.getIconUri());
+        assertEquals("Resource URI", resource.getUri());
+        assertEquals(aliceUser.getId(), resource.getOwner().getId());
+        assertEquals(aliceUser.getUsername(), resource.getOwner().getName());
+    }
+
+    @Test
+    public void testCreateWithOwnerResourceServer() throws Exception {
+        ResourceRepresentation newResource = new ResourceRepresentation();
+
+        newResource.setName("New Resource");
+        newResource.setType("Resource Type");
+        newResource.setIconUri("Resource Icon URI");
+        newResource.setUri("Resource URI");
+
+        ResourceOwnerRepresentation owner = new ResourceOwnerRepresentation();
+
+        owner.setId("photoz-restful-api");
+
+        newResource.setOwner(owner);
+
+        Response response = newResourceRequest().post(Entity.entity(newResource, MediaType.APPLICATION_JSON_TYPE));
+
+        assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+
+        ResourceRepresentation resource = response.readEntity(ResourceRepresentation.class);
+
+        response = newResourceRequest(resource.getId()).get();
+
+        assertEquals(Status.OK.getStatusCode(), response.getStatus());
+
+        resource = response.readEntity(ResourceRepresentation.class);
+
+        assertEquals("New Resource", resource.getName());
+        assertEquals("Resource Type", resource.getType());
+        assertEquals("Resource Icon URI", resource.getIconUri());
+        assertEquals("Resource URI", resource.getUri());
+        assertEquals(resourceServer.getId(), resource.getOwner().getId());
+        assertEquals("photoz-restful-api", resource.getOwner().getName());
     }
 
     @Test
@@ -108,6 +180,12 @@ public class ResourceManagementTest extends AbstractPhotozAdminTest {
         newResource.setType("Resource Type");
         newResource.setIconUri("Resource Icon URI");
         newResource.setUri("Resource URI");
+
+        ResourceOwnerRepresentation owner = new ResourceOwnerRepresentation();
+
+        owner.setId("alice");
+
+        newResource.setOwner(owner);
 
         Response response = newResourceRequest().post(Entity.entity(newResource, MediaType.APPLICATION_JSON_TYPE));
 
