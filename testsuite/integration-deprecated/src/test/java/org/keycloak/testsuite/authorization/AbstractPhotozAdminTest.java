@@ -37,6 +37,7 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
@@ -57,6 +58,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -72,6 +74,7 @@ public abstract class AbstractPhotozAdminTest extends AbstractAuthorizationTest 
 
     protected Resource albumResource;
     protected Policy anyUserPolicy;
+    protected UserModel aliceUser;
 
     @Before
     public void onBefore() {
@@ -84,6 +87,12 @@ public abstract class AbstractPhotozAdminTest extends AbstractAuthorizationTest 
 
         this.albumResource = createAlbumResource();
         this.anyUserPolicy = createAnyUserPolicy();
+        this.aliceUser = onAuthorizationSession(new Function<AuthorizationProvider, UserModel>() {
+            @Override
+            public UserModel apply(AuthorizationProvider authorizationProvider) {
+                return authorizationProvider.getKeycloakSession().users().getUserByUsername("alice", authorizationProvider.getRealm());
+            }
+        });
     }
 
     protected ResourceServer createResourceServer() {

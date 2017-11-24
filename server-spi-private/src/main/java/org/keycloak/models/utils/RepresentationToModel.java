@@ -2285,6 +2285,12 @@ public class RepresentationToModel {
             throw new RuntimeException("No owner specified for resource [" + resource.getName() + "].");
         }
 
+        ClientModel clientModel = authorization.getRealm().getClientById(resourceServer.getId());
+
+        if (ownerId.equals(clientModel.getClientId())) {
+            ownerId = resourceServer.getId();
+        }
+
         if (!resourceServer.getId().equals(ownerId)) {
             RealmModel realm = authorization.getRealm();
             KeycloakSession keycloakSession = authorization.getKeycloakSession();
@@ -2299,7 +2305,7 @@ public class RepresentationToModel {
                 throw new RuntimeException("Owner must be a valid username or user identifier. If the resource server, the client id or null.");
             }
 
-            owner.setId(ownerModel.getId());
+            ownerId = ownerModel.getId();
         }
 
         Resource model = resourceStore.create(resource.getName(), resourceServer, ownerId);
