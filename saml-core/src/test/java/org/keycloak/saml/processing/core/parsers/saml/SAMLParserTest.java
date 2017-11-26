@@ -16,25 +16,28 @@
  */
 package org.keycloak.saml.processing.core.parsers.saml;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
+import org.hamcrest.CustomMatcher;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.DerUtils;
+import org.keycloak.common.util.StreamUtil;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
@@ -66,6 +69,9 @@ public class SAMLParserTest {
     private static final String PUBLIC_CERT = "MIICXjCCAcegAwIBAgIBADANBgkqhkiG9w0BAQ0FADBLMQswCQYDVQQGEwJubzERMA8GA1UECAwIVmVzdGZvbGQxEzARBgNVBAoMCkV4YW1wbGVPcmcxFDASBgNVBAMMC2V4YW1wbGUub3JnMCAXDTE3MDIyNzEwNTY0MFoYDzIxMTcwMjAzMTA1NjQwWjBLMQswCQYDVQQGEwJubzERMA8GA1UECAwIVmVzdGZvbGQxEzARBgNVBAoMCkV4YW1wbGVPcmcxFDASBgNVBAMMC2V4YW1wbGUub3JnMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDiQ4HolBThEYOjdqlHi45BOxw84OIdpuITBvFg2C4bgJupNqavtUpEQ74rA+u8tgL11xc9OvVcOUzA56W5hqYoBG3a/mE+wLPmKVYcSNZ0sE88xALi9mMLp9RTXzhQHgbeoc0P73ifq3Nw9wUoI3mP8omTXp9+k9wQ/KYtx6IxKwIDAQABo1AwTjAdBgNVHQ4EFgQUzWjvSL0O2V2B2N9G1qARQiVgv3QwHwYDVR0jBBgwFoAUzWjvSL0O2V2B2N9G1qARQiVgv3QwDAYDVR0TBAUwAwEB/zANBgkqhkiG9w0BAQ0FAAOBgQBgvKTTcLGlF0KvnIGxkzdaFeYewQtsQZHgnUt+JGKge0CyUU+QPVFhrH19b7fjKeykq/avm/2hku4mKaPyRYpvU9Gm+ARz67rs/vr0ZgJFk00TGI6ssGhdFd7iCptuIh5lEvWk1hD5LzThOI3isq0gK2tTbhafQOkKa45IwbOQ8Q==";
 
     private SAMLParser parser;
+
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
 
     @Before
     public void initParser() {
@@ -323,6 +329,41 @@ public class SAMLParserTest {
     public void testSaml20AssertionsNil2() throws IOException, ParsingException {
         try (InputStream st = SAMLParserTest.class.getResourceAsStream("saml20-assertion-nil-wrong-2.xml")) {
             parser.parse(st);
+        }
+    }
+
+    @Test
+    public void testSaml20AssertionsMissingId() throws IOException, ParsingException {
+        try (InputStream st = removeAttribute("saml20-assertion-example.xml", "ID")) {
+            thrown.expect(ParsingException.class);
+            thrown.expectMessage(endsWith("Required attribute missing: ID"));
+            parser.parse(st);
+        }
+    }
+
+    @Test
+    public void testSaml20AssertionsMissingVersion() throws IOException, ParsingException {
+        try (InputStream st = removeAttribute("saml20-assertion-example.xml", "Version")) {
+            thrown.expect(ParsingException.class);
+            thrown.expectMessage(endsWith("Assertion Version required to be \"2.0\""));
+            parser.parse(st);
+        }
+    }
+
+    @Test
+    public void testSaml20AssertionsMissingIssueInstance() throws IOException, ParsingException {
+        try (InputStream st = removeAttribute("saml20-assertion-example.xml", "IssueInstant")) {
+            thrown.expect(ParsingException.class);
+            thrown.expectMessage(endsWith("Required attribute missing: IssueInstant"));
+            parser.parse(st);
+        }
+    }
+
+    private InputStream removeAttribute(String resourceName, String attribute) throws IOException {
+        try (InputStream st = SAMLParserTest.class.getResourceAsStream(resourceName)) {
+            String str = StreamUtil.readString(st, StandardCharsets.UTF_8);
+            String processed = str.replaceAll(attribute + "=\"[^\"]+\"", "");
+            return new ByteArrayInputStream(processed.getBytes());
         }
     }
 
