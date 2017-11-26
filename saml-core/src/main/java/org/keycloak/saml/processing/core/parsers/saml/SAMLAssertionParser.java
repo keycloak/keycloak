@@ -24,6 +24,8 @@ import org.keycloak.dom.saml.v2.assertion.EncryptedAssertionType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType;
 import org.keycloak.saml.common.ErrorCodes;
+import org.keycloak.saml.common.PicketLinkLogger;
+import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
@@ -52,6 +54,7 @@ import javax.xml.stream.events.XMLEvent;
  * @since Oct 12, 2010
  */
 public class SAMLAssertionParser implements ParserNamespaceSupport {
+    private static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
 
     private final String ASSERTION = JBossSAMLConstants.ASSERTION.get();
 
@@ -157,15 +160,22 @@ public class SAMLAssertionParser implements ParserNamespaceSupport {
     }
 
     private AssertionType parseBaseAttributes(StartElement nextElement) throws ParsingException {
-        Attribute idAttribute = nextElement.getAttributeByName(new QName(JBossSAMLConstants.ID.get()));
-        String id = StaxParserUtil.getAttributeValue(idAttribute);
+        String id = StaxParserUtil.getAttributeValue(nextElement, JBossSAMLConstants.ID.get());
+        if (id == null) {
+            throw logger.parserRequiredAttribute(JBossSAMLConstants.ID.get());
+        }
 
-        Attribute versionAttribute = nextElement.getAttributeByName(new QName(JBossSAMLConstants.VERSION.get()));
-        String version = StaxParserUtil.getAttributeValue(versionAttribute);
-        StringUtil.match(JBossSAMLConstants.VERSION_2_0.get(), version);
+        String version = StaxParserUtil.getAttributeValue(nextElement, JBossSAMLConstants.VERSION.get());
+        if (!JBossSAMLConstants.VERSION_2_0.get().equals(version)) {
+            throw logger.parserException(new RuntimeException(
+                    String.format("Assertion %s required to be \"%s\"", JBossSAMLConstants.VERSION.get(), JBossSAMLConstants.VERSION_2_0.get())));
+        }
 
-        Attribute issueInstantAttribute = nextElement.getAttributeByName(new QName(JBossSAMLConstants.ISSUE_INSTANT.get()));
-        XMLGregorianCalendar issueInstant = XMLTimeUtil.parse(StaxParserUtil.getAttributeValue(issueInstantAttribute));
+        String issueInstantString = StaxParserUtil.getAttributeValue(nextElement, JBossSAMLConstants.ISSUE_INSTANT.get());
+        if (issueInstantString == null) {
+            throw logger.parserRequiredAttribute(JBossSAMLConstants.ISSUE_INSTANT.get());
+        }
+        XMLGregorianCalendar issueInstant = XMLTimeUtil.parse(issueInstantString);
 
         return new AssertionType(id, issueInstant);
     }
