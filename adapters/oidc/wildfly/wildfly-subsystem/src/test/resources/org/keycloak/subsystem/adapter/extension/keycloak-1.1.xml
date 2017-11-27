@@ -22,6 +22,7 @@
         <truststore>truststore.jks</truststore>
         <truststore-password>secret</truststore-password>
         <ssl-required>EXTERNAL</ssl-required>
+        <confidential-port>443</confidential-port>
         <allow-any-hostname>false</allow-any-hostname>
         <disable-trust-manager>true</disable-trust-manager>
         <connection-pool-size>20</connection-pool-size>
@@ -56,6 +57,7 @@
         </realm-public-key>
         <auth-server-url>http://localhost:8080/auth</auth-server-url>
         <ssl-required>EXTERNAL</ssl-required>
+        <confidential-port>443</confidential-port>
         <credential name="secret">0aa31d98-e0aa-404c-b6e0-e771dba1e798</credential>
         <redirect-rewrite-rule name="^/wsmaster/api/(.*)$">api/$1/</redirect-rewrite-rule>
     </secure-deployment>
@@ -84,5 +86,7 @@
         <realm>jboss-infra</realm>
         <resource>wildfly-console</resource>
         <public-client>true</public-client>
+        <ssl-required>EXTERNAL</ssl-required>
+        <confidential-port>443</confidential-port>
     </secure-server>
 </subsystem>

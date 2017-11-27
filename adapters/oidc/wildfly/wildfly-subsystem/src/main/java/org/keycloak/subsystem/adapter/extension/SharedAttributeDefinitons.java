@@ -186,7 +186,12 @@ public class SharedAttributeDefinitons {
             .setDefaultValue(new ModelNode(false))
             .build();
 
-
+    protected static final SimpleAttributeDefinition CONFIDENTIAL_PORT =
+            new SimpleAttributeDefinitionBuilder("confidential-port", ModelType.INT, true)
+                    .setXmlName("confidential-port")
+                    .setAllowExpression(true)
+                    .setDefaultValue(new ModelNode(8443))
+                    .build();
 
 
     protected static final List<SimpleAttributeDefinition> ATTRIBUTES = new ArrayList<SimpleAttributeDefinition>();
@@ -196,6 +201,7 @@ public class SharedAttributeDefinitons {
         ATTRIBUTES.add(TRUSTSTORE);
         ATTRIBUTES.add(TRUSTSTORE_PASSWORD);
         ATTRIBUTES.add(SSL_REQUIRED);
+        ATTRIBUTES.add(CONFIDENTIAL_PORT);
         ATTRIBUTES.add(ALLOW_ANY_HOSTNAME);
         ATTRIBUTES.add(DISABLE_TRUST_MANAGER);
         ATTRIBUTES.add(CONNECTION_POOL_SIZE);
