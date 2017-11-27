@@ -1687,6 +1687,9 @@
                 <product.default-profile>product</product.default-profile>
                 <product.filename.version>7.2</product.filename.version>
             </properties>
+            <modules>
+                <module>testsuite</module>
+            </modules>
         </profile>
 
         <profile>
