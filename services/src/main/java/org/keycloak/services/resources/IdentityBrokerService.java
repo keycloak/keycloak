@@ -1058,9 +1058,9 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     }
 
     private Response redirectToErrorPage(AuthenticationSessionModel authSession,String message, Object ... parameters) {
-        return redirectToErrorPage(authSession, message, null, parameters);
+        return redirectToErrorPage(authSession, Response.Status.INTERNAL_SERVER_ERROR, message, null, parameters);
     }
-    
+
     private Response redirectToErrorPage(Response.Status status, String message, Object ... parameters) {
         return redirectToErrorPage(null, status, message, null, parameters);
     }
