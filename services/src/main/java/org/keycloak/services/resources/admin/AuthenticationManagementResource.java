@@ -735,6 +735,9 @@ public class AuthenticationManagementResource {
 
         }
         AuthenticatorConfigModel config = RepresentationToModel.toModel(json);
+        if (config.getAlias() == null) {
+            return ErrorResponse.error("Alias missing", Response.Status.BAD_REQUEST);
+        }
         config = realm.addAuthenticatorConfig(config);
         model.setAuthenticatorConfig(config.getId());
         realm.updateAuthenticatorExecution(model);

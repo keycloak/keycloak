@@ -356,7 +356,9 @@ public class ModelToRepresentation {
         Collections.sort(authenticationFlows, new Comparator<AuthenticationFlowModel>() {
             @Override
             public int compare(AuthenticationFlowModel left, AuthenticationFlowModel right) {
-                return left.getAlias().compareTo(right.getAlias());
+                String l = left.getAlias() != null ? left.getAlias() : "\0";
+                String r = right.getAlias() != null ? right.getAlias() : "\0";
+                return l.compareTo(r);
             }
         });
 
@@ -370,7 +372,9 @@ public class ModelToRepresentation {
         Collections.sort(authenticatorConfigs, new Comparator<AuthenticatorConfigModel>() {
             @Override
             public int compare(AuthenticatorConfigModel left, AuthenticatorConfigModel right) {
-                return left.getAlias().compareTo(right.getAlias());
+                String l = left.getAlias() != null ? left.getAlias() : "\0";
+                String r = right.getAlias() != null ? right.getAlias() : "\0";
+                return l.compareTo(r);
             }
         });
 
@@ -392,7 +396,9 @@ public class ModelToRepresentation {
         Collections.sort(requiredActionProviders, new Comparator<RequiredActionProviderModel>() {
             @Override
             public int compare(RequiredActionProviderModel left, RequiredActionProviderModel right) {
-                return left.getAlias().compareTo(right.getAlias());
+                String l = left.getAlias() != null ? left.getAlias() : "\0";
+                String r = right.getAlias() != null ? right.getAlias() : "\0";
+                return l.compareTo(r);
             }
         });
 
