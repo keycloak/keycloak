@@ -20,14 +20,12 @@ datacenters (sites) in different geographical locations. Every datacenter has it
 
 Here is the picture with some example architecture:
 
-https://4.bp.blogspot.com/-TuP-tUCytyY/Wa-1b33MTxI/AAAAAAAAIjA/FSSSzfDP1uMqlhkyUqayb4NJwH-O7EFZQCLcBGAs/s1600/Cross-site%2Bdiagram.jpg
-  
-QUESTION: Is this picture appropriate for the Keycloak/RHSSO docs or do we need some better? 
-TODO: ATM there are databases missing in the picture. Also there is "keycloak" referenced everywhere, should be rather replaced with "RHSSO" 
-or something universal for both Keycloak and RHSSO? 
+TODO: Hynek will provide the picture.
 
-QUESTION: Is it better to use term "site" or term "datacenter" . In the whole docs, I am using both (but probably term "datacenter" a bit more).
+QUESTION FROM MAREK: Is it better to use term "site" or term "datacenter" . In the whole docs, I am using both (but probably term "datacenter" a bit more).
 Should it be consolidated?
+HYNEK: We should add reference to infinispan/jdg nomenclature - they use site and "cross-site" ("x-site") for our "cross-DC"
+MATTHEW: Will check and polish this in the documentation. 
  
  
 Prerequisities
@@ -176,11 +174,6 @@ Keycloak node doesn't communicate directly with the Keycloak nodes from differen
 (or infinispan server) for communication between datacenters. This is done 
 through the [Infinispan HotRod protocol](http://infinispan.org/docs/8.2.x/user_guide/user_guide.html#using_hot_rod_server) .
 
-QUESTION: Should we just remove "(or infinispan server)" from the docs? Background: Integration is tested with the JDG server 7.1.0 and 
-Infinispan server 8.2.8. I think that for our customers (product documentation), we even don't want to mention to use community infinispan
-server in the product documentation and we always want to use JDG. For the community, I am not sure we can also always stick with the JDG 7.1.0
-or mention Infinispan 8.2.8 as an option as well?
-
 The infinispan caches on Keycloak side needs to be configured with the [remoteStore](http://infinispan.org/docs/8.2.x/user_guide/user_guide.html#remote_store), 
 to ensure that data are saved to the remote cache, which uses HotRod protocol under the covers. There is separate infinispan cluster 
 between JDG servers, so the data saved on JDG1 on `site1` are replicated to JDG2 on `site2` . 
@@ -190,8 +183,6 @@ HotRod protocol. Keycloak nodes on `site2` then update their infinispan caches a
 site 2 too. 
 
 See the picture in [intro section](#documentation-intro) for more details.  
-
-QUESTION: Do we want to add another picture with the details for communication? Or is the picture in the intro section sufficient?
 
 
 Basic setup
@@ -222,7 +213,7 @@ or any other. In production, there will be rather separate synchronously replica
 JDG Server setup
 ----------------
 
-1) Download JDG 7.1.0 server (or Infinispan 8.2.8 server for the community - TODO: Same question as in previous section applies here) 
+1) Download JDG 7.1.0 server (or Infinispan 8.2.8 server for the community) as in previous section applies here) 
 and unzip to some folder. It will be referred in later steps as `JDG1_HOME` .
 
 2) Change those things in the `JDG1_HOME/standalone/configuration/clustered.xml` in the configuration of JGroups subsystem:
@@ -244,6 +235,7 @@ other site, where we will backup, is `site2`:
     ...
     <relay site="site1">
         <remote-site name="site2" channel="xsite"/>
+        <property name="relay_multicasts">false</property>
     </relay>
 </stack>
 ```
@@ -275,7 +267,8 @@ Details of this setup are out-of-scope of the Keycloak documentation. You can ta
 for more details.
 ENDNOTE
 
-TODO, QUESTION: I guess we want to document Amazon setup? Should we add the link to the Amazon setup documentation here? 
+TODO: Once we have documentation for the Amazon setup, we should add the link to the Amazon setup 
+documentation here.
 
 
 3) Add this into `JDG1_HOME/standalone/configuration/clustered.xml` under cache-container named `clustered` :
@@ -579,7 +572,7 @@ Event 'CLIENT_CACHE_ENTRY_REMOVED', key '193489e7-e2bc-4069-afe8-f1dfa73084ea', 
 ```
 
 
-Administration of Cross-DC deployment
+Administration of Cross DC deployment
 =====================================
 
 Few tips and possibilities related to the Cross-DC deployment.
@@ -590,10 +583,8 @@ is referenced from the infinispan cache `remote-store` elements, is already runn
 
 
 * Every datacenter can have more database nodes if you want to support database failover and better reliability.
-In that case, the JDBC URL used in the configuration of the `KeycloakDS` datasource in `standalone-ha.xml` 
-needs to contain URLs of all the actual database nodes of the particular DC.
-
-QUESTION: Is more info needed? Example of the JDBC URLs with more DB nodes? Or is it out of our scope?
+Refer to the documentation of your database and JDBC driver for the details how to setup this on the
+database side and how the `KeycloakDS` datasource on Keycloak side needs to be configured.  
 
 
 * As mentioned before in [the JDG Server setup section](#jdg-server-setup), every datacenter can have more JDG servers 
@@ -602,13 +593,15 @@ The hotrod protocol used for communication between JDG servers and Keycloak serv
 automatically send new topology to the Keycloak servers about the change in
 the JDG cluster, so the remote store on Keycloak side will know to which JDG servers it can connect. 
 Read the JDG/Infinispan and Wildfly documentation for more details around this.
-
-QUESTION: Should we provide more info? Or rather wait for the feedback from customers and community?
   
  
 * It is highly recommended that master JDG server is running in every site before the Keycloak servers in **any** site 
-are executed. Like in our example, we executed both `jdg1` and `jdg2` first and all Keycloak servers afterwards. The details are described in
-[next section](#bringing-sites-offline-and-online).
+are executed. Like in our example, we executed both `jdg1` and `jdg2` first and all Keycloak servers afterwards. If you still
+need to run the Keycloak server and the backup site is offline, it is recommended to manually switch the backup site 
+offline on the JDG servers on your site as described in [next section](#bringing-sites-offline-and-online).
+Without manually switching the unavailable site offline, the first startup may fail or they may be some exceptions during
+startup until the backup site is taken offline automatically due the configured count of failed operations. 
+See [this part](#take-site-offline) for details.
 
 
 Bringing sites offline and online
@@ -638,22 +631,13 @@ Take site offline
 There are 2 ways to take the site offline.
 
 1) **Manually by admin** - Admin can use the `jconsole` or other tool and run some JMX operations to manually take the particular site offline.
-This is useful especially if the outage is planned. With `jconsole`, you can connect to the `jdg1` server and use the MBean `jboss.datagrid-infinispan:type=Cache,name="sessions(repl_sync)",manager="clustered",component=XSiteAdmin`
-and then operation `takeSiteOffline` with the argument `site2` as shown in the picture. You can then check the operation `status` to check
-if site is really offline. See the picture for details:
-
-PICTURE: https://drive.google.com/file/d/1g6tJ979lSmlcR7g3AWDj4cUc0xWKruiH/view?usp=sharing
+This is useful especially if the outage is planned. With `jconsole` or CLI, you can connect to the `jdg1` server and take the `site2` offline. 
+More details about this is 
+in the [JDG documentation](https://access.redhat.com/documentation/en-us/red_hat_jboss_data_grid/7.1/html/administration_and_configuration_guide/set_up_cross_datacenter_replication#taking_a_site_offline) 
  
 WARNING: This turned off the backup to `site2` for the cache `sessions`. The same steps usually needs to be done for all the 
 other Keycloak caches mentioned [here](#sync-or-async-backups) .
 STOPWARNING
-
-There are also ways to take site offline manually with usage of CLI. More details about this is 
-in the [JDG documentation](https://access.redhat.com/documentation/en-us/red_hat_jboss_data_grid/7.1/html/administration_and_configuration_guide/set_up_cross_datacenter_replication#taking_a_site_offline) 
-
-QUESTION: Should we provide some CLI script to help taking site offline for all our caches? And similarly for putting sites back online
-and do the state transfer?
-
 
 
 2) **Automatically** - After some amount of failed backups, the `site2` will be usually automatically taken offline. This is done due the 
@@ -680,7 +664,7 @@ Take site online
 
 Once your network is back and `site1` and `site2` can talk to each other, you may need to put the site online. This needs to be done 
 manually through JMX or CLI in similar way as described in the [previous section](#take-site-offline). 
-The JMX operation is `bringSiteOnline` . Again, you may need to check all the caches and bring them online.
+Again, you may need to check all the caches and bring them online.
 
 Once the sites are put online, it's usually good to:
 * Do the [state transfer](#state-transfer)
@@ -703,7 +687,7 @@ correctly with 100% consistent data between sites. For the case of Keycloak, it 
 will need to re-login again to their clients. Or have the improper count of loginFailures tracked for brute force protection. See JDG/JGroups/Infinispan
 docs for more tips how to deal with split brain.
 
-The state transfer can be done through JMX. Operation name is `pushState` . There are few other operations to monitor status, cancel push state etc.
+The state transfer can be done again on the JDG side through JMX. Operation name is `pushState` . There are few other operations to monitor status, cancel push state etc.
 More info about state transfer is in JDG docs - https://access.redhat.com/documentation/en-us/red_hat_jboss_data_grid/7.1/html/administration_and_configuration_guide/set_up_cross_datacenter_replication#state_transfer_between_sites
 
 Clear caches
@@ -773,8 +757,7 @@ transaction will fail-fast if there is other transaction in progress for same ke
 The reason for switch this to 0 instead of default 10 seconds was to avoid possible deadlock issues. With Keycloak,
 it can happen that same entity (typically session entity or loginFailure) is updated concurrently from both sites.
 This can cause deadlock under some circumstances, which will cause the transaction blocked for 10 seconds. See [this 
- JIRA](https://issues.jboss.org/browse/JDG-1318) for details (TODO: REMOVE THIS NOTE NOTE: It was decided on some PM call
- to mention this issue in our docs if I understood correctly).
+ JIRA](https://issues.jboss.org/browse/JDG-1318) for details.
  
 With timeout 0, the transaction will immediately fail and then will be retried from Keycloak if backup `failure-policy` with 
 the value `FAIL` is configured. As long as the second concurrent transaction is finished, the retry will be usually successful and entity 
@@ -884,6 +867,30 @@ Make sure that the site name and the node name looks as expected during the star
 This can be also checked in JConsole through the GMS view. Also look 
 at [cluster troubleshooting](http://www.keycloak.org/docs/latest/server_installation/index.html#troubleshooting) for the additional details.
 
+* If there are exceptions during startup of Keycloak server like:
+```
+17:33:58,605 ERROR [org.infinispan.client.hotrod.impl.operations.RetryOnFailureOperation] (ServerService Thread Pool -- 59) ISPN004007: Exception encountered. Retry 10 out of 10: org.infinispan.client.hotrod.exceptions.TransportException:: Could not fetch transport
+...
+Caused by: org.infinispan.client.hotrod.exceptions.TransportException:: Could not connect to server: 127.0.0.1:12232
+	at org.infinispan.client.hotrod.impl.transport.tcp.TcpTransport.<init>(TcpTransport.java:82)
+
+```
+
+it usually means that Keycloak server is not able to reach the JDG server in his own datacenter. Make sure that
+firewall is set as expected and JDG server is possible to connect. 
+
+
+* If there are exceptions during startup of Keycloak server like:
+```
+16:44:18,321 WARN  [org.infinispan.client.hotrod.impl.protocol.Codec21] (ServerService Thread Pool -- 57) ISPN004005: Error received from the server: javax.transaction.RollbackException: ARJUNA016053: Could not commit transaction.
+ ...
+```
+then it's good to check the log of corresponding JDG server of our site and check if it doesn't failed to backup
+to the other site. If the backup site is unavailable, then it's recommended to switch it offline, so that JDG server
+won't try to backup to the offline site and hence the operations will pass successfully on Keycloak server side as well.
+More details are described in [this section](#administration-of-cross-dc-deployment) .   
+
+
 * Check the infinispan statistics, which are again available through JMX. For example, you can try to login and then see if the new session
 was successfully written to both JDG servers and is available in the `sessions` cache there. This can be done indirectly by checking
 the count of elements in the `sessions` cache for the MBean `jboss.datagrid-infinispan:type=Cache,name="sessions(repl_sync)",manager="clustered",component=Statistics` .
@@ -898,8 +905,8 @@ to avoid put big attachements to the mail sent to the mailing list.
 * If you updated the entity (EG. user) on Keycloak server on `site1` and you don't see that entity updated on the Keycloak server on `site2`, then
 the issue can be either in the replication of the synchronous database itself or just that Keycloak caches are not properly invalidated. You may
 try to temporarily disable the Keycloak caches as described [here](http://www.keycloak.org/docs/latest/server_installation/index.html#disabling-caching)
-to nail down if the issue is in replicated database. Also it may help to manually connect to the database and check if data are updated 
-as expected. This is specific to every database, so we won't describe here.  
+to nail down if the issue is at the database replication level. Also it may help to manually connect to the database and check if data are updated 
+as expected. This is specific to every database, so we won't describe the details here.  
 
 * Sometimes you may see the exceptions related to locks like this in JDG log:
 
@@ -912,3 +919,12 @@ writing keys [[B0x033E243034396234..[39]]: org.infinispan.util.concurrent.Timeou
 Those exceptions are not necessarily an issue. They may happen anytime when concurrent edit of same
 entity is triggered on both DCs. Which can be the often case in some deployment. Usually the Keycloak is notified about the failed operation
 and will retry it, so from the user's point of view, there is usually not any issue.
+
+* If you try to authenticate with Keycloak to your application, but it failed with the infinite number 
+of redirects in your browser and you see the errors like this in the Keycloak server log:
+```
+2017-11-27 14:50:31,587 WARN  [org.keycloak.events] (default task-17) type=LOGIN_ERROR, realmId=master, clientId=null, userId=null, ipAddress=37.188.148.81, error=expired_code, restart_after_timeout=true   
+```
+it probably means that your loadbalancer needs to be set to support sticky sessions. 
+Make sure that the provided route name used during startup of Keycloak server (Property `jboss.node.name`)
+contains the correct name used by loadbalancer server to identify current server.
