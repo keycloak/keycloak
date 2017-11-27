@@ -75,6 +75,11 @@ ssl-required::
   The default value is _external_ meaning that HTTPS is required by default for external requests.
   Valid values are 'all', 'external' and 'none'.
 
+confidential-port::
+  The confidential port used by the {project_name} server for secure connections over SSL/TLS.
+  This is _OPTIONAL_.
+  The default value is _8443_.
+
 use-resource-role-mappings::
   If set to true, the adapter will look inside the token for application level role mappings for the user. If false, it will look at the realm level for user role mappings.
   This is _OPTIONAL_.
