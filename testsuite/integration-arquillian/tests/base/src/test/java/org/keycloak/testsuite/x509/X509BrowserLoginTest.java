@@ -86,6 +86,26 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
     }
 
     @Test
+    public void loginWithNonMatchingRegex() throws Exception {
+        X509AuthenticatorConfigModel config = createLoginIssuerDN_OU2CustomAttributeConfig();
+        config.setRegularExpression("INVALID=(.*?)(?:,|$)");
+        AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", config.getConfig());
+
+        String cfgId = createConfig(browserExecution.getId(), cfg);
+        Assert.assertNotNull(cfgId);
+
+        loginConfirmationPage.open();
+
+        events.expectLogin()
+                .user((String) null)
+                .session((String) null)
+                .error("invalid_user_credentials")
+                .removeDetail(Details.CONSENT)
+                .removeDetail(Details.REDIRECT_URI)
+                .assertEvent();
+    }
+
+    @Test
     public void loginWithNonSupportedCertKeyUsage() throws Exception {
         // Set the X509 authenticator configuration
         AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config",

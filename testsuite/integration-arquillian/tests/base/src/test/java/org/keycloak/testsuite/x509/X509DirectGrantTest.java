@@ -146,6 +146,31 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
     }
 
     @Test
+    public void loginWithNonMatchingRegex() throws Exception {
+        X509AuthenticatorConfigModel config = createLoginIssuerDN_OU2CustomAttributeConfig();
+        config.setRegularExpression("INVALID=(.*?)(?:,|$)");
+        AuthenticatorConfigRepresentation cfg = newConfig("x509-directgrant-config", config.getConfig());
+
+        String cfgId = createConfig(directGrantExecution.getId(), cfg);
+        Assert.assertNotNull(cfgId);
+
+        oauth.clientId("resource-owner");
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "", null);
+
+        assertEquals(401, response.getStatusCode());
+
+        events.expectLogin()
+                .user((String) null)
+                .session((String) null)
+                .error("invalid_user_credentials")
+                .client("resource-owner")
+                .removeDetail(Details.CODE_ID)
+                .removeDetail(Details.CONSENT)
+                .removeDetail(Details.REDIRECT_URI)
+                .assertEvent();
+    }
+
+    @Test
     public void loginFailedDisabledUser() throws Exception {
         setUserEnabled("test-user@localhost", false);
 
