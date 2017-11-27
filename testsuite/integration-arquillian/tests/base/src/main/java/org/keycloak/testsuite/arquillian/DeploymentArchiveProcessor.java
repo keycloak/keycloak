@@ -119,7 +119,24 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
                     .addClass(org.keycloak.testsuite.arquillian.annotation.AppServerContainer.class)
                     .addClass(org.keycloak.testsuite.arquillian.annotation.UseServletFilter.class);
         }
-        
+
+        if (isWASAppServer(testClass.getJavaClass())) {
+//        {
+            MavenResolverSystem resolver = Maven.resolver();
+            MavenFormatStage dependencies = resolver
+                    .loadPomFromFile("pom.xml")
+                    .importTestDependencies()
+                    .resolve("org.apache.httpcomponents:httpclient")
+                    .withTransitivity();
+
+            ((WebArchive) archive)
+                    .addAsLibraries(dependencies.asFile())
+                    .addClass(org.keycloak.testsuite.arquillian.annotation.AppServerContainer.class)
+                    .addClass(org.keycloak.testsuite.arquillian.annotation.UseServletFilter.class);
+        }
+
+
+
     }
 
     public static boolean isAdapterTest(TestClass testClass) {
@@ -294,30 +311,6 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
             removeElementsFromDoc(webXmlDoc, "web-app", "security-constraint");
             removeElementsFromDoc(webXmlDoc, "web-app", "login-config");
             removeElementsFromDoc(webXmlDoc, "web-app", "security-role");
-
-            if (isWASAppServer(testClass.getJavaClass())) {
-                removeElementsFromDoc(webXmlDoc, "web-app", "servlet-mapping");
-                removeElementsFromDoc(webXmlDoc, "web-app", "servlet");
-            }
-            
-            if (isWLSAppServer(testClass.getJavaClass())) {
-
-                // add <servlet> tag in case it is missing
-                NodeList nodes = webXmlDoc.getElementsByTagName("servlet");
-                if (nodes.getLength() < 1) {
-                    Element servlet = webXmlDoc.createElement("servlet");
-                    Element servletName = webXmlDoc.createElement("servlet-name");
-                    Element servletClass = webXmlDoc.createElement("servlet-class");
-
-                    servletName.setTextContent("javax.ws.rs.core.Application");
-                    servletClass.setTextContent(getServletClassName(archive));
-
-                    servlet.appendChild(servletName);
-                    servlet.appendChild(servletClass);
-
-                    appendChildInDocument(webXmlDoc, "web-app", servlet);
-                }
-            }
         }
 
         archive.add(new StringAsset((documentToString(webXmlDoc))), WEBXML_PATH);

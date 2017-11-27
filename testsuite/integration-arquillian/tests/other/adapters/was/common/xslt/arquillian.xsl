@@ -34,7 +34,7 @@
                     <property name="remoteServerAddress">localhost</property>
                     <property name="remoteServerSoapPort">8880</property>
                     <property name="securityEnabled">false</property>
-                    <property name="username">admin</property>
+                    <property name="username">wsadmin</property>
                     <property name="adapterImplClass">org.jboss.arquillian.container.was.remote_8_5.WebSphereRemoteContainer</property>
                 </configuration>
             </container>
