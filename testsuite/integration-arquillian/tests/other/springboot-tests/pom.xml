@@ -15,6 +15,8 @@
         <exclude.springboot>**/springboot/**/*Test.java</exclude.springboot>
 
         <adapter.container>tomcat</adapter.container>
+
+        <repo.argument />
     </properties>
 
     <dependencies>
@@ -67,6 +69,8 @@
                                         <argument>spring-boot:run</argument>
                                         <argument>-Dkeycloak.version=${project.version}</argument>
                                         <argument>-Pspring-boot-adapter-${adapter.container}</argument>
+                                        <argument>-Dmaven.repo.local=${settings.localRepository}</argument>
+                                        <argument>${repo.argument}</argument>
                                     </arguments>
                                 </configuration>
                             </execution>
@@ -82,6 +86,18 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+
+        <profile>
+            <id>turn-on-repo-url</id>
+            <activation>
+                <property>
+                    <name>repo.url</name>
+                </property>
+            </activation>
+            <properties>
+                <repo.argument>-Drepo.url=${repo.url}</repo.argument>
+            </properties>
         </profile>
     </profiles>
 
