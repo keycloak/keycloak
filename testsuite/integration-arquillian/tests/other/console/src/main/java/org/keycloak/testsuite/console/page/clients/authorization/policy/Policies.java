@@ -27,8 +27,8 @@ import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.RulePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
+import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.page.Form;
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
@@ -71,6 +71,9 @@ public class Policies extends Form {
 
     @Page
     private GroupPolicy groupPolicy;
+
+    @Page
+    private ModalDialog modalDialog;
 
     public PoliciesTable policies() {
         return table;
@@ -204,7 +207,7 @@ public class Policies extends Form {
             PolicyRepresentation actual = policies().toRepresentation(row);
             if (actual.getName().equalsIgnoreCase(name)) {
                 row.findElements(tagName("td")).get(4).click();
-                driver.findElement(By.xpath(".//button[text()='Delete']")).click();
+                modalDialog.confirmDeletion();
                 return;
             }
         }

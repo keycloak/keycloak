@@ -18,8 +18,8 @@ package org.keycloak.testsuite.console.page.clients.authorization.scope;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.page.Form;
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -39,6 +39,9 @@ public class Scopes extends Form {
 
     @Page
     private Scope scope;
+
+    @Page
+    private ModalDialog modalDialog;
 
     public ScopesTable scopes() {
         return table;
@@ -74,7 +77,7 @@ public class Scopes extends Form {
             ScopeRepresentation actual = scopes().toRepresentation(row);
             if (actual.getName().equalsIgnoreCase(name)) {
                 row.findElements(tagName("td")).get(3).click();
-                driver.findElement(By.xpath(".//button[text()='Delete']")).click();
+                modalDialog.confirmDeletion();
             }
         }
     }

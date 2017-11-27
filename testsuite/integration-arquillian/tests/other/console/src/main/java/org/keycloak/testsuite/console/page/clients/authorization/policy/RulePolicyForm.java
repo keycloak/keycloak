@@ -25,6 +25,12 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
 
+import java.util.concurrent.TimeUnit;
+
+import static org.jboss.arquillian.graphene.Graphene.waitGui;
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.openqa.selenium.By.id;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
@@ -76,8 +82,8 @@ public class RulePolicyForm extends Form {
         setInputValue(artifactId, expected.getArtifactId());
         setInputValue(artifactVersion, expected.getArtifactVersion());
 
-        resolveModuleButton.click();
-        WaitUtils.waitForPageToLoad();
+        clickLink(resolveModuleButton);
+        waitGui().withTimeout(30, TimeUnit.SECONDS).until().element(id("moduleName")).is().enabled();
 
         moduleName.selectByVisibleText(expected.getModuleName());
         WaitUtils.pause(1000);
