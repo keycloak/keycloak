@@ -70,6 +70,8 @@
         <settings.path></settings.path>
         <maven.repo.local></maven.repo.local>
         <repo.url></repo.url>
+        <wl.password></wl.password>
+        <wl.home></wl.home>
 
         <adapter.test.props>
             -Dapp.server.base.url=http://localhost:${app.server.http.port}
@@ -83,6 +85,8 @@
             -Dkie.maven.settings.custom=${settings.path}
             -Dkie.maven.repo.local=${maven.repo.local}
             -Drepo.url=${repo.url}
+            -Dwl.password=${wl.password}
+            -Dwl.home=${wl.home}
         </adapter.test.props>
 
         <app.server.home>${containers.home}/app-server-${app.server}</app.server.home>
