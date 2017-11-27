@@ -131,7 +131,7 @@ For easier testing with Kerberos, we provided some example setups to test.
 
 ===== {project_name} and FreeIPA docker image
 
-Once you install https://www.docker.com/[docker], you can run docker image with http://www.freeipa.org/page/Main_Page[FreeIPA]         server installed.
+Once you install https://www.docker.com/[docker], you can run docker image with FreeIPA server installed.
 FreeIPA provides integrated security solution with MIT Kerberos and 389 LDAP server among other things . The image provides also {project_name}
 server configured with LDAP Federation provider and enabled SPNEGO/Kerberos authentication against the FreeIPA server.
 See details https://github.com/mposolda/keycloak-freeipa-docker/blob/master/README.md[here] .
