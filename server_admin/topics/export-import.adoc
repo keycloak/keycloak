@@ -90,7 +90,8 @@ Examples:
 Import of most resources can be performed from the admin console as well as export of most resources.
 Export of users is not supported.
 
-Note: Attributes containing secrets or private information will be masked in export file.
+Note: Attributes containing secrets or private information will be masked in export file. Export files obtained via Admin Console
+are thus not appropriate for backups or data transfer between servers. Only boot-time exports are appropriate for that.
 
 The files created during a "startup" export can also be used to import from the admin UI.
 This way, you can export from one realm and import to another realm. Or, you can export from one server and import to another.
@@ -98,7 +99,8 @@ Note: The admin console export/import allows just one realm per file.
 
 
 WARNING: The admin console import allows you to "overwrite" resources if you choose.
-Use this feature with caution, especially on a production system.
+Use this feature with caution, especially on a production system. Export .json files from Admin Console Export operation
+are generally not appropriate for data import since they contain invalid values for secrets.
 
 WARNING: The admin console export allows you to export clients, groups, and roles. If there is a great number of any of these
 assets in your realm, the operation may take some time to complete. During that time server may not be responsive to user requests.
