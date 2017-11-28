@@ -31,6 +31,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.util.CookieHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 import javax.crypto.SecretKey;
 import javax.ws.rs.core.Cookie;
@@ -143,7 +144,8 @@ public class RestartLoginCookie {
     }
 
 
-    public static AuthenticationSessionModel restartSession(KeycloakSession session, RealmModel realm) throws Exception {
+    public static AuthenticationSessionModel restartSession(KeycloakSession session, RealmModel realm,
+                                                            RootAuthenticationSessionModel rootSession, String expectedClientId) throws Exception {
         Cookie cook = session.getContext().getRequestHeaders().getCookies().get(KC_RESTART);
         if (cook ==  null) {
             logger.debug("KC_RESTART cookie doesn't exist");
@@ -161,7 +163,18 @@ public class RestartLoginCookie {
         ClientModel client = realm.getClientByClientId(cookie.getClientId());
         if (client == null) return null;
 
-        AuthenticationSessionModel authSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, client, true);
+        // Restart just if client from cookie matches client from the URL.
+        if (!client.getClientId().equals(expectedClientId)) {
+            logger.debugf("Skip restarting from the KC_RESTART. Clients doesn't match: Cookie client: %s, Requested client: %s", client.getClientId(), expectedClientId);
+            return null;
+        }
+
+        // Need to create brand new session and setup cookie
+        if (rootSession == null) {
+            rootSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, true);
+        }
+
+        AuthenticationSessionModel authSession = rootSession.createAuthenticationSession(client);
         authSession.setProtocol(cookie.getAuthMethod());
         authSession.setRedirectUri(cookie.getRedirectUri());
         authSession.setAction(cookie.getAction());

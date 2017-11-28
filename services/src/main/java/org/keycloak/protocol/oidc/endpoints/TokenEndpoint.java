@@ -80,6 +80,7 @@ import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.ProfileHelper;
 
@@ -255,7 +256,7 @@ public class TokenEndpoint {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Missing parameter: " + OAuth2Constants.CODE, Response.Status.BAD_REQUEST);
         }
 
-        ClientSessionCode.ParseResult<AuthenticatedClientSessionModel> parseResult = ClientSessionCode.parseResult(code, session, realm, event, AuthenticatedClientSessionModel.class);
+        ClientSessionCode.ParseResult<AuthenticatedClientSessionModel> parseResult = ClientSessionCode.parseResult(code, session, realm, client, event, AuthenticatedClientSessionModel.class);
         if (parseResult.isAuthSessionNotFound() || parseResult.isIllegalHash()) {
             AuthenticatedClientSessionModel clientSession = parseResult.getClientSession();
 
@@ -469,7 +470,9 @@ public class TokenEndpoint {
         }
         String scope = formParams.getFirst(OAuth2Constants.SCOPE);
 
-        AuthenticationSessionModel authSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, client, false);
+        RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);
+        AuthenticationSessionModel authSession = rootAuthSession.createAuthenticationSession(client);
+
         authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         authSession.setAction(AuthenticatedClientSessionModel.Action.AUTHENTICATE.name());
         authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
@@ -553,13 +556,16 @@ public class TokenEndpoint {
 
         String scope = formParams.getFirst(OAuth2Constants.SCOPE);
 
-        AuthenticationSessionModel authSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, client, false);
+        RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);
+        AuthenticationSessionModel authSession = rootAuthSession.createAuthenticationSession(client);
+
         authSession.setAuthenticatedUser(clientUser);
         authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
         authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, scope);
 
-        UserSessionModel userSession = session.sessions().createUserSession(authSession.getId(), realm, clientUser, clientUsername, clientConnection.getRemoteAddr(), ServiceAccountConstants.CLIENT_AUTH, false, null, null);
+        UserSessionModel userSession = session.sessions().createUserSession(authSession.getParentSession().getId(), realm, clientUser, clientUsername,
+                clientConnection.getRemoteAddr(), ServiceAccountConstants.CLIENT_AUTH, false, null, null);
         event.session(userSession);
 
         AuthenticationManager.setRolesAndMappersInSession(authSession);
@@ -763,7 +769,9 @@ public class TokenEndpoint {
 
         String scope = formParams.getFirst(OAuth2Constants.SCOPE);
 
-        AuthenticationSessionModel authSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, targetClient, false);
+        RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);
+        AuthenticationSessionModel authSession = rootAuthSession.createAuthenticationSession(targetClient);
+
         authSession.setAuthenticatedUser(targetUser);
         authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));

@@ -578,25 +578,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
 
     public static String getPasswordResetEmailLink(MimeMessage message) throws IOException, MessagingException {
-    	Multipart multipart = (Multipart) message.getContent();
-
-        final String textContentType = multipart.getBodyPart(0).getContentType();
-
-        assertEquals("text/plain; charset=UTF-8", textContentType);
-
-        final String textBody = (String) multipart.getBodyPart(0).getContent();
-        final String textChangePwdUrl = MailUtils.getLink(textBody);
-
-        final String htmlContentType = multipart.getBodyPart(1).getContentType();
-
-        assertEquals("text/html; charset=UTF-8", htmlContentType);
-
-        final String htmlBody = (String) multipart.getBodyPart(1).getContent();
-        final String htmlChangePwdUrl = MailUtils.getLink(htmlBody);
-
-        assertEquals(htmlChangePwdUrl, textChangePwdUrl);
-
-        return htmlChangePwdUrl;
+        return MailUtils.getPasswordResetEmailLink(message);
     }
 
 }

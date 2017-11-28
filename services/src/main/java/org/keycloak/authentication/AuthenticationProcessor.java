@@ -56,6 +56,7 @@ import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.AuthenticationFlowURLHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -222,7 +223,7 @@ public class AuthenticationProcessor {
 
     public String generateCode() {
         ClientSessionCode accessCode = new ClientSessionCode(session, getRealm(), getAuthenticationSession());
-        authenticationSession.setTimestamp(Time.currentTime());
+        authenticationSession.getParentSession().setTimestamp(Time.currentTime());
         return accessCode.getOrGenerateCode();
     }
 
@@ -632,7 +633,10 @@ public class AuthenticationProcessor {
 
             } else if (e.getError() == AuthenticationFlowError.FORK_FLOW) {
                 ForkFlowException reset = (ForkFlowException)e;
-                AuthenticationSessionModel clone = clone(session, authenticationSession);
+
+                RootAuthenticationSessionModel rootClone = clone(session, authenticationSession.getClient(), authenticationSession.getParentSession());
+                AuthenticationSessionModel clone = rootClone.getAuthenticationSession(authenticationSession.getClient());
+
                 clone.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
                 setAuthenticationSession(clone);
 
@@ -748,7 +752,7 @@ public class AuthenticationProcessor {
 
     public static void resetFlow(AuthenticationSessionModel authSession, String flowPath) {
         logger.debug("RESET FLOW");
-        authSession.setTimestamp(Time.currentTime());
+        authSession.getParentSession().setTimestamp(Time.currentTime());
         authSession.setAuthenticatedUser(null);
         authSession.clearExecutionStatus();
         authSession.clearUserSessionNotes();
@@ -759,20 +763,26 @@ public class AuthenticationProcessor {
         authSession.setAuthNote(CURRENT_FLOW_PATH, flowPath);
     }
 
-    public static AuthenticationSessionModel clone(KeycloakSession session, AuthenticationSessionModel authSession) {
-        AuthenticationSessionModel clone = new AuthenticationSessionManager(session).createAuthenticationSession(authSession.getRealm(), authSession.getClient(), true);
+    public static RootAuthenticationSessionModel clone(KeycloakSession session, ClientModel client, RootAuthenticationSessionModel authSession) {
+        RootAuthenticationSessionModel clone = new AuthenticationSessionManager(session).createAuthenticationSession(authSession.getRealm(), true);
 
         // Transfer just the client "notes", but not "authNotes"
-        for (Map.Entry<String, String> entry : authSession.getClientNotes().entrySet()) {
-            clone.setClientNote(entry.getKey(), entry.getValue());
+        for (Map.Entry<String, AuthenticationSessionModel> entry : authSession.getAuthenticationSessions().entrySet()) {
+            AuthenticationSessionModel asmOrig = entry.getValue();
+            AuthenticationSessionModel asmClone = clone.createAuthenticationSession(asmOrig.getClient());
+
+            asmClone.setRedirectUri(asmOrig.getRedirectUri());
+            asmClone.setProtocol(asmOrig.getProtocol());
+
+            for (Map.Entry<String, String> clientNote : asmOrig.getClientNotes().entrySet()) {
+                asmClone.setClientNote(clientNote.getKey(), clientNote.getValue());
+            }
         }
 
-        clone.setRedirectUri(authSession.getRedirectUri());
-        clone.setProtocol(authSession.getProtocol());
         clone.setTimestamp(Time.currentTime());
 
-        clone.setAuthNote(FORKED_FROM, authSession.getId());
-        logger.debugf("Forked authSession %s from authSession %s", clone.getId(), authSession.getId());
+        clone.getAuthenticationSession(client).setAuthNote(FORKED_FROM, authSession.getId());
+        logger.debugf("Forked authSession %s from authSession %s . Client: '%s'", clone.getId(), authSession.getId(), client.getClientId());
 
         return clone;
 
@@ -825,7 +835,8 @@ public class AuthenticationProcessor {
         if (!code.isActionActive(ClientSessionCode.ActionType.LOGIN)) {
             throw new AuthenticationFlowException(AuthenticationFlowError.EXPIRED_CODE);
         }
-        authenticationSession.setTimestamp(Time.currentTime());
+
+        authenticationSession.getParentSession().setTimestamp(Time.currentTime());
     }
 
     public Response authenticateOnly() throws AuthenticationFlowException {
@@ -872,9 +883,9 @@ public class AuthenticationProcessor {
 
         if (userSession == null) { // if no authenticator attached a usersession
 
-            userSession = session.sessions().getUserSession(realm, authSession.getId());
+            userSession = session.sessions().getUserSession(realm, authSession.getParentSession().getId());
             if (userSession == null) {
-                userSession = session.sessions().createUserSession(authSession.getId(), realm, authSession.getAuthenticatedUser(), username, connection.getRemoteAddr(), authSession.getProtocol()
+                userSession = session.sessions().createUserSession(authSession.getParentSession().getId(), realm, authSession.getAuthenticatedUser(), username, connection.getRemoteAddr(), authSession.getProtocol()
                         , remember, brokerSessionId, brokerUserId);
             } else if (userSession.getUser() == null || !AuthenticationManager.isSessionValid(realm, userSession)) {
                 userSession.restartSession(realm, authSession.getAuthenticatedUser(), username, connection.getRemoteAddr(), authSession.getProtocol()
@@ -936,7 +947,7 @@ public class AuthenticationProcessor {
         if (nextRequiredAction != null) {
             return AuthenticationManager.redirectToRequiredActions(session, realm, authenticationSession, uriInfo, nextRequiredAction);
         } else {
-            event.detail(Details.CODE_ID, authenticationSession.getId());  // todo This should be set elsewhere.  find out why tests fail.  Don't know where this is supposed to be set
+            event.detail(Details.CODE_ID, authenticationSession.getParentSession().getId());  // todo This should be set elsewhere.  find out why tests fail.  Don't know where this is supposed to be set
             // the user has successfully logged in and we can clear his/her previous login failure attempts.
             logSuccess();
             return AuthenticationManager.finishedRequiredActions(session, authenticationSession, userSession, connection, request, uriInfo, event);

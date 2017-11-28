@@ -159,8 +159,6 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
 
     ) {
 
-        // TODO:mposolda Disable periodic cleaner now on all Keycloak nodes. Make sure it's re-enabled after finish
-
         // Ensure to remove all current sessions and offline sessions
         setTimeOffset(10000000);
         getTestingClientForStartedNodeInDc(0).testing("test").removeExpired("test");
@@ -280,8 +278,6 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
                                              @JmxInfinispanCacheStatistics(dc=DC.SECOND, managementPortProperty = "cache.server.2.management.port", cacheName=InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME) InfinispanStatistics clientSessionCacheDc2Stats
 
     ) throws Exception {
-
-        // TODO:mposolda Disable periodic cleaner now on all Keycloak nodes. Make sure it's re-enabled after finish
 
         // Ensure to remove all current sessions and offline sessions
         setTimeOffset(10000000);

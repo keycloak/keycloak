@@ -33,12 +33,8 @@ public interface CommonClientSessionModel {
     public String getRedirectUri();
     public void setRedirectUri(String uri);
 
-    public String getId();
     public RealmModel getRealm();
     public ClientModel getClient();
-
-    public int getTimestamp();
-    public void setTimestamp(int timestamp);
 
     public String getAction();
     public void setAction(String action);

@@ -80,7 +80,8 @@ public class ClientSessionCode<CLIENT_SESSION extends CommonClientSessionModel> 
         }
     }
 
-    public static <CLIENT_SESSION extends CommonClientSessionModel> ParseResult<CLIENT_SESSION> parseResult(String code, KeycloakSession session, RealmModel realm, EventBuilder event, Class<CLIENT_SESSION> sessionClass) {
+    public static <CLIENT_SESSION extends CommonClientSessionModel> ParseResult<CLIENT_SESSION> parseResult(String code, KeycloakSession session, RealmModel realm, ClientModel client,
+                                                                                                            EventBuilder event, Class<CLIENT_SESSION> sessionClass) {
         ParseResult<CLIENT_SESSION> result = new ParseResult<>();
         if (code == null) {
             result.illegalHash = true;
@@ -88,7 +89,7 @@ public class ClientSessionCode<CLIENT_SESSION extends CommonClientSessionModel> 
         }
         try {
             CodeGenerateUtil.ClientSessionParser<CLIENT_SESSION> clientSessionParser = CodeGenerateUtil.getParser(sessionClass);
-            result.clientSession = getClientSession(code, session, realm, event, clientSessionParser);
+            result.clientSession = getClientSession(code, session, realm, client, event, clientSessionParser);
             if (result.clientSession == null) {
                 result.authSessionNotFound = true;
                 return result;
@@ -113,15 +114,16 @@ public class ClientSessionCode<CLIENT_SESSION extends CommonClientSessionModel> 
     }
 
 
-    public static <CLIENT_SESSION extends CommonClientSessionModel> CLIENT_SESSION getClientSession(String code, KeycloakSession session, RealmModel realm, EventBuilder event, Class<CLIENT_SESSION> sessionClass) {
+    public static <CLIENT_SESSION extends CommonClientSessionModel> CLIENT_SESSION getClientSession(String code, KeycloakSession session, RealmModel realm, ClientModel client,
+                                                                                                    EventBuilder event, Class<CLIENT_SESSION> sessionClass) {
         CodeGenerateUtil.ClientSessionParser<CLIENT_SESSION> clientSessionParser = CodeGenerateUtil.getParser(sessionClass);
-        return getClientSession(code, session, realm, event, clientSessionParser);
+        return getClientSession(code, session, realm, client, event, clientSessionParser);
     }
 
 
-    private static <CLIENT_SESSION extends CommonClientSessionModel> CLIENT_SESSION getClientSession(String code, KeycloakSession session, RealmModel realm, EventBuilder event,
+    private static <CLIENT_SESSION extends CommonClientSessionModel> CLIENT_SESSION getClientSession(String code, KeycloakSession session, RealmModel realm, ClientModel client, EventBuilder event,
                                                                                                      CodeGenerateUtil.ClientSessionParser<CLIENT_SESSION> clientSessionParser) {
-        return clientSessionParser.parseSession(code, session, realm, event);
+        return clientSessionParser.parseSession(code, session, realm, client, event);
     }
 
 
@@ -135,7 +137,8 @@ public class ClientSessionCode<CLIENT_SESSION extends CommonClientSessionModel> 
     }
 
     public boolean isActionActive(ActionType actionType) {
-        int timestamp = commonLoginSession.getTimestamp();
+        CodeGenerateUtil.ClientSessionParser<CLIENT_SESSION> clientSessionParser = (CodeGenerateUtil.ClientSessionParser<CLIENT_SESSION>) CodeGenerateUtil.getParser(commonLoginSession.getClass());
+        int timestamp = clientSessionParser.getTimestamp(commonLoginSession);
 
         int lifespan;
         switch (actionType) {
@@ -210,7 +213,9 @@ public class ClientSessionCode<CLIENT_SESSION extends CommonClientSessionModel> 
 
     public void setAction(String action) {
         commonLoginSession.setAction(action);
-        commonLoginSession.setTimestamp(Time.currentTime());
+
+        CodeGenerateUtil.ClientSessionParser<CLIENT_SESSION> clientSessionParser = (CodeGenerateUtil.ClientSessionParser<CLIENT_SESSION>) CodeGenerateUtil.getParser(commonLoginSession.getClass());
+        clientSessionParser.setTimestamp(commonLoginSession, Time.currentTime());
     }
 
     public String getOrGenerateCode() {

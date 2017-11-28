@@ -77,8 +77,8 @@ public class VerifyEmailActionTokenHandler extends AbstractActionTokenHander<Ver
         if (tokenContext.isAuthenticationSessionFresh()) {
             // Update the authentication session in the token
             token.setOriginalAuthenticationSessionId(token.getAuthenticationSessionId());
-            token.setAuthenticationSessionId(authSession.getId());
-            UriBuilder builder = Urls.actionTokenBuilder(uriInfo.getBaseUri(), token.serialize(session, realm, uriInfo));
+            token.setAuthenticationSessionId(authSession.getParentSession().getId());
+            UriBuilder builder = Urls.actionTokenBuilder(uriInfo.getBaseUri(), token.serialize(session, realm, uriInfo), authSession.getClient().getClientId());
             String confirmUri = builder.build(realm.getName()).toString();
 
             return session.getProvider(LoginFormsProvider.class)

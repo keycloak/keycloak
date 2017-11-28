@@ -236,7 +236,8 @@ public class PolicyEvaluationService {
                     ClientModel clientModel = realm.getClientById(clientId);
                     String id = KeycloakModelUtils.generateId();
 
-                    AuthenticationSessionModel authSession = keycloakSession.authenticationSessions().createAuthenticationSession(id, realm, clientModel);
+                    AuthenticationSessionModel authSession = keycloakSession.authenticationSessions().createRootAuthenticationSession(id, realm)
+                            .createAuthenticationSession(clientModel);
                     authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
                     authSession.setAuthenticatedUser(userModel);
                     userSession = keycloakSession.sessions().createUserSession(id, realm, userModel, userModel.getUsername(), "127.0.0.1", "passwd", false, null, null);

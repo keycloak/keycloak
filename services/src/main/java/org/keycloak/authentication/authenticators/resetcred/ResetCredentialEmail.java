@@ -89,7 +89,7 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
         int absoluteExpirationInSecs = Time.currentTime() + validityInSecs;
 
         // We send the secret in the email in a link as a query param.
-        ResetCredentialsActionToken token = new ResetCredentialsActionToken(user.getId(), absoluteExpirationInSecs, authenticationSession.getId());
+        ResetCredentialsActionToken token = new ResetCredentialsActionToken(user.getId(), absoluteExpirationInSecs, authenticationSession.getParentSession().getId());
         String link = UriBuilder
           .fromUri(context.getActionTokenUrl(token.serialize(context.getSession(), context.getRealm(), context.getUriInfo())))
           .build()
@@ -101,7 +101,7 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
             event.clone().event(EventType.SEND_RESET_PASSWORD)
                          .user(user)
                          .detail(Details.USERNAME, username)
-                         .detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, authenticationSession.getId()).success();
+                         .detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, authenticationSession.getParentSession().getId()).success();
             context.forkWithSuccessMessage(new FormMessage(Messages.EMAIL_SENT));
         } catch (EmailException e) {
             event.clone().event(EventType.SEND_RESET_PASSWORD)

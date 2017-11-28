@@ -25,6 +25,7 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.ExchangeTokenToIdentityProviderToken;
 import org.keycloak.broker.provider.IdentityProvider;
+import org.keycloak.broker.provider.util.IdentityBrokerState;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.Details;
@@ -197,7 +198,9 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
 
                 twitter.setOAuthConsumer(getConfig().getClientId(), getConfig().getClientSecret());
 
-                authSession = ClientSessionCode.getClientSession(state, session, realm, event, AuthenticationSessionModel.class);
+                String clientId = IdentityBrokerState.encoded(state).getClientId();
+                ClientModel client = realm.getClientByClientId(clientId);
+                authSession = ClientSessionCode.getClientSession(state, session, realm, client, event, AuthenticationSessionModel.class);
 
                 String twitterToken = authSession.getAuthNote(TWITTER_TOKEN);
                 String twitterSecret = authSession.getAuthNote(TWITTER_TOKENSECRET);
