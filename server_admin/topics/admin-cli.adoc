@@ -1,439 +1,515 @@
 
-== Admin CLI
+== The Admin CLI
 
-In previous chapters we have described how to use {project_name} Admin Console to perform administrative tasks.
-All those tasks can also be performed from command line by using Admin CLI command line tool.
-
-
-=== Installing Admin CLI
-
-Admin CLI is packaged inside {project_name} Server distribution. You can find execution scripts inside `bin` directory.
-
-The Linux script is called `kcadm.sh`, and the one for Windows is called `kcadm.bat`.
-
-In order to use the client from any location on your filesystem you may want to add {project_name} server directory to your PATH.
-
-On Linux:
-
-    $ export PATH=$PATH:$KEYCLOAK_HOME/bin
-    $ kcadm.sh
-
-On Windows:
-
-    c:\> set PATH=%PATH%;%KEYCLOAK_HOME%\bin
-    c:\> kcadm
+In previous chapters, we described how to use the {project_name} Admin Console to perform administrative tasks. You can also perform those tasks from the command-line interface (CLI) by using the Admin CLI command-line tool.
 
 
-We assume KEYCLOAK_HOME env variable is set to the path where you extracted {project_name} Server distribution.
+=== Installing the Admin CLI
 
-NOTE: To avoid unnecessary repetition the rest of this document will only give Windows examples in places where difference
-in command line is more than just in `kcadm` command name.
+The Admin CLI is packaged inside {project_name} Server distribution. You can find execution scripts inside the [filename]`bin` directory.
+
+The Linux script is called [filename]`kcadm.sh`, and the script for Windows is called [filename]`kcadm.bat`.
+
+You can add the {project_name} server directory to your [filename]`PATH` to use the client from any location on your file system.
+
+For example, on:
+
+* Linux:
+[options="nowrap"]
+----
+$ export PATH=$PATH:$KEYCLOAK_HOME/bin
+$ kcadm.sh
+----
+
+* Windows:
+[options="nowrap"]
+----
+c:\> set PATH=%PATH%;%KEYCLOAK_HOME%\bin
+c:\> kcadm
+----
+
+We assume the `KEYCLOAK_HOME` environment (env) variable is set to the path where you extracted the {project_name} Server distribution.
+
+[NOTE]
+====
+To avoid repetition, the rest of this document only gives Windows examples in places where the difference in the CLI is more than just in the [command]`kcadm` command name.
+====
 
 
-=== Using Admin CLI
+=== Using the Admin CLI
 
-Admin CLI works by making HTTP requests to Admin REST endpoints. Access to them is protected and requires authentication.
+The Admin CLI works by making HTTP requests to Admin REST endpoints. Access to them is protected and requires authentication.
 
-NOTE: Consult Admin REST API documentation for details about JSON attributes for specific endpoints.
+//Should there be a link for the REST API documentation?
+[NOTE]
+====
+Consult the Admin REST API documentation for details about JSON attributes for specific endpoints.
+====
 
-You start an authenticated session by providing credentials (i.e. logging in), then you are ready to perform some CRUD operations.
+. Start an authenticated session by providing credentials, that is, logging in. You are ready to perform create, read, update, and delete (CRUD) operations.
++
+For example, on
 
-For example on Linux:
+* Linux:
++
+[options="nowrap"]
+----
+$ kcadm.sh config credentials --server http://localhost:8080/auth --realm demo --user admin --client admin
+$ kcadm.sh create realms -s realm=demorealm -s enabled=true -o
+$ CID=$(kcadm.sh create clients -r demorealm -s clientId=my_client -s 'redirectUris=["http://localhost:8980/myapp/*"]' -i)
+$ kcadm.sh get clients/$CID/installation/providers/keycloak-oidc-keycloak-json
+----
++
+* Windows:
++
+[options="nowrap"]
+----
+c:\> kcadm config credentials --server http://localhost:8080/auth --realm demo --user admin --client admin
+c:\> kcadm create realms -s realm=demorealm -s enabled=true -o
+c:\> kcadm create clients -r demorealm -s clientId=my_client -s "redirectUris=[\"http://localhost:8980/myapp/*\"]" -i > clientid.txt
+c:\> set /p CID=<clientid.txt
+c:\> kcadm get clients/%CID%/installation/providers/keycloak-oidc-keycloak-json
+----
 
-    $ kcadm.sh config credentials --server http://localhost:8080/auth --realm demo --user admin --client admin
-    $ kcadm.sh create realms -s realm=demorealm -s enabled=true -o
-    $ CID=$(kcadm.sh create clients -r demorealm -s clientId=my_client -s 'redirectUris=["http://localhost:8980/myapp/*"]' -i)
-    $ kcadm.sh get clients/$CID/installation/providers/keycloak-oidc-keycloak-json
+. In a production environment, you access {project_name} with `https:` to avoid exposing tokens to network sniffers. If a server's certificate is not issued by one of the trusted certificate authorities (CAs) that are included in Java's default certificate truststore, prepare a [filename]`truststore.jks` file and instruct the Admin CLI to use it.
++
+For example, on:
 
-
-Or on Windows:
-
-    c:\> kcadm config credentials --server http://localhost:8080/auth --realm demo --user admin --client admin
-    c:\> kcadm create realms -s realm=demorealm -s enabled=true -o
-    c:\> kcadm create clients -r demorealm -s clientId=my_client -s "redirectUris=[\"http://localhost:8980/myapp/*\"]" -i > clientid.txt
-    c:\> set /p CID=<clientid.txt
-    c:\> kcadm get clients/%CID%/installation/providers/keycloak-oidc-keycloak-json
-
-In a production environment {project_name} has to be accessed with `https:` to avoid exposing tokens to network sniffers. If server's
-certificate is not issued by one of the trusted CAs that are included in Java's default certificate truststore, then you will
-need to prepare a truststore.jks file, and instruct `Admin CLI` to use it.
-
-For example on Linux:
-
-    $ kcadm.sh config truststore --trustpass $PASSWORD ~/.keycloak/truststore.jks
-
-Or on Windows:
-
-    c:\> kcadm config truststore --trustpass %PASSWORD% %HOMEPATH%\.keycloak\truststore.jks
+* Linux:
++
+[options="nowrap"]
+----
+$ kcadm.sh config truststore --trustpass $PASSWORD ~/.keycloak/truststore.jks
+----
++
+* Windows:
++
+[options="nowrap"]
+----
+c:\> kcadm config truststore --trustpass %PASSWORD% %HOMEPATH%\.keycloak\truststore.jks
+----
 
 
 === Authenticating
 
-When logging in with `Admin CLI` you specify a server endpoint url, and a realm. Then you specify a username,
-or alternatively you can specify only a client id, which will result in special, so called 'service account' being used. In the first case,
-a password for the specified user has to be used at login. In the latter case there is no user password - only client secret.
-Alternatively, `Signed JWT` can be used.
+When you log in with the Admin CLI, you specify a server endpoint URL and a realm, and then you specify a username. Another option is to specify only a client ID, which results in using a special "service account". When you log in using a username, you must use a password for the specified user. When you log in using a client ID, you only need the client secret, not the user password. You could also use [command]`Signed JWT` instead of the client secret.
 
-The account used for the session needs to have proper permissions in order to be able to invoke Admin REST API operations.
-For example, `realm-admin` role of `realm-management` client allows user to administer the realm within which the user is defined.
+Make sure the account used for the session has the proper permissions to invoke Admin REST API operations. For example, the `realm-admin` role of the `realm-management` client allows the user to administer the realm within which the user is defined.
 
+There are two primary mechanisms for authentication. One mechanism uses [command]`kcadm config credentials` to start an authenticated session.
+[options="nowrap"]
+----
+$ kcadm.sh config credentials --server http://localhost:8080/auth --realm master --user admin --password admin
+----
 
-There are two primary mechanisms for authentication. One is using `kcadm config credentials` to start an authenticated session:
+This approach maintains an authenticated session between the [command]`kcadm` command invocations by saving the obtained access token and the associated refresh token. It may also maintain other secrets in a private configuration file. See <<_working_with_alternative_configurations, next chapter>> for more information on the configuration file.
 
-    $ kcadm.sh config credentials --server http://localhost:8080/auth --realm master --user admin --password admin
+The second approach only authenticates each command invocation for the duration of that invocation. This approach increases the load on the server and the time spent with roundtrips obtaining tokens. The benefit of this approach is not needing to save any tokens between invocations, which means nothing is saved to disk. This mode is used when the [command]`--no-config` argument is specified.
 
-This approach maintains an authenticated session between `kcadm` command invocations by saving the obtained access token, and
-associated refresh token, possibly other secrets as well in a private configuration file. See <<_working_with_alternative_configurations, next chapter>> for more info on configuration file.
+For example, when performing an operation, we specify all the information required for authentication.
+[options="nowrap"]
+----
+$ kcadm.sh get realms --no-config --server http://localhost:8080/auth --realm master --user admin --password admin
+----
 
-Another approach is to authenticate with each command invocation for the duration of that invocation only. This approach results
-in more load on the server, and more time spent with round-trips obtaining tokens, but has a benefit of not needing to save any
-tokens between invocations, thus nothing is saved to disk. This mode is used when `--no-config` argument is specified.
+Run the [command]`kcadm.sh help` command for more information on using the Admin CLI.
 
-For example, when performing an operation we specify all the information required for authentication:
-
-    $ kcadm.sh get realms --no-config --server http://localhost:8080/auth --realm master --user admin --password admin
-
-
-See built-in help for more information on using `Admin CLI`.
-
-
-For example:
-
-    $ kcadm.sh help
-
-
-See `kcadm.sh config credentials --help` for more information about starting an authenticated session.
-
+Run the [command]`kcadm.sh config credentials --help` command for more information about starting an authenticated session.
 
 
 [[_working_with_alternative_configurations]]
 === Working with alternative configurations
 
-By default, `Admin CLI` automatically maintains a configuration file called `kcadm.config` located under user's home
-directory - it's full pathname is `$HOME/.keycloak/kcadm.config` (on Windows it's `%HOMEPATH%\.keycloak\kcadm.config`).
+By default, the Admin CLI automatically maintains a configuration file called [filename]`kcadm.config` located under the user's home directory, which is the full path name [filename]`$HOME/.keycloak/kcadm.config`. On Windows, the full path name is [filename]`%HOMEPATH%\.keycloak\kcadm.config`.
 
-You can use `--config` option to point to a different file / location. This way you can maintain multiple authenticated
-sessions in parallel.
+You can use the [command]`--config` option to point to a different file or location so you can maintain multiple authenticated sessions in parallel.
 
-NOTE: It's best to perform operations tied to a single config file from a single thread.
+[NOTE]
+====
+It is best to perform operations tied to a single configuration file from a single thread.
+====
 
-Make sure to not make config file visible to other users on the system as it contains access tokens, and secrets that should be kept private.
-By default the ~/.keycloak directory and its content will be automatically created with proper access limits. However if directory will
-exist already with non-default permissions, those will not be updated.
+Make sure you do not make the configuration file visible to other users on the system. It contains access tokens and secrets that should be kept private. By default, the [filename]`~/.keycloak` directory and its content are created automatically with proper access limits. If the directory already exists with non-default permissions, those access tokens and secrets will not be updated.
 
-You may want to avoid storing any secrets at all inside a config file for the price of less convenience and having to do more token requests.
-In that case you can use `--no-config` option with all your commands. In that case you will have to specify all the authentication info needed by
-`config credentials` command with each `kcadm` invocation.
+Consider avoiding storing secrets inside a configuration file, even though it is less convenient and you have to make more token requests. If you choose to not store secrets, you can use the [command]`--no-config` option with all your commands and specify all the authentication information needed by the [command]`config credentials` command with each [command]`kcadm` invocation.
 
 
+=== Basic operations and resource URIs
 
-=== Basic operations, and resource URIs
+The Admin CLI allows you to generically perform CRUD operations against Admin REST API endpoints in with additional commands that simplify performing certain tasks.
 
-Admin CLI allows you to perform CRUD operations against Admin REST API endpoints in quite a generic way, with additional commands
-that simplify performing certain tasks.
+The main usage pattern is listed below, where the operations [command]`create`, [command]`get`, [command]`update`, and [command]`delete` are mapped to the HTTP verbs POST, GET, PUT, and DELETE, respectively.
+[options="nowrap"]
+----
+$ kcadm.sh create ENDPOINT [ARGUMENTS]
+$ kcadm.sh get ENDPOINT [ARGUMENTS]
+$ kcadm.sh update ENDPOINT [ARGUMENTS]
+$ kcadm.sh delete ENDPOINT [ARGUMENTS]
+----
 
-Main usage pattern is the following:
+ENDPOINT is a target resource URI and can either be absolute (starting with `http:` or `https:`) or relative, used to compose an absolute URL of the following format.
+[options="nowrap"]
+----
+SERVER_URI/admin/realms/REALM/ENDPOINT
+----
 
-    $ kcadm.sh create ENDPOINT [ARGUMENTS]
-    $ kcadm.sh get ENDPOINT [ARGUMENTS]
-    $ kcadm.sh update ENDPOINT [ARGUMENTS]
-    $ kcadm.sh delete ENDPOINT [ARGUMENTS]
+For example, if you authenticate against the server http://localhost:8080/auth and realm is [filename]`master`, then using [filename]`users` as ENDPOINT results in the resource URL http://localhost:8080/auth/admin/realms/master/users.
 
-Where operations `create`, `get`, `update`, and `delete` are mapped to HTTP verbs POST, GET, PUT, and DELETE, respectively.
-ENDPOINT is a target resource URI, and can either be absolute - starting with 'http:' or 'https:', or relative - used to compose an absolute URL
-of the following format:
+If you set ENDPOINT to [filename]`clients`, the effective resource URI would be http://localhost:8080/auth/admin/realms/master/clients.
 
-    SERVER_URI/admin/realms/REALM/ENDPOINT
+There is a [filename]`realms` endpoint that is treated slightly differently because it is the container for realms. It resolves to:
+[options="nowrap"]
+----
+SERVER_URI/admin/realms
+----
 
+There is also a [filename]`serverinfo` endpoint, which is treated the same way because it is independent of realms.
 
-For example, if the server we authenticate against is `http://localhost:8080/auth`, and realm is `master`, then using `users` as ENDPOINT
-will result in the following resource URL: `http://localhost:8080/auth/admin/realms/master/users`.
+When you authenticate as a user with realm-admin powers, you might need to perform operations on multiple realms. In that case, specify the [command]`-r` option to tell explicitly which realm the operation should be executed against. Instead of using REALM as specified via the [command]`--realm` option of [command]`kcadm.sh config credentials`, the TARGET_REALM is used.
 
-If we set ENDPOINT to `clients` the effective resource URI would be: `http://localhost:8080/auth/admin/realms/master/clients`.
+[options="nowrap"]
+----
+SERVER_URI/admin/realms/TARGET_REALM/ENDPOINT
+----
 
-There is `realms` endpoint which is treated slightly differently since it is the container for realms. It resolves simply to:
+For example,
+[options="nowrap"]
+----
+$ kcadm.sh config credentials --server http://localhost:8080/auth --realm master --user admin --password admin
+$ kcadm.sh create users -s username=testuser -s enabled=true -r demorealm
+----
 
-    SERVER_URI/admin/realms
+In this example, you start a session authenticated as the [filename]`admin` user in the [filename]`master` realm. You then perform a POST call against the resource URL [filename]`http://localhost:8080/auth/admin/realms/demorealm/users`.
 
+The [command]`create` and [command]`update` commands send a JSON body to the server by default. You can use [filename]`-f FILENAME` to read a premade document from a file. When you can use [command]`-f -` option, the message body is read from standard input. You can also specify individual attributes and their values as seen in the previous [command]`create users` example. They are composed into a JSON body and sent to the server.
 
-There is also `serverinfo` which is treated the same way since it is independent of realms.
-
-When authenticating as a user with realm-admin powers you may need to perform operations on multiple different realms. In that case
-you can specify `-r` option to tell explicitly which realm the operation should be executed against.
-Instead of using REALM as specified via `--realm` option of `kcadm.sh config credentials`, the TARGET_REALM will be used:
-
-    SERVER_URI/admin/realms/TARGET_REALM/ENDPOINT
-
+There are several ways to update a resource using the [command]`update` command. You can first determine the current state of a resource and save it to a file, and then edit that file and send it to the server for updating.
 
 For example:
+[options="nowraps"]
+----
+$ kcadm.sh get realms/demorealm > demorealm.json
+$ vi demorealm.json
+$ kcadm.sh update realms/demorealm -f demorealm.json
+----
 
-    $ kcadm.sh config credentials --server http://localhost:8080/auth --realm master --user admin --password admin
-    $ kcadm.sh create users -s username=testuser -s enabled=true -r demorealm
+This method updates the resource on the server with all the attributes in the sent JSON document.
 
-In this example we first start a session authenticated as `admin` user in `master` realm. Then we perform a POST call against the following
-resource URL:
+Another option is to perform an on-the-fly update using the [command]`-s, --set` options to set new values.
 
-    http://localhost:8080/auth/admin/realms/demorealm/users
+For example:
+[options="nowraps"]
+----
+$ kcadm.sh update realms/demorealm -s enabled=false
+----
 
+That method only updates the [command]`enabled` attribute to `false`.
 
-Commands `create` and `update` by default send JSON body to the server. You can use `-f FILENAME` to read a pre-made document from a file.
-You can use `-f -`, and message body will be read from standard input.
-But you can also specify individual attributes and their values as seen in the previous `create users` example, and they will be composed into a JSON body and sent to the server.
-
-
-When using `update` there are several ways to update a resource. You can first get current state of a resource, and save it into a file,
-then edit that file and send it to the server for update. For example:
-
-    $ kcadm.sh get realms/demorealm > demorealm.json
-    $ vi demorealm.json
-    $ kcadm.sh update realms/demorealm -f demorealm.json
-
-This way the resource on the server will be updated with all the attributes in the sent JSON document.
-
-Another option is to perform an update on-the-fly using `-s, --set` options to set new values. For example:
-
-    $ kcadm.sh update realms/demorealm -s enabled=false
-
-That would only update `enabled` attribute to `false`.
-
-By default `update` operation first performs a `get`, and then merges new attribute values with existing.
-Mostly this is a preferred behaviour. In some cases the endpoint may support `PUT` but not `GET`.
-You can use `-n` option to perform a so called 'no-merge' update which performs a PUT, without first doing a GET.
+By default, the [commamd]`update` operation first performs a [command]`get` and then merges the new attribute values with existing values. This is the preferred behavior. In some cases, the endpoint may support [command]`PUT` but not [command]`GET`. You can use [command]`-n` option to perform a "no-merge" update, which performs a [command]`PUT` without first doing a [command]`GET`.
 
 
 === Realm operations
 
-Creating a new realm::
+==== Creating a new realm
 
-To create a new enabled realm use `create` operation on `realms` endpoint, and set attributes `realm` and `enabled`:
+Use the [command]`create` operation on the `realms` endpoint to create a new enabled realm, and set the attributes to `realm` and `enabled`.
+[options="nowrap"]
+----
+$ kcadm.sh create realms -s realm=demorealm -s enabled=true
+----
 
-    $ kcadm.sh create realms -s realm=demorealm -s enabled=true
+A realm is not enabled by default. By enabling it, you can use a realm immediately for authentication.
 
-Realm is not enabled by default. By enabling it, it can be used for authentication immediately.
+A description for a new object can also be in a JSON format.
+[options="nowrap"]
+----
+$ kcadm.sh create realms -f demorealm.json
+----
 
-A description for a new object can be in JSON format as well:
+You can send a JSON document with realm attributes directly from a file or piped to a standard input.
 
-    $ kcadm.sh create realms -f demorealm.json
+For example, on:
 
-JSON document with realm attributes can be sent directly from file or piped to standard input.
+* Linux:
+[options="nowrap"]
+----
+$ kcadm.sh create realms -f - << EOF
+{ "realm": "demorealm", "enabled": true }
+EOF
+----
 
-For example on Linux:
-
-    $ kcadm.sh create realms -f - << EOF
-    { "realm": "demorealm", "enabled": true }
-    EOF
-
-Or on Windows:
-
-    c:\> echo { "realm": "demorealm", "enabled": true } | kcadm create realms -f -
-
-
-Listing existing realms::
-
-The following will return a list of all realms:
-
-    $ kcadm.sh get realms
-
-Note that a list of realms is additionally filtered on the server to only return realms user is allowed to see.
-
-Returning the whole realm description is often too much information as we are often only interested in a subset of attributes like realm name, and if realm is enabled or not.
-You can specify which attributes to return by using `--fields` option:
-
-    $ kcadm.sh get realms --fields realm,enabled
-
-You can even display the result as comma separated values:
-
-    $ kcadm.sh get realms --fields realm --format csv --noquotes
+* Windows:
+[options="nowrap"]
+----
+c:\> echo { "realm": "demorealm", "enabled": true } | kcadm create realms -f -
+----
 
 
-Getting a specific realm::
+==== Listing existing realms
 
-As is common for REST web services, in order to get an individual item of a collection, append an id to collection URI:
+The following command returns a list of all realms.
+[options="nowrap"]
+----
+$ kcadm.sh get realms
+----
 
-    $ kcadm.sh get realms/master
+[NOTE]
+====
+A list of realms is additionally filtered on the server to return only realms a user can see.
+====
+
+Returning the entire realm description often provides too much information. Most users are interested only in a subset of attributes, such as realm name and whether the realm is enabled. You can specify which attributes to return by using the [command]`--fields` option.
+[options="nowrap"]
+----
+$ kcadm.sh get realms --fields realm,enabled
+----
+
+You can also display the result as comma separated values.
+[options="nowrap"]
+----
+$ kcadm.sh get realms --fields realm --format csv --noquotes
+----
+
+==== Getting a specific realm
+
+You append an ID to a collection URI to get an individual item of a collection, as is common for REST web services.
+[options="nowrap"]
+----
+$ kcadm.sh get realms/master
+----
 
 
-Updating a realm::
+==== Updating a realm
 
-In order to only change some attributes of the realm use `-s` to set new values for the attributes. For example:
+. Use the [command]`-s` option to set new values for the attributes when you want to change only some of the realm's attributes.
++
+For example:
++
+[options="nowrap"]
+----
+$ kcadm.sh update realms/demorealm -s enabled=false
+----
+. If you want to set all writable attributes with new values, perform a [command]`get`, edit the current values in the JSON file, and resubmit.
++
+For example:
++
+[options="nowrap"]
+----
+$ kcadm.sh get realms/demorealm > demorealm.json
+$ vi demorealm.json
+$ kcadm.sh update realms/demorealm -f demorealm.json
+----
 
-    $ kcadm.sh update realms/demorealm -s enabled=false
 
-If you want to set all writable attributes with new values, perform a `get` first, edit current values in JSON file, and resubmit. For example:
+==== Deleting a realm
 
-    $ kcadm.sh get realms/demorealm > demorealm.json
-    $ vi demorealm.json
-    $ kcadm.sh update realms/demorealm -f demorealm.json
-
-
-Deleting a realm::
-
-Here is how to delete a realm:
-
-    $ kcadm.sh delete realms/demorealm
+Run the following command to delete a realm.
+[options="nowrap"]
+----
+$ kcadm.sh delete realms/demorealm
+----
 
 
-Turning on all login page options for the realm::
+==== Turning on all login page options for the realm
 
 Set the attributes controlling specific capabilities to `true`.
 
 For example:
+[options="nowrap"]
+----
+$ kcadm.sh update realms/demorealm -s registrationAllowed=true -s registrationEmailAsUsername=true -s rememberMe=true -s verifyEmail=true -s resetPasswordAllowed=true -s editUsernameAllowed=true
+----
 
-    $ kcadm.sh update realms/demorealm -s registrationAllowed=true -s registrationEmailAsUsername=true -s rememberMe=true -s verifyEmail=true -s resetPasswordAllowed=true -s editUsernameAllowed=true
 
+==== Listing the realm keys
 
-Listing the realm keys::
+Use the [command] `get` operation on the [filename]`keys` endpoint of the target realm.
+[options="nowrap"]
+----
+$ kcadm.sh get keys -r demorealm
+----
 
-Use `get` operation on `keys` endpoint of the target realm:
 
-    $ kcadm.sh get keys -r demorealm
+==== Generating new realm keys
 
-
-Generating new realm keys::
-
-To add a new RSA generated keypair, first get `id` of the target realm. For example:
-
-    $ kcadm.sh get realms/demorealm --fields id --format csv --noquotes
-
-Then add a new key provider with higher priority than any of the existing providers as revealed by `kcadm.sh get keys -r demorealm`:
-
-For example on Linux:
-
-    $ kcadm.sh create components -r demorealm -s name=rsa-generated -s providerId=rsa-generated -s providerType=org.keycloak.keys.KeyProvider -s parentId=959844c1-d149-41d7-8359-6aa527fca0b0 -s 'config.priority=["101"]' -s 'config.enabled=["true"]' -s 'config.active=["true"]' -s 'config.keySize=["2048"]'
-
-Or on Windows:
-
-    c:\> kcadm create components -r demorealm -s name=rsa-generated -s providerId=rsa-generated -s providerType=org.keycloak.keys.KeyProvider -s parentId=959844c1-d149-41d7-8359-6aa527fca0b0 -s "config.priority=[\"101\"]" -s "config.enabled=[\"true\"]" -s "config.active=[\"true\"]" -s "config.keySize=[\"2048\"]"
-
-Attribute `parentId` should be set to the value of target realm's `id`.
-
-The newly added key should now become the active key as revealed by `kcadm.sh get keys -r demorealm`.
-
-
-Adding new realm keys from Java Key Store file::
-
-To add a new keypair already prepared as a JKS file on the server, add a new key provider as follows:
-
-For exmple on Linux:
-
-    $ kcadm.sh create components -r demorealm -s name=java-keystore -s providerId=java-keystore -s providerType=org.keycloak.keys.KeyProvider -s parentId=959844c1-d149-41d7-8359-6aa527fca0b0 -s 'config.priority=["101"]' -s 'config.enabled=["true"]' -s 'config.active=["true"]' -s 'config.keystore=["/opt/keycloak/keystore.jks"]' -s 'config.keystorePassword=["secret"]' -s 'config.keyPassword=["secret"]' -s 'config.alias=["localhost"]'
-
-Or on Windows:
-
-    c:\> kcadm create components -r demorealm -s name=java-keystore -s providerId=java-keystore -s providerType=org.keycloak.keys.KeyProvider -s parentId=959844c1-d149-41d7-8359-6aa527fca0b0 -s "config.priority=[\"101\"]" -s "config.enabled=[\"true\"]" -s "config.active=[\"true\"]" -s "config.keystore=[\"/opt/keycloak/keystore.jks\"]" -s "config.keystorePassword=[\"secret\"]" -s "config.keyPassword=[\"secret\"]" -s "config.alias=[\"localhost\"]"
-
-Make sure to change attribute values for `keystore`, `keystorePassword`, `keyPassword`, and `alias` to match your specific keystore.
-
-Attribute `parentId` should be set to the value of target realm's `id`.
-
-
-Making key passive or disabling it::
-
-Identify the key you wish to make passive:
-
-    $ kcadm.sh get keys -r demorealm
-
-Use `providerId` attribute of the key to construct an endpoint uri - `components/PROVIDER_ID`.
-
-Then perform an `update`. For example on Linux:
-
-    $ kcadm.sh update components/PROVIDER_ID -r demorealm -s 'config.active=["false"]'
-
-Or on Windows:
-
-    c:\> kcadm update components/PROVIDER_ID -r demorealm -s "config.active=[\"false\"]"
-
-
-Analogously, other key attributes can be updated.
-
-To disable the key set new `enabled` value, for example: `'config.enabled=["false"]'`
-
-To change key's priority set new `priority` value, for example: `'config.priority=["110"]'`
-
-
-Deleting an old key::
-
-Make sure that the key you are deleting has been passive for some time, and then disabled for some time in order to prevent any existing tokens
-held by applications and users from abruptly failing to work.
-
-Identify the key you wish to make passive:
-
-    $ kcadm.sh get keys -r demorealm
-
-Use the `providerId` of that key to perform a delete. For example:
-
-    $ kcadm.sh delete components/PROVIDER_ID -r demorealm
-
-
-Configuring event logging for a realm::
-
-Use `update` on `events/config` endpoint.
-
-Attribute `eventsListeners` contains a list of EventListenerProviderFactory ids, specifying all event listeners receiving events.
-Separately, there are attributes that control a built-in event storage which allows querying past events via Admin REST API.
-There is separate control over logging of service calls - 'eventsEnabled', and auditing events triggered during Admin Console or Admin REST API - 'adminEventsEnabled'.
-You may want to setup expiry of old events so that your database doesn't get filled up - 'eventsExpiration' is set to time-to-live expressed in seconds.
-
-
-Here is an example of setting up a built-in event listener that will receive all the events and log them through jboss-logging (error events are logged as `WARN`, others as `DEBUG`, using a logger called `org.keycloak.events`):
-
-On Linux:
-
-    $ kcadm.sh update events/config -r demorealm -s 'eventsListeners=["jboss-logging"]'
-
-Or on Windows:
-
-    c:\> kcadm update events/config -r demorealm -s "eventsListeners=[\"jboss-logging\"]"
-
-
-Here is an example of turning on storage of all available ERROR events - not including auditing events - for 2 days so they can be retrieved via Admin REST:
-
-On Linux:
-
-    $ kcadm.sh update events/config -r demorealm -s eventsEnabled=true -s 'enabledEventTypes=["LOGIN_ERROR","REGISTER_ERROR","LOGOUT_ERROR","CODE_TO_TOKEN_ERROR","CLIENT_LOGIN_ERROR","FEDERATED_IDENTITY_LINK_ERROR","REMOVE_FEDERATED_IDENTITY_ERROR","UPDATE_EMAIL_ERROR","UPDATE_PROFILE_ERROR","UPDATE_PASSWORD_ERROR","UPDATE_TOTP_ERROR","VERIFY_EMAIL_ERROR","REMOVE_TOTP_ERROR","SEND_VERIFY_EMAIL_ERROR","SEND_RESET_PASSWORD_ERROR","SEND_IDENTITY_PROVIDER_LINK_ERROR","RESET_PASSWORD_ERROR","IDENTITY_PROVIDER_FIRST_LOGIN_ERROR","IDENTITY_PROVIDER_POST_LOGIN_ERROR","CUSTOM_REQUIRED_ACTION_ERROR","EXECUTE_ACTIONS_ERROR","CLIENT_REGISTER_ERROR","CLIENT_UPDATE_ERROR","CLIENT_DELETE_ERROR"]' -s eventsExpiration=172800
-
-Or on Windows:
-
-    c:\> kcadm update events/config -r demorealm -s eventsEnabled=true -s "enabledEventTypes=[\"LOGIN_ERROR\",\"REGISTER_ERROR\",\"LOGOUT_ERROR\",\"CODE_TO_TOKEN_ERROR\",\"CLIENT_LOGIN_ERROR\",\"FEDERATED_IDENTITY_LINK_ERROR\",\"REMOVE_FEDERATED_IDENTITY_ERROR\",\"UPDATE_EMAIL_ERROR\",\"UPDATE_PROFILE_ERROR\",\"UPDATE_PASSWORD_ERROR\",\"UPDATE_TOTP_ERROR\",\"VERIFY_EMAIL_ERROR\",\"REMOVE_TOTP_ERROR\",\"SEND_VERIFY_EMAIL_ERROR\",\"SEND_RESET_PASSWORD_ERROR\",\"SEND_IDENTITY_PROVIDER_LINK_ERROR\",\"RESET_PASSWORD_ERROR\",\"IDENTITY_PROVIDER_FIRST_LOGIN_ERROR\",\"IDENTITY_PROVIDER_POST_LOGIN_ERROR\",\"CUSTOM_REQUIRED_ACTION_ERROR\",\"EXECUTE_ACTIONS_ERROR\",\"CLIENT_REGISTER_ERROR\",\"CLIENT_UPDATE_ERROR\",\"CLIENT_DELETE_ERROR\"]" -s eventsExpiration=172800
-
-Here is how you reset stored event types to *all available event types* - setting to empty list is the same as enumerating all:
-
-    $ kcadm.sh update events/config -r demorealm -s enabledEventTypes=[]
-
-
-And here is how you enable storage of auditing events:
-
-    $ kcadm.sh update events/config -r demorealm -s adminEventsEnabled=true -s adminEventsDetailsEnabled=true
-
-
-Here is how you get the last 100 events - they are ordered from newest to oldest:
-
-    $ kcadm.sh get events --offset 0 --limit 100
-
-
-Here is how you delete all saved events:
-
-    $ kcadm delete events
-
-
-Flushing the caches::
-
-Use `create` operation, and one of the following endpoints: `clear-realm-cache`, `clear-user-cache`, `clear-keys-cache`.
-
-Set `realm` to the same value as target realm.
-
+. Get the `ID` of the target realm before adding a new RSA-generated key pair.
++
 For example:
++
+[options="nowrap"]
+----
+$ kcadm.sh get realms/demorealm --fields id --format csv --noquotes
+----
+. Add a new key provider with a higher priority than the existing providers as revealed by [command]`kcadm.sh get keys -r demorealm`.
++
+For example, on:
++
+* Linux:
++
+[options="nowrap"]
+----
+$ kcadm.sh create components -r demorealm -s name=rsa-generated -s providerId=rsa-generated -s providerType=org.keycloak.keys.KeyProvider -s parentId=959844c1-d149-41d7-8359-6aa527fca0b0 -s 'config.priority=["101"]' -s 'config.enabled=["true"]' -s 'config.active=["true"]' -s 'config.keySize=["2048"]'
+----
+* Windows:
++
+[options="nowrap"]
+----
+c:\> kcadm create components -r demorealm -s name=rsa-generated -s providerId=rsa-generated -s providerType=org.keycloak.keys.KeyProvider -s parentId=959844c1-d149-41d7-8359-6aa527fca0b0 -s "config.priority=[\"101\"]" -s "config.enabled=[\"true\"]" -s "config.active=[\"true\"]" -s "config.keySize=[\"2048\"]"
+----
+. Set the `parentId` attribute to the value of target realm's `ID`.
++
+The newly added key should now become the active key as revealed by [command]`kcadm.sh get keys -r demorealm`.
 
-    $ kcadm.sh create clear-realm-cache -r demorealm -s realm=demorealm
 
-    $ kcadm.sh create clear-user-cache -r demorealm -s realm=demorealm
+==== Adding new realm keys from a Java Key Store file
 
-    $ kcadm.sh create clear-keys-cache -r demorealm -s realm=demorealm
+. Add a new key provider to add a new key pair already prepared as a JKS file on the server.
++
+For example, on:
++
+* Linux:
++
+[options="nowrap"]
+----
+$ kcadm.sh create components -r demorealm -s name=java-keystore -s providerId=java-keystore -s providerType=org.keycloak.keys.KeyProvider -s parentId=959844c1-d149-41d7-8359-6aa527fca0b0 -s 'config.priority=["101"]' -s 'config.enabled=["true"]' -s 'config.active=["true"]' -s 'config.keystore=["/opt/keycloak/keystore.jks"]' -s 'config.keystorePassword=["secret"]' -s 'config.keyPassword=["secret"]' -s 'config.alias=["localhost"]'
+----
+* Windows:
++
+[options="nowrap"]
+----
+c:\> kcadm create components -r demorealm -s name=java-keystore -s providerId=java-keystore -s providerType=org.keycloak.keys.KeyProvider -s parentId=959844c1-d149-41d7-8359-6aa527fca0b0 -s "config.priority=[\"101\"]" -s "config.enabled=[\"true\"]" -s "config.active=[\"true\"]" -s "config.keystore=[\"/opt/keycloak/keystore.jks\"]" -s "config.keystorePassword=[\"secret\"]" -s "config.keyPassword=[\"secret\"]" -s "config.alias=[\"localhost\"]"
+----
+. Make sure to change the attribute values for `keystore`, `keystorePassword`, `keyPassword`, and `alias` to match your specific keystore.
+. Set the `parentId` attribute to the value of target realm's `ID`.
+
+
+==== Making the key passive or disabling the key
+
+. Identify the key you want to make passive
++
+[options="nowrap"]
+----
+$ kcadm.sh get keys -r demorealm
+----
+. Use the key's `providerId` attribute to construct an endpoint URI: [filename]`components/PROVIDER_ID`.
+. Perform an [command]`update`.
++
+For example, on:
+
+* Linux:
++
+[options="nowrap"]
+----
+$ kcadm.sh update components/PROVIDER_ID -r demorealm -s 'config.active=["false"]'
+----
+* Windows:
++
+[options="nowrap"]
+----
+c:\> kcadm update components/PROVIDER_ID -r demorealm -s "config.active=[\"false\"]"
+----
++
+You can update other key attributes.
+. Set a new `enabled` value to disable the key, for example, `config.enabled=["false"]`.
+. Set a new `priority` value to change the key's priority, for example, `config.priority=["110"]`.
+
+
+==== Deleting an old key
+
+. Make sure the key you are deleting has been passive and disabled to prevent any existing tokens held by applications and users from abruptly failing to work.
+. Identify the key you want to make passive.
++
+[options="nowrap"]
+----
+$ kcadm.sh get keys -r demorealm
+----
+. Use the `providerId` of that key to perform a delete.
++
+[options="nowrap"]
+----
+$ kcadm.sh delete components/PROVIDER_ID -r demorealm
+----
+
+
+==== Configuring event logging for a realm
+
+Use the [command]`update` command on the [filename]`events/config` endpoint.
+
+The `eventsListeners` attribute contains a list of EventListenerProviderFactory IDs that specify all event listeners receiving events. Separately, there are attributes that control a built-in event storage, which allows querying past events via the Admin REST API. There is separate control over logging of service calls (`eventsEnabled`) and auditing events triggered during Admin Console or Admin REST API (`adminEventsEnabled`). You may want to set up expiry of old events so that your database does not fill up; `eventsExpiration` is set to time-to-live expressed in seconds.
+
+Here is an example of setting up a built-in event listener that receives all the events and logs them through jboss-logging. (Using a logger called `org.keycloak.events`, error events are logged as `WARN`, and others are logged as `DEBUG`.)
+
+For example, on:
+
+* Linux:
+[options="nowrap"]
+----
+$ kcadm.sh update events/config -r demorealm -s 'eventsListeners=["jboss-logging"]'
+----
+* Windows:
+[options="nowrap"]
+----
+c:\> kcadm update events/config -r demorealm -s "eventsListeners=[\"jboss-logging\"]"
+----
+
+Here is an example of turning on storage of all available ERROR events&#8212;not including auditing events&#8212;for 2 days so they can be retrieved via Admin REST.
+
+For example, on:
+
+* Linux:
+[options="nowrap"]
+----
+$ kcadm.sh update events/config -r demorealm -s eventsEnabled=true -s 'enabledEventTypes=["LOGIN_ERROR","REGISTER_ERROR","LOGOUT_ERROR","CODE_TO_TOKEN_ERROR","CLIENT_LOGIN_ERROR","FEDERATED_IDENTITY_LINK_ERROR","REMOVE_FEDERATED_IDENTITY_ERROR","UPDATE_EMAIL_ERROR","UPDATE_PROFILE_ERROR","UPDATE_PASSWORD_ERROR","UPDATE_TOTP_ERROR","VERIFY_EMAIL_ERROR","REMOVE_TOTP_ERROR","SEND_VERIFY_EMAIL_ERROR","SEND_RESET_PASSWORD_ERROR","SEND_IDENTITY_PROVIDER_LINK_ERROR","RESET_PASSWORD_ERROR","IDENTITY_PROVIDER_FIRST_LOGIN_ERROR","IDENTITY_PROVIDER_POST_LOGIN_ERROR","CUSTOM_REQUIRED_ACTION_ERROR","EXECUTE_ACTIONS_ERROR","CLIENT_REGISTER_ERROR","CLIENT_UPDATE_ERROR","CLIENT_DELETE_ERROR"]' -s eventsExpiration=172800
+----
+* Windows:
+[options="nowrap"]
+----
+c:\> kcadm update events/config -r demorealm -s eventsEnabled=true -s "enabledEventTypes=[\"LOGIN_ERROR\",\"REGISTER_ERROR\",\"LOGOUT_ERROR\",\"CODE_TO_TOKEN_ERROR\",\"CLIENT_LOGIN_ERROR\",\"FEDERATED_IDENTITY_LINK_ERROR\",\"REMOVE_FEDERATED_IDENTITY_ERROR\",\"UPDATE_EMAIL_ERROR\",\"UPDATE_PROFILE_ERROR\",\"UPDATE_PASSWORD_ERROR\",\"UPDATE_TOTP_ERROR\",\"VERIFY_EMAIL_ERROR\",\"REMOVE_TOTP_ERROR\",\"SEND_VERIFY_EMAIL_ERROR\",\"SEND_RESET_PASSWORD_ERROR\",\"SEND_IDENTITY_PROVIDER_LINK_ERROR\",\"RESET_PASSWORD_ERROR\",\"IDENTITY_PROVIDER_FIRST_LOGIN_ERROR\",\"IDENTITY_PROVIDER_POST_LOGIN_ERROR\",\"CUSTOM_REQUIRED_ACTION_ERROR\",\"EXECUTE_ACTIONS_ERROR\",\"CLIENT_REGISTER_ERROR\",\"CLIENT_UPDATE_ERROR\",\"CLIENT_DELETE_ERROR\"]" -s eventsExpiration=172800
+----
+
+Here is an example of how to reset stored event types to *all available event types*; setting to empty list is the same as enumerating all.
+[options="nowrap"]
+----
+$ kcadm.sh update events/config -r demorealm -s enabledEventTypes=[]
+----
+
+Here is an example of how to enable storage of auditing events.
+[options="nowrap"]
+----
+$ kcadm.sh update events/config -r demorealm -s adminEventsEnabled=true -s adminEventsDetailsEnabled=true
+----
+
+Here is an example of how to get the last 100 events; they are ordered from newest to oldest.
+[options="nowrap"]
+----
+$ kcadm.sh get events --offset 0 --limit 100
+----
+
+Here is an example of how to delete all saved events.
+[options="nowrap"]
+----
+$ kcadm delete events
+----
+
+
+==== Flushing the caches
+
+. Use the [command]`create` operation and one of the following endpoints: [filename]`clear-realm-cache`, [filename]`clear-user-cache`, or [filename]`clear-keys-cache`.
+. Set `realm` to the same value as the target realm.
++
+For example:
++
+[options="nowrap"]
+----
+$ kcadm.sh create clear-realm-cache -r demorealm -s realm=demorealm
+$ kcadm.sh create clear-user-cache -r demorealm -s realm=demorealm
+$ kcadm.sh create clear-keys-cache -r demorealm -s realm=demorealm
+----
 
 
 === Role operations
 
-Creating a realm role::
+==== Creating a realm role
 
 To create a realm role use `roles` endpoint:
 
