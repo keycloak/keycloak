@@ -261,11 +261,19 @@ public interface TestingResource {
     @Produces(MediaType.APPLICATION_JSON)
     Response suspendPeriodicTasks();
 
-
     @POST
     @Path("/restore-periodic-tasks")
     @Produces(MediaType.APPLICATION_JSON)
     Response restorePeriodicTasks();
+
+    @GET
+    @Path("/uncaught-error")
+    @Produces(MediaType.TEXT_HTML_UTF_8)
+    Response uncaughtError();
+
+    @GET
+    @Path("/uncaught-error")
+    Response uncaughtErrorJson();
 
     @POST
     @Path("/run-on-server")
