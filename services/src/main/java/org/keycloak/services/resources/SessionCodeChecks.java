@@ -47,6 +47,7 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.util.BrowserHistoryHelper;
 import org.keycloak.services.util.AuthenticationFlowURLHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 
 public class SessionCodeChecks {
@@ -132,12 +133,6 @@ public class SessionCodeChecks {
             return null;
         }
 
-        // object retrieve
-        AuthenticationSessionModel authSession = ClientSessionCode.getClientSession(code, session, realm, event, AuthenticationSessionModel.class);
-        if (authSession != null) {
-            return authSession;
-        }
-
         // Setup client to be shown on error/info page based on "client_id" parameter
         logger.debugf("Will use client '%s' in back-to-application link", clientId);
         ClientModel client = null;
@@ -148,8 +143,16 @@ public class SessionCodeChecks {
             session.getContext().setClient(client);
         }
 
+        // object retrieve
+        AuthenticationSessionManager authSessionManager = new AuthenticationSessionManager(session);
+        AuthenticationSessionModel authSession = authSessionManager.getCurrentAuthenticationSession(realm, client);
+        if (authSession != null) {
+            return authSession;
+        }
+
         // See if we are already authenticated and userSession with same ID exists.
-        String sessionId = new AuthenticationSessionManager(session).getCurrentAuthenticationSessionId(realm);
+        String sessionId = authSessionManager.getCurrentAuthenticationSessionId(realm);
+        RootAuthenticationSessionModel existingRootAuthSession = null;
         if (sessionId != null) {
             UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
             if (userSession != null) {
@@ -164,10 +167,13 @@ public class SessionCodeChecks {
                 response = loginForm.createInfoPage();
                 return null;
             }
+
+
+            existingRootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, sessionId);
         }
 
         // Otherwise just try to restart from the cookie
-        response = restartAuthenticationSessionFromCookie();
+        response = restartAuthenticationSessionFromCookie(existingRootAuthSession);
         return null;
     }
 
@@ -186,7 +192,7 @@ public class SessionCodeChecks {
         }
 
         // Client checks
-        event.detail(Details.CODE_ID, authSession.getId());
+        event.detail(Details.CODE_ID, authSession.getParentSession().getId());
         ClientModel client = authSession.getClient();
         if (client == null) {
             event.error(Errors.CLIENT_NOT_FOUND);
@@ -240,7 +246,7 @@ public class SessionCodeChecks {
                 return false;
             }
         } else {
-            ClientSessionCode.ParseResult<AuthenticationSessionModel> result = ClientSessionCode.parseResult(code, session, realm, event, AuthenticationSessionModel.class);
+            ClientSessionCode.ParseResult<AuthenticationSessionModel> result = ClientSessionCode.parseResult(code, session, realm, client, event, AuthenticationSessionModel.class);
             clientCode = result.getCode();
             if (clientCode == null) {
 
@@ -341,11 +347,12 @@ public class SessionCodeChecks {
     }
 
 
-    private Response restartAuthenticationSessionFromCookie() {
+    private Response restartAuthenticationSessionFromCookie(RootAuthenticationSessionModel existingRootSession) {
         logger.debug("Authentication session not found. Trying to restart from cookie.");
         AuthenticationSessionModel authSession = null;
+
         try {
-            authSession = RestartLoginCookie.restartSession(session, realm);
+            authSession = RestartLoginCookie.restartSession(session, realm, existingRootSession, clientId);
         } catch (Exception e) {
             ServicesLogger.LOGGER.failedToParseRestartLoginCookie(e);
         }

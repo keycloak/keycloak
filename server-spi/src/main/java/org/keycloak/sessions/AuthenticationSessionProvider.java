@@ -31,26 +31,26 @@ public interface AuthenticationSessionProvider extends Provider {
      * Creates and registers a new authentication session with random ID. Authentication session
      * entity will be prefilled with current timestamp, the given realm and client.
      */
-    AuthenticationSessionModel createAuthenticationSession(RealmModel realm, ClientModel client);
+    RootAuthenticationSessionModel createRootAuthenticationSession(RealmModel realm);
 
-    AuthenticationSessionModel createAuthenticationSession(String id, RealmModel realm, ClientModel client);
+    RootAuthenticationSessionModel createRootAuthenticationSession(String id, RealmModel realm);
 
-    AuthenticationSessionModel getAuthenticationSession(RealmModel realm, String authenticationSessionId);
+    RootAuthenticationSessionModel getRootAuthenticationSession(RealmModel realm, String authenticationSessionId);
 
-    void removeAuthenticationSession(RealmModel realm, AuthenticationSessionModel authenticationSession);
+    void removeRootAuthenticationSession(RealmModel realm, RootAuthenticationSessionModel authenticationSession);
 
     void removeExpired(RealmModel realm);
     void onRealmRemoved(RealmModel realm);
     void onClientRemoved(RealmModel realm, ClientModel client);
 
     /**
-     * Requests update of authNotes of an authentication session that is not owned
+     * Requests update of authNotes of a root authentication session that is not owned
      * by this instance but might exist somewhere in the cluster.
      * 
      * @param authSessionId
      * @param authNotesFragment Map with authNote values. Auth note is removed if the corresponding value in the map is {@code null}.
      */
-    void updateNonlocalSessionAuthNotes(String authSessionId, Map<String, String> authNotesFragment);
+    void updateNonlocalSessionAuthNotes(String authSessionId, ClientModel client, Map<String, String> authNotesFragment);
 
 
 }

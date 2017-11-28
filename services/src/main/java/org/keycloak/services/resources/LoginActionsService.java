@@ -72,6 +72,7 @@ import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.AuthenticationFlowURLHelper;
 import org.keycloak.services.util.BrowserHistoryHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -333,7 +334,8 @@ public class LoginActionsService {
     public Response resetCredentialsGET(@QueryParam("code") String code,
                                         @QueryParam("execution") String execution,
                                         @QueryParam("client_id") String clientId) {
-        AuthenticationSessionModel authSession = new AuthenticationSessionManager(session).getCurrentAuthenticationSession(realm);
+        ClientModel client = realm.getClientByClientId(clientId);
+        AuthenticationSessionModel authSession = new AuthenticationSessionManager(session).getCurrentAuthenticationSession(realm, client);
 
         // we allow applications to link to reset credentials without going through OAuth or SAML handshakes
         if (authSession == null && code == null) {
@@ -357,7 +359,10 @@ public class LoginActionsService {
 
         // set up the account service as the endpoint to call.
         ClientModel client = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
-        authSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, client, true);
+
+        RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, true);
+        authSession = rootAuthSession.createAuthenticationSession(client);
+
         authSession.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
         //authSession.setNote(AuthenticationManager.END_AFTER_REQUIRED_ACTIONS, "true");
         authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
@@ -413,9 +418,8 @@ public class LoginActionsService {
         ActionTokenContext<T> tokenContext;
         String eventError = null;
         String defaultErrorMessage = null;
-        AuthenticationSessionModel authSession = new AuthenticationSessionManager(session).getCurrentAuthenticationSession(realm);
 
-        event.event(EventType.EXECUTE_ACTION_TOKEN);
+        AuthenticationSessionModel authSession = null;
 
         // Setup client, so error page will contain "back to application" link
         ClientModel client = null;
@@ -424,7 +428,10 @@ public class LoginActionsService {
         }
         if (client != null) {
             session.getContext().setClient(client);
+            authSession = new AuthenticationSessionManager(session).getCurrentAuthenticationSession(realm, client);
         }
+
+        event.event(EventType.EXECUTE_ACTION_TOKEN);
 
         // First resolve action token handler
         try {
@@ -500,7 +507,7 @@ public class LoginActionsService {
                 authSession = handler.startFreshAuthenticationSession(token, tokenContext);
                 tokenContext.setAuthenticationSession(authSession, true);
             } else if (tokenAuthSessionId == null ||
-              ! LoginActionsServiceChecks.doesAuthenticationSessionFromCookieMatchOneFromToken(tokenContext, tokenAuthSessionId)) {
+              ! LoginActionsServiceChecks.doesAuthenticationSessionFromCookieMatchOneFromToken(tokenContext, tokenAuthSessionId, client)) {
                 // There exists an authentication session but no auth session ID was received in the action token
                 logger.debugf("Authentication session in progress but no authentication session ID was found in action token %s, restarting.", token.getId());
                 new AuthenticationSessionManager(session).removeAuthenticationSession(realm, authSession, false);
@@ -737,7 +744,7 @@ public class LoginActionsService {
 
     public static Response redirectToAfterBrokerLoginEndpoint(KeycloakSession session, RealmModel realm, UriInfo uriInfo, AuthenticationSessionModel authSession, boolean firstBrokerLogin) {
         ClientSessionCode<AuthenticationSessionModel> accessCode = new ClientSessionCode<>(session, realm, authSession);
-        authSession.setTimestamp(Time.currentTime());
+        authSession.getParentSession().setTimestamp(Time.currentTime());
 
         String clientId = authSession.getClient().getClientId();
         URI redirect = firstBrokerLogin ? Urls.identityProviderAfterFirstBrokerLogin(uriInfo.getBaseUri(), realm.getName(), accessCode.getOrGenerateCode(), clientId) :
@@ -816,7 +823,7 @@ public class LoginActionsService {
         OIDCResponseMode responseMode = OIDCResponseMode.parse(respMode, OIDCResponseType.parse(responseType));
 
         event.event(EventType.LOGIN).client(authSession.getClient())
-                .detail(Details.CODE_ID, authSession.getId())
+                .detail(Details.CODE_ID, authSession.getParentSession().getId())
                 .detail(Details.REDIRECT_URI, authSession.getRedirectUri())
                 .detail(Details.AUTH_METHOD, authSession.getProtocol())
                 .detail(Details.RESPONSE_TYPE, responseType)

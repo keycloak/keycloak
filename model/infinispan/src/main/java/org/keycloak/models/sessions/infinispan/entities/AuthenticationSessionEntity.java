@@ -17,52 +17,33 @@
 
 package org.keycloak.models.sessions.infinispan.entities;
 
-import java.util.HashMap;
-import java.util.HashSet;
+import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
+import org.infinispan.util.concurrent.ConcurrentHashSet;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class AuthenticationSessionEntity extends SessionEntity {
+public class AuthenticationSessionEntity implements Serializable {
 
-    private String id;
-
-    private String clientUuid;
     private String authUserId;
 
     private String redirectUri;
-    private int timestamp;
     private String action;
     private Set<String> roles;
     private Set<String> protocolMappers;
 
-    private Map<String, AuthenticationSessionModel.ExecutionStatus> executionStatus  = new HashMap<>();
+    private Map<String, AuthenticationSessionModel.ExecutionStatus> executionStatus = new ConcurrentHashMap<>();
     private String protocol;
 
     private Map<String, String> clientNotes;
     private Map<String, String> authNotes;
-    private Set<String> requiredActions  = new HashSet<>();
+    private Set<String> requiredActions  = new ConcurrentHashSet<>();
     private Map<String, String> userSessionNotes;
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getClientUuid() {
-        return clientUuid;
-    }
-
-    public void setClientUuid(String clientUuid) {
-        this.clientUuid = clientUuid;
-    }
 
     public String getAuthUserId() {
         return authUserId;
@@ -78,14 +59,6 @@ public class AuthenticationSessionEntity extends SessionEntity {
 
     public void setRedirectUri(String redirectUri) {
         this.redirectUri = redirectUri;
-    }
-
-    public int getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(int timestamp) {
-        this.timestamp = timestamp;
     }
 
     public String getAction() {
@@ -160,25 +133,4 @@ public class AuthenticationSessionEntity extends SessionEntity {
         this.authNotes = authNotes;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof AuthenticationSessionEntity)) return false;
-
-        AuthenticationSessionEntity that = (AuthenticationSessionEntity) o;
-
-        if (id != null ? !id.equals(that.id) : that.id != null) return false;
-
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        return id != null ? id.hashCode() : 0;
-    }
-
-    @Override
-    public String toString() {
-        return String.format("AuthenticationSessionEntity [id=%s, realm=%s, clientUuid=%s ]", getId(), getRealmId(), getClientUuid());
-    }
 }

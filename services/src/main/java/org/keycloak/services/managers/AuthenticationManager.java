@@ -56,6 +56,7 @@ import org.keycloak.services.util.CookieHelper;
 import org.keycloak.services.util.P3PHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 import javax.crypto.SecretKey;
 import javax.ws.rs.core.Cookie;
@@ -215,16 +216,20 @@ public class AuthenticationManager {
     }
 
     private static AuthenticationSessionModel createOrJoinLogoutSession(RealmModel realm, final AuthenticationSessionManager asm, boolean browserCookie) {
+        // Account management client is used as a placeholder
         ClientModel client = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
-        AuthenticationSessionModel logoutAuthSession = asm.getCurrentAuthenticationSession(realm);
+
+        AuthenticationSessionModel logoutAuthSession = asm.getCurrentAuthenticationSession(realm, client);
         // Try to join existing logout session if it exists and browser session is required
         if (browserCookie && logoutAuthSession != null) {
             if (Objects.equals(AuthenticationSessionModel.Action.LOGGING_OUT.name(), logoutAuthSession.getAction())) {
                 return logoutAuthSession;
             }
-            logoutAuthSession.restartSession(realm, client);
+            // Re-create the authentication session for logout
+            logoutAuthSession = logoutAuthSession.getParentSession().createAuthenticationSession(client);
         } else {
-            logoutAuthSession = asm.createAuthenticationSession(realm, client, browserCookie);
+            RootAuthenticationSessionModel rootLogoutSession = asm.createAuthenticationSession(realm, browserCookie);
+            logoutAuthSession = rootLogoutSession.createAuthenticationSession(client);
         }
         logoutAuthSession.setAction(AuthenticationSessionModel.Action.LOGGING_OUT.name());
         return logoutAuthSession;
@@ -381,8 +386,8 @@ public class AuthenticationManager {
     /**
      * Sets logout state of the particular client into the {@code logoutAuthSession}
      * @param logoutAuthSession logoutAuthSession. May be {@code null} in which case this is a no-op.
-     * @param client Client. Must not be {@code null}
-     * @param state
+     * @param clientUuid Client. Must not be {@code null}
+     * @param action
      */
     public static void setClientLogoutAction(AuthenticationSessionModel logoutAuthSession, String clientUuid, AuthenticationSessionModel.Action action) {
         if (logoutAuthSession != null && clientUuid != null) {
@@ -479,8 +484,11 @@ public class AuthenticationManager {
     }
 
     public static Response finishBrowserLogout(KeycloakSession session, RealmModel realm, UserSessionModel userSession, UriInfo uriInfo, ClientConnection connection, HttpHeaders headers) {
+        // Account management client is used as a placeholder
+        ClientModel client = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+
         final AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
-        AuthenticationSessionModel logoutAuthSession = asm.getCurrentAuthenticationSession(realm);
+        AuthenticationSessionModel logoutAuthSession = asm.getCurrentAuthenticationSession(realm, client);
         checkUserSessionOnlyHasLoggedOutClients(realm, userSession, logoutAuthSession);
 
         expireIdentityCookie(realm, uriInfo, connection);
@@ -832,7 +840,7 @@ public class AuthenticationManager {
 
         logger.debugv("processAccessCode: go to oauth page?: {0}", client.isConsentRequired());
 
-        event.detail(Details.CODE_ID, authSession.getId());
+        event.detail(Details.CODE_ID, authSession.getParentSession().getId());
 
         Set<String> requiredActions = user.getRequiredActions();
         Response action = executionActions(session, authSession, request, event, realm, user, requiredActions);

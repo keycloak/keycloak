@@ -30,6 +30,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilderException;
 import javax.ws.rs.core.UriInfo;
 import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 /**
  *
@@ -111,7 +112,9 @@ public class ActionTokenContext<T extends JsonWebToken> {
         // set up the account service as the endpoint to call.
         ClientModel client = realm.getClientByClientId(clientId == null ? Constants.ACCOUNT_MANAGEMENT_CLIENT_ID : clientId);
         
-        authSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, client, true);
+        RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, true);
+        authSession = rootAuthSession.createAuthenticationSession(client);
+
         authSession.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
         authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         String redirectUri = Urls.accountBase(uriInfo.getBaseUri()).path("/").build(realm.getName()).toString();

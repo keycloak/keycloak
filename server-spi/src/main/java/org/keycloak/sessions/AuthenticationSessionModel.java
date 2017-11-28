@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
 /**
@@ -31,10 +30,8 @@ import org.keycloak.models.UserModel;
  */
 public interface AuthenticationSessionModel extends CommonClientSessionModel {
 
-//
-//    public UserSessionModel getUserSession();
-//    public void setUserSession(UserSessionModel userSession);
 
+    RootAuthenticationSessionModel getParentSession();
 
     Map<String, ExecutionStatus> getExecutionStatus();
     void setExecutionStatus(String authenticator, ExecutionStatus status);
@@ -125,8 +122,4 @@ public interface AuthenticationSessionModel extends CommonClientSessionModel {
      */
     void clearClientNotes();
 
-    void updateClient(ClientModel client);
-
-    // Will completely restart whole state of authentication session. It will just keep same ID. It will setup it with provided realm and client.
-    void restartSession(RealmModel realm, ClientModel client);
 }

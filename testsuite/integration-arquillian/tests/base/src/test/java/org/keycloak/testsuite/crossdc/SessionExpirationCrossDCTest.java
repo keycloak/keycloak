@@ -630,23 +630,4 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
     }
 
 
-    @Test
-    public void testClientRemoveAuthSessions(
-            @JmxInfinispanChannelStatistics() InfinispanStatistics channelStatisticsCrossDc) throws Exception {
-
-        createInitialAuthSessions();
-
-        channelStatisticsCrossDc.reset();
-
-        // Remove test-app client
-        ApiUtil.findClientByClientId(getAdminClient().realm(REALM_NAME), "test-app").remove();
-
-        // Assert sessions removed on node1 and node2 and on remote caches.
-        assertAuthSessionsStatisticsExpected("After client removed", channelStatisticsCrossDc,
-                0);
-    }
-
-
-
-
 }

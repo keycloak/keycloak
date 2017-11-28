@@ -26,6 +26,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.cache.infinispan.events.AuthenticationSessionAuthNoteUpdateEvent;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticationSessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.events.AbstractAuthSessionClusterListener;
 import org.keycloak.models.sessions.infinispan.events.ClientRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
@@ -46,7 +47,7 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
 
     private static final Logger log = Logger.getLogger(InfinispanAuthenticationSessionProviderFactory.class);
 
-    private volatile Cache<String, AuthenticationSessionEntity> authSessionsCache;
+    private volatile Cache<String, RootAuthenticationSessionEntity> authSessionsCache;
 
     public static final String PROVIDER_ID = "infinispan";
 
@@ -113,11 +114,18 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
         }
 
         AuthenticationSessionAuthNoteUpdateEvent event = (AuthenticationSessionAuthNoteUpdateEvent) clEvent;
-        AuthenticationSessionEntity authSession = this.authSessionsCache.get(event.getAuthSessionId());
-        updateAuthSession(authSession, event.getAuthNotesFragment());
+        RootAuthenticationSessionEntity authSession = this.authSessionsCache.get(event.getAuthSessionId());
+        updateAuthSession(authSession, event.getClientUUID(), event.getAuthNotesFragment());
     }
 
-    private static void updateAuthSession(AuthenticationSessionEntity authSession, Map<String, String> authNotesFragment) {
+
+    private static void updateAuthSession(RootAuthenticationSessionEntity rootAuthSession, String clientUUID, Map<String, String> authNotesFragment) {
+        if (rootAuthSession == null) {
+            return;
+        }
+
+        AuthenticationSessionEntity authSession = rootAuthSession.getAuthenticationSessions().get(clientUUID);
+
         if (authSession != null) {
             if (authSession.getAuthNotes() == null) {
                 authSession.setAuthNotes(new ConcurrentHashMap<>());

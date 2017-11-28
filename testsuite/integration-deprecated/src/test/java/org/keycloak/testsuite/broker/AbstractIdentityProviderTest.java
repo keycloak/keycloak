@@ -356,15 +356,16 @@ public abstract class AbstractIdentityProviderTest {
         assertEquals("text/html; charset=UTF-8", htmlContentType);
 
         final String htmlBody = (String) multipart.getBodyPart(1).getContent();
-        
+
+        final String htmlChangePwdUrl = MailUtil.getLink(htmlBody);
         // .replace() accounts for escaping the ampersand
         // It's not escaped in the html version because html retrieved from a
         // message bundle is considered safe and it must be unescaped to display
         // properly.
-        final String htmlVerificationUrl = MailUtil.getLink(htmlBody).replace("&", "&amp;");
+        final String htmlChangePwdUrlToCompare = htmlChangePwdUrl.replace("&", "&amp;");
 
-        assertEquals(htmlVerificationUrl, textVerificationUrl);
+        assertEquals(htmlChangePwdUrlToCompare, textVerificationUrl);
 
-        return htmlVerificationUrl;
+        return htmlChangePwdUrl;
     }
 }
