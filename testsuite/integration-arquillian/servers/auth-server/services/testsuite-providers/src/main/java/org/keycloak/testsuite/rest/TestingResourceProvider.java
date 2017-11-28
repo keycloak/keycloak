@@ -690,6 +690,12 @@ public class TestingResourceProvider implements RealmResourceProvider {
         return Response.noContent().build();
     }
 
+    @GET
+    @Path("/uncaught-error")
+    public Response uncaughtError() {
+        throw new RuntimeException("Uncaught error");
+    }
+
     private void suspendTask(String taskName) {
         TimerProvider.TimerTaskContext taskContext = session.getProvider(TimerProvider.class).cancelTask(taskName);
 
