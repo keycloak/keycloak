@@ -548,6 +548,7 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, $route, R
                 Notifications.success("The password has been reset");
                 $scope.password = null;
                 $scope.confirmPassword = null;
+                $route.reload();
             });
         }, function() {
             $scope.password = null;
