@@ -350,6 +350,14 @@ public class OAuthRequestAuthenticator {
         tokenString = tokenResponse.getToken();
         refreshToken = tokenResponse.getRefreshToken();
         idTokenString = tokenResponse.getIdToken();
+
+        log.debug("Verifying tokens");
+        if (log.isTraceEnabled()) {
+            logToken("\taccess_token", tokenString);
+            logToken("\tid_token", idTokenString);
+            logToken("\trefresh_token", refreshToken);
+        }
+
         try {
             token = AdapterRSATokenVerifier.verifyToken(tokenString, deployment);
             if (idTokenString != null) {
@@ -404,4 +412,13 @@ public class OAuthRequestAuthenticator {
         return originalUri;
     }
 
+    private void logToken(String name, String token) {
+        try {
+            JWSInput jwsInput = new JWSInput(token);
+            String wireString = jwsInput.getWireString();
+            log.tracef("\t%s: %s", name, wireString.substring(0, wireString.lastIndexOf(".")) + ".signature");
+        } catch (JWSInputException e) {
+            log.errorf(e, "Failed to parse %s: %s", name, token);
+        }
+    }
 }
