@@ -36,6 +36,9 @@ public class LoginPasswordUpdatePage extends LanguageComboboxAwarePage {
     @FindBy(className = "alert-error")
     private WebElement loginErrorMessage;
 
+    @FindBy(xpath = "//span[@class='kc-feedback-text']")
+    private WebElement feedbackMessage;
+
     public void changePassword(String newPassword, String passwordConfirm) {
         newPasswordInput.sendKeys(newPassword);
         passwordConfirmInput.sendKeys(passwordConfirm);
@@ -55,4 +58,7 @@ public class LoginPasswordUpdatePage extends LanguageComboboxAwarePage {
         return loginErrorMessage != null ? loginErrorMessage.getText() : null;
     }
 
+    public String getFeedbackMessage() {
+        return feedbackMessage.getText();
+    }
 }
