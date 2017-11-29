@@ -598,8 +598,13 @@ public class UserCacheSession implements UserCache {
     }
 
     @Override
+    public int getUsersCount(RealmModel realm, boolean includeServiceAccount) {
+        return getDelegate().getUsersCount(realm, includeServiceAccount);
+    }
+
+    @Override
     public int getUsersCount(RealmModel realm) {
-        return getDelegate().getUsersCount(realm);
+        return getUsersCount(realm, false);
     }
 
     @Override
