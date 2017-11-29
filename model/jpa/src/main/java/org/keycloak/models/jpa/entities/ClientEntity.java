@@ -115,7 +115,7 @@ public class ClientEntity {
 
     @ElementCollection
     @MapKeyColumn(name="NAME")
-    @Column(name="VALUE", length = 2048)
+    @Column(name="VALUE", length = 4000)
     @CollectionTable(name="CLIENT_ATTRIBUTES", joinColumns={ @JoinColumn(name="CLIENT_ID") })
     protected Map<String, String> attributes = new HashMap<String, String>();
 
