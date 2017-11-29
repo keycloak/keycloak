@@ -91,3 +91,5 @@ keycloak.securityConstraints[1].authRoles[0] = admin
 keycloak.securityConstraints[1].securityCollections[0].name = admin stuff
 keycloak.securityConstraints[1].securityCollections[0].patterns[0] = /admin
 ----
+
+WARNING: If you plan to deploy your Spring Application as a WAR then you should not use the Spring Boot Adapter and use the dedicated adapter for the application server or servlet container you are using. Your Spring Boot should also contain a `web.xml` file. 
