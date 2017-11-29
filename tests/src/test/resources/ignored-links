@@ -8,3 +8,8 @@ https://host:port*
 http://broker-keycloak:8180*
 https://expressjs.com/
 https://github.com/keycloak/keycloak/tree/*
+http://node11:8080/auth
+http://node11:8080/auth/admin
+http://node12:8080/auth/admin
+http://node21:8080/auth/admin
+http://node22:8080/auth/admin
