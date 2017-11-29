@@ -19,18 +19,36 @@
 :adapterguide_link: {project_doc_base_url}/securing_apps/
 :adminguide_name: Server Administration Guide
 :adminguide_link: {project_doc_base_url}/server_admin/
+:adminguide_bruteforce_name: Password guess: brute force attacks
+:adminguide_bruteforce_link: {adminguide_link}#password-guess-brute-force-attacks
+:adminguide_clearcache_name: Clearing Server Caches
+:adminguide_clearcache_link: {adminguide_link}#_clear-cache
 :apidocs_name: API Documentation
 :apidocs_link: {project_doc_base_url}/api_documentation/
 :developerguide_name: Server Developer Guide
 :developerguide_link: {project_doc_base_url}/server_development/
+:developerguide_actiontoken_name: Action Token SPI
+:developerguide_actiontoken_link: {developerguide_link}#_action_token_spi
 :gettingstarted_name: Getting Started Guide
 :gettingstarted_link: {project_doc_base_url}/getting_started/
 :upgradingguide_name: Upgrading Guide
 :upgradingguide_link: {project_doc_base_url}/upgrading/
 :installguide_name: Server Installation and Configuration Guide
 :installguide_link: {project_doc_base_url}/server_installation/
+:installguide_clustering_name: Clustering
+:installguide_clustering_link: {installguide_link}#_clustering
+:installguide_database_name: Database
+:installguide_database_link: {installguide_link}#_database
+:installguide_disablingcaching_name: Disabling caching
+:installguide_disablingcaching_link: {installguide_link}#disabling-caching
+:installguide_loadbalancer_name: Setting Up a Load Balancer or Proxy
+:installguide_loadbalancer_link: {installguide_link}#_setting-up-a-load-balancer-or-proxy
 :installguide_profile_name: Profiles
 :installguide_profile_link: {installguide_link}#_profiles
+:installguide_stickysessions_name: Sticky sessions
+:installguide_stickysessions_link: {installguide_link}#sticky-sessions
+:installguide_troubleshooting_name: Troubleshooting
+:installguide_troubleshooting_link: {installguide_link}#troubleshooting
 
 :apidocs_javadocs_name: JavaDocs Documentation
 :apidocs_javadocs_link: http://www.keycloak.org/docs-api/{project_versionDoc}/javadocs/
@@ -57,6 +75,9 @@
 :appserver_admindoc_name: {appserver_name} {appserver_version} Documentation
 :appserver_loadbalancer_link: {appserver_doc_base_url}/High+Availability+Guide
 :appserver_loadbalancer_name: {appserver_name} {appserver_version} Documentation
+
+:jdgserver_name: Infinispan
+:jdgserver_version: 8.2.8
 
 :fuseVersion: JBoss Fuse 6.3.0 Rollup 5
 :fuseHawtioEAPVersion: JBoss EAP 6.4
