@@ -7,7 +7,7 @@ cd /subsystem=datagrid-jgroups
 ./channel=xsite:add(stack=tcp-private)
 
 # 2.b)
-./stack=udp/relay=RELAY:add(site="%LOCAL_SITE%")
+./stack=udp/relay=RELAY:add(site="%LOCAL_SITE%", properties={relay_multicasts=false})
 ./stack=udp/relay=RELAY/remote-site=%REMOTE_SITE%:add(channel=xsite)
 
 
