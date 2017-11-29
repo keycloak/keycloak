@@ -49,31 +49,31 @@
 
         <jboss.as.version>7.2.0.Final</jboss.as.version>
 
-        <aesh.version>0.66.15</aesh.version>
-        <apache.httpcomponents.version>4.5</apache.httpcomponents.version>
-        <apache.httpcomponents.httpcore.version>4.4.1</apache.httpcomponents.httpcore.version>
+        <aesh.version>0.66.19</aesh.version>
+        <apache.httpcomponents.version>4.5.2</apache.httpcomponents.version>
+        <apache.httpcomponents.httpcore.version>4.4.4</apache.httpcomponents.httpcore.version>
         <apache.mime4j.version>0.6</apache.mime4j.version>
-        <jboss.dmr.version>1.3.0.Final</jboss.dmr.version>
+        <jboss.dmr.version>1.4.1.Final</jboss.dmr.version>
         <bouncycastle.version>1.56</bouncycastle.version>
-        <cxf.version>3.1.5</cxf.version>
+        <cxf.version>3.1.12</cxf.version>
         <dom4j.version>1.6.1</dom4j.version>
         <github.relaxng.version>2011.1</github.relaxng.version>
-        <h2.version>1.3.173</h2.version>
-        <hibernate.entitymanager.version>5.0.7.Final</hibernate.entitymanager.version>
+        <h2.version>1.4.193</h2.version>
+        <hibernate.entitymanager.version>5.1.10.Final</hibernate.entitymanager.version>
         <hibernate.javax.persistence.version>1.0.0.Final</hibernate.javax.persistence.version>
         <infinispan.version>8.2.8.Final</infinispan.version>
-        <jackson.version>2.5.4</jackson.version>
-        <jackson.databind.version>2.5.4</jackson.databind.version>
+        <jackson.version>2.8.9</jackson.version>
+        <jackson.databind.version>2.8.9</jackson.databind.version>
         <javax.mail.version>1.5.5</javax.mail.version>
-        <jboss.logging.version>3.3.0.Final</jboss.logging.version>
+        <jboss.logging.version>3.3.1.Final</jboss.logging.version>
         <jboss.logging.tools.version>2.0.1.Final</jboss.logging.tools.version>
         <jboss.logging.tools.wf8.version>1.2.0.Final</jboss.logging.tools.wf8.version>
         <jboss-jaxrs-api_2.0_spec>1.0.0.Final</jboss-jaxrs-api_2.0_spec>
-        <jboss-transaction-api_1.2_spec>1.0.0.Final</jboss-transaction-api_1.2_spec>
+        <jboss-transaction-api_1.2_spec>1.0.1.Final</jboss-transaction-api_1.2_spec>
         <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.2_spec.version>1.0.4.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.2_spec.version>
-        <log4j.version>1.2.16</log4j.version>
+        <log4j.version>1.2.17</log4j.version>
         <resteasy.version>3.0.24.Final</resteasy.version>
-        <slf4j.version>1.7.7</slf4j.version>
+        <slf4j.version>1.7.22</slf4j.version>
         <sun.istack.version>2.21</sun.istack.version>
         <sun.jaxb.version>2.2.11</sun.jaxb.version>
         <sun.xsom.version>20140925</sun.xsom.version>
@@ -81,8 +81,9 @@
         <elytron.version>1.1.6.Final</elytron.version>
         <elytron.undertow-server.version>1.0.1.Final</elytron.undertow-server.version>
         <woodstox.version>5.0.3</woodstox.version>
-        <xmlsec.version>2.0.5</xmlsec.version>
+        <xmlsec.version>2.0.8</xmlsec.version>
         <glassfish.json.version>1.0.4</glassfish.json.version>
+        <wildfly.common.version>1.2.0.Final</wildfly.common.version>
 
         <!-- Authorization Drools Policy Provider -->
         <version.org.drools>6.4.0.Final</version.org.drools>
@@ -647,6 +648,11 @@
                 <groupId>org.wildfly.security</groupId>
                 <artifactId>wildfly-elytron</artifactId>
                 <version>${elytron.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.common</groupId>
+                <artifactId>wildfly-common</artifactId>
+                <version>${wildfly.common.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.wildfly.security.elytron-web</groupId>
