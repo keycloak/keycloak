@@ -399,12 +399,17 @@ public class UserStorageManager implements UserProvider, OnUserCache, OnCreateCo
     }
 
     @Override
-    public int getUsersCount(RealmModel realm) {
-        int size = localStorage().getUsersCount(realm);
+    public int getUsersCount(RealmModel realm, boolean includeServiceAccount) {
+        int size = localStorage().getUsersCount(realm, includeServiceAccount);
         for (UserQueryProvider provider : getStorageProviders(session, realm, UserQueryProvider.class)) {
             size += provider.getUsersCount(realm);
         }
         return size;
+    }
+
+    @Override
+    public int getUsersCount(RealmModel realm) {
+        return getUsersCount(realm, false);
     }
 
     @FunctionalInterface

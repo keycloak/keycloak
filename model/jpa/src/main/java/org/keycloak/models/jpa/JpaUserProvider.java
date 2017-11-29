@@ -596,11 +596,22 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     }
 
     @Override
-    public int getUsersCount(RealmModel realm) {
-        Object count = em.createNamedQuery("getRealmUserCount")
+    public int getUsersCount(RealmModel realm, boolean includeServiceAccount) {
+        String namedQuery = "getRealmUserCountExcludeServiceAccount";
+
+        if (includeServiceAccount) {
+            namedQuery = "getRealmUserCount";
+        }
+
+        Object count = em.createNamedQuery(namedQuery)
                 .setParameter("realmId", realm.getId())
                 .getSingleResult();
         return ((Number)count).intValue();
+    }
+
+    @Override
+    public int getUsersCount(RealmModel realm) {
+        return getUsersCount(realm, false);
     }
 
     @Override

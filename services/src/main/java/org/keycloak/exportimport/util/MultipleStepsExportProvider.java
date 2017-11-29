@@ -81,7 +81,7 @@ public abstract class MultipleStepsExportProvider implements ExportProvider {
 
                 // Count total number of users
                 if (!exportUsersIntoRealmFile) {
-                    usersHolder.totalCount = session.users().getUsersCount(realm);
+                    usersHolder.totalCount = session.users().getUsersCount(realm, true);
                     federatedUsersHolder.totalCount = session.userFederatedStorage().getStoredUsersCount(realm);
                 }
             }

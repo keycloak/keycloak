@@ -357,6 +357,9 @@ public class UserModelTest extends AbstractModelTest {
         Assert.assertTrue(users.contains(user1));
         Assert.assertTrue(users.contains(user2));
 
+        Assert.assertEquals(2, session.users().getUsersCount(realm, true));
+        Assert.assertEquals(1, session.users().getUsersCount(realm, false));
+
         // Remove client
         new ClientManager(realmManager).removeClient(realm, client);
         commit();
