@@ -90,7 +90,7 @@ public class GetCmd extends  AbstractRequestCmd {
         out.println();
         out.println("Command to retrieve existing resources from the server.");
         out.println();
-        out.println("Use `" + CMD + " config credentials` to establish an authenticated session, or use CREDENTIALS OPTIONS");
+        out.println("Use '" + CMD + " config credentials' to establish an authenticated session, or use CREDENTIALS OPTIONS");
         out.println("to perform one time authentication.");
         out.println();
         out.println("Arguments:");
@@ -122,6 +122,18 @@ public class GetCmd extends  AbstractRequestCmd {
         out.println("    --format FORMAT           Set output format to comma-separated-values by using 'csv'. Default format is 'json'");
         out.println("    --noquotes                Don't quote strings when output format is 'csv'");
         out.println("    -a, --admin-root URL      URL of Admin REST endpoint root if not default - e.g. http://localhost:8080/auth/admin");
+        out.println();
+        out.println("Output results can be filtered by using '--fields' and a filter pattern. Filtering is performed by processing each item in a result set");
+        out.println("and applying filter on it. A pattern is defined as a comma separated list of attribute specifiers. Use '*' in a specifier to include all ");
+        out.println("attributes. Use attribute name, to include individual attributes. Use '-' prefix to exclude individual attributes.");
+        out.println("Use brackets after attribute specifier to specify a pattern for child attributes. For example: ");
+        out.println();
+        out.println("   'protocolMappers(id,config)'          only return attributes 'id' and 'config' of protocolMapper top level attribute");
+        out.println("   '*(*(*))'                             return all attributes three levels deep");
+        out.println("   '*(*),-id,-protocolMappers'           return all attributes two levels deep, excluding 'id', and 'protocolMappers' top level attributes");
+        out.println();
+        out.println("If attribute of object type is included, but its children are not specified by using brackets, then an empty object will be returned - '{}'.");
+        out.println("Usually you will want to specify object attributes with brackets to display them fully - e.g. 'protocolMappers(*(*))'");
         out.println();
         out.println("Examples:");
         out.println();

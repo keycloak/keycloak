@@ -323,7 +323,7 @@ public class GetRolesCmd extends GetCmd {
         out.println();
         out.println("Command to list realm or client roles of a realm, a user, a group or a composite role.");
         out.println();
-        out.println("Use `" + CMD + " config credentials` to establish an authenticated session, or use CREDENTIALS OPTIONS");
+        out.println("Use '" + CMD + " config credentials' to establish an authenticated session, or use CREDENTIALS OPTIONS");
         out.println("to perform one time authentication.");
         out.println();
         out.println("If client is specified using --cclientid or --cid then client roles are listed, otherwise realm roles are listed.");
@@ -366,6 +366,13 @@ public class GetRolesCmd extends GetCmd {
         out.println("    --available               Return available roles - those that can still be added");
         out.println("    --effective               Return effective roles - transitively taking composite roles into account");
         out.println("    --all                     Return all client roles in addition to realm roles");
+        out.println();
+        out.println("    -H, --print-headers       Print response headers");
+        out.println("    -F, --fields FILTER       A filter pattern to specify which fields of a JSON response to output");
+        out.println("                              Use '" + CMD + " get --help' for more info on FILTER syntax.");
+        out.println("    -c, --compressed          Don't pretty print the output");
+        out.println("    --format FORMAT           Set output format to comma-separated-values by using 'csv'. Default format is 'json'");
+        out.println("    --noquotes                Don't quote strings when output format is 'csv'");
         out.println("    -a, --admin-root URL      URL of Admin REST endpoint root if not default - e.g. http://localhost:8080/auth/admin");
         out.println("    -r, --target-realm REALM  Target realm to issue requests against if not the one authenticated against");
         out.println();

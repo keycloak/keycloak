@@ -91,7 +91,7 @@ public class CreateCmd extends AbstractRequestCmd {
         out.println();
         out.println("Command to create new resources on the server.");
         out.println();
-        out.println("Use `" + CMD + " config credentials` to establish an authenticated sessions, or use --no-config with ");
+        out.println("Use '" + CMD + " config credentials' to establish an authenticated sessions, or use --no-config with ");
         out.println("CREDENTIALS OPTIONS to perform one time authentication.");
         out.println();
         out.println("Arguments:");
@@ -122,6 +122,7 @@ public class CreateCmd extends AbstractRequestCmd {
         out.println("    -o, --output              After creation output the new resource to standard output");
         out.println("    -i, --id                  After creation only print id of the new resource to standard output");
         out.println("    -F, --fields FILTER       A filter pattern to specify which fields of a JSON response to output");
+        out.println("                              Use '" + CMD + " get --help' for more info on FILTER syntax.");
         out.println("    -c, --compressed          Don't pretty print the output");
         out.println("    -a, --admin-root URL      URL of Admin REST endpoint root if not default - e.g. http://localhost:8080/auth/admin");
         out.println();
