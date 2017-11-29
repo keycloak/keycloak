@@ -406,6 +406,28 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
+    public void countUsersNotServiceAccount() {
+        createUsers();
+
+        Integer count = realm.users().count();
+        assertEquals(9, count.intValue());
+
+        ClientRepresentation client = new ClientRepresentation();
+
+        client.setClientId("test-client");
+        client.setPublicClient(false);
+        client.setSecret("secret");
+        client.setServiceAccountsEnabled(true);
+        client.setEnabled(true);
+        client.setRedirectUris(Arrays.asList("http://url"));
+
+        getAdminClient().realm(REALM_NAME).clients().create(client);
+
+        // KEYCLOAK-5660, should not consider service accounts
+        assertEquals(9, realm.users().count().intValue());
+    }
+
+    @Test
     public void delete() {
         String userId = createUser();
         Response response = realm.users().delete(userId);
