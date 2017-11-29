@@ -62,6 +62,8 @@ import java.net.URI;
 import java.text.MessageFormat;
 import java.util.*;
 
+import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PASSWORD;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -132,7 +134,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 page = LoginFormsPages.LOGIN_UPDATE_PROFILE;
                 break;
             case UPDATE_PASSWORD:
-                actionMessage = Messages.UPDATE_PASSWORD;
+                boolean isRequestedByAdmin = user.getRequiredActions().stream().filter(Objects::nonNull).anyMatch(UPDATE_PASSWORD.toString()::contains);
+                actionMessage = isRequestedByAdmin ? Messages.UPDATE_PASSWORD : Messages.RESET_PASSWORD;
                 page = LoginFormsPages.LOGIN_UPDATE_PASSWORD;
                 break;
             case VERIFY_EMAIL:

@@ -50,6 +50,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.*;
+
 import static org.junit.Assert.*;
 
 /**
@@ -257,6 +258,8 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         driver.navigate().to(changePasswordUrl.trim());
 
         updatePasswordPage.assertCurrent();
+
+        assertEquals("You need to change your password.", updatePasswordPage.getFeedbackMessage());
 
         updatePasswordPage.changePassword(password, password);
 
