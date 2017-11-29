@@ -20,6 +20,12 @@
     <changeSet author="psilva@redhat.com" id="3.4.1">
         <!-- KEYCLOAK-4231, changing length to same value used by COMPONENT_CONFIG.VALUE -->
         <modifyDataType tableName="CLIENT_ATTRIBUTES" columnName="VALUE" newDataType="VARCHAR(4000)"/>
+
+        <!-- KEYCLOAK-5868 REFRESH_TOKEN_MAX_REUSE added in 3.4.0.CR1, but value for existing realms is null -->
+        <update tableName="REALM">
+            <column name="REFRESH_TOKEN_MAX_REUSE" type="INT" valueNumeric="0"/>
+            <where>REFRESH_TOKEN_MAX_REUSE IS NULL</where>
+        </update>
     </changeSet>
 
 </databaseChangeLog>
