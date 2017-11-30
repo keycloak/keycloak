@@ -25,6 +25,7 @@ include::../migrate_themes.adoc[leveloffset=2]
 
 include::patching-zip-installation.adoc[leveloffset=3]
 include::patching-rpm-installation.adoc[leveloffset=3]
+include::patching_maven_repo.adoc[leveloffset=3]
 
 == Upgrading {project_name} Adapters
 
