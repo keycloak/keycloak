@@ -45,7 +45,7 @@ Based on the environment, you have the option to decide if you prefer:
 * Performance - which is typically used in Active/Passive mode. Data written on `site1` does not need to be visible immediately on `site2`. 
 In some cases, the data may not be visible on `site2` at all. 
 
-For more details, see link:Modes[Modes].
+For more details, see <<Modes>>.
 
 
 [[requestprocessing]]
@@ -70,7 +70,7 @@ The second data center is used just as a `backup` for saving the data. In case o
 * Active/Active - Here the users and client applications send the requests to the {project_name} nodes in both data centers.
 It means that data need to be visible immediately on both sites and available to be consumed immediately from {project_name} servers on both sites. This is especially true if {project_name} server writes some data on `site1`, and it is required that the data are available immediately for reading by {project_name} servers on `site2` immediately after the write on `site1` is finished.
 
-The active/passive mode is better for performance. For more information about how to configure caches for either mode, see: link:backups[sync or async backups section].    
+The active/passive mode is better for performance. For more information about how to configure caches for either mode, see: <<backups>>.    
 
 
 [[database]]
@@ -121,7 +121,7 @@ sessions, which are valid for the length of a user's browser session. The caches
 Finally the `loginFailures` cache is used to track data about failed logins, such as how many times the user `john` 
 entered a bad password. The details are described link:{adminguide_bruteforce_link}[here]. It is up to the admin whether this cache should be replicated across data centers. To have an accurate count of login failures, the replication is needed. On the other hand, not replicating this data can save some performance. So if performance is more important then accurate counts of login failures, the replication can be avoided. 
 
-For more detail about how caches can be configured see link:tuningcache[Tuning the JDG Cache Configuration].
+For more detail about how caches can be configured see <<tuningcache>>.
 
 
 [[communication]]
@@ -133,7 +133,7 @@ The Infinispan caches on the {project_name} side must be configured with the lin
 
 Finally, the receiving JDG server notifies the {project_name} servers in its cluster through the Client Listeners, which are a feature of the HotRod protocol. {project_name} nodes on `site2` then update their Infinispan caches and the particular user session is also visible on {project_name} nodes on `site2`. 
 
-See the link:archdiagram[example architecture diagram] for more details.
+See the <<archdiagram>> for more details.
 
 
 [[setup]]
@@ -148,11 +148,11 @@ For this example, we describe using two data centers, `site1` and `site2`. Each 
 * {jdgserver_name} servers `jdg1` and `jdg2` are connected to each other through the RELAY2 protocol and `backup` based {jdgserver_name} caches in a similar way as described in the link:https://access.redhat.com/documentation/en-us/red_hat_jboss_data_grid/7.1/html-single/administration_and_configuration_guide/#configure_cross_datacenter_replication_remote_client_server_mode[JDG documentation].
 
 * {project_name} servers `node11` and `node12` form a cluster with each other, but they do not communicate directly with any server in `site2`.
-They communicate with the Infinispan server `jdg1` using the HotRod protocol (Remote cache). See link:communication[Communication details] for the details.
+They communicate with the Infinispan server `jdg1` using the HotRod protocol (Remote cache). See <<communication>> for the details.
   
 * The same details apply for `node21` and `node22`. They cluster with each other and communicate only with `jdg2` server using the HotRod protocol.
   
-Our example setup assumes all that all 4 {project_name} servers talk to the same database. In production, it is recommended to use separate synchronously replicated databases across data centers as described in link:database[the Database section].
+Our example setup assumes all that all 4 {project_name} servers talk to the same database. In production, it is recommended to use separate synchronously replicated databases across data centers as described in <<database>>.
 
 
 [[jdgsetup]]
@@ -226,7 +226,7 @@ Details of this more-detailed setup are out-of-scope of the {project_name} docum
                 
 </cache-container>
 ```
-NOTE: Details about the configuration options inside `replicated-cache-configuration` are explained in link:tuningcache[Tuning the JDG Cache Configuration], which includes information about tweaking some of those options.
+NOTE: Details about the configuration options inside `replicated-cache-configuration` are explained in <<tuningcache>>, which includes information about tweaking some of those options.
 
 +  
 
@@ -300,7 +300,7 @@ NOTE: In production, you can have more {jdgserver_name} servers in every data ce
 
 . Unzip {project_name} server distribution to a location you choose. It will be referred to later as `NODE11`.
 
-. Configure a shared database for KeycloakDS datasource. It is recommended to use MySQL or MariaDB for testing purposes. See link:database[the Database section] for more details.
+. Configure a shared database for KeycloakDS datasource. It is recommended to use MySQL or MariaDB for testing purposes. See <<database>> for more details.
 +
 In production you will likely need to have a separate database server in every data center and both database servers should be synchronously replicated to each other. In the example setup, we just use a single database and connect all 4 {project_name} servers to it.   
 +
@@ -506,7 +506,7 @@ This section contains some tips and options related to Cross-Datacenter Replicat
 
 * Every datacenter can have more {jdgserver_name} servers running in the cluster. This is useful if you want some failover and better fault tolerance. The HotRod protocol used for communication between {jdgserver_name} servers and {project_name} servers has a feature that {jdgserver_name} servers will automatically send new topology to the {project_name} servers about the change in the {jdgserver_name} cluster, so the remote store on {project_name} side will know to which {jdgserver_name} servers it can connect. Read the {jdgserver_name} and Wildfly documentation for more details.
  
-* It is highly recommended that a master {jdgserver_name} server is running in every site before the {project_name} servers in **any** site are started. As in our example, we started both `jdg1` and `jdg2` first, before all {project_name} servers. If you still need to run the {project_name} server and the backup site is offline, it is recommended to manually switch the backup site offline on the {jdgserver_name} servers on your site, as described in link:onoffline[Bringing sites offline and online]. If you do not manually switch the unavailable site offline, the first startup may fail or they may be some exceptions during startup until the backup site is taken offline automatically due the configured count of failed operations.
+* It is highly recommended that a master {jdgserver_name} server is running in every site before the {project_name} servers in **any** site are started. As in our example, we started both `jdg1` and `jdg2` first, before all {project_name} servers. If you still need to run the {project_name} server and the backup site is offline, it is recommended to manually switch the backup site offline on the {jdgserver_name} servers on your site, as described in <<onoffline>>. If you do not manually switch the unavailable site offline, the first startup may fail or they may be some exceptions during startup until the backup site is taken offline automatically due the configured count of failed operations.
 
 
 [[onoffline]]
@@ -517,9 +517,9 @@ For example, assume this scenario:
 . Site `site2` is entirely offline from the `site1` perspective. This means that all {jdgserver_name} servers on `site2` are off *or* the network between `site1` and `site2` is broken. 
 . You run {project_name} servers and {jdgserver_name} server `jdg1` in site `site1` 
 . Someone logs in on a {project_name} server on `site1`. 
-. The {project_name} server from `site1` will try to write the session to the remote cache on `jdg1` server, which is supposed to backup data to the `jdg2` server in the `site2`. See link:communication[Communication details] for more information.
+. The {project_name} server from `site1` will try to write the session to the remote cache on `jdg1` server, which is supposed to backup data to the `jdg2` server in the `site2`. See <<communication>> for more information.
 . Server `jdg2` is offline or unreachable from `jdg1`. So the backup from `jdg1` to `jdg2` will fail.
-. The exception is thrown in `jdg1` log and the failure will be propagated from `jdg1` server to {project_name} servers as well because the default `FAIL` backup failure policy is configured. See link:backupfailure[Backup failure policy] for details around the backup policies.
+. The exception is thrown in `jdg1` log and the failure will be propagated from `jdg1` server to {project_name} servers as well because the default `FAIL` backup failure policy is configured. See <<backupfailure>> for details around the backup policies.
 . The error will happen on {project_name} side too and user may not be able to finish his login.
 
 According to your environment, it may be more or less probable that the network between sites is unavailable or temporarily broken (split-brain). In case this happens, it is good that {jdgserver_name} servers on `site1` are aware of the fact that {jdgserver_name} servers on `site2` are unavailable, so they will stop trying to reach the servers in the `jdg2` site and the backup failures won't happen. This is called `Take site offline` .
@@ -532,9 +532,9 @@ There are 2 ways to take the site offline.
 This is useful especially if the outage is planned. With `jconsole` or CLI, you can connect to the `jdg1` server and take the `site2` offline. 
 More details about this are available in the link:https://access.redhat.com/documentation/en-us/red_hat_jboss_data_grid/7.1/html/administration_and_configuration_guide/set_up_cross_datacenter_replication#taking_a_site_offline[JDG documentation]. 
  
-WARNING: This has turned off the backup to `site2` for the cache `sessions`. The same steps usually need to be done for all the other {project_name} caches mentioned in link:backups[SYNC or ASYNC backups].
+WARNING: This has turned off the backup to `site2` for the cache `sessions`. The same steps usually need to be done for all the other {project_name} caches mentioned in <<backups>>.
 
-**Automatically** - After some amount of failed backups, the `site2` will usually be taken offline automatically. This is done due the configuration of `take-offline` element inside the cache configuration as configured in link:jdgsetup[JDG server setup].
+**Automatically** - After some amount of failed backups, the `site2` will usually be taken offline automatically. This is done due the configuration of `take-offline` element inside the cache configuration as configured in <<jdgsetup>>.
 
 ```
 <take-offline min-wait="60000" after-failures="3" />
@@ -555,8 +555,8 @@ Again, you may need to check all the caches and bring them online.
 
 Once the sites are put online, it's usually good to:
 
-* Do the link:statetransfer[state transfer].
-* Manually link:clearcache[clear the Keycloak caches]. 
+* Do the <<statetransfer>>.
+* Manually <<clearcache>>. 
 
 
 [[statetransfer]]
@@ -602,8 +602,8 @@ How bad are these inconsistencies? Usually only means that a user will need to r
 
 When using the `WARN` policy, it may happen that the single-use cache, which is provided by the `actionTokens` cache and which handles that particular key is really single use, but may "successfully" write the same key twice. But, for example, the OAuth2 specification link:https://tools.ietf.org/html/rfc6749#section-10.5[mentions] that code must be single-use. With the `WARN` policy, this may not be strictly guaranteed and the same code could be written twice if there is an attempt to write it concurrently in both sites.
 
-If there is a longer network outage or split-brain, then with both `FAIL` and `WARN`, the other site will be taken offline after some time and failures as described in link:onoffline[taking a site off and online]. With the default 1 minute timeout, it is usually 1-3 minutes until all the involved caches are taken offline. After that, all the operations will work fine from an end user perspective. 
-You only need to manually restore the site when it is back online as mentioned in link:onoffline[taking a site off and online].
+If there is a longer network outage or split-brain, then with both `FAIL` and `WARN`, the other site will be taken offline after some time and failures as described in <<onoffline>>. With the default 1 minute timeout, it is usually 1-3 minutes until all the involved caches are taken offline. After that, all the operations will work fine from an end user perspective. 
+You only need to manually restore the site when it is back online as mentioned in <<onoffline>>.
 
 In summary, if you expect frequent, longer outages between sites and it is acceptable for you to have some data inconsistencies and a not 100% accurate single-use cache, but you never want end-users to see the errors and long timeouts, then switch to `WARN`.
 
@@ -642,15 +642,15 @@ By default, all 7 caches are configured with `SYNC` backup, which is the safest 
 
 * The `work` cache is used mainly to send some messages, such as cache invalidation events, to the other site. It is also used to ensure that some special events, such as userStorage synchronizations, happen only on single site. It is recommended to keep this set to `SYNC`.
 
-* The `actionTokens` cache is used as single-use cache to track that some tokens/tickets were used just once. For example link:cache[Action tokens] or OAuth2 codes. It is possible to set this to `ASYNC` to slightly improved performance, but then it is not guaranteed that particular ticket is really single-use. For example, if there is concurrent request for same ticket in both sites, then it is possible that both requests will be successful with the `ASYNC` strategy. So what you set here will depend on whether you prefer better security (`SYNC` strategy) or better performance (`ASYNC` strategy). 
+* The `actionTokens` cache is used as single-use cache to track that some tokens/tickets were used just once. For example <<cache>> or OAuth2 codes. It is possible to set this to `ASYNC` to slightly improved performance, but then it is not guaranteed that particular ticket is really single-use. For example, if there is concurrent request for same ticket in both sites, then it is possible that both requests will be successful with the `ASYNC` strategy. So what you set here will depend on whether you prefer better security (`SYNC` strategy) or better performance (`ASYNC` strategy). 
 
-* The `loginFailures` cache may be used in any of the 3 modes. If there is no backup at all, it means that count of login failures for a user will be counted separately for every site (See link:cache[Action tokens] for details). This has some security implications, however it has some performance advantages. Also it mitigates the possible risk of denial of service (DoS) attacks. For example, if an attacker simulates 1000 concurrent requests using the username and password of the user on both sites, it will mean lots of messages being passed between the sites, which may result in network congestion. The `ASYNC` strategy might be even worse as the attacker requests won't be blocked by waiting for the backup to the other site, resulting in potentially even more congested network traffic. 
+* The `loginFailures` cache may be used in any of the 3 modes. If there is no backup at all, it means that count of login failures for a user will be counted separately for every site (See <<cache>> for details). This has some security implications, however it has some performance advantages. Also it mitigates the possible risk of denial of service (DoS) attacks. For example, if an attacker simulates 1000 concurrent requests using the username and password of the user on both sites, it will mean lots of messages being passed between the sites, which may result in network congestion. The `ASYNC` strategy might be even worse as the attacker requests won't be blocked by waiting for the backup to the other site, resulting in potentially even more congested network traffic. 
 The count of login failures also will not be accurate with the `ASYNC` strategy.
 
 For the environments with slower network between data centers and probability of DoS, it is recommended to not backup the `loginFailures` cache at all.
 
-* It is recommended to keep the `sessions` and `clientSessions` caches in `SYNC`. Switching them to `ASYNC` is possible only if you are sure that user requests and backchannel requests (requests from client applications to {project_name} as described link:requestprocessing[here]) will be always processed on same site. This is true, for example, if:
-** You use active/passive mode as described link:modes[here].
+* It is recommended to keep the `sessions` and `clientSessions` caches in `SYNC`. Switching them to `ASYNC` is possible only if you are sure that user requests and backchannel requests (requests from client applications to {project_name} as described in <<requestprocessing>>) will be always processed on same site. This is true, for example, if:
+** You use active/passive mode as described <<modes>>.
 ** All your client applications are using the {project_name} link:http://www.keycloak.org/docs/latest/securing_apps/index.html#_javascript_adapter[Javascript Adapter]. The Javascript adapter sends the backchannel requests within the browser and hence they participate on the browser sticky session and will end on same cluster node (hence on same site) as the other browser requests of this user.
 ** Your load balancer is able to serve the requests based on client IP address (location) and the client applications are deployed on both sites.
 +
@@ -672,9 +672,9 @@ Note the `mode` attribute of cache-configuration element.
 
 The following tips are intended to assist you should you need to troubleshoot:
 
-* It is recommended to go through the link:setup[example setup] and have this one working first, so that you have some understanding of how things work. It is also wise to read this entire document to have some understanding of things.
+* It is recommended to go through the <<setup>> and have this one working first, so that you have some understanding of how things work. It is also wise to read this entire document to have some understanding of things.
 
-* Check in jconsole cluster status (GMS) and the JGroups status (RELAY) of {jdgserver_name} as described in link:jdgsetup[JDG server setup]. If things do not look as expected, then the issue is likely in the setup of {jdgserver_name} servers. 
+* Check in jconsole cluster status (GMS) and the JGroups status (RELAY) of {jdgserver_name} as described in <<jdgsetup>>. If things do not look as expected, then the issue is likely in the setup of {jdgserver_name} servers. 
 
 * For the {project_name} servers, you should see a message like this during the server startup:
 +
@@ -707,11 +707,11 @@ it usually means that {project_name} server is not able to reach the {jdgserver_
  ...
 ```
 +
-then check the log of corresponding {jdgserver_name} server of your site and check if has failed to backup to the other site. If the backup site is unavailable, then it is recommended to switch it offline, so that {jdgserver_name} server won't try to backup to the offline site causing the operations to pass successfully on {project_name} server side as well. See link:administration[Administration of Cross-DC Deployment] for more.   
+then check the log of corresponding {jdgserver_name} server of your site and check if has failed to backup to the other site. If the backup site is unavailable, then it is recommended to switch it offline, so that {jdgserver_name} server won't try to backup to the offline site causing the operations to pass successfully on {project_name} server side as well. See <<administration>> for more information.   
 
 * Check the Infinispan statistics, which are available through JMX. For example, try to login and then see if the new session was successfully written to both {jdgserver_name} servers and is available in the `sessions` cache there. This can be done indirectly by checking the count of elements in the `sessions` cache for the MBean `jboss.datagrid-infinispan:type=Cache,name="sessions(repl_sync)",manager="clustered",component=Statistics` and attribute `numberOfEntries`. After login, there should be one more entry for `numberOfEntries` on both {jdgserver_name} servers on both sites.
 
-* Enable DEBUG logging as described link:serversetup[here]. For example, if you log in and you think that the new session is not available on the second site, it's good to check the {project_name} server logs and check that listeners were triggered as described in the link:serversetup[the setup section]. If you do not know and want to ask on keycloak-user mailing list, it is helpful to send the log files from {project_name} servers on both datacenters in the email. Either add the log snippets to the mails or put the logs somewhere and reference them in the email.
+* Enable DEBUG logging as described <<serversetup>>. For example, if you log in and you think that the new session is not available on the second site, it's good to check the {project_name} server logs and check that listeners were triggered as described in the <<serversetup>>. If you do not know and want to ask on keycloak-user mailing list, it is helpful to send the log files from {project_name} servers on both datacenters in the email. Either add the log snippets to the mails or put the logs somewhere and reference them in the email.
 
 * If you updated the entity, such as `user`, on {project_name} server on `site1` and you do not see that entity updated on the {project_name} server on `site2`, then the issue can be either in the replication of the synchronous database itself or that {project_name} caches are not properly invalidated. You may try to temporarily disable the {project_name} caches as described link:{installguide_disablingcaching_link}[here] to nail down if the issue is at the database replication level. Also it may help to manually connect to the database and check if data are updated as expected. This is specific to every database, so you will need to consult the documentation for your database.  
 
