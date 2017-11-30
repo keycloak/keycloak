@@ -38,7 +38,8 @@
             
     <modules>
         <module>keycloak</module>
+        <module>load-balancer/wildfly-modcluster</module>
         <module>tests</module>
     </modules>
-
+    
 </project>
