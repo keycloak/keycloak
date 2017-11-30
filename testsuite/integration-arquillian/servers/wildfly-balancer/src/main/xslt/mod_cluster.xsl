@@ -67,7 +67,7 @@
     <xsl:template match="//*[local-name()='socket-binding-group' and @name='standard-sockets']">
         <xsl:copy>
             <xsl:apply-templates select="node()|@*"/>
-            <socket-binding name="modcluster" interface="private" port="23364" multicast-address="${{jboss.default.multicast.address:230.0.0.4}}"/>
+            <socket-binding name="modcluster" interface="private" port="23364" multicast-address="${{jboss.default.multicast.address:230.0.0.4}}" multicast-port="23364" />
         </xsl:copy>
     </xsl:template>
 

@@ -180,10 +180,10 @@ public final class SuiteContext {
             }
         } else if (isAuthServerCluster()) {
             sb.append(isAuthServerCluster() ? "\nFrontend: " : "")
-              .append(getAuthServerInfo().getQualifier())
+              .append(getAuthServerInfo().getQualifier()).append(" - ").append(getAuthServerInfo().getContextRoot().toExternalForm())
               .append("\n");
 
-            getAuthServerBackendsInfo().forEach(bInfo -> sb.append("  Backend: ").append(bInfo).append("\n"));
+            getAuthServerBackendsInfo().forEach(bInfo -> sb.append("  Backend: ").append(bInfo).append(" - ").append(bInfo.getContextRoot().toExternalForm()).append("\n"));
         } else {
           sb.append(getAuthServerInfo().getQualifier())
             .append("\n");

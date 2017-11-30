@@ -216,12 +216,13 @@ public class AuthServerTestEnricher {
             suiteContext.setAuthServerInfo(container);
 
             containers.stream()
-              .filter(c -> c.getQualifier().startsWith(AUTH_SERVER_BACKEND))
-              .forEach(c -> {
-                String portOffsetString = c.getArquillianContainer().getContainerConfiguration().getContainerProperties().getOrDefault("bindHttpPortOffset", "0");
-                updateWithAuthServerInfo(c, Integer.valueOf(portOffsetString));
-                suiteContext.addAuthServerBackendsInfo(0, c);
-              });
+                .filter(c -> c.getQualifier().startsWith(AUTH_SERVER_BACKEND))
+                .sorted((a, b) -> a.getQualifier().compareTo(b.getQualifier())) // ordering is expected by the cluster tests
+                .forEach(c -> {
+                    int portOffset = Integer.parseInt(c.getQualifier().substring(AUTH_SERVER_BACKEND.length()));
+                    updateWithAuthServerInfo(c, portOffset);
+                    suiteContext.addAuthServerBackendsInfo(0, c);
+                });
 
             if (suiteContext.getAuthServerBackendsInfo().isEmpty()) {
                 throw new RuntimeException(String.format("No auth server container matching '%s' found in arquillian.xml.", AUTH_SERVER_BACKEND));
