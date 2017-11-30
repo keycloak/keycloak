@@ -434,10 +434,10 @@ module.controller('ClientCertificateImportCtrl', function($scope, $location, $ht
                 //fileFormDataName: myFile,
                 /* customize how data is added to formData. See #40#issuecomment-28612000 for example */
                 //formDataAppender: function(formData, key, val){}
-            }).success(function(data, status, headers) {
+            }).then(function(data, status, headers) {
                 Notifications.success("Keystore uploaded successfully.");
                 $location.url(redirectLocation);
-            });
+            })
             //.then(success, error, progress);
         }
     };
