@@ -4,7 +4,7 @@ cat $JBOSS_HOME/standalone/configuration/standalone.xml
 
 . get-ips.sh
 
-PARAMS="-b $PUBLIC_IP -bprivate $PRIVATE_IP $@"
+PARAMS="-b $PUBLIC_IP -bmanagement $PUBLIC_IP -bprivate $PRIVATE_IP $@"
 echo "Server startup params: $PARAMS"
 
 # Note: External container connectivity is always provided by eth0 -- irrespective of which is considered public/private by KC.
