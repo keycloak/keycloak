@@ -154,6 +154,8 @@ public class KeycloakDeployment {
             log.debug("resolveUrls");
         }
 
+        authServerBaseUrl = authUrlBuilder.build().toString();
+
         String login = authUrlBuilder.clone().path(ServiceUrlConstants.AUTH_PATH).build(getRealm()).toString();
         authUrl = KeycloakUriBuilder.fromUri(login);
         realmInfoUrl = authUrlBuilder.clone().path(ServiceUrlConstants.REALM_INFO_PATH).build(getRealm()).toString();
