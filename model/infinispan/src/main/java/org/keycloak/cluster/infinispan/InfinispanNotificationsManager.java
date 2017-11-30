@@ -50,8 +50,10 @@ import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterListener;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.ConcurrentMultivaluedHashMap;
+import org.keycloak.common.util.Retry;
 import org.keycloak.executors.ExecutorsProvider;
 import org.keycloak.models.KeycloakSession;
+import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 
 /**
  * Impl for sending infinispan messages across cluster and listening to them
@@ -153,7 +155,21 @@ public class InfinispanNotificationsManager {
                     .put(eventKey, wrappedEvent, 120, TimeUnit.SECONDS);
         } else {
             // Add directly to remoteCache. Will notify remote listeners on all nodes in all DCs
-            workRemoteCache.put(eventKey, wrappedEvent, 120, TimeUnit.SECONDS);
+            Retry.executeWithBackoff((int iteration) -> {
+                try {
+                    workRemoteCache.put(eventKey, wrappedEvent, 120, TimeUnit.SECONDS);
+                } catch (HotRodClientException re) {
+                if (logger.isDebugEnabled()) {
+                    logger.debugf(re, "Failed sending notification to remote cache '%s'. Key: '%s', iteration '%s'. Will try to retry the task",
+                            workRemoteCache.getName(), eventKey, iteration);
+                }
+
+                // Rethrow the exception. Retry will take care of handle the exception and eventually retry the operation.
+                throw re;
+            }
+
+        }, 10, 10);
+
         }
     }
 
