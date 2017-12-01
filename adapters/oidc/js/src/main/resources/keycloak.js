@@ -163,7 +163,7 @@
                         window.history.replaceState({}, null, callback.newUrl);
                         processCallback(callback, initPromise);
                     }).error(function (e) {
-                        throw 'Could not initialize iframe';
+                        initPromise.setError();
                     });
                 } else if (initOptions) {
                     if (initOptions.token && initOptions.refreshToken) {
