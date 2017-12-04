@@ -35,6 +35,8 @@ services:
             args:
                 LOCAL_SITE: dc1
                 REMOTE_SITE: dc2
+                MANAGEMENT_USER: ${MANAGEMENT_USER}
+                MANAGEMENT_USER_PASS: ${MANAGEMENT_USER_PASS}
         image: keycloak_test_infinispan_dc1:${KEYCLOAK_VERSION:-latest}
         cpuset: ${INFINISPAN_DC1_CPUSET:-1}
         mem_limit: ${INFINISPAN_MEMLIMIT:-1500m}
@@ -49,7 +51,7 @@ services:
             TCP_PING_INITIAL_HOSTS: infinispan_dc1[7600]
             JAVA_OPTS: ${INFINISPAN_JVM_MEMORY:--Xms64m -Xmx1g -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -XX:+DisableExplicitGC} -Djava.net.preferIPv4Stack=true -Djboss.modules.system.pkgs=org.jboss.byteman -Djava.awt.headless=true
         ports:
-            - "9991:9990"
+            - "9990"
 
     infinispan_dc2:
         build: 
@@ -57,6 +59,8 @@ services:
             args:
                 LOCAL_SITE: dc2
                 REMOTE_SITE: dc1
+                MANAGEMENT_USER: ${MANAGEMENT_USER}
+                MANAGEMENT_USER_PASS: ${MANAGEMENT_USER_PASS}
         image: keycloak_test_infinispan_dc2:${KEYCLOAK_VERSION:-latest}
         depends_on:
             infinispan_dc1:
@@ -74,7 +78,7 @@ services:
             TCP_PING_INITIAL_HOSTS: infinispan_dc1[7600],infinispan_dc2[7600]
             JAVA_OPTS: ${INFINISPAN_JVM_MEMORY:--Xms64m -Xmx1g -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -XX:+DisableExplicitGC} -Djava.net.preferIPv4Stack=true -Djboss.modules.system.pkgs=org.jboss.byteman -Djava.awt.headless=true
         ports:
-            - "9992:9990"
+            - "9990"
     
     
     mariadb_dc1:
@@ -94,7 +98,7 @@ services:
         entrypoint: docker-entrypoint-wsrep.sh
         command: --wsrep-new-cluster
         ports:
-            - "3306:3306"
+            - "3307:3306"
             
     mariadb_dc2:
         build: db/mariadb
@@ -113,7 +117,7 @@ services:
         entrypoint: docker-entrypoint-wsrep.sh
         command: --wsrep_cluster_address=gcomm://mariadb_dc1
         ports:
-            - "3307:3306"
+            - "3308:3306"
 
 
     loadbalancer_dc1:
@@ -133,6 +137,7 @@ services:
             WORKER_TASK_MAX_THREADS: ${LB_WORKER_TASK_MAX_THREADS:-16}
         ports:
             - "8081:8080"
+            - "9991:9990"
             
     loadbalancer_dc2:
         build: load-balancer/wildfly-modcluster
@@ -151,4 +156,5 @@ services:
             WORKER_TASK_MAX_THREADS: ${LB_WORKER_TASK_MAX_THREADS:-16}
         ports:
             - "8082:8080"
+            - "9992:9990"
 

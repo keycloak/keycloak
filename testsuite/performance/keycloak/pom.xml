@@ -51,10 +51,8 @@
         <skip.crossdc.configuration>true</skip.crossdc.configuration>
         
         <skip.configuration>false</skip.configuration>
+        <skip.add.management.user>true</skip.add.management.user>
         <skip.keycloak.docker>false</skip.keycloak.docker>
-        
-        <keycloak.debug.user>admin</keycloak.debug.user>
-        <keycloak.debug.user.password>admin</keycloak.debug.user.password>
         
         <scripts.dir>${project.build.scriptSourceDirectory}</scripts.dir>
         <resources.dir>${project.basedir}/src/main/resources</resources.dir>
@@ -136,6 +134,19 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <id>add-management-user</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skip.add.management.user}</skip>
+                            <target>
+                                <ant antfile="configure.xml" target="add-management-user" />
+                            </target>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>keycloak-docker</id>
                         <phase>process-resources</phase>
                         <goals>
@@ -164,6 +175,22 @@
             </activation>
             <properties>
                 <script.extension>ps1</script.extension>
+            </properties>
+        </profile>
+        
+        <profile>        
+            <id>add-management-user</id>
+            <activation>
+                <property>
+                    <name>management.user</name>
+                </property>
+            </activation>
+            <properties>
+                <skip.add.management.user>false</skip.add.management.user>
+                <!--it seems to be necessary to explicitly re-set these properties here
+                otherwise the antrun plugin won't pick them up-->
+                <management.user>${management.user}</management.user>
+                <management.user.password>${management.user.password}</management.user.password>
             </properties>
         </profile>
         

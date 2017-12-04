@@ -135,26 +135,30 @@ For example:
 `mvn verify -Ptest -DrunUsers=1 -DnumOfIterations=10 -DuserThinkTime=0 -Ddataset=100u -DrefreshTokenPeriod=10 -Dgatling.simulationClass=keycloak.AdminSimulation`
 
 
-## Debugging & Profiling
+## Monitoring
 
-Keycloak docker container exposes JMX management interface on port `9990`.
+### JMX
 
-### JVisualVM
+To enable access to JMX on the WildFly-backed services set properties `management.user` and `management.user.password` during the provisioning phase.
 
+#### JVisualVM
+
+- Set `JBOSS_HOME` variable to point to a valid WildFly 10+ installation.
 - Start JVisualVM with `jboss-client.jar` on classpath: `./jvisualvm --cp:a $JBOSS_HOME/bin/client/jboss-client.jar`.
-- Add a local JMX connection: `service:jmx:remote+http://localhost:9990`.
+- Add a local JMX connection: `service:jmx:remote+http://localhost:9990`. <sup>**[*]**</sup>
 - Check "Use security credentials" and set `admin:admin`. (The default credentials can be overriden by providing env. variables `DEBUG_USER` and `DEBUG_USER_PASSWORD` to the container.)
 - Open the added connection.
 
-_Note: The above applies for the singlenode deployment.
-In cluster/crossdc deployments there are multiple KC containers running at the same time so their exposed ports are mapped to random available ports on `0.0.0.0`.
-To find the actual mapped ports run command: `docker ps | grep performance_keycloak`._
+**[*]** For `singlenode` this points to the JMX console of the Keycloak server.
+To get the connection URLs for `cluster` or `crossdc` deployments see the JMX section in the generated `provisioned-system.properties` file.
+- Property `keycloak.frontend.servers.jmx` contains JMX URLs of the Load Balancers.
+- Property `keycloak.backend.servers.jmx` contains JMX URLs of the clustered Keycloak servers.
+- Property `infinispan.servers.jmx` contains JMX URLs of the Infinispan servers, in Cross-DC deployment.
 
+### Docker Monitoring
 
-## Monitoring
-
-There is a docker-based solution for monitoring of CPU, memory and network usage per container. 
-(It uses CAdvisor service to export container metrics into InfluxDB time series database, and Grafana web app to query the DB and present results as graphs.)
+There is a docker-based solution for monitoring CPU, memory and network usage per container. 
+It uses CAdvisor service to export container metrics into InfluxDB time series database, and Grafana web app to query the DB and present results as graphs.
 
 - To enable run: `mvn verify -Pmonitoring`
 - To disable run: `mvn verify -Pmonitoring-off[,delete-monitoring-data]`.

@@ -47,5 +47,6 @@ services:
             WORKER_TASK_MAX_THREADS: ${LB_WORKER_TASK_MAX_THREADS:-16}
         ports:
             - "8080:8080"
+            - "9990:9990"
 
 

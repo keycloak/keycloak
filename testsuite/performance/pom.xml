@@ -31,6 +31,11 @@
     <name>Keycloak Performance TestSuite</name>
     <packaging>pom</packaging>
     
+    <properties>
+        <management.user/>
+        <management.user.password/>
+    </properties>
+            
     <modules>
         <module>keycloak</module>
         <module>tests</module>
