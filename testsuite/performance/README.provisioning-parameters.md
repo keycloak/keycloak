@@ -82,6 +82,13 @@ The maximum cluster size corresponds to the number of cpusets.
 | Category    | Setting                       | Property                    | Default Value   |
 |-------------|-------------------------------|-----------------------------|-----------------|
 | Docker      | Allocated CPUs                | `monitoring.docker.cpusets` | `0`             |
+| JMX         | Management user               | `management.user`           | Not set.        |
+|             | Management user's password    | `management.user.password`  | Not set.        |
+
+By setting the `managemen.user` and `management.user.password` parameters it is possible 
+to add a management user to all WildFly-backed services (*Keycloak Server*, *Infinispan Server* and the *Load Balancer*).
+Unless both parameters are explicitly provided during the provisioning phase the user will not be added 
+and it won't be possible to log into the management console or access JMX.
 
 
 ## Note on Docker settings

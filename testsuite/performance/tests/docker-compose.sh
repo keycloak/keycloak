@@ -52,13 +52,20 @@ function inspectDockerPortMapping() {
 function generateProvisionedSystemProperties() {
     echo "Generating $PROVISIONED_SYSTEM_PROPERTIES_FILE"
     echo "deployment=$DEPLOYMENT" > $PROVISIONED_SYSTEM_PROPERTIES_FILE
+    echo "# Docker Compose" >> $PROVISIONED_SYSTEM_PROPERTIES_FILE
     echo "keycloak.docker.services=$KEYCLOAK_SERVICES" >> $PROVISIONED_SYSTEM_PROPERTIES_FILE
     case "$DEPLOYMENT" in
         singlenode)
+            echo "# HTTP" >> $PROVISIONED_SYSTEM_PROPERTIES_FILE
             inspectDockerPortMapping 8080/tcp ${PROJECT_NAME}_keycloak_1
             echo "keycloak.frontend.servers=http://localhost:$MAPPED_PORT/auth" >> $PROVISIONED_SYSTEM_PROPERTIES_FILE
+
+            echo "# JMX" >> $PROVISIONED_SYSTEM_PROPERTIES_FILE
+            inspectDockerPortMapping 9990/tcp ${PROJECT_NAME}_keycloak_1
+            echo "keycloak.frontend.servers.jmx=service:jmx:remote+http://localhost:$MAPPED_PORT" >> $PROVISIONED_SYSTEM_PROPERTIES_FILE
         ;;
         cluster)
+            echo "# HTTP" >> $PROVISIONED_SYSTEM_PROPERTIES_FILE
             inspectDockerPortMapping 8080/tcp ${PROJECT_NAME}_loadbalancer_1
             echo "keycloak.frontend.servers=http://localhost:$MAPPED_PORT/auth" >> $PROVISIONED_SYSTEM_PROPERTIES_FILE
             BACKEND_URLS=""
@@ -67,8 +74,19 @@ function generateProvisionedSystemProperties() {
                 BACKEND_URLS="$BACKEND_URLS http://localhost:$MAPPED_PORT/auth"
             done
             echo "keycloak.backend.servers=$BACKEND_URLS" >> $PROVISIONED_SYSTEM_PROPERTIES_FILE
+
+            echo "# JMX" >> $PROVISIONED_SYSTEM_PROPERTIES_FILE
+            inspectDockerPortMapping 9990/tcp ${PROJECT_NAME}_loadbalancer_1
+            echo "keycloak.frontend.servers.jmx=service:jmx:remote+http://localhost:$MAPPED_PORT" >> $PROVISIONED_SYSTEM_PROPERTIES_FILE
+            BACKEND_URLS=""
+            for SERVICE in $KEYCLOAK_SERVICES ; do
+                inspectDockerPortMapping 9990/tcp ${PROJECT_NAME}_${SERVICE}_1
+                BACKEND_URLS="$BACKEND_URLS service:jmx:remote+http://localhost:$MAPPED_PORT"
+            done
+            echo "keycloak.backend.servers.jmx=$BACKEND_URLS" >> $PROVISIONED_SYSTEM_PROPERTIES_FILE
         ;;
         crossdc) 
+            echo "# HTTP" >> $PROVISIONED_SYSTEM_PROPERTIES_FILE
             inspectDockerPortMapping 8080/tcp ${PROJECT_NAME}_loadbalancer_dc1_1
             KC_DC1_PORT=$MAPPED_PORT
             inspectDockerPortMapping 8080/tcp ${PROJECT_NAME}_loadbalancer_dc2_1
@@ -80,6 +98,25 @@ function generateProvisionedSystemProperties() {
                 BACKEND_URLS="$BACKEND_URLS http://localhost:$MAPPED_PORT/auth"
             done
             echo "keycloak.backend.servers=$BACKEND_URLS" >> $PROVISIONED_SYSTEM_PROPERTIES_FILE
+
+            echo "# JMX" >> $PROVISIONED_SYSTEM_PROPERTIES_FILE
+            inspectDockerPortMapping 9990/tcp ${PROJECT_NAME}_loadbalancer_dc1_1
+            KC_DC1_PORT=$MAPPED_PORT
+            inspectDockerPortMapping 9990/tcp ${PROJECT_NAME}_loadbalancer_dc2_1
+            KC_DC2_PORT=$MAPPED_PORT
+            echo "keycloak.frontend.servers.jmx=service:jmx:remote+http://localhost:$KC_DC1_PORT service:jmx:remote+http://localhost:$KC_DC2_PORT" >> $PROVISIONED_SYSTEM_PROPERTIES_FILE
+            BACKEND_URLS=""
+            for SERVICE in $KEYCLOAK_SERVICES ; do
+                inspectDockerPortMapping 9990/tcp ${PROJECT_NAME}_${SERVICE}_1
+                BACKEND_URLS="$BACKEND_URLS service:jmx:remote+http://localhost:$MAPPED_PORT"
+            done
+            echo "keycloak.backend.servers.jmx=$BACKEND_URLS" >> $PROVISIONED_SYSTEM_PROPERTIES_FILE
+
+            inspectDockerPortMapping 9990/tcp ${PROJECT_NAME}_infinispan_dc1_1
+            ISPN_DC1_PORT=$MAPPED_PORT
+            inspectDockerPortMapping 9990/tcp ${PROJECT_NAME}_infinispan_dc2_1
+            ISPN_DC2_PORT=$MAPPED_PORT
+            echo "infinispan.servers.jmx=service:jmx:remote+http://localhost:$ISPN_DC1_PORT service:jmx:remote+http://localhost:$ISPN_DC2_PORT" >> $PROVISIONED_SYSTEM_PROPERTIES_FILE
         ;;
     esac
 }

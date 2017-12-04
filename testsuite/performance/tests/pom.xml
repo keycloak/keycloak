@@ -391,6 +391,9 @@
 
                                         <KEYCLOAK_VERSION>${project.version}</KEYCLOAK_VERSION>
                                         
+                                        <MANAGEMENT_USER>${management.user}</MANAGEMENT_USER>
+                                        <MANAGEMENT_USER_PASS>${management.user.password}</MANAGEMENT_USER_PASS>
+                                        
                                         <KEYCLOAK_SCALE>${keycloak.scale}</KEYCLOAK_SCALE>
                                         <KEYCLOAK_DC1_SCALE>${keycloak.dc1.scale}</KEYCLOAK_DC1_SCALE>
                                         <KEYCLOAK_DC2_SCALE>${keycloak.dc2.scale}</KEYCLOAK_DC2_SCALE>
