@@ -1082,6 +1082,10 @@ public class OAuthClient {
         return publicKeys.get(realm);
     }
 
+    public void removeCachedPublicKeys() {
+        publicKeys.clear();
+    }
+
 
     private interface StateParamProvider {
 

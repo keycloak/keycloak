@@ -73,6 +73,7 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
     @Before
     public void beforeTest() {
         try {
+            oauth.removeCachedPublicKeys();
             adminClient.realm(REALM_NAME).remove();
         } catch (NotFoundException ignore) {
         }
@@ -528,6 +529,68 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
     }
 
 
+    // CLIENT SESSIONS
+
+    @Test
+    public void testClearDetachedClientSessions(
+            @JmxInfinispanCacheStatistics(dc=DC.FIRST, managementPortProperty = "cache.server.management.port", cacheName=InfinispanConnectionProvider.USER_SESSION_CACHE_NAME) InfinispanStatistics cacheDc1Statistics,
+            @JmxInfinispanCacheStatistics(dc=DC.SECOND, managementPortProperty = "cache.server.2.management.port", cacheName=InfinispanConnectionProvider.USER_SESSION_CACHE_NAME) InfinispanStatistics cacheDc2Statistics,
+            @JmxInfinispanChannelStatistics() InfinispanStatistics channelStatisticsCrossDc) throws Exception {
+
+        // Don't include remote stats. Size is smaller because of distributed cache
+        List<OAuthClient.AccessTokenResponse> responses = createInitialSessions(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME,
+                false, cacheDc1Statistics, cacheDc2Statistics, true);
+
+        // Directly remove the userSession entity on DC0. Should be propagated to DC1 as well, but clientSessions are not yet cleared (they become detached)
+        for (OAuthClient.AccessTokenResponse response : responses) {
+            String userSessionId = oauth.verifyToken(response.getAccessToken()).getSessionState();
+            getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME).removeKey(userSessionId);
+        }
+
+        // Increase offset to big value like 100 hours
+        setTimeOffset(360000);
+
+        // Trigger removeExpired
+        getTestingClientForStartedNodeInDc(0).testing().removeExpired(REALM_NAME);
+        getTestingClientForStartedNodeInDc(1).testing().removeExpired(REALM_NAME);
+
+        // Ensure clientSessions were removed
+        assertStatisticsExpected("After remove expired", InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME,
+                cacheDc1Statistics, cacheDc2Statistics, channelStatisticsCrossDc,
+                sessions01, sessions02, clientSessions01, clientSessions02,
+                remoteSessions01, remoteSessions02, true);
+    }
+
+
+    @Test
+    public void testClearDetachedOfflineClientSessions(
+            @JmxInfinispanCacheStatistics(dc=DC.FIRST, managementPortProperty = "cache.server.management.port", cacheName=InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME) InfinispanStatistics cacheDc1Statistics,
+            @JmxInfinispanCacheStatistics(dc=DC.SECOND, managementPortProperty = "cache.server.2.management.port", cacheName=InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME) InfinispanStatistics cacheDc2Statistics,
+            @JmxInfinispanChannelStatistics() InfinispanStatistics channelStatisticsCrossDc) throws Exception {
+
+        // Don't include remote stats. Size is smaller because of distributed cache
+        List<OAuthClient.AccessTokenResponse> responses = createInitialSessions(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME,
+                true, cacheDc1Statistics, cacheDc2Statistics, true);
+
+        // Directly remove the userSession entity on DC0. Should be propagated to DC1 as well, but clientSessions are not yet cleared (they become detached)
+        for (OAuthClient.AccessTokenResponse response : responses) {
+            String userSessionId = oauth.verifyToken(response.getAccessToken()).getSessionState();
+            getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME).removeKey(userSessionId);
+        }
+
+        // Increase offset to big value like 10000 hours (400+ days)
+        setTimeOffset(36000000);
+
+        // Trigger removeExpired
+        getTestingClientForStartedNodeInDc(0).testing().removeExpired(REALM_NAME);
+        getTestingClientForStartedNodeInDc(1).testing().removeExpired(REALM_NAME);
+
+        // Ensure clientSessions were removed
+        assertStatisticsExpected("After remove expired", InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME, InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME,
+                cacheDc1Statistics, cacheDc2Statistics, channelStatisticsCrossDc,
+                sessions01, sessions02, clientSessions01, clientSessions02,
+                remoteSessions01, remoteSessions02, true);
+    }
 
     // AUTH SESSIONS
 
