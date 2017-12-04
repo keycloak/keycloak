@@ -8,6 +8,8 @@ embed-server --server-config=standalone.xml
 /subsystem=infinispan/cache-container=keycloak/local-cache=sessions:add()
 /subsystem=infinispan/cache-container=keycloak/local-cache=authenticationSessions:add()
 /subsystem=infinispan/cache-container=keycloak/local-cache=offlineSessions:add()
+/subsystem=infinispan/cache-container=keycloak/local-cache=clientSessions:add()
+/subsystem=infinispan/cache-container=keycloak/local-cache=offlineClientSessions:add()
 /subsystem=infinispan/cache-container=keycloak/local-cache=loginFailures:add()
 /subsystem=infinispan/cache-container=keycloak/local-cache=work:add()
 /subsystem=infinispan/cache-container=keycloak/local-cache=authorization:add()
