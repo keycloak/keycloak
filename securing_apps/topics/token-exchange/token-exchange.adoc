@@ -298,7 +298,7 @@ NOTE:  The current limitation on external token exchanges is that if the externa
        provider.
 
 When the exchange is complete, a user session will be created within the realm, and you will receive an access
-and or refresh token depending on the `requested_toke_type` parameter value.  You should note that this new
+and or refresh token depending on the `requested_token_type` parameter value.  You should note that this new
 user session will remain active until it times out or until you call the logout endpoint of the realm passing this
 new access token.
 
