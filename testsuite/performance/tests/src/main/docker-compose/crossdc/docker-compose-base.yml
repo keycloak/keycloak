@@ -124,15 +124,15 @@ services:
         build: load-balancer/wildfly-modcluster
         image: keycloak_test_loadbalancer:${KEYCLOAK_VERSION:-latest}
         cpuset: ${LB_DC1_CPUSET:-1}
-        mem_limit: ${LB_MEMLIMIT:-1g}
+        mem_limit: ${LB_MEMLIMIT:-1500m}
         networks:
             - dc1_keycloak
 #            - loadbalancing
         environment:
             PRIVATE_SUBNET: 10.1.1.0/24
 #            PUBLIC_SUBNET: 10.0.2.0/24
-            JAVA_OPTS: ${LB_JVM_MEMORY:--Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m} -Djava.net.preferIPv4Stack=true -Djboss.modules.system.pkgs=org.jboss.byteman -Djava.awt.headless=true
-            HTTP_MAX_CONNECTIONS: ${LB_HTTP_MAX_CONNECTIONS:-500}
+            JAVA_OPTS: ${LB_JVM_MEMORY:--Xms64m -Xmx1024m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m} -Djava.net.preferIPv4Stack=true -Djboss.modules.system.pkgs=org.jboss.byteman -Djava.awt.headless=true
+            HTTP_MAX_CONNECTIONS: ${LB_HTTP_MAX_CONNECTIONS:-50000}
             WORKER_IO_THREADS: ${LB_WORKER_IO_THREADS:-2}
             WORKER_TASK_MAX_THREADS: ${LB_WORKER_TASK_MAX_THREADS:-16}
         ports:
@@ -143,15 +143,15 @@ services:
         build: load-balancer/wildfly-modcluster
         image: keycloak_test_loadbalancer:${KEYCLOAK_VERSION:-latest}
         cpuset: ${LB_DC2_CPUSET:-1}
-        mem_limit: ${LB_MEMLIMIT:-1g}
+        mem_limit: ${LB_MEMLIMIT:-1500m}
         networks:
             - dc2_keycloak
 #            - loadbalancing
         environment:
             PRIVATE_SUBNET: 10.2.1.0/24
 #            PUBLIC_SUBNET: 10.0.2.0/24
-            JAVA_OPTS: ${LB_JVM_MEMORY:--Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m} -Djava.net.preferIPv4Stack=true -Djboss.modules.system.pkgs=org.jboss.byteman -Djava.awt.headless=true
-            HTTP_MAX_CONNECTIONS: ${LB_HTTP_MAX_CONNECTIONS:-500}
+            JAVA_OPTS: ${LB_JVM_MEMORY:--Xms64m -Xmx1024m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m} -Djava.net.preferIPv4Stack=true -Djboss.modules.system.pkgs=org.jboss.byteman -Djava.awt.headless=true
+            HTTP_MAX_CONNECTIONS: ${LB_HTTP_MAX_CONNECTIONS:-50000}
             WORKER_IO_THREADS: ${LB_WORKER_IO_THREADS:-2}
             WORKER_TASK_MAX_THREADS: ${LB_WORKER_TASK_MAX_THREADS:-16}
         ports:
