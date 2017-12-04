@@ -190,6 +190,8 @@ public class ClientAttributeCertificateResource {
         if (keystoreFormat.equals(CERTIFICATE_PEM)) {
             String pem = StreamUtil.readString(inputParts.get(0).getBody(InputStream.class, null));
 
+            pem = PemUtils.removeBeginEnd(pem);
+
             // Validate format
             KeycloakModelUtils.getCertificate(pem);
 
