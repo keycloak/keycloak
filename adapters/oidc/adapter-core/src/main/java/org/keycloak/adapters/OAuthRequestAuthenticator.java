@@ -390,7 +390,8 @@ public class OAuthRequestAuthenticator {
     protected String stripOauthParametersFromRedirect() {
         KeycloakUriBuilder builder = KeycloakUriBuilder.fromUri(facade.getRequest().getURI())
                 .replaceQueryParam(OAuth2Constants.CODE, null)
-                .replaceQueryParam(OAuth2Constants.STATE, null);
+                .replaceQueryParam(OAuth2Constants.STATE, null)
+                .replaceQueryParam(OAuth2Constants.SESSION_STATE, null);
         return builder.build().toString();
     }
     

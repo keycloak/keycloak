@@ -894,6 +894,8 @@ public class OAuthClient {
         private String error;
         private String errorDescription;
 
+        private String sessionState;
+
         // Just during OIDC implicit or hybrid flow
         private String accessToken;
         private String idToken;
@@ -920,6 +922,7 @@ public class OAuthClient {
             state = params.get(OAuth2Constants.STATE);
             error = params.get(OAuth2Constants.ERROR);
             errorDescription = params.get(OAuth2Constants.ERROR_DESCRIPTION);
+            sessionState = params.get(OAuth2Constants.SESSION_STATE);
             accessToken = params.get(OAuth2Constants.ACCESS_TOKEN);
             idToken = params.get(OAuth2Constants.ID_TOKEN);
         }
@@ -942,6 +945,10 @@ public class OAuthClient {
 
         public String getErrorDescription() {
             return errorDescription;
+        }
+
+        public String getSessionState() {
+            return sessionState;
         }
 
         public String getAccessToken() {

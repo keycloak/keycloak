@@ -75,12 +75,17 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
 
 
     @Test
-    public void nonceMatches() {
+    public void nonceAndSessionStateMatches() {
         EventRepresentation loginEvent = loginUser("abcdef123456");
-        List<IDToken> idTokens = retrieveIDTokens(loginEvent);
+
+        OAuthClient.AuthorizationEndpointResponse authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth, isFragment());
+        Assert.assertNotNull(authzResponse.getSessionState());
+
+        List<IDToken> idTokens = testAuthzResponseAndRetrieveIDTokens(authzResponse, loginEvent);
 
         for (IDToken idToken : idTokens) {
             Assert.assertEquals("abcdef123456", idToken.getNonce());
+            Assert.assertEquals(authzResponse.getSessionState(), idToken.getSessionState());
         }
     }
 
@@ -169,7 +174,9 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
         return events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
     }
 
-    protected abstract List<IDToken> retrieveIDTokens(EventRepresentation loginEvent);
+    protected abstract boolean isFragment();
+
+    protected abstract List<IDToken> testAuthzResponseAndRetrieveIDTokens(OAuthClient.AuthorizationEndpointResponse authzResponse, EventRepresentation loginEvent);
 
     protected ClientManager.ClientManagerBuilder clientManagerBuilder() {
         return ClientManager.realm(adminClient.realm("test")).clientId("test-app");
