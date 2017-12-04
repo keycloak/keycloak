@@ -156,11 +156,11 @@ case "$OPERATION" in
 
                 validateNotEmpty DB_CPUSETS $DB_CPUSETS
                 DB_CPUSETS_ARRAY=( $DB_CPUSETS )
-                DB_CPUSET=${DB_CPUSETS_ARRAY[0]}
+                export DB_CPUSET=${DB_CPUSETS_ARRAY[0]}
 
                 validateNotEmpty KEYCLOAK_CPUSETS $KEYCLOAK_CPUSETS
                 KEYCLOAK_CPUSETS_ARRAY=( $KEYCLOAK_CPUSETS )
-                KEYCLOAK_CPUSET=${KEYCLOAK_CPUSETS_ARRAY[0]}
+                export KEYCLOAK_CPUSET=${KEYCLOAK_CPUSETS_ARRAY[0]}
 
                 echo "DB_CPUSET: $DB_CPUSET"
                 echo "KEYCLOAK_CPUSET: $KEYCLOAK_CPUSET"
@@ -174,11 +174,11 @@ case "$OPERATION" in
 
                 validateNotEmpty DB_CPUSETS $DB_CPUSETS
                 DB_CPUSETS_ARRAY=( $DB_CPUSETS )
-                DB_CPUSET=${DB_CPUSETS_ARRAY[0]}
+                export DB_CPUSET=${DB_CPUSETS_ARRAY[0]}
 
                 validateNotEmpty LB_CPUSETS $LB_CPUSETS
                 LB_CPUSETS_ARRAY=( $LB_CPUSETS )
-                LB_CPUSET=${LB_CPUSETS_ARRAY[0]}
+                export LB_CPUSET=${LB_CPUSETS_ARRAY[0]}
 
                 validateNotEmpty KEYCLOAK_CPUSETS $KEYCLOAK_CPUSETS
                 KEYCLOAK_CPUSETS_ARRAY=( $KEYCLOAK_CPUSETS )
@@ -189,6 +189,7 @@ case "$OPERATION" in
                 if [ $KEYCLOAK_SCALE -lt 1 ]; then KEYCLOAK_SCALE=1; fi
 
                 echo "DB_CPUSET: $DB_CPUSET"
+                echo "LB_CPUSET: $LB_CPUSET"
                 echo "KEYCLOAK_CPUSETS: $KEYCLOAK_CPUSETS"
                 echo "KEYCLOAK_SCALE: ${KEYCLOAK_SCALE} (max ${KEYCLOAK_MAX_SCALE})"
 
@@ -214,8 +215,8 @@ case "$OPERATION" in
                 validateNotEmpty DB_DC2_CPUSETS $DB_DC2_CPUSETS
                 DB_DC1_CPUSETS_ARRAY=( $DB_DC1_CPUSETS )
                 DB_DC2_CPUSETS_ARRAY=( $DB_DC2_CPUSETS )
-                DB_DC1_CPUSET=${DB_DC1_CPUSETS_ARRAY[0]}
-                DB_DC2_CPUSET=${DB_DC2_CPUSETS_ARRAY[0]}
+                export DB_DC1_CPUSET=${DB_DC1_CPUSETS_ARRAY[0]}
+                export DB_DC2_CPUSET=${DB_DC2_CPUSETS_ARRAY[0]}
                 echo "DB_DC1_CPUSET: $DB_DC1_CPUSET"
                 echo "DB_DC2_CPUSET: $DB_DC2_CPUSET"
 
@@ -223,8 +224,8 @@ case "$OPERATION" in
                 validateNotEmpty LB_DC2_CPUSETS $LB_DC2_CPUSETS
                 LB_DC1_CPUSETS_ARRAY=( $LB_DC1_CPUSETS )
                 LB_DC2_CPUSETS_ARRAY=( $LB_DC2_CPUSETS )
-                LB_DC1_CPUSET=${LB_DC1_CPUSETS_ARRAY[0]}
-                LB_DC2_CPUSET=${LB_DC2_CPUSETS_ARRAY[0]}
+                export LB_DC1_CPUSET=${LB_DC1_CPUSETS_ARRAY[0]}
+                export LB_DC2_CPUSET=${LB_DC2_CPUSETS_ARRAY[0]}
                 echo "LB_DC1_CPUSET: $LB_DC1_CPUSET"
                 echo "LB_DC2_CPUSET: $LB_DC2_CPUSET"
 
@@ -232,8 +233,8 @@ case "$OPERATION" in
                 validateNotEmpty INFINISPAN_DC2_CPUSETS $INFINISPAN_DC2_CPUSETS
                 INFINISPAN_DC1_CPUSETS_ARRAY=( $INFINISPAN_DC1_CPUSETS )
                 INFINISPAN_DC2_CPUSETS_ARRAY=( $INFINISPAN_DC2_CPUSETS )
-                INFINISPAN_DC1_CPUSET=${INFINISPAN_DC1_CPUSETS_ARRAY[0]}
-                INFINISPAN_DC2_CPUSET=${INFINISPAN_DC2_CPUSETS_ARRAY[0]}
+                export INFINISPAN_DC1_CPUSET=${INFINISPAN_DC1_CPUSETS_ARRAY[0]}
+                export INFINISPAN_DC2_CPUSET=${INFINISPAN_DC2_CPUSETS_ARRAY[0]}
                 echo "INFINISPAN_DC1_CPUSET: $INFINISPAN_DC1_CPUSET"
                 echo "INFINISPAN_DC2_CPUSET: $INFINISPAN_DC2_CPUSET"
 
@@ -276,6 +277,15 @@ case "$OPERATION" in
                 echo "KEYCLOAK_SERVICES: $KEYCLOAK_SERVICES"
 
                 generateDockerComposeFile
+
+            ;;
+
+            monitoring)
+
+                validateNotEmpty MONITORING_CPUSETS "$MONITORING_CPUSETS"
+                MONITORING_CPUSETS_ARRAY=( $MONITORING_CPUSETS )
+                export MONITORING_CPUSET=${MONITORING_CPUSETS_ARRAY[0]}
+                echo "MONITORING_CPUSET: $MONITORING_CPUSET"
 
             ;;
 
