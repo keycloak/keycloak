@@ -83,6 +83,9 @@ public interface OAuth2Constants {
 
     String MAX_AGE = "max_age";
 
+    // OIDC Session Management
+    String SESSION_STATE = "session_state";
+
     String JWT = "JWT";
 
     // https://tools.ietf.org/html/rfc7636#section-6.1

@@ -35,6 +35,7 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -299,8 +300,16 @@ public class TokenEndpoint {
         }
 
         String redirectUri = clientSession.getNote(OIDCLoginProtocol.REDIRECT_URI_PARAM);
-        String formParam = formParams.getFirst(OAuth2Constants.REDIRECT_URI);
-        if (redirectUri != null && !redirectUri.equals(formParam)) {
+        String redirectUriParam = formParams.getFirst(OAuth2Constants.REDIRECT_URI);
+
+        // KEYCLOAK-4478 Backwards compatibility with the adapters earlier than KC 3.4.2
+        if (redirectUriParam.contains("session_state=")) {
+            redirectUriParam = KeycloakUriBuilder.fromUri(redirectUriParam)
+                    .replaceQueryParam(OAuth2Constants.SESSION_STATE, null)
+                    .build().toString();
+        }
+
+        if (redirectUri != null && !redirectUri.equals(redirectUriParam)) {
             event.error(Errors.INVALID_CODE);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Incorrect redirect_uri", Response.Status.BAD_REQUEST);
         }
