@@ -30,6 +30,7 @@ import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessio
 import org.keycloak.models.sessions.infinispan.events.AbstractAuthSessionClusterListener;
 import org.keycloak.models.sessions.infinispan.events.ClientRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
+import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
@@ -46,6 +47,8 @@ import org.jboss.logging.Logger;
 public class InfinispanAuthenticationSessionProviderFactory implements AuthenticationSessionProviderFactory {
 
     private static final Logger log = Logger.getLogger(InfinispanAuthenticationSessionProviderFactory.class);
+
+    private InfinispanKeyGenerator keyGenerator;
 
     private volatile Cache<String, RootAuthenticationSessionEntity> authSessionsCache;
 
@@ -105,7 +108,7 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
     @Override
     public AuthenticationSessionProvider create(KeycloakSession session) {
         lazyInit(session);
-        return new InfinispanAuthenticationSessionProvider(session, authSessionsCache);
+        return new InfinispanAuthenticationSessionProvider(session, keyGenerator, authSessionsCache);
     }
 
     private void updateAuthNotes(ClusterEvent clEvent) {
@@ -148,6 +151,8 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
                 if (authSessionsCache == null) {
                     InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
                     authSessionsCache = connections.getCache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME);
+
+                    keyGenerator = new InfinispanKeyGenerator();
 
                     ClusterProvider cluster = session.getProvider(ClusterProvider.class);
                     cluster.registerListener(AUTHENTICATION_SESSION_EVENTS, this::updateAuthNotes);
