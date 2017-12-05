@@ -227,6 +227,11 @@ endif::[]
 $ ./bin/jboss-cli.sh --file=adapter-install.cli
 ----
 
+===== JBoss SSO
+
+{appserver_name} has built-in support for single sign-on for web applications deployed to the same {appserver_name}
+instance. This should not be enabled when using {project_name}.
+
 ===== Required Per WAR Configuration
 
 This section describes how to secure a WAR directly by adding configuration and editing files within your WAR package.

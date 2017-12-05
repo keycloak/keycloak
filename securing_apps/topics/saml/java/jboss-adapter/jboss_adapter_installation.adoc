@@ -143,3 +143,7 @@ public class CustomerService {
 We hope to improve our integration in the future so that you don't have to specify the
 `@SecurityDomain` annotation when you want to propagate a keycloak security context to the EJB tier.
 
+===== JBoss SSO
+
+{appserver_name} has built-in support for single sign-on for web applications deployed to the same {appserver_name}
+instance. This should not be enabled when using {project_name}.
