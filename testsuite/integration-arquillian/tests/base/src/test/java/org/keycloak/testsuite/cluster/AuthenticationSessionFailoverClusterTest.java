@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.cluster;
 
 import java.io.IOException;
-import java.util.List;
 
 import javax.mail.MessagingException;
 
@@ -30,7 +29,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.AuthenticationSessionManager;
-import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
@@ -39,9 +37,9 @@ import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.Cookie;
+import org.openqa.selenium.WebDriver;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 
@@ -113,14 +111,14 @@ public class AuthenticationSessionFailoverClusterTest extends AbstractFailoverCl
     protected void failoverTest(boolean expectSuccessfulFailover) throws IOException, MessagingException {
         loginPage.open();
 
-        String cookieValue1 = getAuthSessionCookieValue();
+        String cookieValue1 = getAuthSessionCookieValue(driver);
 
         // Login and assert on "updatePassword" page
         loginPage.login("login-test", "password");
         updatePasswordPage.assertCurrent();
 
         // Route didn't change
-        Assert.assertEquals(cookieValue1, getAuthSessionCookieValue());
+        Assert.assertEquals(cookieValue1, getAuthSessionCookieValue(driver));
 
         log.info("Authentication session cookie: " + cookieValue1);
 
@@ -137,7 +135,7 @@ public class AuthenticationSessionFailoverClusterTest extends AbstractFailoverCl
             //Action was successful
             updateProfilePage.assertCurrent();
 
-            String cookieValue2 = getAuthSessionCookieValue();
+            String cookieValue2 = getAuthSessionCookieValue(driver);
 
             log.info("Authentication session cookie after failover: " + cookieValue2);
 
@@ -163,7 +161,7 @@ public class AuthenticationSessionFailoverClusterTest extends AbstractFailoverCl
         appPage.assertCurrent();
     }
 
-    private String getAuthSessionCookieValue() {
+    static String getAuthSessionCookieValue(WebDriver driver) {
         Cookie authSessionCookie = driver.manage().getCookieNamed(AuthenticationSessionManager.AUTH_SESSION_ID);
         Assert.assertNotNull(authSessionCookie);
         return authSessionCookie.getValue();

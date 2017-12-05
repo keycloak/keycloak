@@ -31,14 +31,20 @@ public class InfinispanStickySessionEncoderProvider implements StickySessionEnco
 
     private final KeycloakSession session;
     private final String myNodeName;
+    private final boolean shouldAttachRoute;
 
-    public InfinispanStickySessionEncoderProvider(KeycloakSession session, String myNodeName) {
+    public InfinispanStickySessionEncoderProvider(KeycloakSession session, String myNodeName, boolean shouldAttachRoute) {
         this.session = session;
         this.myNodeName = myNodeName;
+        this.shouldAttachRoute = shouldAttachRoute;
     }
 
     @Override
     public String encodeSessionId(String sessionId) {
+        if (!shouldAttachRoute) {
+            return sessionId;
+        }
+
         String nodeName = getNodeName(sessionId);
         if (nodeName != null) {
             return sessionId + '.' + nodeName;
@@ -49,8 +55,14 @@ public class InfinispanStickySessionEncoderProvider implements StickySessionEnco
 
     @Override
     public String decodeSessionId(String encodedSessionId) {
+        // Try to decode regardless if shouldAttachRoute is true/false. It's possible that some loadbalancers may forward the route information attached by them to the backend keycloak server. We need to remove it then.
         int index = encodedSessionId.indexOf('.');
         return index == -1 ? encodedSessionId : encodedSessionId.substring(0, index);
+    }
+
+    @Override
+    public boolean shouldAttachRoute() {
+        return shouldAttachRoute;
     }
 
     @Override

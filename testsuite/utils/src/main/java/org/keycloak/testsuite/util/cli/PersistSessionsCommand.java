@@ -80,7 +80,7 @@ public class PersistSessionsCommand extends AbstractCommand {
                 UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
 
                 for (int i = 0; i < countInThisBatch; i++) {
-                    UserSessionModel userSession = session.sessions().createUserSession(KeycloakModelUtils.generateId(), realm, john, "john-doh@localhost", "127.0.0.2", "form", true, null, null);
+                    UserSessionModel userSession = session.sessions().createUserSession(realm, john, "john-doh@localhost", "127.0.0.2", "form", true, null, null);
                     AuthenticatedClientSessionModel clientSession = session.sessions().createClientSession(realm, testApp, userSession);
                     clientSession.setRedirectUri("http://redirect");
                     clientSession.setNote("foo", "bar-" + i);

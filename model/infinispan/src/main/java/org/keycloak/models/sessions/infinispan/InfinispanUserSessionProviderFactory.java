@@ -51,6 +51,7 @@ import org.keycloak.models.sessions.infinispan.initializer.InfinispanCacheInitia
 import org.keycloak.models.sessions.infinispan.initializer.OfflinePersistentUserSessionLoader;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheSessionListener;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheSessionsLoader;
+import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
 import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
@@ -80,6 +81,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     private RemoteCacheInvoker remoteCacheInvoker;
     private LastSessionRefreshStore lastSessionRefreshStore;
     private LastSessionRefreshStore offlineLastSessionRefreshStore;
+    private InfinispanKeyGenerator keyGenerator;
 
     @Override
     public InfinispanUserSessionProvider create(KeycloakSession session) {
@@ -90,7 +92,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> offlineClientSessionsCache = connections.getCache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME);
         Cache<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>> loginFailures = connections.getCache(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME);
 
-        return new InfinispanUserSessionProvider(session, remoteCacheInvoker, lastSessionRefreshStore, offlineLastSessionRefreshStore, 
+        return new InfinispanUserSessionProvider(session, remoteCacheInvoker, lastSessionRefreshStore, offlineLastSessionRefreshStore, keyGenerator,
           cache, offlineSessionsCache, clientSessionCache, offlineClientSessionsCache, loginFailures);
     }
 
@@ -109,6 +111,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                 if (event instanceof PostMigrationEvent) {
                     KeycloakSession session = ((PostMigrationEvent) event).getSession();
 
+                    keyGenerator = new InfinispanKeyGenerator();
                     checkRemoteCaches(session);
                     loadPersistentSessions(factory, getMaxErrors(), getSessionsPerSegment());
                     registerClusterListeners(session);

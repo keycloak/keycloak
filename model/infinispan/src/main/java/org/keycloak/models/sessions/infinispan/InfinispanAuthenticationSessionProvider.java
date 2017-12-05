@@ -32,6 +32,7 @@ import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessio
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.SessionEventsSenderTransaction;
 import org.keycloak.models.sessions.infinispan.stream.RootAuthenticationSessionPredicate;
+import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RealmInfoUtil;
 import org.keycloak.sessions.AuthenticationSessionProvider;
@@ -46,12 +47,14 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
 
     private final KeycloakSession session;
     private final Cache<String, RootAuthenticationSessionEntity> cache;
+    private final InfinispanKeyGenerator keyGenerator;
     protected final InfinispanKeycloakTransaction tx;
     protected final SessionEventsSenderTransaction clusterEventsSenderTx;
 
-    public InfinispanAuthenticationSessionProvider(KeycloakSession session, Cache<String, RootAuthenticationSessionEntity> cache) {
+    public InfinispanAuthenticationSessionProvider(KeycloakSession session, InfinispanKeyGenerator keyGenerator, Cache<String, RootAuthenticationSessionEntity> cache) {
         this.session = session;
         this.cache = cache;
+        this.keyGenerator = keyGenerator;
 
         this.tx = new InfinispanKeycloakTransaction();
         this.clusterEventsSenderTx = new SessionEventsSenderTransaction(session);
@@ -62,7 +65,7 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
 
     @Override
     public RootAuthenticationSessionModel createRootAuthenticationSession(RealmModel realm) {
-        String id = KeycloakModelUtils.generateId();
+        String id = keyGenerator.generateKeyString(session, cache);
         return createRootAuthenticationSession(id, realm);
     }
 
