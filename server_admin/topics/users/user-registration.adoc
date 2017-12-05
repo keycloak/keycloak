@@ -3,7 +3,12 @@
 === User Registration
 
 You can enable {project_name} to allow user self registration.  When enabled, the login page has a registration
-link the user can click on to create their new account.  Enabling registration is pretty simple.  Go to the
+link the user can click on to create their new account.
+
+When user self registration is enabled it is possible to use the registration form to detect valid usernames and emails.
+To prevent this enable <<_recaptcha,reCAPTCHA Support>>.
+
+Enabling registration is pretty simple.  Go to the
 `Realm Settings` left menu and click it.  Then go to the `Login` tab.  There is a `User Registration` switch on this
 tab.  Turn it on, then click the `Save` button.
 
@@ -23,5 +28,3 @@ image:{project_images}/registration-form.png[]
 
 You can change the look and feel of the registration form as well as removing or adding additional fields that must be entered.
 See the link:{developerguide_link}[{developerguide_name}] for more information.
-
-
