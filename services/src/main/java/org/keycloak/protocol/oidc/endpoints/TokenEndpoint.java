@@ -699,9 +699,8 @@ public class TokenEndpoint {
                 }
             }
 
-            String sessionId = KeycloakModelUtils.generateId();
             tokenUser = requestedUser;
-            tokenSession = session.sessions().createUserSession(sessionId, realm, requestedUser, requestedUser.getUsername(), clientConnection.getRemoteAddr(), "impersonate", false, null, null);
+            tokenSession = session.sessions().createUserSession(realm, requestedUser, requestedUser.getUsername(), clientConnection.getRemoteAddr(), "impersonate", false, null, null);
         }
 
         String requestedIssuer = formParams.getFirst(OAuth2Constants.REQUESTED_ISSUER);
@@ -850,8 +849,7 @@ public class TokenEndpoint {
 
         UserModel user = importUserFromExternalIdentity(context);
 
-        String sessionId = KeycloakModelUtils.generateId();
-        UserSessionModel userSession = session.sessions().createUserSession(sessionId, realm, user, user.getUsername(), clientConnection.getRemoteAddr(), "external-exchange", false, null, null);
+        UserSessionModel userSession = session.sessions().createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteAddr(), "external-exchange", false, null, null);
         externalIdp.exchangeExternalComplete(userSession, context, formParams);
 
         // this must exist so that we can obtain access token from user session if idp's store tokens is off

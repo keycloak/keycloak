@@ -230,7 +230,7 @@ public class UserSessionPersisterProviderTest {
         fooRealm.addClient("foo-app");
         session.users().addUser(fooRealm, "user3");
 
-        UserSessionModel userSession = session.sessions().createUserSession(KeycloakModelUtils.generateId(), fooRealm, session.users().getUserByUsername("user3", fooRealm), "user3", "127.0.0.1", "form", true, null, null);
+        UserSessionModel userSession = session.sessions().createUserSession(fooRealm, session.users().getUserByUsername("user3", fooRealm), "user3", "127.0.0.1", "form", true, null, null);
         createClientSession(fooRealm.getClientByClientId("foo-app"), userSession, "http://redirect", "state", new HashSet<String>(), new HashSet<String>());
 
         resetSession();
@@ -264,7 +264,7 @@ public class UserSessionPersisterProviderTest {
         fooRealm.addClient("bar-app");
         session.users().addUser(fooRealm, "user3");
 
-        UserSessionModel userSession = session.sessions().createUserSession(KeycloakModelUtils.generateId(), fooRealm, session.users().getUserByUsername("user3", fooRealm), "user3", "127.0.0.1", "form", true, null, null);
+        UserSessionModel userSession = session.sessions().createUserSession(fooRealm, session.users().getUserByUsername("user3", fooRealm), "user3", "127.0.0.1", "form", true, null, null);
         createClientSession(fooRealm.getClientByClientId("foo-app"), userSession, "http://redirect", "state", new HashSet<String>(), new HashSet<String>());
         createClientSession(fooRealm.getClientByClientId("bar-app"), userSession, "http://redirect", "state", new HashSet<String>(), new HashSet<String>());
 
@@ -371,7 +371,7 @@ public class UserSessionPersisterProviderTest {
 
     private UserSessionModel[] createSessions() {
         UserSessionModel[] sessions = new UserSessionModel[3];
-        sessions[0] = session.sessions().createUserSession(KeycloakModelUtils.generateId(), realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.1", "form", true, null, null);
+        sessions[0] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.1", "form", true, null, null);
 
         Set<String> roles = new HashSet<String>();
         roles.add("one");
@@ -384,10 +384,10 @@ public class UserSessionPersisterProviderTest {
         createClientSession(realm.getClientByClientId("test-app"), sessions[0], "http://redirect", "state", roles, protocolMappers);
         createClientSession(realm.getClientByClientId("third-party"), sessions[0], "http://redirect", "state", new HashSet<String>(), new HashSet<String>());
 
-        sessions[1] = session.sessions().createUserSession(KeycloakModelUtils.generateId(), realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.2", "form", true, null, null);
+        sessions[1] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.2", "form", true, null, null);
         createClientSession(realm.getClientByClientId("test-app"), sessions[1], "http://redirect", "state", new HashSet<String>(), new HashSet<String>());
 
-        sessions[2] = session.sessions().createUserSession(KeycloakModelUtils.generateId(), realm, session.users().getUserByUsername("user2", realm), "user2", "127.0.0.3", "form", true, null, null);
+        sessions[2] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user2", realm), "user2", "127.0.0.3", "form", true, null, null);
         createClientSession(realm.getClientByClientId("test-app"), sessions[2], "http://redirect", "state", new HashSet<String>(), new HashSet<String>());
 
         return sessions;

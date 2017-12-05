@@ -54,10 +54,10 @@ import org.keycloak.models.sessions.infinispan.stream.SessionPredicate;
 import org.keycloak.models.sessions.infinispan.stream.UserLoginFailurePredicate;
 import org.keycloak.models.sessions.infinispan.stream.UserSessionPredicate;
 import org.keycloak.models.sessions.infinispan.util.FuturesHelper;
+import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
 import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 
-import java.io.Serializable;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -96,10 +96,13 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     protected final LastSessionRefreshStore lastSessionRefreshStore;
     protected final LastSessionRefreshStore offlineLastSessionRefreshStore;
 
+    protected final InfinispanKeyGenerator keyGenerator;
+
     public InfinispanUserSessionProvider(KeycloakSession session,
                                          RemoteCacheInvoker remoteCacheInvoker,
                                          LastSessionRefreshStore lastSessionRefreshStore,
                                          LastSessionRefreshStore offlineLastSessionRefreshStore,
+                                         InfinispanKeyGenerator keyGenerator,
                                          Cache<String, SessionEntityWrapper<UserSessionEntity>> sessionCache,
                                          Cache<String, SessionEntityWrapper<UserSessionEntity>> offlineSessionCache,
                                          Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache,
@@ -124,6 +127,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
         this.lastSessionRefreshStore = lastSessionRefreshStore;
         this.offlineLastSessionRefreshStore = offlineLastSessionRefreshStore;
+        this.keyGenerator = keyGenerator;
 
         session.getTransactionManager().enlistAfterCompletion(clusterEventsSenderTx);
         session.getTransactionManager().enlistAfterCompletion(sessionTx);
@@ -159,10 +163,10 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     @Override
     public AuthenticatedClientSessionModel createClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession) {
-        AuthenticatedClientSessionEntity entity = new AuthenticatedClientSessionEntity();
+        final UUID clientSessionId = keyGenerator.generateKeyUUID(session, clientSessionCache);
+        AuthenticatedClientSessionEntity entity = new AuthenticatedClientSessionEntity(clientSessionId);
         entity.setRealmId(realm.getId());
         entity.setTimestamp(Time.currentTime());
-        final UUID clientSessionId = entity.getId();
 
         InfinispanChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx = getTransaction(false);
         InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx = getClientSessionTransaction(false);
@@ -175,6 +179,12 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         userSessionUpdateTx.addTask(userSession.getId(), registerClientSessionTask);
 
         return adapter;
+    }
+
+    @Override
+    public UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
+        final String userSessionId = keyGenerator.generateKeyString(session, sessionCache);
+        return createUserSession(userSessionId, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId);
     }
 
     @Override
@@ -872,9 +882,9 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                                                                   InfinispanChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx,
                                                                   InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx,
                                                                   boolean offline) {
-        AuthenticatedClientSessionEntity entity = new AuthenticatedClientSessionEntity();
+        final UUID clientSessionId = keyGenerator.generateKeyUUID(session, getClientSessionCache(offline));
+        AuthenticatedClientSessionEntity entity = new AuthenticatedClientSessionEntity(clientSessionId);
         entity.setRealmId(sessionToImportInto.getRealm().getId());
-        final UUID clientSessionId = entity.getId();
 
         entity.setAction(clientSession.getAction());
         entity.setAuthMethod(clientSession.getProtocol());
