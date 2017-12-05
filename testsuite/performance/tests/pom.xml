@@ -479,7 +479,7 @@
                                 </goals>
                                 <configuration>
                                     <files>
-                                        <file>${project.basedir}/../datasets/${dataset}.properties</file>
+                                        <file>${project.basedir}/datasets/${dataset}.properties</file>
                                     </files>
                                     <quiet>true</quiet>
                                 </configuration>
