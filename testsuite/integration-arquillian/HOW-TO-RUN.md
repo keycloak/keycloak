@@ -536,11 +536,21 @@ First we will manually download, configure and run infinispan servers. Then we c
 It's more effective during development as there is no need to restart infinispan server(s) among test runs.
 
 1) Download infinispan server 8.2.X from http://infinispan.org/download/ and go through the steps 
-from the [../../misc/CrossDataCenter.md](../../misc/CrossDataCenter.md) and the `Infinispan Server Setup` part.
+from the [Keycloak Cross-DC documentation](http://www.keycloak.org/docs/latest/server_installation/index.html#jdgsetup) for setup infinispan servers.
 
-Assume you have both Infinispan/JDG servers up and running.
+The difference to original docs is, that you need to have JDG servers available on localhost with port offsets. So:
 
-**TODO:** Change this once CrossDataCenter.md is removed and converted to the proper docs.
+* The TCPPING hosts should be like this:
+
+```xml
+<property name="initial_hosts">localhost[8610],localhost[9610]"</property>
+``` 
+
+* The port offset when starting node `jdg1` should be like: `-Djboss.socket.binding.port-offset=1010` and when 
+starting the `jdg2` server, then `-Djboss.socket.binding.port-offset=2010` . In both cases, the bind address should be just
+default `localhost` (In other words, the `-b` switch can be omitted).   
+
+So assume you have both Infinispan/JDG servers up and running.
 
 2) Setup MySQL database or some other shared database.  
 
