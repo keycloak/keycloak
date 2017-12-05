@@ -138,6 +138,7 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
     private class ValidationContextImpl extends FormContextImpl implements ValidationContext {
         FormAction action;
         String error;
+        boolean excludeOthers;
 
         private ValidationContextImpl(AuthenticationExecutionModel executionModel, FormAction action) {
             super(executionModel);
@@ -160,6 +161,11 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
         @Override
         public void success() {
            success = true;
+        }
+
+        @Override
+        public void excludeOtherErrors() {
+            excludeOthers = true;
         }
     }
 
@@ -222,8 +228,17 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
             for (ValidationContextImpl v : errors) {
                 for (FormMessage m : v.errors) {
                     if (!fields.contains(m.getField())) {
+                        if (v.excludeOthers) {
+                            fields.clear();
+                            messages.clear();
+                        }
+
                         fields.add(m.getField());
                         messages.add(m);
+
+                        if (v.excludeOthers) {
+                            break;
+                        }
                     }
                 }
             }

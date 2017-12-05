@@ -45,4 +45,11 @@ public interface ValidationContext extends FormContext {
      *
      */
     void success();
+
+    /**
+     * The error messages of this current validation will take precedence over any others. Other error messages will not
+     * be shown. This is useful to prevent validation from leaking to an attacker. For example, the recaptcha validator
+     * calls this method so that usernames cannot be phished
+     */
+    void excludeOtherErrors();
 }
