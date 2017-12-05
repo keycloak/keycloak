@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -17,13 +18,20 @@ public abstract class AbstractDocsTest {
     private static final Logger log = Logger.getLogger(AbstractDocsTest.class);
 
     protected static final Config config = new Config();
-    
+
+    protected static LinkUtils linkUtils;
+    protected static String body;
+    protected static Boolean verbose = System.getProperties().containsKey("verbose") ? true : false;
+
     protected DocUtils utils = new DocUtils();
-    protected LinkUtils linkUtils = new LinkUtils(config);
 
     protected File guideDir;
-    protected static String body;
     protected String guideUrl;
+
+    @BeforeClass
+    public static void beforeClass() {
+        linkUtils = new LinkUtils(config, verbose);
+    }
 
     @Before
     public void before() throws IOException {
@@ -43,13 +51,9 @@ public abstract class AbstractDocsTest {
         }
     }
 
-    @After
-    public void after() {
-        linkUtils.close();
-    }
-
     @AfterClass
     public static void afterClass() {
+        linkUtils.close();
         body = null;
     }
 
@@ -57,45 +61,48 @@ public abstract class AbstractDocsTest {
 
     @Test
     public void checkVariables() {
+        System.out.println("Checking variables");
         List<String> missingVariables = utils.findMissingVariables(body, config.getIgnoredVariables());
         checkFailures("Variables not found", missingVariables);
     }
 
     @Test
     public void checkIncludes() {
+        System.out.println("Checking includes");
         List<String> missingIncludes = utils.findMissingIncludes(body);
         checkFailures("Includes not found", missingIncludes);
     }
 
     @Test
     public void checkImages() {
+        System.out.println("Checking images");
         List<String> failures = linkUtils.findInvalidImages(body, guideDir, guideUrl);
         checkFailures("Images not found", failures);
     }
 
     @Test
     public void checkInternalAnchors() {
+        System.out.println("Checking internal anchors");
         List<String> invalidInternalAnchors = linkUtils.findInvalidInternalAnchors(body);
         checkFailures("Internal anchors not found", invalidInternalAnchors);
     }
 
     @Test
     public void checkExternalLinks() throws IOException {
+        System.out.println("Checking external links");
         List<LinkUtils.InvalidLink> invalidLinks = linkUtils.findInvalidLinks(body, config.getIgnoredLinks(), config.getIgnoredLinkRedirects());
         if (!invalidLinks.isEmpty()) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("Invalid links:");
+            List<String> failures = new LinkedList<>();
             for (LinkUtils.InvalidLink l : invalidLinks) {
-                sb.append("\n");
-                sb.append(" * " + l.getLink() + " (" + l.getError() + ")");
+                failures.add(l.getLink() + " (" + l.getError() + ")");
             }
-            Assert.fail(sb.toString());
+            throw new Failures("Invalid links", failures);
         }
     }
 
     private void checkFailures(String message, List<String> failures) {
         if (!failures.isEmpty()) {
-            Assert.fail(message + ":\n * " + String.join("\n * ", failures));
+            throw new Failures(message, failures);
         }
     }
 

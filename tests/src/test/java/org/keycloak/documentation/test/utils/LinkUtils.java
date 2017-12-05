@@ -20,11 +20,13 @@ public class LinkUtils {
     private HttpUtils http = new HttpUtils();
     private Config config;
     private File verifiedLinksCacheFile;
+    private boolean verbose;
     private Map<String, Long> verifiedLinks;
 
-    public LinkUtils(Config config) {
+    public LinkUtils(Config config, boolean verbose) {
         this.config = config;
         this.verifiedLinksCacheFile = config.getVerifiedLinksCache();
+        this.verbose = verbose;
         this.verifiedLinks = loadCheckedLinksCache();
     }
 
@@ -77,10 +79,15 @@ public class LinkUtils {
                     if (error == null) {
                         verifiedLinks.put(link, System.currentTimeMillis());
 
-                        logger.debug("Checked link: " + link);
+                        if (verbose) {
+                            System.out.println("[OK]  " + link);
+                        }
                     } else {
-                        logger.debug("Bad link: " + link + " (" + error + ")");
                         invalidLinks.add(new InvalidLink(link, error));
+
+                        if (verbose) {
+                            System.out.println("[BAD] " + link);
+                        }
                     }
                 } else if (link.startsWith("file")) {
                     File f = new File(new URL(link).getFile());
@@ -121,13 +128,17 @@ public class LinkUtils {
                 if (!verifiedLinks.containsKey(image)) {
                     boolean valid = http.isValid(image);
                     if (valid) {
-                        logger.debug("Checked image: " + image);
-
                         verifiedLinks.put(image, System.currentTimeMillis());
-                    } else {
-                        logger.debug("Bad image: " + image);
 
+                        if (verbose) {
+                            System.out.println("[OK]  " + image);
+                        }
+                    } else {
                         missingImages.add(image);
+
+                        if (verbose) {
+                            System.out.println("[BAD]  " + image);
+                        }
                     }
                 }
             }
@@ -196,7 +207,7 @@ public class LinkUtils {
                 p.load(new FileInputStream(verifiedLinksCacheFile));
                 for(Map.Entry<Object, Object> e : p.entrySet()) {
                     long checked = Long.valueOf((String) e.getValue());
-                    if (checked + Constants.LINK_CHECK_EXPIRATION <= System.currentTimeMillis()) {
+                    if (checked + Constants.LINK_CHECK_EXPIRATION >= System.currentTimeMillis()) {
                         m.put((String) e.getKey(), checked);
                     }
                 }
