@@ -61,35 +61,30 @@ public abstract class AbstractDocsTest {
 
     @Test
     public void checkVariables() {
-        System.out.println("Checking variables");
         List<String> missingVariables = utils.findMissingVariables(body, config.getIgnoredVariables());
         checkFailures("Variables not found", missingVariables);
     }
 
     @Test
     public void checkIncludes() {
-        System.out.println("Checking includes");
         List<String> missingIncludes = utils.findMissingIncludes(body);
         checkFailures("Includes not found", missingIncludes);
     }
 
     @Test
     public void checkImages() {
-        System.out.println("Checking images");
         List<String> failures = linkUtils.findInvalidImages(body, guideDir, guideUrl);
         checkFailures("Images not found", failures);
     }
 
     @Test
     public void checkInternalAnchors() {
-        System.out.println("Checking internal anchors");
         List<String> invalidInternalAnchors = linkUtils.findInvalidInternalAnchors(body);
         checkFailures("Internal anchors not found", invalidInternalAnchors);
     }
 
     @Test
     public void checkExternalLinks() throws IOException {
-        System.out.println("Checking external links");
         List<LinkUtils.InvalidLink> invalidLinks = linkUtils.findInvalidLinks(body, config.getIgnoredLinks(), config.getIgnoredLinkRedirects());
         if (!invalidLinks.isEmpty()) {
             List<String> failures = new LinkedList<>();
