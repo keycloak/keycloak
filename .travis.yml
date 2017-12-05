@@ -8,7 +8,12 @@ env:
   - PROFILE=product
 
 install: 
+  - echo "travis_fold:start:install folding starts"
   - mvn clean install -DskipTests -B -q -D$PROFILE
+  - echo "travis_fold:end:install folding ends"
 
 script:
+  - echo "travis_fold:start:test folding starts"
   - mvn test -D$PROFILE -B
+  - echo "travis_fold:end:test folding ends"
+
