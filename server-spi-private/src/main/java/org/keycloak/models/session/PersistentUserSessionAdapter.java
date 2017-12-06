@@ -19,7 +19,9 @@ package org.keycloak.models.session;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.OfflineUserSessionModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -33,11 +35,14 @@ import java.util.Map;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class PersistentUserSessionAdapter implements UserSessionModel {
+public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
 
     private final PersistentUserSessionModel model;
-    private final UserModel user;
+    private UserModel user;
+    private String userId;
+    private String username;
     private final RealmModel realm;
+    private KeycloakSession session;
     private final Map<String, AuthenticatedClientSessionModel> authenticatedClientSessions;
 
     private PersistentUserSessionData data;
@@ -60,14 +65,16 @@ public class PersistentUserSessionAdapter implements UserSessionModel {
         this.model.setLastSessionRefresh(other.getLastSessionRefresh());
 
         this.user = other.getUser();
+        this.userId = this.user.getId();
         this.realm = other.getRealm();
         this.authenticatedClientSessions = other.getAuthenticatedClientSessions();
     }
 
-    public PersistentUserSessionAdapter(PersistentUserSessionModel model, RealmModel realm, UserModel user, Map<String, AuthenticatedClientSessionModel> clientSessions) {
+    public PersistentUserSessionAdapter(KeycloakSession session, PersistentUserSessionModel model, RealmModel realm, String userId, Map<String, AuthenticatedClientSessionModel> clientSessions) {
+        this.session = session;
         this.model = model;
         this.realm = realm;
-        this.user = user;
+        this.userId = userId;
         this.authenticatedClientSessions = clientSessions;
     }
 
@@ -113,7 +120,15 @@ public class PersistentUserSessionAdapter implements UserSessionModel {
 
     @Override
     public UserModel getUser() {
+        if (user == null) {
+            user = session.users().getUserById(userId, realm);
+        }
         return user;
+    }
+
+    @Override
+    public String getUserId() {
+        return userId;
     }
 
     @Override
@@ -123,7 +138,7 @@ public class PersistentUserSessionAdapter implements UserSessionModel {
 
     @Override
     public String getLoginUsername() {
-        return user.getUsername();
+        return getUser().getUsername();
     }
 
     @Override
