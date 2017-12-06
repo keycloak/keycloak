@@ -293,6 +293,9 @@ public class UserResource {
              .detail(Details.IMPERSONATOR_REALM,authenticatedRealm.getName())
              .detail(Details.IMPERSONATOR, auth.adminAuth().getUser().getUsername()).success();
 
+        userSession.setNote("impersonated", Boolean.TRUE.toString());
+        userSession.setNote("impersonator", auth.getAuth().getUser().getId());
+
         return result;
     }
 
