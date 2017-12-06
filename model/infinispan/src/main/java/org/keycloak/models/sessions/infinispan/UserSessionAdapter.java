@@ -225,6 +225,11 @@ public class UserSessionAdapter implements UserSessionModel {
     }
 
     @Override
+    public boolean isOffline() {
+        return offline;
+    }
+
+    @Override
     public String getNote(String name) {
         return entity.getNotes() != null ? entity.getNotes().get(name) : null;
     }

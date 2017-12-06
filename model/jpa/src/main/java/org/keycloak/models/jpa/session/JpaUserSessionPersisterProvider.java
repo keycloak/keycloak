@@ -252,6 +252,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         model.setUserSessionId(entity.getUserSessionId());
         model.setLastSessionRefresh(entity.getLastSessionRefresh());
         model.setData(entity.getData());
+        model.setOffline(offlineFromString(entity.getOffline()));
 
         Map<String, AuthenticatedClientSessionModel> clientSessions = new HashMap<>();
         return new PersistentUserSessionAdapter(model, realm, user, clientSessions);
@@ -286,5 +287,9 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
     private String offlineToString(boolean offline) {
         return offline ? "1" : "0";
+    }
+
+    private boolean offlineFromString(String offlineStr) {
+        return "1".equals(offlineStr);
     }
 }

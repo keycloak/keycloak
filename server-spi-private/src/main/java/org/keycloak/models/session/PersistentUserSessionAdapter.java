@@ -157,6 +157,11 @@ public class PersistentUserSessionAdapter implements UserSessionModel {
     }
 
     @Override
+    public boolean isOffline() {
+        return model.isOffline();
+    }
+
+    @Override
     public Map<String, AuthenticatedClientSessionModel> getAuthenticatedClientSessions() {
         return authenticatedClientSessions;
     }
