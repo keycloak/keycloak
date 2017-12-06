@@ -93,7 +93,7 @@ public class ConcurrencyJDGSessionsCacheTest {
         session.setStarted(Time.currentTime());
         session.setLastSessionRefresh(Time.currentTime());
 
-        AuthenticatedClientSessionEntity clientSession = new AuthenticatedClientSessionEntity();
+        AuthenticatedClientSessionEntity clientSession = new AuthenticatedClientSessionEntity(UUID.randomUUID());
         clientSession.setAuthMethod("saml");
         clientSession.setAction("something");
         clientSession.setTimestamp(1234);

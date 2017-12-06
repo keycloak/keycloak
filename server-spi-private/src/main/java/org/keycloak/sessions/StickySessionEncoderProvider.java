@@ -24,8 +24,24 @@ import org.keycloak.provider.Provider;
  */
 public interface StickySessionEncoderProvider extends Provider {
 
+
+    /**
+     * @param sessionId
+     * @return Encoded value to be used as the value of sticky session cookie (AUTH_SESSION_ID cookie)
+     */
     String encodeSessionId(String sessionId);
 
+
+    /**
+     * @param encodedSessionId value of the sticky session cookie
+     * @return decoded value, which represents the actual ID of the {@link AuthenticationSessionModel}
+     */
     String decodeSessionId(String encodedSessionId);
+
+
+    /**
+     * @return true if information about route should be attached to the sticky session cookie by Keycloak. Otherwise it may be attached by loadbalancer.
+     */
+    boolean shouldAttachRoute();
 
 }

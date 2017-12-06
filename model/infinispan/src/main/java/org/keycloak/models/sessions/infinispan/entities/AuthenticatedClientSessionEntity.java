@@ -58,12 +58,8 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
 
     private final UUID id;
 
-    private AuthenticatedClientSessionEntity(UUID id) {
+    public AuthenticatedClientSessionEntity(UUID id) {
         this.id = id;
-    }
-
-    public AuthenticatedClientSessionEntity() {
-        this.id = UUID.randomUUID();
     }
 
     public String getAuthMethod() {
