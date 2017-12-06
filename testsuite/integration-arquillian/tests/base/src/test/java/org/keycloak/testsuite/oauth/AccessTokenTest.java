@@ -34,6 +34,7 @@ import org.keycloak.admin.client.resource.ClientTemplateResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.jose.jws.JWSHeader;
@@ -80,6 +81,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
@@ -94,8 +96,8 @@ import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsernameId;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createRoleNameMapper;
+import static org.keycloak.testsuite.Assert.assertExpiration;
 
-import org.keycloak.util.TokenUtil;
 import org.openqa.selenium.By;
 
 /**
@@ -971,6 +973,46 @@ public class AccessTokenTest extends AbstractKeycloakTest {
             events.expectCodeToToken(codeId, sessionId).client("sample-public-client").assertEvent();
         } finally {
             oauth.closeClient(client);
+        }
+    }
+
+    // KEYCLOAK-4215
+    @Test
+    public void expiration() throws Exception {
+        int sessionMax = (int) TimeUnit.MINUTES.toSeconds(30);
+        int sessionIdle = (int) TimeUnit.MINUTES.toSeconds(30);
+        int tokenLifespan = (int) TimeUnit.MINUTES.toSeconds(5);
+
+        RealmResource realm = adminClient.realm("test");
+        RealmRepresentation rep = realm.toRepresentation();
+        Integer originalSessionMax = rep.getSsoSessionMaxLifespan();
+        rep.setSsoSessionMaxLifespan(sessionMax);
+        realm.update(rep);
+
+        try {
+            oauth.doLogin("test-user@localhost", "password");
+
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+            assertEquals(200, response.getStatusCode());
+
+            // Assert refresh expiration equals session idle
+            assertExpiration(response.getRefreshExpiresIn(), sessionIdle);
+
+            // Assert token expiration equals token lifespan
+            assertExpiration(response.getExpiresIn(), tokenLifespan);
+
+            setTimeOffset(sessionMax - 60);
+
+            response = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+            assertEquals(200, response.getStatusCode());
+
+            // Assert expiration equals session expiration
+            assertExpiration(response.getRefreshExpiresIn(), 60);
+            assertExpiration(response.getExpiresIn(), 60);
+        } finally {
+            rep.setSsoSessionMaxLifespan(originalSessionMax);
+            realm.update(rep);
         }
     }
 
