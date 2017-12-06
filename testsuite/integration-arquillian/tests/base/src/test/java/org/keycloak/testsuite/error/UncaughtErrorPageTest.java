@@ -55,6 +55,16 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
         assertEquals("An internal server error has occurred", errorPage.getError());
     }
 
+    @Test
+    public void errorPageException() {
+        oauth.realm("master");
+        oauth.clientId("nosuch");
+        oauth.openLoginForm();
+
+        assertTrue(errorPage.isCurrent());
+        assertEquals("Client not found.", errorPage.getError());
+    }
+
     private void checkPageNotFound(String path) throws MalformedURLException {
         URI uri = suiteContext.getAuthServerInfo().getUriBuilder().path(path).build();
         driver.navigate().to(uri.toURL());
