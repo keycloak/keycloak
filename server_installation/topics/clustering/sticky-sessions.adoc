@@ -1,4 +1,4 @@
-
+[[sticky-sessions]]
 === Sticky sessions
 
 Typical cluster deployment consists of the load balancer (reverse proxy) and 2 or more {project_name} servers on private network. For performance purposes,
@@ -31,11 +31,39 @@ and hence Infinispan can lookup this session locally. After authentication is fi
 The sticky session is not mandatory for the cluster setup, however it is good for performance for the reasons mentioned above. You need to configure your loadbalancer to sticky
 over the `AUTH_SESSION_ID` cookie. How exactly do this is dependent on your loadbalancer.
 
-Some loadbalancers can be configured to add the route information by themselves instead of rely on the backend {project_name} node. However adding the route by
-the {project_name} is more clever as {project_name} knows, who is the owner of particular session entity and can route it to that node, which is not necessarily the local node.
-We plan to support the setup where the route info won't be added to AUTH_SESSION_ID cookie by the {project_name} server, but instead by the load balancer. However
-adding the cookie by {project_name} would be still the preferred option.
+It is recommended on the {project_name} side to use the system property `jboss.node.name` during startup, with the value corresponding
+to the name of your route. For example, `-Djboss.node.name=node1` will use `node1` to identify the route. This route will be used by
+Infinispan caches and will be attached to the AUTH_SESSION_ID cookie when the node is the owner of the particular key. An example of the
+start up command with this system property can be seen in <<_example-setup-with-mod-cluster,Mod Cluster Example>>.
 
+Typically, the route name be the same name as your backend host, but it is not necessary. You can use a different route name,
+for example if you want to hide the host name of your {project_name} server inside your private network.
+
+==== Disable adding the route
+
+Some load balancers can be configured to add the route information by themselves instead of relying on the back end {project_name} node.
+However, as described above, adding the route by the {project_name} is recommended. This is because when done this way performance improves,
+since {project_name} is aware of the entity that is the owner of particular session and can route to that node, which is not necessarily the local node.
+
+You are permitted to disable adding route information to the AUTH_SESSION_ID cookie by {project_name}, if you prefer, by adding the following
+into your `RHSSO_HOME/standalone/configuration/standalone-ha.xml` file in the {project_name} subsystem configuration:
+
+[source,xml]
+----
+<subsystem xmlns="urn:jboss:domain:keycloak-server:1.1">
+  ...
+    <spi name="stickySessionEncoder">
+        <provider name="infinispan" enabled="true">
+            <properties>
+                <property name="shouldAttachRoute" value="false"/>
+            </properties>
+        </provider>
+    </spi>
+
+</subsystem>
+----
+
+[[_example-setup-with-mod-cluster]]
 ==== Example cluster setup with mod_cluster
 
 In the example, we will use link:http://mod-cluster.jboss.org/[Mod Cluster] as load balancer. One of the key features of mod cluster is, that there is not much
