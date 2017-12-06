@@ -53,6 +53,8 @@ public interface UserSessionModel {
 
     void setLastSessionRefresh(int seconds);
 
+    boolean isOffline();
+
     /**
      * Returns map where key is ID of the client (its UUID) and value is ID respective {@link AuthenticatedClientSessionModel} object.
      * @return 
