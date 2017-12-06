@@ -34,6 +34,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -133,4 +137,9 @@ public class Assert extends org.junit.Assert {
         Assert.assertEquals(helpText, property.getHelpText());
         Assert.assertEquals(type, property.getType());
     }
+
+    public static void assertExpiration(int actual, int expected) {
+        org.junit.Assert.assertThat(actual, allOf(greaterThanOrEqualTo(expected - 50), lessThanOrEqualTo(expected)));
+    }
+
 }
