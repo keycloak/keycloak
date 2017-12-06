@@ -16,8 +16,24 @@
  */
 package org.keycloak.testsuite.adapter.servlet;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.conn.params.ConnManagerParams;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
@@ -38,6 +54,7 @@ import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.VersionRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -45,13 +62,24 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
-import org.keycloak.testsuite.adapter.page.*;
+import org.keycloak.testsuite.adapter.page.BasicAuth;
+import org.keycloak.testsuite.adapter.page.CustomerDb;
+import org.keycloak.testsuite.adapter.page.CustomerDbErrorPage;
+import org.keycloak.testsuite.adapter.page.CustomerPortal;
+import org.keycloak.testsuite.adapter.page.CustomerPortalNoConf;
+import org.keycloak.testsuite.adapter.page.InputPortal;
+import org.keycloak.testsuite.adapter.page.InputPortalNoAccessToken;
+import org.keycloak.testsuite.adapter.page.ProductPortal;
+import org.keycloak.testsuite.adapter.page.ProductPortalAutodetectBearerOnly;
+import org.keycloak.testsuite.adapter.page.SecurePortal;
+import org.keycloak.testsuite.adapter.page.SecurePortalWithCustomSessionConfig;
+import org.keycloak.testsuite.adapter.page.TokenMinTTLPage;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.account.Applications;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
 import org.keycloak.testsuite.console.page.events.Config;
 import org.keycloak.testsuite.console.page.events.LoginEvents;
-import org.keycloak.testsuite.util.*;
+import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.util.BasicAuthHelper;
 
@@ -62,31 +90,21 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Form;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static org.junit.Assert.*;
-
 import javax.ws.rs.core.Response.Status;
 
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
-import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
-import static org.keycloak.testsuite.util.WaitUtils.*;
+import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 /**
  *
@@ -109,7 +127,11 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     @Page
     private ProductPortal productPortal;
     @Page
+    private ProductPortalAutodetectBearerOnly productPortalAutodetectBearerOnly;
+    @Page
     private InputPortal inputPortal;
+    @Page
+    private InputPortalNoAccessToken inputPortalNoAccessToken;
     @Page
     private TokenMinTTLPage tokenMinTTLPage;
     @Page
@@ -160,10 +182,20 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     protected static WebArchive productPortal() {
         return servletDeployment(ProductPortal.DEPLOYMENT_NAME, ProductServlet.class);
     }
+    
+    @Deployment(name = ProductPortalAutodetectBearerOnly.DEPLOYMENT_NAME)
+    protected static WebArchive productPortalAutodetectBearerOnly() {
+        return servletDeployment(ProductPortalAutodetectBearerOnly.DEPLOYMENT_NAME, ProductServlet.class);
+    }
 
     @Deployment(name = InputPortal.DEPLOYMENT_NAME)
     protected static WebArchive inputPortal() {
         return servletDeployment(InputPortal.DEPLOYMENT_NAME, "keycloak.json", InputServlet.class, ServletTestUtils.class);
+    }
+    
+    @Deployment(name = InputPortalNoAccessToken.DEPLOYMENT_NAME)
+    protected static WebArchive inputPortalNoAccessToken() {
+        return servletDeployment(InputPortalNoAccessToken.DEPLOYMENT_NAME, "keycloak.json", InputServlet.class, ServletTestUtils.class);
     }
 
     @Deployment(name = TokenMinTTLPage.DEPLOYMENT_NAME)
@@ -184,7 +216,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         applicationsPage.setAuthRealm(DEMO);
         loginEventsPage.setConsoleRealm(DEMO);
     }
-
+    
     @Before
     public void beforeDemoServletsAdapterTest() {
         // Delete all cookies from token-min-ttl page to be sure we are logged out
@@ -813,5 +845,175 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Forbidden") || pageSource.contains("HTTP Status 401"));
     }
+    
+    // KEYCLOAK-3509
+    @Test
+    public void testLoginEncodedRedirectUri() {
+        // test login to customer-portal which does a bearer request to customer-db
+        driver.navigate().to(productPortal.getInjectedUrl() + "?encodeTest=a%3Cb");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        
+        assertCurrentUrlEquals(productPortal + "?encodeTest=a%3Cb");
+        String pageSource = driver.getPageSource();
+        Assert.assertTrue(pageSource.contains("iPhone"));
+        Assert.assertTrue(pageSource.contains("uriEncodeTest=true"));
 
+        driver.navigate().to(productPortal.getInjectedUrl());
+        assertCurrentUrlEquals(productPortal);
+        System.out.println(driver.getCurrentUrl());
+        Assert.assertTrue(driver.getPageSource().contains("uriEncodeTest=false"));
+        
+        // test logout
+        String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder())
+                .queryParam(OAuth2Constants.REDIRECT_URI, customerPortal.toString())
+                .build("demo").toString();
+        driver.navigate().to(logoutUri);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        productPortal.navigateTo();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        customerPortal.navigateTo();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        
+    }
+    
+    @Test
+    public void testAutodetectBearerOnly() {
+        Client client = ClientBuilder.newClient();
+        
+        // Do not redirect client to login page if it's an XHR
+        System.out.println(productPortalAutodetectBearerOnly.getInjectedUrl().toString());
+        WebTarget target = client.target(productPortalAutodetectBearerOnly.getInjectedUrl().toString());
+        Response response = target.request().header("X-Requested-With", "XMLHttpRequest").get();
+        Assert.assertEquals(401, response.getStatus());
+        response.close();
+        
+        // Do not redirect client to login page if it's a partial Faces request
+        response = target.request().header("Faces-Request", "partial/ajax").get();
+        Assert.assertEquals(401, response.getStatus());
+        response.close();
+        
+        // Do not redirect client to login page if it's a SOAP request
+        response = target.request().header("SOAPAction", "").get();
+        Assert.assertEquals(401, response.getStatus());
+        response.close();
+
+        // Do not redirect client to login page if Accept header is missing
+        response = target.request().get();
+        Assert.assertEquals(401, response.getStatus());
+        response.close();
+
+        // Do not redirect client to login page if client does not understand HTML reponses
+        response = target.request().header(HttpHeaders.ACCEPT, "application/json,text/xml").get();
+        Assert.assertEquals(401, response.getStatus());
+        response.close();
+
+        // Redirect client to login page if it's not an XHR
+        response = target.request().header("X-Requested-With", "Dont-Know").header(HttpHeaders.ACCEPT, "*/*").get();
+        Assert.assertEquals(302, response.getStatus());
+        Assert.assertTrue(response.getHeaderString(HttpHeaders.LOCATION).contains("response_type=code"));
+        response.close();
+
+        // Redirect client to login page if client explicitely understands HTML responses
+        response = target.request().header(HttpHeaders.ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9").get();
+        Assert.assertEquals(302, response.getStatus());
+        Assert.assertTrue(response.getHeaderString(HttpHeaders.LOCATION).contains("response_type=code"));
+        response.close();
+
+        // Redirect client to login page if client understands all response types
+        response = target.request().header(HttpHeaders.ACCEPT, "*/*").get();
+        Assert.assertEquals(302, response.getStatus());
+        Assert.assertTrue(response.getHeaderString(HttpHeaders.LOCATION).contains("response_type=code"));
+        response.close();
+        client.close();
+    }
+
+    // KEYCLOAK-3016
+    @Test
+    public void testBasicAuthErrorHandling() {
+        Client client = ClientBuilder.newClient();
+        WebTarget target = client.target(customerDb.getInjectedUrl().toString());
+        Response response = target.request().get();
+        Assert.assertEquals(401, response.getStatus());
+        response.close();
+
+        // The number of iterations should be HttpClient's connection pool size + 1.
+        final int LIMIT = ConnManagerParams.DEFAULT_MAX_TOTAL_CONNECTIONS + 1;
+        for (int i = 0; i < LIMIT; i++) {
+            System.out.println("Testing Basic Auth with bad credentials " + i);
+            response = target.request().header(HttpHeaders.AUTHORIZATION, "Basic dXNlcm5hbWU6cGFzc3dvcmQ=").get();
+            Assert.assertEquals(401, response.getStatus());
+            response.close();
+        }
+
+        client.close();
+    }
+    
+    // KEYCLOAK-1733
+    @Test
+    public void testNullQueryParameterAccessToken() {
+        Client client = ClientBuilder.newClient();
+        
+        WebTarget target = client.target(customerDb.getInjectedUrl().toString());
+        Response response = target.request().get();
+        Assert.assertEquals(401, response.getStatus());
+        response.close();
+
+        target = client.target(customerDb.getInjectedUrl().toString() + "?access_token=");
+        response = target.request().get();
+        Assert.assertEquals(401, response.getStatus());
+        response.close();
+
+        client.close();
+    }
+    
+    // KEYCLOAK-1733
+    @Test
+    public void testRestCallWithAccessTokenAsQueryParameter() {
+
+        Client client = ClientBuilder.newClient();
+        try {
+            WebTarget webTarget = client.target(testRealmPage.toString() + "/protocol/openid-connect/token");
+
+            Form form = new Form();
+            form.param("grant_type", "password");
+            form.param("client_id", "customer-portal-public");
+            form.param("username", "bburke@redhat.com");
+            form.param("password", "password");
+            Response response = webTarget.request().post(Entity.form(form));
+
+            Assert.assertEquals(200, response.getStatus());
+            AccessTokenResponse tokenResponse = response.readEntity(AccessTokenResponse.class);
+            response.close();
+
+            String accessToken = tokenResponse.getToken();
+
+            // test without token
+            response = client.target(customerDb.getInjectedUrl().toString()).request().get();
+            Assert.assertEquals(401, response.getStatus());
+            response.close();
+            // test with access_token as QueryParamter
+            response = client.target(customerDb.getInjectedUrl().toString()).queryParam("access_token", accessToken).request().get();
+            Assert.assertEquals(200, response.getStatus());
+            response.close();
+        } finally {
+            client.close();
+        }
+    }
+    
+    //KEYCLOAK-4765
+    @Test
+    @Ignore
+    public void testCallURLWithAccessToken() {
+        // test login to customer-portal which does a bearer request to customer-db
+        String applicationURL = inputPortalNoAccessToken.getInjectedUrl().toString() + "?access_token=invalid_token";
+        driver.navigate().to(applicationURL);
+        System.out.println("Current url: " + driver.getCurrentUrl());
+
+        Assert.assertEquals(applicationURL, driver.getCurrentUrl());
+        System.out.println(driver.getPageSource());
+        inputPortalNoAccessToken.execute("hello");
+    }
 }

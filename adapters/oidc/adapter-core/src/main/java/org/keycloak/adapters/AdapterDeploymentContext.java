@@ -206,6 +206,16 @@ public class AdapterDeploymentContext {
         public void setBearerOnly(boolean bearerOnly) {
             delegate.setBearerOnly(bearerOnly);
         }
+        
+        @Override
+        public boolean isAutodetectBearerOnly() {
+            return delegate.isAutodetectBearerOnly();
+        }
+        
+        @Override
+        public void setAutodetectBearerOnly(boolean autodetectBearerOnly) {
+            delegate.setAutodetectBearerOnly(autodetectBearerOnly);
+        }
 
         @Override
         public boolean isEnableBasicAuth() {
