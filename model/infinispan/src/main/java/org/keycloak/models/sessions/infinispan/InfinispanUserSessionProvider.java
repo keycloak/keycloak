@@ -26,6 +26,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OfflineUserSessionModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
@@ -849,12 +850,22 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         entity.setBrokerSessionId(userSession.getBrokerSessionId());
         entity.setBrokerUserId(userSession.getBrokerUserId());
         entity.setIpAddress(userSession.getIpAddress());
-        entity.setLoginUsername(userSession.getLoginUsername());
         entity.setNotes(userSession.getNotes() == null ? new ConcurrentHashMap<>() : userSession.getNotes());
         entity.setAuthenticatedClientSessions(new AuthenticatedClientSessionStore());
         entity.setRememberMe(userSession.isRememberMe());
         entity.setState(userSession.getState());
-        entity.setUser(userSession.getUser().getId());
+        if (userSession instanceof OfflineUserSessionModel) {
+            // this is a hack so that UserModel doesn't have to be available when offline token is imported.
+            // see related JIRA - KEYCLOAK-5350 and corresponding test
+            OfflineUserSessionModel oline = (OfflineUserSessionModel)userSession;
+            entity.setUser(oline.getUserId());
+            // NOTE: Hack
+            // We skip calling entity.setLoginUsername(userSession.getLoginUsername())
+
+        } else {
+            entity.setLoginUsername(userSession.getLoginUsername());
+            entity.setUser(userSession.getUser().getId());
+        }
 
         entity.setStarted(userSession.getStarted());
         entity.setLastSessionRefresh(userSession.getLastSessionRefresh());

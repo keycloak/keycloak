@@ -17,6 +17,7 @@
 
 package org.keycloak.models.jpa.session;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -42,6 +43,7 @@ import java.util.Map;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class JpaUserSessionPersisterProvider implements UserSessionPersisterProvider {
+    private static final Logger logger = Logger.getLogger(JpaUserSessionPersisterProvider.class);
 
     private final KeycloakSession session;
     private final EntityManager em;
@@ -205,15 +207,19 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         List<String> userSessionIds = new ArrayList<>();
         for (PersistentUserSessionEntity entity : results) {
             RealmModel realm = session.realms().getRealm(entity.getRealmId());
-            UserModel user = session.users().getUserById(entity.getUserId(), realm);
-
-            // Case when user was deleted in the meantime
-            if (user == null) {
-                onUserRemoved(realm, entity.getUserId());
-                return loadUserSessions(firstResult, maxResults, offline);
+            try {
+                UserModel user = session.users().getUserById(entity.getUserId(), realm);
+                // Case when user was deleted in the meantime
+                if (user == null) {
+                    onUserRemoved(realm, entity.getUserId());
+                    return loadUserSessions(firstResult, maxResults, offline);
+                }
+            } catch (Exception e) {
+                logger.debugv(e,"Failed to load user with id {0}", entity.getUserId());
             }
 
-            result.add(toAdapter(realm, user, entity));
+
+            result.add(toAdapter(realm, entity));
             userSessionIds.add(entity.getUserSessionId());
         }
 
@@ -247,7 +253,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         return result;
     }
 
-    private PersistentUserSessionAdapter toAdapter(RealmModel realm, UserModel user, PersistentUserSessionEntity entity) {
+    private PersistentUserSessionAdapter toAdapter(RealmModel realm, PersistentUserSessionEntity entity) {
         PersistentUserSessionModel model = new PersistentUserSessionModel();
         model.setUserSessionId(entity.getUserSessionId());
         model.setLastSessionRefresh(entity.getLastSessionRefresh());
@@ -255,7 +261,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         model.setOffline(offlineFromString(entity.getOffline()));
 
         Map<String, AuthenticatedClientSessionModel> clientSessions = new HashMap<>();
-        return new PersistentUserSessionAdapter(model, realm, user, clientSessions);
+        return new PersistentUserSessionAdapter(session, model, realm, entity.getUserId(), clientSessions);
     }
 
     private PersistentAuthenticatedClientSessionAdapter toAdapter(RealmModel realm, PersistentUserSessionAdapter userSession, PersistentClientSessionEntity entity) {
@@ -264,7 +270,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         PersistentClientSessionModel model = new PersistentClientSessionModel();
         model.setClientId(entity.getClientId());
         model.setUserSessionId(userSession.getId());
-        model.setUserId(userSession.getUser().getId());
+        model.setUserId(userSession.getUserId());
         model.setTimestamp(entity.getTimestamp());
         model.setData(entity.getData());
         return new PersistentAuthenticatedClientSessionAdapter(model, realm, client, userSession);
