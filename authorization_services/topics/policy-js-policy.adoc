@@ -42,8 +42,7 @@ if (contextAttributes.containsValue('kc.client.network.ip_address', '127.0.0.1')
 }
 ```
 
-You can also use Role-Based Access Control (RBAC) in your policies. It is possible to check for
-any *realm* role granted to an user:
+You can also use Role-Based Access Control (RBAC) in your policies. In the example below, we check if an user is granted with a `keycloak_user` *realm* role:
 
 ```javascript
 var context = $evaluation.getContext();
@@ -54,7 +53,7 @@ if (identity.hasRealmRole('keycloak_user')) {
 }
 ```
 
-Or even any *client* role granted to an user:
+Or you can check if an user is granted with a `my-client-role` *client* role, where `my-client` is the client id of the client application:
 
 ```javascript
 var context = $evaluation.getContext();
@@ -66,7 +65,8 @@ if (identity.hasClientRole('my-client', 'my-client-role')) {
 ```
 
 You can also use a combination of several access control mechanisms. The example below shows how roles(RBAC) and
-claims/attributes(ABAC) checks can be used within the same policy:
+claims/attributes(ABAC) checks can be used within the same policy. In this case we check if user is granted with `admin` role
+or has an e-mail from `keycloak.org` domain:
 
 ```javascript
 var context = $evaluation.getContext();
@@ -78,5 +78,4 @@ if (identity.hasRealmRole('admin') || email.endsWith('@keycloak.org')) {
     $evaluation.grant();
 }
 ```
-[NOTE]
-When writing your own rules, keep in mind that the *$evaluation* object is an object implementing *org.keycloak.authorization.policy.evaluation.Evaluation*. For more information about what you can access from this interface, see the <<_policy_evaluation_api, Evaluation API>>.
+NOTE: When writing your own rules, keep in mind that the *$evaluation* object is an object implementing *org.keycloak.authorization.policy.evaluation.Evaluation*. For more information about what you can access from this interface, see the <<_policy_evaluation_api, Evaluation API>>.
