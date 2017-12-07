@@ -269,6 +269,7 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
                 .queryParam(OAuth2Constants.CODE, code)
                 .queryParam(Constants.EXECUTION, executionId)
                 .queryParam(Constants.CLIENT_ID, client.getClientId())
+                .queryParam(Constants.TAB_ID, processor.getAuthenticationSession().getTabId())
                 .build(processor.getRealm().getName());
     }
 

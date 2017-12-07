@@ -1,11 +1,13 @@
 package org.keycloak.testsuite.updaters;
 
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.UserRepresentation;
 import java.io.Closeable;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -51,5 +53,13 @@ public class UserAttributeUpdater {
         userResource.update(rep);
 
         return () -> userResource.update(origRep);
+    }
+
+    public UserAttributeUpdater setRequiredActions(UserModel.RequiredAction... requiredAction) {
+        rep.setRequiredActions(Arrays.stream(requiredAction)
+                .map(action -> action.name())
+                .collect(Collectors.toList())
+        );
+        return this;
     }
 }

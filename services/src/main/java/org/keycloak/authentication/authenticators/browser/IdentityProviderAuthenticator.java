@@ -65,8 +65,9 @@ public class IdentityProviderAuthenticator implements Authenticator {
             if (identityProvider.isEnabled() && providerId.equals(identityProvider.getAlias())) {
                 String accessCode = new ClientSessionCode<>(context.getSession(), context.getRealm(), context.getAuthenticationSession()).getOrGenerateCode();
                 String clientId = context.getAuthenticationSession().getClient().getClientId();
+                String tabId = context.getAuthenticationSession().getTabId();
                 Response response = Response.seeOther(
-                        Urls.identityProviderAuthnRequest(context.getUriInfo().getBaseUri(), providerId, context.getRealm().getName(), accessCode, clientId))
+                        Urls.identityProviderAuthnRequest(context.getUriInfo().getBaseUri(), providerId, context.getRealm().getName(), accessCode, clientId, tabId))
                         .build();
 
                 LOG.debugf("Redirecting to %s", providerId);

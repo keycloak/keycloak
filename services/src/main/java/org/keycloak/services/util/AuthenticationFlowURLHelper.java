@@ -63,7 +63,7 @@ public class AuthenticationFlowURLHelper {
     }
 
 
-    public URI getLastExecutionUrl(String flowPath, String executionId, String clientId) {
+    public URI getLastExecutionUrl(String flowPath, String executionId, String clientId, String tabId) {
         UriBuilder uriBuilder = LoginActionsService.loginActionsBaseUrl(uriInfo)
                 .path(flowPath);
 
@@ -71,6 +71,7 @@ public class AuthenticationFlowURLHelper {
             uriBuilder.queryParam(Constants.EXECUTION, executionId);
         }
         uriBuilder.queryParam(Constants.CLIENT_ID, clientId);
+        uriBuilder.queryParam(Constants.TAB_ID, tabId);
 
         return uriBuilder.build(realm.getName());
     }
@@ -88,7 +89,7 @@ public class AuthenticationFlowURLHelper {
             latestFlowPath = LoginActionsService.AUTHENTICATE_PATH;
         }
 
-        return getLastExecutionUrl(latestFlowPath, executionId, authSession.getClient().getClientId());
+        return getLastExecutionUrl(latestFlowPath, executionId, authSession.getClient().getClientId(), authSession.getTabId());
     }
 
     private String getExecutionId(AuthenticationSessionModel authSession) {

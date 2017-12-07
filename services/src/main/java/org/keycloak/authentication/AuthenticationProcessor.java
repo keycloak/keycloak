@@ -491,6 +491,7 @@ public class AuthenticationProcessor {
                     .queryParam(OAuth2Constants.CODE, code)
                     .queryParam(Constants.EXECUTION, getExecution().getId())
                     .queryParam(Constants.CLIENT_ID, getAuthenticationSession().getClient().getClientId())
+                    .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId())
                     .build(getRealm().getName());
         }
 
@@ -500,6 +501,7 @@ public class AuthenticationProcessor {
                     .queryParam(Constants.KEY, tokenString)
                     .queryParam(Constants.EXECUTION, getExecution().getId())
                     .queryParam(Constants.CLIENT_ID, getAuthenticationSession().getClient().getClientId())
+                    .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId())
                     .build(getRealm().getName());
         }
 
@@ -509,6 +511,7 @@ public class AuthenticationProcessor {
                     .path(AuthenticationProcessor.this.flowPath)
                     .queryParam(Constants.EXECUTION, getExecution().getId())
                     .queryParam(Constants.CLIENT_ID, getAuthenticationSession().getClient().getClientId())
+                    .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId())
                     .build(getRealm().getName());
         }
 
@@ -634,11 +637,11 @@ public class AuthenticationProcessor {
             } else if (e.getError() == AuthenticationFlowError.FORK_FLOW) {
                 ForkFlowException reset = (ForkFlowException)e;
 
-                RootAuthenticationSessionModel rootClone = clone(session, authenticationSession.getClient(), authenticationSession.getParentSession());
-                AuthenticationSessionModel clone = rootClone.getAuthenticationSession(authenticationSession.getClient());
+                AuthenticationSessionModel clone = clone(session, authenticationSession);
 
                 clone.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
                 setAuthenticationSession(clone);
+                session.getProvider(LoginFormsProvider.class).setAuthenticationSession(clone);
 
                 AuthenticationProcessor processor = new AuthenticationProcessor();
                 processor.setAuthenticationSession(clone)
@@ -763,29 +766,24 @@ public class AuthenticationProcessor {
         authSession.setAuthNote(CURRENT_FLOW_PATH, flowPath);
     }
 
-    public static RootAuthenticationSessionModel clone(KeycloakSession session, ClientModel client, RootAuthenticationSessionModel authSession) {
-        RootAuthenticationSessionModel clone = new AuthenticationSessionManager(session).createAuthenticationSession(authSession.getRealm(), true);
 
-        // Transfer just the client "notes", but not "authNotes"
-        for (Map.Entry<String, AuthenticationSessionModel> entry : authSession.getAuthenticationSessions().entrySet()) {
-            AuthenticationSessionModel asmOrig = entry.getValue();
-            AuthenticationSessionModel asmClone = clone.createAuthenticationSession(asmOrig.getClient());
+    // Clone new authentication session from the given authSession. New authenticationSession will have same parent (rootSession) and will use same client
+    public static AuthenticationSessionModel clone(KeycloakSession session, AuthenticationSessionModel authSession) {
+        AuthenticationSessionModel clone = authSession.getParentSession().createAuthenticationSession(authSession.getClient());
 
-            asmClone.setRedirectUri(asmOrig.getRedirectUri());
-            asmClone.setProtocol(asmOrig.getProtocol());
+        clone.setRedirectUri(authSession.getRedirectUri());
+        clone.setProtocol(authSession.getProtocol());
 
-            for (Map.Entry<String, String> clientNote : asmOrig.getClientNotes().entrySet()) {
-                asmClone.setClientNote(clientNote.getKey(), clientNote.getValue());
-            }
+        for (Map.Entry<String, String> clientNote : authSession.getClientNotes().entrySet()) {
+            clone.setClientNote(clientNote.getKey(), clientNote.getValue());
         }
 
-        clone.setTimestamp(Time.currentTime());
+        clone.setAuthNote(FORKED_FROM, authSession.getTabId());
 
-        clone.getAuthenticationSession(client).setAuthNote(FORKED_FROM, authSession.getId());
-        logger.debugf("Forked authSession %s from authSession %s . Client: '%s'", clone.getId(), authSession.getId(), client.getClientId());
+        logger.debugf("Forked authSession %s from authSession %s . Client: %s, Root session: %s",
+                clone.getTabId(), authSession.getTabId(), authSession.getClient().getClientId(), authSession.getParentSession().getId());
 
         return clone;
-
     }
 
 

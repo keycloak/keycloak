@@ -92,19 +92,7 @@ public class OIDCFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         }, APP_REALM_ID);
 
         // First link "pedroigor" user with SAML broker and logout
-        driver.navigate().to("http://localhost:8081/test-app");
-        this.loginPage.clickSocial("kc-saml-idp-basic");
-        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8082/auth/"));
-        Assert.assertEquals("Log in to realm-with-saml-idp-basic", this.driver.getTitle());
-        this.loginPage.login("pedroigor", "password");
-
-        this.idpConfirmLinkPage.assertCurrent();
-        Assert.assertEquals("User with email psilva@redhat.com already exists. How do you want to continue?", this.idpConfirmLinkPage.getMessage());
-        this.idpConfirmLinkPage.clickLinkAccount();
-
-        this.loginPage.login("password");
-        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/test-app"));
-        driver.navigate().to("http://localhost:8081/test-app/logout");
+        linkUserWithSamlBroker("pedroigor", "psilva@redhat.com");
 
 
         // login through OIDC broker now
@@ -157,6 +145,86 @@ public class OIDCFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
             }
 
         }, APP_REALM_ID);
+    }
+
+
+    // KEYCLOAK-5936
+    @Test
+    public void testMoreIdpAndBackButtonWhenLinkingAccount() throws Exception {
+        brokerServerRule.update(new KeycloakRule.KeycloakSetup() {
+
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel realmWithBroker) {
+                setExecutionRequirement(realmWithBroker, DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_HANDLE_EXISTING_SUBFLOW,
+                        IdpEmailVerificationAuthenticatorFactory.PROVIDER_ID, AuthenticationExecutionModel.Requirement.DISABLED);
+
+                //setUpdateProfileFirstLogin(realmWithBroker, IdentityProviderRepresentation.UPFLM_ON);
+            }
+
+        }, APP_REALM_ID);
+
+
+        // First link user with SAML broker and logout
+        linkUserWithSamlBroker("pedroigor", "psilva@redhat.com");
+
+        // Try to login through OIDC broker now
+        loginIDP("pedroigor");
+        this.updateProfilePage.assertCurrent();
+
+        // User doesn't want to continue linking account. He rather wants to revert and try the other broker. Cick browser "back" 2 times now
+        driver.navigate().back();
+        loginExpiredPage.assertCurrent();
+        driver.navigate().back();
+
+        // I am back on the base login screen. Click login with SAML now and login with SAML broker instead
+        Assert.assertEquals("Log in to realm-with-broker", driver.getTitle());
+        this.loginPage.clickSocial("kc-saml-idp-basic");
+
+        // Login inside SAML broker
+        this.loginPage.login("pedroigor", "password");
+
+        // Assert logged successfully
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/test-app"));
+        UserModel federatedUser = getFederatedUser();
+        assertNotNull(federatedUser);
+        assertEquals("pedroigor", federatedUser.getUsername());
+
+        // Logout
+        driver.navigate().to("http://localhost:8081/test-app/logout");
+
+        brokerServerRule.update(new KeycloakRule.KeycloakSetup() {
+
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel realmWithBroker) {
+                setExecutionRequirement(realmWithBroker, DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_HANDLE_EXISTING_SUBFLOW,
+                        IdpEmailVerificationAuthenticatorFactory.PROVIDER_ID, AuthenticationExecutionModel.Requirement.ALTERNATIVE);
+
+            }
+
+        }, APP_REALM_ID);
+
+    }
+
+
+    private void linkUserWithSamlBroker(String username, String email) {
+        // First link "pedroigor" user with SAML broker and logout
+        driver.navigate().to("http://localhost:8081/test-app");
+        this.loginPage.clickSocial("kc-saml-idp-basic");
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8082/auth/"));
+        Assert.assertEquals("Log in to realm-with-saml-idp-basic", this.driver.getTitle());
+        this.loginPage.login(username, "password");
+
+        if (updateProfilePage.isCurrent()) {
+            updateProfilePage.update("Pedro", "Igor", email);
+        }
+
+        this.idpConfirmLinkPage.assertCurrent();
+        Assert.assertEquals("User with email " + email + " already exists. How do you want to continue?", this.idpConfirmLinkPage.getMessage());
+        this.idpConfirmLinkPage.clickLinkAccount();
+
+        this.loginPage.login("password");
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/test-app"));
+        driver.navigate().to("http://localhost:8081/test-app/logout");
     }
 
 }

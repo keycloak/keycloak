@@ -80,14 +80,14 @@ public class AuthenticationSessionManager {
      * @param realm
      * @return
      */
-    public AuthenticationSessionModel getCurrentAuthenticationSession(RealmModel realm, ClientModel client) {
+    public AuthenticationSessionModel getCurrentAuthenticationSession(RealmModel realm, ClientModel client, String tabId) {
         String authSessionId = getAuthSessionCookieDecoded(realm);
 
         if (authSessionId == null) {
             return null;
         }
 
-        return getAuthenticationSessionByIdAndClient(realm, authSessionId, client);
+        return getAuthenticationSessionByIdAndClient(realm, authSessionId, client, tabId);
     }
 
 
@@ -152,9 +152,9 @@ public class AuthenticationSessionManager {
 
 
     // Don't look at cookie. Just lookup authentication session based on the ID and client. Return null if not found
-    public AuthenticationSessionModel getAuthenticationSessionByIdAndClient(RealmModel realm, String authSessionId, ClientModel client) {
+    public AuthenticationSessionModel getAuthenticationSessionByIdAndClient(RealmModel realm, String authSessionId, ClientModel client, String tabId) {
         RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId);
-        return rootAuthSession==null ? null : rootAuthSession.getAuthenticationSession(client);
+        return rootAuthSession==null ? null : rootAuthSession.getAuthenticationSession(client, tabId);
     }
 
 }

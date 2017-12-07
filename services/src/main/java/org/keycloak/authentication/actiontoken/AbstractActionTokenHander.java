@@ -88,7 +88,7 @@ public abstract class AbstractActionTokenHander<T extends JsonWebToken> implemen
 
     @Override
     public String getAuthenticationSessionIdFromToken(T token, ActionTokenContext<T> tokenContext) {
-        return token instanceof DefaultActionToken ? ((DefaultActionToken) token).getAuthenticationSessionId() : null;
+        return token instanceof DefaultActionToken ? ((DefaultActionToken) token).getCompoundAuthenticationSessionId() : null;
     }
 
     @Override

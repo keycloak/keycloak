@@ -173,7 +173,6 @@ public class AuthenticationManager {
     }
 
     /**
-     * Do not logout broker
      *
      * @param session
      * @param realm
@@ -181,6 +180,8 @@ public class AuthenticationManager {
      * @param uriInfo
      * @param connection
      * @param headers
+     * @param logoutBroker
+     * @param offlineSession
      */
     public static void backchannelLogout(KeycloakSession session, RealmModel realm,
                                          UserSessionModel userSession, UriInfo uriInfo,
@@ -197,7 +198,7 @@ public class AuthenticationManager {
         expireUserSessionCookie(session, userSession, realm, uriInfo, headers, connection);
 
         final AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
-        AuthenticationSessionModel logoutAuthSession = createOrJoinLogoutSession(realm, asm, false);
+        AuthenticationSessionModel logoutAuthSession = createOrJoinLogoutSession(session, realm, asm, userSession, false);
 
         try {
             backchannelLogoutAll(session, realm, userSession, logoutAuthSession, uriInfo, headers, logoutBroker);
@@ -215,22 +216,41 @@ public class AuthenticationManager {
         }
     }
 
-    private static AuthenticationSessionModel createOrJoinLogoutSession(RealmModel realm, final AuthenticationSessionManager asm, boolean browserCookie) {
+    private static AuthenticationSessionModel createOrJoinLogoutSession(KeycloakSession session, RealmModel realm, final AuthenticationSessionManager asm, UserSessionModel userSession, boolean browserCookie) {
         // Account management client is used as a placeholder
         ClientModel client = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
 
-        AuthenticationSessionModel logoutAuthSession = asm.getCurrentAuthenticationSession(realm, client);
-        // Try to join existing logout session if it exists and browser session is required
-        if (browserCookie && logoutAuthSession != null) {
-            if (Objects.equals(AuthenticationSessionModel.Action.LOGGING_OUT.name(), logoutAuthSession.getAction())) {
-                return logoutAuthSession;
-            }
-            // Re-create the authentication session for logout
-            logoutAuthSession = logoutAuthSession.getParentSession().createAuthenticationSession(client);
-        } else {
-            RootAuthenticationSessionModel rootLogoutSession = asm.createAuthenticationSession(realm, browserCookie);
-            logoutAuthSession = rootLogoutSession.createAuthenticationSession(client);
+        // Try to lookup current authSessionId from browser cookie. If doesn't exists, use the same as current userSession
+        String authSessionId = null;
+        boolean browserCookiePresent = false;
+        if (browserCookie) {
+            authSessionId = asm.getCurrentAuthenticationSessionId(realm);
         }
+        if (authSessionId != null) {
+            browserCookiePresent = true;
+        } else {
+            authSessionId = userSession.getId();
+        }
+
+        // Try to join existing logout session if it exists
+        RootAuthenticationSessionModel rootLogoutSession = session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId);
+        if (rootLogoutSession == null) {
+            rootLogoutSession = session.authenticationSessions().createRootAuthenticationSession(authSessionId, realm);
+        }
+        if (browserCookie && !browserCookiePresent) {
+            // Update cookie if needed
+            asm.setAuthSessionCookie(authSessionId, realm);
+        }
+
+        // See if we have logoutAuthSession inside current rootSession. Create new if not
+        Optional<AuthenticationSessionModel> found = rootLogoutSession.getAuthenticationSessions().values().stream().filter((AuthenticationSessionModel authSession) -> {
+
+            return client.equals(authSession.getClient()) && Objects.equals(AuthenticationSessionModel.Action.LOGGING_OUT.name(), authSession.getAction());
+
+        }).findFirst();
+
+        AuthenticationSessionModel logoutAuthSession = found.isPresent() ? found.get() : rootLogoutSession.createAuthenticationSession(client);
+
         logoutAuthSession.setAction(AuthenticationSessionModel.Action.LOGGING_OUT.name());
         return logoutAuthSession;
     }
@@ -444,7 +464,7 @@ public class AuthenticationManager {
         }
 
         final AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
-        AuthenticationSessionModel logoutAuthSession = createOrJoinLogoutSession(realm, asm, true);
+        AuthenticationSessionModel logoutAuthSession = createOrJoinLogoutSession(session, realm, asm, userSession, true);
 
         Response response = browserLogoutAllClients(userSession, session, realm, headers, uriInfo, logoutAuthSession);
         if (response != null) {
@@ -484,11 +504,9 @@ public class AuthenticationManager {
     }
 
     public static Response finishBrowserLogout(KeycloakSession session, RealmModel realm, UserSessionModel userSession, UriInfo uriInfo, ClientConnection connection, HttpHeaders headers) {
-        // Account management client is used as a placeholder
-        ClientModel client = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
-
         final AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
-        AuthenticationSessionModel logoutAuthSession = asm.getCurrentAuthenticationSession(realm, client);
+        AuthenticationSessionModel logoutAuthSession = createOrJoinLogoutSession(session, realm, asm, userSession, true);
+
         checkUserSessionOnlyHasLoggedOutClients(realm, userSession, logoutAuthSession);
 
         expireIdentityCookie(realm, uriInfo, connection);
@@ -503,6 +521,7 @@ public class AuthenticationManager {
                 .setEventBuilder(event);
         Response response = protocol.finishLogout(userSession);
         session.sessions().removeUserSession(realm, userSession);
+        session.authenticationSessions().removeRootAuthenticationSession(realm, logoutAuthSession.getParentSession());
         return response;
     }
 
@@ -733,6 +752,7 @@ public class AuthenticationManager {
         }
 
         uriBuilder.queryParam(Constants.CLIENT_ID, authSession.getClient().getClientId());
+        uriBuilder.queryParam(Constants.TAB_ID, authSession.getTabId());
 
         URI redirect = uriBuilder.build(realm.getName());
         return Response.status(302).location(redirect).build();

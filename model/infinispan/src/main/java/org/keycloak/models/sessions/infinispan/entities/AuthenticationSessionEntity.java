@@ -30,6 +30,8 @@ import org.keycloak.sessions.AuthenticationSessionModel;
  */
 public class AuthenticationSessionEntity implements Serializable {
 
+    private String clientUUID;
+
     private String authUserId;
 
     private String redirectUri;
@@ -44,6 +46,14 @@ public class AuthenticationSessionEntity implements Serializable {
     private Map<String, String> authNotes;
     private Set<String> requiredActions  = new ConcurrentHashSet<>();
     private Map<String, String> userSessionNotes;
+
+    public String getClientUUID() {
+        return clientUUID;
+    }
+
+    public void setClientUUID(String clientUUID) {
+        this.clientUUID = clientUUID;
+    }
 
     public String getAuthUserId() {
         return authUserId;

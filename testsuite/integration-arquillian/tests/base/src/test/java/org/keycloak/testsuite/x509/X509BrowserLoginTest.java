@@ -467,4 +467,20 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
                 .removeDetail(Details.REDIRECT_URI)
                 .assertEvent();
     }
+
+
+    // KEYCLOAK-5466
+    @Test
+    public void loginWithCertificateAddedLater() throws Exception {
+        // Start with normal login form
+        loginConfirmationPage.open();
+        loginPage.assertCurrent();
+
+        Assert.assertThat(loginPage.getInfoMessage(), containsString("X509 client authentication has not been configured yet"));
+        loginPage.assertCurrent();
+
+        // Now setup certificate and login with certificate in existing authenticationSession (Not 100% same scenario as KEYCLOAK-5466, but very similar)
+        loginAsUserFromCertSubjectEmail();
+    }
+
 }

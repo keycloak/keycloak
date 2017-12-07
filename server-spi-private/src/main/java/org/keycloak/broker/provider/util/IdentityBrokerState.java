@@ -22,69 +22,61 @@ import java.util.regex.Pattern;
 /**
  * Encapsulates parsing logic related to state passed to identity provider in "state" (or RelayState) parameter
  *
- * Not Thread-safe
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class IdentityBrokerState {
 
-    private String decodedState;
-    private String clientId;
-    private String encodedState;
+    private static final Pattern DOT = Pattern.compile("\\.");
 
-    private IdentityBrokerState() {
+
+    public static IdentityBrokerState decoded(String state, String clientId, String tabId) {
+        String encodedState = state + "." + clientId + "." + tabId;
+
+        return new IdentityBrokerState(state, clientId, tabId, encodedState);
     }
 
-    public static IdentityBrokerState decoded(String decodedState, String clientId) {
-        IdentityBrokerState state = new IdentityBrokerState();
-        state.decodedState = decodedState;
-        state.clientId = clientId;
-        return state;
-    }
 
     public static IdentityBrokerState encoded(String encodedState) {
-        IdentityBrokerState state = new IdentityBrokerState();
-        state.encodedState = encodedState;
-        return state;
+        String[] decoded = DOT.split(encodedState, 3);
+
+        String state =(decoded.length > 0) ? decoded[0] : null;
+        String clientId = (decoded.length > 1) ? decoded[1] : null;
+        String tabId = (decoded.length > 2) ? decoded[2] : null;
+
+        return new IdentityBrokerState(state, clientId, tabId, encodedState);
+    }
+
+
+
+    private final String decodedState;
+    private final String clientId;
+    private final String tabId;
+
+    // Encoded form of whole state
+    private final String encoded;
+
+    private IdentityBrokerState(String decodedStateParam, String clientId, String tabId, String encoded) {
+        this.decodedState = decodedStateParam;
+        this.clientId = clientId;
+        this.tabId = tabId;
+        this.encoded = encoded;
     }
 
 
     public String getDecodedState() {
-        if (decodedState == null) {
-            decode();
-        }
         return decodedState;
     }
 
     public String getClientId() {
-        if (decodedState == null) {
-            decode();
-        }
         return clientId;
     }
 
-    public String getEncodedState() {
-        if (encodedState == null) {
-            encode();
-        }
-        return encodedState;
+    public String getTabId() {
+        return tabId;
     }
 
-
-    private void decode() {
-        String[] decoded = DOT.split(encodedState, 0);
-        decodedState = decoded[0];
-        if (decoded.length > 0) {
-            clientId = decoded[1];
-        }
+    public String getEncoded() {
+        return encoded;
     }
-
-
-    private void encode() {
-        encodedState = decodedState + "." + clientId;
-    }
-
-    private static final Pattern DOT = Pattern.compile("\\.");
-
-
 }

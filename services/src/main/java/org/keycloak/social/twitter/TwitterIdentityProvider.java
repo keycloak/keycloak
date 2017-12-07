@@ -87,7 +87,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
             Twitter twitter = new TwitterFactory().getInstance();
             twitter.setOAuthConsumer(getConfig().getClientId(), getConfig().getClientSecret());
 
-            URI uri = new URI(request.getRedirectUri() + "?state=" + request.getState().getEncodedState());
+            URI uri = new URI(request.getRedirectUri() + "?state=" + request.getState().getEncoded());
 
             RequestToken requestToken = twitter.getOAuthRequestToken(uri.toString());
             AuthenticationSessionModel authSession = request.getAuthenticationSession();
@@ -198,9 +198,17 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
 
                 twitter.setOAuthConsumer(getConfig().getClientId(), getConfig().getClientSecret());
 
-                String clientId = IdentityBrokerState.encoded(state).getClientId();
+                IdentityBrokerState idpState = IdentityBrokerState.encoded(state);
+                String clientId = idpState.getClientId();
+                String tabId = idpState.getTabId();
+                if (clientId == null || tabId == null) {
+                    logger.errorf("Invalid state parameter: %s", state);
+                    sendErrorEvent();
+                    return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
+                }
+
                 ClientModel client = realm.getClientByClientId(clientId);
-                authSession = ClientSessionCode.getClientSession(state, session, realm, client, event, AuthenticationSessionModel.class);
+                authSession = ClientSessionCode.getClientSession(state, tabId, session, realm, client, event, AuthenticationSessionModel.class);
 
                 String twitterToken = authSession.getAuthNote(TWITTER_TOKEN);
                 String twitterSecret = authSession.getAuthNote(TWITTER_TOKENSECRET);
@@ -239,7 +247,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
                 sendErrorEvent();
                 return e.getResponse();
             } catch (Exception e) {
-                logger.error("Could get user profile from twitter.", e);
+                logger.error("Couldn't get user profile from twitter.", e);
                 sendErrorEvent();
                 return ErrorPage.error(session, authSession, Response.Status.BAD_GATEWAY, Messages.UNEXPECTED_ERROR_HANDLING_RESPONSE);
             }

@@ -44,6 +44,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 
 /**
+ * TODO: Remove this and probably also ClientSessionParser. It's uneccessary genericity and abstraction, which is not needed anymore when clientSessionModel was fully removed.
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -79,7 +80,7 @@ class CodeGenerateUtil {
 
     interface ClientSessionParser<CS extends CommonClientSessionModel> {
 
-        CS parseSession(String code, KeycloakSession session, RealmModel realm, ClientModel client, EventBuilder event);
+        CS parseSession(String code, String tabId, KeycloakSession session, RealmModel realm, ClientModel client, EventBuilder event);
 
         String retrieveCode(KeycloakSession session, CS clientSession);
 
@@ -101,9 +102,9 @@ class CodeGenerateUtil {
     private static class AuthenticationSessionModelParser implements ClientSessionParser<AuthenticationSessionModel> {
 
         @Override
-        public AuthenticationSessionModel parseSession(String code, KeycloakSession session, RealmModel realm, ClientModel client, EventBuilder event) {
+        public AuthenticationSessionModel parseSession(String code, String tabId, KeycloakSession session, RealmModel realm, ClientModel client, EventBuilder event) {
             // Read authSessionID from cookie. Code is ignored for now
-            return new AuthenticationSessionManager(session).getCurrentAuthenticationSession(realm, client);
+            return new AuthenticationSessionManager(session).getCurrentAuthenticationSession(realm, client, tabId);
         }
 
         @Override
@@ -163,7 +164,7 @@ class CodeGenerateUtil {
         private CodeJWT codeJWT;
 
         @Override
-        public AuthenticatedClientSessionModel parseSession(String code, KeycloakSession session, RealmModel realm, ClientModel client, EventBuilder event) {
+        public AuthenticatedClientSessionModel parseSession(String code, String tabId, KeycloakSession session, RealmModel realm, ClientModel client, EventBuilder event) {
             SecretKey aesKey = session.keys().getActiveAesKey(realm).getSecretKey();
             SecretKey hmacKey = session.keys().getActiveHmacKey(realm).getSecretKey();
 

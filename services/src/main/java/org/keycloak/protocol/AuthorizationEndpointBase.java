@@ -24,6 +24,7 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -166,7 +167,7 @@ public abstract class AuthorizationEndpointBase {
         }
     }
 
-    protected AuthorizationEndpointChecks getOrCreateAuthenticationSession(ClientModel client, String requestState) {
+    protected AuthenticationSessionModel createAuthenticationSession(ClientModel client, String requestState) {
         AuthenticationSessionManager manager = new AuthenticationSessionManager(session);
         String authSessionId = manager.getCurrentAuthenticationSessionId(realm);
         RootAuthenticationSessionModel rootAuthSession = authSessionId==null ? null : session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId);
@@ -174,128 +175,32 @@ public abstract class AuthorizationEndpointBase {
 
         if (rootAuthSession != null) {
 
-            authSession = rootAuthSession.getAuthenticationSession(client);
+            authSession = rootAuthSession.createAuthenticationSession(client);
 
-            if (authSession != null) {
-                ClientSessionCode<AuthenticationSessionModel> check = new ClientSessionCode<>(session, realm, authSession);
-                if (!check.isActionActive(ClientSessionCode.ActionType.LOGIN)) {
+            logger.debugf("Sent request to authz endpoint. Root authentication session with ID '%s' exists. Client is '%s' . Created new authentication session with tab ID: %s",
+                    rootAuthSession.getId(), client.getClientId(), authSession.getTabId());
 
-                    logger.debugf("Authentication session '%s' exists, but is expired. Restart existing authentication session", rootAuthSession.getId());
-                    rootAuthSession.restartSession(realm);
-                    authSession = rootAuthSession.createAuthenticationSession(client);
+        } else {
 
-                    return new AuthorizationEndpointChecks(authSession);
+            UserSessionModel userSession = authSessionId == null ? null : new UserSessionCrossDCManager(session).getUserSessionIfExistsRemotely(realm, authSessionId);
 
-                } else if (isNewRequest(authSession, client, requestState)) {
-                    // Check if we have lastProcessedExecution note or if some request parameter beside state (eg. prompt, kc_idp_hint) changed. Restart the session just if yes.
-                    // Otherwise update just client information from the AuthorizationEndpoint request.
-                    // This difference is needed, because of logout from JS applications in multiple browser tabs.
-                    if (shouldRestartAuthSession(authSession)) {
-                        logger.debugf("New request from application received, but authentication session '%s' already exists and has client '%s'. Restart child authentication session for client.",
-                                rootAuthSession.getId(), client.getClientId());
-
-                        authSession = rootAuthSession.createAuthenticationSession(client);
-
-                    } else {
-                        logger.debugf("New request from application received, but authentication session '%s' already exists and has client '%s'. Update client information in existing authentication session.",
-                                rootAuthSession.getId(), client.getClientId());
-                        authSession.clearClientNotes();
-                    }
-
-                    return new AuthorizationEndpointChecks(authSession);
-
-                } else {
-                    logger.debug("Re-sent some previous request to Authorization endpoint. Likely browser 'back' or 'refresh' button.");
-
-                    // See if we have lastProcessedExecution note. If yes, we are expired. Also if we are in different flow than initial one. Otherwise it is browser refresh of initial username/password form
-                    if (!shouldShowExpirePage(authSession)) {
-                        return new AuthorizationEndpointChecks(authSession);
-                    } else {
-                        CacheControlUtil.noBackButtonCacheControlHeader();
-
-                        Response response = new AuthenticationFlowURLHelper(session, realm, uriInfo)
-                                .showPageExpired(authSession);
-                        return new AuthorizationEndpointChecks(response);
-                    }
-                }
-            } else {
-                logger.debugf("Sent request to authz endpoint. Authentication session with ID '%s' exists, but doesn't have client: '%s' . Adding client to authentication session",
-                        rootAuthSession.getId(), client.getClientId());
-
+            if (userSession != null) {
+                rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(authSessionId, realm);
                 authSession = rootAuthSession.createAuthenticationSession(client);
-                return new AuthorizationEndpointChecks(authSession);
+                logger.debugf("Sent request to authz endpoint. We don't have root authentication session with ID '%s' but we have userSession." +
+                        "Re-created root authentication session with same ID. Client is: %s . New authentication session tab ID: %s", authSessionId, client.getClientId(), authSession.getTabId());
+            } else {
+                rootAuthSession = manager.createAuthenticationSession(realm, true);
+                authSession = rootAuthSession.createAuthenticationSession(client);
+                logger.debugf("Sent request to authz endpoint. Created new root authentication session with ID '%s' . Client: %s . New authentication session tab ID: %s",
+                        rootAuthSession.getId(), client.getClientId(), authSession.getTabId());
             }
         }
 
-        UserSessionModel userSession = authSessionId==null ? null : new UserSessionCrossDCManager(session).getUserSessionIfExistsRemotely(realm, authSessionId);
+        session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authSession);
 
-        if (userSession != null) {
-            logger.debugf("Sent request to authz endpoint. We don't have authentication session with ID '%s' but we have userSession. Will re-create authentication session with same ID", authSessionId);
-            rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(authSessionId, realm);
-            authSession = rootAuthSession.createAuthenticationSession(client);
-        } else {
-            rootAuthSession = manager.createAuthenticationSession(realm, true);
-            authSession = rootAuthSession.createAuthenticationSession(client);
-            logger.debugf("Sent request to authz endpoint. Created new authentication session with ID '%s'", rootAuthSession.getId());
-        }
+        return authSession;
 
-        return new AuthorizationEndpointChecks(authSession);
-
-    }
-
-
-    protected boolean shouldRestartAuthSession(AuthenticationSessionModel authSession) {
-        return hasProcessedExecution(authSession);
-    }
-
-
-    private boolean hasProcessedExecution(AuthenticationSessionModel authSession) {
-        String lastProcessedExecution = authSession.getAuthNote(AuthenticationProcessor.LAST_PROCESSED_EXECUTION);
-        return (lastProcessedExecution != null);
-    }
-
-
-    // See if we have lastProcessedExecution note. If yes, we are expired. Also if we are in different flow than initial one. Otherwise it is browser refresh of initial username/password form
-    private boolean shouldShowExpirePage(AuthenticationSessionModel authSession) {
-        if (hasProcessedExecution(authSession)) {
-            return true;
-        }
-
-        String initialFlow = authSession.getClientNote(APP_INITIATED_FLOW);
-        if (initialFlow == null) {
-            initialFlow = LoginActionsService.AUTHENTICATE_PATH;
-        }
-
-        String lastFlow = authSession.getAuthNote(AuthenticationProcessor.CURRENT_FLOW_PATH);
-        // Check if we transitted between flows (eg. clicking "register" on login screen and then clicking browser 'back', which showed this page)
-        if (!initialFlow.equals(lastFlow) && AuthenticationSessionModel.Action.AUTHENTICATE.toString().equals(authSession.getAction())) {
-            logger.debugf("Transition between flows! Current flow: %s, Previous flow: %s", initialFlow, lastFlow);
-
-            authSession.setAuthNote(AuthenticationProcessor.CURRENT_FLOW_PATH, initialFlow);
-            authSession.removeAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION);
-            return false;
-        }
-
-        return false;
-    }
-
-    // Try to see if it is new request from the application, or refresh of some previous request
-    protected abstract boolean isNewRequest(AuthenticationSessionModel authSession, ClientModel clientFromRequest, String requestState);
-
-
-    protected static class AuthorizationEndpointChecks {
-        public final AuthenticationSessionModel authSession;
-        public final Response response;
-
-        private AuthorizationEndpointChecks(Response response) {
-            this.authSession = null;
-            this.response = response;
-        }
-
-        private AuthorizationEndpointChecks(AuthenticationSessionModel authSession) {
-            this.authSession = authSession;
-            this.response = null;
-        }
     }
 
 }

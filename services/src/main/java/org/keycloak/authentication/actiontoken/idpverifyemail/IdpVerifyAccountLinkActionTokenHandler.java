@@ -31,6 +31,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 import java.util.Collections;
@@ -76,9 +77,12 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
 
         AuthenticationSessionModel authSession = tokenContext.getAuthenticationSession();
         if (tokenContext.isAuthenticationSessionFresh()) {
-            token.setOriginalAuthenticationSessionId(token.getAuthenticationSessionId());
-            token.setAuthenticationSessionId(authSession.getParentSession().getId());
-            UriBuilder builder = Urls.actionTokenBuilder(uriInfo.getBaseUri(), token.serialize(session, realm, uriInfo), authSession.getClient().getClientId());
+            token.setOriginalCompoundAuthenticationSessionId(token.getCompoundAuthenticationSessionId());
+
+            String authSessionEncodedId = AuthenticationSessionCompoundId.fromAuthSession(authSession).getEncodedId();
+            token.setCompoundAuthenticationSessionId(authSessionEncodedId);
+            UriBuilder builder = Urls.actionTokenBuilder(uriInfo.getBaseUri(), token.serialize(session, realm, uriInfo),
+                    authSession.getClient().getClientId(), authSession.getTabId());
             String confirmUri = builder.build(realm.getName()).toString();
 
             return session.getProvider(LoginFormsProvider.class)
@@ -91,20 +95,20 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
         // verify user email as we know it is valid as this entry point would never have gotten here.
         user.setEmailVerified(true);
 
-        if (token.getOriginalAuthenticationSessionId() != null) {
+        if (token.getOriginalCompoundAuthenticationSessionId() != null) {
             AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
             asm.removeAuthenticationSession(realm, authSession, true);
 
-            ClientModel originalClient = realm.getClientById(token.getOriginalClientUUID());
-            authSession = asm.getAuthenticationSessionByIdAndClient(realm, token.getOriginalAuthenticationSessionId(), originalClient);
+            AuthenticationSessionCompoundId compoundId = AuthenticationSessionCompoundId.encoded(token.getOriginalCompoundAuthenticationSessionId());
+            ClientModel originalClient = realm.getClientById(compoundId.getClientUUID());
+            authSession = asm.getAuthenticationSessionByIdAndClient(realm, compoundId.getRootSessionId(), originalClient, compoundId.getTabId());
 
             if (authSession != null) {
                 authSession.setAuthNote(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_USERNAME, token.getIdentityProviderUsername());
             } else {
 
                 session.authenticationSessions().updateNonlocalSessionAuthNotes(
-                  token.getAuthenticationSessionId(),
-                  originalClient,
+                        compoundId,
                   Collections.singletonMap(IdpEmailVerificationAuthenticator.VERIFY_ACCOUNT_IDP_USERNAME, token.getIdentityProviderUsername())
                 );
             }
