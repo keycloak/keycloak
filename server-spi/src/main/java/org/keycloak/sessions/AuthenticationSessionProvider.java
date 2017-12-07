@@ -47,10 +47,10 @@ public interface AuthenticationSessionProvider extends Provider {
      * Requests update of authNotes of a root authentication session that is not owned
      * by this instance but might exist somewhere in the cluster.
      * 
-     * @param authSessionId
+     * @param compoundId
      * @param authNotesFragment Map with authNote values. Auth note is removed if the corresponding value in the map is {@code null}.
      */
-    void updateNonlocalSessionAuthNotes(String authSessionId, ClientModel client, Map<String, String> authNotesFragment);
+    void updateNonlocalSessionAuthNotes(AuthenticationSessionCompoundId compoundId, Map<String, String> authNotesFragment);
 
 
 }

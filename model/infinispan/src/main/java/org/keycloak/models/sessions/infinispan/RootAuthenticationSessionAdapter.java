@@ -21,12 +21,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.infinispan.Cache;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
@@ -82,25 +84,41 @@ public class RootAuthenticationSessionAdapter implements RootAuthenticationSessi
         Map<String, AuthenticationSessionModel> result = new HashMap<>();
 
         for (Map.Entry<String, AuthenticationSessionEntity> entry : entity.getAuthenticationSessions().entrySet()) {
-            String clientUUID = entry.getKey();
-            result.put(clientUUID , new AuthenticationSessionAdapter(session, this, clientUUID, entry.getValue()));
+            String tabId = entry.getKey();
+            result.put(tabId , new AuthenticationSessionAdapter(session, this, tabId, entry.getValue()));
         }
 
         return result;
     }
 
     @Override
-    public AuthenticationSessionModel getAuthenticationSession(ClientModel client) {
-        return client==null ? null : getAuthenticationSessions().get(client.getId());
+    public AuthenticationSessionModel getAuthenticationSession(ClientModel client, String tabId) {
+        if (client == null || tabId == null) {
+            return null;
+        }
+
+        AuthenticationSessionModel authSession = getAuthenticationSessions().get(tabId);
+        if (authSession != null && client.equals(authSession.getClient())) {
+            return authSession;
+        } else {
+            return null;
+        }
     }
 
     @Override
     public AuthenticationSessionModel createAuthenticationSession(ClientModel client) {
         AuthenticationSessionEntity authSessionEntity = new AuthenticationSessionEntity();
-        entity.getAuthenticationSessions().put(client.getId(), authSessionEntity);
+        authSessionEntity.setClientUUID(client.getId());
+
+        String tabId = provider.generateTabId();
+        entity.getAuthenticationSessions().put(tabId, authSessionEntity);
+
+        // Update our timestamp when adding new authenticationSession
+        entity.setTimestamp(Time.currentTime());
+
         update();
 
-        return new AuthenticationSessionAdapter(session, this, client.getId(), authSessionEntity);
+        return new AuthenticationSessionAdapter(session, this, tabId, authSessionEntity);
     }
 
     @Override

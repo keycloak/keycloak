@@ -30,6 +30,7 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import java.util.Objects;
 import javax.ws.rs.core.Response;
@@ -76,9 +77,12 @@ public class VerifyEmailActionTokenHandler extends AbstractActionTokenHander<Ver
 
         if (tokenContext.isAuthenticationSessionFresh()) {
             // Update the authentication session in the token
-            token.setOriginalAuthenticationSessionId(token.getAuthenticationSessionId());
-            token.setAuthenticationSessionId(authSession.getParentSession().getId());
-            UriBuilder builder = Urls.actionTokenBuilder(uriInfo.getBaseUri(), token.serialize(session, realm, uriInfo), authSession.getClient().getClientId());
+            token.setCompoundOriginalAuthenticationSessionId(token.getCompoundAuthenticationSessionId());
+
+            String authSessionEncodedId = AuthenticationSessionCompoundId.fromAuthSession(authSession).getEncodedId();
+            token.setCompoundAuthenticationSessionId(authSessionEncodedId);
+            UriBuilder builder = Urls.actionTokenBuilder(uriInfo.getBaseUri(), token.serialize(session, realm, uriInfo),
+                    authSession.getClient().getClientId(), authSession.getTabId());
             String confirmUri = builder.build(realm.getName()).toString();
 
             return session.getProvider(LoginFormsProvider.class)
@@ -95,7 +99,7 @@ public class VerifyEmailActionTokenHandler extends AbstractActionTokenHander<Ver
 
         event.success();
 
-        if (token.getOriginalAuthenticationSessionId() != null) {
+        if (token.getCompoundOriginalAuthenticationSessionId() != null) {
             AuthenticationSessionManager asm = new AuthenticationSessionManager(tokenContext.getSession());
             asm.removeAuthenticationSession(tokenContext.getRealm(), authSession, true);
 

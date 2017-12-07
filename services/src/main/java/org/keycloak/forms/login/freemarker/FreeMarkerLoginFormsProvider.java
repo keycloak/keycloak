@@ -248,6 +248,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         if (client != null) {
             uriBuilder.queryParam(Constants.CLIENT_ID, client.getClientId());
         }
+        if (authenticationSession != null) {
+            uriBuilder.queryParam(Constants.TAB_ID, authenticationSession.getTabId());
+        }
         return uriBuilder;
     }
 

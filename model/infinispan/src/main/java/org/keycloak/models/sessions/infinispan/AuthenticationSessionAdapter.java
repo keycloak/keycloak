@@ -40,13 +40,13 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
 
     private final KeycloakSession session;
     private final RootAuthenticationSessionAdapter parent;
-    private final String clientUUID;
+    private final String tabId;
     private AuthenticationSessionEntity entity;
 
-    public AuthenticationSessionAdapter(KeycloakSession session, RootAuthenticationSessionAdapter parent, String clientUUID, AuthenticationSessionEntity entity) {
+    public AuthenticationSessionAdapter(KeycloakSession session, RootAuthenticationSessionAdapter parent, String tabId, AuthenticationSessionEntity entity) {
         this.session = session;
         this.parent = parent;
-        this.clientUUID = clientUUID;
+        this.tabId = tabId;
         this.entity = entity;
     }
 
@@ -54,6 +54,10 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
         parent.update();
     }
 
+    @Override
+    public String getTabId() {
+        return tabId;
+    }
 
     @Override
     public RootAuthenticationSessionModel getParentSession() {
@@ -68,7 +72,7 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
 
     @Override
     public ClientModel getClient() {
-        return getRealm().getClientById(clientUUID);
+        return getRealm().getClientById(entity.getClientUUID());
     }
 
     @Override

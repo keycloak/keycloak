@@ -312,12 +312,8 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
         loginPage.login("login-test", "password");
         updatePasswordPage.assertCurrent();
 
-        // Click browser back. I should be on 'page expired' . URL corresponds to OIDC AuthorizationEndpoint
+        // Click browser back. I should be on login page . URL corresponds to OIDC AuthorizationEndpoint
         driver.navigate().back();
-        loginExpiredPage.assertCurrent();
-
-        // Click 'restart' link. I should be on login page
-        loginExpiredPage.clickLoginRestartLink();
         loginPage.assertCurrent();
     }
 
@@ -326,6 +322,7 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
     public void backButtonInResetPasswordFlow() throws Exception {
         // Click on "forgot password" and type username
         loginPage.open();
+        loginPage.login("login-test", "bad-username");
         loginPage.resetPassword();
 
         resetPasswordPage.assertCurrent();
@@ -344,22 +341,19 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
 
         updatePasswordPage.assertCurrent();
 
-        // Click browser back. Should be on 'page expired'
+        // Click browser back. Should be on loginPage for "forked flow"
         driver.navigate().back();
-        loginExpiredPage.assertCurrent();
-
-        // Click 'continue' should be on updatePasswordPage
-        loginExpiredPage.clickLoginContinueLink();
-        updatePasswordPage.assertCurrent();
-
-        // Click browser back. Should be on 'page expired'
-        driver.navigate().back();
-        loginExpiredPage.assertCurrent();
-
-        // Click 'restart' . Should be on login page
-        loginExpiredPage.clickLoginRestartLink();
         loginPage.assertCurrent();
 
+        // When clicking browser forward, back on updatePasswordPage
+        driver.navigate().forward();
+        updatePasswordPage.assertCurrent();
+
+        // Click browser back. And continue login. Should be on updatePasswordPage
+        driver.navigate().back();
+        loginPage.assertCurrent();
+        loginPage.login("login-test", "password");
+        updatePasswordPage.assertCurrent();
     }
 
 

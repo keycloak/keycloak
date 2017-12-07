@@ -434,6 +434,7 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
                     .path(uri)
                     .queryParam(OAuth2Constants.CODE, queryParams.get(OAuth2Constants.CODE))
                     .queryParam(Constants.CLIENT_ID, queryParams.get(Constants.CLIENT_ID))
+                    .queryParam(Constants.TAB_ID, queryParams.get(Constants.TAB_ID))
                     .build().toString();
 
             log.info("hack uri: " + uri);

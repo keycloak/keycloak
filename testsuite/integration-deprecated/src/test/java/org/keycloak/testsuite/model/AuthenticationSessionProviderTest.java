@@ -87,13 +87,19 @@ public class AuthenticationSessionProviderTest {
         RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(realm);
         AuthenticationSessionModel authSession = rootAuthSession.createAuthenticationSession(client1);
 
+        String tabId = authSession.getTabId();
+
         authSession.setAction("foo");
         rootAuthSession.setTimestamp(100);
 
+
         resetSession();
+
+        client1 = realm.getClientByClientId("test-app");
 
         // Ensure session is here
         rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, rootAuthSession.getId());
+        authSession = rootAuthSession.getAuthenticationSession(client1, tabId);
         testAuthenticationSession(authSession, client1.getId(), null, "foo");
         Assert.assertEquals(100, rootAuthSession.getTimestamp());
 
@@ -107,7 +113,7 @@ public class AuthenticationSessionProviderTest {
         // Ensure session was updated
         rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, rootAuthSession.getId());
         client1 = realm.getClientByClientId("test-app");
-        authSession = rootAuthSession.getAuthenticationSession(client1);
+        authSession = rootAuthSession.getAuthenticationSession(client1, tabId);
         testAuthenticationSession(authSession, client1.getId(), user1.getId(), "foo-updated");
         Assert.assertEquals(200, rootAuthSession.getTimestamp());
 
@@ -127,6 +133,7 @@ public class AuthenticationSessionProviderTest {
         UserModel user1 = session.users().getUserByUsername("user1", realm);
 
         AuthenticationSessionModel authSession = session.authenticationSessions().createRootAuthenticationSession(realm).createAuthenticationSession(client1);
+        String tabId = authSession.getTabId();
 
         authSession.setAction("foo");
         authSession.getParentSession().setTimestamp(100);
@@ -141,13 +148,13 @@ public class AuthenticationSessionProviderTest {
         // Test restart root authentication session
         client1 = realm.getClientByClientId("test-app");
         authSession = session.authenticationSessions().getRootAuthenticationSession(realm, authSession.getParentSession().getId())
-                .getAuthenticationSession(client1);
+                .getAuthenticationSession(client1, tabId);
         authSession.getParentSession().restartSession(realm);
 
         resetSession();
 
         RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, authSession.getParentSession().getId());
-        Assert.assertNull(rootAuthSession.getAuthenticationSession(client1));
+        Assert.assertNull(rootAuthSession.getAuthenticationSession(client1, tabId));
         Assert.assertTrue(rootAuthSession.getTimestamp() > 0);
     }
 
@@ -248,26 +255,26 @@ public class AuthenticationSessionProviderTest {
         String authSessionId = session.authenticationSessions().createRootAuthenticationSession(realm).getId();
         AuthenticationSessionModel authSession1 = session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId).createAuthenticationSession(realm.getClientByClientId("test-app"));
         AuthenticationSessionModel authSession2 = session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId).createAuthenticationSession(realm.getClientByClientId("third-party"));
+        String tab1Id = authSession1.getTabId();
+        String tab2Id = authSession2.getTabId();
 
         authSession1.setAuthNote("foo", "bar");
         authSession2.setAuthNote("foo", "baz");
-
-        String testAppClientUUID = realm.getClientByClientId("test-app").getId();
 
         resetSession();
 
         RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId);
         Assert.assertEquals(2, rootAuthSession.getAuthenticationSessions().size());
-        Assert.assertEquals("bar", rootAuthSession.getAuthenticationSession(realm.getClientByClientId("test-app")).getAuthNote("foo"));
-        Assert.assertEquals("baz", rootAuthSession.getAuthenticationSession(realm.getClientByClientId("third-party")).getAuthNote("foo"));
+        Assert.assertEquals("bar", rootAuthSession.getAuthenticationSession(realm.getClientByClientId("test-app"), tab1Id).getAuthNote("foo"));
+        Assert.assertEquals("baz", rootAuthSession.getAuthenticationSession(realm.getClientByClientId("third-party"), tab2Id).getAuthNote("foo"));
 
         new ClientManager(new RealmManager(session)).removeClient(realm, realm.getClientByClientId("third-party"));
 
         resetSession();
 
         rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId);
-        Assert.assertEquals("bar", rootAuthSession.getAuthenticationSession(realm.getClientByClientId("test-app")).getAuthNote("foo"));
-        Assert.assertNull(rootAuthSession.getAuthenticationSession(realm.getClientByClientId("third-party")));
+        Assert.assertEquals("bar", rootAuthSession.getAuthenticationSession(realm.getClientByClientId("test-app"), tab1Id).getAuthNote("foo"));
+        Assert.assertNull(rootAuthSession.getAuthenticationSession(realm.getClientByClientId("third-party"), tab2Id));
 
         // Revert client
         realm.addClient("third-party");

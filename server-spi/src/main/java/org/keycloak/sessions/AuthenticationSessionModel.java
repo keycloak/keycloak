@@ -24,12 +24,19 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.UserModel;
 
 /**
- * Using class for now to avoid many updates among implementations
+ * Represents the state of the authentication. If the login is requested from different tabs of same browser, every browser
+ * tab has it's own state of the authentication. So there is separate AuthenticationSessionModel for every tab. Whole browser
+ * is represented by {@link RootAuthenticationSessionModel}
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public interface AuthenticationSessionModel extends CommonClientSessionModel {
 
+    /**
+     * @return ID of this subsession (in other words, usually browser tab). For lookup the AuthenticationSessionModel, you need:
+     * ID of rootSession (parent), client UUID and tabId. For lookup the ID of the parent, use {@link #getParentSession().getId()}
+     */
+    String getTabId();
 
     RootAuthenticationSessionModel getParentSession();
 

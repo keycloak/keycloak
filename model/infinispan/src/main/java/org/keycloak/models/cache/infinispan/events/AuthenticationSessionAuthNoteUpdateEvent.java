@@ -35,7 +35,7 @@ import org.infinispan.commons.marshall.SerializeWith;
 public class AuthenticationSessionAuthNoteUpdateEvent implements ClusterEvent {
 
     private String authSessionId;
-
+    private String tabId;
     private String clientUUID;
 
     private Map<String, String> authNotesFragment;
@@ -46,9 +46,10 @@ public class AuthenticationSessionAuthNoteUpdateEvent implements ClusterEvent {
      * @param authNotesFragment
      * @return Event. Note that {@code authNotesFragment} property is not thread safe which is fine for now.
      */
-    public static AuthenticationSessionAuthNoteUpdateEvent create(String authSessionId, String clientUUID, Map<String, String> authNotesFragment) {
+    public static AuthenticationSessionAuthNoteUpdateEvent create(String authSessionId, String tabId, String clientUUID, Map<String, String> authNotesFragment) {
         AuthenticationSessionAuthNoteUpdateEvent event = new AuthenticationSessionAuthNoteUpdateEvent();
         event.authSessionId = authSessionId;
+        event.tabId = tabId;
         event.clientUUID = clientUUID;
         event.authNotesFragment = new LinkedHashMap<>(authNotesFragment);
         return event;
@@ -56,6 +57,10 @@ public class AuthenticationSessionAuthNoteUpdateEvent implements ClusterEvent {
 
     public String getAuthSessionId() {
         return authSessionId;
+    }
+
+    public String getTabId() {
+        return tabId;
     }
 
     public String getClientUUID() {
@@ -68,7 +73,7 @@ public class AuthenticationSessionAuthNoteUpdateEvent implements ClusterEvent {
 
     @Override
     public String toString() {
-        return String.format("AuthenticationSessionAuthNoteUpdateEvent [ authSessionId=%s, clientUUID=%s, authNotesFragment=%s ]",
+        return String.format("AuthenticationSessionAuthNoteUpdateEvent [ authSessionId=%s, tabId=%s, clientUUID=%s, authNotesFragment=%s ]",
                 authSessionId, clientUUID, authNotesFragment);
     }
 
@@ -81,6 +86,7 @@ public class AuthenticationSessionAuthNoteUpdateEvent implements ClusterEvent {
             output.writeByte(VERSION_1);
 
             MarshallUtil.marshallString(value.authSessionId, output);
+            MarshallUtil.marshallString(value.tabId, output);
             MarshallUtil.marshallString(value.clientUUID, output);
             MarshallUtil.marshallMap(value.authNotesFragment, output);
         }
@@ -97,6 +103,7 @@ public class AuthenticationSessionAuthNoteUpdateEvent implements ClusterEvent {
 
         public AuthenticationSessionAuthNoteUpdateEvent readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
             return create(
+              MarshallUtil.unmarshallString(input),
               MarshallUtil.unmarshallString(input),
               MarshallUtil.unmarshallString(input),
               MarshallUtil.unmarshallMap(input, HashMap::new)

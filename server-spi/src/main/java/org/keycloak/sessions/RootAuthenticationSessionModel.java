@@ -38,16 +38,16 @@ public interface RootAuthenticationSessionModel {
 
 
     /**
-     * Key is client UUID, Value is AuthenticationSessionModel for particular client
+     * Key is tabId, Value is AuthenticationSessionModel.
      * @return authentication sessions or empty map if no authenticationSessions presents. Never return null.
      */
     Map<String, AuthenticationSessionModel> getAuthenticationSessions();
 
 
     /**
-     * @return authentication session for particular client or null if it doesn't yet exists.
+     * @return authentication session for particular client and tab or null if it doesn't yet exists.
      */
-    AuthenticationSessionModel getAuthenticationSession(ClientModel client);
+    AuthenticationSessionModel getAuthenticationSession(ClientModel client, String tabId);
 
 
     /**

@@ -69,10 +69,12 @@ public class SessionCodeChecks {
     private final String code;
     private final String execution;
     private final String clientId;
+    private final String tabId;
     private final String flowPath;
 
 
-    public SessionCodeChecks(RealmModel realm, UriInfo uriInfo, HttpRequest request, ClientConnection clientConnection, KeycloakSession session, EventBuilder event, String code, String execution, String clientId, String flowPath) {
+    public SessionCodeChecks(RealmModel realm, UriInfo uriInfo, HttpRequest request, ClientConnection clientConnection, KeycloakSession session, EventBuilder event,
+                             String code, String execution, String clientId, String tabId, String flowPath) {
         this.realm = realm;
         this.uriInfo = uriInfo;
         this.request = request;
@@ -83,6 +85,7 @@ public class SessionCodeChecks {
         this.code = code;
         this.execution = execution;
         this.clientId = clientId;
+        this.tabId = tabId;
         this.flowPath = flowPath;
     }
 
@@ -145,8 +148,9 @@ public class SessionCodeChecks {
 
         // object retrieve
         AuthenticationSessionManager authSessionManager = new AuthenticationSessionManager(session);
-        AuthenticationSessionModel authSession = authSessionManager.getCurrentAuthenticationSession(realm, client);
+        AuthenticationSessionModel authSession = authSessionManager.getCurrentAuthenticationSession(realm, client, tabId);
         if (authSession != null) {
+            session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authSession);
             return authSession;
         }
 
@@ -246,14 +250,14 @@ public class SessionCodeChecks {
                 return false;
             }
         } else {
-            ClientSessionCode.ParseResult<AuthenticationSessionModel> result = ClientSessionCode.parseResult(code, session, realm, client, event, AuthenticationSessionModel.class);
+            ClientSessionCode.ParseResult<AuthenticationSessionModel> result = ClientSessionCode.parseResult(code, tabId, session, realm, client, event, AuthenticationSessionModel.class);
             clientCode = result.getCode();
             if (clientCode == null) {
 
                 // In case that is replayed action, but sent to the same FORM like actual FORM, we just re-render the page
                 if (ObjectUtil.isEqualOrBothNull(execution, authSession.getAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION))) {
                     String latestFlowPath = authSession.getAuthNote(AuthenticationProcessor.CURRENT_FLOW_PATH);
-                    URI redirectUri = getLastExecutionUrl(latestFlowPath, execution, client.getClientId());
+                    URI redirectUri = getLastExecutionUrl(latestFlowPath, execution, tabId);
 
                     logger.debugf("Invalid action code, but execution matches. So just redirecting to %s", redirectUri);
                     authSession.setAuthNote(LoginActionsService.FORWARDED_ERROR_MESSAGE_NOTE, Messages.EXPIRED_ACTION);
@@ -308,7 +312,7 @@ public class SessionCodeChecks {
 
             authSession.setAuthNote(LoginActionsService.FORWARDED_ERROR_MESSAGE_NOTE, Messages.LOGIN_TIMEOUT);
 
-            URI redirectUri = getLastExecutionUrl(LoginActionsService.AUTHENTICATE_PATH, null, authSession.getClient().getClientId());
+            URI redirectUri = getLastExecutionUrl(LoginActionsService.AUTHENTICATE_PATH, null, tabId);
             logger.debugf("Flow restart after timeout. Redirecting to %s", redirectUri);
             response = Response.status(Response.Status.FOUND).location(redirectUri).build();
             return false;
@@ -371,7 +375,7 @@ public class SessionCodeChecks {
                 flowPath = LoginActionsService.AUTHENTICATE_PATH;
             }
 
-            URI redirectUri = getLastExecutionUrl(flowPath, null, authSession.getClient().getClientId());
+            URI redirectUri = getLastExecutionUrl(flowPath, null, authSession.getTabId());
             logger.debugf("Authentication session restart from cookie succeeded. Redirecting to %s", redirectUri);
             return Response.status(Response.Status.FOUND).location(redirectUri).build();
         } else {
@@ -392,15 +396,16 @@ public class SessionCodeChecks {
 
         ClientModel client = authSession.getClient();
         uriBuilder.queryParam(Constants.CLIENT_ID, client.getClientId());
+        uriBuilder.queryParam(Constants.TAB_ID, authSession.getTabId());
 
         URI redirect = uriBuilder.build(realm.getName());
         return Response.status(302).location(redirect).build();
     }
 
 
-    private URI getLastExecutionUrl(String flowPath, String executionId, String clientId) {
+    private URI getLastExecutionUrl(String flowPath, String executionId, String tabId) {
         return new AuthenticationFlowURLHelper(session, realm, uriInfo)
-                .getLastExecutionUrl(flowPath, executionId, clientId);
+                .getLastExecutionUrl(flowPath, executionId, clientId, tabId);
     }
 
 

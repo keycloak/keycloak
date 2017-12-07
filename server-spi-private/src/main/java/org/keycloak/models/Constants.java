@@ -54,6 +54,7 @@ public interface Constants {
     String VERIFY_EMAIL_KEY = "VERIFY_EMAIL_KEY";
     String EXECUTION = "execution";
     String CLIENT_ID = "client_id";
+    String TAB_ID = "tab_id";
     String KEY = "key";
 
     String SKIP_LINK = "skipLink";

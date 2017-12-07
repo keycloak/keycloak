@@ -30,6 +30,7 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel.Action;
 import java.util.Objects;
@@ -251,46 +252,34 @@ public class LoginActionsServiceChecks {
      *
      *  @param <T>
      */
-    public static <T extends JsonWebToken> boolean doesAuthenticationSessionFromCookieMatchOneFromToken(ActionTokenContext<T> context, String authSessionIdFromToken, ClientModel client) throws VerificationException {
-        if (authSessionIdFromToken == null) {
+    public static <T extends JsonWebToken> boolean doesAuthenticationSessionFromCookieMatchOneFromToken(
+            ActionTokenContext<T> context, AuthenticationSessionModel authSessionFromCookie, String authSessionCompoundIdFromToken) throws VerificationException {
+        if (authSessionCompoundIdFromToken == null) {
             return false;
         }
 
-        AuthenticationSessionManager asm = new AuthenticationSessionManager(context.getSession());
-        String authSessionIdFromCookie = asm.getCurrentAuthenticationSessionId(context.getRealm());
 
-        if (authSessionIdFromCookie == null) {
-            return false;
-        }
-
-        AuthenticationSessionModel authSessionFromCookie = asm.getAuthenticationSessionByIdAndClient(context.getRealm(), authSessionIdFromCookie, client);
-        if (authSessionFromCookie == null) {    // Not our client in root session
-            return false;
-        }
-
-        if (Objects.equals(authSessionIdFromCookie, authSessionIdFromToken)) {
+        if (Objects.equals(AuthenticationSessionCompoundId.fromAuthSession(authSessionFromCookie).getEncodedId(), authSessionCompoundIdFromToken)) {
             context.setAuthenticationSession(authSessionFromCookie, false);
             return true;
         }
 
-        String parentSessionId = authSessionFromCookie.getAuthNote(AuthenticationProcessor.FORKED_FROM);
-        if (parentSessionId == null || ! Objects.equals(authSessionIdFromToken, parentSessionId)) {
+        // Check if it's forked session. It would have same parent (rootSession) as our browser authenticationSession
+        String parentTabId = authSessionFromCookie.getAuthNote(AuthenticationProcessor.FORKED_FROM);
+        if (parentTabId == null) {
             return false;
         }
 
-        AuthenticationSessionModel authSessionFromParent = asm.getAuthenticationSessionByIdAndClient(context.getRealm(), parentSessionId, client);
+
+        AuthenticationSessionModel authSessionFromParent = authSessionFromCookie.getParentSession().getAuthenticationSession(authSessionFromCookie.getClient(), parentTabId);
         if (authSessionFromParent == null) {
             return false;
         }
 
-        // It's the correct browser. Let's remove forked session as we won't continue
+        // It's the correct browser. We won't continue login
         // from the login form (browser flow) but from the token's flow
         // Don't expire KC_RESTART cookie at this point
-        asm.removeAuthenticationSession(context.getRealm(), authSessionFromCookie, false);
-        LOG.debugf("Removed forked session: %s", authSessionFromCookie.getParentSession().getId());
-
-        // Refresh browser cookie
-        asm.setAuthSessionCookie(parentSessionId, context.getRealm());
+        LOG.debugf("Switched to forked tab: %s from: %s . Root session: %s", authSessionFromParent.getTabId(), authSessionFromCookie.getTabId(), authSessionFromCookie.getParentSession().getId());
 
         context.setAuthenticationSession(authSessionFromParent, false);
         context.setExecutionId(authSessionFromParent.getAuthNote(AuthenticationProcessor.LAST_PROCESSED_EXECUTION));

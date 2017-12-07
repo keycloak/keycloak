@@ -23,6 +23,7 @@ import java.util.Map;
 
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -35,6 +36,7 @@ import org.keycloak.models.sessions.infinispan.stream.RootAuthenticationSessionP
 import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RealmInfoUtil;
+import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
@@ -162,15 +164,15 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
 
 
     @Override
-    public void updateNonlocalSessionAuthNotes(String authSessionId, ClientModel client, Map<String, String> authNotesFragment) {
-        if (authSessionId == null) {
+    public void updateNonlocalSessionAuthNotes(AuthenticationSessionCompoundId compoundId, Map<String, String> authNotesFragment) {
+        if (compoundId == null) {
             return;
         }
 
         ClusterProvider cluster = session.getProvider(ClusterProvider.class);
         cluster.notify(
           InfinispanAuthenticationSessionProviderFactory.AUTHENTICATION_SESSION_EVENTS,
-          AuthenticationSessionAuthNoteUpdateEvent.create(authSessionId, client.getId(), authNotesFragment),
+          AuthenticationSessionAuthNoteUpdateEvent.create(compoundId.getRootSessionId(), compoundId.getTabId(), compoundId.getClientUUID(), authNotesFragment),
           true,
           ClusterProvider.DCNotify.ALL_BUT_LOCAL_DC
         );
@@ -196,5 +198,10 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
 
     public Cache<String, RootAuthenticationSessionEntity> getCache() {
         return cache;
+    }
+
+
+    protected String generateTabId() {
+        return Base64Url.encode(KeycloakModelUtils.generateSecret(8));
     }
 }

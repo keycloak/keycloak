@@ -118,16 +118,16 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
 
         AuthenticationSessionAuthNoteUpdateEvent event = (AuthenticationSessionAuthNoteUpdateEvent) clEvent;
         RootAuthenticationSessionEntity authSession = this.authSessionsCache.get(event.getAuthSessionId());
-        updateAuthSession(authSession, event.getClientUUID(), event.getAuthNotesFragment());
+        updateAuthSession(authSession, event.getTabId(), event.getAuthNotesFragment());
     }
 
 
-    private static void updateAuthSession(RootAuthenticationSessionEntity rootAuthSession, String clientUUID, Map<String, String> authNotesFragment) {
+    private static void updateAuthSession(RootAuthenticationSessionEntity rootAuthSession, String tabId, Map<String, String> authNotesFragment) {
         if (rootAuthSession == null) {
             return;
         }
 
-        AuthenticationSessionEntity authSession = rootAuthSession.getAuthenticationSessions().get(clientUUID);
+        AuthenticationSessionEntity authSession = rootAuthSession.getAuthenticationSessions().get(tabId);
 
         if (authSession != null) {
             if (authSession.getAuthNotes() == null) {

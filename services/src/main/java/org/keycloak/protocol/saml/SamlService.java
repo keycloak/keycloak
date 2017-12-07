@@ -300,12 +300,7 @@ public class SamlService extends AuthorizationEndpointBase {
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REDIRECT_URI);
             }
 
-            AuthorizationEndpointChecks checks = getOrCreateAuthenticationSession(client, relayState);
-            if (checks.response != null) {
-                return checks.response;
-            }
-
-            AuthenticationSessionModel authSession = checks.authSession;
+            AuthenticationSessionModel authSession = createAuthenticationSession(client, relayState);
 
             authSession.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
             authSession.setRedirectUri(redirect);
@@ -673,12 +668,8 @@ public class SamlService extends AuthorizationEndpointBase {
             redirect = client.getManagementUrl();
         }
 
-        AuthorizationEndpointChecks checks = getOrCreateAuthenticationSession(client, null);
-        if (checks.response != null) {
-            throw new IllegalStateException("Not expected to detect re-sent request for IDP initiated SSO");
-        }
+        AuthenticationSessionModel authSession = createAuthenticationSession(client, null);
 
-        AuthenticationSessionModel authSession = checks.authSession;
         authSession.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
         authSession.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
         authSession.setClientNote(SamlProtocol.SAML_BINDING, SamlProtocol.SAML_POST_BINDING);
@@ -695,26 +686,6 @@ public class SamlService extends AuthorizationEndpointBase {
         return authSession;
     }
 
-
-    @Override
-    protected boolean isNewRequest(AuthenticationSessionModel authSession, ClientModel clientFromRequest, String requestRelayState) {
-        // No support of browser "refresh" or "back" buttons for SAML IDP initiated SSO. So always treat as new request
-        String idpInitiated = authSession.getClientNote(SamlProtocol.SAML_IDP_INITIATED_LOGIN);
-        if (Boolean.parseBoolean(idpInitiated)) {
-            return true;
-        }
-
-        if (requestRelayState == null) {
-            return true;
-        }
-
-        // Check if it's different client
-        if (!clientFromRequest.equals(authSession.getClient())) {
-            return true;
-        }
-
-        return !requestRelayState.equals(authSession.getClientNote(GeneralConstants.RELAY_STATE));
-    }
 
     @POST
     @NoCache

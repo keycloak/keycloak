@@ -139,6 +139,7 @@ public class RequiredActionContextResult implements RequiredActionContext {
                 .queryParam(OAuth2Constants.CODE, code)
                 .queryParam(Constants.EXECUTION, getExecution())
                 .queryParam(Constants.CLIENT_ID, client.getClientId())
+                .queryParam(Constants.TAB_ID, authenticationSession.getTabId())
                 .build(getRealm().getName());
     }
 

@@ -39,6 +39,7 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 import java.net.URI;
@@ -127,11 +128,13 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
                 .removeDetail(Details.AUTH_METHOD)
                 .removeDetail(Details.AUTH_TYPE);
 
+        String authSessionEncodedId = AuthenticationSessionCompoundId.fromAuthSession(authSession).getEncodedId();
         IdpVerifyAccountLinkActionToken token = new IdpVerifyAccountLinkActionToken(
-          existingUser.getId(), absoluteExpirationInSecs, authSession.getParentSession().getId(), authSession.getClient().getId(),
+          existingUser.getId(), absoluteExpirationInSecs, authSessionEncodedId,
           brokerContext.getUsername(), brokerContext.getIdpConfig().getAlias()
         );
-        UriBuilder builder = Urls.actionTokenBuilder(uriInfo.getBaseUri(), token.serialize(session, realm, uriInfo), authSession.getClient().getClientId());
+        UriBuilder builder = Urls.actionTokenBuilder(uriInfo.getBaseUri(), token.serialize(session, realm, uriInfo),
+                authSession.getClient().getClientId(), authSession.getTabId());
         String link = builder
                 .queryParam(Constants.EXECUTION, context.getExecution().getId())
                 .build(realm.getName()).toString();

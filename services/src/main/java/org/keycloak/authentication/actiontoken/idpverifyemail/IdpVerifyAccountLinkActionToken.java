@@ -31,7 +31,6 @@ public class IdpVerifyAccountLinkActionToken extends DefaultActionToken {
     private static final String JSON_FIELD_IDENTITY_PROVIDER_USERNAME = "idpu";
     private static final String JSON_FIELD_IDENTITY_PROVIDER_ALIAS = "idpa";
     private static final String JSON_FIELD_ORIGINAL_AUTHENTICATION_SESSION_ID = "oasid";
-    private static final String JSON_FIELD_ORIGINAL_CLIENT_UUID = "ocid";
 
     @JsonProperty(value = JSON_FIELD_IDENTITY_PROVIDER_USERNAME)
     private String identityProviderUsername;
@@ -42,13 +41,10 @@ public class IdpVerifyAccountLinkActionToken extends DefaultActionToken {
     @JsonProperty(value = JSON_FIELD_ORIGINAL_AUTHENTICATION_SESSION_ID)
     private String originalAuthenticationSessionId;
 
-    @JsonProperty(value = JSON_FIELD_ORIGINAL_CLIENT_UUID)
-    private String originalClientUUID;
 
-    public IdpVerifyAccountLinkActionToken(String userId, int absoluteExpirationInSecs, String authenticationSessionId, String clientUUID,
+    public IdpVerifyAccountLinkActionToken(String userId, int absoluteExpirationInSecs, String compoundAuthenticationSessionId,
       String identityProviderUsername, String identityProviderAlias) {
-        super(userId, TOKEN_TYPE, absoluteExpirationInSecs, null, authenticationSessionId);
-        this.originalClientUUID = clientUUID;
+        super(userId, TOKEN_TYPE, absoluteExpirationInSecs, null, compoundAuthenticationSessionId);
         this.identityProviderUsername = identityProviderUsername;
         this.identityProviderAlias = identityProviderAlias;
     }
@@ -72,19 +68,12 @@ public class IdpVerifyAccountLinkActionToken extends DefaultActionToken {
         this.identityProviderAlias = identityProviderAlias;
     }
 
-    public String getOriginalAuthenticationSessionId() {
+    public String getOriginalCompoundAuthenticationSessionId() {
         return originalAuthenticationSessionId;
     }
 
-    public void setOriginalAuthenticationSessionId(String originalAuthenticationSessionId) {
-        this.originalAuthenticationSessionId = originalAuthenticationSessionId;
+    public void setOriginalCompoundAuthenticationSessionId(String originalCompoundAuthenticationSessionId) {
+        this.originalAuthenticationSessionId = originalCompoundAuthenticationSessionId;
     }
 
-    public String getOriginalClientUUID() {
-        return originalClientUUID;
-    }
-
-    public void setOriginalClientUUID(String originalClientUUID) {
-        this.originalClientUUID = originalClientUUID;
-    }
 }

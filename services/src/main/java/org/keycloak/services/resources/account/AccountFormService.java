@@ -181,16 +181,20 @@ public class AccountFormService extends AbstractSecuredLocalService {
             setReferrerOnPage();
 
             UserSessionModel userSession = auth.getSession();
-            AuthenticationSessionModel authSession = new AuthenticationSessionManager(session).getAuthenticationSessionByIdAndClient(realm, userSession.getId(), client);
-            if (authSession != null) {
-                String forwardedError = authSession.getAuthNote(ACCOUNT_MGMT_FORWARDED_ERROR_NOTE);
-                if (forwardedError != null) {
-                    try {
-                        FormMessage errorMessage = JsonSerialization.readValue(forwardedError, FormMessage.class);
-                        account.setError(Response.Status.INTERNAL_SERVER_ERROR, errorMessage.getMessage(), errorMessage.getParameters());
-                        authSession.removeAuthNote(ACCOUNT_MGMT_FORWARDED_ERROR_NOTE);
-                    } catch (IOException ioe) {
-                        throw new RuntimeException(ioe);
+
+            String tabId = request.getUri().getQueryParameters().getFirst(org.keycloak.models.Constants.TAB_ID);
+            if (tabId != null) {
+                AuthenticationSessionModel authSession = new AuthenticationSessionManager(session).getAuthenticationSessionByIdAndClient(realm, userSession.getId(), client, tabId);
+                if (authSession != null) {
+                    String forwardedError = authSession.getAuthNote(ACCOUNT_MGMT_FORWARDED_ERROR_NOTE);
+                    if (forwardedError != null) {
+                        try {
+                            FormMessage errorMessage = JsonSerialization.readValue(forwardedError, FormMessage.class);
+                            account.setError(Response.Status.INTERNAL_SERVER_ERROR, errorMessage.getMessage(), errorMessage.getParameters());
+                            authSession.removeAuthNote(ACCOUNT_MGMT_FORWARDED_ERROR_NOTE);
+                        } catch (IOException ioe) {
+                            throw new RuntimeException(ioe);
+                        }
                     }
                 }
             }
