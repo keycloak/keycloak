@@ -255,22 +255,24 @@ It is currently required to have different configuration files for the JDG serve
 
 . Start server `jdg1`:
 +
-```
+[source,subs="+quotes"]
+----
 cd JDG1_HOME/bin
 ./standalone.sh -c clustered.xml -Djava.net.preferIPv4Stack=true \
--Djboss.default.multicast.address=234.56.78.99 \
--Djboss.node.name=jdg1
-```
+  -Djboss.default.multicast.address=234.56.78.99 \
+  -Djboss.node.name=jdg1 -b _PUBLIC_IP_ADDRESS_
+----
 +
 
 . Start server `jdg2`. There is a different multicast address, so the `jdg1` and `jdg2` servers are not directly clustered with each other; rather, they are just connected through the RELAY2 protocol, and the TCP JGroups stack is used for communication between them. The start up command looks like this:
 +
-```
+[source,subs="+quotes"]
+----
 cd JDG2_HOME/bin
 ./standalone.sh -c clustered.xml -Djava.net.preferIPv4Stack=true \
--Djboss.default.multicast.address=234.56.78.100 \
--Djboss.node.name=jdg2
-```
+  -Djboss.default.multicast.address=234.56.78.100 \
+  -Djboss.node.name=jdg2 -b _PUBLIC_IP_ADDRESS_
+----
 +
 
 . To verify that channel works at this point, you may need to use JConsole and connect either to the running `JDG1` or the `JDG2` server. When you use the MBean `jgroups:type=protocol,cluster="cluster",protocol=RELAY2` and operation `printRoutes`, you should see output like this:
@@ -420,20 +422,25 @@ In production you will likely need to have a separate database server in every d
  
 . Start `NODE11` :
 +
-```
+[source,subs="+quotes"]
+----
 cd NODE11/bin
 ./standalone.sh -c standalone-ha.xml -Djboss.node.name=node11 -Djboss.site.name=site1 \
--Djboss.default.multicast.address=234.56.78.1 -Dremote.cache.host=jdg1 -Djava.net.preferIPv4Stack=true
-```
+  -Djboss.default.multicast.address=234.56.78.1 -Dremote.cache.host=jdg1 \
+  -Djava.net.preferIPv4Stack=true -b _PUBLIC_IP_ADDRESS_
+
+----
 +
 
 . Start `NODE12` :
 +
-````
+[source,subs="+quotes"]
+----
 cd NODE12/bin
 ./standalone.sh -c standalone-ha.xml -Djboss.node.name=node12 -Djboss.site.name=site1 \
--Djboss.default.multicast.address=234.56.78.1 -Dremote.cache.host=jdg1 -Djava.net.preferIPv4Stack=true
-````
+  -Djboss.default.multicast.address=234.56.78.1 -Dremote.cache.host=jdg1 \
+  -Djava.net.preferIPv4Stack=true -b _PUBLIC_IP_ADDRESS_
+----
 +
 The cluster nodes should be connected. Something like this should be in the log of both NODE11 and NODE12:
 +
@@ -444,11 +451,13 @@ NOTE: The channel name in the log might be different.
 
 . Start `NODE21` :
 +
-```
+[source,subs="+quotes"]
+----
 cd NODE21/bin
 ./standalone.sh -c standalone-ha.xml -Djboss.node.name=node21 -Djboss.site.name=site2 \
--Djboss.default.multicast.address=234.56.78.2 -Dremote.cache.host=jdg2 -Djava.net.preferIPv4Stack=true
-```
+  -Djboss.default.multicast.address=234.56.78.2 -Dremote.cache.host=jdg2 \
+  -Djava.net.preferIPv4Stack=true -b _PUBLIC_IP_ADDRESS_
+----
 +
 It shouldn't be connected to the cluster with `NODE11` and `NODE12`, but to separate one:
 +
@@ -459,11 +468,13 @@ Received new cluster view for channel keycloak: [node21|0] (1) [node21]
 
 . Start `NODE22` :
 +
-```
+[source,subs="+quotes"]
+----
 cd NODE22/bin
 ./standalone.sh -c standalone-ha.xml -Djboss.node.name=node22 -Djboss.site.name=site2 \
--Djboss.default.multicast.address=234.56.78.2 -Dremote.cache.host=jdg2 -Djava.net.preferIPv4Stack=true
-```
+  -Djboss.default.multicast.address=234.56.78.2 -Dremote.cache.host=jdg2 \
+  -Djava.net.preferIPv4Stack=true -b _PUBLIC_IP_ADDRESS_
+----
 +
 It should be in cluster with `NODE21` :
 +
