@@ -765,10 +765,10 @@ public class AuthenticationManager {
             }
             Response response = infoPage
                     .createInfoPage();
+
+            new AuthenticationSessionManager(session).removeAuthenticationSession(authSession.getRealm(), authSession, true);
+
             return response;
-
-            // Don't remove authentication session for now, to ensure that browser buttons (back/refresh) will still work fine.
-
         }
         RealmModel realm = authSession.getRealm();
 
