@@ -13,9 +13,6 @@
     <name>keycloak-test-helper</name>
     <description>Helper library to test application using Keycloak.</description>
     <packaging>jar</packaging>
-    <properties>
-        <resteasy.client.version>3.0.24.Final</resteasy.client.version>
-    </properties>
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -28,12 +25,12 @@
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-client</artifactId>
-            <version>${resteasy.client.version}</version>
+            <version>${resteasy.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-jackson2-provider</artifactId>
-            <version>${resteasy.client.version}</version>
+            <version>${resteasy.version}</version>
         </dependency>
         <dependency>
             <groupId>org.seleniumhq.selenium</groupId>
