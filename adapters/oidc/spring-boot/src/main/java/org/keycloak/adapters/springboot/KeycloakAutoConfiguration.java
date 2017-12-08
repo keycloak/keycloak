@@ -132,10 +132,8 @@ public class KeycloakAutoConfiguration {
             loginConfig.addFirstAuthMethod("KEYCLOAK");
 
             deploymentInfo.setLoginConfig(loginConfig);
-
             deploymentInfo.addInitParameter("keycloak.config.resolver", KeycloakSpringBootConfigResolver.class.getName());
             deploymentInfo.addSecurityConstraints(getSecurityConstraints());
-
             deploymentInfo.addServletExtension(new KeycloakServletExtension());
         }
 
@@ -157,7 +155,6 @@ public class KeycloakAutoConfiguration {
                     undertowSecurityConstraint.addWebResourceCollections(webResourceCollection);
 
                 }
-
                 undertowSecurityConstraints.add(undertowSecurityConstraint);
             }
             return undertowSecurityConstraints;
@@ -280,6 +277,11 @@ public class KeycloakAutoConfiguration {
 
                 for (String authRole : constraint.getAuthRoles()) {
                     tomcatConstraint.addAuthRole(authRole);
+                    if(authRole.equals("*") || authRole.equals("**")) {
+                        // For some reasons embed tomcat don't set the auth constraint on true when wildcard is
+                        // used
+                        tomcatConstraint.setAuthConstraint(true);
+                    }
                 }
 
                 for (KeycloakSpringBootProperties.SecurityCollection collection : constraint.getSecurityCollections()) {
