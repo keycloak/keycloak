@@ -38,6 +38,7 @@ public class UserStorageProviderModel extends PrioritizedComponentModel {
     public static final String FULL_SYNC_PERIOD = "fullSyncPeriod";
     public static final String CHANGED_SYNC_PERIOD = "changedSyncPeriod";
     public static final String LAST_SYNC = "lastSync";
+    public static final String ENABLED = "enabled";
 
     public static enum CachePolicy {
         NO_CACHE,
@@ -59,6 +60,7 @@ public class UserStorageProviderModel extends PrioritizedComponentModel {
     private transient Integer changedSyncPeriod;
     private transient Integer lastSync;
     private transient Boolean importEnabled;
+    private transient Boolean enabled;
     private transient CachePolicy cachePolicy;
     private transient long maxLifespan = -1;
     private transient int evictionHour = -1;
@@ -171,11 +173,28 @@ public class UserStorageProviderModel extends PrioritizedComponentModel {
 
     }
 
-
-
     public void setImportEnabled(boolean flag) {
         importEnabled = flag;
         getConfig().putSingle(IMPORT_ENABLED, Boolean.toString(flag));
+    }
+
+    public void setEnabled(boolean flag) {
+        enabled = flag;
+        getConfig().putSingle(ENABLED, Boolean.toString(flag));
+    }
+
+
+    public boolean isEnabled() {
+        if (enabled == null) {
+            String val = getConfig().getFirst(ENABLED);
+            if (val == null) {
+                enabled = true;
+            } else {
+                enabled = Boolean.valueOf(val);
+            }
+        }
+        return enabled;
+
     }
 
     public int getFullSyncPeriod() {

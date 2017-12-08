@@ -22,6 +22,7 @@ import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialInputUpdater;
 import org.keycloak.credential.CredentialInputValidator;
 import org.keycloak.credential.CredentialModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
@@ -30,9 +31,11 @@ import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserLookupProvider;
+import org.keycloak.storage.user.UserQueryProvider;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -41,7 +44,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class FailableHardcodedStorageProvider implements UserStorageProvider, UserLookupProvider, ImportedUserValidation, CredentialInputUpdater, CredentialInputValidator {
+public class FailableHardcodedStorageProvider implements UserStorageProvider, UserLookupProvider, UserQueryProvider, ImportedUserValidation, CredentialInputUpdater, CredentialInputValidator {
 
     public static String username = "billb";
     public static String password = "password";
@@ -64,13 +67,13 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
 
     @Override
     public boolean supportsCredentialType(String credentialType) {
-        if (fail || componentFail) throw new RuntimeException("FORCED FAILURE");
+        checkForceFail();
         return CredentialModel.PASSWORD.equals(credentialType);
     }
 
     @Override
     public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
-        if (fail || componentFail) throw new RuntimeException("FORCED FAILURE");
+        checkForceFail();
         if (!(input instanceof UserCredentialModel)) return false;
         if (!user.getUsername().equals(username)) throw new RuntimeException("UNKNOWN USER!");
 
@@ -85,25 +88,25 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
 
     @Override
     public void disableCredentialType(RealmModel realm, UserModel user, String credentialType) {
-        if (fail || componentFail) throw new RuntimeException("FORCED FAILURE");
+        checkForceFail();
 
     }
 
     @Override
     public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
-        if (fail || componentFail) throw new RuntimeException("FORCED FAILURE");
+        checkForceFail();
         return Collections.EMPTY_SET;
     }
 
     @Override
     public boolean isConfiguredFor(RealmModel realm, UserModel user, String credentialType) {
-        if (fail || componentFail) throw new RuntimeException("FORCED FAILURE");
+        checkForceFail();
         return CredentialModel.PASSWORD.equals(credentialType);
     }
 
     @Override
     public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
-        if (fail || componentFail) throw new RuntimeException("FORCED FAILURE");
+        checkForceFail();
         if (!(input instanceof UserCredentialModel)) return false;
         if (!user.getUsername().equals("billb")) throw new RuntimeException("UNKNOWN USER!");
         if (input.getType().equals(UserCredentialModel.PASSWORD)) {
@@ -163,19 +166,19 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
 
     @Override
     public UserModel validate(RealmModel realm, UserModel user) {
-        if (fail || componentFail) throw new RuntimeException("FORCED FAILURE");
+        checkForceFail();
         return new Delegate(user);
     }
 
     @Override
     public UserModel getUserById(String id, RealmModel realm) {
-        if (fail || componentFail) throw new RuntimeException("FORCED FAILURE");
+        checkForceFail();
         throw new RuntimeException("THIS IMPORTS  SHOULD NEVER BE CALLED");
     }
 
     @Override
     public UserModel getUserByUsername(String uname, RealmModel realm) {
-        if (fail || componentFail) throw new RuntimeException("FORCED FAILURE");
+        checkForceFail();
         if (!username.equals(uname)) return null;
         UserModel local = session.userLocalStorage().getUserByUsername(uname, realm);
         if (local != null && !model.getId().equals(local.getFederationLink())) {
@@ -198,8 +201,94 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
 
     @Override
     public UserModel getUserByEmail(String email, RealmModel realm) {
-        if (fail || componentFail) throw new RuntimeException("FORCED FAILURE");
+        checkForceFail();
         return null;
+    }
+
+    protected void checkForceFail() {
+        if (fail || componentFail) throw new RuntimeException("FORCED FAILURE");
+    }
+
+    @Override
+    public int getUsersCount(RealmModel realm) {
+        checkForceFail();
+        return 1;
+    }
+
+    @Override
+    public List<UserModel> getUsers(RealmModel realm) {
+        checkForceFail();
+        UserModel hardcoded = getUserByUsername(username, realm);
+        List<UserModel> list = new LinkedList<>();
+        list.add(hardcoded);
+        return list;
+    }
+
+    @Override
+    public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
+        checkForceFail();
+        UserModel hardcoded = getUserByUsername(username, realm);
+        List<UserModel> list = new LinkedList<>();
+        list.add(hardcoded);
+        return list;
+    }
+
+    @Override
+    public List<UserModel> searchForUser(String search, RealmModel realm) {
+        checkForceFail();
+        if (!search.equals(username)) return Collections.EMPTY_LIST;
+        UserModel hardcoded = getUserByUsername(username, realm);
+        List<UserModel> list = new LinkedList<>();
+        list.add(hardcoded);
+        return list;
+    }
+
+    @Override
+    public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
+        checkForceFail();
+        if (!search.equals(username)) return Collections.EMPTY_LIST;
+        UserModel hardcoded = getUserByUsername(username, realm);
+        List<UserModel> list = new LinkedList<>();
+        list.add(hardcoded);
+        return list;
+    }
+
+    @Override
+    public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm) {
+        checkForceFail();
+        if (!username.equals(params.get("username")))return Collections.EMPTY_LIST;
+        UserModel hardcoded = getUserByUsername(username, realm);
+        List<UserModel> list = new LinkedList<>();
+        list.add(hardcoded);
+        return list;
+    }
+
+    @Override
+    public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm, int firstResult, int maxResults) {
+        checkForceFail();
+        if (!username.equals(params.get("username")))return Collections.EMPTY_LIST;
+        UserModel hardcoded = getUserByUsername(username, realm);
+        List<UserModel> list = new LinkedList<>();
+        list.add(hardcoded);
+        return list;
+    }
+
+    @Override
+    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
+        checkForceFail();
+        return Collections.EMPTY_LIST;
+    }
+
+    @Override
+    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group) {
+        checkForceFail();
+        return Collections.EMPTY_LIST;
+    }
+
+    @Override
+    public List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm) {
+        checkForceFail();
+        return Collections.EMPTY_LIST;
     }
 
     @Override

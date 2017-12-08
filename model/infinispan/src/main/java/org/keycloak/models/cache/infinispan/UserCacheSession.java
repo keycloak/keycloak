@@ -48,6 +48,7 @@ import org.keycloak.models.cache.infinispan.events.UserFederationLinkRemovedEven
 import org.keycloak.models.cache.infinispan.events.UserFederationLinkUpdatedEvent;
 import org.keycloak.models.cache.infinispan.events.UserFullInvalidationEvent;
 import org.keycloak.models.cache.infinispan.events.UserUpdatedEvent;
+import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
@@ -296,36 +297,41 @@ public class UserCacheSession implements UserCache {
         if (!storageId.isLocal()) {
             ComponentModel component = realm.getComponent(storageId.getProviderId());
             UserStorageProviderModel model = new UserStorageProviderModel(component);
-            UserStorageProviderModel.CachePolicy policy = model.getCachePolicy();
+
             // although we do set a timeout, Infinispan has no guarantees when the user will be evicted
             // its also hard to test stuff
             boolean invalidate = false;
-            if (policy != null) {
-                //String currentTime = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(new Date(Time.currentTimeMillis()));
-                if (policy == UserStorageProviderModel.CachePolicy.NO_CACHE) {
-                    invalidate = true;
-                } else if (cached.getCacheTimestamp() < model.getCacheInvalidBefore()) {
-                    invalidate = true;
-                } else if (policy == UserStorageProviderModel.CachePolicy.MAX_LIFESPAN) {
-                    if (cached.getCacheTimestamp() + model.getMaxLifespan() < Time.currentTimeMillis()) {
+            if (!model.isEnabled()) {
+                invalidate = true;
+            } else {
+                UserStorageProviderModel.CachePolicy policy = model.getCachePolicy();
+                if (policy != null) {
+                    //String currentTime = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(new Date(Time.currentTimeMillis()));
+                    if (policy == UserStorageProviderModel.CachePolicy.NO_CACHE) {
                         invalidate = true;
-                    }
-                } else if (policy == UserStorageProviderModel.CachePolicy.EVICT_DAILY) {
-                    long dailyTimeout = dailyTimeout(model.getEvictionHour(), model.getEvictionMinute());
-                    dailyTimeout = dailyTimeout - (24 * 60 * 60 * 1000);
-                    //String timeout = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(new Date(dailyTimeout));
-                    //String stamp = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(new Date(cached.getCacheTimestamp()));
-                    if (cached.getCacheTimestamp() <= dailyTimeout) {
+                    } else if (cached.getCacheTimestamp() < model.getCacheInvalidBefore()) {
                         invalidate = true;
-                    }
-                } else if (policy == UserStorageProviderModel.CachePolicy.EVICT_WEEKLY) {
-                    int oneWeek = 7 * 24 * 60 * 60 * 1000;
-                    long weeklyTimeout = weeklyTimeout(model.getEvictionDay(), model.getEvictionHour(), model.getEvictionMinute());
-                    long lastTimeout = weeklyTimeout - oneWeek;
-                    //String timeout = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(new Date(weeklyTimeout));
-                    //String stamp = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(new Date(cached.getCacheTimestamp()));
-                    if (cached.getCacheTimestamp() <= lastTimeout) {
-                        invalidate = true;
+                    } else if (policy == UserStorageProviderModel.CachePolicy.MAX_LIFESPAN) {
+                        if (cached.getCacheTimestamp() + model.getMaxLifespan() < Time.currentTimeMillis()) {
+                            invalidate = true;
+                        }
+                    } else if (policy == UserStorageProviderModel.CachePolicy.EVICT_DAILY) {
+                        long dailyTimeout = dailyTimeout(model.getEvictionHour(), model.getEvictionMinute());
+                        dailyTimeout = dailyTimeout - (24 * 60 * 60 * 1000);
+                        //String timeout = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(new Date(dailyTimeout));
+                        //String stamp = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(new Date(cached.getCacheTimestamp()));
+                        if (cached.getCacheTimestamp() <= dailyTimeout) {
+                            invalidate = true;
+                        }
+                    } else if (policy == UserStorageProviderModel.CachePolicy.EVICT_WEEKLY) {
+                        int oneWeek = 7 * 24 * 60 * 60 * 1000;
+                        long weeklyTimeout = weeklyTimeout(model.getEvictionDay(), model.getEvictionHour(), model.getEvictionMinute());
+                        long lastTimeout = weeklyTimeout - oneWeek;
+                        //String timeout = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(new Date(weeklyTimeout));
+                        //String stamp = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(new Date(cached.getCacheTimestamp()));
+                        if (cached.getCacheTimestamp() <= lastTimeout) {
+                            invalidate = true;
+                        }
                     }
                 }
             }
@@ -346,6 +352,14 @@ public class UserCacheSession implements UserCache {
         if (!storageId.isLocal()) {
             ComponentModel component = realm.getComponent(storageId.getProviderId());
             UserStorageProviderModel model = new UserStorageProviderModel(component);
+            if (!model.isEnabled()) {
+                return new ReadOnlyUserModelDelegate(delegate) {
+                    @Override
+                    public boolean isEnabled() {
+                        return false;
+                    }
+                };
+            }
             UserStorageProviderModel.CachePolicy policy = model.getCachePolicy();
             if (policy != null && policy == UserStorageProviderModel.CachePolicy.NO_CACHE) {
                 return delegate;
@@ -845,7 +859,7 @@ public class UserCacheSession implements UserCache {
 
     @Override
     public boolean removeUser(RealmModel realm, UserModel user) {
-        fullyInvalidateUser(realm, user);
+         fullyInvalidateUser(realm, user);
         return getDelegate().removeUser(realm, user);
     }
 

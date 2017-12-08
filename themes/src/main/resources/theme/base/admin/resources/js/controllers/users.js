@@ -648,6 +648,10 @@ module.controller('UserFederationCtrl', function($scope, $location, $route, real
         return instance.providerId;
     }
 
+    $scope.isProviderEnabled = function(instance) {
+        return !instance.config['enabled'] || instance.config['enabled'][0] == 'true';
+    }
+
     $scope.getInstancePriority = function(instance) {
         if (!instance.config['priority']) {
             console.log('getInstancePriority is undefined');
@@ -711,6 +715,7 @@ module.controller('GenericUserStorageCtrl', function($scope, $location, Notifica
 
             };
             instance.config['priority'] = ["0"];
+            instance.config['enabled'] = ["true"];
 
             $scope.fullSyncEnabled = false;
             $scope.changedSyncEnabled = false;
@@ -752,6 +757,9 @@ module.controller('GenericUserStorageCtrl', function($scope, $location, Notifica
                     instance.config['changedSyncPeriod'] = ['-1'];
 
                 }
+            }
+            if (!instance.config['enabled']) {
+                instance.config['enabled'] = ['true'];
             }
             if (!instance.config['cachePolicy']) {
                 instance.config['cachePolicy'] = ['DEFAULT'];
@@ -1061,6 +1069,7 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
             instance.config = {
 
             };
+            instance.config['enabled'] = ["true"];
             instance.config['priority'] = ["0"];
 
             $scope.fullSyncEnabled = false;
@@ -1097,6 +1106,9 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
                 console.log('setting to -1');
                 instance.config['fullSyncPeriod'] = ['-1'];
 
+            }
+            if (!instance.config['enabled']) {
+                instance.config['enabled'] = ['true'];
             }
             if (!instance.config['changedSyncPeriod']) {
                 console.log('setting to -1');
