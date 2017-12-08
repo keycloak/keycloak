@@ -62,7 +62,11 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
     public FailableHardcodedStorageProvider(ComponentModel model, KeycloakSession session) {
         this.model = model;
         this.session = session;
-        componentFail = model.getConfig().getFirst("fail") != null && model.getConfig().getFirst("fail").equalsIgnoreCase("true");
+        componentFail = isInFailMode(model);
+    }
+
+    public static boolean isInFailMode(ComponentModel model) {
+        return model.getConfig().getFirst("fail") != null && model.getConfig().getFirst("fail").equalsIgnoreCase("true");
     }
 
     @Override
@@ -206,7 +210,11 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
     }
 
     protected void checkForceFail() {
-        if (fail || componentFail) throw new RuntimeException("FORCED FAILURE");
+        if (fail || componentFail) throwFailure();
+    }
+
+    public static  void throwFailure() {
+        throw new RuntimeException("FORCED FAILURE");
     }
 
     @Override
