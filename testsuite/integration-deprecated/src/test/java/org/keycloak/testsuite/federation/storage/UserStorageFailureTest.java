@@ -49,6 +49,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.testsuite.ApplicationServlet;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.Constants;
 import org.keycloak.testsuite.OAuthClient;
@@ -181,6 +182,7 @@ public class UserStorageFailureTest {
 
         // restart server to make sure we can still boot if user storage is down
         keycloakRule.restartServer();
+        keycloakRule.deployServlet("app", "/app", ApplicationServlet.class);
 
         toggleForceFail(false);
 
@@ -231,6 +233,7 @@ public class UserStorageFailureTest {
         System.out.println(driver.getCurrentUrl());
         System.out.println(driver.getPageSource());
         Assert.assertTrue(appPage.isCurrent());
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
         oauth.openLogout();
     }
