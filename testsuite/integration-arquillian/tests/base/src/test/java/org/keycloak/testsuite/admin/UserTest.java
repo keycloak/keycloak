@@ -681,7 +681,17 @@ public class UserTest extends AbstractAdminTest {
 
         MimeMessage message = greenMail.getReceivedMessages()[0];
 
-        String link = MailUtils.getPasswordResetEmailLink(message);
+        MailUtils.EmailBody body = MailUtils.getBody(message);
+
+        assertTrue(body.getText().contains("Update Password"));
+        assertTrue(body.getText().contains("your Admin-client-test account"));
+        assertTrue(body.getText().contains("This link will expire within 720 minutes"));
+
+        assertTrue(body.getHtml().contains("Update Password"));
+        assertTrue(body.getHtml().contains("your Admin-client-test account"));
+        assertTrue(body.getHtml().contains("This link will expire within 720 minutes"));
+
+        String link = MailUtils.getPasswordResetEmailLink(body);
 
         driver.navigate().to(link);
 

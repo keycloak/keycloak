@@ -1,6 +1,7 @@
-<#assign requiredActionsText>
-<#if requiredActions??><#list requiredActions><b><#items as reqActionItem>${msg("requiredAction.${reqActionItem}")}<#sep>, </#items></b></#list><#else></#if>
-</#assign>
+<#outputformat "plainText">
+<#assign requiredActionsText><#if requiredActions??><#list requiredActions><#items as reqActionItem>${msg("requiredAction.${reqActionItem}")}<#sep>, </#sep></#items></#list></#if></#assign>
+</#outputformat>
+
 <html>
 <body>
 ${msg("executeActionsBodyHtml",link, linkExpiration, realmName, requiredActionsText)?no_esc}
