@@ -21,6 +21,7 @@
         <tr data-ng-show="instances && instances.length > 0">
             <th>{{:: 'id' | translate}}</th>
             <th>{{:: 'provider-name' | translate}}</th>
+            <th>{{:: 'enabled' | translate}}</th>
             <th>{{:: 'priority' | translate}}</th>
             <th colspan="2">{{:: 'actions' | translate}}</th>
         </tr>
@@ -29,6 +30,7 @@
         <tr ng-repeat="instance in instances">
             <td><a href="#/realms/{{realm.realm}}/user-storage/providers/{{instance.providerId}}/{{instance.id}}">{{instance.name}}</a></td>
             <td>{{instance.providerId|capitalize}}</td>
+            <td>{{instance.config['enabled'][0]}}</td>
             <td>{{instance.config['priority'][0]}}</td>
             <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/user-storage/providers/{{instance.providerId}}/{{instance.id}}">{{:: 'edit' | translate}}</td>
             <td class="kc-action-cell" data-ng-click="removeUserStorage(instance)">{{:: 'delete' | translate}}</td>

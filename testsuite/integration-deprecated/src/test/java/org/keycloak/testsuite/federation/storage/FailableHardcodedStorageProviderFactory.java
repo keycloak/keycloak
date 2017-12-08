@@ -18,9 +18,14 @@ package org.keycloak.testsuite.federation.storage;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.storage.UserStorageProviderFactory;
+import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.user.ImportSynchronization;
+import org.keycloak.storage.user.SynchronizationResult;
 
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -28,7 +33,7 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class FailableHardcodedStorageProviderFactory implements UserStorageProviderFactory<FailableHardcodedStorageProvider> {
+public class FailableHardcodedStorageProviderFactory implements UserStorageProviderFactory<FailableHardcodedStorageProvider>, ImportSynchronization {
 
     public static final String PROVIDER_ID = "failable-hardcoded-storage";
 
@@ -52,4 +57,15 @@ public class FailableHardcodedStorageProviderFactory implements UserStorageProvi
         return OPTIONS;
     }
 
+    @Override
+    public SynchronizationResult sync(KeycloakSessionFactory sessionFactory, String realmId, UserStorageProviderModel model) {
+        if (FailableHardcodedStorageProvider.isInFailMode(model)) FailableHardcodedStorageProvider.throwFailure();
+        return SynchronizationResult.empty();
+    }
+
+    @Override
+    public SynchronizationResult syncSince(Date lastSync, KeycloakSessionFactory sessionFactory, String realmId, UserStorageProviderModel model) {
+        if (FailableHardcodedStorageProvider.isInFailMode(model)) FailableHardcodedStorageProvider.throwFailure();
+        return SynchronizationResult.empty();
+    }
 }
