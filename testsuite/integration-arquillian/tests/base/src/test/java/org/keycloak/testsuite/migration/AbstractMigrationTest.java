@@ -34,6 +34,7 @@ import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientTemplateRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
@@ -178,6 +179,23 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         } else {
             fail("Browser security headers not found");
         }
+    }
+
+    protected void testMigrationTo3_4_2() {
+        testCliConsoleScopeSize(this.masterRealm);
+        testCliConsoleScopeSize(this.migrationRealm);
+    }
+
+    private void testCliConsoleScopeSize(RealmResource realm) {
+        ClientRepresentation cli = realm.clients().findByClientId(Constants.ADMIN_CLI_CLIENT_ID).get(0);
+        ClientRepresentation console = realm.clients().findByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID).get(0);
+        MappingsRepresentation scopeMappings = realm.clients().get(console.getId()).getScopeMappings().getAll();
+        Assert.assertNull(scopeMappings.getClientMappings());
+        Assert.assertNull(scopeMappings.getRealmMappings());
+
+        scopeMappings = realm.clients().get(cli.getId()).getScopeMappings().getAll();
+        Assert.assertNull(scopeMappings.getClientMappings());
+        Assert.assertNull(scopeMappings.getRealmMappings());
     }
 
     protected void testDockerAuthenticationFlow(RealmResource... realms) {
@@ -420,6 +438,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testMigrationTo3_2_0();
         testMigrationTo3_4_0();
         testMigrationTo3_4_1();
+        testMigrationTo3_4_2();
     }
 
 
