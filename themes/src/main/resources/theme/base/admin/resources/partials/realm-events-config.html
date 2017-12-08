@@ -94,9 +94,11 @@
                 
             </fieldset>
 
-                <div class="pull-right form-actions" data-ng-show="access.manageEvents">
-                <button data-kc-reset data-ng-show="changed">{{:: 'clear-changes' | translate}}</button>
-                <button data-kc-save data-ng-show="changed">{{:: 'save' | translate}}</button>
+            <div class="form-group" data-ng-show="access.manageEvents">
+                <div class="col-md-10 col-md-offset-2">
+                    <button data-kc-reset data-ng-disabled="!changed">{{:: 'clear-changes' | translate}}</button>
+                    <button data-kc-save data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
+                </div>
             </div>
         </form>
     </div>
