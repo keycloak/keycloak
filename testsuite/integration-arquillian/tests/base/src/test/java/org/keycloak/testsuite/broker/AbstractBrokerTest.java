@@ -20,6 +20,7 @@ import org.openqa.selenium.TimeoutException;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -34,9 +35,17 @@ import org.jboss.arquillian.graphene.page.Page;
 
 import javax.ws.rs.core.Response;
 
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.broker.BrokerTestTools.*;
 
 public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
+
+    public static final String ROLE_USER = "user";
+    public static final String ROLE_MANAGER = "manager";
+    public static final String ROLE_FRIENDLY_MANAGER = "friendly-manager";
 
     protected IdentityProviderResource identityProviderResource;
 
@@ -338,9 +347,12 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
     }
 
     protected void createRolesForRealm(String realm) {
-        RoleRepresentation managerRole = new RoleRepresentation("manager",null, false);
-        RoleRepresentation userRole = new RoleRepresentation("user",null, false);
+        RoleRepresentation managerRole = new RoleRepresentation(ROLE_MANAGER,null, false);
+        RoleRepresentation friendlyManagerRole = new RoleRepresentation(ROLE_FRIENDLY_MANAGER,null, false);
+        RoleRepresentation userRole = new RoleRepresentation(ROLE_USER,null, false);
+
         adminClient.realm(realm).roles().create(managerRole);
+        adminClient.realm(realm).roles().create(friendlyManagerRole);
         adminClient.realm(realm).roles().create(userRole);
     }
 
@@ -367,27 +379,32 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
 
         createRoleMappersForConsumerRealm();
 
-        RoleRepresentation managerRole = adminClient.realm(bc.providerRealmName()).roles().get("manager").toRepresentation();
-        RoleRepresentation userRole = adminClient.realm(bc.providerRealmName()).roles().get("user").toRepresentation();
+        RoleRepresentation managerRole = adminClient.realm(bc.providerRealmName()).roles().get(ROLE_MANAGER).toRepresentation();
+        RoleRepresentation userRole = adminClient.realm(bc.providerRealmName()).roles().get(ROLE_USER).toRepresentation();
 
         UserResource userResource = adminClient.realm(bc.providerRealmName()).users().get(userId);
         userResource.roles().realmLevel().add(Collections.singletonList(managerRole));
 
         logInAsUserInIDPForFirstTime();
 
-        List<RoleRepresentation> currentRoles = userResource.roles().realmLevel().listAll();
-        assertEquals("There should be manager role",1, currentRoles.stream().filter(role -> role.getName().equals("manager")).collect(Collectors.toList()).size());
-        assertEquals("User shouldn't have user role", 0, currentRoles.stream().filter(role -> role.getName().equals("user")).collect(Collectors.toList()).size());
+        Set<String> currentRoles = userResource.roles().realmLevel().listAll().stream()
+          .map(RoleRepresentation::getName)
+          .collect(Collectors.toSet());
+
+        assertThat(currentRoles, hasItems(ROLE_MANAGER));
+        assertThat(currentRoles, not(hasItems(ROLE_USER)));
 
         logoutFromRealm(bc.consumerRealmName());
+
 
         userResource.roles().realmLevel().add(Collections.singletonList(userRole));
 
         logInAsUserInIDP();
 
-        currentRoles = userResource.roles().realmLevel().listAll();
-        assertEquals("There should be manager role",1, currentRoles.stream().filter(role -> role.getName().equals("manager")).collect(Collectors.toList()).size());
-        assertEquals("There should be user role",1, currentRoles.stream().filter(role -> role.getName().equals("user")).collect(Collectors.toList()).size());
+        currentRoles = userResource.roles().realmLevel().listAll().stream()
+          .map(RoleRepresentation::getName)
+          .collect(Collectors.toSet());
+        assertThat(currentRoles, hasItems(ROLE_MANAGER, ROLE_USER));
 
         logoutFromRealm(bc.providerRealmName());
         logoutFromRealm(bc.consumerRealmName());
