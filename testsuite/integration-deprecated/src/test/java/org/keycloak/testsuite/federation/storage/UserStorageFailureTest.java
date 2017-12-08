@@ -228,13 +228,16 @@ public class UserStorageFailureTest {
     private void loginSuccessAndLogout(String username, String password) {
         loginPage.open();
         loginPage.login(username, password);
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        System.out.println(driver.getCurrentUrl());
+        System.out.println(driver.getPageSource());
+        Assert.assertTrue(appPage.isCurrent());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
         oauth.openLogout();
     }
 
     @Test
     public void testKeycloak5926() {
+
         // make sure local copy is deleted
         {
             KeycloakSession session = keycloakRule.startSession();
@@ -276,7 +279,7 @@ public class UserStorageFailureTest {
 
             }
 
-            keycloakRule.stopSession(session, false);
+            keycloakRule.stopSession(session, true);
         }
         // test that we can still login to a user
         loginSuccessAndLogout("test-user@localhost", "password");
@@ -370,11 +373,6 @@ public class UserStorageFailureTest {
         events.clear();
     }
 
-    @After
-    public void resetTimeoffset() {
-        Time.setOffset(0);
-
-    }
 
     //@Test
     public void testIDE() throws Exception {
