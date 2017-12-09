@@ -151,15 +151,6 @@ public class RealmManager {
         adminConsole.addRedirectUri(baseUrl + "/*");
         adminConsole.setFullScopeAllowed(false);
         adminConsole.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-
-        RoleModel adminRole;
-        if (realm.getName().equals(Config.getAdminRealm())) {
-            adminRole = realm.getRole(AdminRoles.ADMIN);
-        } else {
-            String realmAdminApplicationClientId = getRealmAdminClientId(realm);
-            ClientModel realmAdminApp = realm.getClientByClientId(realmAdminApplicationClientId);
-            adminRole = realmAdminApp.getRole(AdminRoles.REALM_ADMIN);
-        }
     }
 
     protected void setupAdminConsoleLocaleMapper(RealmModel realm) {
@@ -185,15 +176,6 @@ public class RealmManager {
             adminCli.setStandardFlowEnabled(false);
             adminCli.setDirectAccessGrantsEnabled(true);
             adminCli.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-
-            RoleModel adminRole;
-            if (realm.getName().equals(Config.getAdminRealm())) {
-                adminRole = realm.getRole(AdminRoles.ADMIN);
-            } else {
-                String realmAdminApplicationClientId = getRealmAdminClientId(realm);
-                ClientModel realmAdminApp = realm.getClientByClientId(realmAdminApplicationClientId);
-                adminRole = realmAdminApp.getRole(AdminRoles.REALM_ADMIN);
-            }
         }
 
     }
