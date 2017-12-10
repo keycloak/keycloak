@@ -124,7 +124,7 @@ public abstract class AbstractClientCertificateFromHttpHeadersLookup implements 
             // Get the certificate of the client certificate chain
             for (int i = 0; i < certificateChainLength; i++) {
                 try {
-                    String s = String.format("{0}_{1}", sslCertChainHttpHeaderPrefix, i);
+                    String s = String.format("%s_%s", sslCertChainHttpHeaderPrefix, i);
                     cert = getCertificateFromHttpHeader(httpRequest, s);
                     if (cert != null) {
                         chain.add(cert);
