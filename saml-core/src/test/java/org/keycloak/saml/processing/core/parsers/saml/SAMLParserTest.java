@@ -208,6 +208,27 @@ public class SAMLParserTest {
     }
 
     @Test
+    public void testSaml20MetadataEntityDescriptorIdP() throws IOException, ParsingException {
+        try (InputStream st = SAMLParserTest.class.getResourceAsStream("saml20-entity-descriptor-idp.xml")) {
+            parser.parse(st);
+        }
+    }
+
+    @Test
+    public void testSaml20MetadataEntityDescriptorSP() throws IOException, ParsingException {
+        try (InputStream st = SAMLParserTest.class.getResourceAsStream("saml20-entity-descriptor-sp.xml")) {
+            parser.parse(st);
+        }
+    }
+
+    @Test
+    public void testSaml20MetadataEntityDescriptorAdfsIdP() throws IOException, ParsingException {
+        try (InputStream st = SAMLParserTest.class.getResourceAsStream("KEYCLOAK-4809-IdPMetadata_test.xml")) {
+            parser.parse(st);
+        }
+    }
+
+    @Test
     public void testAttributeProfileMetadata() throws Exception {
         try (InputStream st = SAMLParserTest.class.getResourceAsStream("KEYCLOAK-4236-AttributeProfile-element.xml")) {
             Object parsedObject = parser.parse(st);
