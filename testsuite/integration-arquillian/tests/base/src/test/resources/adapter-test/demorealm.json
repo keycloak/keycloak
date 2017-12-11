@@ -267,13 +267,15 @@
             "secret": "password"
         },
         {
-            "clientId": "basic-auth-service",
-            "standardFlowEnabled": false,
-            "directAccessGrantsEnabled": true,
+            "clientId": "client-secret-jwt-secure-portal",
             "enabled": true,
-            "adminUrl": "/basic-auth",
-            "baseUrl": "/basic-auth",
-            "secret": "password"
+            "adminUrl": "/client-secret-jwt-secure-portal",
+            "baseUrl": "/client-secret-jwt-secure-portal",
+            "clientAuthenticatorType": "client-secret-jwt",
+            "redirectUris": [
+                "/client-secret-jwt-secure-portal/*"
+            ],
+            "secret": "234234-234234-234234"
         }
     ]
 }

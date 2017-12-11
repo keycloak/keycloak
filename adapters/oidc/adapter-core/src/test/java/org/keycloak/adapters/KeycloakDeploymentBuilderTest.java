@@ -21,6 +21,7 @@ import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.junit.Test;
 import org.keycloak.adapters.authentication.ClientIdAndSecretCredentialsProvider;
 import org.keycloak.adapters.authentication.JWTClientCredentialsProvider;
+import org.keycloak.adapters.authentication.JWTClientSecretCredentialsProvider;
 import org.keycloak.adapters.rotation.HardcodedPublicKeyLocator;
 import org.keycloak.adapters.rotation.JWKPublicKeyLocator;
 import org.keycloak.common.enums.RelativeUrlsUsed;
@@ -76,6 +77,7 @@ public class KeycloakDeploymentBuilderTest {
         assertEquals(20, deployment.getMinTimeBetweenJwksRequests());
         assertEquals(120, deployment.getPublicKeyCacheTtl());
         assertEquals("/api/$1", deployment.getRedirectRewriteRules().get("^/wsmaster/api/(.*)$"));
+        assertTrue(deployment.isPkce());
     }
 
     @Test
@@ -94,4 +96,9 @@ public class KeycloakDeploymentBuilderTest {
         assertEquals(JWTClientCredentialsProvider.PROVIDER_ID, deployment.getClientAuthenticator().getId());
     }
 
+    @Test
+    public void loadSecretJwtCredentials() throws Exception {
+        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getClass().getResourceAsStream("/keycloak-secret-jwt.json"));
+        assertEquals(JWTClientSecretCredentialsProvider.PROVIDER_ID, deployment.getClientAuthenticator().getId());
+    }
 }
