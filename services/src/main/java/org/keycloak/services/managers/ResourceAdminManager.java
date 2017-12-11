@@ -30,6 +30,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.LoginProtocolFactory;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.adapters.action.LogoutAction;
@@ -286,19 +289,14 @@ public class ResourceAdminManager {
     }
 
     protected boolean sendPushRevocationPolicyRequest(RealmModel realm, ClientModel resource, int notBefore, String managementUrl) {
-        PushNotBeforeAction adminAction = new PushNotBeforeAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getClientId(), notBefore);
-        String token = new TokenManager().encodeToken(session, realm, adminAction);
-        logger.debugv("pushRevocation resource: {0} url: {1}", resource.getClientId(), managementUrl);
-        URI target = UriBuilder.fromUri(managementUrl).path(AdapterConstants.K_PUSH_NOT_BEFORE).build();
-        try {
-            int status = session.getProvider(HttpClientProvider.class).postText(target.toString(), token);
-            boolean success = status == 204 || status == 200;
-            logger.debugf("pushRevocation success for %s: %s", managementUrl, success);
-            return success;
-        } catch (IOException e) {
-            ServicesLogger.LOGGER.failedToSendRevocation(e);
-            return false;
+        String protocol = resource.getProtocol();
+        if (protocol == null) {
+            protocol = OIDCLoginProtocol.LOGIN_PROTOCOL;
         }
+        LoginProtocol loginProtocol = (LoginProtocol) session.getProvider(LoginProtocol.class, protocol);
+        return loginProtocol == null
+          ? false
+          : loginProtocol.sendPushRevocationPolicyRequest(realm, resource, notBefore, managementUrl);
     }
 
     public GlobalRequestResult testNodesAvailability(URI requestUri, RealmModel realm, ClientModel client) {

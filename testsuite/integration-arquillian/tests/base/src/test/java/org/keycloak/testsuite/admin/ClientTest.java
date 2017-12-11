@@ -27,6 +27,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
@@ -304,6 +305,7 @@ public class ClientTest extends AbstractAdminTest {
         client.setAdminUrl(suiteContext.getAuthServerInfo().getContextRoot() + "/auth/realms/master/app/admin");
         client.setRedirectUris(Collections.singletonList(redirectUri));
         client.setSecret("secret");
+        client.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
         int notBefore = Time.currentTime() - 60;
         client.setNotBefore(notBefore);
