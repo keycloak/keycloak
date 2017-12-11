@@ -60,6 +60,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
 import org.keycloak.testsuite.adapter.page.BasicAuth;
@@ -625,6 +626,8 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
 
     @Test
     public void testOIDCUiLocalesParamForwarding() {
+        ProfileAssume.assumeCommunity();
+
         RealmRepresentation demoRealmRep = testRealmResource().toRepresentation();
         boolean enabled = demoRealmRep.isInternationalizationEnabled();
         String defaultLocale = demoRealmRep.getDefaultLocale();
