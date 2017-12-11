@@ -17,13 +17,20 @@
 
 package org.keycloak.testsuite.client;
 
+import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
+import org.keycloak.testsuite.runonserver.RunOnServerTest;
 
 import javax.ws.rs.NotFoundException;
 import java.util.Collections;
@@ -37,6 +44,11 @@ import static org.junit.Assert.fail;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class ClientRegistrationTest extends AbstractClientRegistrationTest {
+
+    @Deployment
+    public static WebArchive deploy() {
+        return RunOnServerDeployment.create(ClientRegistrationTest.class);
+    }
 
     private static final String CLIENT_ID = "test-client";
     private static final String CLIENT_SECRET = "test-client-secret";
@@ -70,6 +82,28 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     public void registerClientAsAdmin() throws ClientRegistrationException {
         authManageClients();
         registerClient();
+    }
+
+    // KEYCLOAK-5907
+    @Test
+    public void withServiceAccount() throws ClientRegistrationException {
+        authManageClients();
+        ClientRepresentation clientRep = buildClient();
+        clientRep.setServiceAccountsEnabled(true);
+
+        ClientRepresentation rep = registerClient(clientRep);
+
+        UserRepresentation serviceAccountUser = adminClient.realm("test").clients().get(rep.getId()).getServiceAccountUser();
+
+        assertNotNull(serviceAccountUser);
+
+        deleteClient(rep);
+
+        try {
+            adminClient.realm("test").users().get(serviceAccountUser.getId()).toRepresentation();
+            fail("Expected NotFoundException");
+        } catch (NotFoundException e) {
+        }
     }
 
     @Test
