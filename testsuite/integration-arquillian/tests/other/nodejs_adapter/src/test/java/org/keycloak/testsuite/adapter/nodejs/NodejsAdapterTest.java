@@ -22,6 +22,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.adapter.nodejs.page.NodejsExamplePage;
@@ -140,7 +141,7 @@ public class NodejsAdapterTest extends AbstractAuthTest {
 
 
         // test SSO timeout
-        pause(ssoTimeout * 1000);
+        pause((ssoTimeout + SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS) * 1000);
         nodejsExamplePage.clickLogin();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmLoginPage);   // there should be an attempt for token refresh
                                                                     // but SSO session should be already expired
