@@ -243,13 +243,11 @@ public class AuthenticationManager {
         }
 
         // See if we have logoutAuthSession inside current rootSession. Create new if not
-        Optional<AuthenticationSessionModel> found = rootLogoutSession.getAuthenticationSessions().values().stream().filter((AuthenticationSessionModel authSession) -> {
+        AuthenticationSessionModel logoutAuthSession = rootLogoutSession.getAuthenticationSessions().values().stream().filter((AuthenticationSessionModel authSession) -> {
 
             return client.equals(authSession.getClient()) && Objects.equals(AuthenticationSessionModel.Action.LOGGING_OUT.name(), authSession.getAction());
 
-        }).findFirst();
-
-        AuthenticationSessionModel logoutAuthSession = found.isPresent() ? found.get() : rootLogoutSession.createAuthenticationSession(client);
+        }).findFirst().orElse(rootLogoutSession.createAuthenticationSession(client));
 
         logoutAuthSession.setAction(AuthenticationSessionModel.Action.LOGGING_OUT.name());
         return logoutAuthSession;
