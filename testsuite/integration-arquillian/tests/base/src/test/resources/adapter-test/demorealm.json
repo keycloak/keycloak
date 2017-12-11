@@ -267,6 +267,15 @@
             "secret": "password"
         },
         {
+            "clientId": "basic-auth-service",
+            "standardFlowEnabled": false,
+            "directAccessGrantsEnabled": true,
+            "enabled": true,
+            "adminUrl": "/basic-auth",
+            "baseUrl": "/basic-auth",
+            "secret": "password"
+        },
+        {
             "clientId": "client-secret-jwt-secure-portal",
             "enabled": true,
             "adminUrl": "/client-secret-jwt-secure-portal",
