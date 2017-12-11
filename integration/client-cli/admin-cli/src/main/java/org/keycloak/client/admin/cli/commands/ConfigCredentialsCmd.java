@@ -83,6 +83,8 @@ public class ConfigCredentialsCmd extends AbstractAuthOptionsCmd {
                 return help ? CommandResult.SUCCESS : CommandResult.FAILURE;
             }
 
+            checkUnsupportedOptions("--no-config", booleanOptionForCheck(noconfig));
+
             processGlobalOptions();
 
             return process(commandInvocation);

@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.ws.rs.core.Response.Status;
 
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.Decision.Effect;
@@ -42,6 +43,7 @@ import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.representations.idm.authorization.Permission;
+import org.keycloak.services.ErrorResponseException;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -103,7 +105,7 @@ public final class Permissions {
                 Scope byName = scopeStore.findByName(scopeName, resource.getResourceServer().getId());
 
                 if (byName == null) {
-                    throw new RuntimeException("Invalid scope [" + scopeName + "].");
+                    throw new ErrorResponseException("invalid_scope", "Invalid scope [" + scopeName + "].", Status.BAD_REQUEST);
                 }
 
                 return byName;

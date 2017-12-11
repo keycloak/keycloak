@@ -35,7 +35,7 @@ public class BasicTimerProviderFactory implements TimerProviderFactory {
 
     private Timer timer;
 
-    private ConcurrentMap<String, TimerTask> scheduledTasks = new ConcurrentHashMap<String, TimerTask>();
+    private ConcurrentMap<String, TimerTaskContextImpl> scheduledTasks = new ConcurrentHashMap<>();
 
     @Override
     public TimerProvider create(KeycloakSession session) {
@@ -63,11 +63,11 @@ public class BasicTimerProviderFactory implements TimerProviderFactory {
         return "basic";
     }
 
-    protected TimerTask putTask(String taskName, TimerTask task) {
+    protected TimerTaskContextImpl putTask(String taskName, TimerTaskContextImpl task) {
         return scheduledTasks.put(taskName, task);
     }
 
-    protected TimerTask removeTask(String taskName) {
+    protected TimerTaskContextImpl removeTask(String taskName) {
         return scheduledTasks.remove(taskName);
     }
 

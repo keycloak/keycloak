@@ -159,10 +159,12 @@
                 var callback = parseCallback(window.location.href);
 
                 if (callback) {
-                    setupCheckLoginIframe();
-                    window.history.replaceState({}, null, callback.newUrl);
-                    processCallback(callback, initPromise);
-                    return;
+                    return setupCheckLoginIframe().success(function() {
+                        window.history.replaceState({}, null, callback.newUrl);
+                        processCallback(callback, initPromise);
+                    }).error(function (e) {
+                        initPromise.setError();
+                    });
                 } else if (initOptions) {
                     if (initOptions.token && initOptions.refreshToken) {
                         setToken(initOptions.token, initOptions.refreshToken, initOptions.idToken);

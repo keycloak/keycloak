@@ -20,3 +20,4 @@ org.keycloak.wellknown.WellKnownSpi
 org.keycloak.services.clientregistration.ClientRegistrationSpi
 org.keycloak.services.clientregistration.policy.ClientRegistrationPolicySpi
 org.keycloak.authentication.actiontoken.ActionTokenHandlerSpi
+org.keycloak.services.x509.X509ClientCertificateLookupSpi

@@ -48,7 +48,7 @@
     <dependency>
       <groupId>org.freemarker</groupId>
       <artifactId>freemarker</artifactId>
-      <version>2.3.23</version>
+      <version>2.3.26-incubating</version>
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>

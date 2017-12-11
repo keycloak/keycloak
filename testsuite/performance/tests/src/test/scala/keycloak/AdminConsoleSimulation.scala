@@ -1,6 +1,7 @@
 package keycloak
 
 import io.gatling.core.Predef._
+import io.gatling.core.validation.Validation
 import io.gatling.http.Predef._
 import org.jboss.perf.util.Util
 import org.keycloak.performance.TestConfig
@@ -14,16 +15,9 @@ import SimulationsHelper._
 class AdminConsoleSimulation extends Simulation {
 
   println()
-  println("Using server: " + TestConfig.serverUrisList.get(0))
+  println("Target server: " + TestConfig.serverUrisList.get(0))
   println()
-  println("Using test parameters:")
-  println("  runUsers: " + TestConfig.runUsers)
-  println("  numOfIterations: " + TestConfig.numOfIterations)
-  println("  rampUpPeriod: " + TestConfig.rampUpPeriod)
-  println("  userThinkTime: " + TestConfig.userThinkTime)
-  //println("  badLoginAttempts: " + TestConfig.badLoginAttempts)
-  //println("  refreshTokenCount: " + TestConfig.refreshTokenCount)
-  //println("  refreshTokenPeriod: " + TestConfig.refreshTokenPeriod)
+  println("Using test parameters:\n" + TestConfig.toStringCommonTestParameters);
   println()
   println("Using dataset properties:\n" + TestConfig.toStringDatasetProperties)
 
@@ -110,16 +104,18 @@ class AdminConsoleSimulation extends Simulation {
 
 
   val adminScenario = scenario("AdminConsole")
-    .repeat(TestConfig.numOfIterations) {
+    .asLongAs(s => rampDownPeriodNotReached(), null, TestConfig.rampDownASAP) {
+      pace(TestConfig.pace)
       adminSession
     }
 
+  setUp(adminScenario
+    .inject(rampUsers(TestConfig.runUsers) over TestConfig.rampUpPeriod)
+    .protocols(httpProtocol))
 
-  setUp(adminScenario.inject({
-    if (TestConfig.rampUpPeriod > 0) {
-      rampUsers(TestConfig.runUsers) over TestConfig.rampUpPeriod
-    } else {
-      atOnceUsers(TestConfig.runUsers)
-    }
-  }).protocols(httpProtocol))
+  
+  def rampDownPeriodNotReached(): Validation[Boolean] = {
+    System.currentTimeMillis < TestConfig.rampDownPeriodStartTime
+  }
+  
 }

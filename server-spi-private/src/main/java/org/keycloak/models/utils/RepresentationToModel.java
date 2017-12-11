@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -77,6 +78,7 @@ import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.credential.PasswordUserCredentialModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
@@ -1444,7 +1446,7 @@ public class RepresentationToModel {
                 user.addRequiredAction(UserModel.RequiredAction.valueOf(requiredAction.toUpperCase()));
             }
         }
-        createCredentials(userRep, session, newRealm, user);
+        createCredentials(userRep, session, newRealm, user, false);
         if (userRep.getFederatedIdentities() != null) {
             for (FederatedIdentityRepresentation identity : userRep.getFederatedIdentities()) {
                 FederatedIdentityModel mappingModel = new FederatedIdentityModel(identity.getIdentityProvider(), identity.getUserId(), identity.getUserName());
@@ -1485,18 +1487,19 @@ public class RepresentationToModel {
         return user;
     }
 
-    public static void createCredentials(UserRepresentation userRep, KeycloakSession session, RealmModel realm, UserModel user) {
+    public static void createCredentials(UserRepresentation userRep, KeycloakSession session, RealmModel realm, UserModel user, boolean adminRequest) {
         if (userRep.getCredentials() != null) {
             for (CredentialRepresentation cred : userRep.getCredentials()) {
-                updateCredential(session, realm, user, cred);
+                updateCredential(session, realm, user, cred, adminRequest);
             }
         }
     }
 
     // Detect if it is "plain-text" or "hashed" representation and update model according to it
-    private static void updateCredential(KeycloakSession session, RealmModel realm, UserModel user, CredentialRepresentation cred) {
+    private static void updateCredential(KeycloakSession session, RealmModel realm, UserModel user, CredentialRepresentation cred, boolean adminRequest) {
         if (cred.getValue() != null) {
-            UserCredentialModel plainTextCred = convertCredential(cred);
+            PasswordUserCredentialModel plainTextCred = convertCredential(cred);
+            plainTextCred.setAdminRequest(adminRequest);
             session.userCredentialManager().updateCredential(realm, user, plainTextCred);
         } else {
             CredentialModel hashedCred = new CredentialModel();
@@ -1542,8 +1545,8 @@ public class RepresentationToModel {
         }
     }
 
-    public static UserCredentialModel convertCredential(CredentialRepresentation cred) {
-        UserCredentialModel credential = new UserCredentialModel();
+    public static PasswordUserCredentialModel convertCredential(CredentialRepresentation cred) {
+        PasswordUserCredentialModel credential = new PasswordUserCredentialModel();
         credential.setType(cred.getType());
         credential.setValue(cred.getValue());
         return credential;
@@ -1677,7 +1680,7 @@ public class RepresentationToModel {
         model.setConsentText(rep.getConsentText());
         model.setProtocol(rep.getProtocol());
         model.setProtocolMapper(rep.getProtocolMapper());
-        model.setConfig(rep.getConfig());
+        model.setConfig(removeEmptyString(rep.getConfig()));
         return model;
     }
 
@@ -1687,7 +1690,7 @@ public class RepresentationToModel {
         model.setName(rep.getName());
         model.setIdentityProviderAlias(rep.getIdentityProviderAlias());
         model.setIdentityProviderMapper(rep.getIdentityProviderMapper());
-        model.setConfig(rep.getConfig());
+        model.setConfig(removeEmptyString(rep.getConfig()));
         return model;
     }
 
@@ -2283,6 +2286,12 @@ public class RepresentationToModel {
             throw new RuntimeException("No owner specified for resource [" + resource.getName() + "].");
         }
 
+        ClientModel clientModel = authorization.getRealm().getClientById(resourceServer.getId());
+
+        if (ownerId.equals(clientModel.getClientId())) {
+            ownerId = resourceServer.getId();
+        }
+
         if (!resourceServer.getId().equals(ownerId)) {
             RealmModel realm = authorization.getRealm();
             KeycloakSession keycloakSession = authorization.getKeycloakSession();
@@ -2297,7 +2306,7 @@ public class RepresentationToModel {
                 throw new RuntimeException("Owner must be a valid username or user identifier. If the resource server, the client id or null.");
             }
 
-            owner.setId(ownerModel.getId());
+            ownerId = ownerModel.getId();
         }
 
         Resource model = resourceStore.create(resource.getName(), resourceServer, ownerId);
@@ -2429,4 +2438,20 @@ public class RepresentationToModel {
 
         }
     }
+
+    private static Map<String, String> removeEmptyString(Map<String, String> map) {
+        if (map == null) {
+            return null;
+        }
+
+        Map<String, String> m = new HashMap<>(map);
+        for (Iterator<Map.Entry<String, String>> itr = m.entrySet().iterator(); itr.hasNext(); ) {
+            Map.Entry<String, String> e = itr.next();
+            if (e.getValue() == null || e.getValue().equals("")) {
+                itr.remove();
+            }
+        }
+        return m;
+    }
+
 }

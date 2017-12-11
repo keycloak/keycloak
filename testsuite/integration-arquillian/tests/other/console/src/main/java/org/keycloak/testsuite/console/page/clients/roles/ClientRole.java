@@ -28,9 +28,9 @@ public class ClientRole extends ClientRoles {
         return getUriParameter(ROLE_ID).toString();
     }
 
-    private RoleForm form;
+    private RoleDetailsForm form;
 
-    public RoleForm form() {
+    public RoleDetailsForm form() {
         return form;
     }
 

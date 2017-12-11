@@ -25,9 +25,10 @@ do
         ./jboss-cli.sh -c --file="adapter-install.cli"
 
         if [ "$ELYTRON_SUPPORTED" = true ]; then
+            echo "Installing elytron adapter."
             ./jboss-cli.sh -c --file="adapter-elytron-install.cli"
         else
-            ./jboss-cli.sh -c --command="/subsystem=elytron:remove"
+            ./jboss-cli.sh -c --file="$CLI_PATH/remove-elytron-subsystem.cli"
         fi
 
         if [ $? -ne 0 ]; then RESULT=1; fi

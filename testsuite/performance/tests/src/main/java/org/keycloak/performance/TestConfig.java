@@ -4,8 +4,10 @@ import org.keycloak.performance.util.FilteredIterator;
 import org.keycloak.performance.util.LoopingIterator;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ThreadLocalRandom;
@@ -39,7 +41,6 @@ public class TestConfig {
     public static final String authPassword = System.getProperty("authPassword", "admin");
     public static final String authClient = System.getProperty("authClient", "admin-cli");
 
-
     //
     // Settings used by RealmsConfigurationBuilder to generate the dataset and by tests to work within constraints of the dataset
     //
@@ -51,23 +52,26 @@ public class TestConfig {
     public static final int clientRolesPerUser = Integer.getInteger("clientRolesPerUser", 2);
     public static final int clientRolesPerClient = Integer.getInteger("clientRolesPerClient", 2);
 
-
     //
     // Settings used by tests to control common test parameters
     //
     public static final int runUsers = Integer.getInteger("runUsers", 1);
     public static final int rampUpPeriod = Integer.getInteger("rampUpPeriod", 0);
+    public static final int steadyLoadPeriod = Integer.getInteger("steadyLoadPeriod", 30);
+    public static final boolean rampDownASAP = Boolean.getBoolean("rampDownASAP"); // check for rampdown condition after each scenario step
+    public static final int pace = Integer.getInteger("pace", 0); // additional dynamic "pause buffer" between scenario loops
     public static final int userThinkTime = Integer.getInteger("userThinkTime", 5);
     public static final int refreshTokenPeriod = Integer.getInteger("refreshTokenPeriod", 10);
 
+    // Computed timestamps
+    public static final long simulationStartTime = System.currentTimeMillis();//new Date().getTime();
+    public static final long rampDownPeriodStartTime = simulationStartTime + (rampUpPeriod + steadyLoadPeriod) * 1000;
 
     //
     // Settings used by DefaultSimulation to control behavior specific to DefaultSimulation
     //
-    public static final int numOfIterations = Integer.getInteger("numOfIterations", 1);
     public static final int badLoginAttempts = Integer.getInteger("badLoginAttempts", 0);
     public static final int refreshTokenCount = Integer.getInteger("refreshTokenCount", 0);
-
 
     public static final String serverUris;
     public static final List<String> serverUrisList;
@@ -77,21 +81,17 @@ public class TestConfig {
 
     static {
         // if KEYCLOAK_SERVER_URIS env var is set, and system property serverUris is not set
-        String servers = System.getProperty("serverUris");
-        if (servers == null) {
-            String env = System.getenv("KEYCLOAK_SERVER_URIS");
-            serverUris = env != null ? env : "http://localhost:8080/auth";
+        String serversProp = System.getProperty("keycloak.server.uris");
+        if (serversProp == null) {
+            String serversEnv = System.getenv("KEYCLOAK_SERVERS");
+            serverUris = serversEnv != null ? serversEnv : "http://localhost:8080/auth";
         } else {
-            serverUris = servers;
+            serverUris = serversProp;
         }
 
         // initialize serverUrisList and serverUrisIterator
-        ArrayList<String> uris = new ArrayList<>();
-        for (String uri: serverUris.split(" ")) {
-            uris.add(uri);
-        }
-        serverUrisList = uris;
-        serverUrisIterator = new LoopingIterator<>(uris);
+        serverUrisList = Arrays.asList(serverUris.split(" "));
+        serverUrisIterator = new LoopingIterator<>(serverUrisList);
     }
 
     // Users iterators by realm
@@ -99,7 +99,6 @@ public class TestConfig {
 
     // Clients iterators by realm
     private static final ConcurrentMap<String, Iterator<ClientInfo>> clientsIteratorMap = new ConcurrentHashMap<>();
-
 
     public static Iterator<UserInfo> getUsersIterator(String realm) {
         return usersIteratorMap.computeIfAbsent(realm, (k) -> randomUsersIterator(realm));
@@ -114,11 +113,24 @@ public class TestConfig {
         return new FilteredIterator<>(clientsIt, (v) -> RealmsConfigurationBuilder.isClientConfidential(v.index));
     }
 
+    public static String toStringCommonTestParameters() {
+        return String.format(
+        "  runUsers: %s\n" + 
+        "  rampUpPeriod: %s\n"+ 
+        "  steadyLoadPeriod: %s\n"+
+        "  rampDownASAP: %s\n"+ 
+        "  pace: %s\n"+ 
+        "  userThinkTime: %s\n"+ 
+        "  refreshTokenPeriod: %s",
+                runUsers, rampUpPeriod, steadyLoadPeriod, rampDownASAP, pace, userThinkTime, refreshTokenPeriod
+        );
+    }
+
     public static String toStringDatasetProperties() {
         return String.format("  numOfRealms: %s\n  usersPerRealm: %s\n  clientsPerRealm: %s\n  realmRoles: %s\n  realmRolesPerUser: %s\n  clientRolesPerUser: %s\n  clientRolesPerClient: %s\n  hashIterations: %s",
                 numOfRealms, usersPerRealm, clientsPerRealm, realmRoles, realmRolesPerUser, clientRolesPerUser, clientRolesPerClient, hashIterations);
     }
-
+    
     public static Iterator<UserInfo> sequentialUsersIterator(final String realm) {
 
         return new Iterator<UserInfo>() {
@@ -203,4 +215,5 @@ public class TestConfig {
             throw new RuntimeException("Can't have more clientRolesPerUser than there are all client roles (clientsPerRealm * clientRolesPerClient)");
         }
     }
+    
 }

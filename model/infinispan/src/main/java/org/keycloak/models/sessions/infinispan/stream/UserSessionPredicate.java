@@ -73,7 +73,6 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
      * from user session, only client session is deleted and user session is not updated for performance reason.
      *
      * @see AuthenticatedClientSessionAdapter#detachFromUserSession()
-     * @param clientSessionCache
      * @param clientUUID
      * @return
      */

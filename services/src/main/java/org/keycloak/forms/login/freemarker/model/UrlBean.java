@@ -33,7 +33,7 @@ public class UrlBean {
     private String realm;
 
     public UrlBean(RealmModel realm, Theme theme, URI baseURI, URI actionUri) {
-        this.realm = realm.getName();
+        this.realm = realm != null ? realm.getName() : null;
         this.theme = theme;
         this.baseURI = baseURI;
         this.actionuri = actionUri;

@@ -29,7 +29,9 @@ import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
+import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeyManager;
@@ -40,7 +42,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.ProtocolMapper;
-import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.saml.mappers.SAMLAttributeStatementMapper;
 import org.keycloak.protocol.saml.mappers.SAMLLoginResponseMapper;
 import org.keycloak.protocol.saml.mappers.SAMLRoleListMapper;
@@ -597,16 +598,25 @@ public class SamlProtocol implements LoginProtocol {
                 builder.addExtension(new KeycloakKeySamlExtensionGenerator(keyName));
             }
         }
-
+        Response response;
         try {
-            return buildLogoutResponse(userSession, logoutBindingUri, builder, binding);
-        } catch (ConfigurationException e) {
-            throw new RuntimeException(e);
-        } catch (ProcessingException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
+            response = buildLogoutResponse(userSession, logoutBindingUri, builder, binding);
+        } catch (ConfigurationException | ProcessingException  | IOException e) {
             throw new RuntimeException(e);
         }
+        if (logoutBindingUri != null) {
+            event.detail(Details.REDIRECT_URI, logoutBindingUri);
+        }
+        event.event(EventType.LOGOUT)
+                .detail(Details.AUTH_METHOD, userSession.getAuthMethod())
+                .client(session.getContext().getClient())
+                .user(userSession.getUser())
+                .session(userSession)
+                .detail(Details.USERNAME, userSession.getLoginUsername())
+                .detail(Details.RESPONSE_MODE, postBinding ? SamlProtocol.SAML_POST_BINDING : SamlProtocol.SAML_REDIRECT_BINDING)
+                .detail(SamlProtocol.SAML_LOGOUT_REQUEST_ID, userSession.getNote(SAML_LOGOUT_REQUEST_ID))
+                .success();
+        return response;
     }
 
     protected Response buildLogoutResponse(UserSessionModel userSession, String logoutBindingUri, SAML2LogoutResponseBuilder builder, JaxrsSAML2BindingBuilder binding) throws ConfigurationException, ProcessingException, IOException {

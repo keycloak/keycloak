@@ -23,6 +23,8 @@ import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.common.VerificationException;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessToken;
 
 import javax.security.cert.X509Certificate;
@@ -83,6 +85,16 @@ public class BearerTokenRequestAuthenticator {
     }
     
     protected AuthOutcome authenticateToken(HttpFacade exchange, String tokenString) {
+        log.debug("Verifying access_token");
+        if (log.isTraceEnabled()) {
+            try {
+                JWSInput jwsInput = new JWSInput(tokenString);
+                String wireString = jwsInput.getWireString();
+                log.tracef("\taccess_token: %s", wireString.substring(0, wireString.lastIndexOf(".")) + ".signature");
+            } catch (JWSInputException e) {
+                log.errorf(e, "Failed to parse access_token: %s", tokenString);
+            }
+        }
         try {
             token = AdapterRSATokenVerifier.verifyToken(tokenString, deployment);
         } catch (VerificationException e) {
@@ -124,6 +136,7 @@ public class BearerTokenRequestAuthenticator {
             }
             surrogate = chain[0].getSubjectDN().getName();
         }
+        log.debug("successful authorized");
         return AuthOutcome.AUTHENTICATED;
     }
 

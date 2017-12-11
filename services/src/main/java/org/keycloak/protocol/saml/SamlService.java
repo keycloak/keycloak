@@ -169,6 +169,15 @@ public class SamlService extends AuthorizationEndpointBase {
                 event.error(Errors.INVALID_SAML_LOGOUT_RESPONSE);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             }
+            String issuer = statusResponse.getIssuer().getValue();
+            ClientModel client = realm.getClientByClientId(issuer);
+            if (client == null) {
+                event.event(EventType.LOGOUT);
+                event.client(issuer);
+                event.error(Errors.CLIENT_NOT_FOUND);
+                return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.CLIENT_NOT_FOUND);
+            }
+            session.getContext().setClient(client);
             logger.debug("logout response");
             Response response = authManager.browserLogout(session, realm, userSession, uriInfo, clientConnection, headers);
             event.success();

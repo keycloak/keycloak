@@ -211,16 +211,22 @@ public class EntitlementService {
                 break;
             }
 
-            Resource resource;
+            Resource resource = null;
 
             if (requestedResource.getResourceSetId() != null) {
                 resource = storeFactory.getResourceStore().findById(requestedResource.getResourceSetId(), resourceServer.getId());
-            } else {
+                if (resource == null) {
+                    throw new ErrorResponseException("invalid_resource", "Resource with id [" + requestedResource.getResourceSetId() + "] does not exist.", Status.FORBIDDEN);
+                }
+            } else if (requestedResource.getResourceSetName() != null) {
                 resource = storeFactory.getResourceStore().findByName(requestedResource.getResourceSetName(), resourceServer.getId());
+                if (resource == null) {
+                    throw new ErrorResponseException("invalid_resource", "Resource with name [" + requestedResource.getResourceSetName() + "] does not exist.", Status.FORBIDDEN);
+                }
             }
 
             if (resource == null && (requestedResource.getScopes() == null || requestedResource.getScopes().isEmpty())) {
-                throw new ErrorResponseException("invalid_resource", "Resource with id [" + requestedResource.getResourceSetId() + "] or name [" + requestedResource.getResourceSetName() + "] does not exist.", Status.FORBIDDEN);
+                throw new ErrorResponseException("invalid_request", "You must provide a resource and/or scopes.", Status.FORBIDDEN);
             }
 
             Set<ScopeRepresentation> requestedScopes = requestedResource.getScopes().stream().map(ScopeRepresentation::new).collect(Collectors.toSet());

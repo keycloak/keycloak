@@ -1,11 +1,13 @@
 # Keycloak Performance Testsuite
 
 ## Requirements:
+- Bash 2.05+
 - Maven 3.1.1+
 - Keycloak server distribution installed in the local Maven repository. To do this run `mvn install -Pdistribution` from the root of the Keycloak project.
+
+### Docker Compose Provisioner
 - Docker 1.13+
 - Docker Compose 1.14+
-- Bash
 
 ## Getting started for the impatient
 
@@ -47,34 +49,68 @@ Keep reading for more information.
 
 ## Provisioning
 
+### Available provisioners:
+
+- `docker-compose` **Default.** See [`README.docker-compose.md`](README.docker-compose.md) for more details.
+
 ### Provision
 
-Usage: `mvn verify -Pprovision[,cluster] [-D<PARAM>=<VALUE> ...]`. 
+Usage: `mvn verify -Pprovision [-Dprovisioner=<PROVISIONER>] [-D<PARAMETER>=<VALUE>] …`. 
 
-- Single node deployment: `mvn verify -Pprovision`
-- Cluster deployment: `mvn verify -Pprovision,cluster [-Dkeycloak.scale=N]`. Default `N=1`.
+#### Deployment Types
 
-Available parameters are described in [README.provisioning-parameters](README.provisioning-parameters.md).
+- Single node: `mvn verify -Pprovision`
+- Cluster: `mvn verify -Pprovision,cluster [-Dkeycloak.scale=N] [-Dkeycloak.cpusets="cpuset1 cpuset2 … cpusetM"]`. `N ∈ {1 .. M}`.
+- Cross-DC: `mvn verify -Pprovision,crossdc [-Dkeycloak.dc1.scale=K] [-Dkeycloak.dc2.scale=L] [-Dkeycloak.dc1.cpusets=…] [-Dkeycloak.dc2.cpusets=…]`
+
+All available parameters are described in [`README.provisioning-parameters.md`](README.provisioning-parameters.md).
+
+#### Provisioned System
+
+The `provision` operation will produce a `provisioned-system.properties` inside the `tests/target` directory 
+with information about the provisioned system such as the type of deployment and URLs of Keycloak servers and load balancers.
+This information is then used by operations `generate-data`, `import-dump`, `test`, `teardown`.
+
+Provisioning can be run multiple times with different parameters. The system will be updated/reprovisioned based on the new parameters.
+However when switching between different deployment types (e.g. from `singlenode` to `cluster`) it is always necessary 
+to tear down the currently running system.
+
+**Note:** When switching deployment type from `singlenode` or `cluster` to `crossdc` (or the other way around) 
+it is necessary to update the generated Keycloak server configuration (inside `keycloak/target` directory) by 
+adding a `clean` goal to the provisioning command like so: `mvn clean verify -Pprovision …`. It is *not* necessary to update this configuration 
+when switching between `singlenode` and `cluster` deployments.
 
 ### Teardown
 
-Usage: `mvn verify -Pteardown[,cluster]`
+Usage: `mvn verify -Pteardown [-Dprovisioner=<PROVISIONER>]`
 
-- Single node deployment: `mvn verify -Pteardown`
-- Cluster deployment: `mvn verify -Pteardown,cluster`
-
-Provisioning/teardown is performed via `docker-compose` tool. More details in [README.docker-compose](README.docker-compose.md).
+**Note:** Unless the provisioned system has been properly torn down the maven build will not allow a cleanup of the `tests/target` directory
+because it contains the `provisioned-system.properties` with information about the still-running system.
 
 
 ## Testing
 
 ### Generate Test Data
 
-Usage: `mvn verify -Pgenerate-data[,cluster] [-Ddataset=DATASET] [-Dexport-dump] [-D<dataset.property>=<value>]`.
+Usage: `mvn verify -Pgenerate-data [-Ddataset=DATASET] [-D<dataset.property>=<value>]`.
 
 Dataset properties are loaded from `datasets/${dataset}.properties` file. Individual properties can be overriden by specifying `-D` params.
 
 Dataset data is first generated as a .json file, and then imported into Keycloak via Admin Client REST API.
+
+#### Dataset Properties
+
+| Property | Description | Value in the Default Dataset |
+| --- | --- | --- | 
+| `numOfRealms` | Number of realms to be created. | `1`  |
+| `usersPerRealm` | Number of users per realm. | `100`  |
+| `clientsPerRealm` | Number of clients per realm. | `2`  |
+| `realmRoles` | Number of realm-roles per realm. | `2`  |
+| `realmRolesPerUser` | Number of realm-roles assigned to a created user. Has to be less than or equal to `realmRoles`. | `2`  |
+| `clientRolesPerUser` | Number of client-roles assigned to a created user. Has to be less than or equal to `clientsPerRealm * clientRolesPerClient`. | `2`  |
+| `clientRolesPerClient` | Number of client-roles per created client. | `2`  |
+| `hashIterations` | Number of password hashing iterations. | `27500`  |
+
 
 #### Examples:
 - `mvn verify -Pgenerate-data` - generate default dataset
@@ -82,57 +118,74 @@ Dataset data is first generated as a .json file, and then imported into Keycloak
 - `mvn verify -Pgenerate-data -Ddataset=100u` - generate `100u` dataset
 - `mvn verify -Pgenerate-data -Ddataset=100r/default` - generate dataset based on `datasets/100r/default.properties`
 
-The data can also be exported from the database, and stored locally as `datasets/${dataset}.sql.gz`
-`DATASET=100u ./prepare-dump.sh`
+#### Export / Import Database Dump
 
 To speed up dataset initialization part, it is possible to pass `-Dexport-dump` option to have the generated dataset
 exported right after it has been generated. Then, if there is a data dump file available then `-Pimport-dump` 
 can be used to import the data directly into the database, bypassing Keycloak server completely.
 
-Usage: `mvn verify -Pimport-dump [-Ddataset=DATASET]`
+**Usage:** `mvn verify -Pimport-dump [-Ddataset=DATASET]`
 
-#### Example:
-- `mvn verify -Pimport-dump -Ddataset=100u` - import `datasets/100u.sql.gz` dump file created using `prepare-dump.sh`.
+**For example:**
+- `mvn verify -Pgenerate-data -Ddataset=100u -Dexport-dump` will generate data based on `datasets/100u.properties` and export a database dump to a file: `datasets/100u.sql.gz`.
+- `mvn verify -Pimport-dump -Ddataset=100u` will import the database dump from a file: `datasets/100u.sql.gz`, and reboot the server(s)
 
 
 ### Run Tests
 
-Usage: `mvn verify -Ptest[,cluster] [-DrunUsers=N] [-DrampUpPeriod=SECONDS] [-DnumOfIterations=N] [-Ddataset=DATASET] [-D<dataset.property>=<value>]* [-D<test.property>=<value>]* `.
+Usage: `mvn verify -Ptest[,cluster] [-DtestParameter=value]`.
 
-_*Note:* The same dataset properties which were used for data generation/import should be supplied to the `test` phase._
+#### Common Parameters
 
-The default test `keycloak.DefaultSimulation` takes the following additional properties:
+| Parameter | Description | Default Value |
+| --- | --- | --- | 
+| `gatling.simulationClass` | Classname of the simulation to be run. | `keycloak.DefaultSimulation`  |
+| `dataset` | Name of the dataset to use. (Individual dataset properties can be overridden with `-Ddataset.property=value`.) | `default` |
+| `runUsers` | Number of users for the simulation run. | `1` |
+| `rampUpPeriod` | Period during which the users will be ramped up. (seconds) | `0` |
+| `steadyLoadPeriod` | A period of steady load. (seconds) | `30` |
+| `rampDownASAP` | When `true` the test will be checking for ramp-down condition after each *scenario step*. When `false` the check will be done only at the end of a *scenario iteration*. | `false` |
+| `pace` | A dynamic pause after each *scenario iteration*. For example if the pace is 30s and one scenario iteration takes only 20s, the simulation will wait additional 10s before continuing to the next iteration. | `0` |
+| `userThinkTime` | Pause between individual scenario steps. | `5` |
+| `refreshTokenPeriod`| Period after which token should be refreshed. | `10` |
 
-`[-DuserThinkTime=SECONDS] [-DbadLoginAttempts=N] [-DrefreshTokenCount=N] [-DrefreshTokenPeriod=SECONDS]`
+#### Addtional Parameters of `keycloak.DefaultSimulation`
+
+| Parameter | Description | Default Value |
+| --- | --- | --- | 
+| `badLoginAttempts` | | `0`  |
+| `refreshTokenCount` | | `0` |
 
 
-If you want to run a different test you need to specify the test class name using `[-Dgatling.simulationClass=CLASSNAME]`.
+Example:
 
-For example:
-
-`mvn verify -Ptest -DrunUsers=1 -DnumOfIterations=10 -DuserThinkTime=0 -Ddataset=100u -DrefreshTokenPeriod=10 -Dgatling.simulationClass=keycloak.AdminSimulation`
-
-
-## Debugging & Profiling
-
-Keycloak docker container exposes JMX management interface on port `9990`.
-
-### JVisualVM
-
-- Start JVisualVM with `jboss-client.jar` on classpath: `./jvisualvm --cp:a $JBOSS_HOME/bin/client/jboss-client.jar`.
-- Add a local JMX connection: `service:jmx:remote+http://localhost:9990`.
-- Check "Use security credentials" and set `admin:admin`. (The default credentials can be overriden by providing env. variables `DEBUG_USER` and `DEBUG_USER_PASSWORD` to the container.)
-- Open the added connection.
-
-_Note: The above applies for the singlenode deployment.
-In cluster/crossdc deployments there are multiple KC containers running at the same time so their exposed ports are mapped to random available ports on `0.0.0.0`.
-To find the actual mapped ports run command: `docker ps | grep performance_keycloak`._
+`mvn verify -Ptest -Dgatling.simulationClass=keycloak.AdminSimulation -Ddataset=100u -DrunUsers=1 -DsteadyLoadPeriod=30 -DuserThinkTime=0 -DrefreshTokenPeriod=15`
 
 
 ## Monitoring
 
-There is a docker-based solution for monitoring of CPU, memory and network usage per container. 
-(It uses CAdvisor service to export container metrics into InfluxDB time series database, and Grafana web app to query the DB and present results as graphs.)
+### JMX
+
+To enable access to JMX on the WildFly-backed services set properties `management.user` and `management.user.password` during the provisioning phase.
+
+#### JVisualVM
+
+- Set `JBOSS_HOME` variable to point to a valid WildFly 10+ installation.
+- Start JVisualVM with `jboss-client.jar` on classpath: `./jvisualvm --cp:a $JBOSS_HOME/bin/client/jboss-client.jar`.
+- Add a local JMX connection: `service:jmx:remote+http://localhost:9990`. <sup>**[*]**</sup>
+- Check "Use security credentials" and set `admin:admin`. (The default credentials can be overriden by providing env. variables `DEBUG_USER` and `DEBUG_USER_PASSWORD` to the container.)
+- Open the added connection.
+
+**[*]** For `singlenode` this points to the JMX console of the Keycloak server.
+To get the connection URLs for `cluster` or `crossdc` deployments see the JMX section in the generated `provisioned-system.properties` file.
+- Property `keycloak.frontend.servers.jmx` contains JMX URLs of the Load Balancers.
+- Property `keycloak.backend.servers.jmx` contains JMX URLs of the clustered Keycloak servers.
+- Property `infinispan.servers.jmx` contains JMX URLs of the Infinispan servers, in Cross-DC deployment.
+
+### Docker Monitoring
+
+There is a docker-based solution for monitoring CPU, memory and network usage per container. 
+It uses CAdvisor service to export container metrics into InfluxDB time series database, and Grafana web app to query the DB and present results as graphs.
 
 - To enable run: `mvn verify -Pmonitoring`
 - To disable run: `mvn verify -Pmonitoring-off[,delete-monitoring-data]`.

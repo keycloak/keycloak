@@ -132,7 +132,7 @@ public class TokenManager {
             if (userSession != null) {
 
                 // Revoke timeouted offline userSession
-                if (userSession.getLastSessionRefresh() < Time.currentTime() - realm.getOfflineSessionIdleTimeout()) {
+                if (!AuthenticationManager.isOfflineSessionValid(realm, userSession)) {
                     sessionManager.revokeOfflineUserSession(userSession);
                     throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Offline session not active", "Offline session not active");
                 }
@@ -282,9 +282,8 @@ public class TokenManager {
                     clusterStartupTime != validation.clientSession.getTimestamp()) {
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
             }
-        }
 
-        if (realm.isRevokeRefreshToken()) {
+
             if (!refreshToken.getId().equals(validation.clientSession.getCurrentRefreshToken())) {
                 validation.clientSession.setCurrentRefreshToken(refreshToken.getId());
                 validation.clientSession.setCurrentRefreshTokenUseCount(0);
@@ -296,8 +295,6 @@ public class TokenManager {
                         "Maximum allowed refresh token reuse exceeded");
             }
             validation.clientSession.setCurrentRefreshTokenUseCount(currentCount + 1);
-        } else {
-            validation.clientSession.setCurrentRefreshToken(null);
         }
     }
 
@@ -638,11 +635,8 @@ public class TokenManager {
 
 
         token.setSessionState(session.getId());
+        token.expiration(getTokenExpiration(realm, session, clientSession));
 
-        int tokenLifespan = getTokenLifespan(realm, clientSession);
-        if (tokenLifespan > 0) {
-            token.expiration(Time.currentTime() + tokenLifespan);
-        }
         Set<String> allowedOrigins = client.getWebOrigins();
         if (allowedOrigins != null) {
             token.setAllowedOrigins(WebOriginsUtils.resolveValidWebOrigins(uriInfo, client));
@@ -650,13 +644,22 @@ public class TokenManager {
         return token;
     }
 
-    private int getTokenLifespan(RealmModel realm, AuthenticatedClientSessionModel clientSession) {
+    private int getTokenExpiration(RealmModel realm, UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
         boolean implicitFlow = false;
         String responseType = clientSession.getNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
         if (responseType != null) {
             implicitFlow = OIDCResponseType.parse(responseType).isImplicitFlow();
         }
-        return implicitFlow ? realm.getAccessTokenLifespanForImplicitFlow() : realm.getAccessTokenLifespan();
+        int tokenLifespan = implicitFlow ? realm.getAccessTokenLifespanForImplicitFlow() : realm.getAccessTokenLifespan();
+
+        int expiration = Time.currentTime() + tokenLifespan;
+
+        if (!userSession.isOffline()) {
+            int sessionExpires = userSession.getStarted() + realm.getSsoSessionMaxLifespan();
+            expiration = expiration <= sessionExpires ? expiration : sessionExpires;
+        }
+
+        return expiration;
     }
 
     protected void addComposites(AccessToken token, RoleModel role) {
@@ -768,11 +771,17 @@ public class TokenManager {
                 sessionManager.createOrUpdateOfflineSession(clientSession, userSession);
             } else {
                 refreshToken = new RefreshToken(accessToken);
-                refreshToken.expiration(Time.currentTime() + realm.getSsoSessionIdleTimeout());
+                refreshToken.expiration(getRefreshExpiration());
             }
             refreshToken.id(KeycloakModelUtils.generateId());
             refreshToken.issuedNow();
             return this;
+        }
+
+        private int getRefreshExpiration() {
+            int sessionExpires = userSession.getStarted() + realm.getSsoSessionMaxLifespan();
+            int expiration = Time.currentTime() + realm.getSsoSessionIdleTimeout();
+            return expiration <= sessionExpires ? expiration : sessionExpires;
         }
 
         public AccessTokenResponseBuilder generateIDToken() {

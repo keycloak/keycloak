@@ -18,6 +18,7 @@
 package org.keycloak.models.sessions.infinispan.stream;
 
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
+import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
@@ -25,6 +26,7 @@ import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
 import java.io.Serializable;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 
 /**
@@ -46,6 +48,10 @@ public class Mappers {
 
     public static Function<Map.Entry<String, SessionEntityWrapper<UserSessionEntity>>, UserSessionEntity> userSessionEntity() {
         return new UserSessionEntityMapper();
+    }
+
+    public static Function<Map.Entry<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>>, AuthenticatedClientSessionEntity> clientSessionEntity() {
+        return new AuthenticatedClientSessionEntityMapper();
     }
 
     public static Function<Map.Entry<LoginFailureKey, SessionEntityWrapper<LoginFailureEntity>>, LoginFailureKey> loginFailureId() {
@@ -98,6 +104,15 @@ public class Mappers {
 
         @Override
         public UserSessionEntity apply(Map.Entry<String, SessionEntityWrapper<UserSessionEntity>> entry) {
+            return entry.getValue().getEntity();
+        }
+
+    }
+
+    private static class AuthenticatedClientSessionEntityMapper implements Function<Map.Entry<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>>, AuthenticatedClientSessionEntity>, Serializable {
+
+        @Override
+        public AuthenticatedClientSessionEntity apply(Map.Entry<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> entry) {
             return entry.getValue().getEntity();
         }
 

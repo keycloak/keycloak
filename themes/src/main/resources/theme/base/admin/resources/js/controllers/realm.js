@@ -2282,8 +2282,9 @@ module.controller('RequiredActionsCtrl', function($scope, realm, unregisteredReq
             }
             $scope.ok = function () {
                 $modalInstance.close();
-                RegisterRequiredAction.save({realm: realm.realm}, $scope.selected.selected);
-                $route.reload();
+                RegisterRequiredAction.save({realm: realm.realm}, $scope.selected.selected, function() {
+                    $route.reload();
+                });
             };
             $scope.cancel = function () {
                 $modalInstance.dismiss('cancel');

@@ -161,6 +161,10 @@
                 <property name="bindHttpPortOffset">1</property>
                 <property name="route">node1</property>
                 <property name="remoteMode">${undertow.remote}</property>
+                <property name="keycloakConfigPropertyOverrides">{
+                    "keycloak.connectionsInfinispan.nodeName": "node1"
+                    }
+                </property>
             </configuration>
         </container>
         <container qualifier="auth-server-undertow-backend2" mode="manual" >
@@ -172,6 +176,10 @@
                 <property name="bindHttpPortOffset">2</property>
                 <property name="route">node2</property>
                 <property name="remoteMode">${undertow.remote}</property>
+                <property name="keycloakConfigPropertyOverrides">{
+                    "keycloak.connectionsInfinispan.nodeName": "node2"
+                    }
+                </property>
             </configuration>
         </container>
 

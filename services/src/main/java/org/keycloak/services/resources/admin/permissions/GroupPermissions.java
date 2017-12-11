@@ -98,6 +98,7 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
             Set<Scope> scopeset = new HashSet<>();
             scopeset.add(manageScope);
             scopeset.add(viewScope);
+            scopeset.add(viewMembersScope);
             scopeset.add(manageMembershipScope);
             scopeset.add(manageMembersScope);
             groupResource.updateScopes(scopeset);

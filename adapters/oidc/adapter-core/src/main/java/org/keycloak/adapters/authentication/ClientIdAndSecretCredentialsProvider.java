@@ -32,7 +32,7 @@ import java.util.Map;
  */
 public class ClientIdAndSecretCredentialsProvider implements ClientCredentialsProvider {
 
-    private static Logger logger = Logger.getLogger(ClientCredentialsProviderUtils.class);
+    private static Logger logger = Logger.getLogger(ClientIdAndSecretCredentialsProvider.class);
 
     public static final String PROVIDER_ID = CredentialRepresentation.SECRET;
 

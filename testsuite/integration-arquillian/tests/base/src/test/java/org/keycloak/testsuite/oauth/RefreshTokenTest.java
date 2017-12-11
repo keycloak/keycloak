@@ -25,6 +25,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
@@ -533,7 +534,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         String refreshId = oauth.verifyRefreshToken(tokenResponse.getRefreshToken()).getId();
 
-        int last = testingClient.testing().getLastSessionRefresh("test", sessionId);
+        int last = testingClient.testing().getLastSessionRefresh("test", sessionId, false);
 
         setTimeOffset(2);
 
@@ -544,7 +545,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         assertEquals(200, tokenResponse.getStatusCode());
 
-        int next = testingClient.testing().getLastSessionRefresh("test", sessionId);
+        int next = testingClient.testing().getLastSessionRefresh("test", sessionId, false);
 
         Assert.assertNotEquals(last, next);
 
@@ -555,7 +556,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         setTimeOffset(4);
         tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
 
-        next = testingClient.testing().getLastSessionRefresh("test", sessionId);
+        next = testingClient.testing().getLastSessionRefresh("test", sessionId, false);
 
         // lastSEssionRefresh should be updated because access code lifespan is higher than sso idle timeout
         Assert.assertThat(next, allOf(greaterThan(last), lessThan(last + 50)));
@@ -564,7 +565,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         RealmManager.realm(realmResource).ssoSessionIdleTimeout(1);
 
         events.clear();
-        setTimeOffset(6);
+        // Needs to add some additional time due the tollerance allowed by IDLE_TIMEOUT_WINDOW_SECONDS
+        setTimeOffset(6 + SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS);
         tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
 
         // test idle timeout

@@ -18,6 +18,7 @@ package org.keycloak.services.managers;
 
 import org.keycloak.Config;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.migration.MigrationModelManager;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.BrowserSecurityHeaders;
@@ -150,15 +151,6 @@ public class RealmManager {
         adminConsole.addRedirectUri(baseUrl + "/*");
         adminConsole.setFullScopeAllowed(false);
         adminConsole.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-
-        RoleModel adminRole;
-        if (realm.getName().equals(Config.getAdminRealm())) {
-            adminRole = realm.getRole(AdminRoles.ADMIN);
-        } else {
-            String realmAdminApplicationClientId = getRealmAdminClientId(realm);
-            ClientModel realmAdminApp = realm.getClientByClientId(realmAdminApplicationClientId);
-            adminRole = realmAdminApp.getRole(AdminRoles.REALM_ADMIN);
-        }
     }
 
     protected void setupAdminConsoleLocaleMapper(RealmModel realm) {
@@ -184,15 +176,6 @@ public class RealmManager {
             adminCli.setStandardFlowEnabled(false);
             adminCli.setDirectAccessGrantsEnabled(true);
             adminCli.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-
-            RoleModel adminRole;
-            if (realm.getName().equals(Config.getAdminRealm())) {
-                adminRole = realm.getRole(AdminRoles.ADMIN);
-            } else {
-                String realmAdminApplicationClientId = getRealmAdminClientId(realm);
-                ClientModel realmAdminApp = realm.getClientByClientId(realmAdminApplicationClientId);
-                adminRole = realmAdminApp.getRole(AdminRoles.REALM_ADMIN);
-            }
         }
 
     }
@@ -533,6 +516,10 @@ public class RealmManager {
 
         setupAuthorizationServices(realm);
         setupClientRegistrations(realm);
+
+        if (rep.getKeycloakVersion() != null) {
+            MigrationModelManager.migrateImport(session, realm, rep, skipUserDependent);
+        }
 
         fireRealmPostCreate(realm);
 

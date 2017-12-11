@@ -58,7 +58,7 @@ public class DeleteCmd extends CreateCmd {
         out.println();
         out.println("Command to delete resources on the server.");
         out.println();
-        out.println("Use `" + CMD + " config credentials` to establish an authenticated sessions, or use CREDENTIALS OPTIONS");
+        out.println("Use '" + CMD + " config credentials' to establish an authenticated sessions, or use CREDENTIALS OPTIONS");
         out.println("to perform one time authentication.");
         out.println();
         out.println("Arguments:");
@@ -66,11 +66,12 @@ public class DeleteCmd extends CreateCmd {
         out.println("  Global options:");
         out.println("    -x                    Print full stack trace when exiting with error");
         out.println("    --config              Path to the config file (" + DEFAULT_CONFIG_FILE_STRING + " by default)");
+        out.println("    --no-config           Don't use config file - no authentication info is loaded or saved");
         out.println("    --truststore PATH     Path to a truststore containing trusted certificates");
         out.println("    --trustpass PASSWORD  Truststore password (prompted for if not specified and --truststore is used)");
         out.println("    CREDENTIALS OPTIONS   Same set of options as accepted by '" + CMD + " config credentials' in order to establish");
-        out.println("                          an authenticated sessions. This allows on-the-fly transient authentication that does");
-        out.println("                          not touch a config file.");
+        out.println("                          an authenticated sessions. In combination with --no-config option this allows transient");
+        out.println("                          (on-the-fly) authentication to be performed which leaves no tokens in config file.");
         out.println();
         out.println("  Command specific options:");
         out.println("    ENDPOINT_URI              URI used to compose a target resource url. Commonly used values start with:");
@@ -87,6 +88,7 @@ public class DeleteCmd extends CreateCmd {
         out.println("    -H, --print-headers       Print response headers");
         out.println("    -o, --output              After delete output any response to standard output");
         out.println("    -F, --fields FILTER       A filter pattern to specify which fields of a JSON response to output");
+        out.println("                              Use '" + CMD + " get --help' for more info on FILTER syntax.");
         out.println("    -c, --compressed          Don't pretty print the output");
         out.println("    -a, --admin-root URL      URL of Admin REST endpoint root if not default - e.g. http://localhost:8080/auth/admin");
         out.println();

@@ -27,6 +27,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.Constants;
+import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -41,15 +42,17 @@ import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
+import org.keycloak.testsuite.updaters.UserAttributeUpdater;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.UserActionTokenBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
+import java.io.Closeable;
 import javax.mail.MessagingException;
-import javax.mail.Multipart;
 import javax.mail.internet.MimeMessage;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -578,25 +581,40 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
 
     public static String getPasswordResetEmailLink(MimeMessage message) throws IOException, MessagingException {
-    	Multipart multipart = (Multipart) message.getContent();
+        return MailUtils.getPasswordResetEmailLink(message);
+    }
 
-        final String textContentType = multipart.getBodyPart(0).getContentType();
+    // https://issues.jboss.org/browse/KEYCLOAK-5861
+    @Test
+    public void verifyEmailNewBrowserSessionWithClientRedirect() throws IOException, MessagingException {
+        try (Closeable u = new UserAttributeUpdater(testRealm().users().get(testUserId))
+          .setEmailVerified(false)
+          .update()) {
+            testRealm().users().get(testUserId).executeActionsEmail(Arrays.asList(RequiredAction.VERIFY_EMAIL.name()));
 
-        assertEquals("text/plain; charset=UTF-8", textContentType);
+            Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+            MimeMessage message = greenMail.getLastReceivedMessage();
 
-        final String textBody = (String) multipart.getBodyPart(0).getContent();
-        final String textChangePwdUrl = MailUtils.getLink(textBody);
+            String verificationUrl = getPasswordResetEmailLink(message);
 
-        final String htmlContentType = multipart.getBodyPart(1).getContentType();
+            driver.manage().deleteAllCookies();
 
-        assertEquals("text/html; charset=UTF-8", htmlContentType);
+            driver.navigate().to(verificationUrl.trim());
+            proceedPage.assertCurrent();
+            proceedPage.clickProceedLink();
 
-        final String htmlBody = (String) multipart.getBodyPart(1).getContent();
-        final String htmlChangePwdUrl = MailUtils.getLink(htmlBody);
+            infoPage.assertCurrent();
+            assertEquals("Your account has been updated.", infoPage.getInfo());
 
-        assertEquals(htmlChangePwdUrl, textChangePwdUrl);
+            // Now log into account page
+            accountPage.setAuthRealm(testRealm().toRepresentation().getRealm());
+            accountPage.navigateTo();
 
-        return htmlChangePwdUrl;
+            loginPage.assertCurrent();
+            loginPage.login("test-user@localhost", "password");
+
+            accountPage.assertCurrent();
+        }
     }
 
 }

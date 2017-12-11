@@ -18,7 +18,6 @@
 
 package org.keycloak.authentication.authenticators.x509;
 
-import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
 
 import javax.ws.rs.core.Response;
@@ -82,6 +81,7 @@ public class ValidateX509CertificateUsername extends AbstractX509ClientCertifica
 
         Object userIdentity = getUserIdentityExtractor(config).extractUserIdentity(certs);
         if (userIdentity == null) {
+            context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
             logger.errorf("[ValidateX509CertificateUsername:authenticate] Unable to extract user identity from certificate.");
             // TODO use specific locale to load error messages
             String errorMessage = "Unable to extract user identity from specified certificate";

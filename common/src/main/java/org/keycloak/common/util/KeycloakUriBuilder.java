@@ -429,7 +429,9 @@ public class KeycloakUriBuilder {
                 if ("".equals(host)) throw new RuntimeException("empty host name");
                 replaceParameter(paramMap, fromEncodedMap, isTemplate, host, buffer, encodeSlash);
             }
-            if (port != -1) buffer.append(":").append(Integer.toString(port));
+            if (port != -1 && (scheme == null || (scheme.equals("http") && port != 80) || (scheme.equals("https") && port != 443)) ) {
+                buffer.append(":").append(Integer.toString(port));
+            }
         } else if (authority != null) {
             buffer.append("//");
             replaceParameter(paramMap, fromEncodedMap, isTemplate, authority, buffer, encodeSlash);

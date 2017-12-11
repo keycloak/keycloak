@@ -17,11 +17,16 @@
 
 package org.keycloak.models.sessions.infinispan.changes.sessions;
 
+import java.util.UUID;
+
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.sessions.infinispan.AuthenticatedClientSessionAdapter;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask;
+import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
 /**
@@ -41,7 +46,72 @@ public class LastSessionRefreshChecker {
     }
 
 
-    public SessionUpdateTask.CrossDCMessageStatus getCrossDCMessageStatus(KeycloakSession kcSession, RealmModel realm, SessionEntityWrapper<UserSessionEntity> sessionWrapper, boolean offline, int newLastSessionRefresh) {
+    public SessionUpdateTask.CrossDCMessageStatus shouldSaveUserSessionToRemoteCache(
+            KeycloakSession kcSession, RealmModel realm, SessionEntityWrapper<UserSessionEntity> sessionWrapper, boolean offline, int newLastSessionRefresh) {
+
+        SessionUpdateTask.CrossDCMessageStatus baseChecks = baseChecks(kcSession, realm ,offline);
+        if (baseChecks != null) {
+            return baseChecks;
+        }
+
+        String userSessionId = sessionWrapper.getEntity().getId();
+
+        if (offline) {
+            Integer lsrr = sessionWrapper.getLocalMetadataNoteInt(UserSessionEntity.LAST_SESSION_REFRESH_REMOTE);
+            if (lsrr == null) {
+                lsrr = sessionWrapper.getEntity().getStarted();
+            }
+
+            if (lsrr + (realm.getOfflineSessionIdleTimeout() / 2) <= newLastSessionRefresh) {
+                logger.debugf("We are going to write remotely userSession %s. Remote last session refresh: %d, New last session refresh: %d",
+                        userSessionId, lsrr, newLastSessionRefresh);
+                return SessionUpdateTask.CrossDCMessageStatus.SYNC;
+            }
+        }
+
+        if (logger.isDebugEnabled()) {
+            logger.debugf("Skip writing last session refresh to the remoteCache. Session %s newLastSessionRefresh %d", userSessionId, newLastSessionRefresh);
+        }
+
+        LastSessionRefreshStore storeToUse = offline ? offlineStore : store;
+        storeToUse.putLastSessionRefresh(kcSession, userSessionId, realm.getId(), newLastSessionRefresh);
+
+        return SessionUpdateTask.CrossDCMessageStatus.NOT_NEEDED;
+    }
+
+
+    public SessionUpdateTask.CrossDCMessageStatus shouldSaveClientSessionToRemoteCache(
+            KeycloakSession kcSession, RealmModel realm, SessionEntityWrapper<AuthenticatedClientSessionEntity> sessionWrapper, UserSessionModel userSession, boolean offline, int newTimestamp) {
+
+        SessionUpdateTask.CrossDCMessageStatus baseChecks = baseChecks(kcSession, realm ,offline);
+        if (baseChecks != null) {
+            return baseChecks;
+        }
+
+        UUID clientSessionId = sessionWrapper.getEntity().getId();
+
+        if (offline) {
+            Integer lsrr = sessionWrapper.getLocalMetadataNoteInt(AuthenticatedClientSessionEntity.LAST_TIMESTAMP_REMOTE);
+            if (lsrr == null) {
+                lsrr = userSession.getStarted();
+            }
+
+            if (lsrr + (realm.getOfflineSessionIdleTimeout() / 2) <= newTimestamp) {
+                    logger.debugf("We are going to write remotely for clientSession %s. Remote timestamp: %d, New timestamp: %d",
+                            clientSessionId, lsrr, newTimestamp);
+                return SessionUpdateTask.CrossDCMessageStatus.SYNC;
+            }
+        }
+
+        if (logger.isDebugEnabled()) {
+            logger.debugf("Skip writing timestamp to the remoteCache. ClientSession %s timestamp %d", clientSessionId, newTimestamp);
+        }
+
+        return SessionUpdateTask.CrossDCMessageStatus.NOT_NEEDED;
+    }
+
+
+    private SessionUpdateTask.CrossDCMessageStatus baseChecks(KeycloakSession kcSession, RealmModel realm, boolean offline) {
         // revokeRefreshToken always writes everything to remoteCache immediately
         if (realm.isRevokeRefreshToken()) {
             return SessionUpdateTask.CrossDCMessageStatus.SYNC;
@@ -53,29 +123,13 @@ public class LastSessionRefreshChecker {
             return SessionUpdateTask.CrossDCMessageStatus.SYNC;
         }
 
+        // Received the message from the other DC that we should update the lastSessionRefresh in local cluster
         Boolean ignoreRemoteCacheUpdate = (Boolean) kcSession.getAttribute(LastSessionRefreshListener.IGNORE_REMOTE_CACHE_UPDATE);
         if (ignoreRemoteCacheUpdate != null && ignoreRemoteCacheUpdate) {
             return SessionUpdateTask.CrossDCMessageStatus.NOT_NEEDED;
         }
 
-        Integer lsrr = sessionWrapper.getLocalMetadataNoteInt(UserSessionEntity.LAST_SESSION_REFRESH_REMOTE);
-        if (lsrr == null) {
-            logger.debugf("Not available lsrr note on user session %s.", sessionWrapper.getEntity().getId());
-            return SessionUpdateTask.CrossDCMessageStatus.SYNC;
-        }
-
-        int idleTimeout = offline ? realm.getOfflineSessionIdleTimeout() : realm.getSsoSessionIdleTimeout();
-
-        if (lsrr + (idleTimeout / 2) <= newLastSessionRefresh) {
-            logger.debugf("We are going to write remotely. Remote last session refresh: %d, New last session refresh: %d", (int) lsrr, newLastSessionRefresh);
-            return SessionUpdateTask.CrossDCMessageStatus.SYNC;
-        }
-
-        logger.debugf("Skip writing last session refresh to the remoteCache. Session %s newLastSessionRefresh %d", sessionWrapper.getEntity().getId(), newLastSessionRefresh);
-
-        storeToUse.putLastSessionRefresh(kcSession, sessionWrapper.getEntity().getId(), realm.getId(), newLastSessionRefresh);
-
-        return SessionUpdateTask.CrossDCMessageStatus.NOT_NEEDED;
+        return null;
     }
 
 }

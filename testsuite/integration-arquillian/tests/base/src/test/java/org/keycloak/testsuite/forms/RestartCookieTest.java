@@ -90,7 +90,7 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
 
     // KEYCLOAK-5440
     @Test
-    public void invalidLoginAndBackButton() throws IOException, MessagingException {
+    public void testRestartCookieBackwardsCompatible() throws IOException, MessagingException {
         String oldRestartCookie = testingClient.server().fetchString((KeycloakSession session) -> {
             try {
                 String cookieVal = OLD_RESTART_COOKIE_JSON.replace("\n", "").replace(" ", "");

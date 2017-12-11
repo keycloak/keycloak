@@ -123,18 +123,17 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
                 .user(existingUser)
                 .detail(Details.USERNAME, existingUser.getUsername())
                 .detail(Details.EMAIL, existingUser.getEmail())
-                .detail(Details.CODE_ID, authSession.getId())
+                .detail(Details.CODE_ID, authSession.getParentSession().getId())
                 .removeDetail(Details.AUTH_METHOD)
                 .removeDetail(Details.AUTH_TYPE);
 
         IdpVerifyAccountLinkActionToken token = new IdpVerifyAccountLinkActionToken(
-          existingUser.getId(), absoluteExpirationInSecs, authSession.getId(),
+          existingUser.getId(), absoluteExpirationInSecs, authSession.getParentSession().getId(), authSession.getClient().getId(),
           brokerContext.getUsername(), brokerContext.getIdpConfig().getAlias()
         );
-        UriBuilder builder = Urls.actionTokenBuilder(uriInfo.getBaseUri(), token.serialize(session, realm, uriInfo));
+        UriBuilder builder = Urls.actionTokenBuilder(uriInfo.getBaseUri(), token.serialize(session, realm, uriInfo), authSession.getClient().getClientId());
         String link = builder
                 .queryParam(Constants.EXECUTION, context.getExecution().getId())
-                .queryParam(Constants.CLIENT_ID, context.getExecution().getId())
                 .build(realm.getName()).toString();
         long expirationInMinutes = TimeUnit.SECONDS.toMinutes(validityInSecs);
 

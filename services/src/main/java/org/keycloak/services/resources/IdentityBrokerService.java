@@ -292,7 +292,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
         // Create AuthenticationSessionModel with same ID like userSession and refresh cookie
         UserSessionModel userSession = cookieResult.getSession();
-        AuthenticationSessionModel authSession = session.authenticationSessions().createAuthenticationSession(userSession.getId(), realmModel, client);
+        AuthenticationSessionModel authSession = session.authenticationSessions().createRootAuthenticationSession(userSession.getId(), realmModel).createAuthenticationSession(client);
         new AuthenticationSessionManager(session).setAuthSessionCookie(userSession.getId(), realmModel);
 
         ClientSessionCode<AuthenticationSessionModel> clientSessionCode = new ClientSessionCode<>(session, realmModel, authSession);
@@ -317,12 +317,12 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                 return response;
             }
         } catch (IdentityBrokerException e) {
-            return redirectToErrorPage(authSession, Messages.COULD_NOT_SEND_AUTHENTICATION_REQUEST, e, providerId);
+            return redirectToErrorPage(authSession, Response.Status.INTERNAL_SERVER_ERROR, Messages.COULD_NOT_SEND_AUTHENTICATION_REQUEST, e, providerId);
         } catch (Exception e) {
-            return redirectToErrorPage(authSession, Messages.UNEXPECTED_ERROR_HANDLING_REQUEST, e, providerId);
+            return redirectToErrorPage(authSession, Response.Status.INTERNAL_SERVER_ERROR, Messages.UNEXPECTED_ERROR_HANDLING_REQUEST, e, providerId);
         }
 
-        return redirectToErrorPage(authSession, Messages.COULD_NOT_PROCEED_WITH_AUTHENTICATION_REQUEST);
+        return redirectToErrorPage(authSession, Response.Status.INTERNAL_SERVER_ERROR, Messages.COULD_NOT_PROCEED_WITH_AUTHENTICATION_REQUEST);
 
     }
 
@@ -588,7 +588,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         AuthenticationSessionModel authSession = clientSessionCode.getClientSession();
 
         try {
-            this.event.detail(Details.CODE_ID, authSession.getId())
+            this.event.detail(Details.CODE_ID, authSession.getParentSession().getId())
                     .removeDetail("auth_method");
 
             SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromAuthenticationSession(authSession, AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE);
@@ -670,7 +670,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             return finishOrRedirectToPostBrokerLogin(authSession, context, true, clientSessionCode);
 
         }  catch (Exception e) {
-            return redirectToErrorPage(authSession,Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR, e);
+            return redirectToErrorPage(authSession, Response.Status.INTERNAL_SERVER_ERROR, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR, e);
         }
     }
 
@@ -685,7 +685,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
             logger.debugf("Redirect to postBrokerLogin flow after authentication with identityProvider '%s'.", context.getIdpConfig().getAlias());
 
-            authSession.setTimestamp(Time.currentTime());
+            authSession.getParentSession().setTimestamp(Time.currentTime());
 
             SerializedBrokeredIdentityContext ctx = SerializedBrokeredIdentityContext.serialize(context);
             ctx.saveToAuthenticationSession(authSession, PostBrokerLoginConstants.PBL_BROKERED_IDENTITY_CONTEXT);
@@ -734,7 +734,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
             return afterPostBrokerLoginFlowSuccess(authenticationSession, context, wasFirstBrokerLogin, parsedCode.clientSessionCode);
         } catch (IdentityBrokerException e) {
-            return redirectToErrorPage(authenticationSession, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR, e);
+            return redirectToErrorPage(authenticationSession, Response.Status.INTERNAL_SERVER_ERROR, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR, e);
         }
     }
 
@@ -752,7 +752,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
                 UserModel linkingUser = AbstractIdpAuthenticator.getExistingUser(session, realmModel, authSession);
                 if (!linkingUser.getId().equals(federatedUser.getId())) {
-                    return redirectToErrorPage(authSession, Messages.IDENTITY_PROVIDER_DIFFERENT_USER_MESSAGE, federatedUser.getUsername(), linkingUser.getUsername());
+                    return redirectToErrorPage(authSession, Response.Status.BAD_REQUEST, Messages.IDENTITY_PROVIDER_DIFFERENT_USER_MESSAGE, federatedUser.getUsername(), linkingUser.getUsername());
                 }
 
                 SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromAuthenticationSession(authSession, AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE);
@@ -789,7 +789,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         if (nextRequiredAction != null) {
             return AuthenticationManager.redirectToRequiredActions(session, realmModel, authSession, uriInfo, nextRequiredAction);
         } else {
-            event.detail(Details.CODE_ID, authSession.getId());  // todo This should be set elsewhere.  find out why tests fail.  Don't know where this is supposed to be set
+            event.detail(Details.CODE_ID, authSession.getParentSession().getId());  // todo This should be set elsewhere.  find out why tests fail.  Don't know where this is supposed to be set
             return AuthenticationManager.finishedRequiredActions(session, authSession, null, clientConnection, request, uriInfo, event);
         }
     }
@@ -866,7 +866,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         }
 
         if (!authenticatedUser.hasRole(this.realmModel.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getRole(AccountRoles.MANAGE_ACCOUNT))) {
-            return redirectToErrorPage(authSession, Messages.INSUFFICIENT_PERMISSION);
+            return redirectToErrorPage(authSession, Response.Status.FORBIDDEN, Messages.INSUFFICIENT_PERMISSION);
         }
 
         if (!authenticatedUser.isEnabled()) {
@@ -919,7 +919,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         if (authSession.getClient() != null && authSession.getClient().getClientId().equals(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID)) {
             return redirectToAccountErrorPage(authSession, message, parameters);
         } else {
-            return redirectToErrorPage(authSession, message, parameters); // Should rather redirect to app instead and display error here?
+            return redirectToErrorPage(authSession, Response.Status.BAD_REQUEST, message, parameters); // Should rather redirect to app instead and display error here?
         }
     }
 
@@ -1057,10 +1057,10 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         return Urls.identityProviderAuthnResponse(this.uriInfo.getBaseUri(), providerId, this.realmModel.getName()).toString();
     }
 
-    private Response redirectToErrorPage(AuthenticationSessionModel authSession,String message, Object ... parameters) {
-        return redirectToErrorPage(authSession, message, null, parameters);
+    private Response redirectToErrorPage(AuthenticationSessionModel authSession, Response.Status status, String message, Object ... parameters) {
+        return redirectToErrorPage(authSession, status, message, null, parameters);
     }
-    
+
     private Response redirectToErrorPage(Response.Status status, String message, Object ... parameters) {
         return redirectToErrorPage(null, status, message, null, parameters);
     }

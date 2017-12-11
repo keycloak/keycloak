@@ -116,7 +116,7 @@ public class UsersResource {
             Set<String> emptySet = Collections.emptySet();
 
             UserResource.updateUserFromRep(user, rep, emptySet, realm, session, false);
-            RepresentationToModel.createCredentials(rep, session, realm, user);
+            RepresentationToModel.createCredentials(rep, session, realm, user, true);
             adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, user.getId()).representation(rep).success();
 
             if (session.getTransactionManager().isActive()) {

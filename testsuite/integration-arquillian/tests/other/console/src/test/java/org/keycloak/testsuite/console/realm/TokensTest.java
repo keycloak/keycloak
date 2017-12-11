@@ -137,8 +137,8 @@ public class TokensTest extends AbstractRealmTest {
         Map<String, Integer> userActionTokens = getUserActionTokens();
 
         assertThat("Action Token attributes list should contain 2 items", userActionTokens.entrySet(), Matchers.hasSize(2));
-        assertThat(userActionTokens, Matchers.hasEntry(VerifyEmailActionToken.TOKEN_TYPE, Long.toString(TimeUnit.DAYS.toSeconds(TIMEOUT))));
-        assertThat(userActionTokens, Matchers.hasEntry(ResetCredentialsActionToken.TOKEN_TYPE, Long.toString(TimeUnit.HOURS.toSeconds(TIMEOUT))));
+        assertThat(userActionTokens, Matchers.hasEntry(VerifyEmailActionToken.TOKEN_TYPE, (int)(TimeUnit.DAYS.toSeconds(TIMEOUT))));
+        assertThat(userActionTokens, Matchers.hasEntry(ResetCredentialsActionToken.TOKEN_TYPE, (int)(TimeUnit.HOURS.toSeconds(TIMEOUT))));
 
     }
 

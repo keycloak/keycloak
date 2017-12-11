@@ -182,6 +182,12 @@
             ]
         },
         {
+            "clientId": "customer-portal-public",
+            "enabled": true,
+            "publicClient": true,
+            "directAccessGrantsEnabled": true
+        },
+        {
             "clientId": "product-portal",
             "enabled": true,
             "adminUrl": "/product-portal",
@@ -198,6 +204,16 @@
             "baseUrl": "/product-portal-subsystem",
             "redirectUris": [
                 "/product-portal-subsystem/*"
+            ],
+            "secret": "password"
+        },
+        {
+            "clientId": "product-portal-autodetect-bearer-only",
+            "enabled": true,
+            "adminUrl": "/product-portal-autodetect-bearer-only",
+            "baseUrl": "/product-portal-autodetect-bearer-only",
+            "redirectUris": [
+                "/product-portal-autodetect-bearer-only/*"
             ],
             "secret": "password"
         },
@@ -244,6 +260,16 @@
             "baseUrl": "/input-portal",
             "redirectUris": [
                 "/input-portal/*"
+            ],
+            "secret": "password"
+        },
+        {
+            "clientId": "input-portal-no-access-token",
+            "enabled": true,
+            "adminUrl": "/input-portal-no-access-token",
+            "baseUrl": "/input-portal-no-access-token",
+            "redirectUris": [
+                "/input-portal-no-access-token/*"
             ],
             "secret": "password"
         },

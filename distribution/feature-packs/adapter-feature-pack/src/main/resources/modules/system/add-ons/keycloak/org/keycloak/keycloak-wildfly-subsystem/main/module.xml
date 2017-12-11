@@ -40,7 +40,7 @@
         <module name="org.jboss.metadata"/>
         <module name="org.keycloak.keycloak-adapter-core"/>
         <module name="org.keycloak.keycloak-wildfly-elytron-oidc-adapter"/>
-        <module name="org.wildfly.security.elytron"/>
+        <module name="org.wildfly.security.elytron" optional="true"/>
         <module name="io.undertow.core"/>
     </dependencies>
 </module>

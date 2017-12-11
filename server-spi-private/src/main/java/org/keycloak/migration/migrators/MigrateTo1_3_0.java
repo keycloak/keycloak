@@ -25,6 +25,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 
@@ -50,6 +51,11 @@ public class MigrateTo1_3_0 implements Migration {
             migrateLDAPProviders(session, realm);
         }
 
+    }
+
+    @Override
+    public void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
+        migrateLDAPProviders(session, realm);
     }
 
     private void migrateLDAPProviders(KeycloakSession session, RealmModel realm) {

@@ -32,6 +32,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.VersionRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -315,8 +316,8 @@ public class AdapterTestStrategy extends ExternalResource {
         session.getTransactionManager().commit();
         session.close();
 
-        Time.setOffset(2);
-
+        // Needs to add some additional time due the tolerance allowed by IDLE_TIMEOUT_WINDOW_SECONDS
+        Time.setOffset(2 + SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS);
 
         // test SSO
         driver.navigate().to(APP_SERVER_BASE_URL + "/product-portal");
@@ -350,7 +351,8 @@ public class AdapterTestStrategy extends ExternalResource {
         session.getTransactionManager().commit();
         session.close();
 
-        Time.setOffset(2);
+        // Needs to add some additional time due the tolerance allowed by IDLE_TIMEOUT_WINDOW_SECONDS
+        Time.setOffset(2 + SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS);
 
         session = keycloakRule.startSession();
         realm = session.realms().getRealmByName("demo");

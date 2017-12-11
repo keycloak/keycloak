@@ -18,9 +18,9 @@ package org.keycloak.testsuite.console.page.clients.authorization.resource;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.page.Form;
 import org.keycloak.testsuite.util.WaitUtils;
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -40,6 +40,9 @@ public class Resources extends Form {
 
     @Page
     private Resource resource;
+
+    @Page
+    private ModalDialog modalDialog;
 
     public ResourcesTable resources() {
         return table;
@@ -79,7 +82,7 @@ public class Resources extends Form {
             ResourceRepresentation actual = resources().toRepresentation(row);
             if (actual.getName().equalsIgnoreCase(name)) {
                 row.findElements(tagName("td")).get(6).click();
-                driver.findElement(By.xpath(".//button[text()='Delete']")).click();
+                modalDialog.confirmDeletion();
                 return;
             }
         }

@@ -33,7 +33,14 @@ public abstract class AbstractDemoFilterServletAdapterTest extends AbstractDemoS
     public void testOIDCParamsForwarding() {
 
     }
+  
+    @Test
+    @Override
+    @Ignore
+    public void testOIDCUiLocalesParamForwarding() {
 
+    }
+  
     @Test
     @Override
     @Ignore
@@ -54,4 +61,5 @@ public abstract class AbstractDemoFilterServletAdapterTest extends AbstractDemoS
     public void testClientNotAuthenticatedInClientSecretJwtByAuthnMethodOutOfSync() {
 
     }
+
 }

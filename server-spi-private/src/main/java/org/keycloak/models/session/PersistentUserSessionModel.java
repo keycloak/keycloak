@@ -24,7 +24,7 @@ public class PersistentUserSessionModel {
 
     private String userSessionId;
     private int lastSessionRefresh;
-
+    private boolean offline;
     private String data;
 
     public String getUserSessionId() {
@@ -43,6 +43,13 @@ public class PersistentUserSessionModel {
         this.lastSessionRefresh = lastSessionRefresh;
     }
 
+    public boolean isOffline() {
+        return offline;
+    }
+
+    public void setOffline(boolean offline) {
+        this.offline = offline;
+    }
 
     public String getData() {
         return data;

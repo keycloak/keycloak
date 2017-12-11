@@ -176,7 +176,13 @@ public class UserSessionAdapter implements UserSessionModel {
 
     @Override
     public String getLoginUsername() {
-        return entity.getLoginUsername();
+        if (entity.getLoginUsername() == null) {
+            // this is a hack so that UserModel doesn't have to be available when offline token is imported.
+            // see related JIRA - KEYCLOAK-5350 and corresponding test
+            return getUser().getUsername();
+        } else {
+            return entity.getLoginUsername();
+        }
     }
 
     public String getIpAddress() {
@@ -212,7 +218,7 @@ public class UserSessionAdapter implements UserSessionModel {
             @Override
             public CrossDCMessageStatus getCrossDCMessageStatus(SessionEntityWrapper<UserSessionEntity> sessionWrapper) {
                 return new LastSessionRefreshChecker(provider.getLastSessionRefreshStore(), provider.getOfflineLastSessionRefreshStore())
-                        .getCrossDCMessageStatus(UserSessionAdapter.this.session, UserSessionAdapter.this.realm, sessionWrapper, offline, lastSessionRefresh);
+                        .shouldSaveUserSessionToRemoteCache(UserSessionAdapter.this.session, UserSessionAdapter.this.realm, sessionWrapper, offline, lastSessionRefresh);
             }
 
             @Override
@@ -222,6 +228,11 @@ public class UserSessionAdapter implements UserSessionModel {
         };
 
         update(task);
+    }
+
+    @Override
+    public boolean isOffline() {
+        return offline;
     }
 
     @Override

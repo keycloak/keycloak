@@ -77,6 +77,8 @@ public class Messages {
 
     public static final String UPDATE_PROFILE = "updateProfileMessage";
 
+    public static final String RESET_PASSWORD = "resetPasswordMessage";
+
     public static final String UPDATE_PASSWORD = "updatePasswordMessage";
 
     public static final String VERIFY_EMAIL = "verifyEmailMessage";
@@ -217,4 +219,9 @@ public class Messages {
     public static final String DIFFERENT_USER_AUTHENTICATED = "differentUserAuthenticated";
 
     public static final String BROKER_LINKING_SESSION_EXPIRED = "brokerLinkingSessionExpired";
+
+    public static final String PAGE_NOT_FOUND = "pageNotFound";
+
+    public static final String INTERNAL_SERVER_ERROR = "internalServerError";
+
 }

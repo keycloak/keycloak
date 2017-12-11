@@ -22,29 +22,34 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.RealmModel;
 
+import java.util.List;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class DefaultKeyProviders {
 
     public static void createProviders(RealmModel realm) {
-        ComponentModel generated = new ComponentModel();
-        generated.setName("rsa-generated");
-        generated.setParentId(realm.getId());
-        generated.setProviderId("rsa-generated");
-        generated.setProviderType(KeyProvider.class.getName());
+        if (!hasProvider(realm, "rsa-generated")) {
+            ComponentModel generated = new ComponentModel();
+            generated.setName("rsa-generated");
+            generated.setParentId(realm.getId());
+            generated.setProviderId("rsa-generated");
+            generated.setProviderType(KeyProvider.class.getName());
 
-        MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
-        config.putSingle("priority", "100");
-        generated.setConfig(config);
+            MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
+            config.putSingle("priority", "100");
+            generated.setConfig(config);
 
-        realm.addComponentModel(generated);
+            realm.addComponentModel(generated);
+        }
 
         createSecretProvider(realm);
         createAesProvider(realm);
     }
 
     public static void createSecretProvider(RealmModel realm) {
+        if (hasProvider(realm, "hmac-generated")) return;
         ComponentModel generated = new ComponentModel();
         generated.setName("hmac-generated");
         generated.setParentId(realm.getId());
@@ -59,6 +64,7 @@ public class DefaultKeyProviders {
     }
 
     public static void createAesProvider(RealmModel realm) {
+        if (hasProvider(realm, "aes-generated")) return;
         ComponentModel generated = new ComponentModel();
         generated.setName("aes-generated");
         generated.setParentId(realm.getId());
@@ -72,22 +78,34 @@ public class DefaultKeyProviders {
         realm.addComponentModel(generated);
     }
 
-    public static void createProviders(RealmModel realm, String privateKeyPem, String certificatePem) {
-        ComponentModel rsa = new ComponentModel();
-        rsa.setName("rsa");
-        rsa.setParentId(realm.getId());
-        rsa.setProviderId("rsa");
-        rsa.setProviderType(KeyProvider.class.getName());
-
-        MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
-        config.putSingle("priority", "100");
-        config.putSingle("privateKey", privateKeyPem);
-        if (certificatePem != null) {
-            config.putSingle("certificate", certificatePem);
+    protected static boolean hasProvider(RealmModel realm, String providerId) {
+        List<ComponentModel> currentComponents = realm.getComponents(realm.getId(), KeyProvider.class.getName());
+        for (ComponentModel current : currentComponents) {
+            if (current.getProviderId().equals(providerId)) {
+                return true;
+            }
         }
-        rsa.setConfig(config);
+        return false;
+    }
 
-        realm.addComponentModel(rsa);
+    public static void createProviders(RealmModel realm, String privateKeyPem, String certificatePem) {
+        if (!hasProvider(realm, "rsa")) {
+            ComponentModel rsa = new ComponentModel();
+            rsa.setName("rsa");
+            rsa.setParentId(realm.getId());
+            rsa.setProviderId("rsa");
+            rsa.setProviderType(KeyProvider.class.getName());
+
+            MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
+            config.putSingle("priority", "100");
+            config.putSingle("privateKey", privateKeyPem);
+            if (certificatePem != null) {
+                config.putSingle("certificate", certificatePem);
+            }
+            rsa.setConfig(config);
+
+            realm.addComponentModel(rsa);
+        }
 
         createSecretProvider(realm);
         createAesProvider(realm);

@@ -167,7 +167,7 @@ public class NewObjectCmd extends AbstractGlobalOptionsCmd {
         out.println();
         out.println("Command to compose JSON objects from attributes, and merge changes into existing JSON documents.");
         out.println();
-        out.println("This is a local command that does not perform any server requests. It's functionality is fully ");
+        out.println("This is a local command that does not perform any server requests. Its functionality is fully ");
         out.println("integrated into 'create', 'update' and 'delete' commands. It's supposed to be a helper tool only.");
         out.println();
         out.println("Arguments:");

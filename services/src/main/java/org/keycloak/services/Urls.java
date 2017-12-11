@@ -182,9 +182,11 @@ public class Urls {
         return loginResetCredentialsBuilder(baseUri).build(realmName);
     }
 
-    public static UriBuilder actionTokenBuilder(URI baseUri, String tokenString) {
+    public static UriBuilder actionTokenBuilder(URI baseUri, String tokenString, String clientId) {
         return loginActionsBase(baseUri).path(LoginActionsService.class, "executeActionToken")
-          .queryParam("key", tokenString);
+                .queryParam("key", tokenString)
+                .queryParam(Constants.CLIENT_ID, clientId);
+
     }
 
     public static UriBuilder loginResetCredentialsBuilder(URI baseUri) {

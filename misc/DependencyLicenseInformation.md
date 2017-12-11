@@ -84,7 +84,7 @@ After modifying a license XML, you must run `download-license-files.sh` against 
 Example command line:
 
 ```
-$ common/download-license-files.sh rh-sso/licenses.xml
+$ distribution/licenses-common/download-license-files.sh distribution/feature-packs/server-feature-pack/src/main/resources/licenses/rh-sso/licenses.xml
 ```
 
 The following shell commands must be available for the script to work:

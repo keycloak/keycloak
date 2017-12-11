@@ -25,9 +25,11 @@ import java.util.stream.Collectors;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
@@ -94,6 +96,13 @@ public class TestCacheResource {
     @Consumes(MediaType.TEXT_PLAIN_UTF_8)
     public void clear() {
         cache.clear();
+    }
+
+    @POST
+    @Path("/remove-key/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public void removeKey(@PathParam("id") String id) {
+        cache.remove(id);
     }
 
     @GET

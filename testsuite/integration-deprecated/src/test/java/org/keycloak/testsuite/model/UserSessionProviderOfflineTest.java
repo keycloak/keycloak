@@ -140,14 +140,13 @@ public class UserSessionProviderOfflineTest {
         // Assert userSession revoked
         testApp = realm.getClientByClientId("test-app");
         thirdparty = realm.getClientByClientId("third-party");
-        Assert.assertEquals(1, session.sessions().getOfflineSessionsCount(realm, testApp));
+
+        // Still 2 sessions. The count of sessions by client may not be accurate after revoke due the
+        // performance optimizations (the "127.0.0.1" session still has another client "thirdparty" in it)
+        Assert.assertEquals(2, session.sessions().getOfflineSessionsCount(realm, testApp));
         Assert.assertEquals(1, session.sessions().getOfflineSessionsCount(realm, thirdparty));
 
-        List<UserSessionModel> testAppSessions = session.sessions().getOfflineUserSessions(realm, testApp, 0, 10);
         List<UserSessionModel> thirdpartySessions = session.sessions().getOfflineUserSessions(realm, thirdparty, 0, 10);
-        Assert.assertEquals(1, testAppSessions.size());
-        Assert.assertEquals("127.0.0.3", testAppSessions.get(0).getIpAddress());
-        Assert.assertEquals("user2", testAppSessions.get(0).getUser().getUsername());
         Assert.assertEquals(1, thirdpartySessions.size());
         Assert.assertEquals("127.0.0.1", thirdpartySessions.get(0).getIpAddress());
         Assert.assertEquals("user1", thirdpartySessions.get(0).getUser().getUsername());
@@ -160,6 +159,27 @@ public class UserSessionProviderOfflineTest {
         clients = sessionManager.findClientsWithOfflineToken(realm, user2);
         Assert.assertEquals(1, clients.size());
         Assert.assertEquals("test-app", clients.iterator().next().getClientId());
+
+        // Revoke the second session for user1 too.
+        sessionManager.revokeOfflineToken(user1, thirdparty);
+
+        resetSession();
+
+        testApp = realm.getClientByClientId("test-app");
+        thirdparty = realm.getClientByClientId("third-party");
+
+        // Accurate count now. All sessions of user1 cleared
+        Assert.assertEquals(1, session.sessions().getOfflineSessionsCount(realm, testApp));
+        Assert.assertEquals(0, session.sessions().getOfflineSessionsCount(realm, thirdparty));
+
+        List<UserSessionModel> testAppSessions = session.sessions().getOfflineUserSessions(realm, testApp, 0, 10);
+
+        Assert.assertEquals(1, testAppSessions.size());
+        Assert.assertEquals("127.0.0.3", testAppSessions.get(0).getIpAddress());
+        Assert.assertEquals("user2", testAppSessions.get(0).getUser().getUsername());
+
+        clients = sessionManager.findClientsWithOfflineToken(realm, user1);
+        Assert.assertEquals(0, clients.size());
     }
 
     @Test
@@ -168,7 +188,7 @@ public class UserSessionProviderOfflineTest {
         fooRealm.addClient("foo-app");
         session.users().addUser(fooRealm, "user3");
 
-        UserSessionModel userSession = session.sessions().createUserSession(KeycloakModelUtils.generateId(), fooRealm, session.users().getUserByUsername("user3", fooRealm), "user3", "127.0.0.1", "form", true, null, null);
+        UserSessionModel userSession = session.sessions().createUserSession(fooRealm, session.users().getUserByUsername("user3", fooRealm), "user3", "127.0.0.1", "form", true, null, null);
         AuthenticatedClientSessionModel clientSession = createClientSession(fooRealm.getClientByClientId("foo-app"), userSession, "http://redirect", "state", new HashSet<String>(), new HashSet<String>());
 
         resetSession();
@@ -217,7 +237,7 @@ public class UserSessionProviderOfflineTest {
         fooRealm.addClient("bar-app");
         session.users().addUser(fooRealm, "user3");
 
-        UserSessionModel userSession = session.sessions().createUserSession(KeycloakModelUtils.generateId(), fooRealm, session.users().getUserByUsername("user3", fooRealm), "user3", "127.0.0.1", "form", true, null, null);
+        UserSessionModel userSession = session.sessions().createUserSession(fooRealm, session.users().getUserByUsername("user3", fooRealm), "user3", "127.0.0.1", "form", true, null, null);
         createClientSession(fooRealm.getClientByClientId("foo-app"), userSession, "http://redirect", "state", new HashSet<String>(), new HashSet<String>());
         createClientSession(fooRealm.getClientByClientId("bar-app"), userSession, "http://redirect", "state", new HashSet<String>(), new HashSet<String>());
 
@@ -278,7 +298,7 @@ public class UserSessionProviderOfflineTest {
         fooRealm.addClient("foo-app");
         session.users().addUser(fooRealm, "user3");
 
-        UserSessionModel userSession = session.sessions().createUserSession(KeycloakModelUtils.generateId(), fooRealm, session.users().getUserByUsername("user3", fooRealm), "user3", "127.0.0.1", "form", true, null, null);
+        UserSessionModel userSession = session.sessions().createUserSession(fooRealm, session.users().getUserByUsername("user3", fooRealm), "user3", "127.0.0.1", "form", true, null, null);
         AuthenticatedClientSessionModel clientSession = createClientSession(fooRealm.getClientByClientId("foo-app"), userSession, "http://redirect", "state", new HashSet<String>(), new HashSet<String>());
 
         resetSession();
@@ -405,7 +425,7 @@ public class UserSessionProviderOfflineTest {
 
     private UserSessionModel[] createSessions() {
         UserSessionModel[] sessions = new UserSessionModel[3];
-        sessions[0] = session.sessions().createUserSession(KeycloakModelUtils.generateId(), realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.1", "form", true, null, null);
+        sessions[0] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.1", "form", true, null, null);
 
         Set<String> roles = new HashSet<String>();
         roles.add("one");
@@ -418,10 +438,10 @@ public class UserSessionProviderOfflineTest {
         createClientSession(realm.getClientByClientId("test-app"), sessions[0], "http://redirect", "state", roles, protocolMappers);
         createClientSession(realm.getClientByClientId("third-party"), sessions[0], "http://redirect", "state", new HashSet<String>(), new HashSet<String>());
 
-        sessions[1] = session.sessions().createUserSession(KeycloakModelUtils.generateId(), realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.2", "form", true, null, null);
+        sessions[1] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.2", "form", true, null, null);
         createClientSession(realm.getClientByClientId("test-app"), sessions[1], "http://redirect", "state", new HashSet<String>(), new HashSet<String>());
 
-        sessions[2] = session.sessions().createUserSession(KeycloakModelUtils.generateId(), realm, session.users().getUserByUsername("user2", realm), "user2", "127.0.0.3", "form", true, null, null);
+        sessions[2] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user2", realm), "user2", "127.0.0.3", "form", true, null, null);
         createClientSession(realm.getClientByClientId("test-app"), sessions[2], "http://redirect", "state", new HashSet<String>(), new HashSet<String>());
 
         return sessions;

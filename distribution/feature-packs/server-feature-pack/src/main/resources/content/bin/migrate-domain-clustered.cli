@@ -432,4 +432,11 @@ if (outcome == failed) of /profile=$clusteredProfile/subsystem=infinispan/cache-
   echo
 end-if
 
+if (outcome == failed) of /profile=$clusteredProfile/subsystem=keycloak-server/spi=x509cert-lookup/:read-resource
+  echo Adding spi=x509cert-lookup...
+  /profile=$clusteredProfile/subsystem=keycloak-server/spi=x509cert-lookup/:add(default-provider=${keycloak.x509cert.lookup.provider:default})
+  /profile=$clusteredProfile/subsystem=keycloak-server/spi=x509cert-lookup/provider=default/:add(enabled=true)
+  echo
+end-if
+
 echo *** End Migration of /profile=$clusteredProfile ***

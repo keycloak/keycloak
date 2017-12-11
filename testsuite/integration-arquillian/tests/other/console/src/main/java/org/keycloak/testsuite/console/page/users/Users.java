@@ -21,7 +21,6 @@ import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm;
 import org.keycloak.testsuite.console.page.fragment.DataTable;
-import org.keycloak.testsuite.util.URLUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -30,8 +29,8 @@ import org.openqa.selenium.support.FindBy;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
-import static org.openqa.selenium.By.*;
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.openqa.selenium.By.tagName;
 
 /**
  *
@@ -79,18 +78,15 @@ public class Users extends AdminConsoleRealm {
         }
 
         public void clickUser(String username) {
-            URLUtils.navigateToUri(getRowByUsername(username).findElement(By.xpath("./td[position()=1]/a")).getAttribute("href"), true);
-            waitForPageToLoad();
+            clickLink(getRowByUsername(username).findElement(By.xpath("./td[position()=1]/a")));
         }
 
         public void editUser(String username) {
             clickRowActionButton(getRowByUsername(username), EDIT);
-            waitForPageToLoad();
         }
 
         public void impersonateUser(String username) {
             clickRowActionButton(getRowByUsername(username), IMPERSONATE);
-            waitForPageToLoad();
         }
 
         public void deleteUser(String username) {

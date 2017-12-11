@@ -119,7 +119,7 @@ public class PolicyEnforcerConfig {
         private String type;
         private String path;
         private List<MethodConfig> methods = new ArrayList<>();
-        private List<String> scopes = Collections.emptyList();
+        private List<String> scopes = new ArrayList<>();
         private String id;
 
         @JsonProperty("enforcement-mode")
@@ -218,7 +218,7 @@ public class PolicyEnforcerConfig {
     public static class MethodConfig {
 
         private String method;
-        private List<String> scopes = Collections.emptyList();
+        private List<String> scopes = new ArrayList<>();
 
         @JsonProperty("scopes-enforcement-mode")
         private ScopeEnforcementMode scopesEnforcementMode = ScopeEnforcementMode.ALL;

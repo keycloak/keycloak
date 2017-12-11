@@ -52,6 +52,9 @@
         <fileSet>
             <directory>src/main/resources/licenses/${product.slot}</directory>
             <outputDirectory>docs/licenses-${product.slot}-adapter</outputDirectory>
+            <excludes>
+                <exclude>licenses.xml</exclude>
+            </excludes>
         </fileSet>
         <fileSet>
             <directory>target/licenses</directory>
