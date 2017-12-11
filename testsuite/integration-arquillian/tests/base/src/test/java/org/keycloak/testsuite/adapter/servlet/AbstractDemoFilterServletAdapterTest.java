@@ -40,5 +40,4 @@ public abstract class AbstractDemoFilterServletAdapterTest extends AbstractDemoS
     public void testOIDCUiLocalesParamForwarding() {
 
     }
-
 }

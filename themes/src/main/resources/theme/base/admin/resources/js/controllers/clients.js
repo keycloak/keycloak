@@ -56,6 +56,9 @@ module.controller('ClientCredentialsCtrl', function($scope, $location, realm, cl
             case 'client-jwt':
                 $scope.clientAuthenticatorConfigPartial = 'client-credentials-jwt.html';
                 break;
+            case 'client-secret-jwt':
+                $scope.clientAuthenticatorConfigPartial = 'client-credentials-secret-jwt.html';
+                break;
             default:
                 $scope.currentAuthenticatorConfigProperties = clientConfigProperties[val];
                 $scope.clientAuthenticatorConfigPartial = 'client-credentials-generic.html';
