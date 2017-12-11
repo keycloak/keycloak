@@ -23,7 +23,7 @@ package org.keycloak.saml.common.constants;
  * @since Dec 10, 2008
  */
 public enum JBossSAMLConstants {
-    ADDRESS("Address"), ADDITIONAL_METADATA_LOCATION("AdditionalMetadataLocation"), AFFILIATION_DESCRIPTOR(
+    ADDRESS("Address"), ADVICE("Advice"), ADDITIONAL_METADATA_LOCATION("AdditionalMetadataLocation"), AFFILIATION_DESCRIPTOR(
             "AffiliationDescriptor"), ALLOW_CREATE("AllowCreate"), ARTIFACT("Artifact"), ARTIFACT_RESOLVE("ArtifactResolve"), ARTIFACT_RESPONSE(
             "ArtifactResponse"), ARTIFACT_RESOLUTION_SERVICE("ArtifactResolutionService"), ASSERTION("Assertion"), ASSERTION_CONSUMER_SERVICE(
             "AssertionConsumerService"), ASSERTION_CONSUMER_SERVICE_URL("AssertionConsumerServiceURL"), ASSERTION_CONSUMER_SERVICE_INDEX(

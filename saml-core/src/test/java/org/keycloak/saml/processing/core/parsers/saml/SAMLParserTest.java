@@ -34,7 +34,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import org.hamcrest.CustomMatcher;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.DerUtils;
 import org.keycloak.common.util.StreamUtil;
@@ -355,6 +354,13 @@ public class SAMLParserTest {
         try (InputStream st = removeAttribute("saml20-assertion-example.xml", "IssueInstant")) {
             thrown.expect(ParsingException.class);
             thrown.expectMessage(endsWith("Required attribute missing: IssueInstant"));
+            parser.parse(st);
+        }
+    }
+
+    @Test
+    public void testSaml20AssertionsAdviceTag() throws IOException, ParsingException {
+        try (InputStream st = SAMLParserTest.class.getResourceAsStream("saml20-assertion-advice.xml")) {
             parser.parse(st);
         }
     }
