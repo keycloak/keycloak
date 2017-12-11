@@ -30,6 +30,8 @@ import org.keycloak.common.util.Time;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.idm.AdminEventRepresentation;
@@ -49,6 +51,7 @@ import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.util.AdminEventPaths;
+import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.CredentialBuilder;
 import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -66,12 +69,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -541,9 +539,30 @@ public class RealmTest extends AbstractAdminTest {
         GlobalRequestResult globalRequestResult = realm.pushRevocation();
         assertAdminEvents.assertEvent(realmId, OperationType.ACTION, "push-revocation", globalRequestResult, ResourceType.REALM);
 
-        assertEquals(1, globalRequestResult.getSuccessRequests().size());
-        assertEquals("http://localhost:8180/auth/realms/master/app/admin", globalRequestResult.getSuccessRequests().get(0));
+        assertThat(globalRequestResult.getSuccessRequests(), Matchers.containsInAnyOrder("http://localhost:8180/auth/realms/master/app/admin"));
         assertNull(globalRequestResult.getFailedRequests());
+
+        PushNotBeforeAction adminPushNotBefore = testingClient.testApp().getAdminPushNotBefore();
+        assertEquals(time, adminPushNotBefore.getNotBefore());
+    }
+
+    @Test
+    public void pushNotBeforeWithSamlApp() {
+        setupTestAppAndUser();
+        setupTestSamlApp();
+
+        int time = Time.currentTime() - 60;
+
+        RealmRepresentation rep = realm.toRepresentation();
+        rep.setNotBefore(time);
+        realm.update(rep);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep, ResourceType.REALM);
+
+        GlobalRequestResult globalRequestResult = realm.pushRevocation();
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, "push-revocation", globalRequestResult, ResourceType.REALM);
+
+        assertThat(globalRequestResult.getSuccessRequests(), Matchers.containsInAnyOrder("http://localhost:8180/auth/realms/master/app/admin"));
+        assertThat(globalRequestResult.getFailedRequests(), Matchers.containsInAnyOrder("http://localhost:8180/auth/realms/master/saml-app/saml"));
 
         PushNotBeforeAction adminPushNotBefore = testingClient.testApp().getAdminPushNotBefore();
         assertEquals(time, adminPushNotBefore.getNotBefore());
@@ -628,6 +647,7 @@ public class RealmTest extends AbstractAdminTest {
         client.setClientId("test-app");
         client.setAdminUrl(suiteContext.getAuthServerInfo().getContextRoot() + "/auth/realms/master/app/admin");
         client.setRedirectUris(Collections.singletonList(redirectUri));
+        client.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         client.setSecret("secret");
         Response resp = realm.clients().create(client);
         String clientDbId = ApiUtil.getCreatedId(resp);
@@ -649,6 +669,22 @@ public class RealmTest extends AbstractAdminTest {
         assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userResetPasswordPath(userId), ResourceType.USER);
 
         testingClient.testApp().clearAdminActions();
+    }
+
+    private void setupTestSamlApp() {
+        String redirectUri = oauth.getRedirectUri().replace("/master/", "/" + REALM_NAME + "/");
+        ClientRepresentation client = ClientBuilder.create()
+          .clientId("test-saml-app")
+          .protocol(SamlProtocol.LOGIN_PROTOCOL)
+          .adminUrl(suiteContext.getAuthServerInfo().getContextRoot() + "/auth/realms/master/saml-app/saml")
+          .addRedirectUri(redirectUri)
+          .secret("secret")
+          .build();
+        Response resp = realm.clients().create(client);
+        String clientDbId = ApiUtil.getCreatedId(resp);
+        getCleanup().addClientUuid(clientDbId);
+        resp.close();
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientResourcePath(clientDbId), client, ResourceType.CLIENT);
     }
 
 }
