@@ -171,6 +171,11 @@ public interface TestingResource {
     @Consumes(MediaType.APPLICATION_JSON)
     void onAdminEvent(final AdminEventRepresentation rep, @QueryParam("includeRepresentation") boolean includeRepresentation);
 
+    @GET
+    @Path("/get-sso-cookie")
+    @Produces(MediaType.APPLICATION_JSON)
+    String getSSOCookieValue();
+
     @POST
     @Path("/remove-user-session")
     @Produces(MediaType.APPLICATION_JSON)
