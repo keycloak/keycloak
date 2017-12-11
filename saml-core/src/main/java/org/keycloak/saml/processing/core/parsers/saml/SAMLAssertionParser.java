@@ -34,7 +34,6 @@ import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.parsers.ParserNamespaceSupport;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.common.util.StaxParserUtil;
-import org.keycloak.saml.common.util.StringUtil;
 import org.keycloak.saml.processing.core.parsers.util.SAMLParserUtil;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 import org.w3c.dom.Element;
@@ -42,7 +41,6 @@ import org.w3c.dom.Element;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.events.Attribute;
 import javax.xml.stream.events.EndElement;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
@@ -131,6 +129,9 @@ public class SAMLAssertionParser implements ParserNamespaceSupport {
                 ConditionsType conditions = (ConditionsType) conditionsParser.parse(xmlEventReader);
 
                 assertion.setConditions(conditions);
+            } else if (JBossSAMLConstants.ADVICE.get().equalsIgnoreCase(tag)) {
+                StaxParserUtil.bypassElementBlock(xmlEventReader);
+                logger.debug("SAML Advice tag is ignored");
             } else if (JBossSAMLConstants.AUTHN_STATEMENT.get().equalsIgnoreCase(tag)) {
                 AuthnStatementType authnStatementType = SAMLParserUtil.parseAuthnStatement(xmlEventReader);
                 assertion.addStatement(authnStatementType);
