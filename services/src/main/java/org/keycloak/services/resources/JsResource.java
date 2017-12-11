@@ -17,6 +17,7 @@
 
 package org.keycloak.services.resources;
 
+import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.common.Version;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.utils.MediaType;
@@ -27,6 +28,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.CacheControl;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
 
@@ -37,6 +39,9 @@ import java.io.InputStream;
  */
 @Path("/js")
 public class JsResource {
+
+    @Context
+    private HttpRequest request;
 
     /**
      * Get keycloak.js file for javascript clients
@@ -115,11 +120,13 @@ public class JsResource {
             cacheControl = CacheControlUtil.noCache();
         }
 
+        Cors cors = Cors.add(request).allowAllOrigins();
+
         InputStream inputStream = getClass().getClassLoader().getResourceAsStream(name);
         if (inputStream != null) {
-            return Response.ok(inputStream).type("text/javascript").cacheControl(cacheControl).build();
+            return cors.builder(Response.ok(inputStream).type("text/javascript").cacheControl(cacheControl)).build();
         } else {
-            return Response.status(Response.Status.NOT_FOUND).build();
+            return cors.builder(Response.status(Response.Status.NOT_FOUND)).build();
         }
     }
 }
