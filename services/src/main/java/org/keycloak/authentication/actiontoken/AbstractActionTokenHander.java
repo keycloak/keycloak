@@ -95,6 +95,7 @@ public abstract class AbstractActionTokenHander<T extends JsonWebToken> implemen
     public AuthenticationSessionModel startFreshAuthenticationSession(T token, ActionTokenContext<T> tokenContext) {
         AuthenticationSessionModel authSession = tokenContext.createAuthenticationSessionForClient(token.getIssuedFor());
         authSession.setAuthNote(AuthenticationManager.END_AFTER_REQUIRED_ACTIONS, "true");
+        authSession.setAction(AuthenticationSessionModel.Action.ACTION_TOKEN.name());
         return authSession;
     }
     

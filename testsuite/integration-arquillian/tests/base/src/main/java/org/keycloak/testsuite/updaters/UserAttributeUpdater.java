@@ -1,11 +1,13 @@
 package org.keycloak.testsuite.updaters;
 
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.idm.UserRepresentation;
 import java.io.Closeable;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -44,6 +46,14 @@ public class UserAttributeUpdater {
 
     public UserAttributeUpdater setEmailVerified(Boolean emailVerified) {
         rep.setEmailVerified(emailVerified);
+        return this;
+    }
+
+    public UserAttributeUpdater setRequiredActions(RequiredAction... requiredAction) {
+        rep.setRequiredActions(Arrays.stream(requiredAction)
+          .map(action -> action.name())
+          .collect(Collectors.toList())
+        );
         return this;
     }
 

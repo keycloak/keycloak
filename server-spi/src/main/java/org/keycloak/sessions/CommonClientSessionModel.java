@@ -55,7 +55,8 @@ public interface CommonClientSessionModel {
         AUTHENTICATE,
         LOGGED_OUT,
         LOGGING_OUT,
-        REQUIRED_ACTIONS
+        REQUIRED_ACTIONS,
+        ACTION_TOKEN,
     }
 
     public enum ExecutionStatus {

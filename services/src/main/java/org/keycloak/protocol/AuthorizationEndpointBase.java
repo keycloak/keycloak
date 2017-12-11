@@ -40,8 +40,10 @@ import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.AuthenticationFlowURLHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.CommonClientSessionModel.Action;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
+import java.util.Objects;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
@@ -245,7 +247,7 @@ public abstract class AuthorizationEndpointBase {
 
 
     protected boolean shouldRestartAuthSession(AuthenticationSessionModel authSession) {
-        return hasProcessedExecution(authSession);
+        return hasProcessedExecution(authSession) || isActionTokenExecution(authSession);
     }
 
 
@@ -254,6 +256,10 @@ public abstract class AuthorizationEndpointBase {
         return (lastProcessedExecution != null);
     }
 
+    private boolean isActionTokenExecution(AuthenticationSessionModel authSession) {
+        String action = authSession.getAction();
+        return Objects.equals(action, Action.ACTION_TOKEN.name());
+    }
 
     // See if we have lastProcessedExecution note. If yes, we are expired. Also if we are in different flow than initial one. Otherwise it is browser refresh of initial username/password form
     private boolean shouldShowExpirePage(AuthenticationSessionModel authSession) {
