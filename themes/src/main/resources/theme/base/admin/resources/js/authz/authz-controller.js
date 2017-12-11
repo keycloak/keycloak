@@ -1814,7 +1814,7 @@ module.controller('ResourceServerPolicyGroupDetailCtrl', function($scope, $route
                 if (!angular.equals($scope.selectedGroups, selectedGroups)) {
                     $scope.changed = true;
                 } else {
-                    $scope.changed = false;
+                    $scope.changed = PolicyController.isNewAssociatedPolicy();
                 }
             }, true);
         },
@@ -1956,7 +1956,7 @@ module.controller('ResourceServerPolicyTimeDetailCtrl', function($scope, $route,
     }
 });
 
-module.controller('ResourceServerPolicyAggregateDetailCtrl', function($scope, $route, $location, realm, PolicyController, ResourceServerPolicy, client) {
+module.controller('ResourceServerPolicyAggregateDetailCtrl', function($scope, $route, $location, realm, PolicyController, ResourceServerPolicy, client, PolicyProvider, policyState) {
     PolicyController.onInit({
         getPolicyType : function() {
             return "aggregate";
@@ -1991,26 +1991,68 @@ module.controller('ResourceServerPolicyAggregateDetailCtrl', function($scope, $r
                     return object.name;
                 }
             };
+
+            $scope.policyProviders = [];
+
+            PolicyProvider.query({
+                realm : $route.current.params.realm,
+                client : client.id
+            }, function (data) {
+                for (i = 0; i < data.length; i++) {
+                    if (data[i].type != 'resource' && data[i].type != 'scope') {
+                        $scope.policyProviders.push(data[i]);
+                    }
+                }
+            });
         },
 
         onInitUpdate : function(policy) {
-            ResourceServerPolicy.associatedPolicies({
-                realm : $route.current.params.realm,
-                client : client.id,
-                id : policy.id
-            }, function(policies) {
-                $scope.selectedPolicies = [];
-                for (i = 0; i < policies.length; i++) {
-                    policies[i].text = policies[i].name;
-                    $scope.selectedPolicies.push(policies[i]);
+            if (PolicyController.isBackNewAssociatedPolicy()) {
+                policy.name = policyState.state.name;
+                policy.description = policyState.state.description;
+                policy.decisionStrategy = policyState.state.decisionStrategy;
+                policy.logic = policyState.state.logic;
+                $scope.selectedPolicies = policyState.state.selectedPolicies;
+
+                if (!$scope.selectedPolicies) {
+                    $scope.selectedPolicies = [];
                 }
-                var copy = angular.copy($scope.selectedPolicies);
-                $scope.$watch('selectedPolicies', function() {
-                    if (!angular.equals($scope.selectedPolicies, copy)) {
-                        $scope.changed = true;
+
+                $scope.changed = true;
+                ResourceServerPolicy.query({
+                   realm: realm.realm,
+                   client : client.id,
+                   permission: false,
+                   name: policyState.state.newPolicyName,
+                   max : 20,
+                   first : 0
+               }, function(response) {
+                    for (i = 0; i < response.length; i++) {
+                        if (response[i].name == policyState.state.newPolicyName) {
+                            response[i].text = response[i].name;
+                            $scope.selectedPolicies.push(response[i]);
+                        }
                     }
-                }, true);
-            });
+                });
+            } else {
+                ResourceServerPolicy.associatedPolicies({
+                    realm : $route.current.params.realm,
+                    client : client.id,
+                    id : policy.id
+                }, function(policies) {
+                    $scope.selectedPolicies = [];
+                    for (i = 0; i < policies.length; i++) {
+                        policies[i].text = policies[i].name;
+                        $scope.selectedPolicies.push(policies[i]);
+                    }
+                    var copy = angular.copy($scope.selectedPolicies);
+                    $scope.$watch('selectedPolicies', function() {
+                        if (!angular.equals($scope.selectedPolicies, copy)) {
+                            $scope.changed = true;
+                        }
+                    }, true);
+                });
+            }
         },
 
         onUpdate : function() {
@@ -2025,7 +2067,37 @@ module.controller('ResourceServerPolicyAggregateDetailCtrl', function($scope, $r
         },
 
         onInitCreate : function(newPolicy) {
-            newPolicy.decisionStrategy = 'UNANIMOUS';
+            policyState.previousPage.name = 'authz-add-aggregated-policy';
+            if (PolicyController.isBackNewAssociatedPolicy()) {
+                newPolicy.name = policyState.state.name;
+                newPolicy.description = policyState.state.description;
+                newPolicy.decisionStrategy = policyState.state.decisionStrategy;
+                newPolicy.logic = policyState.state.logic;
+                $scope.selectedPolicies = policyState.state.selectedPolicies;
+
+                if (!$scope.selectedPolicies) {
+                    $scope.selectedPolicies = [];
+                }
+
+                $scope.changed = true;
+                ResourceServerPolicy.query({
+                   realm: realm.realm,
+                   client : client.id,
+                   permission: false,
+                   name: policyState.state.newPolicyName,
+                   max : 20,
+                   first : 0
+               }, function(response) {
+                    for (i = 0; i < response.length; i++) {
+                        if (response[i].name == policyState.state.newPolicyName) {
+                            response[i].text = response[i].name;
+                            $scope.selectedPolicies.push(response[i]);
+                        }
+                    }
+                });
+            } else {
+                newPolicy.decisionStrategy = 'UNANIMOUS';
+            }
         },
 
         onCreate : function() {
@@ -2041,11 +2113,49 @@ module.controller('ResourceServerPolicyAggregateDetailCtrl', function($scope, $r
     }, realm, client, $scope);
 });
 
-module.service("PolicyController", function($http, $route, $location, ResourceServer, ResourceServerPolicy, ResourceServerPermission, AuthzDialog, Notifications) {
+module.service("PolicyController", function($http, $route, $location, ResourceServer, ResourceServerPolicy, ResourceServerPermission, AuthzDialog, Notifications, policyState) {
 
     var PolicyController = {};
 
+    PolicyController.isNewAssociatedPolicy = function() {
+        return $route.current.params['new_policy'] != null;
+    }
+
+    PolicyController.isBackNewAssociatedPolicy = function() {
+        return $route.current.params['back'] != null;
+    }
+
     PolicyController.onInit = function(delegate, realm, client, $scope) {
+        if (!policyState.previousPage) {
+            policyState.previousPage = {};
+        }
+
+        $scope.policyState = policyState;
+
+        $scope.addPolicy = function(policyType) {
+            policyState.state = $scope.policy;
+            if ($scope.selectedPolicies) {
+                policyState.state.selectedPolicies = $scope.selectedPolicies;
+            }
+            var previousUrl = window.location.href.substring(window.location.href.indexOf('/realms'));
+
+            if (previousUrl.indexOf('back=true') == -1) {
+                previousUrl = previousUrl + '?back=true';
+            }
+            policyState.state.previousUrl = previousUrl;
+            $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/authz/resource-server/policy/" + policyType.type + "/create?new_policy=true");
+        }
+
+        $scope.createNewPolicy = function() {
+            $scope.showNewPolicy = true;
+        }
+
+        $scope.cancelCreateNewPolicy = function() {
+            $scope.showNewPolicy = false;
+        }
+
+        $scope.historyBackOnSaveOrCancel = PolicyController.isNewAssociatedPolicy();
+
         if (!delegate.isPermission) {
             delegate.isPermission = function () {
                 return false;
@@ -2078,7 +2188,6 @@ module.service("PolicyController", function($http, $route, $location, ResourceSe
 
             if (!policyId) {
                 $scope.create = true;
-                $scope.changed = false;
 
                 var policy = {};
 
@@ -2089,6 +2198,8 @@ module.service("PolicyController", function($http, $route, $location, ResourceSe
                 if (delegate.onInitCreate) {
                     delegate.onInitCreate(policy);
                 }
+
+                $scope.changed = $scope.historyBackOnSaveOrCancel || PolicyController.isBackNewAssociatedPolicy();
 
                 $scope.policy = angular.copy(policy);
 
@@ -2105,10 +2216,20 @@ module.service("PolicyController", function($http, $route, $location, ResourceSe
                         }
                         service.save({realm : realm.realm, client : client.id, type: $scope.policy.type}, $scope.policy, function(data) {
                             if (delegate.isPermission()) {
-                                $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/authz/resource-server/permission/" + $scope.policy.type + "/" + data.id);
+                                if ($scope.historyBackOnSaveOrCancel) {
+                                    policyState.state.newPolicyName = $scope.policy.name;
+                                    $location.url(policyState.state.previousUrl);
+                                } else {
+                                    $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/authz/resource-server/permission/" + $scope.policy.type + "/" + data.id);
+                                }
                                 Notifications.success("The permission has been created.");
                             } else {
-                                $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/authz/resource-server/policy/" + $scope.policy.type + "/" + data.id);
+                                if ($scope.historyBackOnSaveOrCancel) {
+                                    policyState.state.newPolicyName = $scope.policy.name;
+                                    $location.url(policyState.state.previousUrl);
+                                } else {
+                                    $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/authz/resource-server/policy/" + $scope.policy.type + "/" + data.id);
+                                }
                                 Notifications.success("The policy has been created.");
                             }
                         });
@@ -2117,9 +2238,17 @@ module.service("PolicyController", function($http, $route, $location, ResourceSe
 
                 $scope.reset = function() {
                     if (delegate.isPermission()) {
-                        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/authz/resource-server/permission/");
+                        if ($scope.historyBackOnSaveOrCancel) {
+                            $location.url(policyState.state.previousUrl);
+                        } else {
+                            $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/authz/resource-server/permission/");
+                        }
                     } else {
-                        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/authz/resource-server/policy/");
+                        if ($scope.historyBackOnSaveOrCancel) {
+                            $location.url(policyState.state.previousUrl);
+                        } else {
+                            $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/authz/resource-server/policy/");
+                        }
                     }
                 }
             } else {
@@ -2137,7 +2266,7 @@ module.service("PolicyController", function($http, $route, $location, ResourceSe
                     }
 
                     $scope.policy = angular.copy(policy);
-                    $scope.changed = false;
+                    $scope.changed = $scope.historyBackOnSaveOrCancel || PolicyController.isBackNewAssociatedPolicy();
 
                     $scope.$watch('policy', function() {
                         if (!angular.equals($scope.policy, policy)) {
@@ -2162,14 +2291,18 @@ module.service("PolicyController", function($http, $route, $location, ResourceSe
                     }
 
                     $scope.reset = function() {
-                        var freshPolicy = angular.copy(data);
+                        if ($scope.historyBackOnSaveOrCancel) {
+                            $location.url(policyState.state.previousUrl);
+                        } else {
+                            var freshPolicy = angular.copy(data);
 
-                        if (delegate.onInitUpdate) {
-                            delegate.onInitUpdate(freshPolicy);
+                            if (delegate.onInitUpdate) {
+                                delegate.onInitUpdate(freshPolicy);
+                            }
+
+                            $scope.policy = angular.copy(freshPolicy);
+                            $scope.changed = false;
                         }
-
-                        $scope.policy = angular.copy(freshPolicy);
-                        $scope.changed = false;
                     }
                 });
 

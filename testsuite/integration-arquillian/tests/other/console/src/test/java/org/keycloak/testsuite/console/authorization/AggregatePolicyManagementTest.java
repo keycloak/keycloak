@@ -138,6 +138,87 @@ public class AggregatePolicyManagementTest extends AbstractAuthorizationSettings
         assertNull(authorizationPage.authorizationTabs().policies().policies().findByName(expected.getName()));
     }
 
+    @Test
+    public void testCreateWithChild() {
+        AggregatePolicyRepresentation expected = new AggregatePolicyRepresentation();
+
+        expected.setName("Test Child Create Aggregate Policy");
+        expected.setDescription("description");
+
+        AggregatePolicy policy = authorizationPage.authorizationTabs().policies().create(expected, false);
+
+        RolePolicyRepresentation childPolicy = new RolePolicyRepresentation();
+
+        childPolicy.setName("Child Role Policy");
+        childPolicy.addRole("Role A");
+
+        policy.createPolicy(childPolicy);
+        policy.form().save();
+
+        assertAlertSuccess();
+
+        expected.addPolicy(childPolicy.getName());
+
+        authorizationPage.navigateTo();
+        AggregatePolicy actual = authorizationPage.authorizationTabs().policies().name(expected.getName());
+        assertPolicy(expected, actual);
+    }
+
+    @Test
+    public void testCreateWithChildAndSelectedPolicy() {
+        AggregatePolicyRepresentation expected = new AggregatePolicyRepresentation();
+
+        expected.setName("Test Child Create Aggregate Policy");
+        expected.setDescription("description");
+        expected.addPolicy("Policy C");
+
+        AggregatePolicy policy = authorizationPage.authorizationTabs().policies().create(expected, false);
+
+        RolePolicyRepresentation childPolicy = new RolePolicyRepresentation();
+
+        childPolicy.setName("Child Role Policy");
+        childPolicy.addRole("Role A");
+
+        policy.createPolicy(childPolicy);
+        policy.form().save();
+
+        assertAlertSuccess();
+
+        expected.addPolicy(childPolicy.getName());
+
+        authorizationPage.navigateTo();
+        AggregatePolicy actual = authorizationPage.authorizationTabs().policies().name(expected.getName());
+        assertPolicy(expected, actual);
+    }
+
+    @Test
+    public void testUpdateWithChild() {
+        AggregatePolicyRepresentation expected = new AggregatePolicyRepresentation();
+
+        expected.setName("Test Child Update Aggregate Policy");
+        expected.setDescription("description");
+        expected.addPolicy("Policy C");
+
+        AggregatePolicy policy = authorizationPage.authorizationTabs().policies().create(expected);
+        assertAlertSuccess();
+        assertPolicy(expected, policy);
+
+        RolePolicyRepresentation childPolicy = new RolePolicyRepresentation();
+
+        childPolicy.setName("Child Role Policy");
+        childPolicy.addRole("Role A");
+
+        policy.createPolicy(childPolicy);
+
+        policy.form().save();
+
+        expected.addPolicy(childPolicy.getName());
+
+        authorizationPage.navigateTo();
+        AggregatePolicy actual = authorizationPage.authorizationTabs().policies().name(expected.getName());
+        assertPolicy(expected, actual);
+    }
+
     private AggregatePolicyRepresentation createPolicy(AggregatePolicyRepresentation expected) {
         AggregatePolicy policy = authorizationPage.authorizationTabs().policies().create(expected);
         assertAlertSuccess();

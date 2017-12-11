@@ -17,7 +17,6 @@
 package org.keycloak.testsuite.console.page.clients.authorization.policy;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.keycloak.representations.idm.authorization.AggregatePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 
 /**
@@ -37,6 +36,6 @@ public class JSPolicy implements PolicyTypeUI {
     }
 
     public void update(JSPolicyRepresentation expected) {
-        form().populate(expected);
+        form().populate(expected, true);
     }
 }

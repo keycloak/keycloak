@@ -75,7 +75,7 @@ public class RulePolicyForm extends Form {
     @FindBy(id = "resolveModule")
     private WebElement resolveModuleButton;
 
-    public void populate(RulePolicyRepresentation expected) {
+    public void populate(RulePolicyRepresentation expected, boolean save) {
         setInputValue(name, expected.getName());
         setInputValue(description, expected.getDescription());
         setInputValue(artifactGroupId, expected.getArtifactGroupId());
@@ -94,7 +94,9 @@ public class RulePolicyForm extends Form {
         scannerPeriodUnit.selectByVisibleText(expected.getScannerPeriodUnit());
         logic.selectByValue(expected.getLogic().name());
 
-        save();
+        if (save) {
+            save();
+        }
     }
 
     public void delete() {

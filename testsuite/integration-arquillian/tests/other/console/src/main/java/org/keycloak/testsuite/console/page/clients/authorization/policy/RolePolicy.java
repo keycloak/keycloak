@@ -36,6 +36,6 @@ public class RolePolicy implements PolicyTypeUI {
     }
 
     public void update(RolePolicyRepresentation expected) {
-        form().populate(expected);
+        form().populate(expected, true);
     }
 }

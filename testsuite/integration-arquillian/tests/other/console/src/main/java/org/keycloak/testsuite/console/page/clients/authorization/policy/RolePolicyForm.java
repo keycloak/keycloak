@@ -64,7 +64,7 @@ public class RolePolicyForm extends Form {
     @FindBy(xpath = "//div[@class='modal-dialog']")
     protected ModalDialog modalDialog;
 
-    public void populate(RolePolicyRepresentation expected) {
+    public void populate(RolePolicyRepresentation expected, boolean save) {
         setInputValue(name, expected.getName());
         setInputValue(description, expected.getDescription());
         logic.selectByValue(expected.getLogic().name());
@@ -88,7 +88,9 @@ public class RolePolicyForm extends Form {
         unSelect(roles, realmRoleSelect.getSelected());
         unSelect(roles, clientRoleSelect.getSelected());
 
-        save();
+        if (save) {
+            save();
+        }
     }
 
     private void unSelect(Set<RolePolicyRepresentation.RoleDefinition> roles, Set<RolePolicyRepresentation.RoleDefinition> selection) {

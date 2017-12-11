@@ -79,38 +79,42 @@ public class Policies extends Form {
         return table;
     }
 
-    public <P extends PolicyTypeUI> P create(AbstractPolicyRepresentation expected) {
+    public <P extends PolicyTypeUI> P create(AbstractPolicyRepresentation expected, boolean save) {
         String type = expected.getType();
 
         performOperationWithPageReload(() -> createSelect.selectByValue(type));
 
         if ("role".equals(type)) {
-            rolePolicy.form().populate((RolePolicyRepresentation) expected);
+            rolePolicy.form().populate((RolePolicyRepresentation) expected, save);
             return (P) rolePolicy;
         } else if ("user".equals(type)) {
-            userPolicy.form().populate((UserPolicyRepresentation) expected);
+            userPolicy.form().populate((UserPolicyRepresentation) expected, save);
             return (P) userPolicy;
         } else if ("aggregate".equals(type)) {
-            aggregatePolicy.form().populate((AggregatePolicyRepresentation) expected);
+            aggregatePolicy.form().populate((AggregatePolicyRepresentation) expected, save);
             return (P) aggregatePolicy;
         } else if ("js".equals(type)) {
-            jsPolicy.form().populate((JSPolicyRepresentation) expected);
+            jsPolicy.form().populate((JSPolicyRepresentation) expected, save);
             return (P) jsPolicy;
         } else if ("time".equals(type)) {
-            timePolicy.form().populate((TimePolicyRepresentation) expected);
+            timePolicy.form().populate((TimePolicyRepresentation) expected, save);
             return (P) timePolicy;
         } else if ("rules".equals(type)) {
-            rulePolicy.form().populate((RulePolicyRepresentation) expected);
+            rulePolicy.form().populate((RulePolicyRepresentation) expected, save);
             return (P) rulePolicy;
         } else if ("client".equals(type)) {
-            clientPolicy.form().populate((ClientPolicyRepresentation) expected);
+            clientPolicy.form().populate((ClientPolicyRepresentation) expected, save);
             return (P) clientPolicy;
         } else if ("group".equals(type)) {
-            groupPolicy.form().populate((GroupPolicyRepresentation) expected);
+            groupPolicy.form().populate((GroupPolicyRepresentation) expected, save);
             return (P) groupPolicy;
         }
 
         return null;
+    }
+
+    public <P extends PolicyTypeUI> P create(AbstractPolicyRepresentation expected) {
+        return create(expected, true);
     }
 
     public void update(String name, AbstractPolicyRepresentation representation) {
@@ -121,21 +125,21 @@ public class Policies extends Form {
                 String type = representation.getType();
 
                 if ("role".equals(type)) {
-                    rolePolicy.form().populate((RolePolicyRepresentation) representation);
+                    rolePolicy.form().populate((RolePolicyRepresentation) representation, true);
                 } else if ("user".equals(type)) {
-                    userPolicy.form().populate((UserPolicyRepresentation) representation);
+                    userPolicy.form().populate((UserPolicyRepresentation) representation, true);
                 } else if ("aggregate".equals(type)) {
-                    aggregatePolicy.form().populate((AggregatePolicyRepresentation) representation);
+                    aggregatePolicy.form().populate((AggregatePolicyRepresentation) representation, true);
                 } else if ("js".equals(type)) {
-                    jsPolicy.form().populate((JSPolicyRepresentation) representation);
+                    jsPolicy.form().populate((JSPolicyRepresentation) representation, true);
                 } else if ("time".equals(type)) {
-                    timePolicy.form().populate((TimePolicyRepresentation) representation);
+                    timePolicy.form().populate((TimePolicyRepresentation) representation, true);
                 } else if ("rules".equals(type)) {
-                    rulePolicy.form().populate((RulePolicyRepresentation) representation);
+                    rulePolicy.form().populate((RulePolicyRepresentation) representation, true);
                 } else if ("client".equals(type)) {
-                    clientPolicy.form().populate((ClientPolicyRepresentation) representation);
+                    clientPolicy.form().populate((ClientPolicyRepresentation) representation, true);
                 } else if ("group".equals(type)) {
-                    groupPolicy.form().populate((GroupPolicyRepresentation) representation);
+                    groupPolicy.form().populate((GroupPolicyRepresentation) representation, true);
                 }
 
                 return;

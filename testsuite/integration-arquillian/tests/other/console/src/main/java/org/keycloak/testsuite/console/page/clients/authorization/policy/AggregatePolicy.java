@@ -17,8 +17,8 @@
 package org.keycloak.testsuite.console.page.clients.authorization.policy;
 
 import org.jboss.arquillian.graphene.page.Page;
+import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.AggregatePolicyRepresentation;
-import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -37,6 +37,10 @@ public class AggregatePolicy implements PolicyTypeUI {
     }
 
     public void update(AggregatePolicyRepresentation expected) {
-        form().populate(expected);
+        form().populate(expected, true);
+    }
+
+    public void createPolicy(AbstractPolicyRepresentation expected) {
+        form().createPolicy(expected);
     }
 }

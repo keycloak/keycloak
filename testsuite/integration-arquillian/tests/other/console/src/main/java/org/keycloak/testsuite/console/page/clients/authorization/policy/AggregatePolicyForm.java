@@ -16,10 +16,15 @@
  */
 package org.keycloak.testsuite.console.page.clients.authorization.policy;
 
+import static org.keycloak.testsuite.util.UIUtils.performOperationWithPageReload;
+
 import java.util.Set;
 
+import org.jboss.arquillian.graphene.page.Page;
+import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.AggregatePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
+import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.console.page.fragment.MultipleStringSelect2;
 import org.keycloak.testsuite.page.Form;
@@ -50,7 +55,16 @@ public class AggregatePolicyForm extends Form {
     @FindBy(xpath = "//div[@class='modal-dialog']")
     protected ModalDialog modalDialog;
 
-    public void populate(AggregatePolicyRepresentation expected) {
+    @FindBy(id = "create-policy-btn")
+    private WebElement createPolicyBtn;
+
+    @FindBy(id = "create-policy")
+    private Select createPolicySelect;
+
+    @Page
+    private RolePolicy rolePolicy;
+
+    public void populate(AggregatePolicyRepresentation expected, boolean save) {
         setInputValue(name, expected.getName());
         setInputValue(description, expected.getDescription());
         logic.selectByValue(expected.getLogic().name());
@@ -58,9 +72,11 @@ public class AggregatePolicyForm extends Form {
         Set<String> selectedPolicies = policySelect.getSelected();
         Set<String> policies = expected.getPolicies();
 
-        for (String policy : policies) {
-            if (!selectedPolicies.contains(policy)) {
-                policySelect.select(policy);
+        if (policies != null) {
+            for (String policy : policies) {
+                if (!selectedPolicies.contains(policy)) {
+                    policySelect.select(policy);
+                }
             }
         }
 
@@ -79,7 +95,9 @@ public class AggregatePolicyForm extends Form {
             }
         }
 
-        save();
+        if (save) {
+            save();
+        }
     }
 
     public void delete() {
@@ -96,5 +114,14 @@ public class AggregatePolicyForm extends Form {
         representation.setPolicies(policySelect.getSelected());
 
         return representation;
+    }
+
+    public void createPolicy(AbstractPolicyRepresentation expected) {
+        createPolicyBtn.click();
+        performOperationWithPageReload(() -> createPolicySelect.selectByValue(expected.getType()));
+
+        if ("role".equals(expected.getType())) {
+            rolePolicy.form().populate((RolePolicyRepresentation) expected, true);
+        }
     }
 }

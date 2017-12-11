@@ -5,6 +5,8 @@
         <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
         <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server">{{:: 'authz-authorization' | translate}}</a></li>
         <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/policy">{{:: 'authz-policies' | translate}}</a></li>
+        <li data-ng-show="create && policyState.state.name != null">{{policyState.state.name}}</li>
+        <li data-ng-show="create && policyState.state.name == null">{{policyState.previousPage.name}}</li>
         <li data-ng-show="create">{{:: 'authz-add-aggregated-policy' | translate}}</li>
         <li data-ng-hide="create">{{:: 'authz-aggregated' | translate}}</li>
         <li data-ng-hide="create">{{originalPolicy.name}}</li>
@@ -32,11 +34,29 @@
             </div>
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="policies">{{:: 'authz-policy-apply-policy' | translate}} <span class="required">*</span></label>
-
-                <div class="col-md-6">
-                    <input type="hidden" ui-select2="policiesUiSelect" id="policies" data-ng-model="selectedPolicies" data-placeholder="{{:: 'authz-select-a-policy' | translate}}..." multiple required />
+                <div class="col-sm-6">
+                    <input type="hidden" ui-select2="policiesUiSelect" id="policies" data-ng-model="selectedPolicies" data-placeholder="{{:: 'authz-select-a-policy' | translate}}..." multiple data-ng-required="!selectedPolicies || selectedPolicies.length == 0" />
                 </div>
                 <kc-tooltip>{{:: 'authz-policy-apply-policy.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix" data-ng-hide="historyBackOnSaveOrCancel">
+                <label class="col-md-2 control-label" for="policies"></label>
+                <div class="col-sm-6">
+                    <div class="input-group">
+                        <div class="input-group-btn" data-ng-hide="showNewPolicy == true">
+                            <button data-ng-click="createNewPolicy()" id="create-policy-btn" class="btn btn-primary">{{:: 'authz-create-policy' | translate}}</button>
+                        </div>
+                        <select id="create-policy" ng-model="policyType" class="form-control"
+                                ng-options="p.name for p in policyProviders track by p.type"
+                                data-ng-change="addPolicy(policyType);"
+                                data-ng-show="showNewPolicy == true">
+                            <option value="" disabled selected>{{:: 'authz-create-policy' | translate}}...</option>
+                        </select>
+                        <div class="input-group-btn" data-ng-show="showNewPolicy == true">
+                            <button data-ng-click="cancelCreateNewPolicy()" id="cancel-create-policy-btn" class="btn btn-primary">{{:: 'cancel' | translate}}</button>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="policy.decisionStrategy">{{:: 'authz-policy-decision-strategy' | translate}}</label>
