@@ -385,6 +385,15 @@ public class DefaultAuthenticationFlows {
         execution.setPriority(20);
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
+
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(clients.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
+        execution.setAuthenticator("client-secret-jwt");
+        execution.setPriority(30);
+        execution.setAuthenticatorFlow(false);
+        realm.addAuthenticatorExecution(execution);
+
     }
 
     public static void firstBrokerLoginFlow(RealmModel realm, boolean migrate) {
