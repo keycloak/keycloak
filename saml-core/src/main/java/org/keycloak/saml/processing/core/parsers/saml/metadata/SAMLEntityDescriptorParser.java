@@ -366,6 +366,8 @@ public class SAMLEntityDescriptorParser extends AbstractDescriptorParser impleme
             } else if (JBossSAMLConstants.ATTRIBUTE_PROFILE.get().equalsIgnoreCase(localPart)) {
                 startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
                 attributeAuthority.addAttributeProfile(StaxParserUtil.getElementText(xmlEventReader));
+            } else if (JBossSAMLConstants.ATTRIBUTE.get().equalsIgnoreCase(localPart)) {
+                attributeAuthority.addAttribute(SAMLParserUtil.parseAttribute(xmlEventReader));
             } else if (JBossSAMLConstants.KEY_DESCRIPTOR.get().equalsIgnoreCase(localPart)) {
                 attributeAuthority.addKeyDescriptor(parseKeyDescriptor(xmlEventReader));
             } else if (JBossSAMLConstants.NAMEID_FORMAT.get().equalsIgnoreCase(localPart)) {
