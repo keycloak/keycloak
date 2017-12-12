@@ -56,6 +56,10 @@ public class KeycloakTestingClient {
         return new KeycloakTestingClient(serverUrl, null);
     }
 
+    public static KeycloakTestingClient getInstance(String serverUrl, ResteasyClient resteasyClient) {
+        return new KeycloakTestingClient(serverUrl, resteasyClient);
+    }
+
     public TestingResource testing() {
         return target.path("/realms/master").proxy(TestingResource.class);
     }
