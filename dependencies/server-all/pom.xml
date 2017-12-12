@@ -33,20 +33,12 @@
 
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>org.jboss.integration-platform</groupId>
-                <artifactId>jboss-integration-platform-bom</artifactId>
-                <type>pom</type>
-                <scope>import</scope>
-                <version>${version.jboss-integration-platform}</version>
-            </dependency>
-
             <!-- Authorization Drools Policy Provider -->
             <dependency>
-                <groupId>org.drools</groupId>
+                <groupId>org.keycloak</groupId>
                 <artifactId>drools-bom</artifactId>
                 <type>pom</type>
-                <version>${version.org.drools}</version>
+                <version>${project.version}</version>
                 <scope>import</scope>
             </dependency>
         </dependencies>

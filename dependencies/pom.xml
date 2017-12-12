@@ -31,6 +31,7 @@
     <description/>
 
     <modules>
+        <module>drools-bom</module>
         <module>server-min</module>
         <module>server-all</module>
     </modules>
