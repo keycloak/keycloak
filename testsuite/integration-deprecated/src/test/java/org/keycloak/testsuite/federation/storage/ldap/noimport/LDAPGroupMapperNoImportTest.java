@@ -167,8 +167,8 @@ public class LDAPGroupMapperNoImportTest {
             GroupLDAPStorageMapper groupMapper = LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, appRealm);
 
             LDAPObject maryLdap = ldapProvider.loadLDAPUserByUsername(appRealm, "marykeycloak");
-            groupMapper.addGroupMappingInLDAP(appRealm, "group1", maryLdap);
-            groupMapper.addGroupMappingInLDAP(appRealm, "group11", maryLdap);
+            groupMapper.addGroupMappingInLDAP(appRealm, KeycloakModelUtils.findGroupByPath(appRealm, "/group1"), maryLdap);
+            groupMapper.addGroupMappingInLDAP(appRealm, KeycloakModelUtils.findGroupByPath(appRealm, "/group1/group11"), maryLdap);
         } finally {
             keycloakRule.stopSession(session, true);
         }

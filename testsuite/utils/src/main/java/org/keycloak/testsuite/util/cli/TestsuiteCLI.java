@@ -66,7 +66,8 @@ public class TestsuiteCLI {
             CacheCommands.GetCacheCommand.class,
             CacheCommands.CacheRealmObjectsCommand.class,
             ClusterProviderTaskCommand.class,
-            LdapManyObjectsInitializerCommand.class
+            LdapManyObjectsInitializerCommand.class,
+            LdapManyGroupsInitializerCommand.class
     };
 
     private final KeycloakSessionFactory sessionFactory;

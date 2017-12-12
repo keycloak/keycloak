@@ -317,7 +317,11 @@ public class LDAPGroupMapperSyncTest {
             LDAPTestUtils.removeAllLDAPUsers(ldapProvider, realm);
             LDAPObject johnLdap = LDAPTestUtils.addLDAPUser(ldapProvider, realm, "johnkeycloak", "John", "Doe", "john@email.org", null, "1234");
             LDAPTestUtils.updateLDAPPassword(ldapProvider, johnLdap, "Password1");
-            groupMapper.addGroupMappingInLDAP(realm, "group11", johnLdap);
+
+            GroupMapperConfig groupMapperConfig = new GroupMapperConfig(mapperModel);
+            LDAPObject ldapGroup = groupMapper.loadLDAPGroupByName("group11");
+            LDAPUtils.addMember(ldapProvider, groupMapperConfig.getMembershipTypeLdapAttribute(), groupMapperConfig.getMembershipLdapAttribute(),
+                    groupMapperConfig.getMembershipUserLdapAttribute(ldapProvider.getLdapIdentityStore().getConfig()), ldapGroup, johnLdap, true);
 
             // Assert groups not yet imported to Keycloak DB
             Assert.assertNull(KeycloakModelUtils.findGroupByPath(realm, "/group1"));
