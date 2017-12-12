@@ -243,8 +243,8 @@ public class LDAPGroupMapperTest {
             GroupLDAPStorageMapper groupMapper = LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, appRealm);
 
             LDAPObject maryLdap = ldapProvider.loadLDAPUserByUsername(appRealm, "marykeycloak");
-            groupMapper.addGroupMappingInLDAP(appRealm, "group1", maryLdap);
-            groupMapper.addGroupMappingInLDAP(appRealm, "group11", maryLdap);
+            groupMapper.addGroupMappingInLDAP(appRealm, group1, maryLdap);
+            groupMapper.addGroupMappingInLDAP(appRealm, group11, maryLdap);
 
             // Add some group mapping to model
             mary.joinGroup(group12);
@@ -304,17 +304,17 @@ public class LDAPGroupMapperTest {
             LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
             GroupLDAPStorageMapper groupMapper = LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, appRealm);
 
+            GroupModel group1 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1");
+            GroupModel group11 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1/group11");
+            GroupModel group12 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1/group12");
+
             LDAPObject robLdap = ldapProvider.loadLDAPUserByUsername(appRealm, "robkeycloak");
-            groupMapper.addGroupMappingInLDAP(appRealm, "group11", robLdap);
-            groupMapper.addGroupMappingInLDAP(appRealm, "group12", robLdap);
+            groupMapper.addGroupMappingInLDAP(appRealm, group11, robLdap);
+            groupMapper.addGroupMappingInLDAP(appRealm, group12, robLdap);
 
             // Get user and check that he has requested groupa from LDAP
             UserModel rob = session.users().getUserByUsername("robkeycloak", appRealm);
             Set<GroupModel> robGroups = rob.getGroups();
-
-            GroupModel group1 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1");
-            GroupModel group11 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1/group11");
-            GroupModel group12 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1/group12");
 
             Assert.assertFalse(robGroups.contains(group1));
             Assert.assertTrue(robGroups.contains(group11));
@@ -444,6 +444,79 @@ public class LDAPGroupMapperTest {
             ComponentModel groupMapper = LDAPTestUtils.getSubcomponentByName(appRealm,ldapModel, "groupsMapper");
             groupMapper.setConfig(oldGroupMapperCfg);
             appRealm.updateComponent(groupMapper);
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+    }
+
+
+    // KEYCLOAK-5017
+    @Test
+    public void test06_addingUserToNewKeycloakGroup() throws Exception {
+        // Add some groups to Keycloak
+        KeycloakSession session = keycloakRule.startSession();
+        try {
+            RealmModel appRealm = session.realms().getRealmByName("test");
+
+            GroupModel group3 = appRealm.createGroup("group3");
+            session.realms().addTopLevelGroup(appRealm, group3);
+            GroupModel group31 = appRealm.createGroup("group31");
+            group3.addChild(group31);
+            GroupModel group32 = appRealm.createGroup("group32");
+            group3.addChild(group32);
+
+            GroupModel group4 = appRealm.createGroup("group4");
+            session.realms().addTopLevelGroup(appRealm, group4);
+
+            GroupModel group14 = appRealm.createGroup("group14");
+            GroupModel group1 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1");
+            group1.addChild(group14);
+
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+        // Add user to some newly created KC groups
+        session = keycloakRule.startSession();
+        try {
+            RealmModel appRealm = session.realms().getRealmByName("test");
+
+            UserModel john = session.users().getUserByUsername("johnkeycloak", appRealm);
+
+            GroupModel group4 =  KeycloakModelUtils.findGroupByPath(appRealm, "/group4");
+            john.joinGroup(group4);
+
+            GroupModel group31 = KeycloakModelUtils.findGroupByPath(appRealm, "/group3/group31");
+            GroupModel group32 = KeycloakModelUtils.findGroupByPath(appRealm, "/group3/group32");
+
+            john.joinGroup(group31);
+            john.joinGroup(group32);
+
+            GroupModel group14 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1/group14");
+            john.joinGroup(group14);
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+        // Check user group memberships
+        session = keycloakRule.startSession();
+        try {
+            RealmModel appRealm = session.realms().getRealmByName("test");
+
+            UserModel john = session.users().getUserByUsername("johnkeycloak", appRealm);
+
+            GroupModel group14 =  KeycloakModelUtils.findGroupByPath(appRealm, "/group1/group14");
+            GroupModel group3 =  KeycloakModelUtils.findGroupByPath(appRealm, "/group3");
+            GroupModel group31 = KeycloakModelUtils.findGroupByPath(appRealm, "/group3/group31");
+            GroupModel group32 = KeycloakModelUtils.findGroupByPath(appRealm, "/group3/group32");
+            GroupModel group4 =  KeycloakModelUtils.findGroupByPath(appRealm, "/group4");
+
+            Set<GroupModel> groups = john.getGroups();
+            Assert.assertTrue(groups.contains(group14));
+            Assert.assertFalse(groups.contains(group3));
+            Assert.assertTrue(groups.contains(group31));
+            Assert.assertTrue(groups.contains(group32));
+            Assert.assertTrue(groups.contains(group4));
         } finally {
             keycloakRule.stopSession(session, true);
         }
