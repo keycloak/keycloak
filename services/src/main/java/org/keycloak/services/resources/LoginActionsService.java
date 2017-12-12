@@ -503,7 +503,7 @@ public class LoginActionsService {
         tokenContext = new ActionTokenContext(session, realm, uriInfo, clientConnection, request, event, handler, execution, this::processFlow, this::brokerLoginFlow);
 
         try {
-            String tokenAuthSessionCompoundId = handler.getAuthenticationSessionIdFromToken(token, tokenContext);
+            String tokenAuthSessionCompoundId = handler.getAuthenticationSessionIdFromToken(token, tokenContext, authSession);
 
             if (tokenAuthSessionCompoundId != null) {
                 // This can happen if the token contains ID but user opens the link in a new browser
