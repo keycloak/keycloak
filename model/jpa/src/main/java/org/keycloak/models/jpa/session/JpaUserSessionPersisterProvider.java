@@ -36,8 +36,10 @@ import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -162,7 +164,11 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
     @Override
     public void onClientRemoved(RealmModel realm, ClientModel client) {
-        int num = em.createNamedQuery("deleteClientSessionsByClient").setParameter("clientId", client.getId()).executeUpdate();
+        onClientRemoved(client.getId());
+    }
+
+    private void onClientRemoved(String clientUUID) {
+        int num = em.createNamedQuery("deleteClientSessionsByClient").setParameter("clientId", clientUUID).executeUpdate();
         num = em.createNamedQuery("deleteDetachedUserSessions").executeUpdate();
     }
 
@@ -223,6 +229,8 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
             userSessionIds.add(entity.getUserSessionId());
         }
 
+        Set<String> removedClientUUIDs = new HashSet<>();
+
         if (!userSessionIds.isEmpty()) {
             TypedQuery<PersistentClientSessionEntity> query2 = em.createNamedQuery("findClientSessionsByUserSessions", PersistentClientSessionEntity.class);
             query2.setParameter("userSessionIds", userSessionIds);
@@ -240,7 +248,13 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
                     PersistentClientSessionEntity clientSession = clientSessions.get(j);
                     if (clientSession.getUserSessionId().equals(userSession.getId())) {
                         PersistentAuthenticatedClientSessionAdapter clientSessAdapter = toAdapter(userSession.getRealm(), userSession, clientSession);
-                        currentClientSessions.put(clientSession.getClientId(), clientSessAdapter);
+
+                        // Case when client was removed in the meantime
+                        if (clientSessAdapter.getClient() == null) {
+                            removedClientUUIDs.add(clientSession.getClientId());
+                        } else {
+                            currentClientSessions.put(clientSession.getClientId(), clientSessAdapter);
+                        }
                         j++;
                     } else {
                         next = false;
@@ -249,6 +263,9 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
             }
         }
 
+        for (String clientUUID : removedClientUUIDs) {
+            onClientRemoved(clientUUID);
+        }
 
         return result;
     }
