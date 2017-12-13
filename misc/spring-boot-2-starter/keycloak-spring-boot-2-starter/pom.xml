@@ -3,17 +3,31 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.keycloak</groupId>
-        <artifactId>keycloak-spring-boot-starter-parent</artifactId>
-        <version>3.4.2.Final-SNAPSHOT</version>
+        <artifactId>keycloak-spring-boot-2-starter-parent</artifactId>
+        <version>3.3.0.CR1-SNAPSHOT</version>
     </parent>
-    <artifactId>keycloak-spring-boot-starter</artifactId>
-    <name>Keycloak :: Spring :: Boot :: Default ::  Starter</name>
-    <description>Spring Boot Default Starter for Keycloak</description>
+    <artifactId>keycloak-spring-boot-2-starter</artifactId>
+    <name>Keycloak :: Spring :: Boot :: 2 :: Default ::  Starter</name>
+    <description>Spring Boot 2 Default Starter for Keycloak</description>
 
+    <properties>
+      <spring-boot.version>2.0.0.M2</spring-boot.version>
+    </properties>
+
+  <repositories>
+    <repository>
+      <id>spring-milestones</id>
+      <name>Spring Milestones</name>
+      <url>https://repo.spring.io/libs-milestone</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
     <dependencies>
       <dependency>
           <groupId>org.keycloak</groupId>
-          <artifactId>keycloak-spring-boot-adapter</artifactId>
+          <artifactId>keycloak-spring-boot-2-adapter</artifactId>
       </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -22,8 +36,8 @@
       <dependency>
           <groupId>org.springframework.boot</groupId>
           <artifactId>spring-boot-starter</artifactId>
-          <version>1.5.2.RELEASE</version>
-      </dependency>
+          <version>2.0.0.M2</version>
+      </dependency>    
       <dependency>
           <groupId>org.keycloak</groupId>
           <artifactId>spring-boot-container-bundle</artifactId>

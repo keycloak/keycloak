@@ -21,20 +21,29 @@
   <parent>
     <artifactId>keycloak-parent</artifactId>
     <groupId>org.keycloak</groupId>
-    <version>3.4.2.Final-SNAPSHOT</version>
+    <version>3.3.0.CR1-SNAPSHOT</version>
     <relativePath>../../../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>keycloak-spring-boot-adapter</artifactId>
-  <name>Keycloak Spring Boot Integration</name>
+  <artifactId>keycloak-spring-boot-2-adapter</artifactId>
+  <name>Keycloak Spring Boot 2 Integration</name>
   <description/>
 
   <properties>
-    <spring-boot.version>1.4.0.RELEASE</spring-boot.version>
-    <spring.version>4.1.6.RELEASE</spring.version>
-    <mockito.version>1.9.5</mockito.version>
+    <spring-boot.version>2.0.0.M2</spring-boot.version>
   </properties>
+
+  <repositories>
+    <repository>
+      <id>spring-milestones</id>
+      <name>Spring Milestones</name>
+      <url>https://repo.spring.io/libs-milestone</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
 
   <dependencies>
 
@@ -69,9 +78,8 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
       <version>${spring-boot.version}</version>
-      <scope>compile</scope>
-      <optional>true</optional>
     </dependency>
+
     <dependency>
       <groupId>io.undertow</groupId>
       <artifactId>undertow-servlet</artifactId>
@@ -107,23 +115,11 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-test</artifactId>
-      <version>${spring.version}</version>
-      <scope>test</scope>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-configuration-processor</artifactId>
+      <optional>true</optional>
+      <version>${spring-boot.version}</version>
     </dependency>
-    <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-all</artifactId>
-      <version>${mockito.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-configuration-processor</artifactId>
-        <optional>true</optional>
-        <version>${spring-boot.version}</version>
-     </dependency>
   </dependencies>
   <build>
     <plugins>
