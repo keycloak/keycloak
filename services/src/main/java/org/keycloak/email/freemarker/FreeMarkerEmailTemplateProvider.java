@@ -29,6 +29,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
@@ -51,6 +52,8 @@ import java.util.Properties;
 public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
 
     protected KeycloakSession session;
+    /** authenticationSession can be null for some email sendings, it is filled only for email sendings performed as part of the authentication session (email verification, password reset, broker link etc.)! */
+    protected AuthenticationSessionModel authenticationSession;
     protected FreeMarkerUtil freeMarker;
     protected RealmModel realm;
     protected UserModel user;
@@ -76,6 +79,12 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
     @Override
     public EmailTemplateProvider setAttribute(String name, Object value) {
         attributes.put(name, value);
+        return this;
+    }
+    
+    @Override
+    public EmailTemplateProvider setAuthenticationSession(AuthenticationSessionModel authenticationSession) {
+        this.authenticationSession = authenticationSession;
         return this;
     }
 

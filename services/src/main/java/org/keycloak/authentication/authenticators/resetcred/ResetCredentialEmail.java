@@ -98,7 +98,7 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
           .toString();
         long expirationInMinutes = TimeUnit.SECONDS.toMinutes(validityInSecs);
         try {
-            context.getSession().getProvider(EmailTemplateProvider.class).setRealm(context.getRealm()).setUser(user).sendPasswordReset(link, expirationInMinutes);
+            context.getSession().getProvider(EmailTemplateProvider.class).setRealm(context.getRealm()).setUser(user).setAuthenticationSession(authenticationSession).sendPasswordReset(link, expirationInMinutes);
 
             event.clone().event(EventType.SEND_RESET_PASSWORD)
                          .user(user)
