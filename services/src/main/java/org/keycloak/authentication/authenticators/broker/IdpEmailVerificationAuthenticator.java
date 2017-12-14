@@ -143,6 +143,7 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
         try {
             context.getSession().getProvider(EmailTemplateProvider.class)
                     .setRealm(realm)
+                    .setAuthenticationSession(authSession)
                     .setUser(existingUser)
                     .setAttribute(EmailTemplateProvider.IDENTITY_PROVIDER_BROKER_CONTEXT, brokerContext)
                     .sendConfirmIdentityBrokerLink(link, expirationInMinutes);

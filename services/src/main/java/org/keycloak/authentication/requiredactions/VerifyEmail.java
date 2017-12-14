@@ -145,6 +145,7 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
         try {
             session
               .getProvider(EmailTemplateProvider.class)
+              .setAuthenticationSession(authSession)
               .setRealm(realm)
               .setUser(user)
               .sendVerifyEmail(link, expirationInMinutes);

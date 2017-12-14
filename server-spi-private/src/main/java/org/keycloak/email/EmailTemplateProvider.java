@@ -21,6 +21,7 @@ import org.keycloak.events.Event;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 import java.util.Map;
 
@@ -30,6 +31,8 @@ import java.util.Map;
 public interface EmailTemplateProvider extends Provider {
 
     String IDENTITY_PROVIDER_BROKER_CONTEXT = "identityProviderBrokerCtx";
+    
+    public EmailTemplateProvider setAuthenticationSession(AuthenticationSessionModel authenticationSession);
 
     public EmailTemplateProvider setRealm(RealmModel realm);
 
