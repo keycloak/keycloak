@@ -16,6 +16,7 @@ import org.keycloak.services.util.LocaleHelper;
 import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.ThemeProvider;
+import org.keycloak.theme.beans.LocaleBean;
 import org.keycloak.theme.beans.MessageBean;
 import org.keycloak.theme.beans.MessageFormatterMethod;
 import org.keycloak.theme.beans.MessageType;
@@ -123,13 +124,14 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
 
     private Map<String, Object> initAttributes(RealmModel realm, Theme theme, Locale locale, int statusCode) throws IOException {
         Map<String, Object> attributes = new HashMap<>();
+        Properties messagesBundle = theme.getMessages(locale);
 
         attributes.put("statusCode", statusCode);
 
         attributes.put("realm", realm);
         attributes.put("url", new UrlBean(realm, theme, uriInfo.getBaseUri(), null));
+        attributes.put("locale", new LocaleBean(realm, locale, uriInfo.getBaseUriBuilder(), messagesBundle));
 
-        Properties messagesBundle = theme.getMessages(locale);
 
         String errorKey = statusCode == 404 ? Messages.PAGE_NOT_FOUND : Messages.INTERNAL_SERVER_ERROR;
         String errorMessage = messagesBundle.getProperty(errorKey);
