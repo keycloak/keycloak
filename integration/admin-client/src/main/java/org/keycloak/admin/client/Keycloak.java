@@ -40,6 +40,8 @@ import static org.keycloak.OAuth2Constants.PASSWORD;
  * default {@link ResteasyClientBuilder} settings. To customize the underling client, use a {@link KeycloakBuilder} to
  * create a Keycloak client.
  *
+ * To read Responses, you can use {@link CreatedResponseUtil} for objects created
+ *
  * @author rodrigo.sasaki@icarros.com.br
  * @see KeycloakBuilder
  */
