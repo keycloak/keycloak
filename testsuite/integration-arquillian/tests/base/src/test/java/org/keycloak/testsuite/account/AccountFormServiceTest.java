@@ -68,6 +68,7 @@ import java.util.Map;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItems;
+import static org.junit.Assert.assertFalse;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -215,7 +216,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         driver.navigate().to(profilePage.getPath() + "?referrer=test-app&referrer_uri=http://localhost:8180/auth/realms/master/app/auth/test%2Ffkrenu%22%3E%3Cscript%3Ealert%281%29%3C%2fscript%3E");
         Assert.assertTrue(profilePage.isCurrent());
 
-        Assert.assertFalse(driver.getPageSource().contains("<script>alert"));
+        assertFalse(driver.getPageSource().contains("<script>alert"));
     }
 
     @Test
@@ -567,7 +568,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
 
         profilePage.open();
         loginPage.login("test-user@localhost", "password");
-        Assert.assertFalse(driver.findElements(By.id("username")).size() > 0);
+        assertFalse(driver.findElements(By.id("username")).size() > 0);
 
         // Revert
         setRegistrationEmailAsUsername(false);
@@ -767,7 +768,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
 
         Assert.assertTrue(totpPage.isCurrent());
 
-        Assert.assertFalse(driver.getPageSource().contains("Remove Google"));
+        assertFalse(driver.getPageSource().contains("Remove Google"));
 
         // Error with false code
         totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret() + "123"));
@@ -785,6 +786,10 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         totpPage.removeTotp();
 
         events.expectAccount(EventType.REMOVE_TOTP).assertEvent();
+
+        accountPage.logOut();
+
+        assertFalse(errorPage.isCurrent());
     }
 
     @Test

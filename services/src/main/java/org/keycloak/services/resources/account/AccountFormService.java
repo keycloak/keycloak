@@ -349,28 +349,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
         }
     }
 
-    @Path("totp-remove")
-    @POST
-    public Response processTotpRemove(final MultivaluedMap<String, String> formData) {
-        if (auth == null) {
-            return login("totp");
-        }
-
-        auth.require(AccountRoles.MANAGE_ACCOUNT);
-
-        csrfCheck(formData);
-
-        UserModel user = auth.getUser();
-        session.userCredentialManager().disableCredentialType(realm, user, CredentialModel.OTP);
-
-        event.event(EventType.REMOVE_TOTP).client(auth.getClient()).user(auth.getUser()).success();
-
-        setReferrerOnPage();
-        return account.setSuccess(Messages.SUCCESS_TOTP_REMOVED).createResponse(AccountPages.TOTP);
-    }
-
-
-    @Path("sessions-logout")
+    @Path("sessions")
     @POST
     public Response processSessionsLogout(final MultivaluedMap<String, String> formData) {
         if (auth == null) {
@@ -401,7 +380,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
         return Response.seeOther(location).build();
     }
 
-    @Path("revoke-grant")
+    @Path("applications")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processRevokeGrant(final MultivaluedMap<String, String> formData) {
@@ -473,32 +452,41 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
         UserModel user = auth.getUser();
 
-        String totp = formData.getFirst("totp");
-        String totpSecret = formData.getFirst("totpSecret");
+        if (action != null && action.equals("Delete")) {
+            session.userCredentialManager().disableCredentialType(realm, user, CredentialModel.OTP);
 
-        if (Validation.isBlank(totp)) {
+            event.event(EventType.REMOVE_TOTP).client(auth.getClient()).user(auth.getUser()).success();
+
             setReferrerOnPage();
-            return account.setError(Response.Status.BAD_REQUEST, Messages.MISSING_TOTP).createResponse(AccountPages.TOTP);
-        } else if (!CredentialValidation.validOTP(realm, totp, totpSecret)) {
+            return account.setSuccess(Messages.SUCCESS_TOTP_REMOVED).createResponse(AccountPages.TOTP);
+        } else {
+            String totp = formData.getFirst("totp");
+            String totpSecret = formData.getFirst("totpSecret");
+
+            if (Validation.isBlank(totp)) {
+                setReferrerOnPage();
+                return account.setError(Response.Status.BAD_REQUEST, Messages.MISSING_TOTP).createResponse(AccountPages.TOTP);
+            } else if (!CredentialValidation.validOTP(realm, totp, totpSecret)) {
+                setReferrerOnPage();
+                return account.setError(Response.Status.BAD_REQUEST, Messages.INVALID_TOTP).createResponse(AccountPages.TOTP);
+            }
+
+            UserCredentialModel credentials = new UserCredentialModel();
+            credentials.setType(realm.getOTPPolicy().getType());
+            credentials.setValue(totpSecret);
+            session.userCredentialManager().updateCredential(realm, user, credentials);
+
+            // to update counter
+            UserCredentialModel cred = new UserCredentialModel();
+            cred.setType(realm.getOTPPolicy().getType());
+            cred.setValue(totp);
+            session.userCredentialManager().isValid(realm, user, cred);
+
+            event.event(EventType.UPDATE_TOTP).client(auth.getClient()).user(auth.getUser()).success();
+
             setReferrerOnPage();
-            return account.setError(Response.Status.BAD_REQUEST, Messages.INVALID_TOTP).createResponse(AccountPages.TOTP);
+            return account.setSuccess(Messages.SUCCESS_TOTP).createResponse(AccountPages.TOTP);
         }
-
-        UserCredentialModel credentials = new UserCredentialModel();
-        credentials.setType(realm.getOTPPolicy().getType());
-        credentials.setValue(totpSecret);
-        session.userCredentialManager().updateCredential(realm, user, credentials);
-
-        // to update counter
-        UserCredentialModel cred = new UserCredentialModel();
-        cred.setType(realm.getOTPPolicy().getType());
-        cred.setValue(totp);
-        session.userCredentialManager().isValid(realm, user, cred);
-
-        event.event(EventType.UPDATE_TOTP).client(auth.getClient()).user(auth.getUser()).success();
-
-        setReferrerOnPage();
-        return account.setSuccess(Messages.SUCCESS_TOTP).createResponse(AccountPages.TOTP);
     }
 
     /**

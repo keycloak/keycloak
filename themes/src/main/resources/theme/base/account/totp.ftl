@@ -14,8 +14,9 @@
         <tr>
             <td class="provider">${msg("mobile")}</td>
             <td class="action">
-                <form action="${url.totpRemoveUrl}" method="post" class="form-inline">
+                <form action="${url.totpUrl}" method="post" class="form-inline">
                     <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker}">
+                    <input type="hidden" id="submitAction" name="submitAction" value="Delete">
                     <button id="remove-mobile" class="btn btn-default"><i class="pficon pficon-delete"></i></button>
                 </form>
                 </td>

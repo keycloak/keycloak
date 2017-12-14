@@ -131,27 +131,12 @@ public class Urls {
         return accountBase(baseUri).path(AccountFormService.class, "totpPage").build(realmName);
     }
 
-    public static URI accountTotpRemove(URI baseUri, String realmName) {
-        return accountBase(baseUri).path(AccountFormService.class, "processTotpRemove")
-                .build(realmName);
-    }
-
     public static URI accountLogPage(URI baseUri, String realmName) {
         return accountBase(baseUri).path(AccountFormService.class, "logPage").build(realmName);
     }
 
     public static URI accountSessionsPage(URI baseUri, String realmName) {
         return accountBase(baseUri).path(AccountFormService.class, "sessionsPage").build(realmName);
-    }
-
-    public static URI accountSessionsLogoutPage(URI baseUri, String realmName) {
-        return accountBase(baseUri).path(AccountFormService.class, "processSessionsLogout")
-                .build(realmName);
-    }
-
-    public static URI accountRevokeClientPage(URI baseUri, String realmName) {
-        return accountBase(baseUri).path(AccountFormService.class, "processRevokeGrant")
-                .build(realmName);
     }
 
     public static URI accountLogout(URI baseUri, URI redirectUri, String realmName) {
