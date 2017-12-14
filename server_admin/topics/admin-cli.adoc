@@ -40,7 +40,6 @@ To avoid repetition, the rest of this document only gives Windows examples in pl
 
 The Admin CLI works by making HTTP requests to Admin REST endpoints. Access to them is protected and requires authentication.
 
-//Should there be a link for the REST API documentation?
 [NOTE]
 ====
 Consult the Admin REST API documentation for details about JSON attributes for specific endpoints.
@@ -71,7 +70,7 @@ c:\> set /p CID=<clientid.txt
 c:\> kcadm get clients/%CID%/installation/providers/keycloak-oidc-keycloak-json
 ----
 
-. In a production environment, you access {project_name} with `https:` to avoid exposing tokens to network sniffers. If a server's certificate is not issued by one of the trusted certificate authorities (CAs) that are included in Java's default certificate truststore, prepare a [filename]`truststore.jks` file and instruct the Admin CLI to use it.
+. In a production environment, you must access {project_name} with `https:` to avoid exposing tokens to network sniffers. If a server's certificate is not issued by one of the trusted certificate authorities (CAs) that are included in Java's default certificate truststore, prepare a [filename]`truststore.jks` file and instruct the Admin CLI to use it.
 +
 For example, on:
 
@@ -92,7 +91,7 @@ c:\> kcadm config truststore --trustpass %PASSWORD% %HOMEPATH%\.keycloak\trustst
 
 === Authenticating
 
-When you log in with the Admin CLI, you specify a server endpoint URL and a realm, and then you specify a username. Another option is to specify only a client ID, which results in using a special "service account". When you log in using a username, you must use a password for the specified user. When you log in using a client ID, you only need the client secret, not the user password. You could also use [command]`Signed JWT` instead of the client secret.
+When you log in with the Admin CLI, you specify a server endpoint URL and a realm, and then you specify a user name. Another option is to specify only a clientId, which results in using a special "service account." When you log in using a user name, you must use a password for the specified user. When you log in using a clientId, you only need the client secret, not the user password. You could also use [command]`Signed JWT` instead of the client secret.
 
 Make sure the account used for the session has the proper permissions to invoke Admin REST API operations. For example, the `realm-admin` role of the `realm-management` client allows the user to administer the realm within which the user is defined.
 
@@ -106,7 +105,7 @@ This approach maintains an authenticated session between the [command]`kcadm` co
 
 The second approach only authenticates each command invocation for the duration of that invocation. This approach increases the load on the server and the time spent with roundtrips obtaining tokens. The benefit of this approach is not needing to save any tokens between invocations, which means nothing is saved to disk. This mode is used when the [command]`--no-config` argument is specified.
 
-For example, when performing an command, we specify all the information required for authentication.
+For example, when performing an operation, we specify all the information required for authentication.
 [options="nowrap"]
 ----
 $ kcadm.sh get realms --no-config --server http://localhost:8080/auth --realm master --user admin --password admin
@@ -120,19 +119,16 @@ Run the [command]`kcadm.sh config credentials --help` command for more informati
 [[_working_with_alternative_configurations]]
 === Working with alternative configurations
 
-By default, the Admin CLI automatically maintains a configuration file called [filename]`kcadm.config` located under the user's home directory, which is the full path name [filename]`$HOME/.keycloak/kcadm.config`. On Windows, the full path name is [filename]`%HOMEPATH%\.keycloak\kcadm.config`.
-
-You can use the [command]`--config` option to point to a different file or location so you can maintain multiple authenticated sessions in parallel.
+By default, the Admin CLI automatically maintains a configuration file called [filename]kcadm.config located under the user's home directory. In Linux-based systems, the full path name is [filename]$HOME/.keycloak/kcadm.config. On Windows, the full path name is [filename]%HOMEPATH%\.keycloak\kcadm.config. You can use the [command]`--config` option to point to a different file or location so you can maintain multiple authenticated sessions in parallel.
 
 [NOTE]
 ====
 It is best to perform operations tied to a single configuration file from a single thread.
 ====
 
-Make sure you do not make the configuration file visible to other users on the system. It contains access tokens and secrets that should be kept private. By default, the [filename]`~/.keycloak` directory and its content are created automatically with proper access limits. If the directory already exists with non-default permissions, those access tokens and secrets will not be updated.
+Make sure you do not make the configuration file visible to other users on the system. It contains access tokens and secrets that should be kept private. By default, the [filename]`~/.keycloak` directory and its content are created automatically with proper access limits. If the directory already exists, its permissions are not updated.
 
-Consider avoiding storing secrets inside a configuration file, even though it is less convenient and you have to make more token requests. If you choose to not store secrets, you can use the [command]`--no-config` option with all your commands and specify all the authentication information needed by the [command]`config credentials` command with each [command]`kcadm` invocation.
-
+If your unique circumstances require you to avoid storing secrets inside a configuration file, you can do so. It will be less convenient and you will have to make more token requests. To not store secrets, use the [command]`--no-config` option with all your commands and specify all the authentication information needed by the [command]`config credentials` command with each [command]`kcadm` invocation.
 
 === Basic operations and resource URIs
 
@@ -147,7 +143,7 @@ $ kcadm.sh update ENDPOINT [ARGUMENTS]
 $ kcadm.sh delete ENDPOINT [ARGUMENTS]
 ----
 
-ENDPOINT is a target resource URI and can either be absolute (starting with `http:` or `https:`) or relative, used to compose an absolute URL of the following format.
+ENDPOINT is a target resource URI and can either be absolute (starting with `http:` or `https:`) or relative, used to compose an absolute URL of the following format:
 [options="nowrap"]
 ----
 SERVER_URI/admin/realms/REALM/ENDPOINT
@@ -272,7 +268,7 @@ $ kcadm.sh get realms --fields realm --format csv --noquotes
 
 ==== Getting a specific realm
 
-You append an ID to a collection URI to get an individual item of a collection, as is common for REST web services.
+You append a realm name to a collection URI to get an individual realm.
 [options="nowrap"]
 ----
 $ kcadm.sh get realms/master
