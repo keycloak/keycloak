@@ -54,6 +54,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.models.utils.SystemClientUtil;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocol.Error;
@@ -364,7 +365,7 @@ public class LoginActionsService {
         AuthenticationSessionModel authSession;
 
         // set up the account service as the endpoint to call.
-        ClientModel client = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+        ClientModel client = SystemClientUtil.getSystemClient(realm);
 
         RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, true);
         authSession = rootAuthSession.createAuthenticationSession(client);

@@ -16,11 +16,15 @@
  */
 package org.keycloak.testsuite.forms;
 
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authentication.actiontoken.resetcred.ResetCredentialsActionToken;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.models.Constants;
+import org.keycloak.models.utils.SystemClientUtil;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -35,6 +39,7 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -43,6 +48,8 @@ import org.keycloak.testsuite.util.UserBuilder;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
+
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -941,6 +948,11 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void resetPasswordLinkOpenedInNewBrowser() throws IOException, MessagingException {
+        resetPasswordLinkOpenedInNewBrowser(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+    }
+
+
+    private void resetPasswordLinkOpenedInNewBrowser(String expectedSystemClientId) throws IOException, MessagingException {
         String username = "login-test";
         String resetUri = oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials";
         driver.navigate().to(resetUri);
@@ -956,7 +968,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         events.expectRequiredAction(EventType.SEND_RESET_PASSWORD)
                 .user(userId)
                 .detail(Details.REDIRECT_URI,  oauth.AUTH_SERVER_ROOT + "/realms/test/account/")
-                .client("account")
+                .client(expectedSystemClientId)
                 .detail(Details.USERNAME, username)
                 .detail(Details.EMAIL, "login@test.com")
                 .session((String)null)
@@ -982,4 +994,22 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         infoPage.assertCurrent();
         assertEquals("Your account has been updated.", infoPage.getInfo());
     }
+
+
+    // KEYCLOAK-5982
+    @Test
+    public void resetPasswordLinkOpenedInNewBrowserAndAccountClientRenamed() throws IOException, MessagingException {
+        ClientResource accountClient = ApiUtil.findClientByClientId(adminClient.realm("test"), Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+
+        // Temporarily rename client "account" . Revert it back after the test
+        try (Closeable accountClientUpdater = new ClientAttributeUpdater(accountClient)
+                .setClientId("account-changed")
+                .update()) {
+
+            // Assert resetPassword link opened in new browser works even if client "account" not available
+            resetPasswordLinkOpenedInNewBrowser(SystemClientUtil.SYSTEM_CLIENT_ID);
+
+        }
+    }
+
 }
