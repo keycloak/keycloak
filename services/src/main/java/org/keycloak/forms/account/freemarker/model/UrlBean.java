@@ -70,18 +70,6 @@ public class UrlBean {
         return Urls.accountSessionsPage(baseQueryURI, realm).toString();
     }
 
-    public String getSessionsLogoutUrl() {
-        return Urls.accountSessionsLogoutPage(baseQueryURI, realm).toString();
-    }
-
-    public String getRevokeClientUrl() {
-        return Urls.accountRevokeClientPage(baseQueryURI, realm).toString();
-    }
-
-    public String getTotpRemoveUrl() {
-        return Urls.accountTotpRemove(baseQueryURI, realm).toString();
-    }
-
     public String getLogoutUrl() {
         return Urls.accountLogout(baseQueryURI, currentURI, realm).toString();
     }
