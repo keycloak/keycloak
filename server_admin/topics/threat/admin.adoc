@@ -1,0 +1,96 @@
+
+=== Admin Endpoints and Console
+
+The {project_name} administrative REST API and the web console are exposed by default on the same port as non-admin
+usage. If you are exposing {project_name} on the Internet, we recommend not also exposing the admin endpoints on the
+Internet.
+
+This can be achieve either directly in {project_name} or with a proxy such as Apache or nginx.
+
+For the proxy option please follow the documentation for the proxy. You need to control access to any requests
+to `/auth/admin`.
+
+To achieve this directly in {project_name} there are a few options. This document covers two options, IP restriction
+and separate ports.
+
+==== IP Restriction
+
+It is possible to restrict access to `/auth/admin` to only specific IP addresses.
+
+The following example restricts access to `/auth/admin` to IP addresses in the range `10.0.0.1` to `10.0.0.255`.
+
+[source,xml,subs="attributes+"]
+----
+<subsystem xmlns="{subsystem_undertow_xml_urn}">
+    ...
+    <server name="default-server">
+        ...
+        <host name="default-host" alias="localhost">
+            ...
+            <filter-ref name="ipAccess"/>
+        </host>
+    </server>
+    <filters>
+        <expression-filter name="ipAccess" expression="path-prefix('/auth/admin') -> ip-access-control(acl={'10.0.0.0/24 allow'})"/>
+    </filters>
+    ...
+</subsystem>
+----
+
+Equivalent configuration using CLI commands:
+
+[source,bash]
+----
+/subsystem=undertow/configuration=filter/expression-filter=ipAccess:add(,expression="path-prefix[/auth/admin] -> ip-access-control(acl={'10.0.0.0/24 allow'})")
+/subsystem=undertow/server=default-server/host=default-host/filter-ref=ipAccess:add()
+----
+
+NOTE: For IP restriction if you are using a proxy it is important to configure it correctly to make sure {project_name}
+receives the client IP address and not the proxy IP address
+
+==== Port Restriction
+
+It is possible to expose `/auth/admin` to a different port that is not exposed on the Internet.
+
+The following example exposes `/auth/admin` on port `8444` while not permitting access with the default port `8443`.
+
+[source,xml,subs="attributes+"]
+----
+<subsystem xmlns="{subsystem_undertow_xml_urn}">
+    ...
+    <server name="default-server">
+        ...
+        <https-listener name="https" socket-binding="https" security-realm="ApplicationRealm" enable-http2="true"/>
+        <https-listener name="https-admin" socket-binding="https-admin" security-realm="ApplicationRealm" enable-http2="true"/>
+        <host name="default-host" alias="localhost">
+            ...
+            <filter-ref name="portAccess"/>
+        </host>
+    </server>
+    <filters>
+        <expression-filter name="portAccess" expression="path-prefix('/auth/admin') and not equals(%p, 8444) -> response-code(403)"/>
+    </filters>
+    ...
+</subsystem>
+
+...
+
+<socket-binding-group name="standard-sockets" default-interface="public" port-offset="${jboss.socket.binding.port-offset:0}">
+    ...
+    <socket-binding name="https" port="${jboss.https.port:8443}"/>
+    <socket-binding name="https-admin" port="${jboss.https.port:8444}"/>
+    ...
+</socket-binding-group>
+----
+
+Equivalent configuration using CLI commands:
+
+[source,bash]
+----
+/socket-binding-group=standard-sockets/socket-binding=https-admin/:add(port=8444)
+
+/subsystem=undertow/server=default-server/https-listener=https-admin:add(socket-binding=https-admin, security-realm=ApplicationRealm, enable-http2=true)
+
+/subsystem=undertow/configuration=filter/expression-filter=portAccess:add(,expression="path-prefix('/auth/admin') and not equals(%p, 8444) -> response-code(403)")
+/subsystem=undertow/server=default-server/host=default-host/filter-ref=portAccess:add()
+----
