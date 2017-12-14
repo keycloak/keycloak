@@ -123,7 +123,9 @@ public class UsersResource {
                 session.getTransactionManager().commit();
             }
 
-            return Response.created(uriInfo.getAbsolutePathBuilder().path(user.getId()).build()).build();
+            return Response.created(uriInfo.getAbsolutePathBuilder().path(user.getId()).build())
+                    .header("Id", user.getId())
+                    .build();
         } catch (ModelDuplicateException e) {
             if (session.getTransactionManager().isActive()) {
                 session.getTransactionManager().setRollbackOnly();
