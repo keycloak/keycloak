@@ -42,6 +42,7 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.SessionTimeoutHelper;
+import org.keycloak.models.utils.SystemClientUtil;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.protocol.oidc.TokenManager;
@@ -218,7 +219,7 @@ public class AuthenticationManager {
 
     private static AuthenticationSessionModel createOrJoinLogoutSession(KeycloakSession session, RealmModel realm, final AuthenticationSessionManager asm, UserSessionModel userSession, boolean browserCookie) {
         // Account management client is used as a placeholder
-        ClientModel client = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+        ClientModel client = SystemClientUtil.getSystemClient(realm);
 
         // Try to lookup current authSessionId from browser cookie. If doesn't exists, use the same as current userSession
         String authSessionId = null;

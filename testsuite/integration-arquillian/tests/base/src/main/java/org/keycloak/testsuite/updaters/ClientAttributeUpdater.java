@@ -25,6 +25,11 @@ public class ClientAttributeUpdater {
         }
     }
 
+    public ClientAttributeUpdater setClientId(String clientId) {
+        this.rep.setClientId(clientId);
+        return this;
+    }
+
     public ClientAttributeUpdater setAttribute(String name, String value) {
         this.rep.getAttributes().put(name, value);
         return this;
