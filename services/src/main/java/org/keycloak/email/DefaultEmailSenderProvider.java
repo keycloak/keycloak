@@ -120,10 +120,10 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
             msg.setFrom(toInternetAddress(from, fromDisplayName));
 
             msg.setReplyTo(new Address[]{toInternetAddress(from, fromDisplayName)});
-            if (replyTo != null) {
+            if (replyTo != null && !replyTo.isEmpty()) {
                 msg.setReplyTo(new Address[]{toInternetAddress(replyTo, replyToDisplayName)});
             }
-            if (envelopeFrom != null) {
+            if (envelopeFrom != null && !envelopeFrom.isEmpty()) {
                 msg.setEnvelopeFrom(envelopeFrom);
             }
 
