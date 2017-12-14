@@ -33,13 +33,13 @@
                     <form class="form-horizontal" data-ng-show="filter">
                         <div class="form-group">
                             <label class="col-sm-2 control-label" for="adminEnabledEventOperations">{{:: 'operation-types' | translate}}</label>
-                            <div class="col-sm-5">
+                            <div class="col-sm-5" onkeypress="return false;">
                                 <input ui-select2="adminEnabledEventOperationsOptions" id="adminEnabledEventOperations" ng-model="query.operationTypes" data-placeholder="{{:: 'select-operations.placeholder' | translate}}"/>
                             </div>
                         </div>
                         <div class="form-group">
                             <label class="col-sm-2 control-label" for="adminEnabledEventResourceTypes">{{:: 'resource-types' | translate}}</label>
-                            <div class="col-sm-5">
+                            <div class="col-sm-5" onkeypress="return false;">
                                 <input ui-select2="adminEnabledEventResourceTypesOptions" id="adminEnabledEventResourceTypes" ng-model="query.resourceTypes" data-placeholder="{{:: 'select-resource-types.placeholder' | translate}}"/>
                             </div>
                         </div>
