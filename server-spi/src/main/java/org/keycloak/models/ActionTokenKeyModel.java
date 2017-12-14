@@ -16,6 +16,8 @@
  */
 package org.keycloak.models;
 
+import org.keycloak.common.util.Base64;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 /**
@@ -45,6 +47,8 @@ public interface ActionTokenKeyModel {
     UUID getActionVerificationNonce();
 
     default String serializeKey() {
-        return String.format("%s.%d.%s.%s", getUserId(), getExpiration(), getActionVerificationNonce(), getActionId());
+        String userId = getUserId();
+        String encodedUserId = userId == null ? "" : Base64.encodeBytes(userId.getBytes(StandardCharsets.UTF_8));
+        return String.format("%s.%d.%s.%s", encodedUserId, getExpiration(), getActionVerificationNonce(), getActionId());
     }
 }
