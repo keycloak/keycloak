@@ -1,0 +1,40 @@
+
+=== Host
+
+{project_name} uses the request URL for a number of things. For example, the URL sent in password reset emails.
+
+By default, the request URL is based on the `Host` header and there is no check to make sure this URL is the valid and
+correct URL.
+
+If you are not using a load balancer or proxy in front of {project_name} that prevents invalid host headers, you must
+explicitly configure what URLs should be accepted.
+
+The following example will only permit requests to `localhost.localdomain` or `localhost`:
+
+[source,xml,subs="attributes+"]
+----
+<subsystem xmlns="{subsystem_undertow_xml_urn}">
+    <server name="default-server" default-host="ignore">
+        ...
+        <host name="default-host" alias="localhost.localdomain, localhost">
+            <location name="/" handler="welcome-content"/>
+            <http-invoker security-realm="ApplicationRealm"/>
+        </host>
+    </server>
+</subsystem>
+----
+
+The changes that have been made from the default config is to add the attribute `default-host="ignore"` and update the
+attribute `alias`. `default-host="ignore"` prevents unknown hosts from being handled, while `alias` is used to list the
+accepted hosts.
+
+Here is the equivalent configuration using CLI commands:
+
+[source,bash]
+----
+/subsystem=undertow/server=default-server:write-attribute(name=default-host,value=ignore)
+/subsystem=undertow/server=default-server/host=default-host:write-attribute(name=alias,value=[localhost.localdomain, localhost]
+
+:reload
+----
+
