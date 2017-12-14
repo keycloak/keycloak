@@ -31,7 +31,7 @@
                 <form class="form-horizontal">
                     <div class="form-group" data-ng-show="filter">
                 <label class="col-md-2 control-label" for="eventTypes">{{:: 'event-type' | translate}}</label>
-                        <div class="col-sm-5">
+                        <div class="col-sm-5" onkeypress="return false;">
                             <input ui-select2="eventSelectOptions" id="eventTypes" ng-model="query.type" data-placeholder="{{:: 'select-event-types.placeholder' | translate}}"/>
             </div>
         </div>
