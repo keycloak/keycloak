@@ -23,8 +23,14 @@ import java.util.Set;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.AggregatePolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
+import org.keycloak.representations.idm.authorization.RulePolicyRepresentation;
+import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
+import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.console.page.fragment.MultipleStringSelect2;
 import org.keycloak.testsuite.page.Form;
@@ -63,6 +69,24 @@ public class AggregatePolicyForm extends Form {
 
     @Page
     private RolePolicy rolePolicy;
+
+    @Page
+    private UserPolicy userPolicy;
+
+    @Page
+    private ClientPolicy clientPolicy;
+
+    @Page
+    private JSPolicy jsPolicy;
+
+    @Page
+    private TimePolicy timePolicy;
+
+    @Page
+    private RulePolicy rulePolicy;
+
+    @Page
+    private GroupPolicy groupPolicy;
 
     public void populate(AggregatePolicyRepresentation expected, boolean save) {
         setInputValue(name, expected.getName());
@@ -122,6 +146,18 @@ public class AggregatePolicyForm extends Form {
 
         if ("role".equals(expected.getType())) {
             rolePolicy.form().populate((RolePolicyRepresentation) expected, true);
+        } else if ("user".equalsIgnoreCase(expected.getType())) {
+            userPolicy.form().populate((UserPolicyRepresentation) expected, true);
+        } else if ("client".equalsIgnoreCase(expected.getType())) {
+            clientPolicy.form().populate((ClientPolicyRepresentation) expected, true);
+        } else if ("js".equalsIgnoreCase(expected.getType())) {
+            jsPolicy.form().populate((JSPolicyRepresentation) expected, true);
+        } else if ("time".equalsIgnoreCase(expected.getType())) {
+            timePolicy.form().populate((TimePolicyRepresentation) expected, true);
+        } else if ("rules".equalsIgnoreCase(expected.getType())) {
+            rulePolicy.form().populate((RulePolicyRepresentation) expected, true);
+        } else if ("group".equalsIgnoreCase(expected.getType())) {
+            groupPolicy.form().populate((GroupPolicyRepresentation) expected, true);
         }
     }
 }
