@@ -30,14 +30,14 @@ the authenticator or requiredActionProvider requires sending email to the user a
 
 Here are concrete changes related to this, which may affect you for the migration.
 
-First change related to this is introducing new infinispan caches `authenticationSessions` and `actionTokens` in `standalone.xml` or `standalone-ha.xml`. If you use our migration CLI, you
+First change related to this is introducing new Infinispan caches `authenticationSessions` and `actionTokens` in `standalone.xml` or `standalone-ha.xml`. If you use our migration CLI, you
 don't need to care much as your `standalone(-ha).xml` files will be migrated automatically.
 
 Second change is changing of some signatures in methods of authentication SPI. This may affect you if you use custom `Authenticator` or
 `RequiredActionProvider`. Classes `AuthenticationFlowContext` and `RequiredActionContext` now allow to retrieve authentication session
 instead of client session.
 
-We also added some initial support for sticky sessions. You may want to change your loadbalancer/proxy server and configure it if you want to suffer from it and have better performance.
+We also added some initial support for sticky sessions. You may want to change your loadbalancer/proxy server and configure it if you don't want to suffer from it and want to have better performance.
 The route is added to the new `AUTH_SESSION_ID` cookie. More info in the clustering documentation.
 
 Another change is, that `token.getClientSession()` was removed. This may affect you for example if you're using Client Initiated Identity Broker Linking feature.
@@ -63,7 +63,7 @@ refreshed tokens will have KID in the header, so after all users exchange their 
 
 === Migrating to 2.5.0
 
-==== Changes to the infinispan caches
+==== Changes to the Infinispan caches
 
 The `realms` cache defined in the infinispan subsystem in `standalone.xml` or `standalone-ha.xml` configuration file, now has the eviction with the 10000 records by default.
 This is the same default like the `users` cache.
@@ -111,7 +111,7 @@ Note this option is still supported, but it may be useful just if you really wan
 and never download the public key from Keycloak. In theory, one reason for this can be to avoid man-in-the-middle attack if you have untrusted network between adapter and Keycloak,
 however in that case, it is much better option to use HTTPS, which will secure all the requests between adapter and Keycloak.
 
-==== Added infinispan cache `keys`
+==== Added Infinispan cache `keys`
 
 In this release, we added new cache `keys` to the infinispan subsystem, which is defined in `standalone.xml` or `standalone-ha.xml` configuration file.
 It has also some eviction and expiration defined. This cache is internally used for caching the external public keys of the entities
@@ -184,7 +184,7 @@ You also need to update `keycloak-server.json` as it's changed due to this.
 ==== Adapter Subsystems only bring in dependencies if Keycloak is on
 
 Previously, if you had installed our SAML or OIDC Keycloak subsystem adapters into Wildfly or JBoss EAP, we would automatically include Keycloak client jars into EVERY application irregardless if you were using Keycloak or not.
-These libraries are now only added to your deployment if you have Keycloak authentication turned on for that adapter (via the subsystem, or auth-method in web.xml
+These libraries are now only added to your deployment if you have Keycloak authentication turned on for that adapter (via the subsystem, or auth-method in web.xml)
 
 ==== Client Registration service endpoints moved
 
@@ -229,7 +229,7 @@ If you are doing a new installation of 1.8 you will have to create an admin user
 ==== OAuth2 Token Introspection
 
 In order to add more compliance with OAuth2 specification, we added a new endpoint for token introspection.
-The new endpoint can reached at `/realms/{realm-name}/protocols/openid-connect/token/introspect` and it is solely based on `RFC-7662.`
+The new endpoint can reached at `/realms/{realm-name}/protocols/openid-connect/token/introspect` and it is solely based on `RFC-7662`.
 
 The `/realms/{realm-name}/protocols/openid-connect/validate` endpoint is now deprecated and we strongly recommend you to move to the new introspection endpoint as soon as possible.
 The reason for this change is that RFC-7662 provides a more standard and secure introspection endpoint.
@@ -278,7 +278,7 @@ So if you want to have any attribute available in `Review Profile` page, you wou
 
 Old versions of Keycloak allowed reusing refresh tokens multiple times.
 Keycloak still permits this, but also have an option `Revoke refresh token` to disallow it.
-Option is in in admin console under token settings.
+Option is under token settings in admin console.
 When a refresh token is used to obtain a new access token a new refresh token is also included.
 When option is enabled, then this new refresh token should be used next time the access token is refreshed.
 It won't be possible to reuse old refresh token multiple times.
@@ -413,14 +413,14 @@ If you're using another library (or RSATokenVerifier) you need to make the corre
 
 To comply with OpenID Connect specification the authentication and token endpoints have been changed to having a single authentication endpoint and a single token endpoint.
 As per-spec `response_type` and `grant_type` parameters are used to select the required flow.
-The old endpoints (`/realms/{realm-name}/protocols/openid-connect/login`, `/realms/{realm-name}/protocols/openid-connect/grants/access`, `/realms/{realm-name}/protocols/openid-connect/refresh`, `/realms/{realm-name}/protocols/openid-connect/access/codes)` are now deprecated and will be removed in a future version.
+The old endpoints (`/realms/{realm-name}/protocols/openid-connect/login`, `/realms/{realm-name}/protocols/openid-connect/grants/access`, `/realms/{realm-name}/protocols/openid-connect/refresh`, `/realms/{realm-name}/protocols/openid-connect/access/codes`) are now deprecated and will be removed in a future version.
 
 ==== Theme changes
 
 The layout of themes have changed.
 The directory hierarchy used to be `type/name` this is now changed to `name/type`.
 For example a login theme named `sunrise` used to be deployed to `standalone/configuration/themes/login/sunrise`, which is now moved to `standalone/configuration/themes/sunrise/login`.
-This change was done to make it easier to have group the different types for the same theme into one folder.
+This change was done to make it easier to have groups of the different types for the same theme into one folder.
 
 If you deployed themes as a JAR in the past you had to create a custom theme loader which required Java code.
 This has been simplified to only requiring a plain text file (`META-INF/keycloak-themes.json`) to describe the themes included in a JAR.
@@ -514,7 +514,7 @@ Facebook admin console).
 
 * SkeletonKeyToken, SkeletonKeyScope, SkeletonKeyPrincipal, and SkeletonKeySession have been renamed to:
   AccessToken, AccessScope, KeycloakPrincipal, and KeycloakAuthenticatedSession respectively.
-* ServleOAuthClient.getBearerToken() method signature has changed.  It now returns an AccessTokenResponse
+* ServletOAuthClient.getBearerToken() method signature has changed.  It now returns an AccessTokenResponse
   so that you can obtain a refresh token too.
 * Adapters now check the access token expiration with every request.  If the token is expired, they will
   attempt to invoke a refresh on the auth server using a saved refresh token.

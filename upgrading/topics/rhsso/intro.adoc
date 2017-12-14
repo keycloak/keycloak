@@ -4,7 +4,7 @@
 
 Red Hat Single Sign-On (RH-SSO) 7.1 is based on the Keycloak project and provides security for your web applications by
 providing Web single sign-on capabilities based on popular standards such as SAML 2.0, OpenID Connect, and OAuth 2.0.
-The Red Hat Single Sign-On Server can act as a SAML or OpenID Connect&#8211;based identity provider, mediating with your
+The Red Hat Single Sign-On Server can act as a SAML or OpenID Connect-based identity provider, mediating with your
 enterprise user directory or third-party SSO provider for identity information and your applications using standards-based
 tokens.
 
