@@ -18,6 +18,7 @@ package org.keycloak.testsuite.console.authorization;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.stream.Collectors;
 
@@ -30,7 +31,6 @@ import org.keycloak.admin.client.resource.RolePoliciesResource;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
-import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
@@ -81,11 +81,27 @@ public class ResourcePermissionManagementTest extends AbstractAuthorizationSetti
     }
 
     @Test
+    public void testCreateWithoutPolicies() throws InterruptedException {
+        authorizationPage.navigateTo();
+        ResourcePermissionRepresentation expected = new ResourcePermissionRepresentation();
+
+        expected.setName("testCreateWithoutPolicies Permission");
+        expected.setDescription("description");
+        expected.addResource("Resource A");
+
+        expected = createPermission(expected);
+
+        authorizationPage.navigateTo();
+        ResourcePermission actual = authorizationPage.authorizationTabs().permissions().name(expected.getName());
+        assertPolicy(expected, actual);
+    }
+
+    @Test
     public void testUpdateResource() throws InterruptedException {
         authorizationPage.navigateTo();
         ResourcePermissionRepresentation expected = new ResourcePermissionRepresentation();
 
-        expected.setName("Test Resource A Permission");
+        expected.setName("testUpdateResource Permission");
         expected.setDescription("description");
         expected.addResource("Resource A");
         expected.addPolicy("Policy A");
@@ -96,7 +112,7 @@ public class ResourcePermissionManagementTest extends AbstractAuthorizationSetti
 
         String previousName = expected.getName();
 
-        expected.setName("Changed Test Resource A Permission");
+        expected.setName(expected.getName() + " Changed");
         expected.setDescription("Changed description");
         expected.setDecisionStrategy(DecisionStrategy.CONSENSUS);
         expected.getResources().clear();
@@ -110,7 +126,16 @@ public class ResourcePermissionManagementTest extends AbstractAuthorizationSetti
 
         authorizationPage.navigateTo();
         ResourcePermission actual = authorizationPage.authorizationTabs().permissions().name(expected.getName());
+        assertPolicy(expected, actual);
 
+        expected.getPolicies().clear();
+
+        authorizationPage.navigateTo();
+        authorizationPage.authorizationTabs().permissions().update(expected.getName(), expected);
+        assertAlertSuccess();
+
+        authorizationPage.navigateTo();
+        actual = authorizationPage.authorizationTabs().permissions().name(expected.getName());
         assertPolicy(expected, actual);
     }
 
@@ -119,7 +144,7 @@ public class ResourcePermissionManagementTest extends AbstractAuthorizationSetti
         authorizationPage.navigateTo();
         ResourcePermissionRepresentation expected = new ResourcePermissionRepresentation();
 
-        expected.setName("Test Resource B Type Permission");
+        expected.setName("testUpdateResourceType Permission");
         expected.setDescription("description");
         expected.setResourceType("test-resource-type");
         expected.addPolicy("Policy A");
@@ -130,7 +155,7 @@ public class ResourcePermissionManagementTest extends AbstractAuthorizationSetti
 
         String previousName = expected.getName();
 
-        expected.setName("Changed Test Resource B Type Permission");
+        expected.setName(expected.getName() + " Changed");
         expected.setDescription("Changed description");
         expected.setDecisionStrategy(DecisionStrategy.CONSENSUS);
 
@@ -152,7 +177,7 @@ public class ResourcePermissionManagementTest extends AbstractAuthorizationSetti
         authorizationPage.navigateTo();
         ResourcePermissionRepresentation expected = new ResourcePermissionRepresentation();
 
-        expected.setName("Test Delete Resource Permission");
+        expected.setName("testDelete Permission");
         expected.setDescription("description");
         expected.addResource("Resource B");
         expected.addPolicy("Policy C");
@@ -170,7 +195,7 @@ public class ResourcePermissionManagementTest extends AbstractAuthorizationSetti
         authorizationPage.navigateTo();
         ResourcePermissionRepresentation expected = new ResourcePermissionRepresentation();
 
-        expected.setName("Test Delete Resource Permission");
+        expected.setName("testDeleteFromList Permission");
         expected.setDescription("description");
         expected.addResource("Resource B");
         expected.addPolicy("Policy C");
@@ -195,6 +220,11 @@ public class ResourcePermissionManagementTest extends AbstractAuthorizationSetti
         assertEquals(expected.getDescription(), actual.getDescription());
         assertEquals(expected.getDecisionStrategy(), actual.getDecisionStrategy());
         assertEquals(expected.getResourceType(), actual.getResourceType());
+        if (expected.getPolicies() == null) {
+            assertTrue(actual.getPolicies() == null || actual.getPolicies().isEmpty());
+        } else {
+            assertEquals(expected.getPolicies().size(), actual.getPolicies().size());
+        }
         assertEquals(0, actual.getPolicies().stream().filter(actualPolicy -> !expected.getPolicies().stream()
                 .filter(expectedPolicy -> actualPolicy.equals(expectedPolicy))
                 .findFirst().isPresent())
