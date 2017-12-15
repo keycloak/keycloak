@@ -45,6 +45,7 @@ import org.keycloak.testsuite.util.RealmRepUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 
 import java.net.MalformedURLException;
+import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 
@@ -67,6 +68,10 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
 
         testRealm.setBruteForceProtected(true);
         testRealm.setFailureFactor(2);
+        testRealm.setMaxDeltaTimeSeconds(200);
+        testRealm.setMaxFailureWaitSeconds(1000);
+        testRealm.setWaitIncrementSeconds(50);
+        testRealm.setQuickLoginCheckMilliSeconds(0L);
 
         userId = user.getId();
 
@@ -282,6 +287,21 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         loginInvalidPassword();
         loginInvalidPassword();
         expectTemporarilyDisabled();
+        clearAllUserFailures();
+        loginSuccess();
+    }
+
+    @Test
+    public void testWait() throws Exception {
+        loginSuccess();
+        loginInvalidPassword();
+        loginInvalidPassword();
+        expectTemporarilyDisabled();
+        // KEYCLOAK-5420
+        // Test to make sure that temporarily disabled doesn't increment failure count
+        testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(52)));
+        loginSuccess();
+        clearUserFailures();
         clearAllUserFailures();
         loginSuccess();
     }
