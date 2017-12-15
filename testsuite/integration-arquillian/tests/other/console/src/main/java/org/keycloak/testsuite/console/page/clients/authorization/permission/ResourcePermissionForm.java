@@ -72,7 +72,9 @@ public class ResourcePermissionForm extends Form {
             resourceSelect.update(expected.getResources());
         }
 
-        policySelect.update(expected.getPolicies());
+        if (expected.getPolicies() != null) {
+            policySelect.update(expected.getPolicies());
+        }
 
         save();
     }

@@ -1050,8 +1050,10 @@ module.controller('ResourceServerPolicyResourceDetailCtrl', function($scope, $ro
 
             var policies = [];
 
-            for (i = 0; i < $scope.selectedPolicies.length; i++) {
-                policies.push($scope.selectedPolicies[i].id);
+            if ($scope.selectedPolicies) {
+                for (i = 0; i < $scope.selectedPolicies.length; i++) {
+                    policies.push($scope.selectedPolicies[i].id);
+                }
             }
 
             $scope.policy.policies = policies;

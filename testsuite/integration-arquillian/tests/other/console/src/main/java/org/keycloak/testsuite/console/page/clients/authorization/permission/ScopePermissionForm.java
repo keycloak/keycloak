@@ -75,7 +75,9 @@ public class ScopePermissionForm extends Form {
             scopeSelect.update(expected.getScopes());
         }
 
-        policySelect.update(expected.getPolicies());
+        if (expected.getPolicies() != null) {
+            policySelect.update(expected.getPolicies());
+        }
 
         save();
     }
