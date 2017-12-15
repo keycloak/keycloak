@@ -37,5 +37,13 @@
         <app.server.management.user>admin</app.server.management.user>
         <app.server.management.password>admin</app.server.management.password>
     </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>${apache.httpcomponents.version}</version>
+        </dependency>
+    </dependencies>
     
 </project>
