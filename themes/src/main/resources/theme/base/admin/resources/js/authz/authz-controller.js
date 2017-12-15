@@ -2146,6 +2146,48 @@ module.service("PolicyController", function($http, $route, $location, ResourceSe
             $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/authz/resource-server/policy/" + policyType.type + "/create?new_policy=true");
         }
 
+        $scope.detailPolicy = function(policy) {
+            policyState.state = $scope.policy;
+            if ($scope.selectedPolicies) {
+                policyState.state.selectedPolicies = $scope.selectedPolicies;
+            }
+            var previousUrl = window.location.href.substring(window.location.href.indexOf('/realms'));
+
+            if (previousUrl.indexOf('back=true') == -1) {
+                previousUrl = previousUrl + '?back=true';
+            }
+            policyState.state.previousUrl = previousUrl;
+            $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/authz/resource-server/policy/" + policy.type + "/" + policy.id + "?new_policy=true");
+        }
+
+        $scope.removePolicy = function(list, policy) {
+            for (i = 0; i < angular.copy(list).length; i++) {
+                if (policy.id == list[i].id) {
+                    list.splice(i, 1);
+                }
+            }
+        }
+
+        $scope.selectPolicy = function(policy) {
+            if (!policy || !policy.id) {
+                return;
+            }
+
+            if (!$scope.selectedPolicies) {
+                $scope.selectedPolicies = [];
+            }
+
+            $scope.selectedPolicy = null;
+
+            for (i = 0; i < $scope.selectedPolicies.length; i++) {
+                if ($scope.selectedPolicies[i].id == policy.id) {
+                    return;
+                }
+            }
+
+            $scope.selectedPolicies.push(policy);
+        }
+
         $scope.createNewPolicy = function() {
             $scope.showNewPolicy = true;
         }

@@ -5,8 +5,8 @@
         <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
         <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server">{{:: 'authz-authorization' | translate}}</a></li>
         <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/policy">{{:: 'authz-policies' | translate}}</a></li>
-        <li data-ng-show="create && policyState.state.name != null">{{policyState.state.name}}</li>
-        <li data-ng-show="create && policyState.state.name == null">{{policyState.previousPage.name}}</li>
+        <li data-ng-show="create && policyState.state.name != null && historyBackOnSaveOrCancel">{{policyState.state.name}}</li>
+        <li data-ng-show="create && policyState.state.name == null && historyBackOnSaveOrCancel">{{policyState.previousPage.name}}</li>
         <li data-ng-show="create">{{:: 'authz-add-user-policy' | translate}}</li>
         <li data-ng-hide="create">{{:: 'user' | translate}}</li>
         <li data-ng-hide="create">{{originalPolicy.name}}</li>
@@ -84,7 +84,7 @@
         <div class="form-group" data-ng-show="access.manageAuthorization">
             <div class="col-md-10 col-md-offset-2">
                 <button kc-save data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
-                <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
+                <button kc-reset data-ng-disabled="!changed && !historyBackOnSaveOrCancel">{{:: 'cancel' | translate}}</button>
             </div>
         </div>
     </form>
