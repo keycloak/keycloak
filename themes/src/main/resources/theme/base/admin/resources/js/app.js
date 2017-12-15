@@ -2493,12 +2493,12 @@ module.controller('RoleSelectorModalCtrl', function($scope, realm, config, confi
     };
 
     $scope.selectRealmRole = function() {
-        config[configName] = [$scope.selectedRealmRole.role.name];
+        config[configName] = $scope.selectedRealmRole.role.name;
         $modalInstance.close();
     }
 
     $scope.selectClientRole = function() {
-        config[configName] = [$scope.client.selected.clientId + "." + $scope.selectedClientRole.role.name];
+        config[configName] = $scope.client.selected.clientId + "." + $scope.selectedClientRole.role.name;
         $modalInstance.close();
     }
 
