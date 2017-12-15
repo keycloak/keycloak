@@ -46,8 +46,13 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
         Response challenge = context.form()
+                .setAttribute("mode", getMode(context))
                 .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
         context.challenge(challenge);
+    }
+
+    private String getMode(RequiredActionContext context) {
+        return context.getUriInfo().getQueryParameters().getFirst("mode");
     }
 
     @Override
@@ -60,12 +65,14 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
 
         if (Validation.isBlank(totp)) {
             Response challenge = context.form()
+                    .setAttribute("mode", getMode(context))
                     .setError(Messages.MISSING_TOTP)
                     .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
             context.challenge(challenge);
             return;
         } else if (!CredentialValidation.validOTP(context.getRealm(), totp, totpSecret)) {
             Response challenge = context.form()
+                    .setAttribute("mode", getMode(context))
                     .setError(Messages.INVALID_TOTP)
                     .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
             context.challenge(challenge);

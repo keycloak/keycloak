@@ -99,6 +99,7 @@ public class RealmRepresentation {
     protected Integer otpPolicyDigits;
     protected Integer otpPolicyLookAheadWindow;
     protected Integer otpPolicyPeriod;
+    protected List<String> otpSupportedApplications;
 
     protected List<UserRepresentation> users;
     protected List<UserRepresentation> federatedUsers;
@@ -852,6 +853,14 @@ public class RealmRepresentation {
 
     public void setOtpPolicyPeriod(Integer otpPolicyPeriod) {
         this.otpPolicyPeriod = otpPolicyPeriod;
+    }
+
+    public List<String> getOtpSupportedApplications() {
+        return otpSupportedApplications;
+    }
+
+    public void setOtpSupportedApplications(List<String> otpSupportedApplications) {
+        this.otpSupportedApplications = otpSupportedApplications;
     }
 
     public String getBrowserFlow() {

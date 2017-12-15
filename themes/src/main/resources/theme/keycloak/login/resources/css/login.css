@@ -156,6 +156,13 @@ ol#kc-totp-settings li:first-of-type {
     max-height:150px;
 }
 
+#kc-totp-secret-key {
+    background-color: #fff;
+    color: #333333;
+    font-size: 16px;
+    padding: 10px;
+}
+
 /* OAuth */
 
 #kc-oauth h3 {
