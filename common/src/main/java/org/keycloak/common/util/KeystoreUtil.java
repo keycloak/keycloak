@@ -21,6 +21,7 @@ import org.keycloak.common.constants.GenericConstants;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.security.KeyPair;
 import java.security.KeyStore;
@@ -43,9 +44,19 @@ public class KeystoreUtil {
 
     public static KeyStore loadKeyStore(String filename, String password) throws Exception {
         KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
-        InputStream trustStream = (filename.startsWith(GenericConstants.PROTOCOL_CLASSPATH))
-                ?KeystoreUtil.class.getResourceAsStream(filename.replace(GenericConstants.PROTOCOL_CLASSPATH, ""))
-                :new FileInputStream(new File(filename));
+        InputStream trustStream = null;
+        if (filename.startsWith(GenericConstants.PROTOCOL_CLASSPATH)) {
+            String resourcePath = filename.replace(GenericConstants.PROTOCOL_CLASSPATH, "");
+            trustStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourcePath);
+            if (trustStream == null) {
+                trustStream = KeystoreUtil.class.getResourceAsStream(resourcePath);
+            }
+            if (trustStream == null) {
+                throw new RuntimeException("Unable to find key store in classpath");
+            }
+        } else {
+            trustStream = new FileInputStream(new File(filename));
+        }
         trustStore.load(trustStream, password.toCharArray());
         trustStream.close();
         return trustStore;
