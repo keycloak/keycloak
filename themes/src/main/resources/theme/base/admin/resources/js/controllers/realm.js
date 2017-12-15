@@ -338,7 +338,7 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, ser
     };
 });
 
-function genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications, url) {
+function genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications, url) {
     $scope.realm = angular.copy(realm);
     $scope.serverInfo = serverInfo;
     $scope.registrationAllowed = $scope.realm.registrationAllowed;
@@ -359,16 +359,7 @@ function genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $l
         $scope.changed = false;
         console.log('oldCopy.realm - ' + oldCopy.realm);
         Realm.update({ id : oldCopy.realm}, realmCopy, function () {
-            var data = Realm.query(function () {
-                Current.realms = data;
-                for (var i = 0; i < Current.realms.length; i++) {
-                    if (Current.realms[i].realm == realmCopy.realm) {
-                        Current.realm = Current.realms[i];
-                        oldCopy = angular.copy($scope.realm);
-                    }
-                }
-            });
-            $location.url(url);
+            $route.reload();
             Notifications.success("Your changes have been saved to the realm.");
             $scope.registrationAllowed = $scope.realm.registrationAllowed;
         });
@@ -380,17 +371,16 @@ function genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $l
     };
 
     $scope.cancel = function() {
-        //$location.url("/realms");
-        window.history.back();
+        $route.reload();
     };
 
 }
 
-module.controller('DefenseHeadersCtrl', function($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications) {
-    genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications, "/realms/" + realm.realm + "/defense/headers");
+module.controller('DefenseHeadersCtrl', function($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications) {
+    genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications, "/realms/" + realm.realm + "/defense/headers");
 });
 
-module.controller('RealmLoginSettingsCtrl', function($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications) {
+module.controller('RealmLoginSettingsCtrl', function($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications) {
     // KEYCLOAK-5474: Make sure duplicateEmailsAllowed is disabled if loginWithEmailAllowed
     $scope.$watch('realm.loginWithEmailAllowed', function() {
         if ($scope.realm.loginWithEmailAllowed) {
@@ -398,18 +388,18 @@ module.controller('RealmLoginSettingsCtrl', function($scope, Current, Realm, rea
         }
     });
     
-    genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications, "/realms/" + realm.realm + "/login-settings");
+    genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications, "/realms/" + realm.realm + "/login-settings");
 });
 
-module.controller('RealmOtpPolicyCtrl', function($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications) {
+module.controller('RealmOtpPolicyCtrl', function($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications) {
     $scope.optionsDigits = [ 6, 8 ];
 
-    genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications, "/realms/" + realm.realm + "/authentication/otp-policy");
+    genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications, "/realms/" + realm.realm + "/authentication/otp-policy");
 });
 
 
-module.controller('RealmThemeCtrl', function($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications) {
-    genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications, "/realms/" + realm.realm + "/theme-settings");
+module.controller('RealmThemeCtrl', function($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications) {
+    genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications, "/realms/" + realm.realm + "/theme-settings");
 
     $scope.supportedLocalesOptions = {
         'multiple' : true,
@@ -1975,7 +1965,7 @@ module.controller('IdentityProviderMapperCreateCtrl', function($scope, realm, id
 
 });
 
-module.controller('RealmFlowBindingCtrl', function($scope, flows, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications) {
+module.controller('RealmFlowBindingCtrl', function($scope, flows, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications) {
     $scope.flows = [];
     $scope.clientFlows = [];
     for (var i=0 ; i<flows.length ; i++) {
@@ -1988,7 +1978,7 @@ module.controller('RealmFlowBindingCtrl', function($scope, flows, Current, Realm
 
     $scope.profileInfo = serverInfo.profileInfo;
 
-    genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications, "/realms/" + realm.realm + "/authentication/flow-bindings");
+    genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications, "/realms/" + realm.realm + "/authentication/flow-bindings");
 });
 
 

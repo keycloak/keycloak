@@ -17,6 +17,7 @@
 package org.keycloak.services.resources.account;
 
 import org.jboss.logging.Logger;
+import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
 import org.keycloak.common.util.UriUtils;
@@ -230,6 +231,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
     @Path("totp")
     @GET
     public Response totpPage() {
+        account.setAttribute("mode", uriInfo.getQueryParameters().getFirst("mode"));
         return forwardToPage("totp", AccountPages.TOTP);
     }
 
@@ -441,6 +443,8 @@ public class AccountFormService extends AbstractSecuredLocalService {
         }
 
         auth.require(AccountRoles.MANAGE_ACCOUNT);
+
+        account.setAttribute("mode", uriInfo.getQueryParameters().getFirst("mode"));
 
         String action = formData.getFirst("submitAction");
         if (action != null && action.equals("Cancel")) {

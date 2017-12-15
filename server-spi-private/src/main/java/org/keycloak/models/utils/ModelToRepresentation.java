@@ -282,6 +282,7 @@ public class ModelToRepresentation {
         rep.setOtpPolicyInitialCounter(otpPolicy.getInitialCounter());
         rep.setOtpPolicyType(otpPolicy.getType());
         rep.setOtpPolicyLookAheadWindow(otpPolicy.getLookAheadWindow());
+        rep.setOtpSupportedApplications(otpPolicy.getSupportedApplications());
         if (realm.getBrowserFlow() != null) rep.setBrowserFlow(realm.getBrowserFlow().getAlias());
         if (realm.getRegistrationFlow() != null) rep.setRegistrationFlow(realm.getRegistrationFlow().getAlias());
         if (realm.getDirectGrantFlow() != null) rep.setDirectGrantFlow(realm.getDirectGrantFlow().getAlias());

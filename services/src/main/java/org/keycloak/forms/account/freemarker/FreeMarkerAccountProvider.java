@@ -86,6 +86,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     protected KeycloakSession session;
     protected FreeMarkerUtil freeMarker;
     protected HttpHeaders headers;
+    protected Map<String, Object> attributes;
 
     protected UriInfo uriInfo;
 
@@ -110,7 +111,11 @@ public class FreeMarkerAccountProvider implements AccountProvider {
 
     @Override
     public Response createResponse(AccountPages page) {
-        Map<String, Object> attributes = new HashMap<String, Object>();
+        Map<String, Object> attributes = new HashMap<>();
+
+        if (this.attributes != null) {
+            attributes.putAll(this.attributes);
+        }
 
         Theme theme;
         try {
@@ -156,7 +161,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
 
         switch (page) {
             case TOTP:
-                attributes.put("totp", new TotpBean(session, realm, user));
+                attributes.put("totp", new TotpBean(session, realm, user, uriInfo.getRequestUriBuilder()));
                 break;
             case FEDERATED_IDENTITY:
                 attributes.put("federatedIdentity", new AccountFederatedIdentityBean(session, realm, user, uriInfo.getBaseUri(), stateChecker));
@@ -358,6 +363,15 @@ public class FreeMarkerAccountProvider implements AccountProvider {
         this.identityProviderEnabled = identityProviderEnabled;
         this.eventsEnabled = eventsEnabled;
         this.passwordUpdateSupported = passwordUpdateSupported;
+        return this;
+    }
+
+    @Override
+    public AccountProvider setAttribute(String key, String value) {
+        if (attributes == null) {
+            attributes = new HashMap<>();
+        }
+        attributes.put(key, value);
         return this;
     }
 

@@ -30,13 +30,37 @@
 
 <ol>
     <li>
-        <p>${msg("totpStep1")?no_esc}</p>
+        <p>${msg("totpStep1")}</p>
+
+        <ul>
+            <#list totp.policy.supportedApplications as app>
+            <li>${app}</li>
+            </#list>
+        </ul>
     </li>
-    <li>
-        <p>${msg("totpStep2")}</p>
-        <p><img src="data:image/png;base64, ${totp.totpSecretQrCode}" alt="Figure: Barcode"></p>
-        <p><span class="code">${totp.totpSecretEncoded}</span></p>
-    </li>
+
+    <#if mode?? && mode = "manual">
+        <li>
+            <p>${msg("totpManualStep2")}</p>
+            <p><span id="kc-totp-secret-key">${totp.totpSecretEncoded}</span></p>
+            <p><a href="${totp.qrUrl}" id="mode-barcode">${msg("totpScanBarcode")}</a></p>
+        </li>
+        <li>
+            <p>${msg("totpManualStep3")}</p>
+            <ul>
+                <li id="kc-totp-type">${msg("totpType")}: ${msg("totp." + totp.policy.type)}</li>
+                <li id="kc-totp-algorithm">${msg("totpAlgorithm")}: ${totp.policy.algorithm}</li>
+                <li id="kc-totp-digits">${msg("totpDigits")}: ${totp.policy.digits}</li>
+                <li id="kc-totp-period">${msg("totpInterval")}: ${totp.policy.period}</li>
+            </ul>
+        </li>
+    <#else>
+        <li>
+            <p>${msg("totpStep2")}</p>
+            <p><img src="data:image/png;base64, ${totp.totpSecretQrCode}" alt="Figure: Barcode"></p>
+            <p><a href="${totp.manualUrl}" id="mode-manual">${msg("totpUnableToScan")}</a></p>
+        </li>
+    </#if>
     <li>
         <p>${msg("totpStep3")}</p>
     </li>
