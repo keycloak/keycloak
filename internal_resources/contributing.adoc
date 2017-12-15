@@ -66,7 +66,9 @@ NOTE: It is possible to clone using SSH so you don't have to enter a username/pa
 When contributing, follow this procedure. Enter commands from the command line on your local machine in the  `keycloak-documentation` directory created earlier when cloning the repository.
 
 . Enter `git checkout master` to checkout the master branch locally.
-. Enter `git rebase upstream/master` to update your cloned branch and your fork with the most current content from the upstream repository.
+. Enter `git fetch upstream` to download the current files from the upstream repository.
+. Enter `git rebase upstream/master` to update your cloned branch on your local machine with the most current content from the upstream repository.
+. Enter `git push origin master` to update your fork in GitHub with the most current content from the upstream repository.
 . Enter `git checkout -b {branchname}` where you create a `{branchname}` that describes the work you are about to do.
 . Make your changes
 . (Optional) Enter `git status` now or at any time to see what branch you are on, what files you have changed, and whether those files are staged to be committed.
