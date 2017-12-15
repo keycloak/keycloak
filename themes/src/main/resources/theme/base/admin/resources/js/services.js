@@ -854,6 +854,7 @@ function roleControl($scope, realm, role, roles, clients,
                 }
             }
             $scope.selectedClientRoles = [];
+            Notifications.success("Client role added.");
         });
     };
 
@@ -870,6 +871,7 @@ function roleControl($scope, realm, role, roles, clients,
                 }
             }
             $scope.selectedClientMappings = [];
+            Notifications.success("Client role removed.");
         });
     };
 
