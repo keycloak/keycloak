@@ -68,9 +68,9 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
 
         testRealm.setBruteForceProtected(true);
         testRealm.setFailureFactor(2);
-        testRealm.setMaxDeltaTimeSeconds(200);
-        testRealm.setMaxFailureWaitSeconds(1000);
-        testRealm.setWaitIncrementSeconds(50);
+        testRealm.setMaxDeltaTimeSeconds(20);
+        testRealm.setMaxFailureWaitSeconds(100);
+        testRealm.setWaitIncrementSeconds(5);
         //testRealm.setQuickLoginCheckMilliSeconds(0L);
 
         userId = user.getId();
@@ -86,9 +86,9 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
             clearAllUserFailures();
             RealmRepresentation realm = adminClient.realm("test").toRepresentation();
             realm.setFailureFactor(2);
-            realm.setMaxDeltaTimeSeconds(200);
-            realm.setMaxFailureWaitSeconds(1000);
-            realm.setWaitIncrementSeconds(50);
+            realm.setMaxDeltaTimeSeconds(20);
+            realm.setMaxFailureWaitSeconds(100);
+            realm.setWaitIncrementSeconds(5);
             adminClient.realm("test").update(realm);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -110,6 +110,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
             realm.setMaxDeltaTimeSeconds(60 * 60 * 12); // 12 hours
             realm.setFailureFactor(30);
             adminClient.realm("test").update(realm);
+            testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(0)));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -327,7 +328,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         expectTemporarilyDisabled();
         // KEYCLOAK-5420
         // Test to make sure that temporarily disabled doesn't increment failure count
-        testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(52)));
+        testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(6)));
         // should be unlocked now
         loginSuccess();
         clearUserFailures();
