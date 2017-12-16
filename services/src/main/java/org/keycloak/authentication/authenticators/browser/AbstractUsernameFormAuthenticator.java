@@ -125,7 +125,9 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
             context.getEvent().user(user);
             context.getEvent().error(Errors.USER_DISABLED);
             Response challengeResponse = disabledUser(context);
-            context.failureChallenge(AuthenticationFlowError.USER_DISABLED, challengeResponse);
+            // this is not a failure so don't call failureChallenge.
+            //context.failureChallenge(AuthenticationFlowError.USER_DISABLED, challengeResponse);
+            context.forceChallenge(challengeResponse);
             return false;
         }
         if (context.getRealm().isBruteForceProtected()) {
@@ -133,7 +135,9 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
                 context.getEvent().user(user);
                 context.getEvent().error(Errors.USER_TEMPORARILY_DISABLED);
                 Response challengeResponse = temporarilyDisabledUser(context);
-                context.failureChallenge(AuthenticationFlowError.USER_TEMPORARILY_DISABLED, challengeResponse);
+                // this is not a failure so don't call failureChallenge.
+                //context.failureChallenge(AuthenticationFlowError.USER_TEMPORARILY_DISABLED, challengeResponse);
+                context.forceChallenge(challengeResponse);
                 return false;
             }
         }
