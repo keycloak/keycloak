@@ -179,7 +179,7 @@ public class AggregatePolicyForm extends Form {
 
                 if (!tds.get(0).getText().isEmpty()) {
                     if (tds.get(0).getText().equals(name)) {
-                        tds.get(2).click();
+                        tds.get(3).click();
                         return true;
                     }
                 }

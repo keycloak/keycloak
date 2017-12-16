@@ -5,8 +5,8 @@
         <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
         <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server">{{:: 'authz-authorization' | translate}}</a></li>
         <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/policy">{{:: 'authz-policies' | translate}}</a></li>
-        <li data-ng-show="create && policyState.state.name != null && historyBackOnSaveOrCancel">{{policyState.state.name}}</li>
-        <li data-ng-show="create && policyState.state.name == null && historyBackOnSaveOrCancel">{{policyState.previousPage.name}}</li>
+        <li data-ng-show="policyState.state.policy.name != null && historyBackOnSaveOrCancel">{{policyState.state.policy.name}}</li>
+        <li data-ng-show="policyState.state.policy.name == null && historyBackOnSaveOrCancel">{{:: policyState.state.previousPage.name | translate}}</li>
         <li data-ng-show="create">{{:: 'authz-add-aggregated-policy' | translate}}</li>
         <li data-ng-hide="create">{{:: 'authz-aggregated' | translate}}</li>
         <li data-ng-hide="create">{{originalPolicy.name}}</li>
@@ -47,7 +47,8 @@
                                         <div class="pull-right">
                                             <select id="create-policy" class="form-control" ng-model="policyType"
                                                     ng-options="p.name for p in policyProviders track by p.type"
-                                                    data-ng-change="addPolicy(policyType);">
+                                                    data-ng-change="addPolicy(policyType);"
+                                                    data-ng-hide="historyBackOnSaveOrCancel">
                                                 <option value="" disabled selected>{{:: 'authz-create-policy' | translate}}...</option>
                                             </select>
                                         </div>
@@ -62,7 +63,8 @@
                         </thead>
                         <tbody>
                             <tr ng-repeat="policy in selectedPolicies">
-                                <td><a href="" data-ng-click="detailPolicy(policy)">{{policy.name}}</a></td>
+                                <td data-ng-hide="historyBackOnSaveOrCancel"><a href="" data-ng-click="detailPolicy(policy)">{{policy.name}}</a></td>
+                                <td data-ng-show="historyBackOnSaveOrCancel">{{policy.name}}</td>
                                 <td>{{policy.description}}</td>
                                 <td class="kc-action-cell" ng-click="removePolicy(selectedPolicies, policy);">
                                     {{:: 'remove' | translate}}
