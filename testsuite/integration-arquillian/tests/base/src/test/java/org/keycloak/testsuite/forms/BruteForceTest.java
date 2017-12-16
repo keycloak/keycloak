@@ -300,6 +300,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         // KEYCLOAK-5420
         // Test to make sure that temporarily disabled doesn't increment failure count
         testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(52)));
+        // should be unlocked now
         loginSuccess();
         clearUserFailures();
         clearAllUserFailures();

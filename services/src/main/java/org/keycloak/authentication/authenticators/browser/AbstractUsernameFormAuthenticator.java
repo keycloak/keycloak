@@ -126,6 +126,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
             context.getEvent().error(Errors.USER_DISABLED);
             Response challengeResponse = disabledUser(context);
             // this is not a failure so don't call failureChallenge.
+            //context.failureChallenge(AuthenticationFlowError.USER_DISABLED, challengeResponse);
             context.forceChallenge(challengeResponse);
             return false;
         }
@@ -135,6 +136,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
                 context.getEvent().error(Errors.USER_TEMPORARILY_DISABLED);
                 Response challengeResponse = temporarilyDisabledUser(context);
                 // this is not a failure so don't call failureChallenge.
+                //context.failureChallenge(AuthenticationFlowError.USER_TEMPORARILY_DISABLED, challengeResponse);
                 context.forceChallenge(challengeResponse);
                 return false;
             }
