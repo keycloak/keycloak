@@ -81,11 +81,39 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
 
     @Before
     public void config() {
+        try {
+            clearUserFailures();
+            clearAllUserFailures();
+            RealmRepresentation realm = adminClient.realm("test").toRepresentation();
+            realm.setFailureFactor(2);
+            realm.setMaxDeltaTimeSeconds(200);
+            realm.setMaxFailureWaitSeconds(1000);
+            realm.setWaitIncrementSeconds(50);
+            adminClient.realm("test").update(realm);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        events.clear();
 
     }
 
     @After
     public void slowItDown() throws Exception {
+        try {
+            clearUserFailures();
+            clearAllUserFailures();
+            RealmRepresentation realm = adminClient.realm("test").toRepresentation();
+            realm.setMaxFailureWaitSeconds(900);
+            realm.setMinimumQuickLoginWaitSeconds(60);
+            realm.setWaitIncrementSeconds(60);
+            realm.setQuickLoginCheckMilliSeconds(1000L);
+            realm.setMaxDeltaTimeSeconds(60 * 60 * 12); // 12 hours
+            realm.setFailureFactor(30);
+            adminClient.realm("test").update(realm);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        events.clear();
         Thread.sleep(100);
     }
 
