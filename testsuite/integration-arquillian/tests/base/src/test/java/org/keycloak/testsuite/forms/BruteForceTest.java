@@ -305,6 +305,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         clearUserFailures();
         clearAllUserFailures();
         loginSuccess();
+        testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(0)));
     }
 
     @Test
