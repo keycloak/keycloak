@@ -71,7 +71,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         testRealm.setMaxDeltaTimeSeconds(200);
         testRealm.setMaxFailureWaitSeconds(1000);
         testRealm.setWaitIncrementSeconds(50);
-        testRealm.setQuickLoginCheckMilliSeconds(0L);
+        //testRealm.setQuickLoginCheckMilliSeconds(0L);
 
         userId = user.getId();
 
