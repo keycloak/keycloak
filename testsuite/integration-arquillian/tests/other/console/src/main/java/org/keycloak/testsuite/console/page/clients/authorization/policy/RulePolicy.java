@@ -36,6 +36,6 @@ public class RulePolicy implements PolicyTypeUI {
     }
 
     public void update(RulePolicyRepresentation expected) {
-        form().populate(expected);
+        form().populate(expected, true);
     }
 }

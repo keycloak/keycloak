@@ -56,14 +56,16 @@ public class ClientPolicyForm extends Form {
     @FindBy(xpath = "//div[@class='modal-dialog']")
     protected ModalDialog modalDialog;
 
-    public void populate(ClientPolicyRepresentation expected) {
+    public void populate(ClientPolicyRepresentation expected, boolean save) {
         setInputValue(name, expected.getName());
         setInputValue(description, expected.getDescription());
         logic.selectByValue(expected.getLogic().name());
 
         clientsInput.update(expected.getClients());
 
-        save();
+        if (save) {
+            save();
+        }
     }
 
     public void delete() {

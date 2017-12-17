@@ -63,7 +63,7 @@ public class GroupPolicyForm extends Form {
     @Drone
     private WebDriver driver;
 
-    public void populate(GroupPolicyRepresentation expected) {
+    public void populate(GroupPolicyRepresentation expected, boolean save) {
         setInputValue(name, expected.getName());
         setInputValue(description, expected.getDescription());
         setInputValue(groupsClaim, expected.getGroupsClaim());
@@ -109,7 +109,9 @@ public class GroupPolicyForm extends Form {
                     });
         }
 
-        save();
+        if (save) {
+            save();
+        }
     }
 
     private void unselect(String path) {

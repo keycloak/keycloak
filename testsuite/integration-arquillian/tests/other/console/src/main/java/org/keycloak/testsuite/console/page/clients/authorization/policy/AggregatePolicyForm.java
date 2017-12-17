@@ -16,13 +16,30 @@
  */
 package org.keycloak.testsuite.console.page.clients.authorization.policy;
 
-import java.util.Set;
+import static org.keycloak.testsuite.util.UIUtils.performOperationWithPageReload;
+import static org.openqa.selenium.By.tagName;
 
+import java.util.List;
+import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import org.jboss.arquillian.graphene.page.Page;
+import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.AggregatePolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
+import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
+import org.keycloak.representations.idm.authorization.RulePolicyRepresentation;
+import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
+import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.console.page.fragment.MultipleStringSelect2;
 import org.keycloak.testsuite.page.Form;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
@@ -45,12 +62,36 @@ public class AggregatePolicyForm extends Form {
     private WebElement deleteButton;
 
     @FindBy(id = "s2id_policies")
-    private MultipleStringSelect2 policySelect;
+    private PolicySelect policySelect;
 
     @FindBy(xpath = "//div[@class='modal-dialog']")
     protected ModalDialog modalDialog;
 
-    public void populate(AggregatePolicyRepresentation expected) {
+    @FindBy(id = "create-policy")
+    private Select createPolicySelect;
+
+    @Page
+    private RolePolicy rolePolicy;
+
+    @Page
+    private UserPolicy userPolicy;
+
+    @Page
+    private ClientPolicy clientPolicy;
+
+    @Page
+    private JSPolicy jsPolicy;
+
+    @Page
+    private TimePolicy timePolicy;
+
+    @Page
+    private RulePolicy rulePolicy;
+
+    @Page
+    private GroupPolicy groupPolicy;
+
+    public void populate(AggregatePolicyRepresentation expected, boolean save) {
         setInputValue(name, expected.getName());
         setInputValue(description, expected.getDescription());
         logic.selectByValue(expected.getLogic().name());
@@ -58,9 +99,11 @@ public class AggregatePolicyForm extends Form {
         Set<String> selectedPolicies = policySelect.getSelected();
         Set<String> policies = expected.getPolicies();
 
-        for (String policy : policies) {
-            if (!selectedPolicies.contains(policy)) {
-                policySelect.select(policy);
+        if (policies != null) {
+            for (String policy : policies) {
+                if (!selectedPolicies.contains(policy)) {
+                    policySelect.select(policy);
+                }
             }
         }
 
@@ -79,7 +122,9 @@ public class AggregatePolicyForm extends Form {
             }
         }
 
-        save();
+        if (save) {
+            save();
+        }
     }
 
     public void delete() {
@@ -96,5 +141,56 @@ public class AggregatePolicyForm extends Form {
         representation.setPolicies(policySelect.getSelected());
 
         return representation;
+    }
+
+    public void createPolicy(AbstractPolicyRepresentation expected) {
+        performOperationWithPageReload(() -> createPolicySelect.selectByValue(expected.getType()));
+
+        if ("role".equals(expected.getType())) {
+            rolePolicy.form().populate((RolePolicyRepresentation) expected, true);
+        } else if ("user".equalsIgnoreCase(expected.getType())) {
+            userPolicy.form().populate((UserPolicyRepresentation) expected, true);
+        } else if ("client".equalsIgnoreCase(expected.getType())) {
+            clientPolicy.form().populate((ClientPolicyRepresentation) expected, true);
+        } else if ("js".equalsIgnoreCase(expected.getType())) {
+            jsPolicy.form().populate((JSPolicyRepresentation) expected, true);
+        } else if ("time".equalsIgnoreCase(expected.getType())) {
+            timePolicy.form().populate((TimePolicyRepresentation) expected, true);
+        } else if ("rules".equalsIgnoreCase(expected.getType())) {
+            rulePolicy.form().populate((RulePolicyRepresentation) expected, true);
+        } else if ("group".equalsIgnoreCase(expected.getType())) {
+            groupPolicy.form().populate((GroupPolicyRepresentation) expected, true);
+        }
+    }
+
+    public class PolicySelect extends MultipleStringSelect2 {
+
+        @Override
+        protected List<WebElement> getSelectedElements() {
+            return getRoot().findElements(By.xpath("(//table[@id='selected-policies'])/tbody/tr")).stream()
+                    .filter(webElement -> webElement.findElements(tagName("td")).size() > 1)
+                    .collect(Collectors.toList());
+        }
+
+        @Override
+        protected BiFunction<WebElement, String, Boolean> deselect() {
+            return (webElement, name) -> {
+                List<WebElement> tds = webElement.findElements(tagName("td"));
+
+                if (!tds.get(0).getText().isEmpty()) {
+                    if (tds.get(0).getText().equals(name)) {
+                        tds.get(3).click();
+                        return true;
+                    }
+                }
+
+                return false;
+            };
+        }
+
+        @Override
+        protected Function<WebElement, String> representation() {
+            return webElement -> webElement.findElements(tagName("td")).get(0).getText();
+        }
     }
 }

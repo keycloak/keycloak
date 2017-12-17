@@ -20,21 +20,35 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
+import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.PoliciesResource;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RolePoliciesResource;
 import org.keycloak.admin.client.resource.RolesResource;
+import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.common.Version;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.authorization.AggregatePolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
+import org.keycloak.representations.idm.authorization.RulePolicyRepresentation;
+import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.console.page.clients.authorization.policy.AggregatePolicy;
 import org.keycloak.testsuite.console.page.clients.authorization.policy.UserPolicy;
+import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testsuite.util.GroupBuilder;
+import org.keycloak.testsuite.util.UserBuilder;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -44,16 +58,22 @@ public class AggregatePolicyManagementTest extends AbstractAuthorizationSettings
     @Before
     public void configureTest() {
         super.configureTest();
-        RolesResource realmRoles = testRealmResource().roles();
+        RealmResource realmResource = testRealmResource();
+        RolesResource realmRoles = realmResource.roles();
         realmRoles.create(new RoleRepresentation("Role A", "", false));
         realmRoles.create(new RoleRepresentation("Role B", "", false));
+        UsersResource users = realmResource.users();
+        users.create(UserBuilder.create().username("user a").build());
+        ClientsResource clients = realmResource.clients();
+        clients.create(ClientBuilder.create().clientId("client a").build());
+        realmResource.groups().add(GroupBuilder.create().name("Group A").build());
 
         RolePolicyRepresentation policyA = new RolePolicyRepresentation();
 
         policyA.setName("Policy A");
         policyA.addRole("Role A");
 
-        AuthorizationResource authorization = testRealmResource().clients().get(newClient.getId()).authorization();
+        AuthorizationResource authorization = realmResource.clients().get(newClient.getId()).authorization();
         PoliciesResource policies = authorization.policies();
         RolePoliciesResource roles = policies.role();
 
@@ -136,6 +156,138 @@ public class AggregatePolicyManagementTest extends AbstractAuthorizationSettings
         authorizationPage.authorizationTabs().policies().deleteFromList(expected.getName());
         authorizationPage.navigateTo();
         assertNull(authorizationPage.authorizationTabs().policies().policies().findByName(expected.getName()));
+    }
+
+    @Test
+    public void testCreateWithChild() {
+        AggregatePolicyRepresentation expected = new AggregatePolicyRepresentation();
+
+        expected.setName("Test Child Create Aggregate Policy");
+        expected.setDescription("description");
+
+        AggregatePolicy policy = authorizationPage.authorizationTabs().policies().create(expected, false);
+
+        RolePolicyRepresentation childPolicy = new RolePolicyRepresentation();
+
+        childPolicy.setName(UUID.randomUUID().toString());
+        childPolicy.addRole("Role A");
+
+        policy.createPolicy(childPolicy);
+        policy.form().save();
+
+        assertAlertSuccess();
+
+        expected.addPolicy(childPolicy.getName());
+
+        authorizationPage.navigateTo();
+        AggregatePolicy actual = authorizationPage.authorizationTabs().policies().name(expected.getName());
+        assertPolicy(expected, actual);
+    }
+
+    @Test
+    public void testCreateWithChildAndSelectedPolicy() {
+        AggregatePolicyRepresentation expected = new AggregatePolicyRepresentation();
+
+        expected.setName("Test Child Create And Select Aggregate Policy");
+        expected.setDescription("description");
+        expected.addPolicy("Policy C");
+
+        AggregatePolicy policy = authorizationPage.authorizationTabs().policies().create(expected, false);
+
+        RolePolicyRepresentation childRolePolicy = new RolePolicyRepresentation();
+        childRolePolicy.setName(UUID.randomUUID().toString());
+        childRolePolicy.addRole("Role A");
+        policy.createPolicy(childRolePolicy);
+        expected.addPolicy(childRolePolicy.getName());
+
+        UserPolicyRepresentation childUserPolicy = new UserPolicyRepresentation();
+        childUserPolicy.setName(UUID.randomUUID().toString());
+        childUserPolicy.setDescription("description");
+        childUserPolicy.addUser("user a");
+        policy.createPolicy(childUserPolicy);
+        expected.addPolicy(childUserPolicy.getName());
+
+        ClientPolicyRepresentation childClientPolicy = new ClientPolicyRepresentation();
+        childClientPolicy.setName(UUID.randomUUID().toString());
+        childClientPolicy.setDescription("description");
+        childClientPolicy.addClient("client a");
+        policy.createPolicy(childClientPolicy);
+        expected.addPolicy(childClientPolicy.getName());
+
+        JSPolicyRepresentation childJSPolicy = new JSPolicyRepresentation();
+
+        childJSPolicy.setName(UUID.randomUUID().toString());
+        childJSPolicy.setDescription("description");
+        childJSPolicy.setCode("$evaluation.grant();");
+        policy.createPolicy(childJSPolicy);
+        expected.addPolicy(childJSPolicy.getName());
+
+        TimePolicyRepresentation childTimePolicy = new TimePolicyRepresentation();
+
+        childTimePolicy.setName(UUID.randomUUID().toString());
+        childTimePolicy.setDescription("description");
+        childTimePolicy.setNotBefore("2017-01-01 00:00:00");
+        childTimePolicy.setNotBefore("2018-01-01 00:00:00");
+        policy.createPolicy(childTimePolicy);
+        expected.addPolicy(childTimePolicy.getName());
+
+        RulePolicyRepresentation rulePolicy = new RulePolicyRepresentation();
+
+        rulePolicy.setName(UUID.randomUUID().toString());
+        rulePolicy.setDescription("description");
+        rulePolicy.setArtifactGroupId("org.keycloak");
+        rulePolicy.setArtifactId("photoz-authz-policy");
+        rulePolicy.setArtifactVersion(Version.VERSION);
+        rulePolicy.setModuleName("PhotozAuthzOwnerPolicy");
+        rulePolicy.setSessionName("MainOwnerSession");
+        rulePolicy.setScannerPeriod("1");
+        rulePolicy.setScannerPeriodUnit("Minutes");
+        policy.createPolicy(rulePolicy);
+        expected.addPolicy(rulePolicy.getName());
+
+        GroupPolicyRepresentation childGroupPolicy = new GroupPolicyRepresentation();
+
+        childGroupPolicy.setName(UUID.randomUUID().toString());
+        childGroupPolicy.setDescription("description");
+        childGroupPolicy.setGroupsClaim("groups");
+        childGroupPolicy.addGroupPath("/Group A", true);
+        policy.createPolicy(childGroupPolicy);
+        expected.addPolicy(childGroupPolicy.getName());
+
+        policy.form().save();
+        assertAlertSuccess();
+
+        authorizationPage.navigateTo();
+        AggregatePolicy actual = authorizationPage.authorizationTabs().policies().name(expected.getName());
+        assertPolicy(expected, actual);
+    }
+
+    @Test
+    public void testUpdateWithChild() {
+        AggregatePolicyRepresentation expected = new AggregatePolicyRepresentation();
+
+        expected.setName("Test Child Update Aggregate Policy");
+        expected.setDescription("description");
+        expected.addPolicy("Policy C");
+
+        AggregatePolicy policy = authorizationPage.authorizationTabs().policies().create(expected);
+        assertAlertSuccess();
+        assertPolicy(expected, policy);
+
+        RolePolicyRepresentation childPolicy = new RolePolicyRepresentation();
+
+        childPolicy.setName(UUID.randomUUID().toString());
+        childPolicy.addRole("Role A");
+
+        policy.createPolicy(childPolicy);
+
+        policy.form().save();
+
+        expected.addPolicy(childPolicy.getName());
+
+        authorizationPage.navigateTo();
+        AggregatePolicy actual = authorizationPage.authorizationTabs().policies().name(expected.getName());
+        assertPolicy(expected, actual);
     }
 
     private AggregatePolicyRepresentation createPolicy(AggregatePolicyRepresentation expected) {

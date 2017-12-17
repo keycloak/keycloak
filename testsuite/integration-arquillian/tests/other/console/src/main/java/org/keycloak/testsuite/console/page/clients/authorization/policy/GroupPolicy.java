@@ -18,7 +18,6 @@ package org.keycloak.testsuite.console.page.clients.authorization.policy;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
-import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -37,6 +36,6 @@ public class GroupPolicy implements PolicyTypeUI {
     }
 
     public void update(GroupPolicyRepresentation expected) {
-        form().populate(expected);
+        form().populate(expected, true);
     }
 }

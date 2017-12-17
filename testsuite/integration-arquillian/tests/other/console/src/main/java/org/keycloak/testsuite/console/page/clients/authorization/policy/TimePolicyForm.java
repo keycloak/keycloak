@@ -81,7 +81,7 @@ public class TimePolicyForm extends Form {
     @FindBy(xpath = "//div[@class='modal-dialog']")
     protected ModalDialog modalDialog;
 
-    public void populate(TimePolicyRepresentation expected) {
+    public void populate(TimePolicyRepresentation expected, boolean save) {
         setInputValue(name, expected.getName());
         setInputValue(description, expected.getDescription());
         logic.selectByValue(expected.getLogic().name());
@@ -98,7 +98,9 @@ public class TimePolicyForm extends Form {
         setInputValue(minute, expected.getMinute());
         setInputValue(minuteEnd, expected.getMinuteEnd());
 
-        save();
+        if (save) {
+            save();
+        }
     }
 
     public void delete() {
