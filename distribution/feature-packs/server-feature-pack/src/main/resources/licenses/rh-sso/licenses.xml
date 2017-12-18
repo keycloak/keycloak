@@ -48,7 +48,7 @@
     <dependency>
       <groupId>org.freemarker</groupId>
       <artifactId>freemarker</artifactId>
-      <version>2.3.26.incubating-redhat-1</version>
+      <version>2.3.26.incubating-redhat-3</version>
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
@@ -64,17 +64,6 @@
         <license>
           <name>Public Domain</name>
           <url>http://aopalliance.sourceforge.net/</url>
-        </license>
-      </licenses>
-    </dependency>
-    <dependency>
-      <groupId>com.google.code.guice</groupId>
-      <artifactId>guice</artifactId>
-      <version>2.0</version>
-      <licenses>
-        <license>
-          <name>Apache Software License 2.0</name>
-          <url>https://raw.githubusercontent.com/google/guice/2.0/COPYING</url>
         </license>
       </licenses>
     </dependency>
@@ -482,6 +471,61 @@
         <license>
           <name>BSD 3-clause New or Revised License</name>
           <url>https://raw.githubusercontent.com/x-stream/xstream/XSTREAM_1_4_9/LICENSE.txt</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.kie</groupId>
+      <artifactId>kie-api</artifactId>
+      <version>6.5.0.Final-redhat-17</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/kiegroup/drools/6.5.0.Final/LICENSE-ASL-2.0.txt</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.kie</groupId>
+      <artifactId>kie-ci</artifactId>
+      <version>6.5.0.Final-redhat-17</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/kiegroup/droolsjbpm-knowledge/6.5.0.Final/LICENSE-ASL-2.0.txt</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.kie</groupId>
+      <artifactId>kie-internal</artifactId>
+      <version>6.5.0.Final-redhat-17</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/kiegroup/droolsjbpm-knowledge/6.5.0.Final/LICENSE-ASL-2.0.txt</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.drools</groupId>
+      <artifactId>drools-compiler</artifactId>
+      <version>6.5.0.Final-redhat-17</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/kiegroup/drools/6.5.0.Final/LICENSE-ASL-2.0.txt</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.drools</groupId>
+      <artifactId>drools-core</artifactId>
+      <version>6.5.0.Final-redhat-17</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/kiegroup/drools/6.5.0.Final/LICENSE-ASL-2.0.txt</url>
         </license>
       </licenses>
     </dependency>
