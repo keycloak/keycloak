@@ -955,7 +955,7 @@ public class RealmAdminResource {
         boolean clientsExported = exportClients != null && exportClients;
 
         ExportOptions options = new ExportOptions(false, clientsExported, groupsAndRolesExported);
-        RealmRepresentation rep = ExportUtils.exportRealm(session, realm, options);
+        RealmRepresentation rep = ExportUtils.exportRealm(session, realm, options, false);
         return stripForExport(session, rep);
     }
 

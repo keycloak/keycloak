@@ -18,6 +18,8 @@
 package org.keycloak.testsuite.exportimport;
 
 import org.jboss.arquillian.container.spi.client.container.LifecycleException;
+import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -25,23 +27,16 @@ import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.dir.DirExportProvider;
 import org.keycloak.exportimport.dir.DirExportProviderFactory;
 import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
-import org.keycloak.representations.idm.ComponentRepresentation;
-import org.keycloak.representations.idm.KeysMetadataRepresentation;
-import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.*;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.runonserver.RunHelpers;
+import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.UserBuilder;
 
 import java.io.File;
 import java.net.URL;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 
 import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
@@ -54,12 +49,19 @@ import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
  */
 public class ExportImportTest extends AbstractKeycloakTest {
 
+    @Deployment
+    public static WebArchive deploy() {
+        return RunOnServerDeployment.create(ExportImportTest.class);
+    }
+
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation testRealm1 = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
         testRealm1.getUsers().add(makeUser("user1"));
         testRealm1.getUsers().add(makeUser("user2"));
         testRealm1.getUsers().add(makeUser("user3"));
+
+        testRealm1.getSmtpServer().put("password", "secret");
 
         setEventsConfig(testRealm1);
         testRealms.add(testRealm1);
@@ -194,6 +196,9 @@ public class ExportImportTest extends AbstractKeycloakTest {
         assertAuthenticated("test", "user1", "password");
         assertAuthenticated("test", "user2", "password");
         assertAuthenticated("test", "user3", "password");
+
+        // KEYCLOAK-6050 Check SMTP password is exported/imported
+        assertEquals("secret", testingClient.server("test").fetch(RunHelpers.internalRealm()).getSmtpServer().get("password"));
     }
 
     private void testRealmExportImport() throws LifecycleException {
