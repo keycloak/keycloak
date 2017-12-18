@@ -46,6 +46,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.oidc.mappers.AmrMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
 import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
@@ -79,6 +80,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Stateless object that creates tokens and manages oauth access codes
@@ -633,6 +635,11 @@ public class TokenManager {
             token.setAuthTime(Integer.parseInt(authTime));
         }
 
+        String authMethods = session.getNote(AuthenticationManager.AUTH_METHODS);
+        if (authMethods != null){
+            token.setAmr(Collections.unmodifiableList(Arrays.asList(authMethods.trim().split(" "))
+                    .stream().map(AmrMapper::getAmr).filter(amrValue -> amrValue != null).collect(Collectors.toList())));
+        }
 
         token.setSessionState(session.getId());
         token.expiration(getTokenExpiration(realm, session, clientSession));
@@ -801,6 +808,7 @@ public class TokenManager {
             idToken.setSessionState(accessToken.getSessionState());
             idToken.expiration(accessToken.getExpiration());
             idToken.setAcr(accessToken.getAcr());
+            idToken.setAmr(accessToken.getAmr());
             transformIDToken(session, idToken, realm, client, userSession.getUser(), userSession, clientSession);
             return this;
         }

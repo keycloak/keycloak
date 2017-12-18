@@ -2,8 +2,14 @@ language: java
 dist: precise
 
 cache:
-  cache: false
-
+  directories:
+    - "$HOME/.m2"
+before_cache:
+  - rm -rf $HOME/.m2/repository/org/keycloak
+branches:
+  only:
+#    - 3.2.x-gl
+    - "/v\\d+\\.\\d+.\\d+/"
 env:
   global:
     - MAVEN_SKIP_RC=true

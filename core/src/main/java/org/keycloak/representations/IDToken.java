@@ -19,6 +19,8 @@ package org.keycloak.representations;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.List;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -50,6 +52,7 @@ public class IDToken extends JsonWebToken {
     public static final String UPDATED_AT = "updated_at";
     public static final String CLAIMS_LOCALES = "claims_locales";
     public static final String ACR = "acr";
+    public static final String AMR = "amr";
 
     // NOTE!!!  WE used to use @JsonUnwrapped on a UserClaimSet object.  This screws up otherClaims and the won't work
     // anymore.  So don't have any @JsonUnwrapped!
@@ -130,6 +133,9 @@ public class IDToken extends JsonWebToken {
 
     @JsonProperty(ACR)
     protected String acr;
+
+    @JsonProperty(AMR)
+    protected List<String> amr;
 
     public String getNonce() {
         return nonce;
@@ -337,5 +343,13 @@ public class IDToken extends JsonWebToken {
 
     public void setAcr(String acr) {
         this.acr = acr;
+    }
+
+    public List<String> getAmr() {
+        return amr;
+    }
+
+    public void setAmr(List<String> amr) {
+        this.amr = amr;
     }
 }
