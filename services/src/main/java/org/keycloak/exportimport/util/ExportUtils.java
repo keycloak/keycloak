@@ -84,16 +84,16 @@ import com.fasterxml.jackson.databind.SerializationFeature;
  */
 public class ExportUtils {
 
-    public static RealmRepresentation exportRealm(KeycloakSession session, RealmModel realm, boolean includeUsers) {
+    public static RealmRepresentation exportRealm(KeycloakSession session, RealmModel realm, boolean includeUsers, boolean internal) {
         ExportOptions opts = new ExportOptions(false, true, true);
         if (includeUsers) {
             opts.setUsersIncluded(true);
         }
-        return exportRealm(session, realm, opts);
+        return exportRealm(session, realm, opts, internal);
     }
 
-    public static RealmRepresentation exportRealm(KeycloakSession session, RealmModel realm, ExportOptions options) {
-        RealmRepresentation rep = ModelToRepresentation.toRepresentation(realm, false);
+    public static RealmRepresentation exportRealm(KeycloakSession session, RealmModel realm, ExportOptions options, boolean internal) {
+        RealmRepresentation rep = ModelToRepresentation.toRepresentation(realm, internal);
         ModelToRepresentation.exportAuthenticationFlows(realm, rep);
         ModelToRepresentation.exportRequiredActions(realm, rep);
 
