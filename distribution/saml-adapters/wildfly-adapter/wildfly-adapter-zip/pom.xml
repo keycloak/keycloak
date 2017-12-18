@@ -87,10 +87,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-distribution-licenses-maven-plugin</artifactId>
-            </plugin>
         </plugins>
     </build>
 
