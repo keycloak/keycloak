@@ -56,16 +56,16 @@ public class Permissions extends Form {
         return table;
     }
 
-    public <P extends PolicyTypeUI> P create(AbstractPolicyRepresentation expected) {
+    public <P extends PolicyTypeUI> P create(AbstractPolicyRepresentation expected, boolean save) {
         String type = expected.getType();
 
         createSelect.selectByValue(type);
 
         if ("resource".equals(type)) {
-            resourcePermission.form().populate((ResourcePermissionRepresentation) expected);
+            resourcePermission.form().populate((ResourcePermissionRepresentation) expected, save);
             return (P) resourcePermission;
         } else if ("scope".equals(type)) {
-            scopePermission.form().populate((ScopePermissionRepresentation) expected);
+            scopePermission.form().populate((ScopePermissionRepresentation) expected, save);
             return (P) scopePermission;
         }
 
@@ -73,6 +73,10 @@ public class Permissions extends Form {
     }
 
     public void update(String name, AbstractPolicyRepresentation representation) {
+        update(name, representation, true);
+    }
+
+    public void update(String name, AbstractPolicyRepresentation representation, boolean save) {
         for (WebElement row : permissions().rows()) {
             PolicyRepresentation actual = permissions().toRepresentation(row);
             if (actual.getName().equalsIgnoreCase(name)) {
@@ -81,9 +85,9 @@ public class Permissions extends Form {
                 String type = representation.getType();
 
                 if ("resource".equals(type)) {
-                    resourcePermission.form().populate((ResourcePermissionRepresentation) representation);
+                    resourcePermission.form().populate((ResourcePermissionRepresentation) representation, save);
                 } else if ("scope".equals(type)) {
-                    scopePermission.form().populate((ScopePermissionRepresentation) representation);
+                    scopePermission.form().populate((ScopePermissionRepresentation) representation, save);
                 }
 
                 return;

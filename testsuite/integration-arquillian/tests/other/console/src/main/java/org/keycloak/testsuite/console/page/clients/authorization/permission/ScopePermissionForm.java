@@ -16,11 +16,30 @@
  */
 package org.keycloak.testsuite.console.page.clients.authorization.permission;
 
+import static org.keycloak.testsuite.util.UIUtils.performOperationWithPageReload;
+
 import java.util.Set;
 import java.util.function.Function;
 
+import org.jboss.arquillian.graphene.page.Page;
+import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
+import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
+import org.keycloak.representations.idm.authorization.RulePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
+import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
+import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
+import org.keycloak.testsuite.console.page.clients.authorization.policy.ClientPolicy;
+import org.keycloak.testsuite.console.page.clients.authorization.policy.GroupPolicy;
+import org.keycloak.testsuite.console.page.clients.authorization.policy.JSPolicy;
+import org.keycloak.testsuite.console.page.clients.authorization.policy.PolicySelect;
+import org.keycloak.testsuite.console.page.clients.authorization.policy.RolePolicy;
+import org.keycloak.testsuite.console.page.clients.authorization.policy.RulePolicy;
+import org.keycloak.testsuite.console.page.clients.authorization.policy.TimePolicy;
+import org.keycloak.testsuite.console.page.clients.authorization.policy.UserPolicy;
 import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.console.page.fragment.MultipleStringSelect2;
 import org.keycloak.testsuite.console.page.fragment.SingleStringSelect2;
@@ -50,7 +69,7 @@ public class ScopePermissionForm extends Form {
     protected ModalDialog modalDialog;
 
     @FindBy(id = "s2id_policies")
-    private MultipleStringSelect2 policySelect;
+    private PolicySelect policySelect;
 
     @FindBy(id = "s2id_scopes")
     private MultipleStringSelect2 scopeSelect;
@@ -61,7 +80,31 @@ public class ScopePermissionForm extends Form {
     @FindBy(id = "s2id_resources")
     private ResourceSelect resourceSelect;
 
-    public void populate(ScopePermissionRepresentation expected) {
+    @FindBy(id = "create-policy")
+    private Select createPolicySelect;
+
+    @Page
+    private RolePolicy rolePolicy;
+
+    @Page
+    private UserPolicy userPolicy;
+
+    @Page
+    private ClientPolicy clientPolicy;
+
+    @Page
+    private JSPolicy jsPolicy;
+
+    @Page
+    private TimePolicy timePolicy;
+
+    @Page
+    private RulePolicy rulePolicy;
+
+    @Page
+    private GroupPolicy groupPolicy;
+
+    public void populate(ScopePermissionRepresentation expected, boolean save) {
         setInputValue(name, expected.getName());
         setInputValue(description, expected.getDescription());
         decisionStrategy.selectByValue(expected.getDecisionStrategy().name());
@@ -79,7 +122,9 @@ public class ScopePermissionForm extends Form {
             policySelect.update(expected.getPolicies());
         }
 
-        save();
+        if (save) {
+            save();
+        }
     }
 
     public void delete() {
@@ -105,6 +150,26 @@ public class ScopePermissionForm extends Form {
         @Override
         protected Function<WebElement, String> representation() {
             return super.representation().andThen(s -> "".equals(s) || s.contains("Any resource...") ? null : s);
+        }
+    }
+
+    public void createPolicy(AbstractPolicyRepresentation expected) {
+        performOperationWithPageReload(() -> createPolicySelect.selectByValue(expected.getType()));
+
+        if ("role".equals(expected.getType())) {
+            rolePolicy.form().populate((RolePolicyRepresentation) expected, true);
+        } else if ("user".equalsIgnoreCase(expected.getType())) {
+            userPolicy.form().populate((UserPolicyRepresentation) expected, true);
+        } else if ("client".equalsIgnoreCase(expected.getType())) {
+            clientPolicy.form().populate((ClientPolicyRepresentation) expected, true);
+        } else if ("js".equalsIgnoreCase(expected.getType())) {
+            jsPolicy.form().populate((JSPolicyRepresentation) expected, true);
+        } else if ("time".equalsIgnoreCase(expected.getType())) {
+            timePolicy.form().populate((TimePolicyRepresentation) expected, true);
+        } else if ("rules".equalsIgnoreCase(expected.getType())) {
+            rulePolicy.form().populate((RulePolicyRepresentation) expected, true);
+        } else if ("group".equalsIgnoreCase(expected.getType())) {
+            groupPolicy.form().populate((GroupPolicyRepresentation) expected, true);
         }
     }
 }

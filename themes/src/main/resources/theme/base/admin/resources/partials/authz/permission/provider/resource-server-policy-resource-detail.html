@@ -82,7 +82,8 @@
                         </thead>
                         <tbody>
                         <tr ng-repeat="policy in selectedPolicies">
-                            <td><a href="" data-ng-click="detailPolicy(policy)">{{policy.name}}</a></td>
+                            <td data-ng-hide="historyBackOnSaveOrCancel"><a href="" data-ng-click="detailPolicy(policy)">{{policy.name}}</a></td>
+                            <td data-ng-show="historyBackOnSaveOrCancel">{{policy.name}}</td>
                             <td>{{policy.description}}</td>
                             <td class="kc-action-cell" ng-click="removePolicy(selectedPolicies, policy);">
                                 {{:: 'remove' | translate}}
