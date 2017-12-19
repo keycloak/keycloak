@@ -2286,6 +2286,7 @@ module.service("PolicyController", function($http, $route, $location, ResourceSe
                     var policy = angular.copy(data);
 
                     $scope.changed = $scope.historyBackOnSaveOrCancel || PolicyController.isBackNewAssociatedPolicy();
+                    $scope.policy = angular.copy(policy);
 
                     if (PolicyController.isBackNewAssociatedPolicy()) {
                         if (delegate.onRestoreState) {
@@ -2295,8 +2296,6 @@ module.service("PolicyController", function($http, $route, $location, ResourceSe
                     } else if (delegate.onInitUpdate) {
                         delegate.onInitUpdate(policy);
                     }
-
-                    $scope.policy = angular.copy(policy);
 
                     $scope.$watch('policy', function() {
                         if (!angular.equals($scope.policy, policy)) {
