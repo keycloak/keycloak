@@ -12,7 +12,7 @@ A typical workflow is as follows:
 - The x.509 client certificate authenticator validates the client certificate as follows:
 * Optionally checks the certificate revocation status using CRL and/or CRL Distribution Points
 * Optionally checks the Certificate revocation status using OCSP (Online Certificate Status Protocol)
-* Optinally validates whether the key usage in the certificate matches the expected key usage
+* Optionally validates whether the key usage in the certificate matches the expected key usage
 * Optionally validates whether the extended key usage in the certificate matches the expected extended key usage
 - If any of the above checks fails, the x.509 authentication fails
 - Otherwise, the authenticator extracts the certificate identity and maps it to an existing user
