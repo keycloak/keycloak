@@ -75,6 +75,7 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
         Response challenge = context.form()
+                .setAttribute("username", context.getAuthenticationSession().getAuthenticatedUser().getUsername())
                 .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
         context.challenge(challenge);
     }
@@ -93,6 +94,7 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
 
         if (Validation.isBlank(passwordNew)) {
             Response challenge = context.form()
+                    .setAttribute("username", context.getAuthenticationSession().getAuthenticatedUser().getUsername())
                     .setError(Messages.MISSING_PASSWORD)
                     .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
             context.challenge(challenge);
@@ -100,6 +102,7 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
             return;
         } else if (!passwordNew.equals(passwordConfirm)) {
             Response challenge = context.form()
+                    .setAttribute("username", context.getAuthenticationSession().getAuthenticatedUser().getUsername())
                     .setError(Messages.NOTMATCH_PASSWORD)
                     .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
             context.challenge(challenge);
@@ -113,6 +116,7 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
         } catch (ModelException me) {
             errorEvent.detail(Details.REASON, me.getMessage()).error(Errors.PASSWORD_REJECTED);
             Response challenge = context.form()
+                    .setAttribute("username", context.getAuthenticationSession().getAuthenticatedUser().getUsername())
                     .setError(me.getMessage(), me.getParameters())
                     .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
             context.challenge(challenge);
@@ -120,6 +124,7 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
         } catch (Exception ape) {
             errorEvent.detail(Details.REASON, ape.getMessage()).error(Errors.PASSWORD_REJECTED);
             Response challenge = context.form()
+                    .setAttribute("username", context.getAuthenticationSession().getAuthenticatedUser().getUsername())
                     .setError(ape.getMessage())
                     .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
             context.challenge(challenge);
