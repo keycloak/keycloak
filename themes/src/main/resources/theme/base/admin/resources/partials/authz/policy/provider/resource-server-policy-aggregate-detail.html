@@ -35,30 +35,33 @@
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="policies">{{:: 'authz-policy-apply-policy' | translate}} <span class="required">*</span></label>
                 <div class="col-sm-6">
-                    <input type="hidden" ui-select2="policiesUiSelect" id="policies" data-ng-change="selectPolicy(selectedPolicy);" data-ng-model="selectedPolicy" data-placeholder="{{:: 'authz-select-a-policy' | translate}}..." data-ng-required="!selectedPolicies || selectedPolicies.length == 0"/>
-                    <p/>
-                    <table class="table table-striped table-bordered" id="selected-policies">
+                    <table class="table table-striped table-bordered" style="margin-top: 0px" id="selected-policies">
                         <thead>
                             <tr>
-                                <th class="kc-table-actions" colspan="3">
-                                    <div class="form-inline">
-                                        <div class="form-group">
+                                <th class="kc-table-actions" colspan="2">
+                                    <div class="form-inline col-md-12" style="width: 107%">
+                                        <div class="form-group" style="width: 100%">
+                                            <div class="input-group" style="width: 100%">
+                                                <input type="hidden" ui-select2="policiesUiSelect" id="policies" data-ng-change="selectPolicy(selectedPolicy);" data-ng-model="selectedPolicy" data-placeholder="{{:: 'authz-select-a-policy' | translate}}..." data-ng-required="!selectedPolicies || selectedPolicies.length == 0"/>
+                                            </div>
                                         </div>
-                                        <div class="pull-right">
-                                            <select id="create-policy" class="form-control" ng-model="policyType"
-                                                    ng-options="p.name for p in policyProviders track by p.type"
-                                                    data-ng-change="addPolicy(policyType);"
-                                                    data-ng-hide="historyBackOnSaveOrCancel">
-                                                <option value="" disabled selected>{{:: 'authz-create-policy' | translate}}...</option>
-                                            </select>
-                                        </div>
+                                    </div>
+                                </th>
+                                <th class="kc-table-actions">
+                                    <div class="pull-right" style="width: 100%">
+                                        <select id="create-policy" class="form-control" ng-model="policyType"
+                                                ng-options="p.name for p in policyProviders track by p.type"
+                                                data-ng-change="addPolicy(policyType);"
+                                                data-ng-hide="historyBackOnSaveOrCancel">
+                                            <option value="" disabled selected>{{:: 'authz-create-policy' | translate}}...</option>
+                                        </select>
                                     </div>
                                 </th>
                             </tr>
                             <tr data-ng-hide="!selectedPolicies || selectedPolicies.length == 0">
                                 <th>{{:: 'name' | translate}}</th>
                                 <th>{{:: 'description' | translate}}</th>
-                                <th>{{:: 'actions' | translate}}</th>
+                                <th width="20%">{{:: 'actions' | translate}}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -66,7 +69,7 @@
                                 <td data-ng-hide="historyBackOnSaveOrCancel"><a href="" data-ng-click="detailPolicy(policy)">{{policy.name}}</a></td>
                                 <td data-ng-show="historyBackOnSaveOrCancel">{{policy.name}}</td>
                                 <td>{{policy.description}}</td>
-                                <td class="kc-action-cell" ng-click="removePolicy(selectedPolicies, policy);">
+                                <td class="kc-action-cell" ng-click="removePolicy(selectedPolicies, policy);" style="vertical-align: middle">
                                     {{:: 'remove' | translate}}
                                 </td>
                             </tr>

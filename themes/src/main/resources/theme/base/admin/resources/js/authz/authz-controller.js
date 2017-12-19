@@ -1309,8 +1309,10 @@ module.controller('ResourceServerPolicyScopeDetailCtrl', function($scope, $route
 
             var policies = [];
 
-            for (i = 0; i < $scope.selectedPolicies.length; i++) {
-                policies.push($scope.selectedPolicies[i].id);
+            if ($scope.selectedPolicies) {
+                for (i = 0; i < $scope.selectedPolicies.length; i++) {
+                    policies.push($scope.selectedPolicies[i].id);
+                }
             }
 
             $scope.policy.policies = policies;
@@ -1355,8 +1357,10 @@ module.controller('ResourceServerPolicyScopeDetailCtrl', function($scope, $route
 
             var policies = [];
 
-            for (i = 0; i < $scope.selectedPolicies.length; i++) {
-                policies.push($scope.selectedPolicies[i].id);
+            if ($scope.selectedPolicies) {
+                for (i = 0; i < $scope.selectedPolicies.length; i++) {
+                    policies.push($scope.selectedPolicies[i].id);
+                }
             }
 
             $scope.policy.policies = policies;
