@@ -1043,10 +1043,12 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
         var i = $scope.allProviders.length;
         while (i--) {
             if ($scope.allProviders[i].groupName !== 'Social') continue;
-            for (var j = 0; j < $scope.configuredProviders.length; j++) {
-                if ($scope.configuredProviders[j].providerId === $scope.allProviders[i].id) {
-                    $scope.allProviders.splice(i, 1);
-                    break;
+            if ($scope.configuredProviders != null) {
+                for (var j = 0; j < $scope.configuredProviders.length; j++) {
+                    if ($scope.configuredProviders[j].providerId === $scope.allProviders[i].id) {
+                        $scope.allProviders.splice(i, 1);
+                        break;
+                    }
                 }
             }
         }
