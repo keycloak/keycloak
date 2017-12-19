@@ -39,6 +39,7 @@
     <modules>
         <module>keycloak</module>
         <module>load-balancer/wildfly-modcluster</module>
+        <module>infinispan</module>
         <module>tests</module>
     </modules>
     

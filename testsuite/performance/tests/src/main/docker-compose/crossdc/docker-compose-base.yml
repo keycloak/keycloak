@@ -30,20 +30,15 @@ networks:
 services:
 
     infinispan_dc1:
-        build: 
-            context: infinispan
-            args:
-                LOCAL_SITE: dc1
-                REMOTE_SITE: dc2
-                MANAGEMENT_USER: ${MANAGEMENT_USER}
-                MANAGEMENT_USER_PASS: ${MANAGEMENT_USER_PASS}
-        image: keycloak_test_infinispan_dc1:${KEYCLOAK_VERSION:-latest}
+        build: infinispan
+        image: keycloak_test_infinispan:${KEYCLOAK_VERSION:-latest}
         cpuset: ${INFINISPAN_DC1_CPUSET:-1}
         mem_limit: ${INFINISPAN_MEMLIMIT:-1500m}
         networks:
             - ispn_replication
             - dc1_keycloak
         environment:
+            CONFIGURATION: clustered-dc1.xml
             PUBLIC_SUBNET: 10.1.1.0/24
             PRIVATE_SUBNET: 10.0.4.0/24
             MGMT_USER: admin
@@ -54,14 +49,8 @@ services:
             - "9990"
 
     infinispan_dc2:
-        build: 
-            context: infinispan
-            args:
-                LOCAL_SITE: dc2
-                REMOTE_SITE: dc1
-                MANAGEMENT_USER: ${MANAGEMENT_USER}
-                MANAGEMENT_USER_PASS: ${MANAGEMENT_USER_PASS}
-        image: keycloak_test_infinispan_dc2:${KEYCLOAK_VERSION:-latest}
+        build: infinispan
+        image: keycloak_test_infinispan:${KEYCLOAK_VERSION:-latest}
         depends_on:
             infinispan_dc1:
                 condition: service_healthy
@@ -71,6 +60,7 @@ services:
             - ispn_replication
             - dc2_keycloak
         environment:
+            CONFIGURATION: clustered-dc2.xml
             PUBLIC_SUBNET: 10.2.1.0/24
             PRIVATE_SUBNET: 10.0.4.0/24
             MGMT_USER: admin
