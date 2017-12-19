@@ -210,6 +210,7 @@ public class RealmsConfigurationBuilder {
         g.writeStringField("realm", realmName);
         g.writeBooleanField("enabled", true);
         g.writeNumberField("accessTokenLifespan", conf.accessTokenLifeSpan);
+        g.writeStringField("sslRequired", "none");
         g.writeBooleanField("registrationAllowed", conf.registrationAllowed);
         g.writeStringField("passwordPolicy", "hashIterations(" + TestConfig.hashIterations + ")");
 
