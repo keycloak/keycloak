@@ -40,7 +40,7 @@ public class SAMLClientCredentialsForm extends Form {
     @FindBy(id = "uploadKeyAlias")
     private WebElement uploadKeyAlias;
 
-    @FindBy(id = "uploadStorePassword")
+    @FindBy(id = "uploadStorePas")
     private WebElement uploadStorePassword;
 
     public void importPemCertificateKey() {

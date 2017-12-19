@@ -2956,3 +2956,14 @@ module.filter('startFrom', function () {
         return [];
     };
 });
+
+
+module.directive('kcPassword', function ($compile, Notifications) {
+    return {
+        restrict: 'A',
+        link: function ($scope, elem, attr, ctrl) {
+            elem.addClass("password-conceal");
+            elem.attr("type","text");
+        }
+    }
+});
