@@ -1,4 +1,6 @@
-## X.509 Client Certificate User Authentication
+[[_x509]]
+
+=== X.509 Client Certificate User Authentication
 
 Keycloak supports login with a X.509 client certificate if the server is configured for mutual SSL authentication.	
 
@@ -18,9 +20,9 @@ A typical workflow is as follows:
 * In the Browser Flow, the server prompts the user to confirm identity or to ignore it and instead sign in with username/password 
 * In the case of the Direct Grant Flow, the server signs in the user
 
-### Features
+==== Features
 
-#### Supported Certificate Identity Sources
+Supported Certificate Identity Sources::
 - Match SubjectDN using regular expression
 - X500 Subject's e-mail attribute
 - X500 Subject's Common Name attribute
@@ -29,31 +31,31 @@ A typical workflow is as follows:
 - X500 Issuer's Common Name attribute
 - Certificate Serial Number
 
-#### Regular Expressions
+Regular Expressions::
 The certificate identity can be extracted from either Subject DN or Issuer DN using a regular expression as a filter. For example, the regular expression below will match the e-mail attribute:
 ```
 emailAddress=(.*?)(?:,|$)
 ```
 The regular expression filtering is applicable only if the `Identity Source` is set to either `Match SubjectDN using regular expression` or `Match IssuerDN using regular expression`. 
 
-#### Mapping certificate identity to an existing user
+Mapping certificate identity to an existing user::
 
 The certificate identity mapping can be configured to map the extracted user identity to an existing user's username or e-mail or to a custom attribute which value matches the certificate identity. For example, setting the `Identity source` to _Subject's e-mail_ and `User mapping method` to _Username or email_ will have the X.509 client certificate authenticator use the e-mail attribute in the certificate's Subject DN  as a search criteria to look up an existing user by username or by e-mail. 
 
 IMPORTANT: Please notice that if we disable `Login with email` at realm settings, the same rules will be applied to certificate authentication. In other words, users won't be able to log in using e-mail attribute. 
 
-#### Other Features: Extended Certificate Validation
+Other Features: Extended Certificate Validation::
 - Revocation status checking using CRL
 - Revocation status checking using CRL/Distribution Point
 - Revocation status checking using OCSP/Responder URI
 - Certificate KeyUsage validation
 - Certificate ExtendedKeyUsage validation
 
-### Enable X.509 Client Certificate User Authentication
+==== Enable X.509 Client Certificate User Authentication
 
 The following sections describe how to configure Wildfly/Undertow and the Keycloak Server to enable X.509 client certificate authentication.
 
-#### Enable mutual SSL in WildFly
+Enable mutual SSL in WildFly::
 See link:https://docs.jboss.org/author/display/WFLY10/Admin+Guide#AdminGuide-EnableSSL[Enable SSL] and link:https://docs.jboss.org/author/display/WFLY10/Admin+Guide#AdminGuide-%7B%7B%3Cssl%2F%3E%7D%7D[SSL] for the instructions how to enable SSL in Wildfly.
 
 * Open $KEYCLOAK_HOME/standalone/configuration/standalone.xml and add a new realm:
@@ -107,7 +109,7 @@ Defines a path the truststore path is relative to
 The password to open the truststore
 
 
-#### Enable https listener 
+Enable https listener::
 
 See link:https://docs.jboss.org/author/display/WFLY10/Admin+Guide#AdminGuide-HTTPSlistener[HTTPS Listener] for the instructions how to enable HTTPS in Wildfly.
 
@@ -132,7 +134,7 @@ The value must match the name of the realm from the previous section
 `https-listener/verify-client`::
 If set to `REQUESTED`, the server will optionally ask for a client certificate. Setting the attribute to `REQUIRED` will have the server to refuse inbound connections if no client certificate has been provided.
 
-### Adding X.509 Client Certificate Authentication to a Browser Flow
+==== Adding X.509 Client Certificate Authentication to a Browser Flow
 
 * Select a realm, click on Authentication link, select the "Browser" flow 
 * Make a copy of the buit-in "Browser" flow. You may want to give the new flow a distinctive name, i.e. "X.509 Browser"
@@ -149,7 +151,7 @@ image:images/x509-browser-flow.png[]
 
 image:images/x509-browser-flow-bindings.png[]
 
-#### Configuring X.509 Client Certificate Authentication
+Configuring X.509 Client Certificate Authentication::
 
 image:images/x509-configuration.png[]
 
@@ -189,7 +191,7 @@ Verifies one or more purposes as defined in the Extended Key Usage extension. Se
 `Bypass identity confirmation`::
 If set, X.509 client certificate authentication will not prompt the user to confirm the certificate identity and will automatiocally sign in the user upon successful authentication.
 
-### Adding X.509 Client Certificate Authentication to a Direct Grant Flow
+==== Adding X.509 Client Certificate Authentication to a Direct Grant Flow
 
 * Using keycloak admin console, click on "Authentication" and select the "Direct Grant" flow,
 * Make a copy of the build-in "Direct Grant" flow. You may want to give the new flow a distinctive name, i.e. "X509 Direct Grant",
@@ -207,9 +209,9 @@ image:images/x509-directgrant-flow.png[]
 
 image:images/x509-directgrant-flow-bindings.png[]
 
-### Troubleshooting
+==== Troubleshooting
 
-#### Direct Grant authentication with X.509 
+Direct Grant authentication with X.509::
 The following template can be used to request a token using the Resource Owner Password Credentials Grant: 
 
 ```

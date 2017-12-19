@@ -195,3 +195,4 @@ If you have issues, we recommend that you enable additional logging to debug the
 * Enable `Debug` flag in admin console for Kerberos or LDAP federation providers
 * Enable TRACE logging for category `org.keycloak` in logging section of `standalone/configuration/standalone.xml` to receive more info `standalone/log/server.log`
 * Add system properties `-Dsun.security.krb5.debug=true` and `-Dsun.security.spnego.debug=true`
+
