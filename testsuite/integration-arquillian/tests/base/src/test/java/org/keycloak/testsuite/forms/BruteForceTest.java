@@ -311,11 +311,13 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         loginInvalidPassword();
         loginInvalidPassword();
         expectTemporarilyDisabled();
+        expectTemporarilyDisabled("test-user@localhost", null, "invalid");
         clearUserFailures();
         loginSuccess();
         loginInvalidPassword();
         loginInvalidPassword();
         expectTemporarilyDisabled();
+        expectTemporarilyDisabled("test-user@localhost", null, "invalid");
         clearAllUserFailures();
         loginSuccess();
     }
@@ -326,6 +328,8 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         loginInvalidPassword();
         loginInvalidPassword();
         expectTemporarilyDisabled();
+        expectTemporarilyDisabled("test-user@localhost", null, "invalid");
+
         // KEYCLOAK-5420
         // Test to make sure that temporarily disabled doesn't increment failure count
         testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(6)));
@@ -343,6 +347,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         loginInvalidPassword("test-User@localhost");
         loginInvalidPassword("Test-user@localhost");
         expectTemporarilyDisabled();
+        expectTemporarilyDisabled("test-user@localhost", null, "invalid");
         clearAllUserFailures();
     }
 
@@ -363,6 +368,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         loginMissingPassword();
         loginMissingPassword();
         expectTemporarilyDisabled();
+        expectTemporarilyDisabled("test-user@localhost", null, "invalid");
         clearUserFailures();
         loginSuccess();
     }
@@ -373,6 +379,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         loginWithTotpFailure();
         loginWithTotpFailure();
         expectTemporarilyDisabled();
+        expectTemporarilyDisabled("test-user@localhost", null, "invalid");
         clearUserFailures();
         loginSuccess();
     }
@@ -383,6 +390,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         loginWithMissingTotp();
         loginWithMissingTotp();
         expectTemporarilyDisabled();
+        expectTemporarilyDisabled("test-user@localhost", null, "invalid");
         clearUserFailures();
         loginSuccess();
     }
@@ -454,6 +462,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         loginInvalidPassword();
         loginInvalidPassword();
         expectTemporarilyDisabled();
+        expectTemporarilyDisabled("test-user@localhost", null, "invalid");
 
         loginPage.resetPassword();
         resetPasswordPage.assertCurrent();
@@ -468,12 +477,16 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
     }
 
     public void expectTemporarilyDisabled() throws Exception {
-        expectTemporarilyDisabled("test-user@localhost", null);
+        expectTemporarilyDisabled("test-user@localhost", null, "password");
     }
 
     public void expectTemporarilyDisabled(String username, String userId) throws Exception {
+        expectTemporarilyDisabled(username, userId, "password");
+    }
+
+    public void expectTemporarilyDisabled(String username, String userId, String password) throws Exception {
         loginPage.open();
-        loginPage.login(username, "password");
+        loginPage.login(username, password);
 
         loginPage.assertCurrent();
         String src = driver.getPageSource();
