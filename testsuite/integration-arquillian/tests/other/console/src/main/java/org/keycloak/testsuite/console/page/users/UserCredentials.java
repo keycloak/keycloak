@@ -18,10 +18,10 @@ public class UserCredentials extends User {
         return super.getUriFragment() + "/user-credentials";
     }
 
-    @FindBy(id = "password")
+    @FindBy(id = "newPas")
     private WebElement newPasswordInput;
 
-    @FindBy(id = "confirmPassword")
+    @FindBy(id = "confirmPas")
     private WebElement confirmPasswordInput;
 
     @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='temporaryPassword']]")

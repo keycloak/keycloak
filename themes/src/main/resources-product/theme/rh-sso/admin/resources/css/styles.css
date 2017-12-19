@@ -409,3 +409,8 @@ table.kc-authz-table-expanded {
     padding-right:0!important;
     padding-left:0!important;
 }
+
+.password-conceal {
+  font-family: 'text-security-disc';
+  font-size: 14px;
+}

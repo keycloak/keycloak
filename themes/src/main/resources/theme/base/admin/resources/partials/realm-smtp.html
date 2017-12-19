@@ -2,9 +2,6 @@
     <kc-tabs-realm></kc-tabs-realm>
 
     <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
-        <input type="text" readonly value="this is not a login form" style="display: none;">
-        <input type="password" readonly value="this is not a login form" style="display: none;">
-
         <div class="form-group clearfix">
             <label class="col-md-2 control-label" for="smtpHost"><span class="required">*</span> {{:: 'host' | translate}}</label>
             <div class="col-md-6">
@@ -79,9 +76,9 @@
             </div>
         </div>
         <div class="form-group clearfix" data-ng-show="realm.smtpServer.auth">
-            <label class="col-md-2 control-label" for="smtpPassword"><span class="required">*</span> {{:: 'password' | translate}}</label>
+            <label class="col-md-2 control-label" for="smtpPas"><span class="required">*</span> {{:: 'password' | translate}}</label>
             <div class="col-md-6">
-                <input class="form-control" id="smtpPassword" type="password" ng-model="realm.smtpServer.password" placeholder="{{:: 'login-password' | translate}}" ng-disabled="!realm.smtpServer.auth" ng-required="realm.smtpServer.auth">
+                <input class="form-control" id="smtpPas" kc-password ng-model="realm.smtpServer.password" placeholder="{{:: 'login-password' | translate}}" ng-disabled="!realm.smtpServer.auth" ng-required="realm.smtpServer.auth">
             </div>
         </div>
 
