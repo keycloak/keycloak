@@ -10,9 +10,6 @@
     <h1>{{:: 'import-saml-key' | translate}} {{client.clientId|capitalize}}</h1>
 
     <form class="form-horizontal" name="keyForm" novalidate kc-read-only="!client.access.configure">
-        <input type="text" readonly value="this is not a login form" style="display: none;">
-        <input type="password" readonly value="this is not a login form" style="display: none;">
-
         <fieldset>
             <div class="form-group">
                 <label class="col-md-2 control-label" for="uploadKeyFormat">{{:: 'archive-format' | translate}}</label>
@@ -36,7 +33,7 @@
             <div class="form-group" data-ng-hide="hideKeystoreSettings()">
                 <label class="col-md-2 control-label" for="uploadStorePassword">{{:: 'store-password' | translate}}</label>
                 <div class="col-md-6">
-                    <input class="form-control" type="password" id="uploadStorePassword" name="uploadStorePassword" data-ng-model="uploadStorePassword" autofocus required>
+                    <input class="form-control" type="password" id="uploadStorePassword" name="uploadStorePassword" data-ng-model="uploadStorePassword" autofocus required autocomplete="off" readonly onfocus="this.removeAttribute('readonly');" />
                 </div>
                 <kc-tooltip>{{:: 'store-password.tooltip' | translate}}</kc-tooltip>
             </div>
