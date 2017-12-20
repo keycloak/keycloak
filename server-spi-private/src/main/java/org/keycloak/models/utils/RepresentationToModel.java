@@ -122,6 +122,7 @@ import org.keycloak.util.JsonSerialization;
 public class RepresentationToModel {
 
     private static Logger logger = Logger.getLogger(RepresentationToModel.class);
+    public static final String OIDC = "openid-connect";
 
     public static OTPPolicy toPolicy(RealmRepresentation rep) {
         OTPPolicy policy = new OTPPolicy();
@@ -1048,7 +1049,13 @@ public class RepresentationToModel {
         if (resourceRep.isPublicClient() != null) client.setPublicClient(resourceRep.isPublicClient());
         if (resourceRep.isFrontchannelLogout() != null)
             client.setFrontchannelLogout(resourceRep.isFrontchannelLogout());
-        if (resourceRep.getProtocol() != null) client.setProtocol(resourceRep.getProtocol());
+
+        // set defaults to openid-connect if no protocol specified
+        if (resourceRep.getProtocol() != null) {
+            client.setProtocol(resourceRep.getProtocol());
+        } else {
+            client.setProtocol(OIDC);
+        }
         if (resourceRep.getNodeReRegistrationTimeout() != null) {
             client.setNodeReRegistrationTimeout(resourceRep.getNodeReRegistrationTimeout());
         } else {
