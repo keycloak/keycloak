@@ -25,4 +25,11 @@
         </update>
     </changeSet>
 
+    <changeSet author="mkanis@redhat.com" id="3.4.2-KEYCLOAK-5172">
+        <update tableName="CLIENT">
+            <column name="PROTOCOL" type="VARCHAR(255)" value="openid-connect"/>
+            <where>PROTOCOL IS NULL</where>
+        </update>
+    </changeSet>
+
 </databaseChangeLog>

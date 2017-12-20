@@ -124,6 +124,14 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
+    public void registerClientWithoutProtocol() throws ClientRegistrationException {
+        authCreateClients();
+        ClientRepresentation clientRepresentation = registerClient();
+
+        assertEquals("openid-connect", clientRepresentation.getProtocol());
+    }
+
+    @Test
     public void registerClientAsAdminWithCreateOnly() throws ClientRegistrationException {
         authCreateClients();
         registerClient();
