@@ -577,6 +577,42 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
 
     }
 
+    // KEYCLOAK-5443
+    @Test
+    public void changeProfileEmailAsUsernameAndEditUsernameEnabled() throws Exception {
+        setEditUsernameAllowed(true);
+        setRegistrationEmailAsUsername(true);
+
+        profilePage.open();
+        loginPage.login("test-user@localhost", "password");
+        assertFalse(driver.findElements(By.id("username")).size() > 0);
+
+        profilePage.updateProfile("New First", "New Last", "new-email@email");
+
+        Assert.assertEquals("Your account has been updated.", profilePage.getSuccess());
+        Assert.assertEquals("New First", profilePage.getFirstName());
+        Assert.assertEquals("New Last", profilePage.getLastName());
+        Assert.assertEquals("new-email@email", profilePage.getEmail());
+
+        List<UserRepresentation> list = adminClient.realm("test").users().search(null, null, null, "new-email@email", null, null);
+        assertEquals(1, list.size());
+
+        UserRepresentation user = list.get(0);
+
+        assertEquals("new-email@email", user.getUsername());
+
+        // Revert
+
+        user.setUsername("test-user@localhost");
+        user.setFirstName("Tom");
+        user.setLastName("Brady");
+        user.setEmail("test-user@localhost");
+        adminClient.realm("test").users().get(user.getId()).update(user);
+
+        setRegistrationEmailAsUsername(false);
+        setEditUsernameAllowed(false);
+    }
+
     private void setEditUsernameAllowed(boolean allowed) {
         RealmRepresentation testRealm = testRealm().toRepresentation();
         testRealm.setEditUsernameAllowed(allowed);
