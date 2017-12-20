@@ -323,7 +323,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
         event.event(EventType.UPDATE_PROFILE).client(auth.getClient()).user(auth.getUser());
 
-        List<FormMessage> errors = Validation.validateUpdateProfileForm(realm.isEditUsernameAllowed(), formData);
+        List<FormMessage> errors = Validation.validateUpdateProfileForm(realm, formData);
         if (errors != null && !errors.isEmpty()) {
             setReferrerOnPage();
             return account.setErrors(Response.Status.BAD_REQUEST, errors).setProfileFormData(formData).createResponse(AccountPages.ACCOUNT);
@@ -753,7 +753,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
     private void updateUsername(String username, UserModel user, KeycloakSession session) {
         RealmModel realm = session.getContext().getRealm();
         boolean usernameChanged = username == null || !user.getUsername().equals(username);
-        if (realm.isEditUsernameAllowed()) {
+        if (realm.isEditUsernameAllowed() && !realm.isRegistrationEmailAsUsername()) {
             if (usernameChanged) {
                 UserModel existing = session.users().getUserByUsername(username, realm);
                 if (existing != null && !existing.getId().equals(user.getId())) {
