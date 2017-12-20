@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.junit.Before;
@@ -30,12 +31,14 @@ import org.keycloak.admin.client.resource.ResourcesResource;
 import org.keycloak.admin.client.resource.RolePoliciesResource;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.authorization.AggregatePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testsuite.console.page.clients.authorization.permission.ResourcePermission;
+import org.keycloak.testsuite.console.page.clients.authorization.policy.AggregatePolicy;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -207,8 +210,36 @@ public class ResourcePermissionManagementTest extends AbstractAuthorizationSetti
         assertNull(authorizationPage.authorizationTabs().permissions().permissions().findByName(expected.getName()));
     }
 
+    @Test
+    public void testCreateWithChild() {
+        ResourcePermissionRepresentation expected = new ResourcePermissionRepresentation();
+
+        expected.setName(UUID.randomUUID().toString());
+        expected.setDescription("description");
+        expected.addResource("Resource B");
+        expected.addPolicy("Policy C");
+
+        ResourcePermission policy = authorizationPage.authorizationTabs().permissions().create(expected, false);
+
+        RolePolicyRepresentation childPolicy = new RolePolicyRepresentation();
+
+        childPolicy.setName(UUID.randomUUID().toString());
+        childPolicy.addRole("Role A");
+
+        policy.createPolicy(childPolicy);
+        policy.form().save();
+
+        assertAlertSuccess();
+
+        expected.addPolicy(childPolicy.getName());
+
+        authorizationPage.navigateTo();
+        ResourcePermission actual = authorizationPage.authorizationTabs().permissions().name(expected.getName());
+        assertPolicy(expected, actual);
+    }
+
     private ResourcePermissionRepresentation createPermission(ResourcePermissionRepresentation expected) {
-        ResourcePermission policy = authorizationPage.authorizationTabs().permissions().create(expected);
+        ResourcePermission policy = authorizationPage.authorizationTabs().permissions().create(expected, true);
         assertAlertSuccess();
         return assertPolicy(expected, policy);
     }

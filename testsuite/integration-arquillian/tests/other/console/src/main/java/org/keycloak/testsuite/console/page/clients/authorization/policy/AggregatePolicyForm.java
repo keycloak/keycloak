@@ -17,13 +17,8 @@
 package org.keycloak.testsuite.console.page.clients.authorization.policy;
 
 import static org.keycloak.testsuite.util.UIUtils.performOperationWithPageReload;
-import static org.openqa.selenium.By.tagName;
 
-import java.util.List;
 import java.util.Set;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
@@ -37,9 +32,7 @@ import org.keycloak.representations.idm.authorization.RulePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testsuite.console.page.fragment.ModalDialog;
-import org.keycloak.testsuite.console.page.fragment.MultipleStringSelect2;
 import org.keycloak.testsuite.page.Form;
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
@@ -160,37 +153,6 @@ public class AggregatePolicyForm extends Form {
             rulePolicy.form().populate((RulePolicyRepresentation) expected, true);
         } else if ("group".equalsIgnoreCase(expected.getType())) {
             groupPolicy.form().populate((GroupPolicyRepresentation) expected, true);
-        }
-    }
-
-    public class PolicySelect extends MultipleStringSelect2 {
-
-        @Override
-        protected List<WebElement> getSelectedElements() {
-            return getRoot().findElements(By.xpath("(//table[@id='selected-policies'])/tbody/tr")).stream()
-                    .filter(webElement -> webElement.findElements(tagName("td")).size() > 1)
-                    .collect(Collectors.toList());
-        }
-
-        @Override
-        protected BiFunction<WebElement, String, Boolean> deselect() {
-            return (webElement, name) -> {
-                List<WebElement> tds = webElement.findElements(tagName("td"));
-
-                if (!tds.get(0).getText().isEmpty()) {
-                    if (tds.get(0).getText().equals(name)) {
-                        tds.get(3).click();
-                        return true;
-                    }
-                }
-
-                return false;
-            };
-        }
-
-        @Override
-        protected Function<WebElement, String> representation() {
-            return webElement -> webElement.findElements(tagName("td")).get(0).getText();
         }
     }
 }
