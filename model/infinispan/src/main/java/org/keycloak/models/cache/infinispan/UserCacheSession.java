@@ -349,6 +349,8 @@ public class UserCacheSession implements UserCache {
         StorageId storageId = delegate.getFederationLink() != null ?
                 new StorageId(delegate.getFederationLink(), delegate.getId()) : new StorageId(delegate.getId());
         CachedUser cached = null;
+        UserAdapter adapter = null;
+
         if (!storageId.isLocal()) {
             ComponentModel component = realm.getComponent(storageId.getProviderId());
             UserStorageProviderModel model = new UserStorageProviderModel(component);
@@ -364,7 +366,11 @@ public class UserCacheSession implements UserCache {
             if (policy != null && policy == UserStorageProviderModel.CachePolicy.NO_CACHE) {
                 return delegate;
             }
+
             cached = new CachedUser(revision, realm, delegate, notBefore);
+            adapter = new UserAdapter(cached, this, session, realm);
+            onCache(realm, adapter, delegate);
+
             if (policy == null || policy == UserStorageProviderModel.CachePolicy.DEFAULT) {
                 cache.addRevisioned(cached, startupRevision);
             } else {
@@ -388,12 +394,12 @@ public class UserCacheSession implements UserCache {
             }
         } else {
             cached = new CachedUser(revision, realm, delegate, notBefore);
+            adapter = new UserAdapter(cached, this, session, realm);
+            onCache(realm, adapter, delegate);
             cache.addRevisioned(cached, startupRevision);
         }
-        UserAdapter adapter = new UserAdapter(cached, this, session, realm);
-        onCache(realm, adapter, delegate);
-        return adapter;
 
+        return adapter;
     }
 
 
