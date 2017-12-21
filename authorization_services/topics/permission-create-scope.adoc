@@ -29,7 +29,8 @@ Defines a set of one or more scopes to protect.
 
 * *Apply Policy*
 +
-Defines a set of one or more policies to associate with a permission.
+Defines a set of one or more policies to associate with a permission. To associate a policy you can either select an existing policy
+or create a new one by selecting the type of the policy you want to create.
 
 * *Decision Strategy*
 +

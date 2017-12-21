@@ -21,7 +21,7 @@ General settings for your resource server. For more details about this page see 
 +
 From this page, you can manage your application's <<_resource_overview, resources>>.
 
-* *Scope*
+* *Authorization Scopes*
 +
 From this page, you can manage <<_resource_overview, scopes>>.
 
@@ -36,6 +36,10 @@ From this page, you can manage the <<_permission_overview, permissions>> for you
 * *Evaluate*
 +
 From this page, you can <<_policy_evaluation_overview, simulate authorization requests>> and view the result of the evaluation of the permissions and authorization policies you have defined.
+
+* *Export Settings*
++
+From this page, you can <<_resource_server_import_config, export>> the authorization settings to a JSON file.
 
 [[resource_server_settings]]
 == Resource Server Settings
@@ -58,11 +62,6 @@ Requests are allowed even when there is no policy associated with a given resour
 +
 Disables the evaluation of all policies and allows access to all resources.
 +
-* *Allow Remote Resource Management*
+* *Remote Resource Management*
 +
 Specifies whether resources can be managed remotely by the resource server. If false, resources can be managed only from the administration console.
-
-+
-* *Export Settings*
-+
-You can export the authorization configuration settings to a JSON file. Click *Export* to display the complete JSON configuration for download. The configuration file contains everything defined for a resource server: protected resources, scopes, permissions, and policies.

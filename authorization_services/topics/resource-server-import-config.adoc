@@ -12,11 +12,8 @@ The configuration settings for a resource server (or client) can be exported and
 To export a configuration file, complete the following steps:
 
 . Navigate to the *Resource Server Settings* page.
-+
-.Resource Server Settings
-image:{project_images}/resource-server/authz-settings.png[alt="Resource Server Settings"]
-
-. On this page, in the Export Settings section, click *Export*.
+. Click the *Export Settings* tab.
+. On this page, click *Export*.
 +
 .Export Settings
 image:{project_images}/resource-server/authz-export.png[alt="Export Settings"]
@@ -24,5 +21,12 @@ image:{project_images}/resource-server/authz-export.png[alt="Export Settings"]
 The configuration file is exported in JSON format and displayed in a text area, from which you can copy and paste. You can also click *Download* to download the configuration file and save it.
 
 == Importing a Configuration File
+
+To export a configuration file, complete the following steps:
+
+. Navigate to the *Resource Server Settings* page.
++
+.Import Settings
+image:{project_images}/resource-server/authz-settings.png[alt="Import Settings"]
 
 To import a configuration file for a resource server, click *Select file* to select a file containing the configuration you want to import.
