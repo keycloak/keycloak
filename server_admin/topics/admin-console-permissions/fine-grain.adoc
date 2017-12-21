@@ -2,6 +2,9 @@
 
 === Fine Grain Admin Permissions
 
+:tech_feature_name: Fine Grain Admin Permissions
+include::../templates/techpreview.adoc[]
+
 Sometimes roles like `manage-realm` or `manage-users` are too coarse grain and you want to create
 restricted admin accounts that have more fine grain permissions.  {project_name} allows you to define
 and assign restricted access policies for managing a realm.  Things like:

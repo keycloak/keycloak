@@ -13,51 +13,35 @@ ifeval::[{project_community}==true]
   * <<_jetty8_adapter,Jetty 8>>
 endif::[]
 
-ifeval::[{project_community}==true]
 * <<_servlet_filter_adapter,Servlet Filter>>
-  * <<_spring_security_adapter,Spring Security>> (community)
-  * <<_spring_boot_adapter,Spring Boot>> (community)
-endif::[]
+* <<_spring_boot_adapter,Spring Boot>>
 
 ifeval::[{project_community}==true]
+  * <<_spring_security_adapter,Spring Security>>
+endif::[]
+
 ===== JavaScript (client-side)
 * <<_javascript_adapter,JavaScript>>
-endif::[]
 
 ===== Node.js (server-side)
 * <<_nodejs_adapter,Node.js>>
 
-===== JavaScript
-* <<_javascript_adapter,JavaScript>>
-
-ifeval::[{project_community}==true]
-===== Node.js
-* https://github.com/keycloak/keycloak-nodejs-connect[{project_name} Connect] (community)
-endif::[]
 
 ifeval::[{project_community}==true]
 ==== C#
 * https://github.com/dylanplecki/KeycloakOwinAuthentication[OWIN] (community)
-endif::[]
 
-ifeval::[{project_community}==true]
 ==== Python
 * https://pypi.python.org/pypi/oic/[oidc] (generic)
-endif::[]
 
-ifeval::[{project_community}==true]
 ==== Android
 * https://github.com/openid/AppAuth-Android[AppAuth] (generic)
 * https://github.com/aerogear/aerogear-android-authz[AeroGear] (generic)
-endif::[]
 
-ifeval::[{project_community}==true]
 ==== iOS
 * https://github.com/openid/AppAuth-iOS[AppAuth] (generic)
 * https://github.com/aerogear/aerogear-ios-oauth2[AeroGear] (generic)
-endif::[]
 
-ifeval::[{project_community}==true]
 ===== Apache HTTP Server
 * https://github.com/zmartzone/mod_auth_openidc[mod_auth_openidc]
 endif::[]
