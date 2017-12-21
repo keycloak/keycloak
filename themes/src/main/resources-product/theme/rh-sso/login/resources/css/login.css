@@ -26,7 +26,6 @@
     color: #000 !important;
     border: 1px solid #fff;
     text-decoration: none;
-    display:block;
     line-height: 20px;
 }
 
@@ -150,6 +149,13 @@ ol#kc-totp-settings li:first-of-type {
 #kc-totp-secret-qr-code {
     max-width:150px;
     max-height:150px;
+}
+
+#kc-totp-secret-key {
+    background-color: #fff;
+    color: #333333;
+    font-size: 16px;
+    padding: 10px;
 }
 
 /* OAuth */
