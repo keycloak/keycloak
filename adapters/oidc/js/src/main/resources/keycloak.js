@@ -772,6 +772,43 @@
         }
 
         function createPromise() {
+            if (typeof Promise === "function") {
+                return createNativePromise();
+            } else {
+                return createLegacyPromise();
+            }
+        }
+
+        function createNativePromise() {
+            // Need to create a native Promise which also preserves the
+            // interface of the custom promise type previously used by the API
+            var p = {
+                setSuccess: function(result) {
+                    p.success = true;
+                    p.resolve(result);
+                },
+
+                setError: function(result) {
+                    p.success = false;
+                    p.reject(result);
+                }
+            };
+            p.promise = new Promise(function(resolve, reject) {
+                p.resolve = resolve;
+                p.reject = reject;
+            });
+            p.promise.success = function(callback) {
+                p.promise.then(callback);
+                return p.promise;
+            }
+            p.promise.error = function(callback) {
+                p.promise.catch(callback);
+                return p.promise;
+            }
+            return p;
+        }
+
+        function createLegacyPromise() {
             var p = {
                 setSuccess: function(result) {
                     p.success = true;
