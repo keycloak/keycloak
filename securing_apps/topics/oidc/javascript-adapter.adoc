@@ -28,14 +28,14 @@ The following example shows how to initialize the JavaScript adapter:
     <script src="keycloak.js"></script>
     <script>
         var keycloak = Keycloak();
-        keycloak.init().success(function(authenticated) {
+        keycloak.init().then(function(authenticated) {
             alert(authenticated ? 'authenticated' : 'not authenticated');
-        }).error(function() {
+        }).catch(function() {
             alert('failed to initialize');
         });
     </script>
 </head>
-----        
+----
 
 If the `keycloak.json` file is in a different location you can specify it:
 
@@ -65,7 +65,7 @@ To enable `login-required` set `onLoad` to `login-required` and pass to the init
 [source]
 ----
 keycloak.init({ onLoad: 'login-required' })
-----    
+----
 
 After the user is authenticated the application can make requests to RESTful services secured by {project_name} by including the bearer token in the
 `Authorization` header. For example:
@@ -102,12 +102,12 @@ token was successfully refreshed and for example display an error to the user if
 
 [source,javascript]
 ----
-keycloak.updateToken(30).success(function() {
+keycloak.updateToken(30).then(function() {
     loadData();
-}).error(function() {
+}).catch(function() {
     alert('Failed to refresh token');
 });
-----    
+----
 
 ==== Session Status iframe
 
@@ -166,10 +166,14 @@ keycloak.init({ flow: 'hybrid' })
 The JavaScript adapter depends on Base64 (window.btoa and window.atob) and HTML5 History API.
 If you need to support browsers that do not have these available (for example, IE9) you need to add polyfillers.
 
-Example polyfill libraries:  
+Example polyfill libraries:
 
 * https://github.com/davidchambers/Base64.js
-* https://github.com/devote/HTML5-History-API        
+* https://github.com/devote/HTML5-History-API
+
+If available, the JavaScript adapter will use native Promise instances as return values from functions documented as returning promises.  To retain backwards compatibility, the `success()` and `error()` functions from previous versions of the adapter are retained.  These remain available whether or not native Promises are provided by the browser.  Promise API polyfills are available for browsers without support:
+
+* https://github.com/stefanpenner/es6-promise
 
 ==== JavaScript Adapter Reference
 
@@ -233,7 +237,7 @@ responseType::
 
 Called to initialize the adapter.
 
-Options is an Object, where: 
+Options is an Object, where:
 
 * onLoad - Specifies an action to do on load. Supported values are 'login-required' or 'check-sso'.
 * token - Set an initial value for the token.
@@ -251,7 +255,7 @@ Returns promise to set functions to be invoked on success or error.
 
 Redirects to login form on (options is an optional object with redirectUri and/or prompt fields).
 
-Options is an Object, where: 
+Options is an Object, where:
 
 * redirectUri - Specifies the uri to redirect to after login.
 * prompt - By default the login screen is displayed if the user is not logged-in to {project_name}. To only authenticate to the application if the user is already logged-in and not display the login page if the user is not logged-in, set this option to `none`. To always require re-authentication and ignore SSO, set this option to `login` .
@@ -270,7 +274,7 @@ Options is an Object, which supports same options like the function `login` .
 
 Redirects to logout.
 
-Options is an Object, where: 
+Options is an Object, where:
 
 * redirectUri - Specifies the uri to redirect to after logout.
 
@@ -278,7 +282,7 @@ Options is an Object, where:
 
 Returns the URL to logout the user.
 
-Options is an Object, where: 
+Options is an Object, where:
 
 * redirectUri - Specifies the uri to redirect to after logout.
 
@@ -321,9 +325,9 @@ For example:
 
 [source,javascript]
 ----
-keycloak.loadUserProfile().success(function(profile) {
+keycloak.loadUserProfile().then(function(profile) {
         alert(JSON.stringify(test, null, "  "));
-    }).error(function() {
+    }).catch(function() {
         alert('Failed to load user profile');
     });
 ----
@@ -335,20 +339,20 @@ Returns true if the token has less than minValidity seconds left before it expir
 ====== updateToken(minValidity)
 
 If the token expires within minValidity seconds (minValidity is optional, if not specified 5 is used) the token is refreshed.
-If the session status iframe is enabled, the session status is also checked. 
+If the session status iframe is enabled, the session status is also checked.
 
 Returns promise to set functions that can be invoked if the token is still valid, or if the token is no longer valid.
 For example:
 
 [source,javascript]
 ----
-keycloak.updateToken(5).success(function(refreshed) {
+keycloak.updateToken(5).then(function(refreshed) {
         if (refreshed) {
             alert('Token was successfully refreshed');
         } else {
             alert('Token is still valid');
         }
-    }).error(function() {
+    }).catch(function() {
         alert('Failed to refresh the token, or the session has expired');
     });
 ----
@@ -358,13 +362,13 @@ keycloak.updateToken(5).success(function(refreshed) {
 Clear authentication state, including tokens.
 This can be useful if application has detected the session was expired, for example if updating token fails.
 
-Invoking this results in onAuthLogout callback listener being invoked. 
+Invoking this results in onAuthLogout callback listener being invoked.
 
 ===== Callback Events
 
 The adapter supports setting callback listeners for certain events.
 
-For example: 
+For example:
 [source,javascript]
 ----
 keycloak.onAuthSuccess = function() { alert('authenticated'); }
