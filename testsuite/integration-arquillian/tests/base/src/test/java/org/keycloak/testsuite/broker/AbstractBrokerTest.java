@@ -78,7 +78,7 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
         if (clients != null) {
             RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
             for (ClientRepresentation client : clients) {
-                log.debug("adding client " + client.getName() + " to realm " + bc.providerRealmName());
+                log.debug("adding client " + client.getClientId()+ " to realm " + bc.providerRealmName());
 
                 providerRealm.clients().create(client).close();
             }
@@ -88,7 +88,7 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
         if (clients != null) {
             RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
             for (ClientRepresentation client : clients) {
-                log.debug("adding client " + client.getName() + " to realm " + bc.consumerRealmName());
+                log.debug("adding client " + client.getClientId() + " to realm " + bc.consumerRealmName());
 
                 consumerRealm.clients().create(client).close();
             }

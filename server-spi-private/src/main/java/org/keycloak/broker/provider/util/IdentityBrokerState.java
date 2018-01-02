@@ -31,7 +31,7 @@ public class IdentityBrokerState {
 
 
     public static IdentityBrokerState decoded(String state, String clientId, String tabId) {
-        String encodedState = state + "." + clientId + "." + tabId;
+        String encodedState = state + "." + tabId + "." + clientId;
 
         return new IdentityBrokerState(state, clientId, tabId, encodedState);
     }
@@ -41,8 +41,8 @@ public class IdentityBrokerState {
         String[] decoded = DOT.split(encodedState, 3);
 
         String state =(decoded.length > 0) ? decoded[0] : null;
-        String clientId = (decoded.length > 1) ? decoded[1] : null;
-        String tabId = (decoded.length > 2) ? decoded[2] : null;
+        String tabId = (decoded.length > 1) ? decoded[1] : null;
+        String clientId = (decoded.length > 2) ? decoded[2] : null;
 
         return new IdentityBrokerState(state, clientId, tabId, encodedState);
     }

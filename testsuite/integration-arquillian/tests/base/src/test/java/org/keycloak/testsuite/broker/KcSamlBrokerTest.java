@@ -5,24 +5,35 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import org.keycloak.broker.saml.mappers.AttributeToRoleMapper;
 import org.keycloak.broker.saml.mappers.UserAttributeMapper;
+import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
+import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.testsuite.saml.AbstractSamlTest;
+import org.keycloak.testsuite.util.SamlClient;
+import org.keycloak.testsuite.util.SamlClient.Binding;
+import org.keycloak.testsuite.util.SamlClientBuilder;
 import java.net.URI;
 import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriBuilderException;
+import org.hamcrest.Matchers;
+import org.junit.Assert;
 import org.junit.Test;
-import static org.hamcrest.Matchers.containsInAnyOrder;
+import org.w3c.dom.Document;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.broker.AbstractBrokerTest.ROLE_FRIENDLY_MANAGER;
 import static org.keycloak.testsuite.broker.AbstractBrokerTest.ROLE_MANAGER;
 import static org.keycloak.testsuite.broker.AbstractBrokerTest.ROLE_USER;
+import static org.keycloak.testsuite.util.Matchers.isSamlResponse;
 
 public class KcSamlBrokerTest extends AbstractBrokerTest {
 
@@ -123,4 +134,35 @@ public class KcSamlBrokerTest extends AbstractBrokerTest {
                 .protocolUrl(UriBuilder.fromUri(getAuthServerRoot()))
                 .build(realm, SamlProtocol.LOGIN_PROTOCOL);
     }
+
+    // KEYCLOAK-6106
+    @Test
+    public void loginClientWithDotsInName() throws Exception {
+        AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST + ".dot/ted", AbstractSamlTest.SAML_ASSERTION_CONSUMER_URL_SALES_POST, null);
+
+        Document doc = SAML2Request.convert(loginRep);
+
+        SAMLDocumentHolder samlResponse = new SamlClientBuilder()
+          .authnRequest(getAuthServerSamlEndpoint(bc.consumerRealmName()), doc, Binding.POST).build()   // Request to consumer IdP
+          .login().idp(bc.getIDPAlias()).build()
+
+          .processSamlResponse(Binding.POST)    // AuthnRequest to producer IdP
+            .targetAttributeSamlRequest()
+            .build()
+
+          .login().user(bc.getUserLogin(), bc.getUserPassword()).build()
+
+          .processSamlResponse(Binding.POST)    // Response from producer IdP
+            .build()
+
+          // first-broker flow
+          .updateProfile().firstName("a").lastName("b").email(bc.getUserEmail()).username(bc.getUserLogin()).build()
+          .followOneRedirect()
+
+          .getSamlResponse(Binding.POST);       // Response from consumer IdP
+
+        Assert.assertThat(samlResponse, Matchers.notNullValue());
+        Assert.assertThat(samlResponse.getSamlObject(), isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+    }
+
 }
