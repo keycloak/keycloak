@@ -27,3 +27,20 @@ image:{project_images}/user-federation.png[]
 
 On the right side, there is an `Add Provider` list box.  Choose the provider type you want to add and you will be brought to the configuration page of that provider.
 
+=== Dealing with Provider Failures
+
+If a User Storage Provider fails, i.e. if your LDAP server is down, you may have trouble logging in and may not be able to view users in the admin console.
+{project_name} does not catch failures when using a Storage Provider to lookup a user.  It will abort the invocation.  So, if you have a Storage Provider with a higher
+priority that fails during user lookup, the login or user query will fail entirely with an exception and abort.  It will not fail over to the next configured provider.
+
+The local {project_name} user database is always searched first to resolve users before any LDAP or custom User Storage Provider.
+You may want to consider creating an admin account that is stored in the local {project_name} user database just in case any problems come up in connecting
+to your LDAP and custom back ends.
+
+Each LDAP and custom User Storage Provider has an `enable` switch on its admin console page.  Disabling the User Storage Provider will skip the provider when
+doing user queries so that you can view and login with users that might be stored in a different provider with lower priority.  If your provider is using an
+`import` strategy and you disable it, imported users are still available for lookup, but only in read only mode.  You will not be able to modify these users until
+you re-enable the provider.
+
+The reason why {project_name} does not fail over if a Storage Provider lookup fails is that user databases often have duplicate usernames or duplicate emails between them.
+This can cause security issues and unforeseen problems as the user may be loaded from one external store when the admin is expecting the user to be loaded from another.
