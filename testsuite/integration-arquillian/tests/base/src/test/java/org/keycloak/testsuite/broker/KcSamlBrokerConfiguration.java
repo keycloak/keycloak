@@ -56,9 +56,14 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
 
     @Override
     public List<ClientRepresentation> createProviderClients(SuiteContext suiteContext) {
+        String clientId = getIDPClientIdInProviderRealm(suiteContext);
+        return Arrays.asList(createProviderClient(suiteContext, clientId));
+    }
+
+    private ClientRepresentation createProviderClient(SuiteContext suiteContext, String clientId) {
         ClientRepresentation client = new ClientRepresentation();
 
-        client.setClientId(getIDPClientIdInProviderRealm(suiteContext));
+        client.setClientId(clientId);
         client.setEnabled(true);
         client.setProtocol(IDP_SAML_PROVIDER_ID);
         client.setRedirectUris(Collections.singletonList(
@@ -119,7 +124,7 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
 
         client.setProtocolMappers(Arrays.asList(emailMapper, userAttrMapper, userFriendlyAttrMapper));
 
-        return Collections.singletonList(client);
+        return client;
     }
 
     @Override
@@ -127,6 +132,16 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
         return Arrays.asList(
           ClientBuilder.create()
             .clientId(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST)
+            .enabled(true)
+            .fullScopeEnabled(true)
+            .protocol(SamlProtocol.LOGIN_PROTOCOL)
+            .baseUrl("http://localhost:8080/sales-post")
+            .addRedirectUri("http://localhost:8080/sales-post/*")
+            .attribute(SamlConfigAttributes.SAML_AUTHNSTATEMENT, SamlProtocol.ATTRIBUTE_TRUE_VALUE)
+            .attribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, SamlProtocol.ATTRIBUTE_FALSE_VALUE)
+            .build(),
+          ClientBuilder.create()
+            .clientId(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST + ".dot/ted")
             .enabled(true)
             .fullScopeEnabled(true)
             .protocol(SamlProtocol.LOGIN_PROTOCOL)
