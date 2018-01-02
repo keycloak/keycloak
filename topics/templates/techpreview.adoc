@@ -1,0 +1,14 @@
+ifeval::[{project_product}==true]
+[NOTE]
+====
+ifeval::[{tech_feature_disabled}!=false]
+{tech_feature_name} is *Technology Preview* and is not fully supported. This feature is disabled by default.
+
+To enable start the server with `-Dkeycloak.profile=preview`. For more details see
+link:{installguide_profile_link}[{installguide_profile_name}].
+endif::[]
+ifeval::[{tech_feature_disabled}==false]
+{tech_feature_name} is *Technology Preview* and is not fully supported.
+endif::[]
+====
+endif::[]

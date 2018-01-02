@@ -1,4 +1,4 @@
-The changes that have been made for RH-SSO 7.1 include:
+===== Theme changes RH-SSO 7.1
 
 **Templates**
 

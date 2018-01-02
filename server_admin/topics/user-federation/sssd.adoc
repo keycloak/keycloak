@@ -24,7 +24,7 @@ Running a FreeIPA server with Docker requires this command:
  docker run --name freeipa-server-container -it \
  -h server.freeipa.local -e PASSWORD=YOUR_PASSWORD \
  -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
- -v /var/lib/ipa-data:/data:Z adelton/freeipa-server
+ -v /var/lib/ipa-data:/data:Z freeipa/freeipa-server
 
 The parameter `-h` with `server.freeipa.local` represents the FreeIPA/IdM server hostname. Be sure to change `YOUR_PASSWORD` to a password of your choosing.
 

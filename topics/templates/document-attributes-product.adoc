@@ -1,9 +1,9 @@
 :project_name: Red Hat Single Sign-On
 :project_community: false
 :project_product: true
-:project_version: 7.2.0.DR4
-:project_versionMvn: 3.3.0.Final-redhat1
-:project_versionNpm: 3.3.0.Final-redhat1
+:project_version: 7.2.0.GA
+:project_versionMvn: 3.4.2.Final-redhat1
+:project_versionNpm: 3.4.2.Final-redhat1
 :project_versionDoc: 7.2
 :project_images: rhsso-images
 :project_doc_base_url: https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/{project_versionDoc}/html-single

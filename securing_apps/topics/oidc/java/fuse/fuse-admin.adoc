@@ -36,7 +36,7 @@ sshRealm=keycloak
 ----
 This file specifies the client application configuration, which is used by JAAS DirectAccessGrantsLoginModule from the `keycloak` JAAS realm for SSH authentication.
 
-. Start Fuse and install the `keycloak` JAAS realm. The easiest way is to install the `keycloak-jaas` feature, which has the JAAS realm predefined. You can override the feature's predefined realm by using your own `keycloak` JAAS realm with higher ranking. For details see the https:access.redhat.com/documentation/en-us/red_hat_jboss_fuse/6.3/html-single/security_guide/#ESBSecureContainer[JBoss Fuse documentation]. 
+. Start Fuse and install the `keycloak` JAAS realm. The easiest way is to install the `keycloak-jaas` feature, which has the JAAS realm predefined. You can override the feature's predefined realm by using your own `keycloak` JAAS realm with higher ranking. For details see the https://access.redhat.com/documentation/en-us/red_hat_jboss_fuse/6.3/html-single/security_guide/#ESBSecureContainer[JBoss Fuse documentation]. 
 +
 Use these commands in the Fuse terminal:
 +

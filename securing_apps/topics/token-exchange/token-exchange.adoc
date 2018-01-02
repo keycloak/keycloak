@@ -3,6 +3,9 @@
 
 == Token Exchange
 
+:tech_feature_name: Token Exchange
+include::../templates/techpreview.adoc[]
+
 In {project_name}, token exchange is the process of using a set of credentials or token to obtain an entirely different token.
 A client may want to invoke on a less trusted application so it may want to downgrade the current token it has.
 A client may want to exchange a {project_token} for a token stored for a linked social provider account.

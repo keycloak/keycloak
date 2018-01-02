@@ -19,6 +19,7 @@ In summary:
 ifeval::[{project_product}==true]
 Each step is described in more detail below the list of changes.
 
+include::rhsso/migrate_themes-changes-72.adoc[leveloffset=0]
 include::rhsso/migrate_themes-changes-71.adoc[leveloffset=0]
 endif::[]
 

@@ -103,6 +103,7 @@ else
         echo ""
         for i in `find -maxdepth 2 -name master.adoc | xargs dirname | sort`; do
             TITLE=`getTitle $i`
+            GUIDE_DIR=`readlink -f $i`
             echo "$TITLE"
             echo " - AsciiDoctor:  file://$GUIDE_DIR/target/html/index.html"
             echo " - ccutil:       file://$GUIDE_DIR/build/tmp/en-US/html-single/index.html"

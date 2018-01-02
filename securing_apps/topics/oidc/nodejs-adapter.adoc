@@ -70,14 +70,14 @@ object, rather than the `keycloak.json` file:
 [source,javascript]
 ----
     let kcConfig = {
-    clientId: 'myclient',
-    bearerOnly: true,
-    serverUrl: 'http://localhost:8080/auth',
-    realm: 'myrealm',
-    realmPublicKey: 'MIIBIjANB...'
-};
+        clientId: 'myclient',
+        bearerOnly: true,
+        serverUrl: 'http://localhost:8080/auth',
+        realm: 'myrealm',
+        realmPublicKey: 'MIIBIjANB...'
+    };
 
-let keycloak = new Keycloak({ store: memoryStore }, kcConfig);
+    let keycloak = new Keycloak({ store: memoryStore }, kcConfig);
 ----
 
 
