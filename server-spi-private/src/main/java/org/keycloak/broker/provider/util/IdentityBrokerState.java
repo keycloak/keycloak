@@ -17,6 +17,7 @@
 
 package org.keycloak.broker.provider.util;
 
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
@@ -31,7 +32,7 @@ public class IdentityBrokerState {
 
 
     public static IdentityBrokerState decoded(String state, String clientId, String tabId) {
-        String encodedState = state + "." + clientId + "." + tabId;
+        String encodedState = state + "." + tabId + "." + clientId;
 
         return new IdentityBrokerState(state, clientId, tabId, encodedState);
     }
@@ -41,12 +42,37 @@ public class IdentityBrokerState {
         String[] decoded = DOT.split(encodedState, 3);
 
         String state =(decoded.length > 0) ? decoded[0] : null;
-        String clientId = (decoded.length > 1) ? decoded[1] : null;
-        String tabId = (decoded.length > 2) ? decoded[2] : null;
+        String tabId = (decoded.length > 1) ? decoded[1] : null;
+        String clientId = (decoded.length > 2) ? decoded[2] : null;
 
         return new IdentityBrokerState(state, clientId, tabId, encodedState);
     }
 
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        IdentityBrokerState that = (IdentityBrokerState) o;
+        return Objects.equals(decodedState, that.decodedState) &&
+                Objects.equals(clientId, that.clientId) &&
+                Objects.equals(tabId, that.tabId) &&
+                Objects.equals(encoded, that.encoded);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(decodedState, clientId, tabId, encoded);
+    }
+
+    @Override
+    public String toString() {
+        return "IdentityBrokerState{" +
+                "decodedState='" + decodedState + '\'' +
+                ", clientId='" + clientId + '\'' +
+                ", tabId='" + tabId + '\'' +
+                '}';
+    }
 
 
     private final String decodedState;
