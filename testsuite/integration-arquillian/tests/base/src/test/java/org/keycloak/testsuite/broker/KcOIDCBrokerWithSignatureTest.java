@@ -89,7 +89,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         if (clients != null) {
             RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
             for (ClientRepresentation client : clients) {
-                log.debug("adding client " + client.getName() + " to realm " + bc.providerRealmName());
+                log.debug("adding client " + client.getClientId() + " to realm " + bc.providerRealmName());
 
                 Response resp = providerRealm.clients().create(client);
                 resp.close();
@@ -100,7 +100,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         if (clients != null) {
             RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
             for (ClientRepresentation client : clients) {
-                log.debug("adding client " + client.getName() + " to realm " + bc.consumerRealmName());
+                log.debug("adding client " + client.getClientId() + " to realm " + bc.consumerRealmName());
 
                 Response resp = consumerRealm.clients().create(client);
                 resp.close();
