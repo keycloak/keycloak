@@ -19,6 +19,7 @@ package org.keycloak.protocol.oidc.endpoints;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
+import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -125,6 +126,9 @@ public class TokenEndpoint {
 
     @Context
     private HttpRequest request;
+
+    @Context
+    private HttpResponse httpResponse;
 
     @Context
     private HttpHeaders headers;
@@ -499,7 +503,10 @@ public class TokenEndpoint {
                 .setUriInfo(uriInfo)
                 .setRequest(request);
         Response challenge = processor.authenticateOnly();
-        if (challenge != null) return challenge;
+        if (challenge != null) {
+            cors.build(httpResponse);
+            return challenge;
+        }
         processor.evaluateRequiredActionTriggers();
         UserModel user = authSession.getAuthenticatedUser();
         if (user.getRequiredActions() != null && user.getRequiredActions().size() > 0) {

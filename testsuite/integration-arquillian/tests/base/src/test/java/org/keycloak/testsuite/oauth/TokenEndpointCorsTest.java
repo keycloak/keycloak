@@ -44,7 +44,7 @@ public class TokenEndpointCorsTest extends AbstractKeycloakTest {
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation realm = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
-        realm.getClients().add(ClientBuilder.create().redirectUris(VALID_CORS_URL + "/realms/master/app").addWebOrigin(VALID_CORS_URL).id("test-app2").clientId("test-app2").publicClient().build());
+        realm.getClients().add(ClientBuilder.create().redirectUris(VALID_CORS_URL + "/realms/master/app").addWebOrigin(VALID_CORS_URL).id("test-app2").clientId("test-app2").publicClient().directAccessGrants().build());
         testRealms.add(realm);
     }
 
@@ -95,6 +95,25 @@ public class TokenEndpointCorsTest extends AbstractKeycloakTest {
         assertCors(response);
         assertEquals("invalid_grant", response.getError());
         assertEquals("Session not active", response.getErrorDescription());
+    }
+
+    @Test
+    public void accessTokenResourceOwnerCorsRequest() throws Exception {
+        oauth.realm("test");
+        oauth.clientId("test-app2");
+        oauth.origin(VALID_CORS_URL);
+
+        // Token request
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+
+        assertEquals(200, response.getStatusCode());
+        assertCors(response);
+
+        // Invalid password
+        response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "invalid");
+
+        assertEquals(401, response.getStatusCode());
+        assertCors(response);
     }
 
     private static void assertCors(OAuthClient.AccessTokenResponse response) {
