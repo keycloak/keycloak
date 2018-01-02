@@ -382,7 +382,10 @@ public class OAuthClient {
                 post.setHeader("Authorization", authorization);
             } else {
                 parameters.add(new BasicNameValuePair("client_id", clientId));
+            }
 
+            if (origin != null) {
+                post.addHeader("Origin", origin);
             }
 
             if (clientSessionState != null) {
