@@ -29,7 +29,7 @@ On the right side, there is an `Add Provider` list box.  Choose the provider typ
 
 === Dealing with Provider Failures
 
-If a User Storage Provider fails, i.e. if your LDAP server is down, you may have trouble logging in and may not be able to view users in the admin console.
+If a User Storage Provider fails, that is, if your LDAP server is down, you may have trouble logging in and may not be able to view users in the admin console.
 {project_name} does not catch failures when using a Storage Provider to lookup a user.  It will abort the invocation.  So, if you have a Storage Provider with a higher
 priority that fails during user lookup, the login or user query will fail entirely with an exception and abort.  It will not fail over to the next configured provider.
 
