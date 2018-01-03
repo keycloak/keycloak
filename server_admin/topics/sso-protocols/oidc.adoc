@@ -57,6 +57,8 @@ client.  HTML5/JavaScript clients always have to be _public_ clients because the
 manner.  Again, this is ok so long as you use HTTPS and strictly enforce redirect URI registration.  This guide goes more detail
 into this in the <<_clients, Managing Clients>> chapter.
 
+{project_name} also supports the optional https://tools.ietf.org/html/rfc7636[Proof Key for Code Exchange] specification.
+
 ===== Implicit Flow
 
 This is a browser-based protocol that is similar to Authorization Code Flow except there are fewer requests and no refresh tokens involved.
