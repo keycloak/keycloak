@@ -57,7 +57,7 @@
 
 :appserver_name: JBoss EAP
 :appserver_dirref: EAP_HOME
-:appserver_version: 7.0
+:appserver_version: 7.1
 
 :appserver_doc_base_url: https://access.redhat.com/documentation/en-us/red_hat_jboss_enterprise_application_platform/{appserver_version}
 :appserver_socket_name: JBoss EAP Configuration Guide
