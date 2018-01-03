@@ -50,7 +50,8 @@ begin first by modifying the `createAdapter()` method.
 ----
 
 In this method we call the `KeycloakSession.userLocalStorage()` method to obtain a reference to local {project_name}
-user storage. We see if the user is stored locally, if not, we add it locally. Also note that we call
+user storage. We see if the user is stored locally, if not, we add it locally. Do not set the `id` of the local user.
+Let {project_name} set auto generate the `id`.  Also note that we call
 `UserModel.setFederationLink()` and pass in the ID of the `ComponentModel` of our provider. This sets a link between
 the provider and the imported user.
 
@@ -67,7 +68,9 @@ This class is an implementation of `UserModel`. Every method just delegates to t
 We override the `setUsername()` method of this delegate class to synchronize automatically with the property file.
 For your providers, you can use this to _intercept_ other methods on the local `UserModel` to perform synchronization
 with your external store.  For example, get methods could make sure that the local store is in sync. Set methods
-keep the external store in sync with the local one.
+keep the external store in sync with the local one.  One thing to note is that the `getId()` method should always return
+ the id that was auto generated when you created the user locally.  You should not return a federated id as shown in
+the other non-import examples.
 
 NOTE: If your provider is implementing the `UserRegistrationProvider` interface, your `removeUser()` method does not
       need to remove the user from local storage.  The runtime will automatically perform this operation.  Also
