@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-parent</artifactId>
-        <version>3.4.3.Final-SNAPSHOT</version>
+        <version>3.4.3.Final</version>
         <relativePath>../../../../pom.xml</relativePath>
     </parent>
 

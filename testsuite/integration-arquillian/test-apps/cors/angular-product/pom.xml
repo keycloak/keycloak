@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-test-apps-cors-parent</artifactId>
-        <version>3.4.3.Final-SNAPSHOT</version>
+        <version>3.4.3.Final</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>

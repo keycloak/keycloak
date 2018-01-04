@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-examples-providers-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.4.3.Final-SNAPSHOT</version>
+        <version>3.4.3.Final</version>
     </parent>
 
     <name>User Storage JPA Provider Example</name>
