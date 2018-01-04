@@ -37,7 +37,9 @@
     <properties>
         <server.groupId>org.keycloak</server.groupId>
         <server.artifactId>keycloak-server-dist</server.artifactId>
-        <server.unpacked.home>${project.build.directory}/keycloak-${product.version}</server.unpacked.home>
+        <server.version>${product.version}</server.version>
+        <server.unpacked.folder.name>keycloak-${server.version}</server.unpacked.folder.name>
+        <server.unpacked.home>${project.build.directory}/${server.unpacked.folder.name}</server.unpacked.home>
         
         <jdbc.driver.groupId>org.mariadb.jdbc</jdbc.driver.groupId>
         <jdbc.driver.artifactId>mariadb-java-client</jdbc.driver.artifactId>
@@ -76,7 +78,7 @@
                                 <artifactItem>
                                     <groupId>${server.groupId}</groupId>
                                     <artifactId>${server.artifactId}</artifactId>
-                                    <version>${project.version}</version>
+                                    <version>${server.version}</version>
                                     <type>zip</type>
                                     <outputDirectory>${project.build.directory}</outputDirectory>
                                 </artifactItem>
