@@ -41,6 +41,9 @@
 
         <product.build-time>${timestamp}</product.build-time>
 
+        <maven.compiler.target>1.7</maven.compiler.target>
+        <maven.compiler.source>1.7</maven.compiler.source>
+
         <wildfly.version>11.0.0.Final</wildfly.version>
         <wildfly.build-tools.version>1.2.2.Final</wildfly.build-tools.version>
         <eap.version>7.1.0.GA-redhat-11</eap.version>
