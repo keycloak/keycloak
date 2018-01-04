@@ -160,7 +160,7 @@ Our example setup assumes all that all 4 {project_name} servers talk to the same
 
 
 [[jdgsetup]]
-==== {jdgserver_name} server setup
+===== {jdgserver_name} server setup
 Follow these steps to set up the {jdgserver_name} server:
 
 . Download {jdgserver_name} {jdgserver_version} server and unzip to a directory you choose. This location will be referred in later steps as `JDG1_HOME` .
@@ -302,7 +302,7 @@ NOTE: In production, you can have more {jdgserver_name} servers in every data ce
 
 
 [[serversetup]]
-==== {project_name} servers setup
+===== {project_name} servers setup
 
 . Unzip {project_name} server distribution to a location you choose. It will be referred to later as `NODE11`.
 
@@ -547,7 +547,7 @@ There are 2 ways to take the site offline.
 This is useful especially if the outage is planned. With `jconsole` or CLI, you can connect to the `jdg1` server and take the `site2` offline. 
 More details about this are available in the link:https://access.redhat.com/documentation/en-us/red_hat_jboss_data_grid/7.1/html/administration_and_configuration_guide/set_up_cross_datacenter_replication#taking_a_site_offline[JDG documentation]. 
  
-WARNING: This has turned off the backup to `site2` for the cache `sessions`. The same steps usually need to be done for all the other {project_name} caches mentioned in <<backups>>.
+WARNING: These steps usually need to be done for all the {project_name} caches mentioned in <<backups>>.
 
 **Automatically** - After some amount of failed backups, the `site2` will usually be taken offline automatically. This is done due the configuration of `take-offline` element inside the cache configuration as configured in <<jdgsetup>>.
 
@@ -577,13 +577,13 @@ Once the sites are put online, it's usually good to:
 [[statetransfer]]
 ==== State transfer
 
-State transfer is a required, manual step. {jdgserver_name} does not do this automatically, for example during split-brain, it is only the admin who may decide which site has preference and hence if state transfer needs to be done bidirectionally between both sites or just unidirectionally, as in only from `site1` to `site2`, but not from `site2` to `site1`. 
+State transfer is a required, manual step. {jdgserver_name} server does not do this automatically, for example during split-brain, it is only the admin who may decide which site has preference and hence if state transfer needs to be done bidirectionally between both sites or just unidirectionally, as in only from `site1` to `site2`, but not from `site2` to `site1`.
 
 A bidirectional state transfer will ensure that entities which were created *after* split-brain on `site1` will be transferred to `site2`. This is not an issue as they do not yet exist on `site2`. Similarly, entities created *after* split-brain on `site2` will be transferred to `site1`. Possibly problematic parts are those entities which exist *before* split-brain on both sites and which were updated during split-brain on both sites. When this happens, one of the sites will *win* and will overwrite the updates done during split-brain by the second site.
 
 Unfortunately, there is no any universal solution to this. Split-brains and network outages are just state, which is usually impossible to be handled 100% correctly with 100% consistent data between sites. In the case of {project_name}, it typically is not a critical issue. In the worst case, users will need to re-login again to their clients, or have the improper count of loginFailures tracked for brute force protection. See the {jdgserver_name}/JGroups documentation for more tips how to deal with split-brain.
 
-The state transfer can be also done on the {jdgserver_name} side through JMX. The operation name is `pushState`. There are few other operations to monitor status, cancel push state, and so on. 
+The state transfer can be also done on the {jdgserver_name} server side through JMX. The operation name is `pushState`. There are few other operations to monitor status, cancel push state, and so on.
 More info about state transfer is available in the link:https://access.redhat.com/documentation/en-us/red_hat_jboss_data_grid/7.1/html/administration_and_configuration_guide/set_up_cross_datacenter_replication#state_transfer_between_sites[{jdgserver_name} docs].
 
 
@@ -635,7 +635,7 @@ With timeout 0, the transaction will immediately fail and then will be retried f
 
 We see very good consistency and results for concurrent transaction with this configuration, and it is recommended to keep it. 
 
-The only (non-functional) problem is the exception in the {jdgserver_name} log, which happens every time when the lock is not immediately available.
+The only (non-functional) problem is the exception in the {jdgserver_name} server log, which happens every time when the lock is not immediately available.
 
 
 [[backups]]
@@ -649,15 +649,15 @@ An important part of the `backup` element is the `strategy` attribute. You must 
 
 If the `SYNC` backup is used, then the backup is synchronous and operation is considered finished on the caller ({project_name} server) side once the backup is processed on the second site. This has worse performance than `ASYNC`, but on the other hand, you are sure that subsequent reads of the particular entity, such as user session, on `site2` will see the updates from `site1`. Also, it is needed if you want data consistency. As with `ASYNC` the caller is not notified at all if backup to the other site failed.
 
-For some caches, it is even possible to not backup at all and completely skip writing data to the {jdgserver_name} server. To set this up, do not use the `remote-store` element for the particular cache on the {project_name} side (file `KEYCLOAK_HOME/standalone/configuration/standalone-ha.xml`) and then the particular `replicated-cache` element is also not needed on the {jdgserver_name} side.
+For some caches, it is even possible to not backup at all and completely skip writing data to the {jdgserver_name} server. To set this up, do not use the `remote-store` element for the particular cache on the {project_name} side (file `KEYCLOAK_HOME/standalone/configuration/standalone-ha.xml`) and then the particular `replicated-cache` element is also not needed on the {jdgserver_name} server side.
 
 By default, all 7 caches are configured with `SYNC` backup, which is the safest option. Here are a few things to consider:
 
-* If you are using active/passive mode (all {project_name} servers are in single site `site1` and the {jdgserver_name} server in `site2` is used purely as backup. More details [here](#modes)), then it is usually fine to use `ASYNC` strategy for all the caches to save the performance.
+* If you are using active/passive mode (all {project_name} servers are in single site `site1` and the {jdgserver_name} server in `site2` is used purely as backup. See <<modes>> for more details), then it is usually fine to use `ASYNC` strategy for all the caches to save the performance.
 
 * The `work` cache is used mainly to send some messages, such as cache invalidation events, to the other site. It is also used to ensure that some special events, such as userStorage synchronizations, happen only on single site. It is recommended to keep this set to `SYNC`.
 
-* The `actionTokens` cache is used as single-use cache to track that some tokens/tickets were used just once. For example <<cache>> or OAuth2 codes. It is possible to set this to `ASYNC` to slightly improved performance, but then it is not guaranteed that particular ticket is really single-use. For example, if there is concurrent request for same ticket in both sites, then it is possible that both requests will be successful with the `ASYNC` strategy. So what you set here will depend on whether you prefer better security (`SYNC` strategy) or better performance (`ASYNC` strategy). 
+* The `actionTokens` cache is used as single-use cache to track that some tokens/tickets were used just once. For example action tokens or OAuth2 codes. It is possible to set this to `ASYNC` to slightly improved performance, but then it is not guaranteed that particular ticket is really single-use. For example, if there is concurrent request for same ticket in both sites, then it is possible that both requests will be successful with the `ASYNC` strategy. So what you set here will depend on whether you prefer better security (`SYNC` strategy) or better performance (`ASYNC` strategy).
 
 * The `loginFailures` cache may be used in any of the 3 modes. If there is no backup at all, it means that count of login failures for a user will be counted separately for every site (See <<cache>> for details). This has some security implications, however it has some performance advantages. Also it mitigates the possible risk of denial of service (DoS) attacks. For example, if an attacker simulates 1000 concurrent requests using the username and password of the user on both sites, it will mean lots of messages being passed between the sites, which may result in network congestion. The `ASYNC` strategy might be even worse as the attacker requests won't be blocked by waiting for the backup to the other site, resulting in potentially even more congested network traffic. 
 The count of login failures also will not be accurate with the `ASYNC` strategy.
@@ -730,7 +730,7 @@ then check the log of corresponding {jdgserver_name} server of your site and che
 
 * If you updated the entity, such as `user`, on {project_name} server on `site1` and you do not see that entity updated on the {project_name} server on `site2`, then the issue can be either in the replication of the synchronous database itself or that {project_name} caches are not properly invalidated. You may try to temporarily disable the {project_name} caches as described link:{installguide_disablingcaching_link}[here] to nail down if the issue is at the database replication level. Also it may help to manually connect to the database and check if data are updated as expected. This is specific to every database, so you will need to consult the documentation for your database.  
 
-* Sometimes you may see the exceptions related to locks like this in {jdgserver_name} log:
+* Sometimes you may see the exceptions related to locks like this in {jdgserver_name} server log:
 +
 ```
 (HotRodServerHandler-6-35) ISPN000136: Error executing command ReplaceCommand, 
