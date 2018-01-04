@@ -6,7 +6,7 @@ NOTE: With Red Hat Enterprise Linux 7, the term channel was replaced with the te
 
 You must subscribe to both the {appserver_name} {appserver_version} and RH-SSO {project_versionDoc} repositories before you can install RH-SSO from an RPM.
 
-NOTE: You cannot continue to receive upgrades to EAP 7.1 RPMs but stop receiving updates for RH-SSO.
+NOTE: You cannot continue to receive upgrades to EAP RPMs but stop receiving updates for RH-SSO.
 
 [[subscribing_EAP_repo]]
 ==== Subscribing to the {appserver_name} {appserver_version} Repository
