@@ -58,6 +58,7 @@
         <db.dc1.docker.cpusets>1</db.dc1.docker.cpusets>
         <db.dc2.docker.cpusets>1</db.dc2.docker.cpusets>
         <db.docker.memlimit>2g</db.docker.memlimit>
+        <db.dump.download.site>https://downloads.jboss.org/keycloak-qe</db.dump.download.site>
 
         <!-- Load Balancer Settings -->
         <lb.docker.cpusets>1</lb.docker.cpusets>
@@ -620,6 +621,7 @@
                                         <DEPLOYMENT>${deployment}</DEPLOYMENT>
                                         <OPERATION>import-dump</OPERATION>
                                         <DATASET>${dataset}</DATASET>
+                                        <DUMP_DOWNLOAD_SITE>${db.dump.download.site}</DUMP_DOWNLOAD_SITE>
                                     </environmentVariables>
                                 </configuration>
                             </execution>
