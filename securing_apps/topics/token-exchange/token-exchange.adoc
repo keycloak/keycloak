@@ -313,7 +313,7 @@ NOTE:  SAML identity providers are not supported at this time.  Twitter tokens c
 ==== Granting Permission for the Exchange
 
 Before external token exchanges can be done, you must grant permission for the calling client to make the exchange.  This
-permission is granted in the same manner as <<_grant_permission_external_exchange, interal to external permission is granted>>.
+permission is granted in the same manner as <<_grant_permission_external_exchange, internal to external permission is granted>>.
 
 If you also provide an `audience` parameter whose value points to a different client other than the calling one, you
 must also grant the calling client permission to exchange to the target client specific in the `audience` parameter.  How
