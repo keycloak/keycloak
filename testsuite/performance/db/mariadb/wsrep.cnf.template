@@ -13,6 +13,8 @@ innodb_doublewrite=1
 
 innodb_buffer_pool_size=122M
 
+max_connections=@MAX_CONNECTIONS@
+
 wsrep_on=ON
 wsrep_provider=/usr/lib/galera/libgalera_smm.so
 
