@@ -980,13 +980,13 @@ module.controller('ResourceServerPolicyResourceDetailCtrl', function($scope, $ro
                 for (i = 0; i < policies.length; i++) {
                     policies[i].text = policies[i].name;
                     $scope.selectedPolicies.push(policies[i]);
-                    var copy = angular.copy($scope.selectedPolicies);
-                    $scope.$watch('selectedPolicies', function() {
-                        if (!angular.equals($scope.selectedPolicies, copy)) {
-                            $scope.changed = true;
-                        }
-                    }, true);
                 }
+                var copy = angular.copy($scope.selectedPolicies);
+                $scope.$watch('selectedPolicies', function() {
+                    if (!angular.equals($scope.selectedPolicies, copy)) {
+                        $scope.changed = true;
+                    }
+                }, true);
             });
         },
 
