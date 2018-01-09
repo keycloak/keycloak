@@ -58,6 +58,7 @@
         <db.dc1.docker.cpusets>1</db.dc1.docker.cpusets>
         <db.dc2.docker.cpusets>1</db.dc2.docker.cpusets>
         <db.docker.memlimit>2g</db.docker.memlimit>
+        <db.max.connections>100</db.max.connections>
         <db.dump.download.site>https://downloads.jboss.org/keycloak-qe</db.dump.download.site>
 
         <!-- Load Balancer Settings -->
@@ -418,6 +419,7 @@
                                         <DB_DC1_CPUSETS>${db.dc1.docker.cpusets}</DB_DC1_CPUSETS>
                                         <DB_DC2_CPUSETS>${db.dc2.docker.cpusets}</DB_DC2_CPUSETS>
                                         <DB_MEMLIMIT>${db.docker.memlimit}</DB_MEMLIMIT>
+                                        <DB_MAX_CONNECTIONS>${db.max.connections}</DB_MAX_CONNECTIONS>
 
                                         <LB_CPUSETS>${lb.docker.cpusets}</LB_CPUSETS>
                                         <LB_DC1_CPUSETS>${lb.dc1.docker.cpusets}</LB_DC1_CPUSETS>
