@@ -9,7 +9,7 @@ While OAuth 2.0 is only a framework for building authorization protocols and is 
 protocol.  OIDC also makes heavy use of the link:https://jwt.io[Json Web Token] (JWT) set of standards.  These standards define an
 identity token JSON format and ways to digitally sign and encrypt that data in a compact and web-friendly way.
 
-There is really two types of use cases when using OIDC.  The first is an application that asks the {project_name} server to authenticate
+There are really two types of use cases when using OIDC.  The first is an application that asks the {project_name} server to authenticate
 a user for them.  After a successful login, the application will receive an _identity token_ and an _access token_.  The _identity token_
 contains information about the user such as username, email, and other profile information.  The _access token_ is digitally signed by
 the realm and contains access information (like user role mappings) that the application can use to determine what resources the user
@@ -30,7 +30,7 @@ that works by exchanging XML documents between the authentication server and the
 
 In {project_name} SAML serves two types of use cases: browser applications and REST invocations.
 
-There is really two types of use cases when using SAML.  The first is an application that asks the {project_name} server to authenticate
+There are really two types of use cases when using SAML.  The first is an application that asks the {project_name} server to authenticate
 a user for them.  After a successful login, the application will receive an XML document that contains
 something called a SAML assertion that specifies various attributes about the user.  This XML document is digitally signed by
 the realm and contains access information (like user role mappings) that the application can use to determine what resources the user

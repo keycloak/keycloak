@@ -24,7 +24,7 @@ To allow a particular user to use `Client Registration CLI` the {project_name} a
 These permissions grant the user the capability to perform operations without the use of <<_initial_access_token,Initial Access Token>> or <<_registration_access_token,Registration Access Token>>.
 ====
 
-It is possible to not assign any [command]`realm-management` roles to a user. In that case, a user can still log in with the Registration Client CLI but cannot use it without an Initial Access Token. Trying to perform any operations without a token results in a *403 Forbidden* error.
+It is possible to not assign any [command]`realm-management` roles to a user. In that case, a user can still log in with the Client Registration CLI but cannot use it without an Initial Access Token. Trying to perform any operations without a token results in a *403 Forbidden* error.
 
 The Administrator can issue Initial Access Tokens from the Admin Console through the *Realm Settings > Client Registration > Initial Access Token* menu.
 
@@ -36,7 +36,7 @@ By default, the server recognizes the Client Registration CLI as the [filename]`
 
 . Strengthen the security by configuring the client [filename]`Access Type` as [filename]`Confidential` and selecting *Credentials > ClientId and Secret*.
 . Provide a secret when running [command]`kcreg config credentials` by using the [command]`--secret` option.
-. Create a new client (for example, [filename]`reg-cli`) if you want to use a separate client configuration for the Registration Client CLI.
+. Create a new client (for example, [filename]`reg-cli`) if you want to use a separate client configuration for the Client Registration CLI.
 . Specify which [filename]`clientId` to use (for example, [command]`--client reg-cli`) when running [command]`kcreg config credentials`.
 . Enable service accounts if you want to use a service account associated with the client by selecting a client to edit in the *Clients* section of the `Admin Console`.
 . Under *Settings*, change the *Access Type* to *Confidential*, toggle the *Service Accounts Enabled* setting to *On*, and click [btn]`Save`.
@@ -53,7 +53,7 @@ You can configure either [filename]`Client Id and Secret` or [filename]`Signed J
 
 The Client Registration CLI is packaged inside the Keycloak Server distribution. You can find execution scripts inside the [filename]`bin` directory. The Linux script is called [filename]`kcreg.sh`, and the Windows script is called [filename]`kcreg.bat`.
 
-Add the Keycloak server directory to your [filename]`PATH` when setting up the client for use from any location on the file system .
+Add the Keycloak server directory to your [filename]`PATH` when setting up the client for use from any location on the file system.
 
 For example, on:
 
@@ -160,7 +160,7 @@ By default, the Client Registration CLI automatically maintains a configuration 
 Do not make the configuration file visible to other users on the system. The configuration file contains access tokens and secrets that should be kept private.
 ====
 
-You might want to avoid storing secrets inside a configuration file by using the [command]`--no-config` option with all of your commands, even thought it is less convenient and requires more token requests to do so. Specify all authentication information with each [command]`kcreg` invocation.
+You might want to avoid storing secrets inside a configuration file by using the [command]`--no-config` option with all of your commands, even though it is less convenient and requires more token requests to do so. Specify all authentication information with each [command]`kcreg` invocation.
 
 
 [[_initial_access_and_registration_access_tokens]]
