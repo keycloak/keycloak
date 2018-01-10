@@ -23,7 +23,7 @@ To add it manually and if you are using Maven, add the following to your depende
 
 ----
 
-Make also sure to add the Adapter POM dependency :
+Make also sure to add the Adapter BOM dependency :
 
 [source,xml,subs="attributes+"]
 ----

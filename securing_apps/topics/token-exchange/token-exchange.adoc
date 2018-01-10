@@ -84,7 +84,7 @@ a JSON document as described in the link:http://www.ietf.org/id/draft-ietf-oauth
 
 Clients requesting a refresh token will get back both an access and refresh token in the response.  Clients requesting only
 access token type will only get an access token in the response.  Expiration information may or may not be included for
-clients requesting a an external issuer through the `requested_issuer`paramater.
+clients requesting a an external issuer through the `requested_issuer` paramater.
 
 Error responses generally fall under the 400 HTTP response code category, but other error status codes may be returned
 depending on the severity of the error.  Error responses may include content depending on the `requested_issuer`.
