@@ -2,7 +2,7 @@
 
 === X.509 Client Certificate User Authentication
 
-Keycloak supports login with a X.509 client certificate if the server is configured for mutual SSL authentication.	
+{project_name} supports login with a X.509 client certificate if the server is configured for mutual SSL authentication.
 
 A typical workflow is as follows:
 
@@ -53,12 +53,12 @@ Other Features: Extended Certificate Validation::
 
 ==== Enable X.509 Client Certificate User Authentication
 
-The following sections describe how to configure Wildfly/Undertow and the Keycloak Server to enable X.509 client certificate authentication.
+The following sections describe how to configure Wildfly/Undertow and the {project_name} Server to enable X.509 client certificate authentication.
 
 Enable mutual SSL in WildFly::
 See link:https://docs.jboss.org/author/display/WFLY10/Admin+Guide#AdminGuide-EnableSSL[Enable SSL] and link:https://docs.jboss.org/author/display/WFLY10/Admin+Guide#AdminGuide-%7B%7B%3Cssl%2F%3E%7D%7D[SSL] for the instructions how to enable SSL in Wildfly.
 
-* Open $KEYCLOAK_HOME/standalone/configuration/standalone.xml and add a new realm:
+* Open {project_dirref}/standalone/configuration/standalone.xml and add a new realm:
 ```
 <security-realms>
     <security-realm name="ssl-realm">
@@ -193,7 +193,7 @@ If set, X.509 client certificate authentication will not prompt the user to conf
 
 ==== Adding X.509 Client Certificate Authentication to a Direct Grant Flow
 
-* Using keycloak admin console, click on "Authentication" and select the "Direct Grant" flow,
+* Using {project_name} admin console, click on "Authentication" and select the "Direct Grant" flow,
 * Make a copy of the build-in "Direct Grant" flow. You may want to give the new flow a distinctive name, i.e. "X509 Direct Grant",
 * Delete "Validate Username" and "Password" authenticators,
 * Click on "Execution" and add "X509/Validate Username" and click on "Save" to add the execution step to the parent flow.
@@ -209,6 +209,60 @@ image:images/x509-directgrant-flow.png[]
 
 image:images/x509-directgrant-flow-bindings.png[]
 
+==== Client certificate lookup
+
+When an HTTP request is sent directly to {project_name} server, the {appserver_name} undertow subsystem will establish an SSL handshake and extract the client certificate. The client certificate will be then saved to the attribute `javax.servlet.request.X509Certificate` of the HTTP request, as specified in the servlet specification. The {project_name} X509 authenticator will be then able to lookup the certificate from this attribute.
+
+However, when the {project_name} server listens to HTTP requests behind a load balancer or reverse proxy, it may be the proxy server which extracts the client certificate and establishes the mutual SSL connection. A reverse proxy usually puts the authenticated client certificate in the HTTP header of the underlying request and forwards it to the back end {project_name} server. In this case, {project_name} must be able to look up the X.509 certificate chain from the HTTP headers instead of from the attribute of HTTP request, as is done for Undertow.
+
+If {project_name} is behind a reverse proxy, you usually need to configure alternative provider of the `x509cert-lookup` SPI in {project_dirref}/standalone/configuration/standalone.xml. Along with the `default` provider, which looks up the certificate from the HTTP header, we also have two additional built-in providers: `haproxy` and `apache`, which are described next.
+
+===== HAProxy certificate lookup provider
+
+You can use this provider when your {project_name} server is behind an HAProxy reverse proxy. Configure the server like this:
+
+[source,xml]
+----
+<spi name="x509cert-lookup">
+    <default-provider>haproxy</default-provider>
+    <provider name="haproxy" enabled="true">
+        <properties>
+            <property name="sslClientCert" value="SSL_CLIENT_CERT"/>
+            <property name="sslCertChainPrefix" value="CERT_CHAIN"/>
+            <property name="certificateChainLength" value="10"/>
+        </properties>
+    </provider>
+</spi>
+----
+
+In this example configuration, the client certificate will be looked up from the HTTP header, `SSL_CLIENT_CERT`, and the other certificates from its chain will be looked up from HTTP headers like `CERT_CHAIN_0` , `CERT_CHAIN_1`, ..., `CERT_CHAIN_9` . The attribute `certificateChainLength` is the maximum length of the chain, so the last one tried attribute would be `CERT_CHAIN_9` .
+
+Consult the HAProxy documentation for the details of how the HTTP Headers for the client certificate and client certificate chain can be configured and their proper names.
+
+===== Apache certificate lookup provider
+
+You can use this provider when your {project_name} server is behind an Apache reverse proxy. Configure the server like this:
+
+[source,xml]
+----
+<spi name="x509cert-lookup">
+    <default-provider>apache</default-provider>
+    <provider name="apache" enabled="true">
+        <properties>
+            <property name="sslClientCert" value="SSL_CLIENT_CERT"/>
+            <property name="sslCertChainPrefix" value="CERT_CHAIN"/>
+            <property name="certificateChainLength" value="10"/>
+        </properties>
+    </provider>
+</spi>
+----
+
+The configuration is same as for the `haproxy` provider. Consult the Apache documentation for the details of how the HTTP Headers for the client certificate and client certificate chain can be configured and their proper names.
+
+===== Other reverse proxy implementations
+
+We do not have built-in support for other reverse proxy implementations. However, it is possible that other reverse proxies can be made to behave in a similar way to `apache` or `haproxy` and that some of those providers can be used. If none of those works, you may need to create your own implementation of the `org.keycloak.services.x509.X509ClientCertificateLookupFactory` and `org.keycloak.services.x509.X509ClientCertificateLookup` provider. See the link:{developerguide_link}[{developerguide_name}] for the details on how to add your own provider.
+
 ==== Troubleshooting
 
 Direct Grant authentication with X.509::
@@ -223,7 +277,7 @@ $ curl https://[host][:port]/auth/realms/master/protocol/openid-connect/token \
 ```
 
 `[host][:port]`::
-The host and the port number of a remote Keycloak server that has been configured to allow users authenticate with x.509 client certificates using the Direct Grant Flow.
+The host and the port number of a remote {project_name} server that has been configured to allow users authenticate with x.509 client certificates using the Direct Grant Flow.
 
 `CLIENT_ID`::
 A client id.
