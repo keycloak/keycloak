@@ -335,7 +335,7 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
 
     @Deployment(name = SalesPostAutodetectServlet.DEPLOYMENT_NAME)
     protected static WebArchive salesPostAutodetect() {
-        return samlServletDeployment(SalesPostAutodetectServlet.DEPLOYMENT_NAME, SendUsernameServlet.class);
+        return samlServletDeployment(SalesPostAutodetectServlet.DEPLOYMENT_NAME, "sales-post-autodetect/WEB-INF/web.xml", SendUsernameServlet.class);
     }
 
     @Override
