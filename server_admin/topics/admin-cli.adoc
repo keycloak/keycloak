@@ -1695,3 +1695,77 @@ For example:
 ----
 $ kcadm.sh get authentication/flows -r demorealm
 ----
+
+[discrete]
+==== Getting a specific authentication flow
+
+Run the [command]`get` command on the [filename]`authentication/flows/FLOW_ID` endpoint.
+
+For example:
+[options="nowrap"]
+----
+$ kcadm.sh get authentication/flows/febfd772-e1a1-42fb-b8ae-00c0566fafb8 -r demorealm
+----
+
+[discrete]
+==== Listing executions for a flow
+
+Run the [command]`get` command on the [filename]`authentication/flows/FLOW_ALIAS/executions` endpoint.
+
+For example:
+[options="nowrap"]
+----
+$ kcadm.sh get authentication/flows/Copy%20of%20browser/executions -r demorealm
+----
+
+
+[discrete]
+==== Adding configuration to an execution
+
+. Get execution for a flow, and take note of its ID
+. Run the [command]`create` command on the [filename]`authentication/executions/{executionId}/config` endpoint.
+
+For example:
+[options="nowrap"]
+----
+$ kcadm create "authentication/executions/a3147129-c402-4760-86d9-3f2345e401c7/config" -r examplerealm -b '{"config":{"x509-cert-auth.mapping-source-selection":"Match SubjectDN using regular expression","x509-cert-auth.regular-expression":"(.*?)(?:$)","x509-cert-auth.mapper-selection":"Custom Attribute Mapper","x509-cert-auth.mapper-selection.user-attribute-name":"usercertificate","x509-cert-auth.crl-checking-enabled":"","x509-cert-auth.crldp-checking-enabled":false,"x509-cert-auth.crl-relative-path":"crl.pem","x509-cert-auth.ocsp-checking-enabled":"","x509-cert-auth.ocsp-responder-uri":"","x509-cert-auth.keyusage":"","x509-cert-auth.extendedkeyusage":"","x509-cert-auth.confirmation-page-disallowed":""},"alias":"my_otp_config"}'
+----
+
+
+[discrete]
+==== Getting configuration for an execution
+
+. Get execution for a flow, and get its [filename]`authenticationConfig` attribute, containing the config ID.
+. Run the [command]`get` command on the [filename]`authentication/config/ID` endpoint.
+
+For example:
+[options="nowrap"]
+----
+$ kcadm get "authentication/config/dd91611a-d25c-421a-87e2-227c18421833" -r examplerealm
+----
+
+
+[discrete]
+==== Updating configuration for an execution
+
+. Get execution for a flow, and get its [filename]`authenticationConfig` attribute, containing the config ID.
+. Run the [command]`update` command on the [filename]`authentication/config/ID` endpoint.
+
+For example:
+[options="nowrap"]
+----
+$ kcadm update "authentication/config/dd91611a-d25c-421a-87e2-227c18421833" -r examplerealm -b '{"id":"dd91611a-d25c-421a-87e2-227c18421833","alias":"my_otp_config","config":{"x509-cert-auth.extendedkeyusage":"","x509-cert-auth.mapper-selection.user-attribute-name":"usercertificate","x509-cert-auth.ocsp-responder-uri":"","x509-cert-auth.regular-expression":"(.*?)(?:$)","x509-cert-auth.crl-checking-enabled":"true","x509-cert-auth.confirmation-page-disallowed":"","x509-cert-auth.keyusage":"","x509-cert-auth.mapper-selection":"Custom Attribute Mapper","x509-cert-auth.crl-relative-path":"crl.pem","x509-cert-auth.crldp-checking-enabled":"false","x509-cert-auth.mapping-source-selection":"Match SubjectDN using regular expression","x509-cert-auth.ocsp-checking-enabled":""}}'
+----
+
+
+[discrete]
+==== Deleting configuration for an execution
+
+. Get execution for a flow, and get its [filename]`authenticationConfig` attribute, containing the config ID.
+. Run the [command]`delete` command on the [filename]`authentication/config/ID` endpoint.
+
+For example:
+[options="nowrap"]
+----
+$ kcadm delete "authentication/config/dd91611a-d25c-421a-87e2-227c18421833" -r examplerealm
+----
