@@ -21,6 +21,7 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.policy.PasswordPolicyNotMetException;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -148,6 +149,10 @@ public class RealmsAdminResource {
         } catch (ModelDuplicateException e) {
             logger.error("Conflict detected", e);
             return ErrorResponse.exists("Conflict detected. See logs for details");
+        } catch (PasswordPolicyNotMetException e) {
+            logger.error("Password policy not met for user " + e.getUsername(), e);
+            if (session.getTransactionManager().isActive()) session.getTransactionManager().setRollbackOnly();
+            return ErrorResponse.error("Password policy not met. See logs for details", Response.Status.BAD_REQUEST);
         }
     }
 

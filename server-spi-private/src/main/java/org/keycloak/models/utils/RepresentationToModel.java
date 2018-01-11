@@ -79,6 +79,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.credential.PasswordUserCredentialModel;
+import org.keycloak.policy.PasswordPolicyNotMetException;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
@@ -1534,7 +1535,17 @@ public class RepresentationToModel {
         if (cred.getValue() != null) {
             PasswordUserCredentialModel plainTextCred = convertCredential(cred);
             plainTextCred.setAdminRequest(adminRequest);
-            session.userCredentialManager().updateCredential(realm, user, plainTextCred);
+            
+            //if called from import we need to change realm in context to load password policies from the newly created realm
+            RealmModel origRealm = session.getContext().getRealm();
+            try {
+                session.getContext().setRealm(realm);
+                session.userCredentialManager().updateCredential(realm, user, plainTextCred);
+            } catch (ModelException ex) {
+                throw new PasswordPolicyNotMetException(ex.getMessage(), user.getUsername(), ex);
+            } finally {
+                session.getContext().setRealm(origRealm);
+            }
         } else {
             CredentialModel hashedCred = new CredentialModel();
             hashedCred.setType(cred.getType());
