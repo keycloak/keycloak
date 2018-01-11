@@ -23,8 +23,10 @@ import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.ServerInfoResource;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.admin.OperationType;
@@ -50,6 +52,7 @@ import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.runonserver.RunHelpers;
+import org.keycloak.testsuite.updaters.RealmRemover;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.CredentialBuilder;
@@ -60,6 +63,7 @@ import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -68,6 +72,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import javax.ws.rs.BadRequestException;
 
 import static org.junit.Assert.*;
 
@@ -83,6 +88,8 @@ public class RealmTest extends AbstractAdminTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     @Test
     public void getRealms() {
@@ -193,6 +200,40 @@ public class RealmTest extends AbstractAdminTest {
         assertRealm(rep, created);
 
         adminClient.realms().realm("admin-test-1").remove();
+    }
+
+    //KEYCLOAK-6146
+    @Test
+    public void createRealmWithPasswordPolicyFromJsonWithInvalidPasswords() {
+        //try to create realm with password policies and users with plain-text passwords what doesn't met the policies
+        RealmRepresentation rep = loadJson(getClass().getResourceAsStream("/import/testrealm-keycloak-6146-error.json"), RealmRepresentation.class);
+
+        expectedException.expect(NotFoundException.class);
+        expectedException.expectMessage(String.valueOf(Response.Status.NOT_FOUND.getStatusCode()));
+
+        try {
+            adminClient.realms().create(rep);
+        } catch (BadRequestException ex) {
+            //ensure the realm was not created
+            log.info("--Caught expected BadRequestException--");
+            adminClient.realms().realm("secure-app").toRepresentation();
+        }
+        //test will fail on AssertionError when both BadRequestException and NotFoundException is not thrown
+    }
+    
+    //KEYCLOAK-6146
+    @Test
+    public void createRealmWithPasswordPolicyFromJsonWithValidPasswords() throws IOException {
+        //realm with password policies and users have passwords in correct state
+        RealmRepresentation rep = loadJson(getClass().getResourceAsStream("/import/testrealm-keycloak-6146.json"), RealmRepresentation.class);
+        adminClient.realms().create(rep);
+        
+        RealmResource secureApp = adminClient.realms().realm("secure-app");
+        RealmRepresentation created = secureApp.toRepresentation();
+        
+        try (Closeable c = new RealmRemover(secureApp).remove()) {
+            assertRealm(rep, created);
+        }
     }
 
     @Test
