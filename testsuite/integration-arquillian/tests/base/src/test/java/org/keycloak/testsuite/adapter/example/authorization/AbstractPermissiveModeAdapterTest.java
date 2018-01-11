@@ -41,8 +41,13 @@ public abstract class AbstractPermissiveModeAdapterTest extends AbstractServletA
         performTests(() -> {
             login("jdoe", "jdoe");
             driver.navigate().to(getResourceServerUrl() + "/enforcing/resource");
-            assertTrue(driver.getTitle().equals("Error"));
-            assertTrue(driver.getPageSource().contains("Not Found"));
+
+            if (System.getProperty("app.server","").startsWith("eap6")) {
+                assertTrue(driver.getPageSource().contains("HTTP Status 404"));
+            } else {
+                assertTrue(driver.getTitle().equals("Error"));
+                assertTrue(driver.getPageSource().contains("Not Found"));
+            }
 
             driver.navigate().to(getResourceServerUrl() + "/protected/admin");
             assertTrue(wasDenied());
