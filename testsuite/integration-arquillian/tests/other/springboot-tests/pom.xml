@@ -18,6 +18,8 @@
 
         <repo.argument />
         <maven.settings.file />
+
+        <jetty.adapter.version />
     </properties>
 
     <dependencies>
@@ -74,6 +76,7 @@
                                         <argument>-Dkeycloak.version=${project.version}</argument>
                                         <argument>-Pspring-boot-adapter-${adapter.container}</argument>
                                         <argument>-Dmaven.repo.local=${settings.localRepository}</argument>
+                                        <argument>-Djetty.adapter.version=${jetty.adapter.version}</argument>
                                         <argument>${repo.argument}</argument>
                                     </arguments>
                                 </configuration>
@@ -125,6 +128,7 @@
                                         <argument>-Dkeycloak.version=${project.version}</argument>
                                         <argument>-Pspring-boot-adapter-${adapter.container}</argument>
                                         <argument>-Dmaven.repo.local=${settings.localRepository}</argument>
+                                        <argument>-Djetty.adapter.version=${jetty.adapter.version}</argument>
                                     </arguments>
                                 </configuration>
                             </execution>
