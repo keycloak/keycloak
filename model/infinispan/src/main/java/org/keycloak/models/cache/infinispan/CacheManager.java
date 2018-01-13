@@ -198,29 +198,22 @@ public abstract class CacheManager {
     }
 
 
-    public void sendInvalidationEvents(KeycloakSession session, Collection<InvalidationEvent> invalidationEvents) {
+    public void sendInvalidationEvents(KeycloakSession session, Collection<InvalidationEvent> invalidationEvents, String eventKey) {
         ClusterProvider clusterProvider = session.getProvider(ClusterProvider.class);
 
         // Maybe add InvalidationEvent, which will be collection of all invalidationEvents? That will reduce cluster traffic even more.
         for (InvalidationEvent event : invalidationEvents) {
-            clusterProvider.notify(generateEventId(event), event, true);
+            clusterProvider.notify(eventKey, event, true, ClusterProvider.DCNotify.ALL_DCS);
         }
     }
 
-    protected String generateEventId(InvalidationEvent event) {
-        return new StringBuilder(event.getId())
-                .append("_")
-                .append(event.hashCode())
-                .toString();
-    }
 
-
-    protected void invalidationEventReceived(InvalidationEvent event) {
+    public void invalidationEventReceived(InvalidationEvent event) {
         Set<String> invalidations = new HashSet<>();
 
         addInvalidationsFromEvent(event, invalidations);
 
-        getLogger().debugf("Invalidating %d cache items after received event %s", invalidations.size(), event);
+        getLogger().debugf("[%s] Invalidating %d cache items after received event %s", cache.getCacheManager().getAddress(), invalidations.size(), event);
 
         for (String invalidation : invalidations) {
             invalidateObject(invalidation);

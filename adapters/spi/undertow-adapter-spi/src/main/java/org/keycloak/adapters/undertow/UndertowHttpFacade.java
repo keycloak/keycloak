@@ -84,6 +84,11 @@ public class UndertowHttpFacade implements HttpFacade {
         }
 
         @Override
+        public String getRelativePath() {
+            return exchange.getRelativePath();
+        }
+
+        @Override
         public boolean isSecure() {
             String protocol = exchange.getRequestScheme();
             return protocol.equalsIgnoreCase("https");

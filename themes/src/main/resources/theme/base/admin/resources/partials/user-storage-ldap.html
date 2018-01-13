@@ -8,9 +8,6 @@
     <kc-tabs-ldap></kc-tabs-ldap>
 
     <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
-        <input type="text" readonly value="this is not a login form" style="display: none;">
-        <input type="password" readonly value="this is not a login form" style="display: none;">
-
         <fieldset>
             <legend><span class="text">{{:: 'required-settings' | translate}}</span></legend>
             <div class="form-group clearfix" data-ng-show="!create">
@@ -18,6 +15,13 @@
                 <div class="col-md-6">
                     <input class="form-control" id="providerId" type="text" ng-model="instance.id" readonly>
                 </div>
+            </div>
+            <div class="form-group clearfix block">
+                <label class="col-md-2 control-label" for="enabled">{{:: 'enabled' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="instance.config['enabled'][0]" name="enabled" id="enabled" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'user-storage.enabled.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="consoleDisplayName">{{:: 'console-display-name' | translate}} </label>
@@ -32,6 +36,13 @@
                     <input class="form-control" id="priority" type="text" ng-model="instance.config['priority'][0]">
                 </div>
                 <kc-tooltip>{{:: 'priority.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block">
+                <label class="col-md-2 control-label" for="importEnabled">{{:: 'import-enabled' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="instance.config['importEnabled'][0]" name="importEnabled" id="importEnabled" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'ldap.import-enabled.tooltip' | translate}}</kc-tooltip>
             </div>
 
             <div class="form-group">
@@ -137,9 +148,9 @@
                 <kc-tooltip>{{:: 'ldap.bind-dn.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix" data-ng-hide="instance.config['authType'][0] == 'none'">
-                <label class="col-md-2 control-label" for="ldapBindCredential"><span class="required">*</span> {{:: 'bind-credential' | translate}}</label>
+                <label class="col-md-2 control-label" for="ldapBindCred"><span class="required">*</span> {{:: 'bind-credential' | translate}}</label>
                 <div class="col-md-6">
-                    <input class="form-control" id="ldapBindCredential" type="password" ng-model="instance.config['bindCredential'][0]" placeholder="{{:: 'ldap-bind-credentials' | translate}}" data-ng-required="instance.config['authType'][0] != 'none'">
+                    <input class="form-control" id="ldapBindCred" kc-password ng-model="instance.config['bindCredential'][0]" placeholder="{{:: 'ldap-bind-credentials' | translate}}" data-ng-required="instance.config['authType'][0] != 'none'">
                 </div>
                 <kc-tooltip>{{:: 'ldap.bind-credential.tooltip' | translate}}</kc-tooltip>
                 <div class="col-sm-4" data-ng-show="access.manageRealm">
@@ -165,6 +176,13 @@
                     </div>
                 </div>
                 <kc-tooltip>{{:: 'ldap.search-scope.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="validatePasswordPolicy">{{:: 'validate-password-policy' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="instance.config['validatePasswordPolicy'][0]" name="validatePasswordPolicy" id="validatePasswordPolicy" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'ldap.validate-password-policy.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
                 <label class="col-md-2 control-label" for="useTruststoreSpi">{{:: 'use-truststore-spi' | translate}}</label>
@@ -312,7 +330,7 @@
                 <kc-tooltip>{{:: 'userStorage.cachePolicy.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group" data-ng-show="instance.config['cachePolicy'][0] == 'EVICT_WEEKLY'">
-                <label for="evictionDay" class="col-md-2 control-label">{{:: 'userStorage.evictionDay' | translate}}</label>
+                <label for="evictionDay" class="col-md-2 control-label">{{:: 'userStorage.cachePolicy.evictionDay' | translate}}</label>
                 <div class="col-md-2">
                     <div>
                         <select id="evictionDay" ng-model="instance.config['evictionDay'][0]" class="form-control">
@@ -455,6 +473,8 @@
                 <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
                 <button class="btn btn-primary" data-ng-click="triggerChangedUsersSync()" data-ng-hide="changed">{{:: 'synchronize-changed-users' | translate}}</button>
                 <button class="btn btn-primary" data-ng-click="triggerFullSync()" data-ng-hide="changed">{{:: 'synchronize-all-users' | translate}}</button>
+                <button class="btn btn-primary" data-ng-click="removeImportedUsers()" data-ng-hide="changed">{{:: 'remove-imported-users' | translate}}</button>
+                <button class="btn btn-primary" data-ng-click="unlinkUsers()" data-ng-hide="changed">{{:: 'unlink-users' | translate}}</button>
             </div>
         </div>
     </form>

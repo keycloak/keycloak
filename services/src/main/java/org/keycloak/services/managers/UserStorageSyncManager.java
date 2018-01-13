@@ -81,7 +81,7 @@ public class UserStorageSyncManager {
 
     public SynchronizationResult syncAllUsers(final KeycloakSessionFactory sessionFactory, final String realmId, final UserStorageProviderModel provider) {
         UserStorageProviderFactory factory = (UserStorageProviderFactory) sessionFactory.getProviderFactory(UserStorageProvider.class, provider.getProviderId());
-        if (!(factory instanceof ImportSynchronization) || !provider.isImportEnabled()) {
+        if (!(factory instanceof ImportSynchronization) || !provider.isImportEnabled() || !provider.isEnabled()) {
             return SynchronizationResult.ignored();
 
         }
@@ -122,7 +122,7 @@ public class UserStorageSyncManager {
 
     public SynchronizationResult syncChangedUsers(final KeycloakSessionFactory sessionFactory, final String realmId, final UserStorageProviderModel provider) {
         UserStorageProviderFactory factory = (UserStorageProviderFactory) sessionFactory.getProviderFactory(UserStorageProvider.class, provider.getProviderId());
-        if (!(factory instanceof ImportSynchronization) || !provider.isImportEnabled()) {
+        if (!(factory instanceof ImportSynchronization) || !provider.isImportEnabled() || !provider.isEnabled()) {
             return SynchronizationResult.ignored();
 
         }
@@ -171,7 +171,7 @@ public class UserStorageSyncManager {
 
         }
         UserStorageProviderClusterEvent event = UserStorageProviderClusterEvent.createEvent(removed, realm.getId(), provider);
-        session.getProvider(ClusterProvider.class).notify(USER_STORAGE_TASK_KEY, event, false);
+        session.getProvider(ClusterProvider.class).notify(USER_STORAGE_TASK_KEY, event, false, ClusterProvider.DCNotify.ALL_DCS);
     }
 
 

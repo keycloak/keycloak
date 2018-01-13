@@ -20,10 +20,12 @@ package org.keycloak.testsuite.admin.client.authorization;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ResourceScopeResource;
 import org.keycloak.admin.client.resource.ResourceScopesResource;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.client.AbstractClientTest;
@@ -38,7 +40,7 @@ import static org.junit.Assert.assertFalse;
  */
 public abstract class AbstractAuthorizationTest extends AbstractClientTest {
 
-    protected static final String RESOURCE_SERVER_CLIENT_ID = "test-resource-server";
+    protected static final String RESOURCE_SERVER_CLIENT_ID = "resource-server-test";
 
     @BeforeClass
     public static void enabled() {
@@ -73,8 +75,17 @@ public abstract class AbstractAuthorizationTest extends AbstractClientTest {
 
         resourceServer.setAuthorizationServicesEnabled(true);
         resourceServer.setServiceAccountsEnabled(true);
+        resourceServer.setPublicClient(false);
+        resourceServer.setSecret("secret");
 
         getClientResource().update(resourceServer);
+
+        AuthorizationResource authorization = getClientResource().authorization();
+        ResourceServerRepresentation settings = authorization.exportSettings();
+
+        settings.setAllowRemoteResourceManagement(true);
+
+        authorization.update(settings);
     }
 
     protected ResourceScopeResource createDefaultScope() {

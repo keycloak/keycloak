@@ -53,4 +53,8 @@ public interface ProviderFactory<T extends Provider> {
 
     public String getId();
 
+    default int order() {
+        return 0;
+    }
+
 }

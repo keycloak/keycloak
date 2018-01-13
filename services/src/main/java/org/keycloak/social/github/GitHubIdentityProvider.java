@@ -21,11 +21,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
-import org.keycloak.broker.oidc.util.JsonSimpleHttp;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
+import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
 
 /**
@@ -46,22 +46,39 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
 	}
 
 	@Override
+	protected boolean supportsExternalExchange() {
+		return true;
+	}
+
+	@Override
+	protected String getProfileEndpointForValidation(EventBuilder event) {
+		return PROFILE_URL;
+	}
+
+	@Override
+	protected BrokeredIdentityContext extractIdentityFromProfile(EventBuilder event, JsonNode profile) {
+		BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "id"));
+
+		String username = getJsonProperty(profile, "login");
+		user.setUsername(username);
+		user.setName(getJsonProperty(profile, "name"));
+		user.setEmail(getJsonProperty(profile, "email"));
+		user.setIdpConfig(getConfig());
+		user.setIdp(this);
+
+		AbstractJsonUserAttributeMapper.storeUserProfileForMapper(user, profile, getConfig().getAlias());
+
+		return user;
+
+	}
+
+
+	@Override
 	protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
 		try {
-			JsonNode profile = JsonSimpleHttp.asJson(SimpleHttp.doGet(PROFILE_URL).header("Authorization", "Bearer " + accessToken));
+			JsonNode profile = SimpleHttp.doGet(PROFILE_URL, session).header("Authorization", "Bearer " + accessToken).asJson();
 
-			BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "id"));
-
-			String username = getJsonProperty(profile, "login");
-			user.setUsername(username);
-			user.setName(getJsonProperty(profile, "name"));
-			user.setEmail(getJsonProperty(profile, "email"));
-			user.setIdpConfig(getConfig());
-			user.setIdp(this);
-
-			AbstractJsonUserAttributeMapper.storeUserProfileForMapper(user, profile, getConfig().getAlias());
-
-			return user;
+			return extractIdentityFromProfile(null, profile);
 		} catch (Exception e) {
 			throw new IdentityBrokerException("Could not obtain user profile from github.", e);
 		}

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ * Copyright 2017 Red Hat, Inc. and/or its affiliates
+  ~ * and other contributors as indicated by the @author tags.
+  ~ *
+  ~ * Licensed under the Apache License, Version 2.0 (the "License");
+  ~ * you may not use this file except in compliance with the License.
+  ~ * You may obtain a copy of the License at
+  ~ *
+  ~ * http://www.apache.org/licenses/LICENSE-2.0
+  ~ *
+  ~ * Unless required by applicable law or agreed to in writing, software
+  ~ * distributed under the License is distributed on an "AS IS" BASIS,
+  ~ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ * See the License for the specific language governing permissions and
+  ~ * limitations under the License.
+  -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet author="keycloak" id="3.4.2">
+        <!-- KEYCLOAK-5868 REFRESH_TOKEN_MAX_REUSE added in 3.4.0.CR1, but value for existing realms is null -->
+        <update tableName="REALM">
+            <column name="REFRESH_TOKEN_MAX_REUSE" type="INT" valueNumeric="0"/>
+            <where>REFRESH_TOKEN_MAX_REUSE IS NULL</where>
+        </update>
+    </changeSet>
+
+    <changeSet author="mkanis@redhat.com" id="3.4.2-KEYCLOAK-5172">
+        <update tableName="CLIENT">
+            <column name="PROTOCOL" type="VARCHAR(255)" value="openid-connect"/>
+            <where>PROTOCOL IS NULL</where>
+        </update>
+    </changeSet>
+
+</databaseChangeLog>

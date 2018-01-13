@@ -108,7 +108,7 @@
       "redirectUris": [
         "/photoz-html5-client/*"
       ],
-      "webOrigins": ["*"]
+      "webOrigins": ["http://localhost:8080"]
     },
     {
       "clientId": "photoz-restful-api",
@@ -119,7 +119,7 @@
       "redirectUris": [
         "/photoz-restful-api/*"
       ],
-      "webOrigins" : ["*"]
+      "webOrigins" : ["http://localhost:8080"]
     }
   ]
 }

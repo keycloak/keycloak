@@ -37,6 +37,6 @@
         <module name="org.kie"/>
         <module name="org.mvel"/>
         <module name="org.slf4j"/>
-        <module name="org.eclipse.jdt.core.compiler.ecj"/>
+        <module name="org.eclipse.jdt.ecj"/>
     </dependencies>
 </module>

@@ -63,6 +63,10 @@ public class AccountUpdateProfilePage extends AbstractAccountPage {
         return RealmsResource.accountUrl(UriBuilder.fromUri(getAuthServerRoot())).build("test").toString();
     }
 
+    public String getPath(String realm) {
+        return RealmsResource.accountUrl(UriBuilder.fromUri(getAuthServerRoot())).build(realm).toString();
+    }
+
     public void updateProfile(String firstName, String lastName, String email) {
         firstNameInput.clear();
         firstNameInput.sendKeys(firstName);
@@ -139,6 +143,10 @@ public class AccountUpdateProfilePage extends AbstractAccountPage {
 
     public void open() {
         driver.navigate().to(getPath());
+    }
+
+    public void open(String realm) {
+        driver.navigate().to(getPath(realm));
     }
 
     public void backToApplication() {

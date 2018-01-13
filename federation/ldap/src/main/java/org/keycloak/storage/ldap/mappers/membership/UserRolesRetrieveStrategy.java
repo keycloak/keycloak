@@ -42,7 +42,7 @@ public interface UserRolesRetrieveStrategy {
 
     List<LDAPObject> getLDAPRoleMappings(CommonLDAPGroupMapper roleOrGroupMapper, LDAPObject ldapUser, LDAPConfig ldapConfig);
 
-    void beforeUserLDAPQuery(LDAPQuery query);
+    void beforeUserLDAPQuery(CommonLDAPGroupMapper roleOrGroupMapper, LDAPQuery query);
 
 
     // Impl subclasses
@@ -66,7 +66,7 @@ public interface UserRolesRetrieveStrategy {
         }
 
         @Override
-        public void beforeUserLDAPQuery(LDAPQuery query) {
+        public void beforeUserLDAPQuery(CommonLDAPGroupMapper roleOrGroupMapper, LDAPQuery query) {
         }
 
         protected Condition getMembershipCondition(String membershipAttr, String userMembership) {
@@ -82,7 +82,9 @@ public interface UserRolesRetrieveStrategy {
 
         @Override
         public List<LDAPObject> getLDAPRoleMappings(CommonLDAPGroupMapper roleOrGroupMapper, LDAPObject ldapUser, LDAPConfig ldapConfig) {
-            Set<String> memberOfValues = ldapUser.getAttributeAsSet(LDAPConstants.MEMBER_OF);
+            String memberOfLdapAttrName = roleOrGroupMapper.getConfig().getMemberOfLdapAttribute();
+
+            Set<String> memberOfValues = ldapUser.getAttributeAsSet(memberOfLdapAttrName);
             if (memberOfValues == null) {
                 return Collections.emptyList();
             }
@@ -108,9 +110,11 @@ public interface UserRolesRetrieveStrategy {
         }
 
         @Override
-        public void beforeUserLDAPQuery(LDAPQuery query) {
-            query.addReturningLdapAttribute(LDAPConstants.MEMBER_OF);
-            query.addReturningReadOnlyLdapAttribute(LDAPConstants.MEMBER_OF);
+        public void beforeUserLDAPQuery(CommonLDAPGroupMapper roleOrGroupMapper, LDAPQuery query) {
+            String memberOfLdapAttrName = roleOrGroupMapper.getConfig().getMemberOfLdapAttribute();
+
+            query.addReturningLdapAttribute(memberOfLdapAttrName);
+            query.addReturningReadOnlyLdapAttribute(memberOfLdapAttrName);
         }
 
     };

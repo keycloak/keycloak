@@ -30,8 +30,22 @@
             <outputDirectory></outputDirectory>
             <includes>
                 <include>**/*.js</include>
+                <include>**/*.map</include>
+                <include>**/*.d.ts</include>
                 <include>**/*.html</include>
             </includes>
+        </fileSet>
+        <!-- License Data -->
+        <fileSet>
+            <directory>src/main/resources/licenses/${product.slot}</directory>
+            <outputDirectory>docs/licenses-${product.slot}-adapter</outputDirectory>
+            <excludes>
+                <exclude>licenses.xml</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
+            <directory>target/licenses</directory>
+            <outputDirectory>docs/licenses-${product.slot}-adapter</outputDirectory>
         </fileSet>
     </fileSets>
 </assembly>

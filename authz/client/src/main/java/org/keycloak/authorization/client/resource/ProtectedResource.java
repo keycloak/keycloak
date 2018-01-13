@@ -17,12 +17,15 @@
  */
 package org.keycloak.authorization.client.resource;
 
+import static org.keycloak.authorization.client.util.Throwables.handleAndWrapException;
+
+import java.util.Set;
+import java.util.function.Supplier;
+
 import org.keycloak.authorization.client.representation.RegistrationResponse;
 import org.keycloak.authorization.client.representation.ResourceRepresentation;
 import org.keycloak.authorization.client.util.Http;
 import org.keycloak.util.JsonSerialization;
-
-import java.util.Set;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -30,9 +33,9 @@ import java.util.Set;
 public class ProtectedResource {
 
     private final Http http;
-    private final String pat;
+    private final Supplier<String> pat;
 
-    public ProtectedResource(Http http, String pat) {
+    public ProtectedResource(Http http, Supplier<String> pat) {
         this.http = http;
         this.pat = pat;
     }
@@ -40,62 +43,62 @@ public class ProtectedResource {
     public RegistrationResponse create(ResourceRepresentation resource) {
         try {
             return this.http.<RegistrationResponse>post("/authz/protection/resource_set")
-                    .authorizationBearer(this.pat)
+                    .authorizationBearer(this.pat.get())
                     .json(JsonSerialization.writeValueAsBytes(resource))
                     .response().json(RegistrationResponse.class).execute();
-        } catch (Exception e) {
-            throw new RuntimeException("Could not create resource.", e);
+        } catch (Exception cause) {
+            throw handleAndWrapException("Could not create resource", cause);
         }
     }
 
     public void update(ResourceRepresentation resource) {
         try {
             this.http.<RegistrationResponse>put("/authz/protection/resource_set/" + resource.getId())
-                    .authorizationBearer(this.pat)
+                    .authorizationBearer(this.pat.get())
                     .json(JsonSerialization.writeValueAsBytes(resource)).execute();
-        } catch (Exception e) {
-            throw new RuntimeException("Could not create resource.", e);
+        } catch (Exception cause) {
+            throw handleAndWrapException("Could not update resource", cause);
         }
     }
 
     public RegistrationResponse findById(String id) {
         try {
             return this.http.<RegistrationResponse>get("/authz/protection/resource_set/" + id)
-                    .authorizationBearer(this.pat)
+                    .authorizationBearer(this.pat.get())
                     .response().json(RegistrationResponse.class).execute();
-        } catch (Exception e) {
-            throw new RuntimeException("Could not find resource.", e);
+        } catch (Exception cause) {
+            throw handleAndWrapException("Could not find resource", cause);
         }
     }
 
     public Set<String> findByFilter(String filter) {
         try {
             return this.http.<Set>get("/authz/protection/resource_set")
-                    .authorizationBearer(this.pat)
+                    .authorizationBearer(this.pat.get())
                     .param("filter", filter)
                     .response().json(Set.class).execute();
-        } catch (Exception e) {
-            throw new RuntimeException("Could not find resource.", e);
+        } catch (Exception cause) {
+            throw handleAndWrapException("Could not find resource", cause);
         }
     }
 
     public Set<String> findAll() {
         try {
             return this.http.<Set>get("/authz/protection/resource_set")
-                    .authorizationBearer(this.pat)
+                    .authorizationBearer(this.pat.get())
                     .response().json(Set.class).execute();
-        } catch (Exception e) {
-            throw new RuntimeException("Could not find resource.", e);
+        } catch (Exception cause) {
+            throw handleAndWrapException("Could not find resource", cause);
         }
     }
 
     public void delete(String id) {
         try {
             this.http.delete("/authz/protection/resource_set/" + id)
-                    .authorizationBearer(this.pat)
+                    .authorizationBearer(this.pat.get())
                     .execute();
-        } catch (Exception e) {
-            throw new RuntimeException("Could not delete resource.", e);
+        } catch (Exception cause) {
+            throw handleAndWrapException("Could not delete resource", cause);
         }
     }
 }

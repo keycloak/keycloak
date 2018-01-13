@@ -22,6 +22,7 @@ import java.util.List;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
 import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
+import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
@@ -66,7 +67,7 @@ public class SAML2ErrorResponseBuilder implements SamlProtocolExtensionsAwareBui
     public Document buildDocument() throws ProcessingException {
 
         try {
-            StatusResponseType statusResponse = new StatusResponseType(IDGenerator.create("ID_"), XMLTimeUtil.getIssueInstant());
+            StatusResponseType statusResponse = new ResponseType(IDGenerator.create("ID_"), XMLTimeUtil.getIssueInstant());
 
             statusResponse.setStatus(JBossSAMLAuthnResponseFactory.createStatusTypeForResponder(status));
             NameIDType issuer = new NameIDType();

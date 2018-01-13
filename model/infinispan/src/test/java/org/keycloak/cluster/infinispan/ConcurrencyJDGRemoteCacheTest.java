@@ -30,31 +30,31 @@ import org.infinispan.client.hotrod.annotation.ClientCacheEntryModified;
 import org.infinispan.client.hotrod.annotation.ClientListener;
 import org.infinispan.client.hotrod.event.ClientCacheEntryCreatedEvent;
 import org.infinispan.client.hotrod.event.ClientCacheEntryModifiedEvent;
-import org.infinispan.configuration.cache.Configuration;
-import org.infinispan.configuration.cache.ConfigurationBuilder;
-import org.infinispan.configuration.global.GlobalConfigurationBuilder;
-import org.infinispan.manager.DefaultCacheManager;
+import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.persistence.manager.PersistenceManager;
 import org.infinispan.persistence.remote.RemoteStore;
-import org.infinispan.persistence.remote.configuration.ExhaustedAction;
 import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
-import org.junit.Ignore;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 
 /**
- * Test concurrency for remoteStore (backed by HotRod RemoteCaches) against external JDG
+ * Test concurrency for remoteStore (backed by HotRod RemoteCaches) against external JDG. Especially tests "putIfAbsent" contract.
+ *
+ * Steps: {@see ConcurrencyJDGRemoteCacheClientListenersTest}
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@Ignore
 public class ConcurrencyJDGRemoteCacheTest {
 
     private static Map<String, EntryInfo> state = new HashMap<>();
 
+    private RemoteCache remoteCache1;
+    private RemoteCache remoteCache2;
+
+
     public static void main(String[] args) throws Exception {
         // Init map somehow
-        for (int i=0 ; i<100 ; i++) {
+        for (int i=0 ; i<3000 ; i++) {
             String key = "key-" + i;
             state.put(key, new EntryInfo());
         }
@@ -63,6 +63,8 @@ public class ConcurrencyJDGRemoteCacheTest {
         Worker worker1 = createWorker(1);
         Worker worker2 = createWorker(2);
 
+        long start = System.currentTimeMillis();
+
         // Start and join workers
         worker1.start();
         worker2.start();
@@ -70,11 +72,15 @@ public class ConcurrencyJDGRemoteCacheTest {
         worker1.join();
         worker2.join();
 
+        long took = System.currentTimeMillis() - start;
+
         // Output
         for (Map.Entry<String, EntryInfo> entry : state.entrySet()) {
             System.out.println(entry.getKey() + ":::" + entry.getValue());
             worker1.cache.remove(entry.getKey());
         }
+
+        System.out.println("Took: " + took + " ms");
 
         // Finish JVM
         worker1.cache.getCacheManager().stop();
@@ -82,8 +88,8 @@ public class ConcurrencyJDGRemoteCacheTest {
     }
 
     private static Worker createWorker(int threadId) {
-        EmbeddedCacheManager manager = createManager(threadId);
-        Cache<String, Integer> cache = manager.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
+        EmbeddedCacheManager manager = new TestCacheManagerFactory().createManager(threadId, InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, RemoteStoreConfigurationBuilder.class);
+        Cache<String, Integer> cache = manager.getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
 
         System.out.println("Retrieved cache: " + threadId);
 
@@ -92,56 +98,6 @@ public class ConcurrencyJDGRemoteCacheTest {
         remoteStore.getRemoteCache().addClientListener(listener);
 
         return new Worker(cache, threadId);
-    }
-
-    private static EmbeddedCacheManager createManager(int threadId) {
-        System.setProperty("java.net.preferIPv4Stack", "true");
-        System.setProperty("jgroups.tcp.port", "53715");
-        GlobalConfigurationBuilder gcb = new GlobalConfigurationBuilder();
-
-        boolean clustered = false;
-        boolean async = false;
-        boolean allowDuplicateJMXDomains = true;
-
-        if (clustered) {
-            gcb = gcb.clusteredDefault();
-            gcb.transport().clusterName("test-clustering");
-        }
-
-        gcb.globalJmxStatistics().allowDuplicateDomains(allowDuplicateJMXDomains);
-
-        EmbeddedCacheManager cacheManager = new DefaultCacheManager(gcb.build());
-
-        Configuration invalidationCacheConfiguration = getCacheBackedByRemoteStore(threadId);
-
-        cacheManager.defineConfiguration(InfinispanConnectionProvider.WORK_CACHE_NAME, invalidationCacheConfiguration);
-        return cacheManager;
-
-    }
-
-    private static Configuration getCacheBackedByRemoteStore(int threadId) {
-        ConfigurationBuilder cacheConfigBuilder = new ConfigurationBuilder();
-
-        // int port = threadId==1 ? 11222 : 11322;
-        int port = 11222;
-
-        return cacheConfigBuilder.persistence().addStore(RemoteStoreConfigurationBuilder.class)
-                .fetchPersistentState(false)
-                .ignoreModifications(false)
-                .purgeOnStartup(false)
-                .preload(false)
-                .shared(true)
-                .remoteCacheName(InfinispanConnectionProvider.WORK_CACHE_NAME)
-                .rawValues(true)
-                .forceReturnValues(false)
-                .addServer()
-                    .host("localhost")
-                    .port(port)
-                .connectionPool()
-                    .maxActive(20)
-                    .exhaustedAction(ExhaustedAction.CREATE_NEW)
-                .async()
-                .   enabled(false).build();
     }
 
 
@@ -182,7 +138,7 @@ public class ConcurrencyJDGRemoteCacheTest {
                 String cacheKey = entry.getKey();
                 EntryInfo wrapper = state.get(cacheKey);
 
-                int val = getClusterStartupTime(this.cache, cacheKey, wrapper);
+                int val = getClusterStartupTime(this.cache, cacheKey, wrapper, myThreadId);
                 if (myThreadId == 1) {
                     wrapper.th1.set(val);
                 } else {
@@ -196,33 +152,54 @@ public class ConcurrencyJDGRemoteCacheTest {
 
     }
 
-    public static int getClusterStartupTime(Cache<String, Integer> cache, String cacheKey, EntryInfo wrapper) {
-        int startupTime = new Random().nextInt(1024);
+    public static int getClusterStartupTime(Cache<String, Integer> cache, String cacheKey, EntryInfo wrapper, int myThreadId) {
+        Integer startupTime = myThreadId==1 ? Integer.parseInt(cacheKey.substring(4)) : Integer.parseInt(cacheKey.substring(4)) * 2;
 
         // Concurrency doesn't work correctly with this
         //Integer existingClusterStartTime = (Integer) cache.putIfAbsent(cacheKey, startupTime);
 
         // Concurrency works fine with this
         RemoteCache remoteCache = cache.getAdvancedCache().getComponentRegistry().getComponent(PersistenceManager.class).getStores(RemoteStore.class).iterator().next().getRemoteCache();
-        Integer existingClusterStartTime = (Integer) remoteCache.withFlags(Flag.FORCE_RETURN_VALUE).putIfAbsent(cacheKey, startupTime);
 
-        if (existingClusterStartTime == null) {
+        Integer existingClusterStartTime = null;
+        for (int i=0 ; i<10 ; i++) {
+            try {
+                existingClusterStartTime = (Integer) remoteCache.withFlags(Flag.FORCE_RETURN_VALUE).putIfAbsent(cacheKey, startupTime);
+                break;
+            } catch (HotRodClientException ce) {
+                if (i == 9) {
+                    throw ce;
+                    //break;
+                } else {
+                    wrapper.exceptions.incrementAndGet();
+                    System.err.println("Exception: i=" + i + " for key: " + cacheKey + " and myThreadId: " + myThreadId);
+                }
+            }
+        }
+
+        if (existingClusterStartTime == null
+//                || startupTime.equals(remoteCache.get(cacheKey))
+                ) {
             wrapper.successfulInitializations.incrementAndGet();
             return startupTime;
         } else {
+            wrapper.failedInitializations.incrementAndGet();
             return existingClusterStartTime;
         }
     }
 
-    private static class EntryInfo {
+    public static class EntryInfo {
         AtomicInteger successfulInitializations = new AtomicInteger(0);
         AtomicInteger successfulListenerWrites = new AtomicInteger(0);
         AtomicInteger th1 = new AtomicInteger();
         AtomicInteger th2 = new AtomicInteger();
+        AtomicInteger failedInitializations = new AtomicInteger();
+        AtomicInteger exceptions = new AtomicInteger();
 
         @Override
         public String toString() {
-            return String.format("Inits: %d, listeners: %d, th1: %d, th2: %d", successfulInitializations.get(), successfulListenerWrites.get(), th1.get(), th2.get());
+            return String.format("Inits: %d, listeners: %d, failedInits: %d, exceptions: %s, th1: %d, th2: %d", successfulInitializations.get(), successfulListenerWrites.get(),
+            failedInitializations.get(), exceptions.get(), th1.get(), th2.get());
         }
     }
 

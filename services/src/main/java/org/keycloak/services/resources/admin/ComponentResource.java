@@ -25,6 +25,7 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.component.SubComponentFactory;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -37,7 +38,7 @@ import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ComponentTypeRepresentation;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
@@ -62,9 +63,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.stream.Collectors;
 
 /**
+ * @resource Component
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
@@ -73,7 +74,7 @@ public class ComponentResource {
 
     protected RealmModel realm;
 
-    private RealmAuth auth;
+    private AdminPermissionEvaluator auth;
 
     private AdminEventBuilder adminEvent;
 
@@ -89,12 +90,10 @@ public class ComponentResource {
     @Context
     protected HttpHeaders headers;
 
-    public ComponentResource(RealmModel realm, RealmAuth auth, AdminEventBuilder adminEvent) {
+    public ComponentResource(RealmModel realm, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.auth = auth;
         this.realm = realm;
-        this.adminEvent = adminEvent;
-
-        auth.init(RealmAuth.Resource.REALM);
+        this.adminEvent = adminEvent.resource(ResourceType.COMPONENT);
     }
 
     @GET
@@ -103,7 +102,7 @@ public class ComponentResource {
     public List<ComponentRepresentation> getComponents(@QueryParam("parent") String parent,
                                                        @QueryParam("type") String type,
                                                        @QueryParam("name") String name) {
-        auth.requireView();
+        auth.realm().requireViewRealm();
         List<ComponentModel> components = Collections.EMPTY_LIST;
         if (parent == null && type == null) {
             components = realm.getComponents();
@@ -133,7 +132,7 @@ public class ComponentResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response create(ComponentRepresentation rep) {
-        auth.requireManage();
+        auth.realm().requireManageRealm();
         try {
             ComponentModel model = RepresentationToModel.toModel(session, rep);
             if (model.getParentId() == null) model.setParentId(realm.getId());
@@ -154,7 +153,7 @@ public class ComponentResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public ComponentRepresentation getComponent(@PathParam("id") String id) {
-        auth.requireView();
+        auth.realm().requireViewRealm();
         ComponentModel model = realm.getComponent(id);
         if (model == null) {
             throw new NotFoundException("Could not find component");
@@ -167,14 +166,14 @@ public class ComponentResource {
     @Path("{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response updateComponent(@PathParam("id") String id, ComponentRepresentation rep) {
-        auth.requireManage();
+        auth.realm().requireManageRealm();
         try {
             ComponentModel model = realm.getComponent(id);
             if (model == null) {
                 throw new NotFoundException("Could not find component");
             }
             RepresentationToModel.updateComponent(session, rep, model, false);
-            adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo, model.getId()).representation(StripSecretsUtils.strip(session, rep)).success();
+            adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(StripSecretsUtils.strip(session, rep)).success();
             realm.updateComponent(model);
             return Response.noContent().build();
         } catch (ComponentValidationException e) {
@@ -186,18 +185,18 @@ public class ComponentResource {
     @DELETE
     @Path("{id}")
     public void removeComponent(@PathParam("id") String id) {
-        auth.requireManage();
+        auth.realm().requireManageRealm();
         ComponentModel model = realm.getComponent(id);
         if (model == null) {
             throw new NotFoundException("Could not find component");
         }
-        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo, model.getId()).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
         realm.removeComponent(model);
 
     }
 
     private Response localizedErrorResponse(ComponentValidationException cve) {
-        Properties messages = AdminRoot.getMessages(session, realm, auth.getAuth().getToken().getLocale(), "admin-messages", "messages");
+        Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale(), "admin-messages", "messages");
 
         Object[] localizedParameters = cve.getParameters()==null ? null : Arrays.asList(cve.getParameters()).stream().map((Object parameter) -> {
 
@@ -226,7 +225,7 @@ public class ComponentResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public List<ComponentTypeRepresentation> getSubcomponentConfig(@PathParam("id") String parentId, @QueryParam("type") String subtype) {
-        auth.requireView();
+        auth.realm().requireViewRealm();
         ComponentModel parent = realm.getComponent(parentId);
         if (parent == null) {
             throw new NotFoundException("Could not find parent component");

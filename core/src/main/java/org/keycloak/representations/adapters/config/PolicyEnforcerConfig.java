@@ -62,7 +62,7 @@ public class PolicyEnforcerConfig {
     }
 
     public List<PathConfig> getPaths() {
-        return Collections.unmodifiableList(this.paths);
+        return this.paths;
     }
 
     public EnforcementMode getEnforcementMode() {
@@ -119,7 +119,7 @@ public class PolicyEnforcerConfig {
         private String type;
         private String path;
         private List<MethodConfig> methods = new ArrayList<>();
-        private List<String> scopes = Collections.emptyList();
+        private List<String> scopes = new ArrayList<>();
         private String id;
 
         @JsonProperty("enforcement-mode")
@@ -196,10 +196,12 @@ public class PolicyEnforcerConfig {
                     '}';
         }
 
+        @JsonIgnore
         public boolean hasPattern() {
             return getPath().indexOf("{") != -1;
         }
 
+        @JsonIgnore
         public boolean isInstance() {
             return this.parentConfig != null;
         }
@@ -216,7 +218,10 @@ public class PolicyEnforcerConfig {
     public static class MethodConfig {
 
         private String method;
-        private List<String> scopes = Collections.emptyList();
+        private List<String> scopes = new ArrayList<>();
+
+        @JsonProperty("scopes-enforcement-mode")
+        private ScopeEnforcementMode scopesEnforcementMode = ScopeEnforcementMode.ALL;
 
         public String getMethod() {
             return method;
@@ -233,12 +238,25 @@ public class PolicyEnforcerConfig {
         public void setScopes(List<String> scopes) {
             this.scopes = scopes;
         }
+
+        public void setScopesEnforcementMode(ScopeEnforcementMode scopesEnforcementMode) {
+            this.scopesEnforcementMode = scopesEnforcementMode;
+        }
+
+        public ScopeEnforcementMode getScopesEnforcementMode() {
+            return scopesEnforcementMode;
+        }
     }
 
     public enum EnforcementMode {
         PERMISSIVE,
         ENFORCING,
         DISABLED
+    }
+
+    public enum ScopeEnforcementMode {
+        ALL,
+        ANY
     }
 
     public static class UmaProtocolConfig {

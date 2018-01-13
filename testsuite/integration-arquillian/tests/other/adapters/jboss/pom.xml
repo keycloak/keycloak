@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests-adapters</artifactId>
-        <version>2.5.1.Final-SNAPSHOT</version>
+        <version>4.0.0.CR1-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-adapters-jboss</artifactId>
@@ -36,6 +36,7 @@
     <properties>
         <common.resources>${project.parent.basedir}/common</common.resources>
         <app.server.type>managed</app.server.type>
+        <auth.server.actual.protocol>http</auth.server.actual.protocol>
         <auth.server.actual.http.port>${auth.server.http.port}</auth.server.actual.http.port>
         <keycloak.subsystem.xsl>keycloak-subsystem.xsl</keycloak.subsystem.xsl>
     </properties>
@@ -64,7 +65,7 @@
                                     <parameters>
                                         <parameter>
                                             <name>auth-server-host</name>
-                                            <value>http://localhost:${auth.server.actual.http.port}</value>
+                                            <value>${auth.server.actual.protocol}://localhost:${auth.server.actual.http.port}</value>
                                         </parameter>
                                     </parameters>
                                 </transformationSet>
@@ -81,12 +82,13 @@
             <id>ssl</id>
             <activation>
                 <property>
-                    <name>app.server.ssl.required</name>
+                    <name>auth.server.ssl.required</name>
                     <value>true</value>
                 </property>
             </activation>
             <properties>
                 <!-- one realm definition for each secure-deployment -->
+                <auth.server.actual.protocol>https</auth.server.actual.protocol>
                 <auth.server.actual.http.port>${auth.server.https.port}</auth.server.actual.http.port>
             </properties>
         </profile>
@@ -147,6 +149,12 @@
             <id>app-server-wildfly9</id>
             <modules>
                 <module>wildfly9</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>app-server-wildfly10</id>
+            <modules>
+                <module>wildfly10</module>
             </modules>
         </profile>
         <profile>

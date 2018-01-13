@@ -127,6 +127,7 @@ public class RegistrationRecaptcha implements FormAction, FormActionFactory, Con
             formData.remove(G_RECAPTCHA_RESPONSE);
             context.error(Errors.INVALID_REGISTRATION);
             context.validationError(formData, errors);
+            context.excludeOtherErrors();
             return;
 
 

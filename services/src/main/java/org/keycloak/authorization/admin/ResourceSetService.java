@@ -26,18 +26,19 @@ import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserProvider;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.resources.admin.RealmAuth;
+import org.keycloak.services.resources.admin.AdminEventBuilder;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -48,8 +49,10 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.UriInfo;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -58,7 +61,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
@@ -70,57 +72,51 @@ import static org.keycloak.models.utils.RepresentationToModel.toModel;
 public class ResourceSetService {
 
     private final AuthorizationProvider authorization;
-    private final RealmAuth auth;
+    private final AdminPermissionEvaluator auth;
+    private final AdminEventBuilder adminEvent;
     private ResourceServer resourceServer;
 
-    public ResourceSetService(ResourceServer resourceServer, AuthorizationProvider authorization, RealmAuth auth) {
+    public ResourceSetService(ResourceServer resourceServer, AuthorizationProvider authorization, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.resourceServer = resourceServer;
         this.authorization = authorization;
         this.auth = auth;
+        this.adminEvent = adminEvent.resource(ResourceType.AUTHORIZATION_RESOURCE);
     }
 
     @POST
+    @NoCache
     @Consumes("application/json")
     @Produces("application/json")
+    public Response create(@Context UriInfo uriInfo, ResourceRepresentation resource) {
+        Response response = create(resource);
+        audit(uriInfo, resource, resource.getId(), OperationType.CREATE);
+        return response;
+    }
+
     public Response create(ResourceRepresentation resource) {
         requireManage();
         StoreFactory storeFactory = this.authorization.getStoreFactory();
         Resource existingResource = storeFactory.getResourceStore().findByName(resource.getName(), this.resourceServer.getId());
         ResourceOwnerRepresentation owner = resource.getOwner();
 
-        if (existingResource != null && existingResource.getResourceServer().getId().equals(this.resourceServer.getId())
-                && existingResource.getOwner().equals(owner)) {
+        if (owner == null) {
+            owner = new ResourceOwnerRepresentation();
+            owner.setId(resourceServer.getId());
+        }
+
+        String ownerId = owner.getId();
+
+        if (ownerId == null) {
+            return ErrorResponse.error("You must specify the resource owner.", Status.BAD_REQUEST);
+        }
+
+        if (existingResource != null && existingResource.getOwner().equals(ownerId)) {
             return ErrorResponse.exists("Resource with name [" + resource.getName() + "] already exists.");
         }
 
-        if (owner != null) {
-            String ownerId = owner.getId();
-
-            if (ownerId != null) {
-                if (!resourceServer.getClientId().equals(ownerId)) {
-                    RealmModel realm = authorization.getRealm();
-                    KeycloakSession keycloakSession = authorization.getKeycloakSession();
-                    UserProvider users = keycloakSession.users();
-                    UserModel ownerModel = users.getUserById(ownerId, realm);
-
-                    if (ownerModel == null) {
-                        ownerModel = users.getUserByUsername(ownerId, realm);
-                    }
-
-                    if (ownerModel == null) {
-                        return ErrorResponse.error("Owner must be a valid username or user identifier. If the resource server, the client id or null.", Status.BAD_REQUEST);
-                    }
-
-                    owner.setId(ownerModel.getId());
-                }
-            }
-        }
-
-        Resource model = toModel(resource, this.resourceServer, authorization);
-
         ResourceRepresentation representation = new ResourceRepresentation();
 
-        representation.setId(model.getId());
+        representation.setId(toModel(resource, this.resourceServer, authorization).getId());
 
         return Response.status(Status.CREATED).entity(representation).build();
     }
@@ -129,7 +125,7 @@ public class ResourceSetService {
     @PUT
     @Consumes("application/json")
     @Produces("application/json")
-    public Response update(@PathParam("id") String id, ResourceRepresentation resource) {
+    public Response update(@Context UriInfo uriInfo, @PathParam("id") String id, ResourceRepresentation resource) {
         requireManage();
         resource.setId(id);
         StoreFactory storeFactory = this.authorization.getStoreFactory();
@@ -142,12 +138,14 @@ public class ResourceSetService {
 
         toModel(resource, resourceServer, authorization);
 
+        audit(uriInfo, resource, OperationType.UPDATE);
+
         return Response.noContent().build();
     }
 
     @Path("{id}")
     @DELETE
-    public Response delete(@PathParam("id") String id) {
+    public Response delete(@Context UriInfo uriInfo, @PathParam("id") String id) {
         requireManage();
         StoreFactory storeFactory = authorization.getStoreFactory();
         Resource resource = storeFactory.getResourceStore().findById(id, resourceServer.getId());
@@ -168,6 +166,10 @@ public class ResourceSetService {
         }
 
         storeFactory.getResourceStore().delete(id);
+
+        if (authorization.getRealm().isAdminEventsEnabled()) {
+            audit(uriInfo, toRepresentation(resource, resourceServer, authorization), OperationType.DELETE);
+        }
 
         return Response.noContent().build();
     }
@@ -213,7 +215,7 @@ public class ResourceSetService {
         if (model.getType() != null) {
             ResourceStore resourceStore = authorization.getStoreFactory().getResourceStore();
             for (Resource typed : resourceStore.findByType(model.getType(), resourceServer.getId())) {
-                if (typed.getOwner().equals(resourceServer.getClientId()) && !typed.getId().equals(model.getId())) {
+                if (typed.getOwner().equals(resourceServer.getId()) && !typed.getId().equals(model.getId())) {
                     scopes.addAll(typed.getScopes().stream().map(model1 -> {
                         ScopeRepresentation scope = new ScopeRepresentation();
                         scope.setId(model1.getId());
@@ -270,10 +272,10 @@ public class ResourceSetService {
 
     @Path("/search")
     @GET
-    @Produces("application/json")
     @NoCache
+    @Produces("application/json")
     public Response find(@QueryParam("name") String name) {
-        this.auth.requireView();
+        this.auth.realm().requireViewAuthorization();
         StoreFactory storeFactory = authorization.getStoreFactory();
 
         if (name == null) {
@@ -368,13 +370,27 @@ public class ResourceSetService {
 
     private void requireView() {
         if (this.auth != null) {
-            this.auth.requireView();
+            this.auth.realm().requireViewAuthorization();
         }
     }
 
     private void requireManage() {
         if (this.auth != null) {
-            this.auth.requireManage();
+            this.auth.realm().requireManageAuthorization();
+        }
+    }
+
+    private void audit(@Context UriInfo uriInfo, ResourceRepresentation resource, OperationType operation) {
+        audit(uriInfo, resource, null, operation);
+    }
+
+    private void audit(@Context UriInfo uriInfo, ResourceRepresentation resource, String id, OperationType operation) {
+        if (authorization.getRealm().isAdminEventsEnabled()) {
+            if (id != null) {
+                adminEvent.operation(operation).resourcePath(uriInfo, id).representation(resource).success();
+            } else {
+                adminEvent.operation(operation).resourcePath(uriInfo).representation(resource).success();
+            }
         }
     }
 }

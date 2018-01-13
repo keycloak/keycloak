@@ -48,6 +48,7 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
         c.setRootUrl("http://root");
 
         client = createClient(c);
+        getCleanup().addClientUuid(client.getId());
 
         c = new ClientRepresentation();
         c.setEnabled(true);
@@ -55,7 +56,8 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
         c.setSecret("RegistrationAccessTokenTestClientSecret");
         c.setRootUrl("http://root");
 
-        createClient(c);
+        c = createClient(c);
+        getCleanup().addClientUuid(c.getId());
 
         reg.auth(Auth.token(client.getRegistrationAccessToken()));
     }
@@ -80,13 +82,16 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
 
     @Test
     public void getClientWithRegistrationToken() throws ClientRegistrationException {
+        setTimeOffset(10);
+
         ClientRepresentation rep = reg.get(client.getClientId());
         assertNotNull(rep);
-        assertNotEquals(client.getRegistrationAccessToken(), rep.getRegistrationAccessToken());
 
-        // check registration access token is updated
-        assertRead(client.getClientId(), client.getRegistrationAccessToken(), false);
-        assertRead(client.getClientId(), rep.getRegistrationAccessToken(), true);
+        assertEquals(client.getRegistrationAccessToken(), rep.getRegistrationAccessToken());
+        assertNotNull(rep.getRegistrationAccessToken());
+
+        // KEYCLOAK-4984 check registration access token is not updated
+        assertRead(client.getClientId(), client.getRegistrationAccessToken(), true);
     }
 
     @Test

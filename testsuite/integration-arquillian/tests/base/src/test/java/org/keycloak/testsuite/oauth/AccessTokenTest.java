@@ -34,6 +34,7 @@ import org.keycloak.admin.client.resource.ClientTemplateResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.jose.jws.JWSHeader;
@@ -56,6 +57,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -79,6 +81,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
@@ -93,6 +96,8 @@ import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsernameId;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createRoleNameMapper;
+import static org.keycloak.testsuite.Assert.assertExpiration;
+
 import org.openqa.selenium.By;
 
 /**
@@ -210,12 +215,8 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         oauth.redirectUri(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth/admin/test/console/nosuch.html");
         oauth.openLoginForm();
 
-        String actionUrl = driver.getPageSource().split("action=\"")[1].split("\"")[0].replaceAll("&amp;", "&");
-        actionUrl = actionUrl.replaceFirst("&execution=.*", "");
-
-        String loginPageCode = actionUrl.split("code=")[1].split("&")[0];
-
-        driver.navigate().to(actionUrl);
+        String actionURI = ActionURIUtils.getActionURIFromPageSource(driver.getPageSource());
+        String loginPageCode = ActionURIUtils.parseQueryParamsFromActionURI(actionURI).get("code");
 
         oauth.fillLoginForm("test-user@localhost", "password");
 
@@ -308,7 +309,6 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         events.expectCodeToToken(codeId, sessionId)
                 .removeDetail(Details.TOKEN_ID)
                 .user((String) null)
-                .session((String) null)
                 .removeDetail(Details.REFRESH_TOKEN_ID)
                 .removeDetail(Details.REFRESH_TOKEN_TYPE)
                 .error(Errors.INVALID_CODE).assertEvent();
@@ -335,8 +335,8 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
         setTimeOffset(0);
 
-        AssertEvents.ExpectedEvent expectedEvent = events.expectCodeToToken(codeId, null);
-        expectedEvent.error("invalid_code")
+        AssertEvents.ExpectedEvent expectedEvent = events.expectCodeToToken(codeId, codeId);
+        expectedEvent.error("expired_code")
                 .removeDetail(Details.TOKEN_ID)
                 .removeDetail(Details.REFRESH_TOKEN_ID)
                 .removeDetail(Details.REFRESH_TOKEN_TYPE)
@@ -381,7 +381,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
             response = oauth.doAccessTokenRequest(code, "password");
             Assert.assertEquals(400, response.getStatusCode());
 
-            AssertEvents.ExpectedEvent expectedEvent = events.expectCodeToToken(codeId, null);
+            AssertEvents.ExpectedEvent expectedEvent = events.expectCodeToToken(codeId, codeId);
             expectedEvent.error("invalid_code")
                     .removeDetail(Details.TOKEN_ID)
                     .removeDetail(Details.REFRESH_TOKEN_ID)
@@ -446,13 +446,14 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
         oauth.doLogin("test-user@localhost", "password");
 
-        String code = driver.getPageSource().split("code=")[1].split("&")[0].split("\"")[0];
+        String actionURI = ActionURIUtils.getActionURIFromPageSource(driver.getPageSource());
+        String code = ActionURIUtils.parseQueryParamsFromActionURI(actionURI).get("code");
 
         OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
         Assert.assertEquals(400, response.getStatusCode());
 
         EventRepresentation event = events.poll();
-        assertNotNull(event.getDetails().get(Details.CODE_ID));
+        assertNull(event.getDetails().get(Details.CODE_ID));
 
         UserManager.realm(adminClient.realm("test")).user(user).removeRequiredAction(UserModel.RequiredAction.UPDATE_PROFILE.toString());
     }
@@ -612,7 +613,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
 
             Response response = executeGrantAccessTokenRequest(grantTarget);
-            assertEquals(400, response.getStatus());
+            assertEquals(401, response.getStatus());
             response.close();
 
             {
@@ -975,6 +976,46 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         }
     }
 
+    // KEYCLOAK-4215
+    @Test
+    public void expiration() throws Exception {
+        int sessionMax = (int) TimeUnit.MINUTES.toSeconds(30);
+        int sessionIdle = (int) TimeUnit.MINUTES.toSeconds(30);
+        int tokenLifespan = (int) TimeUnit.MINUTES.toSeconds(5);
+
+        RealmResource realm = adminClient.realm("test");
+        RealmRepresentation rep = realm.toRepresentation();
+        Integer originalSessionMax = rep.getSsoSessionMaxLifespan();
+        rep.setSsoSessionMaxLifespan(sessionMax);
+        realm.update(rep);
+
+        try {
+            oauth.doLogin("test-user@localhost", "password");
+
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+            assertEquals(200, response.getStatusCode());
+
+            // Assert refresh expiration equals session idle
+            assertExpiration(response.getRefreshExpiresIn(), sessionIdle);
+
+            // Assert token expiration equals token lifespan
+            assertExpiration(response.getExpiresIn(), tokenLifespan);
+
+            setTimeOffset(sessionMax - 60);
+
+            response = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
+            assertEquals(200, response.getStatusCode());
+
+            // Assert expiration equals session expiration
+            assertExpiration(response.getRefreshExpiresIn(), 60);
+            assertExpiration(response.getExpiresIn(), 60);
+        } finally {
+            rep.setSsoSessionMaxLifespan(originalSessionMax);
+            realm.update(rep);
+        }
+    }
+
     private IDToken getIdToken(org.keycloak.representations.AccessTokenResponse tokenResponse) throws JWSInputException {
         JWSInput input = new JWSInput(tokenResponse.getIdToken());
         return input.readJsonContent(IDToken.class);
@@ -996,7 +1037,8 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         Form form = new Form();
         form.param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD)
                 .param("username", username)
-                .param("password", password);
+                .param("password", password)
+                .param(OAuth2Constants.SCOPE, OAuth2Constants.SCOPE_OPENID);
         return grantTarget.request()
                 .header(HttpHeaders.AUTHORIZATION, header)
                 .post(Entity.form(form));

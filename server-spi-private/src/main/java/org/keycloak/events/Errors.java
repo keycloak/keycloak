@@ -37,6 +37,7 @@ public interface Errors {
     String USER_DISABLED = "user_disabled";
     String USER_TEMPORARILY_DISABLED = "user_temporarily_disabled";
     String INVALID_USER_CREDENTIALS = "invalid_user_credentials";
+    String DIFFERENT_USER_AUTHENTICATED = "different_user_authenticated";
 
     String USERNAME_MISSING = "username_missing";
     String USERNAME_IN_USE = "username_in_use";
@@ -45,13 +46,16 @@ public interface Errors {
     String INVALID_REDIRECT_URI = "invalid_redirect_uri";
     String INVALID_CODE = "invalid_code";
     String INVALID_TOKEN = "invalid_token";
+    String INVALID_TOKEN_TYPE = "invalid_token_type";
     String INVALID_SAML_RESPONSE = "invalid_saml_response";
     String INVALID_SAML_AUTHN_REQUEST = "invalid_authn_request";
     String INVALID_SAML_LOGOUT_REQUEST = "invalid_logout_request";
     String INVALID_SAML_LOGOUT_RESPONSE = "invalid_logout_response";
     String INVALID_SIGNATURE = "invalid_signature";
     String INVALID_REGISTRATION = "invalid_registration";
+    String INVALID_ISSUER = "invalid_issuer";
     String INVALID_FORM = "invalid_form";
+    String INVALID_CONFIG = "invalid_config";
     String EXPIRED_CODE = "expired_code";
 
     String REGISTRATION_DISABLED = "registration_disabled";
@@ -75,4 +79,16 @@ public interface Errors {
     String PASSWORD_CONFIRM_ERROR = "password_confirm_error";
     String PASSWORD_MISSING = "password_missing";
     String PASSWORD_REJECTED = "password_rejected";
+
+    // https://tools.ietf.org/html/rfc7636
+    String CODE_VERIFIER_MISSING = "code_verifier_missing";
+    String INVALID_CODE_VERIFIER = "invalid_code_verifier";
+    String PKCE_VERIFICATION_FAILED = "pkce_verification_failed";
+    String INVALID_CODE_CHALLENGE_METHOD = "invalid_code_challenge_method";
+
+
+    String NOT_LOGGED_IN = "not_logged_in";
+    String UNKNOWN_IDENTITY_PROVIDER = "unknown_identity_provider";
+    String ILLEGAL_ORIGIN = "illegal_origin";
+
 }

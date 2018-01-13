@@ -23,7 +23,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.services.resources.AccountService;
+import org.keycloak.services.resources.account.AccountFormService;
 import org.keycloak.services.Urls;
 
 import javax.ws.rs.core.UriBuilder;
@@ -46,7 +46,6 @@ public class AccountFederatedIdentityBean {
 
     public AccountFederatedIdentityBean(KeycloakSession session, RealmModel realm, UserModel user, URI baseUri, String stateChecker) {
         this.session = session;
-        URI accountIdentityUpdateUri = Urls.accountFederatedIdentityUpdate(baseUri, realm.getName());
 
         List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
         Set<FederatedIdentityModel> identities = session.users().getFederatedIdentities(user, realm);
@@ -63,15 +62,8 @@ public class AccountFederatedIdentityBean {
                     availableIdentities++;
                 }
 
-                String action = identity != null ? "remove" : "add";
-                String actionUrl = UriBuilder.fromUri(accountIdentityUpdateUri)
-                        .queryParam("action", action)
-                        .queryParam("provider_id", providerId)
-                        .queryParam("stateChecker", stateChecker)
-                        .build().toString();
-
                 String displayName = KeycloakModelUtils.getIdentityProviderDisplayName(session, provider);
-                FederatedIdentityEntry entry = new FederatedIdentityEntry(identity, displayName, provider.getAlias(), provider.getAlias(), actionUrl,
+                FederatedIdentityEntry entry = new FederatedIdentityEntry(identity, displayName, provider.getAlias(), provider.getAlias(),
                 		  															provider.getConfig() != null ? provider.getConfig().get("guiOrder") : null);
                 orderedSet.add(entry);
             }
@@ -80,7 +72,7 @@ public class AccountFederatedIdentityBean {
         this.identities = new LinkedList<FederatedIdentityEntry>(orderedSet); 
 
         // Removing last social provider is not possible if you don't have other possibility to authenticate
-        this.removeLinkPossible = availableIdentities > 1 || user.getFederationLink() != null || AccountService.isPasswordSet(session, realm, user);
+        this.removeLinkPossible = availableIdentities > 1 || user.getFederationLink() != null || AccountFormService.isPasswordSet(session, realm, user);
     }
 
     private FederatedIdentityModel getIdentity(Set<FederatedIdentityModel> identities, String providerId) {
@@ -105,17 +97,15 @@ public class AccountFederatedIdentityBean {
         private FederatedIdentityModel federatedIdentityModel;
         private final String providerId;
 		private final String providerName;
-        private final String actionUrl;
         private final String guiOrder;
         private final String displayName;
 
         public FederatedIdentityEntry(FederatedIdentityModel federatedIdentityModel, String displayName, String providerId,
-                                      String providerName, String actionUrl, String guiOrder) {
+                                      String providerName, String guiOrder) {
             this.federatedIdentityModel = federatedIdentityModel;
             this.displayName = displayName;
             this.providerId = providerId;
             this.providerName = providerName;
-            this.actionUrl = actionUrl;
             this.guiOrder = guiOrder;
         }
 
@@ -139,10 +129,6 @@ public class AccountFederatedIdentityBean {
             return federatedIdentityModel != null;
         }
 
-        public String getActionUrl() {
-            return actionUrl;
-        }
-        
         public String getGuiOrder() {
             return guiOrder;
         }

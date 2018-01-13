@@ -17,23 +17,32 @@
 
 package org.keycloak.testsuite.arquillian;
 
+import org.jboss.arquillian.container.osgi.OSGiApplicationArchiveProcessor;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.container.test.impl.enricher.resource.URLResourceProvider;
 import org.jboss.arquillian.container.test.spi.client.deployment.ApplicationArchiveProcessor;
 import org.jboss.arquillian.container.test.spi.client.deployment.DeploymentScenarioGenerator;
 import org.jboss.arquillian.core.spi.LoadableExtension;
+import org.jboss.arquillian.drone.spi.Configurator;
+import org.jboss.arquillian.drone.webdriver.factory.WebDriverFactory;
 import org.jboss.arquillian.graphene.location.ContainerCustomizableURLResourceProvider;
 import org.jboss.arquillian.graphene.location.CustomizableURLResourceProvider;
+import org.jboss.arquillian.test.spi.TestEnricher;
 import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
 import org.jboss.arquillian.test.spi.execution.TestExecutionDecider;
 import org.keycloak.testsuite.arquillian.h2.H2TestEnricher;
+import org.keycloak.testsuite.arquillian.jmx.JmxConnectorRegistryCreator;
 import org.keycloak.testsuite.arquillian.karaf.CustomKarafContainer;
 import org.keycloak.testsuite.arquillian.migration.MigrationTestExecutionDecider;
 import org.keycloak.testsuite.arquillian.provider.AdminClientProvider;
+import org.keycloak.testsuite.arquillian.provider.LoadBalancerControllerProvider;
 import org.keycloak.testsuite.arquillian.provider.OAuthClientProvider;
 import org.keycloak.testsuite.arquillian.provider.SuiteContextProvider;
 import org.keycloak.testsuite.arquillian.provider.TestContextProvider;
 import org.keycloak.testsuite.arquillian.provider.URLProvider;
+import org.keycloak.testsuite.drone.HtmlUnitScreenshots;
+import org.keycloak.testsuite.drone.KeycloakDronePostSetup;
+import org.keycloak.testsuite.drone.KeycloakWebDriverConfigurator;
 
 /**
  *
@@ -48,12 +57,15 @@ public class KeycloakArquillianExtension implements LoadableExtension {
                 .service(ResourceProvider.class, SuiteContextProvider.class)
                 .service(ResourceProvider.class, TestContextProvider.class)
                 .service(ResourceProvider.class, AdminClientProvider.class)
-                .service(ResourceProvider.class, OAuthClientProvider.class);
+                .service(ResourceProvider.class, OAuthClientProvider.class)
+                .service(ResourceProvider.class, LoadBalancerControllerProvider.class);
 
         builder
                 .service(DeploymentScenarioGenerator.class, DeploymentTargetModifier.class)
                 .service(ApplicationArchiveProcessor.class, DeploymentArchiveProcessor.class)
                 .service(DeployableContainer.class, CustomKarafContainer.class)
+                .service(TestEnricher.class, CacheStatisticsControllerEnricher.class)
+                .observer(JmxConnectorRegistryCreator.class)
                 .observer(AuthServerTestEnricher.class)
                 .observer(AppServerTestEnricher.class)
                 .observer(H2TestEnricher.class);
@@ -63,7 +75,14 @@ public class KeycloakArquillianExtension implements LoadableExtension {
         builder
                 .override(ResourceProvider.class, URLResourceProvider.class, URLProvider.class)
                 .override(ResourceProvider.class, CustomizableURLResourceProvider.class, URLProvider.class)
-                .override(ResourceProvider.class, ContainerCustomizableURLResourceProvider.class, URLProvider.class);
+                .override(ResourceProvider.class, ContainerCustomizableURLResourceProvider.class, URLProvider.class)
+                .override(ApplicationArchiveProcessor.class, OSGiApplicationArchiveProcessor.class, KeycloakOSGiApplicationArchiveProcessor.class);
+
+        builder
+                .override(Configurator.class, WebDriverFactory.class, KeycloakWebDriverConfigurator.class)
+                .observer(HtmlUnitScreenshots.class)
+                .observer(KeycloakDronePostSetup.class);
+
 
     }
 

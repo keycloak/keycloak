@@ -36,7 +36,6 @@ import org.infinispan.manager.DefaultCacheManager;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -157,12 +156,13 @@ public class InfinispanKeyStorageProviderTest {
 
     protected Cache<String, PublicKeysEntry> getKeysCache() {
         GlobalConfigurationBuilder gcb = new GlobalConfigurationBuilder();
-        gcb.globalJmxStatistics().allowDuplicateDomains(true);
+        gcb.globalJmxStatistics().allowDuplicateDomains(true).enabled(true);
 
         final DefaultCacheManager cacheManager = new DefaultCacheManager(gcb.build());
 
         ConfigurationBuilder cb = new ConfigurationBuilder();
         cb.eviction().strategy(EvictionStrategy.LRU).type(EvictionType.COUNT).size(InfinispanConnectionProvider.KEYS_CACHE_DEFAULT_MAX);
+        cb.jmxStatistics().enabled(true);
         Configuration cfg = cb.build();
 
         cacheManager.defineConfiguration(InfinispanConnectionProvider.KEYS_CACHE_NAME, cfg);

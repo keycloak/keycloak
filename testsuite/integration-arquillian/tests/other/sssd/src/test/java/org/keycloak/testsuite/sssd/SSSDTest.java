@@ -1,9 +1,22 @@
 package org.keycloak.testsuite.sssd;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.List;
+
+import javax.ws.rs.core.Response;
+
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.jboss.arquillian.graphene.page.Page;
+import org.jboss.logging.Logger;
+import org.junit.Assume;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.common.constants.GenericConstants;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
@@ -17,27 +30,24 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.util.LDAPTestConfiguration;
 
-import javax.ws.rs.core.Response;
-import java.util.List;
+import com.beust.jcommander.internal.Lists;
 
 public class SSSDTest extends AbstractKeycloakTest {
 
-    private static final String DISPLAY_NAME = "Test user federation";
+	private static final Logger log = Logger.getLogger(SSSDTest.class);
+
+	private static final String DISPLAY_NAME = "Test user federation";
     private static final String PROVIDER_NAME = "sssd";
     private static final String REALM_NAME = "test";
 
-    private static final String USERNAME = "emily";
-    private static final String PASSWORD = "emily123";
-    private static final String DISABLED_USER = "david";
-    private static final String DISABLED_USER_PASSWORD = "david123";
-    private static final String NO_EMAIL_USER = "bart";
-    private static final String NO_EMAIL_USER_PASSWORD = "bart123";
+    private static final String sssdConfigPath = "sssd/sssd.properties";
 
-    private static final String DEFINITELY_NOT_PASSWORD = "not" + PASSWORD;
-
-    private static final String ADMIN_USERNAME = "admin";
-    private static final String ADMIN_PASSWORD = "password";
+    private static final String DISABLED_USER = "disabled";
+    private static final String NO_EMAIL_USER = "noemail";
+    private static final String ADMIN_USER = "admin";
+    private static PropertiesConfiguration sssdConfig;
 
     @Page
     protected LoginPage accountLoginPage;
@@ -63,6 +73,15 @@ public class SSSDTest extends AbstractKeycloakTest {
         testRealms.add(realm);
     }
 
+    @BeforeClass
+    public static void loadSSSDConfiguration() throws ConfigurationException {
+        log.info("Reading SSSD configuration from classpath from: " + sssdConfigPath);
+        InputStream is = SSSDTest.class.getClassLoader().getResourceAsStream(sssdConfigPath);
+        sssdConfig = new PropertiesConfiguration();
+        sssdConfig.load(is);
+        sssdConfig.setListDelimiter(',');
+    }
+
     @Before
     public void createUserFederation() {
         ComponentRepresentation userFederation = new ComponentRepresentation();
@@ -81,34 +100,38 @@ public class SSSDTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void testWrongUser() {
-        log.debug("Testing wrong password for user " + USERNAME);
+    public void testInvalidPassword() {
+        String username = getUsername();
+        log.debug("Testing invalid password for user " + username);
 
-        driver.navigate().to(getAccountUrl());
+        profilePage.open();
         Assert.assertEquals("Browser should be on login page now", "Log in to " + REALM_NAME, driver.getTitle());
-        accountLoginPage.login(USERNAME, DEFINITELY_NOT_PASSWORD);
-
+        accountLoginPage.login(username, "invalid-password");
         Assert.assertEquals("Invalid username or password.", accountLoginPage.getError());
     }
 
     @Test
     public void testDisabledUser() {
-        log.debug("Testing disabled user " + USERNAME);
+        String username = getUser(DISABLED_USER);
+        Assume.assumeTrue("Ignoring test no disabled user configured", username != null);
+        log.debug("Testing disabled user " + username);
 
-        driver.navigate().to(getAccountUrl());
+        profilePage.open();
         Assert.assertEquals("Browser should be on login page now", "Log in to " + REALM_NAME, driver.getTitle());
-        accountLoginPage.login(DISABLED_USER, DISABLED_USER_PASSWORD);
+        accountLoginPage.login(username, getPassword(username));
 
         Assert.assertEquals("Invalid username or password.", accountLoginPage.getError());
     }
 
     @Test
     public void testAdmin() {
-        log.debug("Testing password for user " + ADMIN_USERNAME);
+        String username = getUser(ADMIN_USER);
+        Assume.assumeTrue("Ignoring test no admin user configured", username != null);
+        log.debug("Testing password for user " + username);
 
-        driver.navigate().to(getAccountUrl());
+        profilePage.open();
         Assert.assertEquals("Browser should be on login page now", "Log in to " + REALM_NAME, driver.getTitle());
-        accountLoginPage.login(ADMIN_USERNAME, ADMIN_PASSWORD);
+        accountLoginPage.login(username, getPassword(username));
         Assert.assertTrue(profilePage.isCurrent());
     }
 
@@ -116,20 +139,23 @@ public class SSSDTest extends AbstractKeycloakTest {
     public void testExistingUserLogIn() {
         log.debug("Testing correct password");
 
-        driver.navigate().to(getAccountUrl());
-        Assert.assertEquals("Browser should be on login page now", "Log in to " + REALM_NAME, driver.getTitle());
-        accountLoginPage.login(USERNAME, PASSWORD);
-        Assert.assertTrue(profilePage.isCurrent());
-        testUserGroups();
+        for (String username : getUsernames()) {
+            profilePage.open();
+            Assert.assertEquals("Browser should be on login page now", "Log in to " + REALM_NAME, driver.getTitle());
+            accountLoginPage.login(username, getPassword(username));
+            Assert.assertTrue(profilePage.isCurrent());
+            verifyUserGroups(username, getGroups(username));
+            profilePage.logout();
+        }
     }
 
     @Test
     public void testExistingUserWithNoEmailLogIn() {
         log.debug("Testing correct password, but no e-mail provided");
-
-        driver.navigate().to(getAccountUrl());
+        String username = getUser(NO_EMAIL_USER);
+        profilePage.open();
         Assert.assertEquals("Browser should be on login page now", "Log in to " + REALM_NAME, driver.getTitle());
-        accountLoginPage.login(NO_EMAIL_USER, NO_EMAIL_USER_PASSWORD);
+        accountLoginPage.login(username, getPassword(username));
         Assert.assertTrue(profilePage.isCurrent());
     }
 
@@ -137,11 +163,13 @@ public class SSSDTest extends AbstractKeycloakTest {
     public void testDeleteSSSDFederationProvider() {
         log.debug("Testing correct password");
 
-        driver.navigate().to(getAccountUrl());
+        profilePage.open();
+        String username = getUsername();
         Assert.assertEquals("Browser should be on login page now", "Log in to " + REALM_NAME, driver.getTitle());
-        accountLoginPage.login(USERNAME, PASSWORD);
+        accountLoginPage.login(username, getPassword(username));
         Assert.assertTrue(profilePage.isCurrent());
-        testUserGroups();
+        verifyUserGroups(username, getGroups(username));
+
         int componentsListSize = adminClient.realm(REALM_NAME).components().query().size();
         adminClient.realm(REALM_NAME).components().component(SSSDFederationID).remove();
         Assert.assertEquals(componentsListSize - 1, adminClient.realm(REALM_NAME).components().query().size());
@@ -151,13 +179,14 @@ public class SSSDTest extends AbstractKeycloakTest {
     @Test
     public void changeReadOnlyProfile() throws Exception {
 
+        String username = getUsername();
         profilePage.open();
-        accountLoginPage.login(USERNAME, PASSWORD);
+        accountLoginPage.login(username, getPassword(username));
 
-        Assert.assertEquals("emily", profilePage.getUsername());
-        Assert.assertEquals("Emily", profilePage.getFirstName());
-        Assert.assertEquals("Jones", profilePage.getLastName());
-        Assert.assertEquals("emily@jones.com", profilePage.getEmail());
+        Assert.assertEquals(username, profilePage.getUsername());
+        Assert.assertEquals(sssdConfig.getProperty("user." + username + ".firstname"), profilePage.getFirstName());
+        Assert.assertEquals(sssdConfig.getProperty("user." + username + ".lastname"), profilePage.getLastName());
+        Assert.assertEquals(sssdConfig.getProperty("user." + username + ".mail"), profilePage.getEmail());
 
         profilePage.updateProfile("New first", "New last", "new@email.com");
 
@@ -166,41 +195,43 @@ public class SSSDTest extends AbstractKeycloakTest {
 
     @Test
     public void changeReadOnlyPassword() {
+        String username = getUsername();
         changePasswordPage.open();
-        accountLoginPage.login(USERNAME, PASSWORD);
+        accountLoginPage.login(username, getPassword(username));
 
-        changePasswordPage.changePassword(PASSWORD, "new-password", "new-password");
+        changePasswordPage.changePassword(getPassword(username), "new-password", "new-password");
         Assert.assertEquals("You can't update your password as your account is read only.", profilePage.getError());
     }
 
-
-    private void testUserGroups() {
-        log.debug("Testing user groups");
-
-        List<UserRepresentation> users = adminClient.realm(REALM_NAME).users().search(USERNAME, 0, 1);
-
+    private void verifyUserGroups(String username, List<String> groups) {
+        List<UserRepresentation> users = adminClient.realm(REALM_NAME).users().search(username, 0, 1);
         Assert.assertTrue("There must be at least one user", users.size() > 0);
-        Assert.assertEquals("Exactly our test user", USERNAME, users.get(0).getUsername());
+        Assert.assertEquals("Exactly our test user", username, users.get(0).getUsername());
+        List<GroupRepresentation> assignedGroups = adminClient.realm(REALM_NAME).users().get(users.get(0).getId()).groups();
+        Assert.assertEquals("User must have exactly " + groups.size() + " groups", groups.size(), assignedGroups.size());
 
-        List<GroupRepresentation> groups = adminClient.realm(REALM_NAME).users().get(users.get(0).getId()).groups();
-
-        Assert.assertEquals("User must have exactly two groups", 2, groups.size());
-        boolean wrongGroup = false;
-        for (GroupRepresentation group : groups) {
-            if (!group.getName().equalsIgnoreCase("ipausers") && !group.getName().equalsIgnoreCase("testgroup")) {
-                wrongGroup = true;
-                break;
-            }
+        for (GroupRepresentation group : assignedGroups) {
+            Assert.assertTrue(groups.contains(group.getName()));
         }
-
-        Assert.assertFalse("There exists some wrong group", wrongGroup);
     }
 
-    private String getAccountUrl() {
-        return getAuthRoot() + "/auth/realms/" + REALM_NAME + "/account";
+    private String getUsername() {
+        return sssdConfig.getStringArray("usernames")[0];
     }
 
-    private String getAuthRoot() {
-        return suiteContext.getAuthServerInfo().getContextRoot().toString();
+    private String getUser(String type) {
+        return sssdConfig.getString("user." + type);
+    }
+
+    private List<String> getUsernames() {
+        return Lists.newArrayList(sssdConfig.getStringArray("usernames"));
+    }
+
+    private String getPassword(String username) {
+        return sssdConfig.getString("user." + username + ".password");
+    }
+
+    private List<String> getGroups(String username) {
+        return Lists.newArrayList(sssdConfig.getStringArray("user." + username + ".groups"));
     }
 }

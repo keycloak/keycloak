@@ -4,6 +4,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.client.registration.cli.config.ConfigData;
 import org.keycloak.client.registration.cli.config.FileConfigHandler;
+import org.keycloak.client.registration.cli.util.OsUtil;
 import org.keycloak.testsuite.cli.KcRegExec;
 import org.keycloak.testsuite.util.TempFileResource;
 
@@ -23,13 +24,19 @@ public class KcRegTruststoreTest extends AbstractRegCliTest {
     @Test
     public void testTruststore() throws IOException {
 
-        // only run this test if ssl protected keycloak server is available
+        File truststore = new File("src/test/resources/keystore/keycloak.truststore");
+
+        KcRegExec exe = execute("config truststore --no-config '" + truststore.getAbsolutePath() + "'");
+
+        assertExitCodeAndStreamSizes(exe, 1, 0, 2);
+        Assert.assertEquals("stderr first line", "Unsupported option: --no-config", exe.stderrLines().get(0));
+        Assert.assertEquals("try help", "Try '" + OsUtil.CMD + " help config truststore' for more information", exe.stderrLines().get(1));
+
+        // only run the rest of this test if ssl protected keycloak server is available
         if (!isAuthServerSSL()) {
             System.out.println("TEST SKIPPED - This test requires HTTPS. Run with '-Pauth-server-wildfly -Dauth.server.ssl.required=true'");
             return;
         }
-
-        File truststore = new File("src/test/resources/keystore/keycloak.truststore");
 
         FileConfigHandler handler = initCustomConfigFile();
 
@@ -37,7 +44,7 @@ public class KcRegTruststoreTest extends AbstractRegCliTest {
 
             if (runIntermittentlyFailingTests()) {
                 // configure truststore
-                KcRegExec exe = execute("config truststore --config '" + configFile.getName() + "' '" + truststore.getAbsolutePath() + "'");
+                exe = execute("config truststore --config '" + configFile.getName() + "' '" + truststore.getAbsolutePath() + "'");
 
                 assertExitCodeAndStreamSizes(exe, 0, 0, 0);
 
@@ -80,7 +87,7 @@ public class KcRegTruststoreTest extends AbstractRegCliTest {
         }
 
         // configure truststore with password
-        KcRegExec exe = execute("config truststore --trustpass secret '" + truststore.getAbsolutePath() + "'");
+        exe = execute("config truststore --trustpass secret '" + truststore.getAbsolutePath() + "'");
         assertExitCodeAndStreamSizes(exe, 0, 0, 0);
 
         // perform authentication against server - asks for password, then for truststore password

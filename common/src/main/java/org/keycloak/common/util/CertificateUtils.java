@@ -75,7 +75,6 @@ public class CertificateUtils {
      */
     public static X509Certificate generateV3Certificate(KeyPair keyPair, PrivateKey caPrivateKey, X509Certificate caCert,
             String subject) throws Exception {
-
         try {
             X500Name subjectDN = new X500Name("CN=" + subject);
 

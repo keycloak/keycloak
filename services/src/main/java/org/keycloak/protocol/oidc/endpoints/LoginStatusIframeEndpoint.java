@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oidc.endpoints;
 
+import org.keycloak.common.Version;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -28,8 +29,10 @@ import org.keycloak.utils.MediaType;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -42,24 +45,25 @@ import java.util.Set;
 public class LoginStatusIframeEndpoint {
 
     @Context
-    private UriInfo uriInfo;
-
-    @Context
     private KeycloakSession session;
-
-    private RealmModel realm;
-
-    public LoginStatusIframeEndpoint(RealmModel realm) {
-        this.realm = realm;
-    }
 
     @GET
     @Produces(MediaType.TEXT_HTML_UTF_8)
-    public Response getLoginStatusIframe() {
+    public Response getLoginStatusIframe(@QueryParam("version") String version) {
+        CacheControl cacheControl;
+        if (version != null) {
+            if (!version.equals(Version.RESOURCES_VERSION)) {
+                return Response.status(Response.Status.NOT_FOUND).build();
+            }
+            cacheControl = CacheControlUtil.getDefaultCacheControl();
+        } else {
+            cacheControl = CacheControlUtil.noCache();
+        }
+
         InputStream resource = getClass().getClassLoader().getResourceAsStream("login-status-iframe.html");
         if (resource != null) {
             P3PHelper.addP3PHeader(session);
-            return Response.ok(resource).cacheControl(CacheControlUtil.getDefaultCacheControl()).build();
+            return Response.ok(resource).cacheControl(cacheControl).build();
         } else {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
@@ -69,6 +73,7 @@ public class LoginStatusIframeEndpoint {
     @Path("init")
     public Response preCheck(@QueryParam("client_id") String clientId, @QueryParam("origin") String origin) {
         try {
+            UriInfo uriInfo = session.getContext().getUri();
             RealmModel realm = session.getContext().getRealm();
             ClientModel client = session.realms().getClientByClientId(clientId, realm);
             if (client != null) {

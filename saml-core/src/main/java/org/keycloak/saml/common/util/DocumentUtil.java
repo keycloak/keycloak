@@ -52,6 +52,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.util.Objects;
 
 /**
  * Utility dealing with DOM
@@ -510,7 +511,7 @@ public class DocumentUtil {
 
     };
 
-    private static DocumentBuilder getDocumentBuilder() throws ParserConfigurationException {
+    public static DocumentBuilder getDocumentBuilder() throws ParserConfigurationException {
         DocumentBuilder res = XML_DOCUMENT_BUILDER.get();
         res.reset();
         return res;
@@ -553,5 +554,34 @@ public class DocumentUtil {
         }
 
         return documentBuilderFactory;
+    }
+
+    /**
+     * Get a (direct) child {@linkplain Element} from the parent {@linkplain Element}. 
+     *
+     * @param parent parent element
+     * @param targetNamespace namespace URI
+     * @param targetLocalName local name
+     * @return a child element matching the target namespace and localname, where {@linkplain Element#getParentNode()} is the parent input parameter
+     * @return
+     */
+    
+    public static Element getDirectChildElement(Element parent, String targetNamespace, String targetLocalName) {
+        Node child = parent.getFirstChild();
+        
+        while(child != null) {
+            if(child instanceof Element) {
+                Element childElement = (Element)child;
+                
+                String ns = childElement.getNamespaceURI();
+                String localName = childElement.getLocalName();
+                
+                if(Objects.equals(targetNamespace, ns) && Objects.equals(targetLocalName, localName)) {
+                    return childElement;
+                }
+            }
+            child = child.getNextSibling();
+        }
+        return null;
     }
 }

@@ -18,14 +18,15 @@ public abstract class AbstractSAMLFilterServletAdapterTest extends AbstractSAMLS
     public void checkRoles() {
         badClientSalesPostSigServletPage.checkRoles(true);
         badRealmSalesPostSigServletPage.checkRoles(true);
+        employeeAcsServletPage.checkRoles(true);
         employeeSigServletPage.checkRoles(true);
         employeeSigFrontServletPage.checkRoles(true);
         salesMetadataServletPage.checkRoles(true);
         salesPostServletPage.checkRoles(true);
         salesPostEncServletPage.checkRoles(true);
+        salesPostEncSignAssertionsOnlyServletPage.checkRoles(true);
         salesPostSigServletPage.checkRoles(true);
         salesPostPassiveServletPage.checkRoles(true);
-        salesPostSigEmailServletPage.checkRoles(true);
         salesPostSigPersistentServletPage.checkRoles(true);
         salesPostSigTransientServletPage.checkRoles(true);
         salesPostAssertionAndResponseSigPage.checkRoles(true);
@@ -39,19 +40,24 @@ public abstract class AbstractSAMLFilterServletAdapterTest extends AbstractSAMLS
         employee2ServletPage.checkRolesEndPoint(true);
         employee2ServletPage.logout();
 
-        forbiddenIfNotAuthenticated = false;
+        salesPostSigEmailServletPage.navigateTo();
+        testRealmLoginPage.form().login(bburkeUser);
+        salesPostSigEmailServletPage.checkRolesEndPoint(true);
+        salesPostSigEmailServletPage.logout();
     }
 
     @After
     public void uncheckRoles() {
         badClientSalesPostSigServletPage.checkRoles(false);
         badRealmSalesPostSigServletPage.checkRoles(false);
+        employeeAcsServletPage.checkRoles(false);
         employee2ServletPage.checkRoles(false);
         employeeSigServletPage.checkRoles(false);
         employeeSigFrontServletPage.checkRoles(false);
         salesMetadataServletPage.checkRoles(false);
         salesPostServletPage.checkRoles(false);
         salesPostEncServletPage.checkRoles(false);
+        salesPostEncSignAssertionsOnlyServletPage.checkRoles(false);
         salesPostSigServletPage.checkRoles(false);
         salesPostPassiveServletPage.checkRoles(false);
         salesPostSigEmailServletPage.checkRoles(false);
@@ -72,7 +78,7 @@ public abstract class AbstractSAMLFilterServletAdapterTest extends AbstractSAMLS
     @Test
     @Override
     @Ignore
-    public void testErrorHandling() {
+    public void testErrorHandlingUnsigned() {
 
     }
 }

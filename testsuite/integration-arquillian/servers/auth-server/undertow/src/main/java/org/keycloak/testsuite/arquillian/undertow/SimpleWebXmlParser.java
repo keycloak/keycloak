@@ -33,6 +33,7 @@ import io.undertow.servlet.api.LoginConfig;
 import io.undertow.servlet.api.SecurityConstraint;
 import io.undertow.servlet.api.SecurityInfo;
 import io.undertow.servlet.api.ServletInfo;
+import io.undertow.servlet.api.ServletSessionConfig;
 import io.undertow.servlet.api.WebResourceCollection;
 import org.jboss.logging.Logger;
 import org.w3c.dom.Document;
@@ -95,6 +96,14 @@ class SimpleWebXmlParser {
 
                 Class<? extends Filter> filterClazz = (Class<? extends Filter>) Class.forName(filterClass);
                 FilterInfo undertowFilter = new FilterInfo(filterName, filterClazz);
+
+                List<ElementWrapper> initParams = filter.getElementsByTagName("init-param");
+                for (ElementWrapper initParam : initParams) {
+                    String paramName = initParam.getElementByTagName("param-name").getText();
+                    String paramValue = initParam.getElementByTagName("param-value").getText();
+                    undertowFilter.addInitParam(paramName, paramValue);
+                }
+
                 di.addFilter(undertowFilter);
 
                 if (filterMappings.containsKey(filterName)) {
@@ -160,6 +169,19 @@ class SimpleWebXmlParser {
                 } else {
                     di.setLoginConfig(new LoginConfig(realmName).addFirstAuthMethod(mech));
                 }
+            }
+
+            // COOKIE CONFIG
+            ElementWrapper sessionCfg = document.getElementByTagName("session-config");
+            if (sessionCfg != null) {
+                ElementWrapper cookieConfig = sessionCfg.getElementByTagName("cookie-config");
+                String httpOnly = cookieConfig.getElementByTagName("http-only").getText();
+                String cookieName = cookieConfig.getElementByTagName("name").getText();
+
+                ServletSessionConfig cfg = new ServletSessionConfig();
+                cfg.setHttpOnly(Boolean.parseBoolean(httpOnly));
+                cfg.setName(cookieName);
+                di.setServletSessionConfig(cfg);
             }
 
         } catch (ClassNotFoundException cnfe) {

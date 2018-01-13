@@ -17,9 +17,10 @@
 package org.keycloak.broker.provider;
 
 import org.jboss.resteasy.spi.HttpRequest;
-import org.keycloak.models.ClientSessionModel;
+import org.keycloak.broker.provider.util.IdentityBrokerState;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.ws.rs.core.UriInfo;
 
@@ -30,20 +31,20 @@ public class AuthenticationRequest {
 
     private final KeycloakSession session;
     private final UriInfo uriInfo;
-    private final String state;
+    private final IdentityBrokerState state;
     private final HttpRequest httpRequest;
     private final RealmModel realm;
     private final String redirectUri;
-    private final ClientSessionModel clientSession;
+    private final AuthenticationSessionModel authSession;
 
-    public AuthenticationRequest(KeycloakSession session, RealmModel realm, ClientSessionModel clientSession, HttpRequest httpRequest, UriInfo uriInfo, String state, String redirectUri) {
+    public AuthenticationRequest(KeycloakSession session, RealmModel realm, AuthenticationSessionModel authSession, HttpRequest httpRequest, UriInfo uriInfo, IdentityBrokerState state, String redirectUri) {
         this.session = session;
         this.realm = realm;
         this.httpRequest = httpRequest;
         this.uriInfo = uriInfo;
         this.state = state;
         this.redirectUri = redirectUri;
-        this.clientSession = clientSession;
+        this.authSession = authSession;
     }
 
     public KeycloakSession getSession() {
@@ -54,7 +55,7 @@ public class AuthenticationRequest {
         return this.uriInfo;
     }
 
-    public String getState() {
+    public IdentityBrokerState getState() {
         return this.state;
     }
 
@@ -76,7 +77,7 @@ public class AuthenticationRequest {
         return this.redirectUri;
     }
 
-    public ClientSessionModel getClientSession() {
-        return this.clientSession;
+    public AuthenticationSessionModel getAuthenticationSession() {
+        return this.authSession;
     }
 }

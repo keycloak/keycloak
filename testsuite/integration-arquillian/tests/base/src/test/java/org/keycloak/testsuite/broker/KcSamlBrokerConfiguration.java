@@ -6,6 +6,7 @@
 package org.keycloak.testsuite.broker;
 
 import org.keycloak.protocol.ProtocolMapperUtils;
+import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
 import org.keycloak.protocol.saml.mappers.UserAttributeStatementMapper;
@@ -16,12 +17,15 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 
+import org.keycloak.testsuite.saml.AbstractSamlTest;
+import org.keycloak.testsuite.util.ClientBuilder;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.*;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.*;
 import static org.keycloak.testsuite.broker.BrokerTestTools.*;
 
@@ -52,9 +56,14 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
 
     @Override
     public List<ClientRepresentation> createProviderClients(SuiteContext suiteContext) {
+        String clientId = getIDPClientIdInProviderRealm(suiteContext);
+        return Arrays.asList(createProviderClient(suiteContext, clientId));
+    }
+
+    private ClientRepresentation createProviderClient(SuiteContext suiteContext, String clientId) {
         ClientRepresentation client = new ClientRepresentation();
 
-        client.setClientId(getAuthRoot(suiteContext) + "/auth/realms/" + REALM_CONS_NAME);
+        client.setClientId(clientId);
         client.setEnabled(true);
         client.setProtocol(IDP_SAML_PROVIDER_ID);
         client.setRedirectUris(Collections.singletonList(
@@ -63,17 +72,17 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
 
         Map<String, String> attributes = new HashMap<>();
 
-        attributes.put("saml.authnstatement", "true");
-        attributes.put("saml_single_logout_service_url_post",
+        attributes.put(SamlConfigAttributes.SAML_AUTHNSTATEMENT, "true");
+        attributes.put(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE,
                 getAuthRoot(suiteContext) + "/auth/realms/" + REALM_CONS_NAME + "/broker/" + IDP_SAML_ALIAS + "/endpoint");
-        attributes.put("saml_assertion_consumer_url_post",
+        attributes.put(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE,
                 getAuthRoot(suiteContext) + "/auth/realms/" + REALM_CONS_NAME + "/broker/" + IDP_SAML_ALIAS + "/endpoint");
-        attributes.put("saml_force_name_id_format", "true");
-        attributes.put("saml_name_id_format", "username");
-        attributes.put("saml.assertion.signature", "false");
-        attributes.put("saml.server.signature", "false");
-        attributes.put("saml.client.signature", "false");
-        attributes.put("saml.encrypt", "false");
+        attributes.put(SamlConfigAttributes.SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE, "true");
+        attributes.put(SamlConfigAttributes.SAML_NAME_ID_FORMAT_ATTRIBUTE, "username");
+        attributes.put(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE, "false");
+        attributes.put(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "false");
+        attributes.put(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, "false");
+        attributes.put(SamlConfigAttributes.SAML_ENCRYPT, "false");
 
         client.setAttributes(attributes);
 
@@ -115,12 +124,33 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
 
         client.setProtocolMappers(Arrays.asList(emailMapper, userAttrMapper, userFriendlyAttrMapper));
 
-        return Collections.singletonList(client);
+        return client;
     }
 
     @Override
     public List<ClientRepresentation> createConsumerClients(SuiteContext suiteContext) {
-        return null;
+        return Arrays.asList(
+          ClientBuilder.create()
+            .clientId(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST)
+            .enabled(true)
+            .fullScopeEnabled(true)
+            .protocol(SamlProtocol.LOGIN_PROTOCOL)
+            .baseUrl("http://localhost:8080/sales-post")
+            .addRedirectUri("http://localhost:8080/sales-post/*")
+            .attribute(SamlConfigAttributes.SAML_AUTHNSTATEMENT, SamlProtocol.ATTRIBUTE_TRUE_VALUE)
+            .attribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, SamlProtocol.ATTRIBUTE_FALSE_VALUE)
+            .build(),
+          ClientBuilder.create()
+            .clientId(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST + ".dot/ted")
+            .enabled(true)
+            .fullScopeEnabled(true)
+            .protocol(SamlProtocol.LOGIN_PROTOCOL)
+            .baseUrl("http://localhost:8080/sales-post")
+            .addRedirectUri("http://localhost:8080/sales-post/*")
+            .attribute(SamlConfigAttributes.SAML_AUTHNSTATEMENT, SamlProtocol.ATTRIBUTE_TRUE_VALUE)
+            .attribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, SamlProtocol.ATTRIBUTE_FALSE_VALUE)
+            .build()
+        );
     }
 
     @Override
@@ -133,15 +163,15 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
 
         Map<String, String> config = idp.getConfig();
 
-        config.put("singleSignOnServiceUrl", getAuthRoot(suiteContext) + "/auth/realms/" + REALM_PROV_NAME + "/protocol/saml");
-        config.put("singleLogoutServiceUrl", getAuthRoot(suiteContext) + "/auth/realms/" + REALM_PROV_NAME + "/protocol/saml");
-        config.put("nameIDPolicyFormat", "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress");
-        config.put("forceAuthn", "true");
-        config.put("postBindingResponse", "true");
-        config.put("postBindingAuthnRequest", "true");
-        config.put("validateSignature", "false");
-        config.put("wantAuthnRequestsSigned", "false");
-        config.put("backchannelSupported", "true");
+        config.put(SINGLE_SIGN_ON_SERVICE_URL, getAuthRoot(suiteContext) + "/auth/realms/" + REALM_PROV_NAME + "/protocol/saml");
+        config.put(SINGLE_LOGOUT_SERVICE_URL, getAuthRoot(suiteContext) + "/auth/realms/" + REALM_PROV_NAME + "/protocol/saml");
+        config.put(NAME_ID_POLICY_FORMAT, "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress");
+        config.put(FORCE_AUTHN, "true");
+        config.put(POST_BINDING_RESPONSE, "true");
+        config.put(POST_BINDING_AUTHN_REQUEST, "true");
+        config.put(VALIDATE_SIGNATURE, "false");
+        config.put(WANT_AUTHN_REQUESTS_SIGNED, "false");
+        config.put(BACKCHANNEL_SUPPORTED, "false");
 
         return idp;
     }
@@ -154,6 +184,11 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
     @Override
     public String consumerRealmName() {
         return REALM_CONS_NAME;
+    }
+
+    @Override
+    public String getIDPClientIdInProviderRealm(SuiteContext suiteContext) {
+        return getAuthRoot(suiteContext) + "/auth/realms/" + consumerRealmName();
     }
 
     @Override

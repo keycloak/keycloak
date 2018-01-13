@@ -40,7 +40,15 @@ public interface RealmProvider extends Provider {
 
     List<GroupModel> getGroups(RealmModel realm);
 
+    Long getGroupsCount(RealmModel realm, Boolean onlyTopGroups);
+
+    Long getGroupsCountByNameContaining(RealmModel realm, String search);
+
     List<GroupModel> getTopLevelGroups(RealmModel realm);
+
+    List<GroupModel> getTopLevelGroups(RealmModel realm, Integer first, Integer max);
+
+    List searchForGroupByName(RealmModel realm, String search, Integer first, Integer max);
 
     boolean removeGroup(RealmModel realm, GroupModel group);
 
@@ -90,4 +98,11 @@ public interface RealmProvider extends Provider {
     List<RealmModel> getRealms();
     boolean removeRealm(String id);
     void close();
+
+    ClientInitialAccessModel createClientInitialAccessModel(RealmModel realm, int expiration, int count);
+    ClientInitialAccessModel getClientInitialAccessModel(RealmModel realm, String id);
+    void removeClientInitialAccessModel(RealmModel realm, String id);
+    List<ClientInitialAccessModel> listClientInitialAccess(RealmModel realm);
+    void removeExpiredClientInitialAccess();
+    void decreaseRemainingCount(RealmModel realm, ClientInitialAccessModel clientInitialAccess); // Separate provider method to ensure we decrease remainingCount atomically instead of doing classic update
 }

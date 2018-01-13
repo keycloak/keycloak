@@ -17,23 +17,25 @@
 
 package org.keycloak.email;
 
+import com.sun.mail.smtp.SMTPMessage;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.truststore.HostnameVerificationPolicy;
 import org.keycloak.truststore.JSSETruststoreConfigurator;
 
+import javax.mail.Address;
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
 import javax.mail.Session;
 import javax.mail.Transport;
+import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
-import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 import javax.net.ssl.SSLSocketFactory;
+import java.io.UnsupportedEncodingException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
@@ -54,20 +56,22 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
     }
 
     @Override
-    public void send(RealmModel realm, UserModel user, String subject, String textBody, String htmlBody) throws EmailException {
+    public void send(Map<String, String> config, UserModel user, String subject, String textBody, String htmlBody) throws EmailException {
         Transport transport = null;
         try {
             String address = retrieveEmailAddress(user);
-            Map<String, String> config = realm.getSmtpConfig();
 
             Properties props = new Properties();
-            props.setProperty("mail.smtp.host", config.get("host"));
+
+            if (config.containsKey("host")) {
+                props.setProperty("mail.smtp.host", config.get("host"));
+            }
 
             boolean auth = "true".equals(config.get("auth"));
             boolean ssl = "true".equals(config.get("ssl"));
             boolean starttls = "true".equals(config.get("starttls"));
 
-            if (config.containsKey("port")) {
+            if (config.containsKey("port") && config.get("port") != null) {
                 props.setProperty("mail.smtp.port", config.get("port"));
             }
 
@@ -91,25 +95,38 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
             props.setProperty("mail.smtp.connectiontimeout", "10000");
 
             String from = config.get("from");
+            String fromDisplayName = config.get("fromDisplayName");
+            String replyTo = config.get("replyTo");
+            String replyToDisplayName = config.get("replyToDisplayName");
+            String envelopeFrom = config.get("envelopeFrom");
 
             Session session = Session.getInstance(props);
 
             Multipart multipart = new MimeMultipart("alternative");
 
-            if(textBody != null) {
+            if (textBody != null) {
                 MimeBodyPart textPart = new MimeBodyPart();
                 textPart.setText(textBody, "UTF-8");
                 multipart.addBodyPart(textPart);
             }
 
-            if(htmlBody != null) {
+            if (htmlBody != null) {
                 MimeBodyPart htmlPart = new MimeBodyPart();
                 htmlPart.setContent(htmlBody, "text/html; charset=UTF-8");
                 multipart.addBodyPart(htmlPart);
             }
 
-            MimeMessage msg = new MimeMessage(session);
-            msg.setFrom(new InternetAddress(from));
+            SMTPMessage msg = new SMTPMessage(session);
+            msg.setFrom(toInternetAddress(from, fromDisplayName));
+
+            msg.setReplyTo(new Address[]{toInternetAddress(from, fromDisplayName)});
+            if (replyTo != null && !replyTo.isEmpty()) {
+                msg.setReplyTo(new Address[]{toInternetAddress(replyTo, replyToDisplayName)});
+            }
+            if (envelopeFrom != null && !envelopeFrom.isEmpty()) {
+                msg.setEnvelopeFrom(envelopeFrom);
+            }
+
             msg.setHeader("To", address);
             msg.setSubject(subject, "utf-8");
             msg.setContent(multipart);
@@ -136,7 +153,17 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
             }
         }
     }
-    
+
+    protected InternetAddress toInternetAddress(String email, String displayName) throws UnsupportedEncodingException, AddressException, EmailException {
+        if (email == null || "".equals(email.trim())) {
+            throw new EmailException("Please provide a valid address", null);
+        }
+        if (displayName == null || "".equals(displayName.trim())) {
+            return new InternetAddress(email);
+        }
+        return new InternetAddress(email, displayName, "utf-8");
+    }
+
     protected String retrieveEmailAddress(UserModel user) {
         return user.getEmail();
     }

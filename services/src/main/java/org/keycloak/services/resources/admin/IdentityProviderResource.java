@@ -19,12 +19,15 @@ package org.keycloak.services.resources.admin;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
+import org.keycloak.authorization.model.Resource;
+import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -43,7 +46,11 @@ import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
+import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -65,13 +72,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * @resource Identity Providers
  * @author Pedro Igor
  */
 public class IdentityProviderResource {
 
     protected static final Logger logger = Logger.getLogger(IdentityProviderResource.class);
 
-    private final RealmAuth auth;
+    private final AdminPermissionEvaluator auth;
     private final RealmModel realm;
     private final KeycloakSession session;
     private final IdentityProviderModel identityProviderModel;
@@ -79,7 +87,7 @@ public class IdentityProviderResource {
 
     @Context private UriInfo uriInfo;
 
-    public IdentityProviderResource(RealmAuth auth, RealmModel realm, KeycloakSession session, IdentityProviderModel identityProviderModel, AdminEventBuilder adminEvent) {
+    public IdentityProviderResource(AdminPermissionEvaluator auth, RealmModel realm, KeycloakSession session, IdentityProviderModel identityProviderModel, AdminEventBuilder adminEvent) {
         this.realm = realm;
         this.session = session;
         this.identityProviderModel = identityProviderModel;
@@ -96,7 +104,7 @@ public class IdentityProviderResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public IdentityProviderRepresentation getIdentityProvider() {
-        this.auth.requireView();
+        this.auth.realm().requireViewIdentityProviders();
 
         if (identityProviderModel == null) {
             throw new javax.ws.rs.NotFoundException();
@@ -114,7 +122,7 @@ public class IdentityProviderResource {
     @DELETE
     @NoCache
     public Response delete() {
-        this.auth.requireManage();
+        this.auth.realm().requireManageIdentityProviders();
 
         if (identityProviderModel == null) {
             throw new javax.ws.rs.NotFoundException();
@@ -137,7 +145,7 @@ public class IdentityProviderResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @NoCache
     public Response update(IdentityProviderRepresentation providerRep) {
-        this.auth.requireManage();
+        this.auth.realm().requireManageIdentityProviders();
 
         if (identityProviderModel == null) {
             throw new javax.ws.rs.NotFoundException();
@@ -228,7 +236,7 @@ public class IdentityProviderResource {
     @Path("export")
     @NoCache
     public Response export(@Context UriInfo uriInfo, @QueryParam("format") String format) {
-        this.auth.requireView();
+        this.auth.realm().requireViewIdentityProviders();
 
         if (identityProviderModel == null) {
             throw new javax.ws.rs.NotFoundException();
@@ -249,7 +257,7 @@ public class IdentityProviderResource {
     @Path("mapper-types")
     @NoCache
     public Map<String, IdentityProviderMapperTypeRepresentation> getMapperTypes() {
-        this.auth.requireView();
+        this.auth.realm().requireViewIdentityProviders();
 
         if (identityProviderModel == null) {
             throw new javax.ws.rs.NotFoundException();
@@ -288,7 +296,7 @@ public class IdentityProviderResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public List<IdentityProviderMapperRepresentation> getMappers() {
-        this.auth.requireView();
+        this.auth.realm().requireViewIdentityProviders();
 
         if (identityProviderModel == null) {
             throw new javax.ws.rs.NotFoundException();
@@ -311,14 +319,18 @@ public class IdentityProviderResource {
     @Path("mappers")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response addMapper(IdentityProviderMapperRepresentation mapper) {
-        auth.requireManage();
+        this.auth.realm().requireManageIdentityProviders();
 
         if (identityProviderModel == null) {
             throw new javax.ws.rs.NotFoundException();
         }
 
         IdentityProviderMapperModel model = RepresentationToModel.toModel(mapper);
-        model = realm.addIdentityProviderMapper(model);
+        try {
+            model = realm.addIdentityProviderMapper(model);
+        } catch (Exception e) {
+            return ErrorResponse.error("Failed to add mapper '" + model.getName() + "' to identity provider [" + identityProviderModel.getProviderId() + "].", Response.Status.BAD_REQUEST);
+        }
 
         adminEvent.operation(OperationType.CREATE).resource(ResourceType.IDENTITY_PROVIDER_MAPPER).resourcePath(uriInfo, model.getId())
             .representation(mapper).success();
@@ -338,7 +350,7 @@ public class IdentityProviderResource {
     @Path("mappers/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public IdentityProviderMapperRepresentation getMapperById(@PathParam("id") String id) {
-        auth.requireView();
+        this.auth.realm().requireViewIdentityProviders();
 
         if (identityProviderModel == null) {
             throw new javax.ws.rs.NotFoundException();
@@ -360,7 +372,7 @@ public class IdentityProviderResource {
     @Path("mappers/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     public void update(@PathParam("id") String id, IdentityProviderMapperRepresentation rep) {
-        auth.requireManage();
+        this.auth.realm().requireManageIdentityProviders();
 
         if (identityProviderModel == null) {
             throw new javax.ws.rs.NotFoundException();
@@ -383,7 +395,7 @@ public class IdentityProviderResource {
     @NoCache
     @Path("mappers/{id}")
     public void delete(@PathParam("id") String id) {
-        auth.requireManage();
+        this.auth.realm().requireManageIdentityProviders();
 
         if (identityProviderModel == null) {
             throw new javax.ws.rs.NotFoundException();
@@ -395,6 +407,59 @@ public class IdentityProviderResource {
         adminEvent.operation(OperationType.DELETE).resource(ResourceType.IDENTITY_PROVIDER_MAPPER).resourcePath(uriInfo).success();
 
     }
+
+    /**
+     * Return object stating whether client Authorization permissions have been initialized or not and a reference
+     *
+     * @return
+     */
+    @Path("management/permissions")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    public ManagementPermissionReference getManagementPermissions() {
+        this.auth.realm().requireViewIdentityProviders();
+
+        AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
+        if (!permissions.idps().isPermissionsEnabled(identityProviderModel)) {
+            return new ManagementPermissionReference();
+        }
+        return toMgmtRef(identityProviderModel, permissions);
+    }
+
+    public static ManagementPermissionReference toMgmtRef(IdentityProviderModel model, AdminPermissionManagement permissions) {
+        ManagementPermissionReference ref = new ManagementPermissionReference();
+        ref.setEnabled(true);
+        ref.setResource(permissions.idps().resource(model).getId());
+        ref.setScopePermissions(permissions.idps().getPermissions(model));
+        return ref;
+    }
+
+
+    /**
+     * Return object stating whether client Authorization permissions have been initialized or not and a reference
+     *
+     *
+     * @return initialized manage permissions reference
+     */
+    @Path("management/permissions")
+    @PUT
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @NoCache
+    public ManagementPermissionReference setManagementPermissionsEnabled(ManagementPermissionReference ref) {
+        this.auth.realm().requireManageIdentityProviders();
+        AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
+        permissions.idps().setPermissionsEnabled(identityProviderModel, ref.isEnabled());
+        if (ref.isEnabled()) {
+            return toMgmtRef(identityProviderModel, permissions);
+        } else {
+            return new ManagementPermissionReference();
+        }
+    }
+
+
+
 
 
 }

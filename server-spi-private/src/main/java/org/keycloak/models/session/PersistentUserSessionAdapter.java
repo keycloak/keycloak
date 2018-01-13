@@ -18,27 +18,32 @@
 package org.keycloak.models.session;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.OfflineUserSessionModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class PersistentUserSessionAdapter implements UserSessionModel {
+public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
 
     private final PersistentUserSessionModel model;
-    private final UserModel user;
+    private UserModel user;
+    private String userId;
+    private String username;
     private final RealmModel realm;
-    private final List<ClientSessionModel> clientSessions;
+    private KeycloakSession session;
+    private final Map<String, AuthenticatedClientSessionModel> authenticatedClientSessions;
 
     private PersistentUserSessionData data;
 
@@ -51,22 +56,26 @@ public class PersistentUserSessionAdapter implements UserSessionModel {
         data.setNotes(other.getNotes());
         data.setRememberMe(other.isRememberMe());
         data.setStarted(other.getStarted());
-        data.setState(other.getState());
+        if (other.getState() != null) {
+            data.setState(other.getState().toString());
+        }
 
         this.model = new PersistentUserSessionModel();
         this.model.setUserSessionId(other.getId());
         this.model.setLastSessionRefresh(other.getLastSessionRefresh());
 
         this.user = other.getUser();
+        this.userId = this.user.getId();
         this.realm = other.getRealm();
-        this.clientSessions = other.getClientSessions();
+        this.authenticatedClientSessions = other.getAuthenticatedClientSessions();
     }
 
-    public PersistentUserSessionAdapter(PersistentUserSessionModel model, RealmModel realm, UserModel user, List<ClientSessionModel> clientSessions) {
+    public PersistentUserSessionAdapter(KeycloakSession session, PersistentUserSessionModel model, RealmModel realm, String userId, Map<String, AuthenticatedClientSessionModel> clientSessions) {
+        this.session = session;
         this.model = model;
         this.realm = realm;
-        this.user = user;
-        this.clientSessions = clientSessions;
+        this.userId = userId;
+        this.authenticatedClientSessions = clientSessions;
     }
 
     // Lazily init data
@@ -111,7 +120,15 @@ public class PersistentUserSessionAdapter implements UserSessionModel {
 
     @Override
     public UserModel getUser() {
+        if (user == null) {
+            user = session.users().getUserById(userId, realm);
+        }
         return user;
+    }
+
+    @Override
+    public String getUserId() {
+        return userId;
     }
 
     @Override
@@ -121,7 +138,7 @@ public class PersistentUserSessionAdapter implements UserSessionModel {
 
     @Override
     public String getLoginUsername() {
-        return user.getUsername();
+        return getUser().getUsername();
     }
 
     @Override
@@ -155,8 +172,22 @@ public class PersistentUserSessionAdapter implements UserSessionModel {
     }
 
     @Override
-    public List<ClientSessionModel> getClientSessions() {
-        return clientSessions;
+    public boolean isOffline() {
+        return model.isOffline();
+    }
+
+    @Override
+    public Map<String, AuthenticatedClientSessionModel> getAuthenticatedClientSessions() {
+        return authenticatedClientSessions;
+    }
+
+    @Override
+    public void removeAuthenticatedClientSessions(Collection<String> removedClientUUIDS) {
+        if (removedClientUUIDS == null || ! removedClientUUIDS.iterator().hasNext()) {
+            return;
+        }
+
+        removedClientUUIDS.forEach(authenticatedClientSessions::remove);
     }
 
     @Override
@@ -188,12 +219,29 @@ public class PersistentUserSessionAdapter implements UserSessionModel {
 
     @Override
     public State getState() {
-        return getData().getState();
+        String state = getData().getState();
+
+        if (state == null) {
+            return null;
+        }
+
+        // Migration to Keycloak 3.2
+        if (state.equals("LOGGING_IN")) {
+            return State.LOGGED_IN;
+        }
+
+        return State.valueOf(state);
     }
 
     @Override
     public void setState(State state) {
-        getData().setState(state);
+        String stateStr = state==null ? null : state.toString();
+        getData().setState(stateStr);
+    }
+
+    @Override
+    public void restartSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
+        throw new IllegalStateException("Not supported");
     }
 
     @Override
@@ -234,7 +282,7 @@ public class PersistentUserSessionAdapter implements UserSessionModel {
         private Map<String, String> notes;
 
         @JsonProperty("state")
-        private State state;
+        private String state;
 
         public String getBrokerSessionId() {
             return brokerSessionId;
@@ -292,11 +340,11 @@ public class PersistentUserSessionAdapter implements UserSessionModel {
             this.notes = notes;
         }
 
-        public State getState() {
+        public String getState() {
             return state;
         }
 
-        public void setState(State state) {
+        public void setState(String state) {
             this.state = state;
         }
     }

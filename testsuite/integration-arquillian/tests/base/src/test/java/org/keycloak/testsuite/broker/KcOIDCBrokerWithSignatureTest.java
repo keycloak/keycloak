@@ -78,7 +78,8 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         log.debug("adding identity provider to realm " + bc.consumerRealmName());
 
         RealmResource realm = adminClient.realm(bc.consumerRealmName());
-        realm.identityProviders().create(bc.setUpIdentityProvider(suiteContext));
+        Response resp = realm.identityProviders().create(bc.setUpIdentityProvider(suiteContext));
+        resp.close();
     }
 
 
@@ -88,9 +89,10 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         if (clients != null) {
             RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
             for (ClientRepresentation client : clients) {
-                log.debug("adding client " + client.getName() + " to realm " + bc.providerRealmName());
+                log.debug("adding client " + client.getClientId() + " to realm " + bc.providerRealmName());
 
-                providerRealm.clients().create(client);
+                Response resp = providerRealm.clients().create(client);
+                resp.close();
             }
         }
 
@@ -98,9 +100,10 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         if (clients != null) {
             RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
             for (ClientRepresentation client : clients) {
-                log.debug("adding client " + client.getName() + " to realm " + bc.consumerRealmName());
+                log.debug("adding client " + client.getClientId() + " to realm " + bc.consumerRealmName());
 
-                consumerRealm.clients().create(client);
+                Response resp = consumerRealm.clients().create(client);
+                resp.close();
             }
         }
     }
@@ -211,6 +214,23 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         // Set key id to a valid one
         cfg.setPublicKeySignatureVerifierKeyId(expectedKeyId);
         updateIdentityProvider(idpRep);
+        logInAsUserInIDP();
+        assertLoggedInAccountManagement();
+        logoutFromRealm(bc.consumerRealmName());
+
+        // Set key id to empty
+        cfg.setPublicKeySignatureVerifierKeyId("");
+        updateIdentityProvider(idpRep);
+        logInAsUserInIDP();
+        assertLoggedInAccountManagement();
+        logoutFromRealm(bc.consumerRealmName());
+
+        // Unset key id
+        cfg.setPublicKeySignatureVerifierKeyId(null);
+        updateIdentityProvider(idpRep);
+        logInAsUserInIDP();
+        assertLoggedInAccountManagement();
+        logoutFromRealm(bc.consumerRealmName());
     }
 
 

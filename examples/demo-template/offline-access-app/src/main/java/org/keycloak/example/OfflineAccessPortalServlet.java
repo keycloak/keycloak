@@ -182,6 +182,11 @@ public class OfflineAccessPortalServlet extends HttpServlet {
                     }
 
                     @Override
+                    public String getRelativePath() {
+                        return servletRequest.getServletPath();
+                    }
+
+                    @Override
                     public boolean isSecure() {
                         return servletRequest.isSecure();
                     }

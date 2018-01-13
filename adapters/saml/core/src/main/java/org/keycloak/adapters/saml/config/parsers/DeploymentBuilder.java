@@ -41,6 +41,7 @@ import java.security.cert.Certificate;
 import java.util.HashSet;
 import java.util.Set;
 import org.keycloak.adapters.cloned.HttpClientBuilder;
+import java.net.URI;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -67,6 +68,7 @@ public class DeploymentBuilder {
         deployment.setNameIDPolicyFormat(sp.getNameIDPolicyFormat());
         deployment.setLogoutPage(sp.getLogoutPage());
         deployment.setSignatureCanonicalizationMethod(sp.getIdp().getSignatureCanonicalizationMethod());
+        deployment.setAutodetectBearerOnly(sp.isAutodetectBearerOnly());
         deployment.setSignatureAlgorithm(SignatureAlgorithm.RSA_SHA256);
         if (sp.getIdp().getSignatureAlgorithm() != null) {
             deployment.setSignatureAlgorithm(SignatureAlgorithm.valueOf(sp.getIdp().getSignatureAlgorithm()));
@@ -155,6 +157,12 @@ public class DeploymentBuilder {
         sso.setRequestBindingUrl(sp.getIdp().getSingleSignOnService().getBindingUrl());
         if (sp.getIdp().getSingleSignOnService().getResponseBinding() != null) {
             sso.setResponseBinding(SamlDeployment.Binding.parseBinding(sp.getIdp().getSingleSignOnService().getResponseBinding()));
+        }
+        if (sp.getIdp().getSingleSignOnService().getAssertionConsumerServiceUrl() != null) {
+            if (! sp.getIdp().getSingleSignOnService().getAssertionConsumerServiceUrl().endsWith("/saml")) {
+                throw new RuntimeException("AssertionConsumerServiceUrl must end with \"/saml\".");
+            }
+            sso.setAssertionConsumerServiceUrl(URI.create(sp.getIdp().getSingleSignOnService().getAssertionConsumerServiceUrl()));
         }
         sso.setSignRequest(sp.getIdp().getSingleSignOnService().isSignRequest());
         sso.setValidateResponseSignature(sp.getIdp().getSingleSignOnService().isValidateResponseSignature());

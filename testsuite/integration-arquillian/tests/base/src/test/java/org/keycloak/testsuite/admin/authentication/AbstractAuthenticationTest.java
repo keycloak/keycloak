@@ -30,6 +30,7 @@ import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.AssertAdminEvents;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -196,6 +197,8 @@ public abstract class AbstractAuthenticationTest extends AbstractKeycloakTest {
         Response response = authMgmtResource.createFlow(flowRep);
         org.keycloak.testsuite.Assert.assertEquals(201, response.getStatus());
         response.close();
+        String flowId = ApiUtil.getCreatedId(response);
+        getCleanup().addAuthenticationFlowId(flowId);
         assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AssertAdminEvents.isExpectedPrefixFollowedByUuid(AdminEventPaths.authFlowsPath()), flowRep, ResourceType.AUTH_FLOW);
     }
 }

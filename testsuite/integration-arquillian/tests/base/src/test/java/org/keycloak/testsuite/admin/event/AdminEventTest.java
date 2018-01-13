@@ -59,7 +59,9 @@ public class AdminEventTest extends AbstractEventTest {
 
     private String createUser(String username) {
         UserRepresentation user = createUserRepresentation(username, username + "@foo.com", "foo", "bar", true);
-        return ApiUtil.createUserWithAdminClient(testRealmResource(), user);
+        String userId = ApiUtil.createUserWithAdminClient(testRealmResource(), user);
+        getCleanup().addUserId(userId);
+        return userId;
     }
 
     private void updateRealm() {
@@ -90,7 +92,7 @@ public class AdminEventTest extends AbstractEventTest {
         assertNull(event.getError());
 
         AuthDetailsRepresentation details = event.getAuthDetails();
-        assertEquals(realmName(), details.getRealmId());
+        assertEquals("master", details.getRealmId());
         assertNotNull(details.getClientId());
         assertNotNull(details.getUserId());
         assertNotNull(details.getIpAddress());
@@ -106,7 +108,7 @@ public class AdminEventTest extends AbstractEventTest {
         assertEquals("CREATE", event.getOperationType());
 
         assertEquals(realmName(), event.getRealmId());
-        assertEquals(realmName(), event.getAuthDetails().getRealmId());
+        assertEquals("master", event.getAuthDetails().getRealmId());
         assertNull(event.getRepresentation());
     }
 
@@ -130,7 +132,7 @@ public class AdminEventTest extends AbstractEventTest {
         updateRealm();
         assertEquals(3, events().size());
 
-        List<AdminEventRepresentation> events = testRealmResource().getAdminEvents(Arrays.asList("CREATE"), realmName(), null, null, null, null, null, null, null, null);
+        List<AdminEventRepresentation> events = testRealmResource().getAdminEvents(Arrays.asList("CREATE"), null, null, null, null, null, null, null, null, null);
         assertEquals(2, events.size());
     }
 

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator">
+        <resetJUL>true</resetJUL>
+    </contextListener>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%-5level] %logger{15} - %msg%n%rEx</pattern>
+        </encoder>
+        <immediateFlush>false</immediateFlush>
+    </appender>
+
+    <!-- Uncomment for logging ALL HTTP request and responses -->
+    <!-- 	<logger name="io.gatling.http" level="TRACE" /> -->
+    <!-- Uncomment for logging ONLY FAILED HTTP request and responses -->
+    <!-- 	<logger name="io.gatling.http" level="DEBUG" /> -->
+
+    <root level="WARN">
+        <appender-ref ref="CONSOLE" />
+    </root>
+
+</configuration>

@@ -17,19 +17,18 @@
  */
 package org.keycloak.example.photoz.admin;
 
-import org.keycloak.example.photoz.entity.Album;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+
+import org.keycloak.example.photoz.entity.Album;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -37,13 +36,8 @@ import java.util.List;
 @Path("/admin/album")
 public class AdminAlbumService {
 
-    public static final String SCOPE_ADMIN_ALBUM_MANAGE = "urn:photoz.com:scopes:album:admin:manage";
-
     @Inject
     private EntityManager entityManager;
-
-    @Context
-    private HttpHeaders headers;
 
     @GET
     @Produces("application/json")

@@ -1,27 +1,27 @@
 <?xml version="1.0"?>
 <!--
-  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
-  ~ and other contributors as indicated by the @author tags.
-  ~
-  ~ Licensed under the Apache License, Version 2.0 (the "License");
-  ~ you may not use this file except in compliance with the License.
-  ~ You may obtain a copy of the License at
-  ~
-  ~ http://www.apache.org/licenses/LICENSE-2.0
-  ~
-  ~ Unless required by applicable law or agreed to in writing, software
-  ~ distributed under the License is distributed on an "AS IS" BASIS,
-  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  ~ See the License for the specific language governing permissions and
-  ~ limitations under the License.
-  -->
+~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+~ and other contributors as indicated by the @author tags.
+~
+~ Licensed under the Apache License, Version 2.0 (the "License");
+~ you may not use this file except in compliance with the License.
+~ You may obtain a copy of the License at
+~
+~ http://www.apache.org/licenses/LICENSE-2.0
+~
+~ Unless required by applicable law or agreed to in writing, software
+~ distributed under the License is distributed on an "AS IS" BASIS,
+~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+~ See the License for the specific language governing permissions and
+~ limitations under the License.
+-->
 
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests</artifactId>
-        <version>2.5.1.Final-SNAPSHOT</version>
+        <version>4.0.0.CR1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -40,7 +40,9 @@
         <exclude.client>-</exclude.client>
         <!--exclude cluster tests by default, enabled by 'auth-server-*-cluster' profiles in tests/pom.xml-->
         <exclude.cluster>**/cluster/**/*Test.java</exclude.cluster>
-
+        <exclude.crossdc>**/crossdc/**/*Test.java</exclude.crossdc>
+        <!-- exclude x509 tests by default, enabled by 'ssl' profile -->
+        <exclude.x509>**/x509/*Test.java</exclude.x509>
         <!-- exclude undertow adapter tests. They can be added by -Dtest=org.keycloak.testsuite.adapter.undertow.**.*Test -->
         <exclude.undertow.adapter>**/adapter/undertow/**/*Test.java</exclude.undertow.adapter>
     </properties>
@@ -62,6 +64,11 @@
             <version>1.10</version>
         </dependency>
         <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.5</version>
+        </dependency>
+        <dependency>
             <groupId>org.keycloak.testsuite</groupId>
             <artifactId>integration-arquillian-testsuite-providers</artifactId>
             <version>${project.version}</version>
@@ -69,6 +76,11 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -81,6 +93,28 @@
             <artifactId>greenmail</artifactId>
             <scope>compile</scope>
         </dependency>
+        <!--<dependency>-->
+            <!--<groupId>com.spotify</groupId>-->
+            <!--<artifactId>docker-client</artifactId>-->
+            <!--<version>8.3.2</version>-->
+            <!--<scope>test</scope>-->
+            <!--<exclusions>-->
+                <!--<exclusion>-->
+                    <!--<groupId>javax.ws.rs</groupId>-->
+                    <!--<artifactId>javax.ws.rs-api</artifactId>-->
+                <!--</exclusion>-->
+                <!--<exclusion>-->
+                    <!--<groupId>com.github.jnr</groupId>-->
+                    <!--<artifactId>jnr-unixsocket</artifactId>-->
+                <!--</exclusion>-->
+            <!--</exclusions>-->
+        <!--</dependency>-->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <version>1.2.1</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     
     <build>
@@ -90,6 +124,7 @@
                 <filtering>true</filtering>
                 <includes>
                     <include>migration-test/*</include>
+                    <include>authorization-test/*</include>
                 </includes>
             </testResource>
             <testResource>
@@ -118,7 +153,9 @@
                         <exclude>${exclude.account}</exclude>
                         <exclude>${exclude.client}</exclude>
                         <exclude>${exclude.cluster}</exclude>
+                        <exclude>${exclude.crossdc}</exclude>
                         <exclude>${exclude.undertow.adapter}</exclude>
+                        <exclude>${exclude.x509}</exclude>
                     </excludes>
                 </configuration>
             </plugin>
@@ -127,7 +164,7 @@
                 <artifactId>maven-resources-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>copy-arquillian-xml</id>
+                        <id>copy-arquillian-xml-and-password-blacklists</id>
                         <phase>generate-resources</phase>
                         <goals>
                             <goal>copy-resources</goal>
@@ -139,6 +176,7 @@
                                     <directory>src/test/resources</directory>
                                     <includes>
                                         <include>arquillian.xml</include>
+                                        <include>password-blacklists/**</include>
                                     </includes>
                                     <!--<filtering>true</filtering>-->
                                 </resource>
@@ -191,8 +229,45 @@
                     </execution>
                 </executions>
             </plugin>
+
         </plugins>
 
     </build>
-    
+
+    <profiles>
+        <profile>
+            <id>auth-servers-crossdc-undertow</id>
+            <properties>
+                <skip.clean.second.cache>false</skip.clean.second.cache>
+            </properties>
+        </profile>
+        <profile>
+            <id>auth-servers-crossdc-jboss</id>
+            <properties>
+                <skip.clean.second.cache>false</skip.clean.second.cache>
+                <skip.copy.auth.crossdc.nodes>false</skip.copy.auth.crossdc.nodes>
+            </properties>
+        </profile>
+        
+        <profile>
+            <!--see KEYCLOAK-4793-->
+            <id>kie.maven.settings</id>
+            <activation>
+                <property>
+                    <name>repo.url</name>
+                </property>
+            </activation>
+            <properties>
+                <maven.repo.local>${user.home}/.m2/repository</maven.repo.local>
+                <settings.path>${user.home}/.m2/settings.xml</settings.path>
+                <kie.maven.settings>
+                    -Dkie.maven.settings.custom=${settings.path}
+                    -Dkie.maven.repo.local=${maven.repo.local}
+                    -Drepo.url=${repo.url}
+                </kie.maven.settings>
+            </properties>
+        </profile>
+        
+    </profiles>
+
 </project>

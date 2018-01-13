@@ -17,12 +17,16 @@
  */
 package org.keycloak.authorization.permission.evaluator;
 
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.keycloak.authorization.Decision;
 import org.keycloak.authorization.permission.ResourcePermission;
+import org.keycloak.authorization.policy.evaluation.DecisionResultCollector;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.authorization.policy.evaluation.PolicyEvaluator;
-
-import java.util.Iterator;
+import org.keycloak.authorization.policy.evaluation.Result;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -49,5 +53,24 @@ class IterablePermissionEvaluator implements PermissionEvaluator {
         } catch (Throwable cause) {
             decision.onError(cause);
         }
+    }
+
+    @Override
+    public List<Result> evaluate() {
+        AtomicReference<List<Result>> result = new AtomicReference<>();
+
+        evaluate(new DecisionResultCollector() {
+            @Override
+            public void onError(Throwable cause) {
+                throw new RuntimeException("Failed to evaluate permissions", cause);
+            }
+
+            @Override
+            protected void onComplete(List<Result> results) {
+                result.set(results);
+            }
+        });
+
+        return result.get();
     }
 }

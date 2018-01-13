@@ -13,7 +13,11 @@
   "smtpServer": {
     "from": "auto@keycloak.org",
     "host": "localhost",
-    "port":"3025"
+    "port":"3025",
+    "fromDisplayName": "Keycloak SSO",
+    "replyTo":"reply-to@keycloak.org",
+    "replyToDisplayName": "Keycloak no-reply",
+    "envelopeFrom": "auto+bounces@keycloak.org"
   },
   "users" : [
     {
@@ -144,6 +148,17 @@
       "secret": "password"
     },
     {
+      "clientId": "root-url-client",
+      "enabled": true,
+      "rootUrl": "http://localhost:8180/foo/bar",
+      "adminUrl": "http://localhost:8180/foo/bar",
+      "baseUrl": "/baz",
+      "redirectUris": [
+        "http://localhost:8180/foo/bar/*"
+      ],
+      "secret": "password"
+    },
+    {
       "clientId" : "test-app-scope",
       "enabled": true,
 
@@ -158,6 +173,7 @@
       "enabled": true,
       "consentRequired": true,
 
+      "baseUrl": "http://localhost:8180/auth/realms/master/app/auth",
       "redirectUris": [
         "http://localhost:8180/auth/realms/master/app/*"
       ],
@@ -342,6 +358,13 @@
       ],
       "adminUrl": "http://localhost:8180/varnamedapp/base/admin",
       "secret": "password"
+    },
+    {
+      "clientId": "direct-grant",
+      "enabled": true,
+      "directAccessGrantsEnabled": true,
+      "secret": "password",
+      "webOrigins": [ "http://localtest.me:8180" ]
     }
   ],
   "roles" : {
@@ -434,6 +457,17 @@
             "level2Attribute": ["true"]
 
           }
+        },
+        {
+          "name": "level2group2",
+          "realmRoles": ["admin"],
+          "clientRoles": {
+            "test-app": ["customer-user"]
+          },
+          "attributes": {
+            "level2Attribute": ["true"]
+
+          }
         }
       ]
     },
@@ -454,6 +488,17 @@
           "realmRoles": ["admin"],
           "clientRoles": {
             "test-app": ["customer-user", "customer-admin-composite-role"]
+          },
+          "attributes": {
+            "level2Attribute": ["true"]
+
+          }
+        },
+        {
+          "name": "level2group2",
+          "realmRoles": ["admin"],
+          "clientRoles": {
+            "test-app": ["customer-user"]
           },
           "attributes": {
             "level2Attribute": ["true"]

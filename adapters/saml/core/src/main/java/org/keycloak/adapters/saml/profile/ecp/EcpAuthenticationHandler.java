@@ -156,7 +156,15 @@ public class EcpAuthenticationHandler extends AbstractSamlAuthenticationHandler 
                 paosRequestHeader.setMustUnderstand(true);
                 paosRequestHeader.setActor("http://schemas.xmlsoap.org/soap/actor/next");
                 paosRequestHeader.addAttribute(envelope.createName("service"), JBossSAMLURIConstants.ECP_PROFILE.get());
-                paosRequestHeader.addAttribute(envelope.createName("responseConsumerURL"), deployment.getAssertionConsumerServiceUrl());
+                paosRequestHeader.addAttribute(envelope.createName("responseConsumerURL"), getResponseConsumerUrl());
+            }
+
+            private String getResponseConsumerUrl() {
+                return (deployment.getIDP() == null
+                  || deployment.getIDP().getSingleSignOnService() == null
+                  || deployment.getIDP().getSingleSignOnService().getAssertionConsumerServiceUrl() == null
+                ) ? null
+                  : deployment.getIDP().getSingleSignOnService().getAssertionConsumerServiceUrl().toString();
             }
         };
     }

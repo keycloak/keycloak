@@ -154,6 +154,8 @@ public class ExportImportUtil {
 
         Assert.assertNull(realmRsc.users().get(wburke.getId()).roles().getAll().getRealmMappings());
 
+        Assert.assertEquals((Object) 159, wburke.getNotBefore());
+
         UserRepresentation loginclient = findByUsername(realmRsc, "loginclient");
         // user with creation timestamp as string in import
         Assert.assertEquals(new Long(123655), loginclient.getCreatedTimestamp());
@@ -627,11 +629,15 @@ public class ExportImportUtil {
         assertPredicate(scopes, scopePredicates);
 
         List<PolicyRepresentation> policies = authzResource.policies().policies();
-        Assert.assertEquals(10, policies.size());
+        Assert.assertEquals(14, policies.size());
         List<Predicate<PolicyRepresentation>> policyPredicates = new ArrayList<>();
         policyPredicates.add(policyRepresentation -> "Any Admin Policy".equals(policyRepresentation.getName()));
         policyPredicates.add(policyRepresentation -> "Any User Policy".equals(policyRepresentation.getName()));
+        policyPredicates.add(representation -> "Client and Realm Role Policy".equals(representation.getName()));
+        policyPredicates.add(representation -> "Client Test Policy".equals(representation.getName()));
+        policyPredicates.add(representation -> "Group Policy Test".equals(representation.getName()));
         policyPredicates.add(policyRepresentation -> "Only Premium User Policy".equals(policyRepresentation.getName()));
+        policyPredicates.add(policyRepresentation -> "wburke policy".equals(policyRepresentation.getName()));
         policyPredicates.add(policyRepresentation -> "All Users Policy".equals(policyRepresentation.getName()));
         policyPredicates.add(policyRepresentation -> "Premium Resource Permission".equals(policyRepresentation.getName()));
         policyPredicates.add(policyRepresentation -> "Administrative Resource Permission".equals(policyRepresentation.getName()));

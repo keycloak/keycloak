@@ -21,7 +21,9 @@ import org.jboss.logging.Logger;
 import org.keycloak.AuthorizationContext;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OIDCHttpFacade;
+import org.keycloak.adapters.authentication.ClientCredentialsProviderUtils;
 import org.keycloak.authorization.client.AuthzClient;
+import org.keycloak.authorization.client.ClientAuthenticator;
 import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.representation.RegistrationResponse;
 import org.keycloak.authorization.client.representation.ResourceRepresentation;
@@ -51,11 +53,18 @@ public class PolicyEnforcer {
     private final AuthzClient authzClient;
     private final PolicyEnforcerConfig enforcerConfig;
     private final Map<String, PathConfig> paths;
+    private final PathMatcher pathMatcher;
 
     public PolicyEnforcer(KeycloakDeployment deployment, AdapterConfig adapterConfig) {
         this.deployment = deployment;
         this.enforcerConfig = adapterConfig.getPolicyEnforcerConfig();
-        this.authzClient = AuthzClient.create(new Configuration(adapterConfig.getAuthServerUrl(), adapterConfig.getRealm(), adapterConfig.getResource(), adapterConfig.getCredentials(), deployment.getClient()));
+        this.authzClient = AuthzClient.create(new Configuration(adapterConfig.getAuthServerUrl(), adapterConfig.getRealm(), adapterConfig.getResource(), adapterConfig.getCredentials(), deployment.getClient()), new ClientAuthenticator() {
+            @Override
+            public void configureClientCredentials(HashMap<String, String> requestParams, HashMap<String, String> requestHeaders) {
+                ClientCredentialsProviderUtils.setClientCredentials(PolicyEnforcer.this.deployment, requestHeaders, requestParams);
+            }
+        });
+        this.pathMatcher = new PathMatcher(this.authzClient);
         this.paths = configurePaths(this.authzClient.protection().resource(), this.enforcerConfig);
 
         if (LOGGER.isDebugEnabled()) {
@@ -218,7 +227,14 @@ public class PolicyEnforcer {
 
         pathConfig.setId(resourceDescription.getId());
         pathConfig.setName(resourceDescription.getName());
-        pathConfig.setPath(resourceDescription.getUri());
+
+        String uri = resourceDescription.getUri();
+
+        if (uri == null || "".equals(uri.trim())) {
+            throw new RuntimeException("Failed to configure paths. Resource [" + resourceDescription.getName() + "] has an invalid or empty URI [" + uri + "].");
+        }
+
+        pathConfig.setPath(uri);
 
         List<String> scopeNames = new ArrayList<>();
 
@@ -230,5 +246,9 @@ public class PolicyEnforcer {
         pathConfig.setType(resourceDescription.getType());
 
         return pathConfig;
+    }
+
+    public PathMatcher getPathMatcher() {
+        return pathMatcher;
     }
 }

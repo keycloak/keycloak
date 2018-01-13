@@ -18,8 +18,10 @@
 package org.keycloak.policy;
 
 import org.keycloak.Config;
+import org.keycloak.credential.hash.PasswordHashProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -29,8 +31,11 @@ import org.keycloak.models.UserModel;
  */
 public class HashAlgorithmPasswordPolicyProviderFactory implements PasswordPolicyProviderFactory, PasswordPolicyProvider {
 
+    private KeycloakSession session;
+
     @Override
     public PasswordPolicyProvider create(KeycloakSession session) {
+        this.session = session;
         return this;
     }
 
@@ -83,7 +88,12 @@ public class HashAlgorithmPasswordPolicyProviderFactory implements PasswordPolic
 
     @Override
     public Object parseConfig(String value) {
-        return value != null ? value : PasswordPolicy.HASH_ALGORITHM_DEFAULT;
+        String providerId = value != null && value.length() > 0 ? value : PasswordPolicy.HASH_ALGORITHM_DEFAULT;
+        PasswordHashProvider provider = session.getProvider(PasswordHashProvider.class, providerId);
+        if (provider == null) {
+            throw new PasswordPolicyConfigException("Password hashing provider not found");
+        }
+        return providerId;
     }
 
 }

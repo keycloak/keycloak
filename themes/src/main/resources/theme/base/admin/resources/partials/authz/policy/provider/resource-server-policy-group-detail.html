@@ -1,0 +1,126 @@
+<!--
+  ~ * Copyright 2017 Red Hat, Inc. and/or its affiliates
+  ~ * and other contributors as indicated by the @author tags.
+  ~ *
+  ~ * Licensed under the Apache License, Version 2.0 (the "License");
+  ~ * you may not use this file except in compliance with the License.
+  ~ * You may obtain a copy of the License at
+  ~ *
+  ~ * http://www.apache.org/licenses/LICENSE-2.0
+  ~ *
+  ~ * Unless required by applicable law or agreed to in writing, software
+  ~ * distributed under the License is distributed on an "AS IS" BASIS,
+  ~ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ * See the License for the specific language governing permissions and
+  ~ * limitations under the License.
+  -->
+
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/clients">{{:: 'clients' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server">{{:: 'authz-authorization' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/policy">{{:: 'authz-policies' | translate}}</a></li>
+        <li data-ng-show="policyState.state.policy.name != null && historyBackOnSaveOrCancel">{{policyState.state.policy.name}}</li>
+        <li data-ng-show="policyState.state.policy.name == null && historyBackOnSaveOrCancel">{{:: policyState.state.previousPage.name | translate}}</li>
+        <li data-ng-show="create">{{:: 'authz-add-group-policy' | translate}}</li>
+        <li data-ng-hide="create">{{:: 'groups' | translate}}</li>
+        <li data-ng-hide="create">{{originalPolicy.name}}</li>
+    </ol>
+
+    <h1 data-ng-show="create">{{:: 'authz-add-group-policy' | translate}}</h1>
+    <h1 data-ng-hide="create">{{originalPolicy.name|capitalize}}<i class="pficon pficon-delete clickable" data-ng-show="!create"
+                                                         data-ng-click="remove()"></i></h1>
+
+    <form class="form-horizontal" name="groupPolicyForm" novalidate>
+        <fieldset class="border-top">
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="name">{{:: 'name' | translate}} <span class="required">*</span></label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" id="name" name="name" data-ng-model="policy.name" autofocus required data-ng-blur="checkNewNameAvailability()">
+                </div>
+                <kc-tooltip>{{:: 'authz-policy-name.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="description">{{:: 'description' | translate}} </label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" id="description" name="description" data-ng-model="policy.description">
+                </div>
+                <kc-tooltip>{{:: 'authz-policy-description.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="groupsClaim">{{:: 'authz-policy-group-claim' | translate}} <span class="required">*</span></label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" id="groupsClaim" name="groupsClaim" data-ng-model="policy.groupsClaim" required>
+                </div>
+                <kc-tooltip>{{:: 'authz-policy-group-claim.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="selectedGroups">{{:: 'groups' | translate}} <span class="required">*</span></label>
+                <div class="col-md-6">
+                    <div tree-id="tree"
+                        angular-treeview="true"
+                        tree-model="groupList"
+                        node-id="id"
+                        node-label="name"
+                        node-children="subGroups" >
+                    </div>
+                    <button data-ng-click="selectGroup(tree.currentNode)" id="selectGroup" class="btn btn-primary" data-ng-disabled="tree.currentNode == null">Select</button>
+                    <input class="form-control" type="text" id="selectedGroups" name="selectedGroups" data-ng-model="noop" data-ng-required="selectedGroups.length <= 0" autofocus required data-ng-show="false">
+                </div>
+                <kc-tooltip>{{:: 'authz-policy-user-users.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-if="selectedGroups.length > 0">
+                <label class="col-md-2 control-label"></label>
+                <div class="col-md-5">
+                    <table class="table table-striped table-bordered" id="selected-groups">
+                        <thead>
+                            <tr>
+                                <th>{{:: 'path' | translate}}</th>
+                                <th class="col-sm-3">Extend to Children</th>
+                                <th>{{:: 'actions' | translate}}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr ng-repeat="group in selectedGroups | orderBy:'name' track by $index">
+                                <td>{{group.path}}</td>
+                                <td>
+                                    <input type="checkbox" ng-model="group.extendChildren" id="{{role.id}}" data-ng-click="extendChildren()">
+                                </td>
+                                <td class="kc-action-cell">
+                                    <button class="btn btn-default btn-block btn-sm" ng-click="removeFromList(group);">{{:: 'remove' | translate}}</button>
+                                </td>
+                            </tr>
+                            <tr data-ng-show="!selectedGroups.length">
+                                <td class="text-muted" colspan="3">{{:: 'authz-no-groups-assigned' | translate}}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="logic">{{:: 'authz-policy-logic' | translate}}</label>
+
+                <div class="col-sm-1">
+                    <select class="form-control" id="logic"
+                            data-ng-model="policy.logic">
+                        <option value="POSITIVE">{{:: 'authz-policy-logic-positive' | translate}}</option>
+                        <option value="NEGATIVE">{{:: 'authz-policy-logic-negative' | translate}}</option>
+                    </select>
+                </div>
+
+                <kc-tooltip>{{:: 'authz-policy-logic.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <input type="hidden" data-ng-model="policy.type"/>
+        </fieldset>
+        <div class="form-group" data-ng-show="access.manageAuthorization">
+            <div class="col-md-10 col-md-offset-2">
+                <button kc-save data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
+                <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<kc-menu></kc-menu>

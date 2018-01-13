@@ -1,0 +1,42 @@
+embed-server --server-config=clustered.xml
+
+# ADD PRIVATE NETWORK INTERFATCE for cross-DC communication
+
+/interface=private:add(inet-address=${jboss.bind.address.private:127.0.0.1})
+
+
+# ADD PRIVATE JGROUPS SOCKET BINDINGS
+
+cd /socket-binding-group=standard-sockets
+
+./socket-binding=jgroups-mping-private:add( interface=private, port=0, multicast-address="${jboss.private.multicast.address:234.99.54.14}", multicast-port="45700")
+./socket-binding=jgroups-tcp-private:add(   interface=private, port=7600)
+./socket-binding=jgroups-tcp-fd-private:add(interface=private, port=57600)
+./socket-binding=jgroups-udp-private:add(   interface=private, port=55200, multicast-address="${jboss.private.multicast.address:234.99.54.14}", multicast-port="45688")
+./socket-binding=jgroups-udp-fd-private:add(interface=private, port=54200)
+
+
+# ADD PRIVATE TCP STACK
+
+cd /subsystem=datagrid-jgroups
+
+./stack=tcp-private:add(transport={type=TCP, socket-binding=jgroups-tcp-private})
+cd stack=tcp-private
+
+:add-protocol(type=MPING, socket-binding=jgroups-mping-private)
+:add-protocol(type=MERGE3)
+:add-protocol(type=FD_SOCK, socket-binding=jgroups-tcp-fd-private)
+:add-protocol(type=FD_ALL)
+:add-protocol(type=VERIFY_SUSPECT)
+:add-protocol(type=pbcast.NAKACK2, properties={"use_mcast_xmit" => "false"})
+:add-protocol(type=UNICAST3)
+:add-protocol(type=pbcast.STABLE)
+:add-protocol(type=pbcast.GMS)
+:add-protocol(type=MFC)
+# ISPN 8
+:add-protocol(type=FRAG2)
+## ISPN 9
+#:add-protocol(type=FRAG3)
+cd ..
+
+

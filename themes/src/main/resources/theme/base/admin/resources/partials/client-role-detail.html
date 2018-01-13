@@ -8,11 +8,9 @@
         <li data-ng-hide="create">{{role.name}}</li>
     </ol>
 
-    <h1 data-ng-show="create">{{:: 'add-role' | translate}}</h1>
-    <h1 data-ng-hide="create">{{role.name|capitalize}}<i class="pficon pficon-delete clickable" data-ng-show="!create && access.manageClients" 
-    	data-ng-hide="changed" data-ng-click="remove()"></i></h1>
+    <kc-tabs-client-role></kc-tabs-client-role>
 
-    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageClients">
+    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!client.access.configure">
 
         <fieldset class="border-top">
             <div class="form-group">
@@ -49,13 +47,13 @@
         </fieldset>
 
         <div class="form-group">
-            <div class="col-md-10 col-md-offset-2" data-ng-show="create && access.manageClients">
+            <div class="col-md-10 col-md-offset-2" data-ng-show="create && client.access.configure">
                 <button kc-save>{{:: 'save' | translate}}</button>
                 <button kc-cancel data-ng-click="cancel()">{{:: 'cancel' | translate}}</button>
             </div>
         </div>
         <div class="form-group">
-            <div class="col-md-10 col-md-offset-2" data-ng-show="!create && access.manageClients">
+            <div class="col-md-10 col-md-offset-2" data-ng-show="!create && client.access.configure">
                 <button kc-save  data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
                 <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
             </div>

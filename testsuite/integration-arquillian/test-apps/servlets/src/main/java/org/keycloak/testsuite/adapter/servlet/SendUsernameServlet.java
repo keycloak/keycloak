@@ -25,6 +25,7 @@ import org.keycloak.adapters.spi.AuthenticationError;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
 
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -47,7 +48,7 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 @Path("/")
-public class SendUsernameServlet {
+public class SendUsernameServlet extends HttpServlet {
 
     private static boolean checkRoles = false;
     private static SamlAuthenticationError authError;
@@ -65,7 +66,7 @@ public class SendUsernameServlet {
             return Response.status(Response.Status.FORBIDDEN).entity("Forbidden").build();
         }
 
-        return Response.ok(getOutput()).header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN_TYPE + ";charset=UTF-8").build();
+        return Response.ok(getOutput()).header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_TYPE + ";charset=UTF-8").build();
     }
 
     @POST
@@ -85,6 +86,7 @@ public class SendUsernameServlet {
     @Path("getAttributes")
     public Response getSentPrincipal() throws IOException {
         System.out.println("In SendUsername Servlet getSentPrincipal()");
+        sentPrincipal = httpServletRequest.getUserPrincipal();
 
         return Response.ok(getAttributes()).header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_TYPE + ";charset=UTF-8").build();
 
@@ -190,6 +192,7 @@ public class SendUsernameServlet {
         SamlPrincipal principal = (SamlPrincipal) sentPrincipal;
         String output = "attribute email: " + principal.getAttribute(X500SAMLProfileConstants.EMAIL.get());
         output += "<br /> topAttribute: " + principal.getAttribute("topAttribute");
+        output += "<br /> boolean-attribute: " + principal.getAttribute("boolean-attribute");
         output += "<br /> level2Attribute: " + principal.getAttribute("level2Attribute");
         output += "<br /> group: " + principal.getAttributes("group").toString();
         output += "<br /> friendlyAttribute email: " + principal.getFriendlyAttribute("email");

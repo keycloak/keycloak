@@ -29,8 +29,9 @@
     <dependencies>
         <module name="org.keycloak.keycloak-common"/>
         <module name="org.keycloak.keycloak-core"/>
-        <module name="org.keycloak.keycloak-server-spi"/>
-        <module name="org.keycloak.keycloak-server-spi-private"/>
+        <module name="org.keycloak.keycloak-server-spi" services="import"/>
+        <module name="org.keycloak.keycloak-server-spi-private" services="import"/>
+        <module name="org.keycloak.keycloak-services" services="import"/>
         <module name="org.jboss.aesh"/>
         <module name="org.jboss.as.domain-management"/>
         <module name="com.fasterxml.jackson.core.jackson-core"/>

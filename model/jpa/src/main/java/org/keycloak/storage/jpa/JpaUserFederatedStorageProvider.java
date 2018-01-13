@@ -416,6 +416,20 @@ public class JpaUserFederatedStorageProvider implements
     }
 
 
+    @Override
+    public void setNotBeforeForUser(RealmModel realm, String userId, int notBefore) {
+        // Track it as attribute for now
+        String notBeforeStr = String.valueOf(notBefore);
+        setSingleAttribute(realm, userId, "fedNotBefore", notBeforeStr);
+    }
+
+    @Override
+    public int getNotBeforeOfUser(RealmModel realm, String userId) {
+        MultivaluedHashMap<String, String> attrs = getAttributes(realm, userId);
+        String notBeforeStr = attrs.getFirst("fedNotBefore");
+
+        return notBeforeStr==null ? 0 : Integer.parseInt(notBeforeStr);
+    }
 
     @Override
     public Set<GroupModel> getGroups(RealmModel realm, String userId) {

@@ -18,8 +18,8 @@
 package org.keycloak.models.session;
 
 import org.keycloak.Config;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -70,7 +70,7 @@ public class DisabledUserSessionPersisterProvider implements UserSessionPersiste
     }
 
     @Override
-    public void createClientSession(ClientSessionModel clientSession, boolean offline) {
+    public void createClientSession(AuthenticatedClientSessionModel clientSession, boolean offline) {
 
     }
 
@@ -85,7 +85,7 @@ public class DisabledUserSessionPersisterProvider implements UserSessionPersiste
     }
 
     @Override
-    public void removeClientSession(String clientSessionId, boolean offline) {
+    public void removeClientSession(String userSessionId, String clientUUID, boolean offline) {
 
     }
 

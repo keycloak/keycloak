@@ -28,5 +28,18 @@
             <directory>target/${project.build.finalName}</directory>
             <outputDirectory/>            
         </fileSet>
+
+        <!-- License Data -->
+        <fileSet>
+            <directory>src/main/resources/licenses/${product.slot}</directory>
+            <outputDirectory>content/docs/licenses-${product.slot}</outputDirectory>
+            <excludes>
+                <exclude>licenses.xml</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
+            <directory>target/licenses</directory>
+            <outputDirectory>content/docs/licenses-${product.slot}</outputDirectory>
+        </fileSet>
     </fileSets>
 </assembly>

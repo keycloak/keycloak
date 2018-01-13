@@ -1,0 +1,772 @@
+<?xml version="1.0"?>
+<licenseSummary>
+  <dependencies>
+    <dependency>
+      <groupId>com.google.zxing</groupId>
+      <artifactId>core</artifactId>
+      <version>3.2.1.redhat-4</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/zxing/zxing/zxing-3.2.1/COPYING</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>com.google.zxing</groupId>
+      <artifactId>javase</artifactId>
+      <version>3.2.1.redhat-4</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/zxing/zxing/zxing-3.2.1/COPYING</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.liquibase</groupId>
+      <artifactId>liquibase-core</artifactId>
+      <version>3.4.1.redhat-2</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/liquibase/liquibase/liquibase-parent-3.4.1/LICENSE.txt</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.twitter4j</groupId>
+      <artifactId>twitter4j-core</artifactId>
+      <version>4.0.4.redhat-3</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/yusuke/twitter4j/4.0.4/LICENSE.txt</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.freemarker</groupId>
+      <artifactId>freemarker</artifactId>
+      <version>2.3.26.incubating-redhat-3</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://git-wip-us.apache.org/repos/asf?p=incubator-freemarker.git;a=blob_plain;f=LICENSE.txt;hb=v2.3.23</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>aopalliance</groupId>
+      <artifactId>aopalliance</artifactId>
+      <version>1.0</version>
+      <licenses>
+        <license>
+          <name>Public Domain</name>
+          <url>http://aopalliance.sourceforge.net/</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.codehaus.plexus</groupId>
+      <artifactId>plexus-classworlds</artifactId>
+      <version>2.5.2</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/sonatype/plexus-classworlds/plexus-classworlds-2.5.2/LICENSE-2.0.txt</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.codehaus.plexus</groupId>
+      <artifactId>plexus-utils</artifactId>
+      <version>3.0.20</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url> <!-- Source repo contains no license file -->
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.codehaus.plexus</groupId>
+      <artifactId>plexus-component-annotations</artifactId>
+      <version>1.5.5</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url> <!-- Source repo contains no license file -->
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.codehaus.plexus</groupId>
+      <artifactId>plexus-interpolation</artifactId>
+      <version>1.21</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url> <!-- Source repo contains no license file -->
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.ant</groupId>
+      <artifactId>ant-launcher</artifactId>
+      <version>1.8.3</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://git-wip-us.apache.org/repos/asf?p=ant.git;a=blob_plain;f=LICENSE;hb=rel/1.8.3</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.ant</groupId>
+      <artifactId>ant</artifactId>
+      <version>1.8.3</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://git-wip-us.apache.org/repos/asf?p=ant.git;a=blob_plain;f=LICENSE;hb=rel/1.8.3</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven.wagon</groupId>
+      <artifactId>wagon-http-shared</artifactId>
+      <version>2.6</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url> <!-- Source repo contains no license file -->
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven.wagon</groupId>
+      <artifactId>wagon-provider-api</artifactId>
+      <version>2.6</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url> <!-- Source repo contains no license file -->
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven.wagon</groupId>
+      <artifactId>wagon-http</artifactId>
+      <version>2.6</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url> <!-- Source repo contains no license file -->
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-compat</artifactId>
+      <version>3.2.5</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://git-wip-us.apache.org/repos/asf?p=maven.git;a=blob_plain;f=LICENSE;hb=maven-3.2.5</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-model-builder</artifactId>
+      <version>3.2.5</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://git-wip-us.apache.org/repos/asf?p=maven.git;a=blob_plain;f=LICENSE;hb=maven-3.2.5</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-core</artifactId>
+      <version>3.2.5</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://git-wip-us.apache.org/repos/asf?p=maven.git;a=blob_plain;f=LICENSE;hb=maven-3.2.5</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-model</artifactId>
+      <version>3.2.5</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://git-wip-us.apache.org/repos/asf?p=maven.git;a=blob_plain;f=LICENSE;hb=maven-3.2.5</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-artifact</artifactId>
+      <version>3.2.5</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://git-wip-us.apache.org/repos/asf?p=maven.git;a=blob_plain;f=LICENSE;hb=maven-3.2.5</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-plugin-api</artifactId>
+      <version>3.2.5</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://git-wip-us.apache.org/repos/asf?p=maven.git;a=blob_plain;f=LICENSE;hb=maven-3.2.5</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-settings</artifactId>
+      <version>3.2.5</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://git-wip-us.apache.org/repos/asf?p=maven.git;a=blob_plain;f=LICENSE;hb=maven-3.2.5</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-repository-metadata</artifactId>
+      <version>3.2.5</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://git-wip-us.apache.org/repos/asf?p=maven.git;a=blob_plain;f=LICENSE;hb=maven-3.2.5</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-aether-provider</artifactId>
+      <version>3.2.5</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://git-wip-us.apache.org/repos/asf?p=maven.git;a=blob_plain;f=LICENSE;hb=maven-3.2.5</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-settings-builder</artifactId>
+      <version>3.2.5</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://git-wip-us.apache.org/repos/asf?p=maven.git;a=blob_plain;f=LICENSE;hb=maven-3.2.5</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.mvel</groupId>
+      <artifactId>mvel2</artifactId>
+      <version>2.2.8.Final</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/mvel/mvel/mvel2-2.2.8.Final/LICENSE.txt</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.sonatype.sisu.inject</groupId>
+      <artifactId>guice-servlet</artifactId>
+      <version>3.2.3</version>
+      <licenses>
+        <license>
+          <name>Eclipse Public License 1.0</name>
+          <url>http://git.eclipse.org/c/sisu/org.eclipse.sisu.inject.git/plain/LICENSE.txt?h=releases/0.3.2</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.sisu</groupId>
+      <artifactId>org.eclipse.sisu.plexus</artifactId>
+      <version>0.3.0.M1</version>
+      <licenses>
+        <license>
+          <name>Eclipse Public License 1.0</name>
+          <url>http://git.eclipse.org/c/sisu/org.eclipse.sisu.inject.git/plain/LICENSE.txt?h=milestones/0.3.0.M1</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.sisu</groupId>
+      <artifactId>org.eclipse.sisu.inject</artifactId>
+      <version>0.3.0.M1</version>
+      <licenses>
+        <license>
+          <name>Eclipse Public License 1.0</name>
+          <url>http://git.eclipse.org/c/sisu/org.eclipse.sisu.inject.git/plain/LICENSE.txt?h=milestones/0.3.0.M1</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.aether</groupId>
+      <artifactId>aether-util</artifactId>
+      <version>1.0.0.v20140518</version>
+      <licenses>
+        <license>
+          <name>Eclipse Public License 1.0</name>
+          <url>https://raw.githubusercontent.com/jvanzyl/aether-core/aether-1.0.0.v20140518/epl-v10.html</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.aether</groupId>
+      <artifactId>aether-impl</artifactId>
+      <version>1.0.0.v20140518</version>
+      <licenses>
+        <license>
+          <name>Eclipse Public License 1.0</name>
+          <url>https://raw.githubusercontent.com/jvanzyl/aether-core/aether-1.0.0.v20140518/epl-v10.html</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.aether</groupId>
+      <artifactId>aether-transport-wagon</artifactId>
+      <version>1.0.0.v20140518</version>
+      <licenses>
+        <license>
+          <name>Eclipse Public License 1.0</name>
+          <url>https://raw.githubusercontent.com/jvanzyl/aether-core/aether-1.0.0.v20140518/epl-v10.html</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.aether</groupId>
+      <artifactId>aether-connector-basic</artifactId>
+      <version>1.0.0.v20140518</version>
+      <licenses>
+        <license>
+          <name>Eclipse Public License 1.0</name>
+          <url>https://raw.githubusercontent.com/jvanzyl/aether-core/aether-1.0.0.v20140518/epl-v10.html</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.aether</groupId>
+      <artifactId>aether-transport-file</artifactId>
+      <version>1.0.0.v20140518</version>
+      <licenses>
+        <license>
+          <name>Eclipse Public License 1.0</name>
+          <url>https://raw.githubusercontent.com/jvanzyl/aether-core/aether-1.0.0.v20140518/epl-v10.html</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.aether</groupId>
+      <artifactId>aether-api</artifactId>
+      <version>1.0.0.v20140518</version>
+      <licenses>
+        <license>
+          <name>Eclipse Public License 1.0</name>
+          <url>https://raw.githubusercontent.com/jvanzyl/aether-core/aether-1.0.0.v20140518/epl-v10.html</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.aether</groupId>
+      <artifactId>aether-spi</artifactId>
+      <version>1.0.0.v20140518</version>
+      <licenses>
+        <license>
+          <name>Eclipse Public License 1.0</name>
+          <url>https://raw.githubusercontent.com/jvanzyl/aether-core/aether-1.0.0.v20140518/epl-v10.html</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.aether</groupId>
+      <artifactId>aether-transport-http</artifactId>
+      <version>1.0.0.v20140518</version>
+      <licenses>
+        <license>
+          <name>Eclipse Public License 1.0</name>
+          <url>https://raw.githubusercontent.com/jvanzyl/aether-core/aether-1.0.0.v20140518/epl-v10.html</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jdt.core.compiler</groupId>
+      <artifactId>ecj</artifactId>
+      <version>4.4.2</version>
+      <licenses>
+        <license>
+          <name>Eclipse Public License 1.0</name>
+          <url>http://git.eclipse.org/c/jdt/eclipse.jdt.core.git/plain/README.md?h=I20140606-1215</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.sonatype.sisu</groupId>
+      <artifactId>sisu-guice</artifactId>
+      <version>3.2.3</version>
+      <licenses>
+        <license>
+          <name>Eclipse Public License 1.0</name>
+          <url>http://git.eclipse.org/c/sisu/org.eclipse.sisu.inject.git/plain/LICENSE.txt?h=releases/0.3.2</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.sonatype.plexus</groupId>
+      <artifactId>plexus-cipher</artifactId>
+      <version>1.7</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url> <!-- Source repo contains no license file -->
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.sonatype.plexus</groupId>
+      <artifactId>plexus-sec-dispatcher</artifactId>
+      <version>1.3</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url> <!-- Source repo contains no license file -->
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.antlr</groupId>
+      <artifactId>antlr-runtime</artifactId>
+      <version>3.5</version>
+      <licenses>
+        <license>
+          <name>BSD 3-clause New or Revised License</name>
+          <url>https://raw.githubusercontent.com/antlr/antlr3/antlr-3.5/runtime/Python/LICENSE</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>com.thoughtworks.xstream</groupId>
+      <artifactId>xstream</artifactId>
+      <version>1.4.9</version>
+      <licenses>
+        <license>
+          <name>BSD 3-clause New or Revised License</name>
+          <url>https://raw.githubusercontent.com/x-stream/xstream/XSTREAM_1_4_9/LICENSE.txt</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.kie</groupId>
+      <artifactId>kie-api</artifactId>
+      <version>6.5.0.Final-redhat-17</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/kiegroup/drools/6.5.0.Final/LICENSE-ASL-2.0.txt</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.kie</groupId>
+      <artifactId>kie-ci</artifactId>
+      <version>6.5.0.Final-redhat-17</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/kiegroup/droolsjbpm-knowledge/6.5.0.Final/LICENSE-ASL-2.0.txt</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.kie</groupId>
+      <artifactId>kie-internal</artifactId>
+      <version>6.5.0.Final-redhat-17</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/kiegroup/droolsjbpm-knowledge/6.5.0.Final/LICENSE-ASL-2.0.txt</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.drools</groupId>
+      <artifactId>drools-compiler</artifactId>
+      <version>6.5.0.Final-redhat-17</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/kiegroup/drools/6.5.0.Final/LICENSE-ASL-2.0.txt</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.drools</groupId>
+      <artifactId>drools-core</artifactId>
+      <version>6.5.0.Final-redhat-17</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/kiegroup/drools/6.5.0.Final/LICENSE-ASL-2.0.txt</url>
+        </license>
+      </licenses>
+    </dependency>
+  </dependencies>
+  <others>
+    <other>
+      <description>jQuery</description>
+      <locations>
+        <file>themes/keycloak/common/resources/lib/jquery/jquery-1.10.2.js</file>
+      </locations>
+      <licenses>
+        <license>
+          <name>MIT License</name>
+          <url>https://raw.githubusercontent.com/jquery/jquery/1.10.2/MIT-LICENSE.txt</url>
+        </license>
+      </licenses>
+    </other>
+    <other>
+      <description>AngularJS</description>
+      <locations>
+        <directory>themes/keycloak/common/resources/lib/angular</directory>
+      </locations>
+      <licenses>
+        <license>
+          <name>MIT License</name>
+          <url>https://raw.githubusercontent.com/angular/angular.js/v1.4.4/LICENSE</url>
+        </license>
+      </licenses>
+    </other>
+    <other>
+      <description>angular-translate</description>
+      <locations>
+        <file>themes/keycloak/common/resources/lib/angular/angular-translate.js</file>
+        <file>themes/keycloak/common/resources/lib/angular/angular-translate-loader-url.js</file>
+      </locations>
+      <licenses>
+        <license>
+          <name>MIT License</name>
+          <url>https://raw.githubusercontent.com/angular-translate/angular-translate/2.7.2/LICENSE</url>
+        </license>
+      </licenses>
+    </other>
+    <other>
+      <description>ui-select2</description>
+      <locations>
+        <file>themes/keycloak/common/resources/lib/angular/select2.js</file>
+      </locations>
+      <licenses>
+        <license>
+          <name>MIT License</name>
+          <url>https://raw.githubusercontent.com/angular-ui/ui-select2/v0.0.5/LICENSE</url>
+        </license>
+      </licenses>
+    </other>
+    <other>
+      <description>angular-ui-bootstrap</description>
+      <locations>
+        <file>themes/keycloak/common/resources/lib/angular/ui-bootstrap-tpls-0.11.0.js</file>
+      </locations>
+      <licenses>
+        <license>
+          <name>MIT License</name>
+          <url>https://raw.githubusercontent.com/angular-ui/bootstrap/0.11.0/LICENSE</url>
+        </license>
+      </licenses>
+    </other>
+    <other>
+      <description>Angular Treeview</description>
+      <locations>
+        <directory>themes/keycloak/common/resources/lib/angular/treeview</directory>
+      </locations>
+      <licenses>
+        <license>
+          <name>MIT License</name>
+          <url>https://raw.githubusercontent.com/eu81273/angular.treeview/master/LICENSE</url>
+        </license>
+      </licenses>
+    </other>
+    <other>
+      <description>Select2</description>
+      <locations>
+        <directory>themes/keycloak/common/resources/lib/select2-3.4.1</directory>
+      </locations>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/select2/select2/3.4.1/LICENSE</url>
+        </license>
+        <license>
+          <name>GNU General Public License v2.0 only</name>
+          <url>https://raw.githubusercontent.com/select2/select2/3.4.1/LICENSE</url>
+        </license>
+      </licenses>
+    </other>
+    <other>
+      <description>FileSaver.js</description>
+      <locations>
+        <file>themes/keycloak/common/resources/lib/filesaver/FileSaver.js</file>
+      </locations>
+      <licenses>
+        <license>
+          <name>MIT License</name>
+          <url>https://raw.githubusercontent.com/eligrey/FileSaver.js/1.3.2/LICENSE.md</url>
+        </license>
+      </licenses>
+    </other>
+    <other>
+      <description>angular-file-upload</description>
+      <locations>
+        <directory>themes/keycloak/common/resources/lib/fileupload</directory>
+      </locations>
+      <licenses>
+        <license>
+          <name>MIT License</name>
+          <url>https://raw.githubusercontent.com/danialfarid/ng-file-upload/1.1.10/LICENSE</url>
+        </license>
+      </licenses>
+    </other>
+    <other>
+      <description>UI.Ace</description>
+      <locations>
+        <file>themes/keycloak/common/resources/lib/ui-ace/ui-ace.min.js</file>
+        <file>themes/keycloak/common/resources/lib/ui-ace/ui-ace.js</file>
+      </locations>
+      <licenses>
+        <license>
+          <name>MIT License</name>
+          <url>https://raw.githubusercontent.com/angular-ui/ui-ace/src0.2.3/LICENSE</url>
+        </license>
+      </licenses>
+    </other>
+    <other>
+      <description>Ace Code Editor</description>
+      <locations>
+        <directory>themes/keycloak/common/resources/lib/ui-ace</directory>
+      </locations>
+      <licenses>
+        <license>
+          <name>BSD 3-clause New or Revised License</name>
+          <url>https://raw.githubusercontent.com/ajaxorg/ace-builds/v1.2.3/LICENSE</url>
+        </license>
+      </licenses>
+    </other>
+    <other>
+      <description>Font Awesome (Font)</description>
+      <locations>
+        <directory>themes/keycloak/common/resources/lib/components/font-awesome/fonts</directory>
+      </locations>
+      <licenses>
+        <license>
+          <name>SIL Open Font License 1.1</name>
+          <url>https://raw.githubusercontent.com/FortAwesome/Font-Awesome/v4.3.0/README.md</url>
+        </license>
+      </licenses>
+    </other>
+    <other>
+      <description>Glyphicons Halflings</description>
+      <locations>
+        <directory>themes/keycloak/common/resources/lib/components/bootstrap/dist/fonts</directory>
+      </locations>
+      <licenses>
+        <license>
+          <name>MIT License</name>
+          <url>https://raw.githubusercontent.com/twbs/bootstrap/v3.3.1-130-gadd44ca/LICENSE</url>
+        </license>
+      </licenses>
+    </other>
+    <other>
+      <description>Patternfly</description>
+      <locations>
+        <directory>themes/keycloak/common/resources/lib/patternfly</directory>
+      </locations>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/patternfly/patternfly/v1.1.4-32-ge6a8fd5/LICENSE.txt</url>
+        </license>
+      </licenses>
+    </other>
+    <other>
+      <description>OpenSans</description>
+      <locations>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-LightItalic-webfont.ttf</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-BoldItalic-webfont.woff</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-BoldItalic-webfont.ttf</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Regular-webfont.woff</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-ExtraBold-webfont.ttf</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-ExtraBoldItalic-webfont.ttf</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Regular-webfont.eot</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-ExtraBoldItalic-webfont.woff</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-SemiboldItalic-webfont.ttf</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-ExtraBold-webfont.eot</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-LightItalic-webfont.woff</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-SemiboldItalic-webfont.eot</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Regular-webfont.svg</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-BoldItalic-webfont.eot</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Light-webfont.svg</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Bold-webfont.svg</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-ExtraBoldItalic-webfont.eot</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Italic-webfont.woff</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Bold-webfont.ttf</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Semibold-webfont.eot</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Italic-webfont.svg</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-ExtraBold-webfont.woff</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Semibold-webfont.woff</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Bold-webfont.woff</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Semibold-webfont.svg</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-SemiboldItalic-webfont.svg</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-ExtraBoldItalic-webfont.svg</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Light-webfont.eot</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-LightItalic-webfont.eot</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-SemiboldItalic-webfont.woff</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Semibold-webfont.ttf</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Italic-webfont.eot</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-ExtraBold-webfont.svg</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Bold-webfont.eot</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-BoldItalic-webfont.svg</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-LightItalic-webfont.svg</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Light-webfont.ttf</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Light-webfont.woff</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Italic-webfont.ttf</file>
+        <file>themes/keycloak/common/resources/lib/patternfly/fonts/OpenSans-Regular-webfont.ttf</file>
+      </locations>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/google/fonts/master/apache/opensans/LICENSE.txt</url>
+        </license>
+      </licenses>
+    </other>
+    <other>
+      <description>Zocial</description>
+      <locations>
+        <directory>themes/keycloak/common/resources/lib/zocial</directory>
+      </locations>
+      <licenses>
+        <license>
+          <name>MIT License</name>
+          <url>https://raw.githubusercontent.com/smcllns/css-social-buttons/547237515694d05eaa38aeae3fb4d2eb4dee1ac9/README.md</url>
+        </license>
+      </licenses>
+    </other>
+  </others>
+</licenseSummary>

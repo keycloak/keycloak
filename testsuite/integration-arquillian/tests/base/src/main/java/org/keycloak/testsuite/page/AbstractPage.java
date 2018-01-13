@@ -26,6 +26,7 @@ import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
+import org.junit.Assert;
 
 /**
  *
@@ -95,11 +96,16 @@ public abstract class AbstractPage {
     }
 
     public void navigateTo(boolean waitForMatch) {
-        URLUtils.navigateToUri(driver, buildUri().toASCIIString(), waitForMatch);
+        URLUtils.navigateToUri(buildUri().toASCIIString(), waitForMatch);
     }
 
     public boolean isCurrent() {
-        return URLUtils.currentUrlEqual(driver, toString());
+        return URLUtils.currentUrlEqual(toString());
     }
 
+    public void assertCurrent() {
+        String name = getClass().getSimpleName();
+        Assert.assertTrue("Expected " + name + " but was " + driver.getTitle() + " (" + driver.getCurrentUrl() + ")",
+                isCurrent());
+    }
 }

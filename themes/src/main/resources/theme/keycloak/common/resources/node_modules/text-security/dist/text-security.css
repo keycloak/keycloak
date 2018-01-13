@@ -1,0 +1,24 @@
+@font-face {
+    font-family: 'text-security-circle';
+    src: url('text-security-circle.eot');
+    src: url('text-security-circle.eot?#iefix') format('embedded-opentype'),
+    url('text-security-circle.woff') format('woff'),
+    url('text-security-circle.ttf')  format('truetype'),
+    url('text-security-circle.svg#text-security') format('svg');
+}
+@font-face {
+    font-family: 'text-security-square';
+    src: url('text-security-square.eot');
+    src: url('text-security-square.eot?#iefix') format('embedded-opentype'),
+    url('text-security-square.woff') format('woff'),
+    url('text-security-square.ttf')  format('truetype'),
+    url('text-security-square.svg#text-security') format('svg');
+}
+@font-face {
+    font-family: 'text-security-disc';
+    src: url('text-security-disc.eot');
+    src: url('text-security-disc.eot?#iefix') format('embedded-opentype'),
+    url('text-security-disc.woff') format('woff'),
+    url('text-security-disc.ttf')  format('truetype'),
+    url('text-security-disc.svg#text-security') format('svg');
+}

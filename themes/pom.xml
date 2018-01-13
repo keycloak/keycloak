@@ -1,15 +1,181 @@
 <?xml version="1.0"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-	<parent>
-		<artifactId>keycloak-parent</artifactId>
-		<groupId>org.keycloak</groupId>
-		<version>2.5.1.Final-SNAPSHOT</version>
-	</parent>
-	<modelVersion>4.0.0</modelVersion>
+    <parent>
+        <artifactId>keycloak-parent</artifactId>
+        <groupId>org.keycloak</groupId>
+        <version>4.0.0.CR1-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
 
-	<artifactId>keycloak-themes</artifactId>
-	<name>Keycloak Themes</name>
-	<description />
+    <artifactId>keycloak-themes</artifactId>
+    <name>Keycloak Themes</name>
+    <description/>
+
+    <profiles>
+        <profile>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!product</name>
+                </property>
+            </activation>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources</directory>
+                    </resource>
+                    <resource>
+                        <directory>src/main/resources-community</directory>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+        <profile>
+            <id>product</id>
+            <activation>
+                <property>
+                    <name>product</name>
+                </property>
+            </activation>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources</directory>
+                    </resource>
+                    <resource>
+                        <directory>src/main/resources-product</directory>
+                    </resource>
+                </resources>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-jar-plugin</artifactId>
+                        <configuration>
+                            <excludes>
+                                <exclude>**/keycloak-preview/**</exclude>
+                            </excludes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        
+        <profile>
+            <id>account2</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.github.eirslett</groupId>
+                        <artifactId>frontend-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>install node and yarn</id>
+                                <goals>
+                                    <goal>install-node-and-yarn</goal>
+                                </goals>
+                                <phase>generate-resources</phase>
+                                <configuration>
+                                    <workingDirectory>src/main/resources/theme/keycloak-preview/account/resources</workingDirectory>
+                                    <nodeVersion>v6.9.1</nodeVersion>
+                                    <yarnVersion>v0.28.4</yarnVersion>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>yarn install keycloak preview</id>
+                                <goals>
+                                    <goal>yarn</goal>
+                                </goals>
+                                <configuration>
+                                    <arguments>install --production=false --frozen-lockfile</arguments>
+                                    <workingDirectory>src/main/resources/theme/keycloak-preview/account/resources</workingDirectory>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>compile typescript</id>
+                                <goals>
+                                    <goal>yarn</goal>
+                                </goals>
+                                <phase>compile</phase>
+                                <configuration>
+                                    <arguments>run build</arguments>
+                                    <workingDirectory>src/main/resources/theme/keycloak-preview/account/resources</workingDirectory>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>yarn remove dev dependencies production=true</id>
+                                <goals>
+                                    <goal>yarn</goal>
+                                </goals>
+                                <phase>process-classes</phase>
+                                <configuration>
+                                    <arguments>install --production=true --frozen-lockfile</arguments>
+                                    <workingDirectory>src/main/resources/theme/keycloak-preview/account/resources</workingDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-clean-plugin</artifactId>
+                        <configuration>
+                            <filesets>
+                                <fileset>
+                                    <directory>src/main/resources/theme/keycloak-preview/account/resources/node_modules</directory>
+                                </fileset>
+                                <fileset>
+                                    <directory>src/main/resources/theme/keycloak-preview/account/resources/node</directory>
+                                </fileset>
+                            </filesets>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+    
+    <build>
+        <plugins>
+            <!-- KEYCLOAK-5391: Commented out until node_modules fetching issue is resolved.
+                        <plugin>
+                            <artifactId>maven-clean-plugin</artifactId>
+                            <configuration>
+                                <filesets>
+                                    <fileset>
+                                        <directory>src/main/resources/theme/keycloak/common/resources/node_modules</directory>
+                                    </fileset>
+                                </filesets>
+                            </configuration>
+                        </plugin>
+                        <plugin>
+                            <groupId>com.github.eirslett</groupId>
+                            <artifactId>frontend-maven-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>install node and yarn</id>
+                                    <goals>
+                                        <goal>install-node-and-yarn</goal>
+                                    </goals>
+                                    <phase>generate-resources</phase>
+                                </execution>
+                                <execution>
+                                    <id>yarn install</id>
+                                    <goals>
+                                        <goal>yarn</goal>
+                                    </goals>
+                                    <configuration>
+                                                           vvv remove space    vvv remove space on uncomment
+                                        <arguments>install - -production=false - -frozen-lockfile</arguments>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                            <configuration>
+                                <nodeVersion>v6.11.1</nodeVersion>
+                                <yarnVersion>v0.27.5</yarnVersion>
+                                <workingDirectory>src/main/resources/theme/keycloak/common/resources</workingDirectory>
+                                <installDirectory>target</installDirectory>
+                            </configuration>
+                        </plugin>
+            -->
+        </plugins>
+    </build>
 
 </project>

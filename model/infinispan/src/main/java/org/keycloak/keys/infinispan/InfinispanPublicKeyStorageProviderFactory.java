@@ -28,14 +28,11 @@ import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.keys.PublicKeyStorageProvider;
-import org.keycloak.keys.PublicKeyStorageSpi;
 import org.keycloak.keys.PublicKeyStorageProviderFactory;
 import org.keycloak.keys.PublicKeyStorageUtils;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
 
@@ -49,6 +46,8 @@ public class InfinispanPublicKeyStorageProviderFactory implements PublicKeyStora
     public static final String PROVIDER_ID = "infinispan";
 
     public static final String KEYS_CLEAR_CACHE_EVENTS = "KEYS_CLEAR_CACHE_EVENTS";
+
+    public static final String PUBLIC_KEY_STORAGE_INVALIDATION_EVENT = "PUBLIC_KEY_STORAGE_INVALIDATION_EVENT";
 
     private volatile Cache<String, PublicKeysEntry> keysCache;
 
@@ -69,12 +68,10 @@ public class InfinispanPublicKeyStorageProviderFactory implements PublicKeyStora
                     this.keysCache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.KEYS_CACHE_NAME);
 
                     ClusterProvider cluster = session.getProvider(ClusterProvider.class);
-                    cluster.registerListener(ClusterProvider.ALL, (ClusterEvent event) -> {
+                    cluster.registerListener(PUBLIC_KEY_STORAGE_INVALIDATION_EVENT, (ClusterEvent event) -> {
 
-                        if (event instanceof PublicKeyStorageInvalidationEvent) {
-                            PublicKeyStorageInvalidationEvent invalidationEvent = (PublicKeyStorageInvalidationEvent) event;
-                            keysCache.remove(invalidationEvent.getCacheKey());
-                        }
+                        PublicKeyStorageInvalidationEvent invalidationEvent = (PublicKeyStorageInvalidationEvent) event;
+                        keysCache.remove(invalidationEvent.getCacheKey());
 
                     });
 

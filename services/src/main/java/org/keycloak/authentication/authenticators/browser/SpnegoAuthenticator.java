@@ -30,7 +30,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
 
 import javax.ws.rs.core.HttpHeaders;
@@ -98,7 +97,7 @@ public class SpnegoAuthenticator extends AbstractUsernameFormAuthenticator imple
             context.setUser(output.getAuthenticatedUser());
             if (output.getState() != null && !output.getState().isEmpty()) {
                 for (Map.Entry<String, String> entry : output.getState().entrySet()) {
-                    context.getClientSession().setUserSessionNote(entry.getKey(), entry.getValue());
+                    context.getAuthenticationSession().setUserSessionNote(entry.getKey(), entry.getValue());
                 }
             }
             context.success();
@@ -120,9 +119,10 @@ public class SpnegoAuthenticator extends AbstractUsernameFormAuthenticator imple
         }
         if (context.getExecution().isRequired()) {
             return context.getSession().getProvider(LoginFormsProvider.class)
+                    .setAuthenticationSession(context.getAuthenticationSession())
                     .setStatus(Response.Status.UNAUTHORIZED)
                     .setResponseHeader(HttpHeaders.WWW_AUTHENTICATE, negotiateHeader)
-                    .setError(Messages.KERBEROS_NOT_ENABLED).createErrorPage();
+                    .setError(Messages.KERBEROS_NOT_ENABLED).createErrorPage(Response.Status.BAD_REQUEST);
         } else {
             return optionalChallengeRedirect(context, negotiateHeader);
         }

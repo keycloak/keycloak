@@ -1,10 +1,10 @@
 package org.keycloak.authorization.client.resource;
 
-import org.keycloak.authorization.client.AuthorizationDeniedException;
+import static org.keycloak.authorization.client.util.Throwables.handleAndWrapException;
+
 import org.keycloak.authorization.client.representation.EntitlementRequest;
 import org.keycloak.authorization.client.representation.EntitlementResponse;
 import org.keycloak.authorization.client.util.Http;
-import org.keycloak.authorization.client.util.HttpResponseException;
 import org.keycloak.util.JsonSerialization;
 
 /**
@@ -23,32 +23,21 @@ public class EntitlementResource {
     public EntitlementResponse getAll(String resourceServerId) {
         try {
             return this.http.<EntitlementResponse>get("/authz/entitlement/" + resourceServerId)
-                    .authorizationBearer(this.eat)
-                    .response()
-                        .json(EntitlementResponse.class).execute();
-        } catch (HttpResponseException e) {
-            if (403 == e.getStatusCode()) {
-                throw new AuthorizationDeniedException(e);
-            }
-            throw new RuntimeException("Failed to obtain entitlements.", e);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to obtain entitlements.", e);
+                    .authorizationBearer(eat)
+                    .response().json(EntitlementResponse.class).execute();
+        } catch (Exception cause) {
+            throw handleAndWrapException("Failed to obtain entitlements", cause);
         }
     }
 
     public EntitlementResponse get(String resourceServerId, EntitlementRequest request) {
         try {
             return this.http.<EntitlementResponse>post("/authz/entitlement/" + resourceServerId)
-                    .authorizationBearer(this.eat)
+                    .authorizationBearer(eat)
                     .json(JsonSerialization.writeValueAsBytes(request))
                     .response().json(EntitlementResponse.class).execute();
-        } catch (HttpResponseException e) {
-            if (403 == e.getStatusCode()) {
-                throw new AuthorizationDeniedException(e);
-            }
-            throw new RuntimeException("Failed to obtain entitlements.", e);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to obtain entitlements.", e);
+        } catch (Exception cause) {
+            throw handleAndWrapException("Failed to obtain entitlements", cause);
         }
     }
 }

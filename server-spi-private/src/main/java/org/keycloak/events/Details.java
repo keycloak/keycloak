@@ -25,6 +25,7 @@ public interface Details {
     String EMAIL = "email";
     String PREVIOUS_EMAIL = "previous_email";
     String UPDATED_EMAIL = "updated_email";
+    String ACTION = "action";
     String CODE_ID = "code_id";
     String REDIRECT_URI = "redirect_uri";
     String RESPONSE_TYPE = "response_type";
@@ -45,6 +46,9 @@ public interface Details {
     String NODE_HOST = "node_host";
     String REASON = "reason";
     String REVOKED_CLIENT = "revoked_client";
+    String AUDIENCE = "audience";
+    String REQUESTED_ISSUER = "requested_issuer";
+    String REQUESTED_SUBJECT = "requested_subject";
     String CLIENT_SESSION_STATE = "client_session_state";
     String CLIENT_SESSION_HOST = "client_session_host";
     String RESTART_AFTER_TIMEOUT = "restart_after_timeout";
@@ -62,5 +66,7 @@ public interface Details {
     String SIGNATURE_ALGORITHM = "signature_algorithm";
 
     String CLIENT_REGISTRATION_POLICY = "client_registration_policy";
+
+    String EXISTING_USER = "previous_user";
 
 }

@@ -61,6 +61,12 @@ public class UserManager {
             userResource.update(user);
         }
 
+        public void enabled(Boolean enabled) {
+            UserRepresentation user = userResource.toRepresentation();
+            user.setEnabled(enabled);
+            userResource.update(user);
+        }
+
 
         private UserRepresentation initializeRequiredActions() {
             UserRepresentation user = userResource.toRepresentation();

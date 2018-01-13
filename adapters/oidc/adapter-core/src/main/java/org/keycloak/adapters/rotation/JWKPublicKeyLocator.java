@@ -81,7 +81,7 @@ public class JWKPublicKeyLocator implements PublicKeyLocator {
 
 
     private PublicKey lookupCachedKey(int publicKeyCacheTtl, int currentTime, String kid) {
-        if (lastRequestTime + publicKeyCacheTtl > currentTime) {
+        if (lastRequestTime + publicKeyCacheTtl > currentTime && kid != null) {
             return currentKeys.get(kid);
         } else {
             return null;

@@ -38,6 +38,7 @@ import javax.xml.stream.XMLStreamWriter;
 import java.net.URI;
 import java.util.List;
 import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
+import javax.xml.crypto.dsig.XMLSignature;
 
 /**
  * Write a SAML Response to stream
@@ -63,8 +64,17 @@ public class SAMLResponseWriter extends BaseWriter {
      * @throws org.keycloak.saml.common.exceptions.ProcessingException
      */
     public void write(ResponseType response) throws ProcessingException {
+        write(response, false);
+    }
+
+    public void write(ResponseType response, boolean forceWriteDsigNamespace) throws ProcessingException {
+        Element sig = response.getSignature();
+
         StaxUtil.writeStartElement(writer, PROTOCOL_PREFIX, JBossSAMLConstants.RESPONSE.get(), JBossSAMLURIConstants.PROTOCOL_NSURI.get());
 
+        if (forceWriteDsigNamespace && sig != null && sig.getPrefix() != null && ! sig.hasAttribute("xmlns:" + sig.getPrefix())) {
+            StaxUtil.writeNameSpace(writer, sig.getPrefix(), XMLSignature.XMLNS);
+        }
         StaxUtil.writeNameSpace(writer, PROTOCOL_PREFIX, JBossSAMLURIConstants.PROTOCOL_NSURI.get());
         StaxUtil.writeNameSpace(writer, ASSERTION_PREFIX, JBossSAMLURIConstants.ASSERTION_NSURI.get());
 
@@ -75,7 +85,6 @@ public class SAMLResponseWriter extends BaseWriter {
             write(issuer, new QName(JBossSAMLURIConstants.ASSERTION_NSURI.get(), JBossSAMLConstants.ISSUER.get(), ASSERTION_PREFIX));
         }
 
-        Element sig = response.getSignature();
         if (sig != null) {
             StaxUtil.writeDOMElement(writer, sig);
         }
@@ -92,7 +101,7 @@ public class SAMLResponseWriter extends BaseWriter {
             for (ResponseType.RTChoiceType choiceType : choiceTypes) {
                 AssertionType assertion = choiceType.getAssertion();
                 if (assertion != null) {
-                    assertionWriter.write(assertion);
+                    assertionWriter.write(assertion, forceWriteDsigNamespace);
                 }
 
                 EncryptedAssertionType encryptedAssertion = choiceType.getEncryptedAssertion();

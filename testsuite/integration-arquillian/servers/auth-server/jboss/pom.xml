@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-auth-server</artifactId>
-        <version>2.5.1.Final-SNAPSHOT</version>
+        <version>4.0.0.CR1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -191,6 +191,7 @@
                                             <dir>${auth.server.home}/standalone/configuration</dir>
                                             <includes>
                                                 <include>standalone.xml</include>
+                                                <include>standalone-ha.xml</include>
                                             </includes>
                                             <stylesheet>${common.resources}/keycloak-server-subsystem.xsl</stylesheet>
                                             <outputDir>${auth.server.home}/standalone/configuration</outputDir>
@@ -236,6 +237,12 @@
                                             <includes>
                                                 <include>keycloak.jks</include>
                                                 <include>keycloak.truststore</include>
+                                                <include>client.jks</include>
+                                                <include>ca.crt</include>
+                                                <include>client.crt</include>
+                                                <include>client.key</include>
+                                                <include>intermediate-ca.crl</include>
+                                                <include>empty.crl</include>
                                             </includes>
                                         </resource>
                                     </resources>
@@ -303,6 +310,7 @@
                                                 <artifactId>${auth.server.overlay.artifactId}</artifactId>
                                                 <version>${auth.server.overlay.version}</version>
                                                 <type>zip</type>
+                                                <overWrite>true</overWrite>
                                                 <outputDirectory>${project.build.directory}/unpacked/${overlaid.container.unpacked.folder.name}</outputDirectory>
                                             </artifactItem>
                                         </artifactItems>
@@ -335,75 +343,10 @@
                 </pluginManagement>
             </build>
         </profile>
-
-        <profile>
-            <id>ssl</id>
-            <activation>
-                <property>
-                    <name>auth.server.ssl.required</name>
-                </property>
-            </activation>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.codehaus.mojo</groupId>
-                            <artifactId>xml-maven-plugin</artifactId>
-                            <executions>
-                                <execution>
-                                    <id>configure-adapter-subsystem-security</id>
-                                    <phase>process-resources</phase>
-                                    <goals>
-                                        <goal>transform</goal>
-                                    </goals>
-                                    <configuration>
-                                        <transformationSets>
-                                            <transformationSet>
-                                                <dir>${auth.server.home}/standalone/configuration</dir>
-                                                <includes>
-                                                    <include>standalone.xml</include>
-                                                </includes>
-                                                <stylesheet>${common.resources}/${security.xsl}</stylesheet>
-                                                <outputDir>${auth.server.home}/standalone/configuration</outputDir>
-                                            </transformationSet>
-                                        </transformationSets>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
-                        <plugin>
-                            <artifactId>maven-resources-plugin</artifactId>
-                            <executions>
-                                <execution>
-                                    <id>copy-keystore</id>
-                                    <phase>process-resources</phase>
-                                    <goals>
-                                        <goal>copy-resources</goal>
-                                    </goals>
-                                    <configuration>
-                                        <outputDirectory>${auth.server.home}/standalone/configuration</outputDirectory>
-                                        <resources>
-                                            <resource>
-                                                <directory>${common.resources}/keystore</directory>
-                                                <includes>
-                                                    <include>keycloak.jks</include>
-                                                    <include>keycloak.truststore</include>
-                                                </includes>
-                                            </resource>
-                                        </resources>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
-
         <profile>
             <id>jpa</id>
             <properties>
-                <jdbc.mvn.driver.deployment.dir>${auth.server.home}/modules/system/layers/base/com/${jdbc.mvn.artifactId}/main</jdbc.mvn.driver.deployment.dir>
+                <jdbc.mvn.driver.deployment.dir>${auth.server.home}/modules/system/layers/base/test/jdbc/${jdbc.mvn.artifactId}/main</jdbc.mvn.driver.deployment.dir>
                 <skip.h2.tcp>true</skip.h2.tcp>
             </properties>
             <build>
@@ -633,6 +576,120 @@
                 </pluginManagement>
             </build>
         </profile>
+        
+        <profile>
+            <id>auth-servers-crossdc-jboss</id>
+            <properties>
+                <crossdc.jboss.jdbc.url>jdbc:h2:tcp://localhost:9092/mem:keycloak-dc-shared;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE</crossdc.jboss.jdbc.url>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
+                    </plugin>
+                </plugins>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <artifactId>maven-enforcer-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>enforce-profile-activation</id>
+                                    <goals>
+                                        <goal>enforce</goal>
+                                    </goals>
+                                    <configuration>
+                                        <rules>
+                                            <requireProperty>
+                                                <property>auth.server.jboss</property>
+                                                <message>Profile "auth-servers-crossdc-jboss" requires activation of another profile: either "auth-server-wildfly" or "auth-server-eap".</message>
+                                                <regex>(wildfly|eap)</regex>
+                                            </requireProperty>
+                                        </rules>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.codehaus.mojo</groupId>
+                            <artifactId>xml-maven-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>jpa-h2-tcp</id>
+                                    <phase>process-resources</phase>
+                                    <goals>
+                                        <goal>transform</goal>
+                                    </goals>
+                                    <configuration>
+                                        <skip>${skip.h2.tcp}</skip>
+                                        <transformationSets>
+                                            <transformationSet>
+                                                <dir>${auth.server.home}/standalone/configuration</dir>
+                                                <includes>
+                                                    <include>standalone-ha.xml</include>
+                                                </includes>
+                                                <stylesheet>${common.resources}/datasource-jdbc-url.xsl</stylesheet>
+                                                <outputDir>${auth.server.home}/standalone/configuration</outputDir>
+                                                <parameters>
+                                                    <parameter>
+                                                        <name>pool.name</name>
+                                                        <value>KeycloakDS</value>
+                                                    </parameter>
+                                                    <parameter>
+                                                        <name>jdbc.url</name>
+                                                        <value>${crossdc.jboss.jdbc.url}</value>
+                                                    </parameter>
+                                                </parameters>
+                                            </transformationSet>
+                                        </transformationSets>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.codehaus.mojo</groupId>
+                            <artifactId>exec-maven-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>crossdc-setup</id>
+                                    <phase>process-resources</phase>
+                                    <goals>
+                                        <goal>exec</goal>
+                                    </goals>
+                                    <configuration>
+                                        <executable>${auth.server.home}/bin/jboss-cli.sh</executable>
+                                        <arguments>
+                                            <argument>--file=${common.resources}/crossdc/cross-dc-setup.cli</argument>
+                                        </arguments>
+                                    </configuration>
+                                </execution>
+                                <execution>
+                                    <id>remove-temp-data-crossdc-setup</id>
+                                    <phase>process-resources</phase>
+                                    <goals>
+                                        <goal>exec</goal>
+                                    </goals>
+                                    <configuration>
+                                        <workingDirectory>${auth.server.home}/standalone/</workingDirectory>
+                                        <executable>rm</executable>
+                                        <arguments>
+                                            <argument>-rf</argument>
+                                            <argument>data</argument>
+                                            <argument>log</argument>
+                                            <argument>tmp</argument>
+                                        </arguments>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+        
         <profile>
             <id>auth-server-cluster</id>
             <properties>
@@ -796,6 +853,24 @@
             <modules>
                 <module>eap</module>
             </modules>
+        </profile>
+
+
+        <profile>
+            <id>db-failover-mariadb</id>
+            <properties>
+                <jdbc.mvn.groupId>org.mariadb.jdbc</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>mariadb-java-client</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>2.0.3</jdbc.mvn.version>
+                <keycloak.connectionsJpa.user>keycloak</keycloak.connectionsJpa.user>
+                <keycloak.connectionsJpa.password>keycloak</keycloak.connectionsJpa.password>
+                
+                <mariadb.ha.mode>replication</mariadb.ha.mode>
+                <mariadb.hosts>localhost:3316,localhost:3326</mariadb.hosts>
+                <mariadb.database>keycloak</mariadb.database>
+                <mariadb.options></mariadb.options>
+                <keycloak.connectionsJpa.url>jdbc:mariadb:${mariadb.ha.mode}://${mariadb.hosts}/${mariadb.database}${mariadb.options}</keycloak.connectionsJpa.url>
+            </properties>
         </profile>
 
     </profiles>

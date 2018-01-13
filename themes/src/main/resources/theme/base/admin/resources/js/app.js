@@ -1,10 +1,5 @@
 'use strict';
 
-var consoleBaseUrl = window.location.href;
-consoleBaseUrl = consoleBaseUrl.substring(0, consoleBaseUrl.indexOf("/console"));
-consoleBaseUrl = consoleBaseUrl + "/console";
-var configUrl = consoleBaseUrl + "/config";
-
 var auth = {};
 var resourceBundle;
 var locale = 'en';
@@ -14,11 +9,11 @@ var resourceRequests = 0;
 var loadingTimer = -1;
 
 angular.element(document).ready(function () {
-    var keycloakAuth = new Keycloak(configUrl);
+    var keycloakAuth = new Keycloak(consoleBaseUrl + 'config');
 
     function whoAmI(success, error) {
         var req = new XMLHttpRequest();
-        req.open('GET', consoleBaseUrl + "/whoami", true);
+        req.open('GET', consoleBaseUrl + 'whoami', true);
         req.setRequestHeader('Accept', 'application/json');
         req.setRequestHeader('Authorization', 'bearer ' + keycloakAuth.token);
 
@@ -38,7 +33,7 @@ angular.element(document).ready(function () {
 
     function loadResourceBundle(success, error) {
         var req = new XMLHttpRequest();
-        req.open('GET', consoleBaseUrl + '/messages.json?lang=' + locale, true);
+        req.open('GET', consoleBaseUrl + 'messages.json?lang=' + locale, true);
         req.setRequestHeader('Accept', 'application/json');
 
         req.onreadystatechange = function () {
@@ -130,6 +125,12 @@ module.config(['$translateProvider', function($translateProvider) {
     $translateProvider.translations(locale, resourceBundle);
 }]);
 
+// Change for upgrade to AngularJS 1.6
+// See https://github.com/angular/angular.js/commit/aa077e81129c740041438688dff2e8d20c3d7b52
+module.config(['$locationProvider', function($locationProvider) {
+  $locationProvider.hashPrefix('');
+}]);
+
 module.config([ '$routeProvider', function($routeProvider) {
     $routeProvider
         .when('/create/realm', {
@@ -194,6 +195,9 @@ module.config([ '$routeProvider', function($routeProvider) {
         .when('/realms/:realm/token-settings', {
             templateUrl : resourceUrl + '/partials/realm-tokens.html',
             resolve : {
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                },
                 realm : function(RealmLoader) {
                     return RealmLoader();
                 }
@@ -555,6 +559,15 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmImportCtrl'
         })
+        .when('/realms/:realm/partial-export', {
+            templateUrl : resourceUrl + '/partials/partial-export.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                }
+            },
+            controller : 'RealmExportCtrl'
+        })
         .when('/create/user/:realm', {
             templateUrl : resourceUrl + '/partials/user-detail.html',
             resolve : {
@@ -760,6 +773,18 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RoleDetailCtrl'
         })
+        .when('/realms/:realm/roles/:role/users', {
+        	templateUrl : resourceUrl + '/partials/realm-role-users.html',
+        	resolve : {
+        		realm : function(RealmLoader) {
+        			return RealmLoader();
+        		},
+        		role : function(RoleLoader) {
+        			return RoleLoader();
+        		}
+        	},
+        	controller : 'RoleMembersCtrl'
+        })
         .when('/realms/:realm/roles', {
             templateUrl : resourceUrl + '/partials/role-list.html',
             resolve : {
@@ -777,9 +802,6 @@ module.config([ '$routeProvider', function($routeProvider) {
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
-                },
-                groups : function(GroupListLoader) {
-                    return GroupListLoader();
                 }
             },
             controller : 'GroupListCtrl'
@@ -1394,9 +1416,6 @@ module.config([ '$routeProvider', function($routeProvider) {
                 realm : function(RealmLoader) {
                     return RealmLoader();
                 },
-                clients : function(ClientListLoader) {
-                    return ClientListLoader();
-                },
                 serverInfo : function(ServerInfoLoader) {
                     return ServerInfoLoader();
                 }
@@ -1708,8 +1727,8 @@ module.config([ '$routeProvider', function($routeProvider) {
                 flows : function(AuthenticationFlowsLoader) {
                     return AuthenticationFlowsLoader();
                 },
-                serverInfo : function(ServerInfo) {
-                    return ServerInfo.delay;
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
                 }
             },
             controller : 'RealmFlowBindingCtrl'
@@ -1917,7 +1936,7 @@ module.factory('spinnerInterceptor', function($q, $window, $rootScope, $location
                 $('#loading').hide();
             }
             return response;
-        }, 
+        },
         responseError: function(response) {
             resourceRequests--;
             if (resourceRequests == 0) {
@@ -1937,7 +1956,7 @@ module.factory('errorInterceptor', function($q, $window, $rootScope, $location, 
     return {
         response: function(response) {
             return response;
-        }, 
+        },
         responseError: function(response) {
             if (response.status == 401) {
                 Auth.authz.logout();
@@ -1948,9 +1967,13 @@ module.factory('errorInterceptor', function($q, $window, $rootScope, $location, 
             } else if (response.status) {
                 if (response.data && response.data.errorMessage) {
                     Notifications.error(response.data.errorMessage);
+                } else if (response.data && response.data.error_description) {
+                    Notifications.error(response.data.error_description);
                 } else {
                     Notifications.error("An unexpected server error has occurred");
                 }
+            } else {
+                Notifications.error("No response from server.");
             }
             return $q.reject(response);
         }
@@ -2173,15 +2196,29 @@ module.directive('kcEnter', function() {
     };
 });
 
-module.directive('kcSave', function ($compile, Notifications) {
+module.directive('kcSave', function ($compile, $timeout, Notifications) {
+    var clickDelay = 500; // 500 ms
+
     return {
         restrict: 'A',
         link: function ($scope, elem, attr, ctrl) {
             elem.addClass("btn btn-primary");
             elem.attr("type","submit");
-            elem.bind('click', function() {
+
+            var disabled = false;
+            elem.on('click', function(evt) {
                 if ($scope.hasOwnProperty("changed") && !$scope.changed) return;
-                
+
+                // KEYCLOAK-4121: Prevent double form submission
+                if (disabled) {
+                    evt.preventDefault();
+                    evt.stopImmediatePropagation();
+                    return;
+                } else {
+                    disabled = true;
+                    $timeout(function () { disabled = false; }, clickDelay, false);
+                }
+
                 $scope.$apply(function() {
                     var form = elem.closest('form');
                     if (form && form.attr('name')) {
@@ -2336,12 +2373,39 @@ module.directive('kcTabsAuthentication', function () {
     }
 });
 
+module.directive('kcTabsRole', function () {
+    return {
+        scope: true,
+        restrict: 'E',
+        replace: true,
+        templateUrl: resourceUrl + '/templates/kc-tabs-role.html'
+    }
+});
+
+module.directive('kcTabsClientRole', function () {
+    return {
+        scope: true,
+        restrict: 'E',
+        replace: true,
+        templateUrl: resourceUrl + '/templates/kc-tabs-client-role.html'
+    }
+});
+
 module.directive('kcTabsUser', function () {
     return {
         scope: true,
         restrict: 'E',
         replace: true,
         templateUrl: resourceUrl + '/templates/kc-tabs-user.html'
+    }
+});
+
+module.directive('kcTabsUsers', function () {
+    return {
+        scope: true,
+        restrict: 'E',
+        replace: true,
+        templateUrl: resourceUrl + '/templates/kc-tabs-users.html'
     }
 });
 
@@ -2468,6 +2532,10 @@ module.controller('RoleSelectorModalCtrl', function($scope, realm, config, confi
 module.controller('ProviderConfigCtrl', function ($modal, $scope, ComponentUtils) {
     $scope.fileNames = {};
 
+    // KEYCLOAK-4463
+    $scope.initEditor = function(editor){
+        editor.$blockScrolling = Infinity; // suppress warning message
+    };
 
     $scope.openRoleSelector = function (configName, config) {
         $modal.open({
@@ -2813,35 +2881,35 @@ module.directive('kcOnReadFile', function ($parse) {
 
 module.controller('PagingCtrl', function ($scope) {
     $scope.currentPageInput = 1;
-    
+
     $scope.firstPage = function() {
         if (!$scope.hasPrevious()) return;
         $scope.currentPage = 1;
         $scope.currentPageInput = 1;
     };
-    
+
     $scope.lastPage = function() {
         if (!$scope.hasNext()) return;
         $scope.currentPage = $scope.numberOfPages;
         $scope.currentPageInput = $scope.numberOfPages;
     };
-    
+
     $scope.previousPage = function() {
         if (!$scope.hasPrevious()) return;
         $scope.currentPage--;
         $scope.currentPageInput = $scope.currentPage;
     };
-    
+
     $scope.nextPage = function() {
         if (!$scope.hasNext()) return;
         $scope.currentPage++;
         $scope.currentPageInput = $scope.currentPage;
     };
-    
+
     $scope.hasNext = function() {
         return $scope.currentPage < $scope.numberOfPages;
     };
-    
+
     $scope.hasPrevious = function() {
         return $scope.currentPage > 1;
     };
@@ -2871,11 +2939,11 @@ module.directive('kcValidPage', function() {
                if (viewValue >= 1 && viewValue <= scope.numberOfPages) {
                    scope.currentPage = viewValue;
                }
-               
+
                return true;
            }
        }
-   } 
+   }
 });
 
 // filter used for paged tables
@@ -2887,4 +2955,15 @@ module.filter('startFrom', function () {
         }
         return [];
     };
+});
+
+
+module.directive('kcPassword', function ($compile, Notifications) {
+    return {
+        restrict: 'A',
+        link: function ($scope, elem, attr, ctrl) {
+            elem.addClass("password-conceal");
+            elem.attr("type","text");
+        }
+    }
 });

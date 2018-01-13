@@ -9,10 +9,7 @@
 
     <h1>{{:: 'export-saml-key' | translate}} {{client.clientId|capitalize}}</h1>
 
-    <form class="form-horizontal" name="keyForm" novalidate kc-read-only="!access.manageRealm">
-        <input type="text" readonly value="this is not a login form" style="display: none;">
-        <input type="password" readonly value="this is not a login form" style="display: none;">
-
+    <form class="form-horizontal" name="keyForm" novalidate kc-read-only="!client.access.configure">
         <fieldset class="form-group col-sm-10">
             <div class="form-group">
                 <label class="col-md-2 control-label" for="downloadKeyFormat">{{:: 'archive-format' | translate}}</label>
@@ -34,9 +31,9 @@
                 <kc-tooltip>{{:: 'key-alias.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group" data-ng-hide="!keyInfo.privateKey">
-                <label class="col-md-2 control-label" for="keyPassword">{{:: 'key-password' | translate}}</label>
+                <label class="col-md-2 control-label" for="keyPas">{{:: 'key-password' | translate}}</label>
                 <div class="col-md-6">
-                    <input class="form-control" type="password" id="keyPassword" name="keyPassword" data-ng-model="jks.keyPassword" autofocus required>
+                    <input class="form-control" kc-password id="keyPas" name="keyPas" data-ng-model="jks.keyPassword" autofocus required>
                 </div>
                 <kc-tooltip>{{:: 'key-password.tooltip' | translate}}</kc-tooltip>
             </div>
@@ -48,14 +45,14 @@
                 <kc-tooltip>{{:: 'realm-certificate-alias.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="storePassword">{{:: 'store-password' | translate}}</label>
+                <label class="col-md-2 control-label" for="storePas">{{:: 'store-password' | translate}}</label>
                 <div class="col-md-6">
-                    <input class="form-control" type="password" id="storePassword" name="storePassword" data-ng-model="jks.storePassword" autofocus required>
+                    <input class="form-control" kc-password id="storePas" name="storePas" data-ng-model="jks.storePassword" autofocus required>
                 </div>
                 <kc-tooltip>{{:: 'store-password.tooltip' | translate}}</kc-tooltip>
            </div>
             <div class="form-group">
-                <div class="col-md-10 col-md-offset-2" data-ng-show="access.manageRealm">
+                <div class="col-md-10 col-md-offset-2" data-ng-show="client.access.configure">
                     <button class="btn btn-primary" type="submit" data-ng-click="download()">{{:: 'download' | translate}}</button>
                 </div>
             </div>

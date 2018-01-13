@@ -23,13 +23,13 @@ package org.keycloak.saml.common.constants;
  * @since Dec 10, 2008
  */
 public enum JBossSAMLConstants {
-    ADDRESS("Address"), ADDITIONAL_METADATA_LOCATION("AdditionalMetadataLocation"), AFFILIATION_DESCRIPTOR(
+    ADDRESS("Address"), ADVICE("Advice"), ADDITIONAL_METADATA_LOCATION("AdditionalMetadataLocation"), AFFILIATION_DESCRIPTOR(
             "AffiliationDescriptor"), ALLOW_CREATE("AllowCreate"), ARTIFACT("Artifact"), ARTIFACT_RESOLVE("ArtifactResolve"), ARTIFACT_RESPONSE(
             "ArtifactResponse"), ARTIFACT_RESOLUTION_SERVICE("ArtifactResolutionService"), ASSERTION("Assertion"), ASSERTION_CONSUMER_SERVICE(
             "AssertionConsumerService"), ASSERTION_CONSUMER_SERVICE_URL("AssertionConsumerServiceURL"), ASSERTION_CONSUMER_SERVICE_INDEX(
             "AssertionConsumerServiceIndex"), ASSERTION_ID_REQUEST_SERVICE("AssertionIDRequestService"), ATTRIBUTE("Attribute"), ATTRIBUTE_QUERY(
             "AttributeQuery"), ATTRIBUTE_AUTHORITY_DESCRIPTOR("AttributeAuthorityDescriptor"), ATTRIBUTE_CONSUMING_SERVICE(
-            "AttributeConsumingService"), ATTRIBUTE_CONSUMING_SERVICE_INDEX("AttributeConsumingServiceIndex"), ATTRIBUTE_SERVICE(
+            "AttributeConsumingService"), ATTRIBUTE_CONSUMING_SERVICE_INDEX("AttributeConsumingServiceIndex"), ATTRIBUTE_PROFILE("AttributeProfile"), ATTRIBUTE_SERVICE(
             "AttributeService"), ATTRIBUTE_STATEMENT("AttributeStatement"), ATTRIBUTE_VALUE("AttributeValue"), AUDIENCE(
             "Audience"), AUDIENCE_RESTRICTION("AudienceRestriction"), AUTHN_CONTEXT("AuthnContext"), AUTHENTICATING_AUTHORITY(
             "AuthenticatingAuthority"), AUTHN_AUTHORITY_DESCRIPTOR("AuthnAuthorityDescriptor"), AUTHN_CONTEXT_CLASS_REF(

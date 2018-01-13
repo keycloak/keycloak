@@ -24,6 +24,8 @@ import org.keycloak.dom.saml.v2.assertion.EncryptedAssertionType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType;
 import org.keycloak.saml.common.ErrorCodes;
+import org.keycloak.saml.common.PicketLinkLogger;
+import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
@@ -32,7 +34,6 @@ import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.parsers.ParserNamespaceSupport;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.common.util.StaxParserUtil;
-import org.keycloak.saml.common.util.StringUtil;
 import org.keycloak.saml.processing.core.parsers.util.SAMLParserUtil;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 import org.w3c.dom.Element;
@@ -40,7 +41,6 @@ import org.w3c.dom.Element;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.events.Attribute;
 import javax.xml.stream.events.EndElement;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
@@ -52,6 +52,7 @@ import javax.xml.stream.events.XMLEvent;
  * @since Oct 12, 2010
  */
 public class SAMLAssertionParser implements ParserNamespaceSupport {
+    private static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
 
     private final String ASSERTION = JBossSAMLConstants.ASSERTION.get();
 
@@ -128,6 +129,9 @@ public class SAMLAssertionParser implements ParserNamespaceSupport {
                 ConditionsType conditions = (ConditionsType) conditionsParser.parse(xmlEventReader);
 
                 assertion.setConditions(conditions);
+            } else if (JBossSAMLConstants.ADVICE.get().equalsIgnoreCase(tag)) {
+                StaxParserUtil.bypassElementBlock(xmlEventReader);
+                logger.debug("SAML Advice tag is ignored");
             } else if (JBossSAMLConstants.AUTHN_STATEMENT.get().equalsIgnoreCase(tag)) {
                 AuthnStatementType authnStatementType = SAMLParserUtil.parseAuthnStatement(xmlEventReader);
                 assertion.addStatement(authnStatementType);
@@ -157,15 +161,22 @@ public class SAMLAssertionParser implements ParserNamespaceSupport {
     }
 
     private AssertionType parseBaseAttributes(StartElement nextElement) throws ParsingException {
-        Attribute idAttribute = nextElement.getAttributeByName(new QName(JBossSAMLConstants.ID.get()));
-        String id = StaxParserUtil.getAttributeValue(idAttribute);
+        String id = StaxParserUtil.getAttributeValue(nextElement, JBossSAMLConstants.ID.get());
+        if (id == null) {
+            throw logger.parserRequiredAttribute(JBossSAMLConstants.ID.get());
+        }
 
-        Attribute versionAttribute = nextElement.getAttributeByName(new QName(JBossSAMLConstants.VERSION.get()));
-        String version = StaxParserUtil.getAttributeValue(versionAttribute);
-        StringUtil.match(JBossSAMLConstants.VERSION_2_0.get(), version);
+        String version = StaxParserUtil.getAttributeValue(nextElement, JBossSAMLConstants.VERSION.get());
+        if (!JBossSAMLConstants.VERSION_2_0.get().equals(version)) {
+            throw logger.parserException(new RuntimeException(
+                    String.format("Assertion %s required to be \"%s\"", JBossSAMLConstants.VERSION.get(), JBossSAMLConstants.VERSION_2_0.get())));
+        }
 
-        Attribute issueInstantAttribute = nextElement.getAttributeByName(new QName(JBossSAMLConstants.ISSUE_INSTANT.get()));
-        XMLGregorianCalendar issueInstant = XMLTimeUtil.parse(StaxParserUtil.getAttributeValue(issueInstantAttribute));
+        String issueInstantString = StaxParserUtil.getAttributeValue(nextElement, JBossSAMLConstants.ISSUE_INSTANT.get());
+        if (issueInstantString == null) {
+            throw logger.parserRequiredAttribute(JBossSAMLConstants.ISSUE_INSTANT.get());
+        }
+        XMLGregorianCalendar issueInstant = XMLTimeUtil.parse(issueInstantString);
 
         return new AssertionType(id, issueInstant);
     }

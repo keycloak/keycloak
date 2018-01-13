@@ -17,21 +17,31 @@
 
 package org.keycloak.models.sessions.infinispan.stream;
 
-import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
+import org.keycloak.models.sessions.infinispan.AuthenticatedClientSessionAdapter;
+import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
-import java.io.Serializable;
+import org.keycloak.models.sessions.infinispan.util.KeycloakMarshallUtil;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.Map;
 import java.util.function.Predicate;
+import org.infinispan.commons.marshall.Externalizer;
+import org.infinispan.commons.marshall.MarshallUtil;
+import org.infinispan.commons.marshall.SerializeWith;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class UserSessionPredicate implements Predicate<Map.Entry<String, SessionEntity>>, Serializable {
+@SerializeWith(UserSessionPredicate.ExternalizerImpl.class)
+public class UserSessionPredicate implements Predicate<Map.Entry<String, SessionEntityWrapper<UserSessionEntity>>> {
 
-    private String realm;
+    private final String realm;
 
     private String user;
+
+    private String client;
 
     private Integer expired;
 
@@ -44,12 +54,30 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
         this.realm = realm;
     }
 
+    /**
+     * Creates a user session predicate. If using the {@link #client(java.lang.String)} method, see its warning.
+     * @param realm
+     * @return
+     */
     public static UserSessionPredicate create(String realm) {
         return new UserSessionPredicate(realm);
     }
 
     public UserSessionPredicate user(String user) {
         this.user = user;
+        return this;
+    }
+
+    /**
+     * Adds a test for client. Note that this test can return stale sessions because on detaching client session
+     * from user session, only client session is deleted and user session is not updated for performance reason.
+     *
+     * @see AuthenticatedClientSessionAdapter#detachFromUserSession()
+     * @param clientUUID
+     * @return
+     */
+    public UserSessionPredicate client(String clientUUID) {
+        this.client = clientUUID;
         return this;
     }
 
@@ -70,20 +98,18 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
     }
 
     @Override
-    public boolean test(Map.Entry<String, SessionEntity> entry) {
-        SessionEntity e = entry.getValue();
+    public boolean test(Map.Entry<String, SessionEntityWrapper<UserSessionEntity>> entry) {
+        UserSessionEntity entity = entry.getValue().getEntity();
 
-        if (!(e instanceof UserSessionEntity)) {
-            return false;
-        }
-
-        UserSessionEntity entity = (UserSessionEntity) e;
-
-        if (!realm.equals(entity.getRealm())) {
+        if (!realm.equals(entity.getRealmId())) {
             return false;
         }
 
         if (user != null && !entity.getUser().equals(user)) {
+            return false;
+        }
+
+        if (client != null && (entity.getAuthenticatedClientSessions() == null || !entity.getAuthenticatedClientSessions().containsKey(client))) {
             return false;
         }
 
@@ -104,5 +130,44 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
         }
 
         return true;
+    }
+
+    public static class ExternalizerImpl implements Externalizer<UserSessionPredicate> {
+
+        private static final int VERSION_1 = 1;
+
+        @Override
+        public void writeObject(ObjectOutput output, UserSessionPredicate obj) throws IOException {
+            output.writeByte(VERSION_1);
+
+            MarshallUtil.marshallString(obj.realm, output);
+            MarshallUtil.marshallString(obj.user, output);
+            MarshallUtil.marshallString(obj.client, output);
+            KeycloakMarshallUtil.marshall(obj.expired, output);
+            KeycloakMarshallUtil.marshall(obj.expiredRefresh, output);
+            MarshallUtil.marshallString(obj.brokerSessionId, output);
+            MarshallUtil.marshallString(obj.brokerUserId, output);
+
+        }
+
+        @Override
+        public UserSessionPredicate readObject(ObjectInput input) throws IOException, ClassNotFoundException {
+            switch (input.readByte()) {
+                case VERSION_1:
+                    return readObjectVersion1(input);
+                default:
+                    throw new IOException("Unknown version");
+            }
+        }
+
+        public UserSessionPredicate readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
+            UserSessionPredicate res = new UserSessionPredicate(MarshallUtil.unmarshallString(input));
+            res.user(MarshallUtil.unmarshallString(input));
+            res.client(MarshallUtil.unmarshallString(input));
+            res.expired(KeycloakMarshallUtil.unmarshallInteger(input), KeycloakMarshallUtil.unmarshallInteger(input));
+            res.brokerSessionId(MarshallUtil.unmarshallString(input));
+            res.brokerUserId(MarshallUtil.unmarshallString(input));
+            return res;
+        }
     }
 }

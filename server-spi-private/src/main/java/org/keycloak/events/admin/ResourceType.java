@@ -151,5 +151,30 @@ public enum ResourceType {
     /**
      *
      */
-    , CLUSTER_NODE;
+    , CLUSTER_NODE
+
+    /**
+     *
+     */
+    , COMPONENT
+
+    /**
+     *
+     */
+    , AUTHORIZATION_RESOURCE_SERVER
+
+    /**
+     *
+     */
+    , AUTHORIZATION_RESOURCE
+
+    /**
+     *
+     */
+    , AUTHORIZATION_SCOPE
+
+    /**
+     *
+     */
+    , AUTHORIZATION_POLICY;
 }

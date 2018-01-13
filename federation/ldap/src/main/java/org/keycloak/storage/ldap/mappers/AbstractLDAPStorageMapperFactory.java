@@ -34,16 +34,6 @@ import java.util.Map;
  */
 public abstract class AbstractLDAPStorageMapperFactory implements LDAPStorageMapperFactory<LDAPStorageMapper> {
 
-    // Used to map attributes from LDAP to UserModel attributes
-    public static final String ATTRIBUTE_MAPPER_CATEGORY = "Attribute Mapper";
-
-    // Used to map roles from LDAP to UserModel users
-    public static final String ROLE_MAPPER_CATEGORY = "Role Mapper";
-
-
-    // Used to map group from LDAP to UserModel users
-    public static final String GROUP_MAPPER_CATEGORY = "Group Mapper";
-
     @Override
     public void init(Config.Scope config) {
     }

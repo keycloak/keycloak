@@ -17,12 +17,12 @@
  */
 package org.keycloak.authorization.admin;
 
-import static java.util.Arrays.asList;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -33,15 +33,14 @@ import java.util.stream.Stream;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Produces;
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 
 import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.admin.representation.PolicyEvaluationRequest;
-import org.keycloak.authorization.admin.representation.PolicyEvaluationResponse;
+import org.keycloak.authorization.admin.representation.PolicyEvaluationResponseBuilder;
 import org.keycloak.authorization.attribute.Attributes;
 import org.keycloak.authorization.common.KeycloakEvaluationContext;
 import org.keycloak.authorization.common.KeycloakIdentity;
@@ -55,21 +54,25 @@ import org.keycloak.authorization.policy.evaluation.Result;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.authorization.util.Permissions;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.protocol.ProtocolMapper;
-import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.authorization.PolicyEvaluationRequest;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
-import org.keycloak.services.resources.admin.RealmAuth;
+import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -77,44 +80,57 @@ import org.keycloak.services.resources.admin.RealmAuth;
 public class PolicyEvaluationService {
 
     private final AuthorizationProvider authorization;
-    private final RealmAuth auth;
+    private final AdminPermissionEvaluator auth;
     @Context
     private HttpRequest httpRequest;
 
     private final ResourceServer resourceServer;
 
-    PolicyEvaluationService(ResourceServer resourceServer, AuthorizationProvider authorization, RealmAuth auth) {
+    PolicyEvaluationService(ResourceServer resourceServer, AuthorizationProvider authorization, AdminPermissionEvaluator auth) {
         this.resourceServer = resourceServer;
         this.authorization = authorization;
         this.auth = auth;
     }
 
+    static class Decision extends DecisionResultCollector {
+        Throwable error;
+        List<Result> results;
+
+        @Override
+        protected void onComplete(List<Result> results) {
+            this.results = results;
+        }
+
+        @Override
+        public void onError(Throwable cause) {
+            this.error = cause;
+
+        }
+    }
+
+    public static <T> List<T> asList(T... a) {
+        List<T> list = new LinkedList<T>();
+        for (T t : a) list.add(t);
+        return list;
+    }
+
     @POST
     @Consumes("application/json")
     @Produces("application/json")
-    public void evaluate(PolicyEvaluationRequest evaluationRequest, @Suspended AsyncResponse asyncResponse) {
-        this.auth.requireView();
-        KeycloakIdentity identity = createIdentity(evaluationRequest);
-        EvaluationContext evaluationContext = createEvaluationContext(evaluationRequest, identity);
-        authorization.evaluators().from(createPermissions(evaluationRequest, evaluationContext, authorization), evaluationContext).evaluate(createDecisionCollector(authorization, identity, asyncResponse));
+    public Response evaluate(PolicyEvaluationRequest evaluationRequest) throws Throwable {
+        this.auth.realm().requireViewAuthorization();
+        CloseableKeycloakIdentity identity = createIdentity(evaluationRequest);
+        try {
+            return Response.ok(PolicyEvaluationResponseBuilder.build(evaluate(evaluationRequest, createEvaluationContext(evaluationRequest, identity)), resourceServer, authorization, identity)).build();
+        } catch (Exception e) {
+            throw new ErrorResponseException(OAuthErrorException.SERVER_ERROR, "Error while evaluating permissions.", Status.INTERNAL_SERVER_ERROR);
+        } finally {
+            identity.close();
+        }
     }
 
-    private DecisionResultCollector createDecisionCollector(AuthorizationProvider authorization, KeycloakIdentity identity, AsyncResponse asyncResponse) {
-        return new DecisionResultCollector() {
-            @Override
-            protected void onComplete(List<Result> results) {
-                try {
-                    asyncResponse.resume(Response.ok(PolicyEvaluationResponse.build(results, resourceServer,  authorization, identity)).build());
-                } catch (Throwable cause) {
-                    asyncResponse.resume(cause);
-                }
-            }
-
-            @Override
-            public void onError(Throwable cause) {
-                asyncResponse.resume(cause);
-            }
-        };
+    private List<Result> evaluate(PolicyEvaluationRequest evaluationRequest, EvaluationContext evaluationContext) {
+        return authorization.evaluators().from(createPermissions(evaluationRequest, evaluationContext, authorization), evaluationContext).evaluate();
     }
 
     private EvaluationContext createEvaluationContext(PolicyEvaluationRequest representation, KeycloakIdentity identity) {
@@ -144,11 +160,11 @@ public class PolicyEvaluationService {
     }
 
     private List<ResourcePermission> createPermissions(PolicyEvaluationRequest representation, EvaluationContext evaluationContext, AuthorizationProvider authorization) {
-        List<PolicyEvaluationRequest.Resource> resources = representation.getResources();
-        return resources.stream().flatMap((Function<PolicyEvaluationRequest.Resource, Stream<ResourcePermission>>) resource -> {
+        List<ResourceRepresentation> resources = representation.getResources();
+        return resources.stream().flatMap((Function<ResourceRepresentation, Stream<ResourcePermission>>) resource -> {
             StoreFactory storeFactory = authorization.getStoreFactory();
             if (resource == null) {
-                resource = new PolicyEvaluationRequest.Resource();
+                resource = new ResourceRepresentation();
             }
 
             Set<ScopeRepresentation> givenScopes = resource.getScopes();
@@ -180,16 +196,76 @@ public class PolicyEvaluationService {
         }).collect(Collectors.toList());
     }
 
-    private KeycloakIdentity createIdentity(PolicyEvaluationRequest representation) {
+    private static class CloseableKeycloakIdentity extends KeycloakIdentity {
+        private UserSessionModel userSession;
+
+        public CloseableKeycloakIdentity(AccessToken accessToken, KeycloakSession keycloakSession, UserSessionModel userSession) {
+            super(accessToken, keycloakSession);
+            this.userSession = userSession;
+        }
+
+        public void close() {
+            if (userSession != null) {
+                keycloakSession.sessions().removeUserSession(realm, userSession);
+            }
+
+        }
+    }
+
+    private CloseableKeycloakIdentity createIdentity(PolicyEvaluationRequest representation) {
         KeycloakSession keycloakSession = this.authorization.getKeycloakSession();
         RealmModel realm = keycloakSession.getContext().getRealm();
-        AccessToken accessToken = new AccessToken();
+        AccessToken accessToken = null;
 
-        accessToken.subject(representation.getUserId());
-        accessToken.issuedFor(representation.getClientId());
-        accessToken.audience(representation.getClientId());
-        accessToken.issuer(Urls.realmIssuer(keycloakSession.getContext().getUri().getBaseUri(), realm.getName()));
-        accessToken.setRealmAccess(new AccessToken.Access());
+
+        String subject = representation.getUserId();
+
+        AuthenticatedClientSessionModel clientSession = null;
+        UserSessionModel userSession = null;
+        if (subject != null) {
+            UserModel userModel = keycloakSession.users().getUserById(subject, realm);
+
+            if (userModel != null) {
+                String clientId = representation.getClientId();
+
+                if (clientId == null) {
+                    clientId = resourceServer.getId();
+                }
+
+                if (clientId != null) {
+                    ClientModel clientModel = realm.getClientById(clientId);
+
+                    AuthenticationSessionModel authSession = keycloakSession.authenticationSessions().createRootAuthenticationSession(realm)
+                            .createAuthenticationSession(clientModel);
+                    authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+                    authSession.setAuthenticatedUser(userModel);
+                    userSession = keycloakSession.sessions().createUserSession(authSession.getParentSession().getId(), realm, userModel, userModel.getUsername(), "127.0.0.1", "passwd", false, null, null);
+
+                    AuthenticationManager.setRolesAndMappersInSession(authSession);
+                    clientSession = TokenManager.attachAuthenticationSession(keycloakSession, userSession, authSession);
+
+                    Set<RoleModel> requestedRoles = new HashSet<>();
+                    for (String roleId : clientSession.getRoles()) {
+                        RoleModel role = realm.getRoleById(roleId);
+                        if (role != null) {
+                            requestedRoles.add(role);
+                        }
+                    }
+                    accessToken = new TokenManager().createClientAccessToken(keycloakSession, requestedRoles, realm, clientModel, userModel, userSession, clientSession);
+                }
+            }
+        }
+
+        if (accessToken == null) {
+            accessToken = new AccessToken();
+
+            accessToken.subject(representation.getUserId());
+            accessToken.issuedFor(representation.getClientId());
+            accessToken.audience(representation.getClientId());
+            accessToken.issuer(Urls.realmIssuer(keycloakSession.getContext().getUri().getBaseUri(), realm.getName()));
+            accessToken.setRealmAccess(new AccessToken.Access());
+
+        }
 
         AccessToken.Access realmAccess = accessToken.getRealmAccess();
         Map<String, Object> claims = accessToken.getOtherClaims();
@@ -199,69 +275,11 @@ public class PolicyEvaluationService {
             givenAttributes.forEach((key, value) -> claims.put(key, asList(value)));
         }
 
-        String subject = accessToken.getSubject();
-
-        if (subject != null) {
-            UserModel userModel = keycloakSession.users().getUserById(subject, realm);
-
-            if (userModel != null) {
-                userModel.getAttributes().forEach(claims::put);
-
-                userModel.getRoleMappings().stream().map(RoleModel::getName).forEach(roleName -> realmAccess.addRole(roleName));
-
-                String clientId = representation.getClientId();
-
-                if (clientId == null) {
-                    clientId = resourceServer.getClientId();
-                }
-
-                if (clientId != null) {
-                    ClientModel clientModel = realm.getClientById(clientId);
-                    ClientSessionModel clientSession = null;
-                    UserSessionModel userSession = null;
-                    try {
-                        clientSession = keycloakSession.sessions().createClientSession(realm, clientModel);
-                        userSession = keycloakSession.sessions().createUserSession(realm, userModel, userModel.getUsername(), "127.0.0.1", "passwd", false, null, null);
-
-                        UserSessionModel finalUserSession = userSession;
-                        ClientSessionModel finalClientSession = clientSession;
-
-                        for (ProtocolMapperModel mapping : clientModel.getProtocolMappers()) {
-                            KeycloakSessionFactory sessionFactory = keycloakSession.getKeycloakSessionFactory();
-                            ProtocolMapper mapper = (ProtocolMapper)sessionFactory.getProviderFactory(ProtocolMapper.class, mapping.getProtocolMapper());
-
-                            if (mapper != null && (mapper instanceof OIDCAccessTokenMapper)) {
-                                accessToken = ((OIDCAccessTokenMapper)mapper).transformAccessToken(accessToken, mapping, keycloakSession, finalUserSession, finalClientSession);
-                            }
-                        }
-                    } finally {
-                        if (clientSession != null) {
-                            keycloakSession.sessions().removeClientSession(realm, clientSession);
-                        }
-
-                        if (userSession != null) {
-                            keycloakSession.sessions().removeUserSession(realm, userSession);
-                        }
-                    }
-
-                    AccessToken.Access clientAccess = accessToken.addAccess(clientModel.getClientId());
-                    clientAccess.roles(new HashSet<>());
-
-                    userModel.getClientRoleMappings(clientModel).stream().map(RoleModel::getName).forEach(roleName -> clientAccess.addRole(roleName));
-
-                    ClientModel resourceServerClient = realm.getClientById(resourceServer.getClientId());
-                    AccessToken.Access resourceServerAccess = accessToken.addAccess(resourceServerClient.getClientId());
-                    resourceServerAccess.roles(new HashSet<>());
-
-                    userModel.getClientRoleMappings(resourceServerClient).stream().map(RoleModel::getName).forEach(roleName -> resourceServerAccess.addRole(roleName));
-                }
-            }
-        }
 
         if (representation.getRoleIds() != null) {
             representation.getRoleIds().forEach(roleName -> realmAccess.addRole(roleName));
         }
 
-        return new KeycloakIdentity(accessToken, keycloakSession);
+        return new CloseableKeycloakIdentity(accessToken, keycloakSession, userSession);
     }
 }

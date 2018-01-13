@@ -25,6 +25,8 @@ import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -43,6 +45,8 @@ public class OTPPolicy implements Serializable {
     protected int period;
 
     private static final Map<String, String> algToKeyUriAlg = new HashMap<>();
+
+    private static final OtpApp[] allApplications = new OtpApp[] { new FreeOTP(), new GoogleAuthenticator() };
 
     static {
         algToKeyUriAlg.put(HmacOTP.HMAC_SHA1, "SHA1");
@@ -151,4 +155,60 @@ public class OTPPolicy implements Serializable {
             throw new RuntimeException(e);
         }
     }
+
+    public List<String> getSupportedApplications() {
+        List<String> applications = new LinkedList<>();
+        for (OtpApp a : allApplications) {
+            if (a.supports(this)) {
+                applications.add(a.getName());
+            }
+        }
+        return applications;
+    }
+
+    public interface OtpApp {
+
+        String getName();
+
+        boolean supports(OTPPolicy policy);
+    }
+
+    public static class GoogleAuthenticator implements OtpApp {
+
+        @Override
+        public String getName() {
+            return "Google Authenticator";
+        }
+
+        @Override
+        public boolean supports(OTPPolicy policy) {
+            if (policy.digits != 6) {
+                return false;
+            }
+
+            if (!policy.getAlgorithm().equals("HmacSHA1")) {
+                return false;
+            }
+
+            if (policy.getType().equals("totp") && policy.getPeriod() != 30) {
+                return false;
+            }
+
+            return true;
+        }
+    }
+
+    public static class FreeOTP implements OtpApp {
+
+        @Override
+        public String getName() {
+            return "FreeOTP";
+        }
+
+        @Override
+        public boolean supports(OTPPolicy policy) {
+            return true;
+        }
+    }
+
 }

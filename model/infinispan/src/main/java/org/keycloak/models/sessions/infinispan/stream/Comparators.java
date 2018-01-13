@@ -18,6 +18,7 @@
 package org.keycloak.models.sessions.infinispan.stream;
 
 import org.keycloak.models.sessions.infinispan.UserSessionTimestamp;
+import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
 import java.io.Serializable;
 import java.util.Comparator;
@@ -35,6 +36,19 @@ public class Comparators {
         @Override
         public int compare(UserSessionTimestamp u1, UserSessionTimestamp u2) {
             return u1.getClientSessionTimestamp() - u2.getClientSessionTimestamp();
+        }
+    }
+
+
+    public static Comparator<UserSessionEntity> userSessionLastSessionRefresh() {
+        return new UserSessionLastSessionRefreshComparator();
+    }
+
+    private static class UserSessionLastSessionRefreshComparator implements Comparator<UserSessionEntity>, Serializable {
+
+        @Override
+        public int compare(UserSessionEntity u1, UserSessionEntity u2) {
+            return u1.getLastSessionRefresh() - u2.getLastSessionRefresh();
         }
     }
 

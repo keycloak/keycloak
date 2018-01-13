@@ -22,4 +22,5 @@ public @interface UseServletFilter {
     String filterClass();
     String filterPattern() default "/*";
     String dispatcherType() default "";
+    String skipPattern() default "";
 }

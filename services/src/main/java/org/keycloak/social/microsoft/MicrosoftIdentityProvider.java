@@ -19,18 +19,24 @@ package org.keycloak.social.microsoft;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
-import org.keycloak.broker.oidc.util.JsonSimpleHttp;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.services.ErrorResponseException;
 
+import javax.ws.rs.core.Response;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
 /**
@@ -56,37 +62,63 @@ public class MicrosoftIdentityProvider extends AbstractOAuth2IdentityProvider im
     }
 
     @Override
+    protected boolean supportsExternalExchange() {
+        return true;
+    }
+
+    @Override
+    protected String getProfileEndpointForValidation(EventBuilder event) {
+        return PROFILE_URL;
+    }
+
+    @Override
+    protected SimpleHttp buildUserInfoRequest(String subjectToken, String userInfoUrl) {
+        String URL = null;
+        try {
+            URL = PROFILE_URL + "?access_token=" + URLEncoder.encode(subjectToken, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+        return SimpleHttp.doGet(URL, session);
+    }
+
+    @Override
     protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
         try {
             String URL = PROFILE_URL + "?access_token=" + URLEncoder.encode(accessToken, "UTF-8");
             if (log.isDebugEnabled()) {
                 log.debug("Microsoft Live user profile request to: " + URL);
             }
-            JsonNode profile = JsonSimpleHttp.asJson(SimpleHttp.doGet(URL));
+            JsonNode profile = SimpleHttp.doGet(URL, session).asJson();
 
-            String id = getJsonProperty(profile, "id");
-
-            String email = null;
-            if (profile.has("emails")) {
-                email = getJsonProperty(profile.get("emails"), "preferred");
-            }
-
-            BrokeredIdentityContext user = new BrokeredIdentityContext(id);
-
-            user.setUsername(email != null ? email : id);
-            user.setFirstName(getJsonProperty(profile, "first_name"));
-            user.setLastName(getJsonProperty(profile, "last_name"));
-            if (email != null)
-                user.setEmail(email);
-            user.setIdpConfig(getConfig());
-            user.setIdp(this);
-
-            AbstractJsonUserAttributeMapper.storeUserProfileForMapper(user, profile, getConfig().getAlias());
-
-            return user;
+            return extractIdentityFromProfile(null, profile);
         } catch (Exception e) {
             throw new IdentityBrokerException("Could not obtain user profile from Microsoft Live ID.", e);
         }
+    }
+
+    @Override
+    protected BrokeredIdentityContext extractIdentityFromProfile(EventBuilder event, JsonNode profile) {
+        String id = getJsonProperty(profile, "id");
+
+        String email = null;
+        if (profile.has("emails")) {
+            email = getJsonProperty(profile.get("emails"), "preferred");
+        }
+
+        BrokeredIdentityContext user = new BrokeredIdentityContext(id);
+
+        user.setUsername(email != null ? email : id);
+        user.setFirstName(getJsonProperty(profile, "first_name"));
+        user.setLastName(getJsonProperty(profile, "last_name"));
+        if (email != null)
+            user.setEmail(email);
+        user.setIdpConfig(getConfig());
+        user.setIdp(this);
+
+        AbstractJsonUserAttributeMapper.storeUserProfileForMapper(user, profile, getConfig().getAlias());
+
+        return user;
     }
 
     @Override

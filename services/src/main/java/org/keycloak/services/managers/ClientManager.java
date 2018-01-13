@@ -39,6 +39,7 @@ import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.adapters.config.BaseRealmConfig;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.sessions.AuthenticationSessionProvider;
 
 import java.net.URI;
 import java.util.Collections;
@@ -102,6 +103,11 @@ public class ClientManager {
             UserSessionPersisterProvider sessionsPersister = realmManager.getSession().getProvider(UserSessionPersisterProvider.class);
             if (sessionsPersister != null) {
                 sessionsPersister.onClientRemoved(realm, client);
+            }
+
+            AuthenticationSessionProvider authSessions = realmManager.getSession().authenticationSessions();
+            if (authSessions != null) {
+                authSessions.onClientRemoved(realm, client);
             }
 
             UserModel serviceAccountUser = realmManager.getSession().users().getServiceAccount(client);

@@ -4,7 +4,7 @@
         <li><a href="#/realms/{{realm.realm}}/clients">{{:: 'clients' | translate}}</a></li>
         <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
         <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server">{{:: 'authz-authorization' | translate}}</a></li>
-        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/scope">{{:: 'authz-scope' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/scope">{{:: 'authz-scopes' | translate}}</a></li>
         <li data-ng-show="create">{{:: 'authz-add-scope' | translate}}</li>
         <li data-ng-hide="create">{{originalScope.name}}</li>
     </ol>
@@ -25,7 +25,7 @@
             <div class="form-group">
                 <label class="col-md-2 control-label" for="name">{{:: 'authz-icon-uri' | translate}} </label>
                 <div class="col-sm-6">
-                    <input class="form-control" type="text" id="name" name="name" data-ng-model="scope.iconUri" autofocus>
+                    <input class="form-control" type="text" id="iconUri" name="name" data-ng-model="scope.iconUri" autofocus>
                 </div>
                 <kc-tooltip>{{:: 'authz-icon-uri.tooltip' | translate}}</kc-tooltip>
             </div>

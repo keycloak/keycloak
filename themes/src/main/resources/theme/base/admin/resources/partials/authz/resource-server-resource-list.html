@@ -1,5 +1,12 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
 
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/clients">{{:: 'clients' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server">{{:: 'authz-authorization' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/resource">{{:: 'authz-resources' | translate}}</a></li>
+    </ol>
+
     <kc-tabs-resource-server></kc-tabs-resource-server>
 
     <table class="table table-striped table-bordered">
@@ -57,7 +64,7 @@
                 <th>{{:: 'type' | translate}}</th>
                 <th>{{:: 'authz-uri' | translate}}</th>
                 <th>{{:: 'authz-owner' | translate}}</th>
-                <th colspan="2">{{:: 'actions' | translate}}</th>
+                <th colspan="3">{{:: 'actions' | translate}}</th>
             </tr>
         </thead>
         <tfoot data-ng-show="resources && (resources.length >= query.max || query.first > 0)">
@@ -92,9 +99,12 @@
                 <td class="kc-action-cell" ng-click="createPolicy(resource);">
                     {{:: 'authz-create-permission' | translate}}
                 </td>
+                <td class="kc-action-cell" ng-click="delete(resource);">
+                    {{:: 'delete' | translate}}
+                </td>
             </tr>
             <tr ng-if="resource.details && resource.details.loaded" ng-repeat-end="">
-                <td colspan="6">
+                <td colspan="7">
                     <div id="details">
                         <table class="table kc-authz-table-expanded table-striped">
                             <thead>

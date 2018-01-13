@@ -28,20 +28,30 @@ import org.openqa.selenium.support.ui.Select;
 /**
  *
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
+ * @author <a href="mailto:pzaoral@redhat.com">Peter Zaoral</a>
  */
 public class CreateExecutionForm extends Form {
     public enum ProviderOption {
-        DIRECT_GRANT_VALIDATE_USERNAME("direct-grant-validate-username"),
-        RESET_OTP("reset-otp"),
-        AUTH_COOKIE("auth-cookie"),
-        RESET_CREDENTIALS_CHOOSE_USER("reset-credentials-choose-user"),
-        DIRECT_GRANT_VALIDATE_PASSWORD("direct-grant-validate-password"),
-        AUTH_USERNAME_PASSWORD_FORM("auth-username-password-form"),
-        AUTH_OTP_FORM("auth-otp-form"),
-        AUTH_SPNEGO("auth-spnego"),
-        DIRECT_GRANT_VALIDATE_OPT("direct-grant-validate-otp"),
-        RESET_CREDENTIALS_EMAIL("reset-credential-email"),
-        RESET_PASSWORD("reset-password");
+        IDENTITY_PROVIDER_REDIRECTOR("Identity Provider Redirector"),
+        USERNAME_VALIDATION("Username Validation"),
+        RESET_OTP("Reset OTP"),
+        COOKIE("Cookie"),
+        CHOOSE_USER("Choose User"),
+        PASSWORD("Password"),
+        REVIEW_PROFILE("Review Profile"),
+        CONFIRM_LINK_EXISTING_ACCOUNT("Confirm Link Existing Account"),
+        CONDITIONAL_OTP("Conditional OTP"),
+        USERNAME_PASSWORD("Username Password"),
+        KERBEROS("Kerberos"),
+        SEND_RESET_EMAIL("Send Reset Email"),
+        RESET_PASSWORD("Reset Password"),
+        HTTP_BASIC_AUTHETICATION("HTTP Basic Authentication"),
+        OTP_FORM("OTP Form"),
+        USERNAME_PASSWORD_FORM_FOR_IDENTITY_PROVIDER_REAUTH("Username Password For Identity Provider Reauthentication"),
+        VERIFY_EXISTING_ACCOUNT_BY_EMAIL("Verify Existing Account By Email"),
+        SCRIPT("Script"),
+        OTP("OTP"),
+        CREATE_USER_IF_UNIQUE("Create User If Unique");
         
         private final String name;
 

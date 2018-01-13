@@ -38,6 +38,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -163,8 +164,13 @@ public interface RealmResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response partialImport(PartialImportRepresentation rep);
+    Response partialImport(PartialImportRepresentation rep);
 
+    @Path("partial-export")
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    RealmRepresentation partialExport(@QueryParam("exportGroupsAndRoles") Boolean exportGroupsAndRoles,
+                                             @QueryParam("exportClients") Boolean exportClients);
     @Path("authentication")
     @Consumes(MediaType.APPLICATION_JSON)
     AuthenticationManagementResource flows();
@@ -178,6 +184,12 @@ public interface RealmResource {
     Response testLDAPConnection(@QueryParam("action") String action, @QueryParam("connectionUrl") String connectionUrl,
                                 @QueryParam("bindDn") String bindDn, @QueryParam("bindCredential") String bindCredential,
                                 @QueryParam("useTruststoreSpi") String useTruststoreSpi, @QueryParam("connectionTimeout") String connectionTimeout);
+
+    @Path("testSMTPConnection/{config}")
+    @POST
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    Response testSMTPConnection(final @PathParam("config") String config) throws Exception;
 
     @Path("clear-realm-cache")
     @POST

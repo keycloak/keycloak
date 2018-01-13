@@ -34,7 +34,6 @@
         <module name="org.keycloak.keycloak-server-spi" services="import"/>
         <module name="org.keycloak.keycloak-server-spi-private" services="import"/>
         <module name="org.keycloak.keycloak-model-jpa" services="import"/>
-        <module name="org.keycloak.keycloak-model-mongo" services="import"/>
         <module name="org.keycloak.keycloak-model-infinispan" services="import"/>
         <module name="org.keycloak.keycloak-saml-core-public" services="import"/>
         <module name="org.keycloak.keycloak-saml-core" services="import"/>
@@ -50,7 +49,6 @@
         <module name="javax.mail.api"/>
         <module name="javax.xml.soap.api"/>
         <module name="org.jboss.resteasy.resteasy-jaxrs"/>
-        <module name="org.jboss.resteasy.resteasy-crypto"/>
         <module name="org.jboss.resteasy.resteasy-multipart-provider"/>
         <module name="org.jboss.dmr"/>
         <module name="javax.servlet.api"/>
@@ -64,8 +62,10 @@
         <module name="org.bouncycastle" />
         <module name="javax.api"/>
         <module name="javax.activation.api"/>
+        <module name="javax.json.api"/>
         <module name="org.apache.httpcomponents"/>
         <module name="org.twitter4j"/>
         <module name="javax.transaction.api"/>
+        <module name="sun.jdk"/>
     </dependencies>
 </module>

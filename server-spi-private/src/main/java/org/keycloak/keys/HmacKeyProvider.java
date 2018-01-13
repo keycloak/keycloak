@@ -19,34 +19,17 @@ package org.keycloak.keys;
 
 import org.keycloak.jose.jws.AlgorithmType;
 
-import javax.crypto.SecretKey;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.cert.X509Certificate;
-import java.util.List;
-
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public interface HmacKeyProvider extends KeyProvider<HmacKeyMetadata> {
+public interface HmacKeyProvider extends SecretKeyProvider {
 
     default AlgorithmType getType() {
         return AlgorithmType.HMAC;
     }
 
-    /**
-     * Return the active secret key, or <code>null</code> if no active key is available.
-     *
-     * @return
-     */
-    SecretKey getSecretKey();
-
-    /**
-     * Return the secret key for the specified kid, or <code>null</code> if the kid is unknown.
-     *
-     * @param kid
-     * @return
-     */
-    SecretKey getSecretKey(String kid);
+    default String getJavaAlgorithmName() {
+        return "HmacSHA256";
+    }
 
 }

@@ -29,11 +29,12 @@
         <module name="com.fasterxml.jackson.core.jackson-core"/>
         <module name="com.fasterxml.jackson.core.jackson-databind"/>
         <module name="com.fasterxml.jackson.jaxrs.jackson-jaxrs-json-provider"/>
-        <module name="org.apache.httpcomponents" />
+        <module name="org.apache.httpcomponents"/>
         <module name="org.jboss.logging"/>
         <module name="org.keycloak.keycloak-adapter-spi"/>
         <module name="org.keycloak.keycloak-common"/>
         <module name="org.keycloak.keycloak-core"/>
+        <module name="org.keycloak.keycloak-authz-client"/>
     </dependencies>
 
 </module>

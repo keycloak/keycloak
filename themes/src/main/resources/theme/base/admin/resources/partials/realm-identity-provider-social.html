@@ -8,9 +8,6 @@
     <kc-tabs-identity-provider></kc-tabs-identity-provider>
 
     <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageIdentityProviders">
-        <input type="text" readonly value="this is not a login form" style="display: none;">
-        <input type="password" readonly value="this is not a login form" style="display: none;">
-
         <fieldset>
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="redirectUri">{{:: 'redirect-uri' | translate}}</label>
@@ -31,7 +28,7 @@
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="clientSecret"><span class="required">*</span> {{:: 'client-secret' | translate}}</label>
                 <div class="col-md-6">
-                    <input class="form-control" id="clientSecret" type="password" ng-model="identityProvider.config.clientSecret" required>
+                    <input class="form-control" id="clientSecret" kc-password ng-model="identityProvider.config.clientSecret" required>
                 </div>
                 <kc-tooltip>{{:: 'social.client-secret.tooltip' | translate}}</kc-tooltip>
             </div>
@@ -77,6 +74,20 @@
                     <input ng-model="identityProvider.trustEmail" name="identityProvider.trustEmail" id="trustEmail" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
                 <kc-tooltip>{{:: 'trust-email.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="linkOnly">{{:: 'link-only' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="identityProvider.linkOnly" name="identityProvider.trustEmail" id="linkOnly" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'link-only.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="hideOnLoginPage">{{:: 'hide-on-login-page' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="identityProvider.config.hideOnLoginPage" name="identityProvider.config.hideOnLoginPage" id="hideOnLoginPage" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'hide-on-login-page.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
                 <label class="col-md-2 control-label" for="guiOrder">{{:: 'gui-order' | translate}}</label>

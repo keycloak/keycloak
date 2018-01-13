@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-distribution-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>2.5.1.Final-SNAPSHOT</version>
+        <version>4.0.0.CR1-SNAPSHOT</version>
     </parent>
 
     <artifactId>keycloak-server-overlay</artifactId>
@@ -32,14 +32,18 @@
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-server-dist</artifactId>
+            <artifactId>keycloak-server-feature-pack</artifactId>
+            <type>zip</type>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-client-cli-dist</artifactId>
             <type>zip</type>
         </dependency>
     </dependencies>
 
     <build>
         <finalName>keycloak-overlay-${project.version}</finalName>
-        <resources></resources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -64,21 +68,22 @@
                             </artifactItems>
                         </configuration>
                     </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.wildfly.build</groupId>
+                <artifactId>wildfly-server-provisioning-maven-plugin</artifactId>
+                <version>${build-tools.version}</version>
+                <executions>
                     <execution>
-                        <id>unpack-server-dist</id>
-                        <phase>prepare-package</phase>
+                        <id>server-provisioning</id>
                         <goals>
-                            <goal>unpack</goal>
+                            <goal>build</goal>
                         </goals>
+                        <phase>compile</phase>
                         <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-server-dist</artifactId>
-                                    <type>zip</type>
-                                    <outputDirectory>${project.build.directory}/unpacked</outputDirectory>
-                                </artifactItem>
-                            </artifactItems>
+                            <config-file>../${keycloak.provisioning.xml}</config-file>
+                            <overlay>true</overlay>
                         </configuration>
                     </execution>
                 </executions>
@@ -101,30 +106,6 @@
                                     <filtering>true</filtering>
                                 </resource>
                             </resources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>assemble</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                        <configuration>
-                            <descriptors>
-                                <descriptor>assembly.xml</descriptor>
-                            </descriptors>
-                            <recompressZippedFiles>true</recompressZippedFiles>
-                            <finalName>${project.build.finalName}</finalName>
-                            <appendAssemblyId>false</appendAssemblyId>
-                            <outputDirectory>${project.build.directory}</outputDirectory>
-                            <workDirectory>${project.build.directory}/assembly/work</workDirectory>
-                            <tarLongFileMode>gnu</tarLongFileMode>
                         </configuration>
                     </execution>
                 </executions>
@@ -166,7 +147,68 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>assemble</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>${assemblyFile}</descriptor>
+                            </descriptors>
+                            <recompressZippedFiles>true</recompressZippedFiles>
+                            <finalName>${project.build.finalName}</finalName>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <outputDirectory>${project.build.directory}</outputDirectory>
+                            <workDirectory>${project.build.directory}/assembly/work</workDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!product</name>
+                </property>
+            </activation>
+            <properties>
+                <build-tools.version>${wildfly.build-tools.version}</build-tools.version>
+                <assemblyFile>assembly.xml</assemblyFile>
+                <readmeInclude>README.txt</readmeInclude>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>product</id>
+            <activation>
+                <property>
+                    <name>product</name>
+                </property>
+            </activation>
+            <properties>
+                <build-tools.version>${eap.build-tools.version}</build-tools.version>
+                <assemblyFile>assembly.xml</assemblyFile>
+                <profileExcludes>%regex[(docs/contrib.*)|(docs/examples.*)|(docs/schema.*)]</profileExcludes>
+                <readmeInclude></readmeInclude>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.wildfly</groupId>
+                    <artifactId>wildfly-dist</artifactId>
+                    <type>zip</type>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 
 </project>

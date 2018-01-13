@@ -17,13 +17,20 @@
 
 package org.keycloak.testsuite.client;
 
+import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
+import org.keycloak.testsuite.runonserver.RunOnServerTest;
 
 import javax.ws.rs.NotFoundException;
 import java.util.Collections;
@@ -38,19 +45,35 @@ import static org.junit.Assert.fail;
  */
 public class ClientRegistrationTest extends AbstractClientRegistrationTest {
 
+    @Deployment
+    public static WebArchive deploy() {
+        return RunOnServerDeployment.create(ClientRegistrationTest.class);
+    }
+
     private static final String CLIENT_ID = "test-client";
     private static final String CLIENT_SECRET = "test-client-secret";
 
-    private ClientRepresentation registerClient() throws ClientRegistrationException {
-        ClientRepresentation client = new ClientRepresentation();
+    private ClientRepresentation buildClient() {
+    	ClientRepresentation client = new ClientRepresentation();
         client.setClientId(CLIENT_ID);
         client.setSecret(CLIENT_SECRET);
-
+        
+        return client;
+    }
+    
+    private ClientRepresentation registerClient() throws ClientRegistrationException {
+    	return registerClient(buildClient());
+    }
+    
+    private ClientRepresentation registerClient(ClientRepresentation client) throws ClientRegistrationException {
         ClientRepresentation createdClient = reg.create(client);
         assertEquals(CLIENT_ID, createdClient.getClientId());
 
         client = adminClient.realm(REALM_NAME).clients().get(createdClient.getId()).toRepresentation();
         assertEquals(CLIENT_ID, client.getClientId());
+
+        // Remove this client after test
+        getCleanup().addClientUuid(createdClient.getId());
 
         return client;
     }
@@ -59,6 +82,28 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     public void registerClientAsAdmin() throws ClientRegistrationException {
         authManageClients();
         registerClient();
+    }
+
+    // KEYCLOAK-5907
+    @Test
+    public void withServiceAccount() throws ClientRegistrationException {
+        authManageClients();
+        ClientRepresentation clientRep = buildClient();
+        clientRep.setServiceAccountsEnabled(true);
+
+        ClientRepresentation rep = registerClient(clientRep);
+
+        UserRepresentation serviceAccountUser = adminClient.realm("test").clients().get(rep.getId()).getServiceAccountUser();
+
+        assertNotNull(serviceAccountUser);
+
+        deleteClient(rep);
+
+        try {
+            adminClient.realm("test").users().get(serviceAccountUser.getId()).toRepresentation();
+            fail("Expected NotFoundException");
+        } catch (NotFoundException e) {
+        }
     }
 
     @Test
@@ -79,6 +124,14 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
+    public void registerClientWithoutProtocol() throws ClientRegistrationException {
+        authCreateClients();
+        ClientRepresentation clientRepresentation = registerClient();
+
+        assertEquals("openid-connect", clientRepresentation.getProtocol());
+    }
+
+    @Test
     public void registerClientAsAdminWithCreateOnly() throws ClientRegistrationException {
         authCreateClients();
         registerClient();
@@ -95,6 +148,17 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
         }
     }
 
+    @Test
+    public void registerClientWithNonAsciiChars() throws ClientRegistrationException {
+    	authCreateClients();
+    	ClientRepresentation client = buildClient();
+    	String name = "Cli\u00EBnt";
+		client.setName(name);
+    	
+    	ClientRepresentation createdClient = registerClient(client);
+    	assertEquals(name, createdClient.getName());
+    }
+    
     @Test
     public void getClientAsAdmin() throws ClientRegistrationException {
         registerClientAsAdmin();
@@ -165,6 +229,23 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
+    public void updateClientSecret() throws ClientRegistrationException {
+        authManageClients();
+
+        registerClient();
+
+        ClientRepresentation client = reg.get(CLIENT_ID);
+        assertNotNull(client.getSecret());
+        client.setSecret("mysecret");
+
+        reg.update(client);
+
+        ClientRepresentation updatedClient = reg.get(CLIENT_ID);
+
+        assertEquals("mysecret", updatedClient.getSecret());
+    }
+
+    @Test
     public void updateClientAsAdminWithCreateOnly() throws ClientRegistrationException {
         authCreateClients();
         try {
@@ -199,6 +280,20 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
         } catch (ClientRegistrationException e) {
             assertEquals(404, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
         }
+    }
+
+    @Test
+    public void updateClientWithNonAsciiChars() throws ClientRegistrationException {
+    	authCreateClients();
+    	registerClient();
+    	
+    	authManageClients();
+    	ClientRepresentation client = reg.get(CLIENT_ID);
+    	String name = "Cli\u00EBnt";
+		client.setName(name);
+    	
+    	ClientRepresentation updatedClient = reg.update(client);
+    	assertEquals(name, updatedClient.getName());
     }
 
     private void deleteClient(ClientRepresentation client) throws ClientRegistrationException {

@@ -73,4 +73,8 @@ public class KerberosRule extends LDAPRule {
     public boolean isCaseSensitiveLogin() {
         return ldapTestConfiguration.isCaseSensitiveLogin();
     }
+
+    public boolean isStartEmbeddedLdapServer() {
+        return ldapTestConfiguration.isStartEmbeddedLdapServer();
+    }
 }

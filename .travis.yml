@@ -1,34 +1,28 @@
 language: java
+dist: precise
 
 cache:
-  directories:
-    - $HOME/.m2
-
-before_cache:
-  - rm -rf $HOME/.m2/repository/org/keycloak
+  cache: false
 
 env:
   global:
     - MAVEN_SKIP_RC=true
-    - MAVEN_OPTS="-Xms512m -Xmx2048m"
+    - MAVEN_OPTS="-Xms512m -Xmx1536m"
   matrix:
-    - TESTS=group1
-    - TESTS=group2
-    - TESTS=group3
-    - TESTS=group4
-    - TESTS=adapter
+    - TESTS=unit
+    - TESTS=server-group1
+    - TESTS=server-group2
+    - TESTS=server-group3
+    - TESTS=server-group4
     - TESTS=old
+    - TESTS=crossdc
 
 jdk:
   - oraclejdk8
 
-before_script:
-  - export MAVEN_SKIP_RC=true
+install: true
 
-install: 
-  - travis_wait 60 mvn install -Pdistribution -DskipTests=true -B -V -q
-
-script:
+script: 
   - ./travis-run-tests.sh $TESTS
 
 sudo: false

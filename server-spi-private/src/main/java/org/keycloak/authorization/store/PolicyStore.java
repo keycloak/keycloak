@@ -18,11 +18,12 @@
 package org.keycloak.authorization.store;
 
 
-import org.keycloak.authorization.model.Policy;
-import org.keycloak.authorization.model.ResourceServer;
-
 import java.util.List;
 import java.util.Map;
+
+import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 
 /**
  * A {@link PolicyStore} is responsible to manage the persistence of {@link Policy} instances.
@@ -35,12 +36,11 @@ public interface PolicyStore {
      * Creates a new {@link Policy} instance. The new instance is not necessarily persisted though, which may require
      * a call to the {#save} method to actually make it persistent.
      *
-     * @param name           the name of the policy
-     * @param type           the type of the policy
+     * @param representation the policy representation
      * @param resourceServer the resource server to which this policy belongs
      * @return a new instance of {@link Policy}
      */
-    Policy create(String name, String type, ResourceServer resourceServer);
+    Policy create(AbstractPolicyRepresentation representation, ResourceServer resourceServer);
 
     /**
      * Deletes a policy from the underlying persistence mechanism.
@@ -128,13 +128,4 @@ public interface PolicyStore {
      * @return a list of policies that depends on the a policy with the given identifier
      */
     List<Policy> findDependentPolicies(String id, String resourceServerId);
-
-    /**
-     * Notify this store about changes to data associated with policies. E.g.: resources and scopes..
-     *
-     * TODO: need a better strategy to handle cross-references between stores, specially in cases where the store is caching data. Use some event-based solution here.
-     *
-     * @param cached
-     */
-    default void notifyChange(Object cached) {}
 }

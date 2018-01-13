@@ -24,12 +24,15 @@ import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.constants.AdapterConstants;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.LoginProtocolFactory;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.adapters.action.LogoutAction;
@@ -107,13 +110,15 @@ public class ResourceAdminManager {
     }
 
     public void logoutUser(URI requestUri, RealmModel realm, UserModel user, KeycloakSession keycloakSession) {
+        keycloakSession.users().setNotBeforeForUser(realm, user, Time.currentTime());
+
         List<UserSessionModel> userSessions = keycloakSession.sessions().getUserSessions(realm, user);
         logoutUserSessions(requestUri, realm, userSessions);
     }
 
     protected void logoutUserSessions(URI requestUri, RealmModel realm, List<UserSessionModel> userSessions) {
         // Map from "app" to clientSessions for this app
-        MultivaluedHashMap<ClientModel, ClientSessionModel> clientSessions = new MultivaluedHashMap<ClientModel, ClientSessionModel>();
+        MultivaluedHashMap<String, AuthenticatedClientSessionModel> clientSessions = new MultivaluedHashMap<>();
         for (UserSessionModel userSession : userSessions) {
             putClientSessions(clientSessions, userSession);
         }
@@ -121,37 +126,26 @@ public class ResourceAdminManager {
         logger.debugv("logging out {0} resources ", clientSessions.size());
         //logger.infov("logging out resources: {0}", clientSessions);
 
-        for (Map.Entry<ClientModel, List<ClientSessionModel>> entry : clientSessions.entrySet()) {
-            logoutClientSessions(requestUri, realm, entry.getKey(), entry.getValue());
-        }
-    }
-
-    private void putClientSessions(MultivaluedHashMap<ClientModel, ClientSessionModel> clientSessions, UserSessionModel userSession) {
-        for (ClientSessionModel clientSession : userSession.getClientSessions()) {
-            ClientModel client = clientSession.getClient();
-            clientSessions.add(client, clientSession);
-        }
-    }
-
-    public void logoutUserFromClient(URI requestUri, RealmModel realm, ClientModel resource, UserModel user) {
-        List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
-        List<ClientSessionModel> ourAppClientSessions = null;
-        if (userSessions != null) {
-            MultivaluedHashMap<ClientModel, ClientSessionModel> clientSessions = new MultivaluedHashMap<ClientModel, ClientSessionModel>();
-            for (UserSessionModel userSession : userSessions) {
-                putClientSessions(clientSessions, userSession);
+        for (Map.Entry<String, List<AuthenticatedClientSessionModel>> entry : clientSessions.entrySet()) {
+            if (entry.getValue().size() == 0) {
+                continue;
             }
-            ourAppClientSessions = clientSessions.get(resource);
+            logoutClientSessions(requestUri, realm, entry.getValue().get(0).getClient(), entry.getValue());
         }
-
-        logoutClientSessions(requestUri, realm, resource, ourAppClientSessions);
     }
 
-    public boolean logoutClientSession(URI requestUri, RealmModel realm, ClientModel resource, ClientSessionModel clientSession) {
+    private void putClientSessions(MultivaluedHashMap<String, AuthenticatedClientSessionModel> clientSessions, UserSessionModel userSession) {
+        for (Map.Entry<String, AuthenticatedClientSessionModel> entry : userSession.getAuthenticatedClientSessions().entrySet()) {
+            clientSessions.add(entry.getKey(), entry.getValue());
+        }
+    }
+
+
+    public boolean logoutClientSession(URI requestUri, RealmModel realm, ClientModel resource, AuthenticatedClientSessionModel clientSession) {
         return logoutClientSessions(requestUri, realm, resource, Arrays.asList(clientSession));
     }
 
-    protected boolean logoutClientSessions(URI requestUri, RealmModel realm, ClientModel resource, List<ClientSessionModel> clientSessions) {
+    protected boolean logoutClientSessions(URI requestUri, RealmModel realm, ClientModel resource, List<AuthenticatedClientSessionModel> clientSessions) {
         String managementUrl = getManagementUrl(requestUri, resource);
         if (managementUrl != null) {
 
@@ -160,7 +154,7 @@ public class ResourceAdminManager {
             List<String> userSessions = new LinkedList<>();
             if (clientSessions != null && clientSessions.size() > 0) {
                 adapterSessionIds = new MultivaluedHashMap<String, String>();
-                for (ClientSessionModel clientSession : clientSessions) {
+                for (AuthenticatedClientSessionModel clientSession : clientSessions) {
                     String adapterSessionId = clientSession.getNote(AdapterConstants.CLIENT_SESSION_STATE);
                     if (adapterSessionId != null) {
                         String host = clientSession.getNote(AdapterConstants.CLIENT_SESSION_HOST);
@@ -295,19 +289,14 @@ public class ResourceAdminManager {
     }
 
     protected boolean sendPushRevocationPolicyRequest(RealmModel realm, ClientModel resource, int notBefore, String managementUrl) {
-        PushNotBeforeAction adminAction = new PushNotBeforeAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getClientId(), notBefore);
-        String token = new TokenManager().encodeToken(session, realm, adminAction);
-        logger.debugv("pushRevocation resource: {0} url: {1}", resource.getClientId(), managementUrl);
-        URI target = UriBuilder.fromUri(managementUrl).path(AdapterConstants.K_PUSH_NOT_BEFORE).build();
-        try {
-            int status = session.getProvider(HttpClientProvider.class).postText(target.toString(), token);
-            boolean success = status == 204 || status == 200;
-            logger.debugf("pushRevocation success for %s: %s", managementUrl, success);
-            return success;
-        } catch (IOException e) {
-            ServicesLogger.LOGGER.failedToSendRevocation(e);
-            return false;
+        String protocol = resource.getProtocol();
+        if (protocol == null) {
+            protocol = OIDCLoginProtocol.LOGIN_PROTOCOL;
         }
+        LoginProtocol loginProtocol = (LoginProtocol) session.getProvider(LoginProtocol.class, protocol);
+        return loginProtocol == null
+          ? false
+          : loginProtocol.sendPushRevocationPolicyRequest(realm, resource, notBefore, managementUrl);
     }
 
     public GlobalRequestResult testNodesAvailability(URI requestUri, RealmModel realm, ClientModel client) {

@@ -18,21 +18,23 @@
 
 package org.keycloak.authorization.jpa.store;
 
+import javax.persistence.EntityManager;
+
 import org.keycloak.Config;
+import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.store.AuthorizationStoreFactory;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
-
-import javax.persistence.EntityManager;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class JPAAuthorizationStoreFactory implements AuthorizationStoreFactory {
     @Override
-    public StoreFactory  create(KeycloakSession session) {
-        return new JPAStoreFactory(getEntityManager(session));
+    public StoreFactory create(KeycloakSession session) {
+        AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
+        return new JPAStoreFactory(getEntityManager(session), provider);
     }
 
     @Override

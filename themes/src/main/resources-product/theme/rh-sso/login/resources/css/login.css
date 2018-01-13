@@ -1,0 +1,340 @@
+.alert-error {
+    background-color: #ffffff;
+    border-color: #cc0000;
+    color: #333333;
+}
+
+#kc-locale ul {
+    display: none;
+    position: absolute;
+    background-color: #fff;
+    list-style: none;
+    right: 20px;
+    top: 30px;
+    width: 200px;
+    padding: 2px;
+}
+
+#kc-locale:hover ul {
+    display: block;
+    margin: 0;
+}
+
+#kc-locale ul li a {
+    display: block;
+    padding: 1px 11px;
+    color: #000 !important;
+    border: 1px solid #fff;
+    text-decoration: none;
+    line-height: 20px;
+}
+
+#kc-locale ul li a:hover {
+    color: #4d5258;
+    background-color: #d4edfa;
+    border-color: #b3d3e7;
+}
+
+#kc-locale-dropdown a {
+    color: #fff;
+}
+
+#kc-locale-dropdown a:hover {
+    text-decoration: none;
+}
+
+a#kc-current-locale-link {
+    display: block;
+    padding: 5px;
+}
+
+a#kc-current-locale-link:hover {
+    background-color: rgba(0,0,0,0.2);
+}
+
+a#kc-current-locale-link::after {
+    content: "\2c5";
+    margin-left: 4px;
+}
+
+.login-pf .container {
+    padding-top: 40px;
+}
+
+.login-pf a:hover {
+    color: #0099d3;
+}
+
+#kc-logo {
+    width: 100%;
+}
+
+#kc-logo-wrapper {
+    background-image: url("../lib/rcue/img/logo.svg");
+    background-repeat: no-repeat;
+
+    height: 57px;
+    width: 137px;
+}
+
+div.kc-logo-text {
+    background-image: url("../img/keycloak-logo-text.png");
+    background-repeat: no-repeat;
+    width: 250px;
+    height: 38px;
+}
+
+div.kc-logo-text span {
+    display: none;
+}
+
+#kc-header {
+    color: #fff;
+    overflow: visible;
+    padding-left: 80px;
+    white-space: nowrap;
+}
+
+#kc-header-wrapper {
+    font-size: 26px;
+    text-transform: uppercase;
+    line-height: 1.2em;
+    margin-bottom: 15px;
+}
+
+#kc-content {
+    position: relative;
+}
+
+#kc-content-wrapper {
+    overflow-y: hidden;
+}
+
+#kc-info {
+    padding-bottom: 200px;
+    margin-bottom: -200px;
+}
+
+#kc-info-wrapper {
+    font-size: 13px;
+}
+
+#kc-form-options span {
+    display: block;
+}
+
+#kc-terms-text {
+    margin-bottom: 20px;
+}
+
+#kc-registration {
+    margin-bottom: 15px;
+}
+
+/* TOTP */
+
+ol#kc-totp-settings {
+    margin: 0;
+    padding: 0;
+}
+
+ol#kc-totp-settings li {
+    margin-top: 1em;
+}
+
+ol#kc-totp-settings li:first-of-type {
+    margin-top: 0;
+}
+
+#kc-totp-secret-qr-code {
+    max-width:150px;
+    max-height:150px;
+}
+
+#kc-totp-secret-key {
+    background-color: #fff;
+    color: #333333;
+    font-size: 16px;
+    padding: 10px;
+}
+
+/* OAuth */
+
+#kc-oauth h3 {
+    margin-top: 0;
+}
+
+#kc-oauth ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#kc-oauth ul li {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 12px;
+    padding: 10px 30px;
+}
+
+#kc-oauth ul li:first-of-type {
+    border-top: 0;
+}
+
+#kc-oauth .kc-role {
+    display: inline-block;
+    width: 50%;
+}
+
+/* Code */
+#kc-code textarea {
+    width: 100%;
+    height: 8em;
+}
+
+/* Social */
+
+#kc-social-providers ul {
+    padding: 0;
+    margin: 0;
+}
+
+#kc-social-providers li {
+    display: block;
+    margin-top: 5px;
+}
+
+#kc-social-providers li:first-of-type {
+    margin-top: 0;
+}
+
+.zocial {
+    width: 150px;
+}
+
+.zocial:hover {
+    color: #fff !important;
+}
+
+.zocial.facebook,
+.zocial.github,
+.zocial.google,
+.zocial.microsoft,
+.zocial.stackoverflow,
+.zocial.linkedin,
+.zocial.twitter {
+    background-image: none;
+    border-radius: 2px;
+
+    font-family: "Open Sans", sans-serif;
+    font-weight: normal;
+
+    box-shadow: none;
+    text-shadow: none;
+}
+
+.zocial.google {
+    background-color: #dd4b39 !important;
+}
+
+.zocial.facebook:hover,
+.zocial.github:hover,
+.zocial.google:hover,
+.zocial.microsoft:hover,
+.zocial.stackoverflow:hover,
+.zocial.linkedin:hover,
+.zocial.twitter:hover {
+    background-image: linear-gradient(rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.2) 100%) !important;
+}
+
+/* Copy of zocial windows classes to be used for microsoft's social provider button */
+.zocial.microsoft {background-color: #0052a4; color: #fff;}
+.zocial.microsoft:before { content: "\f15d"; }
+
+@media (min-width: 768px) {
+    #kc-container-wrapper {
+        position: absolute;
+        width: 100%;
+    }
+
+    #kc-logo-wrapper {
+        position: absolute;
+        top: 50px;
+        right: 50px;
+    }
+
+    .login-pf .container {
+        padding-right: 80px;
+    }
+
+    #kc-locale {
+        position: relative;
+        width: 200px;
+        left: -230px;
+        text-align: right;
+        z-index: 9999;
+    }
+}
+
+@media (max-width: 767px) {
+    #kc-logo {
+        float: none;
+        margin: auto;
+    }
+
+    #kc-logo-wrapper {
+        background-position: center;
+        width: 100%;
+        margin: 20px 0;
+    }
+
+    #kc-header {
+        padding-left: 15px;
+        padding-right: 15px;
+        float: none;
+        text-align: center;
+    }
+
+    #kc-form {
+        float: none;
+    }
+
+    #kc-info-wrapper {
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        margin-top: 15px;
+        padding-top: 15px;
+        padding-left: 0px;
+        padding-right: 15px;
+    }
+
+    #kc-social-providers li {
+        display: inline-block;
+        margin-right: 5px;
+    }
+
+    .login-pf .container {
+        padding-top: 15px;
+        padding-bottom: 15px;
+    }
+
+    #kc-locale {
+        position: absolute;
+        width: 200px;
+        top: 10px;
+        right: 0px;
+        text-align: right;
+        z-index: 9999;
+    }
+}
+
+@media (min-height: 646px) {
+    #kc-container-wrapper {
+        bottom: 12%;
+    }
+}
+
+@media (max-height: 645px) {
+    #kc-container-wrapper {
+        padding-top: 50px;
+        top: 20%;
+    }
+}

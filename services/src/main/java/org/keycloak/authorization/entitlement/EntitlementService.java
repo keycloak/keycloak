@@ -17,10 +17,37 @@
  */
 package org.keycloak.authorization.entitlement;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.OPTIONS;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.authorization.representation.AuthorizationRequestMetadata;
 import org.keycloak.authorization.common.KeycloakEvaluationContext;
 import org.keycloak.authorization.common.KeycloakIdentity;
 import org.keycloak.authorization.entitlement.representation.EntitlementRequest;
@@ -29,8 +56,8 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
-import org.keycloak.authorization.policy.evaluation.DecisionResultCollector;
 import org.keycloak.authorization.policy.evaluation.Result;
+import org.keycloak.authorization.protection.permission.representation.PermissionRequest;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
@@ -46,38 +73,15 @@ import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
-import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.Cors;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.OPTIONS;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.container.Suspended;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class EntitlementService {
 
+    protected static final Logger logger = Logger.getLogger(EntitlementService.class);
     private final AuthorizationProvider authorization;
 
     @Context
@@ -100,7 +104,7 @@ public class EntitlementService {
     @GET()
     @Produces("application/json")
     @Consumes("application/json")
-    public void getAll(@PathParam("resource_server_id") String resourceServerId, @Suspended AsyncResponse asyncResponse) {
+    public Response getAll(@PathParam("resource_server_id") String resourceServerId) {
         KeycloakIdentity identity = new KeycloakIdentity(this.authorization.getKeycloakSession());
 
         if (resourceServerId == null) {
@@ -115,40 +119,20 @@ public class EntitlementService {
         }
 
         StoreFactory storeFactory = authorization.getStoreFactory();
-        ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(client.getId());
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(client.getId());
 
-        authorization.evaluators().from(Permissions.all(resourceServer, identity, authorization), new KeycloakEvaluationContext(this.authorization.getKeycloakSession())).evaluate(new DecisionResultCollector() {
+        if (resourceServer == null) {
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client does not support permissions", Status.FORBIDDEN);
+        }
 
-            @Override
-            public void onError(Throwable cause) {
-                asyncResponse.resume(cause);
-            }
-
-            @Override
-            protected void onComplete(List<Result> results) {
-                List<Permission> entitlements = Permissions.allPermits(results, authorization, resourceServer);
-
-                if (entitlements.isEmpty()) {
-                    HashMap<Object, Object> error = new HashMap<>();
-
-                    error.put(OAuth2Constants.ERROR, "not_authorized");
-
-                    asyncResponse.resume(Cors.add(request, Response.status(Status.FORBIDDEN)
-                            .entity(error))
-                            .allowedOrigins(identity.getAccessToken())
-                            .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build());
-                } else {
-                    asyncResponse.resume(Cors.add(request, Response.ok().entity(new EntitlementResponse(createRequestingPartyToken(entitlements)))).allowedOrigins(identity.getAccessToken()).allowedMethods("GET").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build());
-                }
-            }
-        });
+        return evaluate(null, Permissions.all(resourceServer, identity, authorization), identity, resourceServer);
     }
 
     @Path("{resource_server_id}")
     @POST
     @Consumes("application/json")
     @Produces("application/json")
-    public void get(@PathParam("resource_server_id") String resourceServerId, EntitlementRequest entitlementRequest, @Suspended AsyncResponse asyncResponse) {
+    public Response get(@PathParam("resource_server_id") String resourceServerId, EntitlementRequest entitlementRequest) {
         KeycloakIdentity identity = new KeycloakIdentity(this.authorization.getKeycloakSession());
 
         if (entitlementRequest == null) {
@@ -168,81 +152,95 @@ public class EntitlementService {
         }
 
         StoreFactory storeFactory = authorization.getStoreFactory();
-        ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(client.getId());
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(client.getId());
 
-        try {
-            authorization.evaluators().from(createPermissions(entitlementRequest, resourceServer, authorization), new KeycloakEvaluationContext(this.authorization.getKeycloakSession())).evaluate(new DecisionResultCollector() {
-                @Override
-                public void onError(Throwable cause) {
-                    asyncResponse.resume(cause);
-                }
-
-                @Override
-                protected void onComplete(List<Result> results) {
-                    List<Permission> entitlements = Permissions.permits(results, authorization, resourceServer.getId());
-
-                    if (entitlements.isEmpty()) {
-                        HashMap<Object, Object> error = new HashMap<>();
-
-                        error.put(OAuth2Constants.ERROR, "not_authorized");
-
-                        asyncResponse.resume(Cors.add(request, Response.status(Status.FORBIDDEN)
-                                .entity(error))
-                                .allowedOrigins(identity.getAccessToken())
-                                .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build());
-                    } else {
-                        asyncResponse.resume(Cors.add(request, Response.ok().entity(new EntitlementResponse(createRequestingPartyToken(entitlements)))).allowedOrigins(identity.getAccessToken()).allowedMethods("GET").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build());
-                    }
-                }
-            });
-        } catch (Exception e) {
-            String message = e.getMessage();
-
-            if (message == null) {
-                message = "Could not process authorization request";
-            }
-
-            asyncResponse.resume(ErrorResponse.error(message, Status.BAD_REQUEST));
+        if (resourceServer == null) {
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client does not support permissions", Status.FORBIDDEN);
         }
+
+        return evaluate(entitlementRequest.getMetadata(), createPermissions(entitlementRequest, resourceServer, authorization), identity, resourceServer);
     }
 
-    private String createRequestingPartyToken(List<Permission> permissions) {
-        AccessToken accessToken = Tokens.getAccessToken(this.authorization.getKeycloakSession());
+    private Response evaluate(AuthorizationRequestMetadata metadata, List<ResourcePermission> permissions, KeycloakIdentity identity, ResourceServer resourceServer) {
+        try {
+            List<Result> result = authorization.evaluators().from(permissions, new KeycloakEvaluationContext(this.authorization.getKeycloakSession())).evaluate();
+            List<Permission> entitlements = Permissions.permits(result, metadata, authorization, resourceServer);
+
+            if (!entitlements.isEmpty()) {
+                return Cors.add(request, Response.ok().entity(new EntitlementResponse(createRequestingPartyToken(entitlements, identity.getAccessToken(), resourceServer)))).allowedOrigins(identity.getAccessToken()).allowedMethods("GET").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
+            }
+        } catch (Exception cause) {
+            logger.error("Failed to evaluate permissions", cause);
+            throw new ErrorResponseException(OAuthErrorException.SERVER_ERROR, "Error while evaluating permissions.", Status.INTERNAL_SERVER_ERROR);
+        }
+
+        HashMap<Object, Object> error = new HashMap<>();
+
+        error.put(OAuth2Constants.ERROR, "not_authorized");
+
+        return Cors.add(request, Response.status(Status.FORBIDDEN)
+                .entity(error))
+                .allowedOrigins(identity.getAccessToken())
+                .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
+    }
+
+    private String createRequestingPartyToken(List<Permission> permissions, AccessToken accessToken, ResourceServer resourceServer) {
         RealmModel realm = this.authorization.getKeycloakSession().getContext().getRealm();
         AccessToken.Authorization authorization = new AccessToken.Authorization();
 
         authorization.setPermissions(permissions);
         accessToken.setAuthorization(authorization);
 
+        ClientModel clientModel = realm.getClientById(resourceServer.getId());
+
+        if (!accessToken.hasAudience(clientModel.getClientId())) {
+            accessToken.audience(clientModel.getClientId());
+        }
+
         return new TokenManager().encodeToken(this.authorization.getKeycloakSession(), realm, accessToken);
     }
 
     private List<ResourcePermission> createPermissions(EntitlementRequest entitlementRequest, ResourceServer resourceServer, AuthorizationProvider authorization) {
         StoreFactory storeFactory = authorization.getStoreFactory();
-        Map<String, Set<String>> permissionsToEvaluate = new HashMap<>();
+        Map<String, Set<String>> permissionsToEvaluate = new LinkedHashMap<>();
+        AuthorizationRequestMetadata metadata = entitlementRequest.getMetadata();
+        Integer limit = metadata != null && metadata.getLimit() > 0 ? metadata.getLimit() : null;
 
-        entitlementRequest.getPermissions().forEach(requestedResource -> {
-            Resource resource;
+        for (PermissionRequest requestedResource : entitlementRequest.getPermissions()) {
+            if (limit != null && limit <= 0) {
+                break;
+            }
+
+            Resource resource = null;
 
             if (requestedResource.getResourceSetId() != null) {
                 resource = storeFactory.getResourceStore().findById(requestedResource.getResourceSetId(), resourceServer.getId());
-            } else {
+                if (resource == null) {
+                    throw new ErrorResponseException("invalid_resource", "Resource with id [" + requestedResource.getResourceSetId() + "] does not exist.", Status.FORBIDDEN);
+                }
+            } else if (requestedResource.getResourceSetName() != null) {
                 resource = storeFactory.getResourceStore().findByName(requestedResource.getResourceSetName(), resourceServer.getId());
+                if (resource == null) {
+                    throw new ErrorResponseException("invalid_resource", "Resource with name [" + requestedResource.getResourceSetName() + "] does not exist.", Status.FORBIDDEN);
+                }
             }
 
             if (resource == null && (requestedResource.getScopes() == null || requestedResource.getScopes().isEmpty())) {
-                throw new ErrorResponseException("invalid_resource", "Resource with id [" + requestedResource.getResourceSetId() + "] or name [" + requestedResource.getResourceSetName() + "] does not exist.", Status.FORBIDDEN);
+                throw new ErrorResponseException("invalid_request", "You must provide a resource and/or scopes.", Status.FORBIDDEN);
             }
 
             Set<ScopeRepresentation> requestedScopes = requestedResource.getScopes().stream().map(ScopeRepresentation::new).collect(Collectors.toSet());
-            Set<String> collect = requestedScopes.stream().map(ScopeRepresentation::getName).collect(Collectors.toSet());
+            Set<String> scopeNames = requestedScopes.stream().map(ScopeRepresentation::getName).collect(Collectors.toSet());
 
             if (resource != null) {
-                permissionsToEvaluate.put(resource.getId(), collect);
+                permissionsToEvaluate.put(resource.getId(), scopeNames);
+                if (limit != null) {
+                    limit--;
+                }
             } else {
                 ResourceStore resourceStore = authorization.getStoreFactory().getResourceStore();
                 ScopeStore scopeStore = authorization.getStoreFactory().getScopeStore();
-                List<Resource> resources = new ArrayList<Resource>();
+                List<Resource> resources = new ArrayList<>();
 
                 resources.addAll(resourceStore.findByScope(requestedScopes.stream().map(scopeRepresentation -> {
                     Scope scope = scopeStore.findByName(scopeRepresentation.getName(), resourceServer.getId());
@@ -255,17 +253,21 @@ public class EntitlementService {
                 }).filter(s -> s != null).collect(Collectors.toList()), resourceServer.getId()));
 
                 for (Resource resource1 : resources) {
-                    permissionsToEvaluate.put(resource1.getId(), collect);
+                    permissionsToEvaluate.put(resource1.getId(), scopeNames);
+                    if (limit != null) {
+                        limit--;
+                    }
                 }
 
-                permissionsToEvaluate.put("$KC_SCOPE_PERMISSION", collect);
+                permissionsToEvaluate.put("$KC_SCOPE_PERMISSION", scopeNames);
             }
-        });
+        }
 
         String rpt = entitlementRequest.getRpt();
 
         if (rpt != null && !"".equals(rpt)) {
             KeycloakContext context = authorization.getKeycloakSession().getContext();
+
             if (!Tokens.verifySignature(session, context.getRealm(), rpt)) {
                 throw new ErrorResponseException("invalid_rpt", "RPT signature is invalid", Status.FORBIDDEN);
             }
@@ -285,7 +287,11 @@ public class EntitlementService {
                     List<Permission> permissions = authorizationData.getPermissions();
 
                     if (permissions != null) {
-                        permissions.forEach(permission -> {
+                        for (Permission permission : permissions) {
+                            if (limit != null && limit <= 0) {
+                                break;
+                            }
+
                             Resource resourcePermission = storeFactory.getResourceStore().findById(permission.getResourceSetId(), resourceServer.getId());
 
                             if (resourcePermission != null) {
@@ -294,6 +300,9 @@ public class EntitlementService {
                                 if (scopes == null) {
                                     scopes = new HashSet<>();
                                     permissionsToEvaluate.put(resourcePermission.getId(), scopes);
+                                    if (limit != null) {
+                                        limit--;
+                                    }
                                 }
 
                                 Set<String> scopePermission = permission.getScopes();
@@ -302,7 +311,7 @@ public class EntitlementService {
                                     scopes.addAll(scopePermission);
                                 }
                             }
-                        });
+                        }
                     }
                 }
             }
@@ -314,10 +323,7 @@ public class EntitlementService {
 
                     if ("$KC_SCOPE_PERMISSION".equals(key)) {
                         ScopeStore scopeStore = authorization.getStoreFactory().getScopeStore();
-                        List<Scope> scopes = entry.getValue().stream().map(scopeName -> {
-                            Scope byName = scopeStore.findByName(scopeName, resourceServer.getId());
-                            return byName;
-                        }).collect(Collectors.toList());
+                        List<Scope> scopes = entry.getValue().stream().map(scopeName -> scopeStore.findByName(scopeName, resourceServer.getId())).filter(scope -> Objects.nonNull(scope)).collect(Collectors.toList());
                         return Arrays.asList(new ResourcePermission(null, scopes, resourceServer)).stream();
                     } else {
                         Resource entryResource = storeFactory.getResourceStore().findById(key, resourceServer.getId());

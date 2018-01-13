@@ -27,7 +27,15 @@ import java.util.LinkedList;
  */
 public class LDAPDn {
 
-    private final Deque<Entry> entries = new LinkedList<>();
+    private final Deque<Entry> entries;
+
+    private LDAPDn() {
+        this.entries = new LinkedList<>();
+    }
+
+    private LDAPDn(Deque<Entry> entries) {
+        this.entries = entries;
+    }
 
     public static LDAPDn fromString(String dnString) {
         LDAPDn dn = new LDAPDn();
@@ -42,7 +50,11 @@ public class LDAPDn {
         String[] rdns = dnString.split("(?<!\\\\),");
         for (String entryStr : rdns) {
             String[] rdn = entryStr.split("(?<!\\\\)=");
-            dn.addLast(rdn[0].trim(), rdn[1].trim());
+            if (rdn.length >1) {
+                dn.addLast(rdn[0].trim(), rdn[1].trim());
+            } else {
+                dn.addLast(rdn[0].trim(), "");
+            }
         }
 
         return dn;
@@ -115,12 +127,14 @@ public class LDAPDn {
 
     /**
      *
-     * @return string like "dc=something,dc=org" from the DN like "uid=joe,dc=something,dc=org"
+     * @return DN like "dc=something,dc=org" from the DN like "uid=joe,dc=something,dc=org".
+     * Returned DN will be new clone not related to the original DN instance.
+     *
      */
-    public String getParentDn() {
+    public LDAPDn getParentDn() {
         LinkedList<Entry> parentDnEntries = new LinkedList<>(entries);
         parentDnEntries.remove();
-        return toString(parentDnEntries);
+        return new LDAPDn(parentDnEntries);
     }
 
     public boolean isDescendantOf(LDAPDn expectedParentDn) {

@@ -43,7 +43,7 @@ public class ProfileService {
     @Produces("application/json")
     public Response view(@Context HttpServletRequest request) {
         Principal userPrincipal = request.getUserPrincipal();
-        List albums = this.entityManager.createQuery("from Album where userId = '" + userPrincipal.getName() + "'").getResultList();
+        List albums = this.entityManager.createQuery("from Album where userId = :id").setParameter("id", userPrincipal.getName()).getResultList();
         return Response.ok(new Profile(userPrincipal.getName(), albums.size())).build();
     }
 

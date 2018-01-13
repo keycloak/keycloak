@@ -52,6 +52,12 @@ abstract class CrossDCAwareCacheFactory {
             // For cross-DC scenario, we need to return underlying remoteCache for atomic operations to work properly
             RemoteStore remoteStore = remoteStores.iterator().next();
             RemoteCache remoteCache = remoteStore.getRemoteCache();
+
+            if (remoteCache == null) {
+                String cacheName = remoteStore.getConfiguration().remoteCacheName();
+                throw new IllegalStateException("Remote cache '" + cacheName + "' is not available.");
+            }
+
             return new RemoteCacheWrapperFactory(remoteCache);
         }
     }

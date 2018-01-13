@@ -18,6 +18,7 @@
 package org.keycloak.services;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
@@ -28,18 +29,33 @@ import javax.ws.rs.core.Response;
 public class ErrorPageException extends WebApplicationException {
 
     private final KeycloakSession session;
+    private Response.Status status;
     private final String errorMessage;
     private final Object[] parameters;
+    private final AuthenticationSessionModel authSession;
 
-    public ErrorPageException(KeycloakSession session, String errorMessage, Object... parameters) {
+    
+    public ErrorPageException(KeycloakSession session, Response.Status status, String errorMessage, Object... parameters) {
         this.session = session;
+        this.status = status;
         this.errorMessage = errorMessage;
         this.parameters = parameters;
+        this.authSession = null;
     }
+    
+    public ErrorPageException(KeycloakSession session, AuthenticationSessionModel authSession, Response.Status status, String errorMessage, Object... parameters) {
+        this.session = session;
+        this.status = status;
+        this.errorMessage = errorMessage;
+        this.parameters = parameters;
+        this.authSession = authSession;
+    }
+
+
 
     @Override
     public Response getResponse() {
-        return ErrorPage.error(session, errorMessage, parameters);
+        return ErrorPage.error(session, authSession, status, errorMessage, parameters);
     }
 
 }

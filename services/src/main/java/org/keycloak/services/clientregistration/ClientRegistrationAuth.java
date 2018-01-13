@@ -31,12 +31,15 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyException;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyManager;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.util.TokenUtil;
 
 import javax.ws.rs.core.HttpHeaders;
@@ -57,6 +60,8 @@ public class ClientRegistrationAuth {
     private RealmModel realm;
     private JsonWebToken jwt;
     private ClientInitialAccessModel initialAccessModel;
+    private String kid;
+    private String token;
 
     public ClientRegistrationAuth(KeycloakSession session, ClientRegistrationProvider provider, EventBuilder event) {
         this.session = session;
@@ -78,18 +83,33 @@ public class ClientRegistrationAuth {
             return;
         }
 
-        ClientRegistrationTokenUtils.TokenVerification tokenVerification = ClientRegistrationTokenUtils.verifyToken(session, realm, uri, split[1]);
+        token = split[1];
+
+        ClientRegistrationTokenUtils.TokenVerification tokenVerification = ClientRegistrationTokenUtils.verifyToken(session, realm, uri, token);
         if (tokenVerification.getError() != null) {
             throw unauthorized(tokenVerification.getError().getMessage());
         }
+        kid = tokenVerification.getKid();
         jwt = tokenVerification.getJwt();
 
         if (isInitialAccessToken()) {
-            initialAccessModel = session.sessions().getClientInitialAccessModel(session.getContext().getRealm(), jwt.getId());
+            initialAccessModel = session.realms().getClientInitialAccessModel(session.getContext().getRealm(), jwt.getId());
             if (initialAccessModel == null) {
                 throw unauthorized("Initial Access Token not found");
             }
         }
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public String getKid() {
+        return kid;
+    }
+
+    public JsonWebToken getJwt() {
+        return jwt;
     }
 
     private boolean isBearerToken() {
@@ -231,42 +251,70 @@ public class ClientRegistrationAuth {
         return initialAccessModel;
     }
 
-    private boolean hasRole(String... role) {
+    private boolean hasRole(String... roles) {
         try {
-            Map<String, Object> otherClaims = jwt.getOtherClaims();
-            if (otherClaims != null) {
-                Map<String, Map<String, List<String>>> resourceAccess = (Map<String, Map<String, List<String>>>) jwt.getOtherClaims().get("resource_access");
-                if (resourceAccess == null) {
-                    return false;
-                }
+            if (jwt.getIssuedFor().equals(Constants.ADMIN_CLI_CLIENT_ID)
+                    || jwt.getIssuedFor().equals(Constants.ADMIN_CONSOLE_CLIENT_ID)) {
+                return hasRoleInModel(roles);
 
-                List<String> roles = null;
-
-                Map<String, List<String>> map;
-                if (realm.getName().equals(Config.getAdminRealm())) {
-                    map = resourceAccess.get(realm.getMasterAdminClient().getClientId());
-                } else {
-                    map = resourceAccess.get(Constants.REALM_MANAGEMENT_CLIENT_ID);
-                }
-
-                if (map != null) {
-                    roles = map.get("roles");
-                }
-
-                if (roles == null) {
-                    return false;
-                }
-
-                for (String r : role) {
-                    if (roles.contains(r)) {
-                        return true;
-                    }
-                }
+            } else {
+                return hasRoleInToken(roles);
             }
-            return false;
         } catch (Throwable t) {
             return false;
         }
+    }
+
+    private boolean hasRoleInModel(String[] roles) {
+        ClientModel roleNamespace;
+        UserModel user = session.users().getUserById(jwt.getSubject(), realm);
+        if (user == null) {
+            return false;
+        }
+        if (realm.getName().equals(Config.getAdminRealm())) {
+            roleNamespace = realm.getMasterAdminClient();
+        } else {
+            roleNamespace = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
+        }
+        for (String role : roles) {
+            RoleModel roleModel = roleNamespace.getRole(role);
+            if (user.hasRole(roleModel)) return true;
+        }
+        return false;
+    }
+
+    private boolean hasRoleInToken(String[] role) {
+        Map<String, Object> otherClaims = jwt.getOtherClaims();
+        if (otherClaims != null) {
+            Map<String, Map<String, List<String>>> resourceAccess = (Map<String, Map<String, List<String>>>) jwt.getOtherClaims().get("resource_access");
+            if (resourceAccess == null) {
+                return false;
+            }
+
+            List<String> roles = null;
+
+            Map<String, List<String>> map;
+            if (realm.getName().equals(Config.getAdminRealm())) {
+                map = resourceAccess.get(realm.getMasterAdminClient().getClientId());
+            } else {
+                map = resourceAccess.get(Constants.REALM_MANAGEMENT_CLIENT_ID);
+            }
+
+            if (map != null) {
+                roles = map.get("roles");
+            }
+
+            if (roles == null) {
+                return false;
+            }
+
+            for (String r : role) {
+                if (roles.contains(r)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private boolean authenticateClient(ClientModel client) {

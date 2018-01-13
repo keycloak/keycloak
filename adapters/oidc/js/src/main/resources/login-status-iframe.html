@@ -28,7 +28,7 @@
         } else  if (!init) {
             var req = new XMLHttpRequest();
 
-            var url = location.href + "/init";
+            var url = location.href.split("?")[0] + "/init";
             url += "?client_id=" + encodeURIComponent(clientId);
             url += "&origin=" + encodeURIComponent(origin);
 
@@ -36,7 +36,7 @@
 
             req.onreadystatechange = function () {
                 if (req.readyState === 4) {
-                    if (req.status === 204) {
+                    if (req.status === 204 || req.status === 1223) {
                         init = {
                             clientId: clientId,
                             origin: origin
@@ -53,7 +53,8 @@
             req.send();
         } else {
             if (clientId === init.clientId && origin === init.origin) {
-                if (sessionState === cookie) {
+                var c = cookie.split('/');
+                if (sessionState === c[2]) {
                     callback('unchanged');
                 } else {
                     callback('changed');
@@ -81,7 +82,7 @@
         var origin = event.origin;
         var data = event.data.split(' ');
         if (data.length != 2) {
-            event.source.postMessage('error', origin);
+            return;
         }
 
         var clientId = data[0];

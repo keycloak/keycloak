@@ -17,10 +17,12 @@
 package org.keycloak.testsuite.actions;
 
 import org.jboss.arquillian.graphene.page.Page;
+import org.jboss.arquillian.junit.InSequence;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -32,8 +34,10 @@ import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentatio
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AccountTotpPage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
@@ -42,9 +46,17 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.util.UserBuilder;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -75,6 +87,15 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
                 adminClient.realm("test").flows().updateExecutions("browser", execution);
             }
         }
+
+        ApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
+        UserRepresentation user = UserBuilder.create().enabled(true)
+                .username("test-user@localhost")
+                .email("test-user@localhost")
+                .firstName("Tom")
+                .lastName("Brady")
+                .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name()).build();
+        ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
     }
 
 
@@ -109,15 +130,102 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
         String userId = events.expectRegister("setupTotp", "email@mail.com").assertEvent().getUserId();
 
-        Assert.assertTrue(totpPage.isCurrent());
+        assertTrue(totpPage.isCurrent());
 
         totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
 
-        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setuptotp").assertEvent().getSessionId();
+        String authSessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setuptotp").assertEvent()
+                .getDetails().get(Details.CODE_ID);
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().user(userId).session(sessionId).detail(Details.USERNAME, "setuptotp").assertEvent();
+        events.expectLogin().user(userId).session(authSessionId).detail(Details.USERNAME, "setuptotp").assertEvent();
+    }
+
+    @Test
+    public void setupTotpRegisterManual() {
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.register("firstName", "lastName", "checkQrCode@mail.com", "checkQrCode", "password", "password");
+
+        String pageSource = driver.getPageSource();
+
+        assertTrue(pageSource.contains("Install one of the following applications on your mobile"));
+        assertTrue(pageSource.contains("FreeOTP"));
+        assertTrue(pageSource.contains("Google Authenticator"));
+
+        assertTrue(pageSource.contains("Open the application and scan the barcode"));
+        assertFalse(pageSource.contains("Open the application and enter the key"));
+
+        assertTrue(pageSource.contains("Unable to scan?"));
+        assertFalse(pageSource.contains("Scan barcode?"));
+
+        totpPage.clickManual();
+
+        pageSource = driver.getPageSource();
+
+        assertTrue(pageSource.contains("Install one of the following applications on your mobile"));
+        assertTrue(pageSource.contains("FreeOTP"));
+        assertTrue(pageSource.contains("Google Authenticator"));
+
+        assertFalse(pageSource.contains("Open the application and scan the barcode"));
+        assertTrue(pageSource.contains("Open the application and enter the key"));
+
+        assertFalse(pageSource.contains("Unable to scan?"));
+        assertTrue(pageSource.contains("Scan barcode?"));
+
+        assertTrue(driver.findElement(By.id("kc-totp-secret-key")).getText().matches("[\\w]{4}( [\\w]{4}){7}"));
+
+        assertEquals("Type: Time-based", driver.findElement(By.id("kc-totp-type")).getText());
+        assertEquals("Algorithm: HmacSHA1", driver.findElement(By.id("kc-totp-algorithm")).getText());
+        assertEquals("Digits: 6", driver.findElement(By.id("kc-totp-digits")).getText());
+        assertEquals("Interval: 30", driver.findElement(By.id("kc-totp-period")).getText());
+
+        totpPage.clickBarcode();
+
+        pageSource = driver.getPageSource();
+
+        assertTrue(pageSource.contains("Install one of the following applications on your mobile"));
+        assertTrue(pageSource.contains("FreeOTP"));
+        assertTrue(pageSource.contains("Google Authenticator"));
+
+        assertTrue(pageSource.contains("Open the application and scan the barcode"));
+        assertFalse(pageSource.contains("Open the application and enter the key"));
+
+        assertTrue(pageSource.contains("Unable to scan?"));
+        assertFalse(pageSource.contains("Scan barcode?"));
+    }
+
+    @Test
+    public void setupTotpModifiedPolicy() {
+        RealmResource realm = testRealm();
+        RealmRepresentation rep = realm.toRepresentation();
+        rep.setOtpPolicyDigits(8);
+        rep.setOtpPolicyType("hotp");
+        rep.setOtpPolicyAlgorithm("HmacSHA256");
+        realm.update(rep);
+        try {
+            loginPage.open();
+            loginPage.clickRegister();
+            registerPage.register("firstName", "lastName", "setupTotpModifiedPolicy@mail.com", "setupTotpModifiedPolicy", "password", "password");
+
+            String pageSource = driver.getPageSource();
+
+            assertTrue(pageSource.contains("FreeOTP"));
+            assertFalse(pageSource.contains("Google Authenticator"));
+
+            totpPage.clickManual();
+
+            assertEquals("Type: Counter-based", driver.findElement(By.id("kc-totp-type")).getText());
+            assertEquals("Algorithm: HmacSHA256", driver.findElement(By.id("kc-totp-algorithm")).getText());
+            assertEquals("Digits: 8", driver.findElement(By.id("kc-totp-digits")).getText());
+            assertEquals("Interval: 30", driver.findElement(By.id("kc-totp-period")).getText());
+        } finally {
+            rep.setOtpPolicyDigits(6);
+            rep.setOtpPolicyType("totp");
+            rep.setOtpPolicyAlgorithm("HmacSHA1");
+            realm.update(rep);
+        }
     }
 
     @Test
@@ -131,22 +239,23 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
         totpPage.configure(totp.generateTOTP(totpSecret));
 
-        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent().getSessionId();
+        String authSessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent()
+                .getDetails().get(Details.CODE_ID);
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        EventRepresentation loginEvent = events.expectLogin().session(sessionId).assertEvent();
+        EventRepresentation loginEvent = events.expectLogin().session(authSessionId).assertEvent();
 
         oauth.openLogout();
 
-        events.expectLogout(loginEvent.getSessionId()).assertEvent();
+        events.expectLogout(authSessionId).assertEvent();
 
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
         String src = driver.getPageSource();
         loginTotpPage.login(totp.generateTOTP(totpSecret));
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         events.expectLogin().assertEvent();
     }
@@ -169,7 +278,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         totpPage.configure(totp.generateTOTP(totpCode));
 
         // After totp config, user should be on the app page
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setuptotp2").assertEvent();
 
@@ -186,7 +295,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         // Totp is already configured, thus one-time password is needed, login page should be loaded
         String uri = driver.getCurrentUrl();
         String src = driver.getPageSource();
-        Assert.assertTrue(loginPage.isCurrent());
+        assertTrue(loginPage.isCurrent());
         Assert.assertFalse(totpPage.isCurrent());
 
         // Login with one-time password
@@ -215,9 +324,10 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         totpPage.assertCurrent();
         totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
 
-        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent().getSessionId();
+        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent()
+                .getDetails().get(Details.CODE_ID);
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         events.expectLogin().user(userId).session(sessionId).detail(Details.USERNAME, "setupTotp2").assertEvent();
     }
@@ -246,9 +356,10 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         TimeBasedOTP timeBased = new TimeBasedOTP(HmacOTP.HMAC_SHA1, 8, 30, 1);
         totpPage.configure(timeBased.generateTOTP(totpSecret));
 
-        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent().getSessionId();
+        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent()
+                .getDetails().get(Details.CODE_ID);
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         EventRepresentation loginEvent = events.expectLogin().session(sessionId).assertEvent();
 
@@ -260,12 +371,18 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         loginPage.login("test-user@localhost", "password");
         String src = driver.getPageSource();
         String token = timeBased.generateTOTP(totpSecret);
-        Assert.assertEquals(8, token.length());
+        assertEquals(8, token.length());
         loginTotpPage.login(token);
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         events.expectLogin().assertEvent();
+
+        // Revert
+        realmRep = adminClient.realm("test").toRepresentation();
+        RealmBuilder.edit(realmRep)
+                .otpDigits(6);
+        adminClient.realm("test").update(realmRep);
     }
 
     @Test
@@ -291,9 +408,10 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         HmacOTP otpgen = new HmacOTP(6, HmacOTP.HMAC_SHA1, 1);
         totpPage.configure(otpgen.generateHOTP(totpSecret, 0));
         String uri = driver.getCurrentUrl();
-        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent().getSessionId();
+        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent()
+            .getDetails().get(Details.CODE_ID);
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         EventRepresentation loginEvent = events.expectLogin().session(sessionId).assertEvent();
 
@@ -306,7 +424,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         String token = otpgen.generateHOTP(totpSecret, 1);
         loginTotpPage.login(token);
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         events.expectLogin().assertEvent();
 
@@ -331,9 +449,21 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         loginTotpPage.assertCurrent();
         loginTotpPage.login(token);
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         events.expectLogin().assertEvent();
+
+        // Revert
+        realmRep = adminClient.realm("test").toRepresentation();
+        RealmBuilder.edit(realmRep)
+                .otpLookAheadWindow(1)
+                .otpDigits(6)
+                .otpPeriod(30)
+                .otpType(UserCredentialModel.TOTP)
+                .otpAlgorithm(HmacOTP.HMAC_SHA1)
+                .otpInitialCounter(0);
+        adminClient.realm("test").update(realmRep);
+
     }
 
 }

@@ -36,17 +36,30 @@ public interface UsersResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     List<UserRepresentation> search(@QueryParam("username") String username,
-                                           @QueryParam("firstName") String firstName,
-                                           @QueryParam("lastName") String lastName,
-                                             @QueryParam("email") String email,
-                                             @QueryParam("first") Integer firstResult,
-                                             @QueryParam("max") Integer maxResults);
+                                    @QueryParam("firstName") String firstName,
+                                    @QueryParam("lastName") String lastName,
+                                    @QueryParam("email") String email,
+                                    @QueryParam("first") Integer firstResult,
+                                    @QueryParam("max") Integer maxResults);
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<UserRepresentation> search(@QueryParam("username") String username);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     List<UserRepresentation> search(@QueryParam("search") String search,
-                                           @QueryParam("first") Integer firstResult,
-                                           @QueryParam("max") Integer maxResults);
+                                    @QueryParam("first") Integer firstResult,
+                                    @QueryParam("max") Integer maxResults);
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<UserRepresentation> list(@QueryParam("first") Integer firstResult,
+                                  @QueryParam("max") Integer maxResults);
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<UserRepresentation> list();
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
@@ -63,4 +76,6 @@ public interface UsersResource {
     @Path("{id}")
     @DELETE
     Response delete(@PathParam("id") String id);
+
+
 }

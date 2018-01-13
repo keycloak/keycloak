@@ -19,13 +19,21 @@ package org.keycloak.testsuite.forms;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.events.Details;
+import org.keycloak.models.Constants;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.common.util.Retry;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 
+import java.io.Closeable;
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
@@ -33,6 +41,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import org.keycloak.testsuite.auth.page.account.AccountManagement;
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -79,6 +88,9 @@ public class LogoutTest extends AbstractTestRealmKeycloakTest {
 
         String sessionId2 = events.expectLogin().assertEvent().getSessionId();
         assertNotEquals(sessionId, sessionId2);
+
+        driver.navigate().to(logoutUrl);
+        events.expectLogout(sessionId2).detail(Details.REDIRECT_URI, redirectUri).assertEvent();
     }
 
     @Test
@@ -123,7 +135,7 @@ public class LogoutTest extends AbstractTestRealmKeycloakTest {
 
          // Check session 1 not logged-in
         oauth.openLoginForm();
-        assertEquals(oauth.getLoginFormUrl(), driver.getCurrentUrl());
+        loginPage.assertCurrent();
 
         // Login session 3
         oauth.doLogin("test-user@localhost", "password");
@@ -133,6 +145,10 @@ public class LogoutTest extends AbstractTestRealmKeycloakTest {
         // Check session 3 logged-in
         oauth.openLoginForm();
         events.expectLogin().session(sessionId3).removeDetail(Details.USERNAME).assertEvent();
+
+        //  Logout session 3 by redirect
+        driver.navigate().to(oauth.getLogoutUrl().redirectUri(AppPage.baseUrl).build());
+        events.expectLogout(sessionId3).detail(Details.REDIRECT_URI, AppPage.baseUrl).assertEvent();
     }
 
     //KEYCLOAK-2741
@@ -198,6 +214,47 @@ public class LogoutTest extends AbstractTestRealmKeycloakTest {
 
         String sessionId2 = events.expectLogin().assertEvent().getSessionId();
         assertNotEquals(sessionId, sessionId2);
+
+        driver.navigate().to(logoutUrl);
+        events.expectLogout(sessionId2).removeDetail(Details.REDIRECT_URI).assertEvent();
+    }
+
+    @Test
+    public void logoutUserByAdmin() {
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+        assertTrue(appPage.isCurrent());
+        String sessionId = events.expectLogin().assertEvent().getSessionId();
+
+        UserRepresentation user = ApiUtil.findUserByUsername(adminClient.realm("test"), "test-user@localhost");
+        Assert.assertEquals((Object) 0, user.getNotBefore());
+
+        adminClient.realm("test").users().get(user.getId()).logout();
+
+        Retry.execute(() -> {
+            UserRepresentation u = adminClient.realm("test").users().get(user.getId()).toRepresentation();
+            Assert.assertTrue(u.getNotBefore() > 0);
+
+            loginPage.open();
+            loginPage.assertCurrent();
+        }, 10, 200);
+    }
+
+
+    // KEYCLOAK-5982
+    @Test
+    public void testLogoutWhenAccountClientRenamed() throws IOException {
+        // Rename client "account"
+        ClientResource accountClient = ApiUtil.findClientByClientId(adminClient.realm("test"), Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+
+        // Temporarily rename client "account" . Revert it back after the test
+        try (Closeable accountClientUpdater = new ClientAttributeUpdater(accountClient)
+                .setClientId("account-changed")
+                .update()) {
+
+            // Assert logout works
+            logoutRedirect();
+        }
     }
 
 }

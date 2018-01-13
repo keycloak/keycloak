@@ -33,37 +33,60 @@
             <includes>
                 <include>**/module.xml</include>
             </includes>
+            <!-- unused resteasy providers eat up memory, can't remove them as it my effect RH-SSO patching
+            <excludes>
+                <exclude>**/jose-jwt/**</exclude>
+                <exclude>**/resteasy-atom-provider/**</exclude>
+                <exclude>**/resteasy-crypto/**</exclude>
+                <exclude>**/resteasy-jettison-provider/**</exclude>
+                <exclude>**/resteasy-json-p-provider/**</exclude>
+                <exclude>**/resteasy-jsapi/**</exclude>
+                <exclude>**/resteasy-spring/**</exclude>
+                <exclude>**/resteasy-yaml-provider/**</exclude>
+                <exclude>**/jettison/**</exclude>
+            </excludes>
+            -->
         </fileSet>
         <fileSet>
             <directory>target/${project.build.finalName}</directory>
             <outputDirectory/>
             <filtered>false</filtered>
             <excludes>
-                <exclude>**/*.sh</exclude>
-                <exclude>**/module.xml</exclude>
+                <exclude>bin/*.sh</exclude>
+                <!-- jboss-client.jar unused  Unfortunately, this may screw up our patch process so it can't be removed.
+                <exclude>bin/client/README-EJB-JMS.txt</exclude>
+                <exclude>bin/client/jboss-client.jar</exclude>
+                 -->
+                <exclude>module.xml</exclude>
                 <exclude>welcome-content/**</exclude>
-                <exclude>appclient</exclude>
                 <exclude>appclient/**</exclude>
+                <exclude>bin/appclient.*</exclude>
                 <exclude>copyright.txt</exclude>
                 <exclude>README.txt</exclude>
-                <exclude>themes/**</exclude>
+                <exclude>version.txt</exclude>
+                <exclude>${profileExcludes}</exclude>
+                <exclude>docs/licenses-${product.slot}/**</exclude>
+                <!-- unused resteasy providers eat up memory can't remove them as it my effect RH-SSO patching
+                <exclude>**/jose-jwt/**</exclude>
+                <exclude>**/resteasy-atom-provider/**</exclude>
+                <exclude>**/resteasy-crypto/**</exclude>
+                <exclude>**/resteasy-jettison-provider/**</exclude>
+                <exclude>**/resteasy-json-p-provider/**</exclude>
+                <exclude>**/resteasy-jsapi/**</exclude>
+                <exclude>**/resteasy-spring/**</exclude>
+                <exclude>**/resteasy-yaml-provider/**</exclude>
+                <exclude>**/jettison/**</exclude>
+                 -->
             </excludes>
         </fileSet>
+
         <fileSet>
             <directory>target/${project.build.finalName}</directory>
             <outputDirectory/>
             <includes>
-                <include>**/*.sh</include>
+                <include>bin/*.sh</include>
             </includes>
             <fileMode>0755</fileMode>
-        </fileSet>
-        <fileSet>
-            <directory>target/${project.build.finalName}</directory>
-            <outputDirectory/>
-            <includes>
-                <include>themes/**</include>
-            </includes>
-            <fileMode>0444</fileMode>
         </fileSet>
         <fileSet>
             <directory>src/main/welcome-content</directory>
@@ -87,5 +110,21 @@
                 <include>**/*</include>
             </includes>
         </fileSet>
+        <fileSet>
+            <directory>target/licenses/content/docs</directory>
+            <outputDirectory>docs</outputDirectory>
+            <includes>
+                <include>licenses-${product.slot}/**</include>
+            </includes>
+        </fileSet>
     </fileSets>
+
+    <files>
+        <file>
+            <source>src/main/version.txt</source>
+            <outputDirectory/>
+            <filtered>true</filtered>
+        </file>
+    </files>
+
 </assembly>

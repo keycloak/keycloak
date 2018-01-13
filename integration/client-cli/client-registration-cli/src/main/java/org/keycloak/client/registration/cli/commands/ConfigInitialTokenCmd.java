@@ -111,7 +111,8 @@ public class ConfigInitialTokenCmd extends AbstractAuthOptionsCmd implements Com
                 "--keypass", keyPass,
                 "--alias", alias,
                 "--truststore", trustStore,
-                "--trustpass", keyPass);
+                "--trustpass", keyPass,
+                "--no-config", booleanOptionForCheck(noconfig));
 
 
         if (!delete && token == null) {

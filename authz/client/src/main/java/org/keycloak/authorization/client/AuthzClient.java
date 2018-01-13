@@ -22,12 +22,15 @@ import org.keycloak.authorization.client.resource.AuthorizationResource;
 import org.keycloak.authorization.client.resource.EntitlementResource;
 import org.keycloak.authorization.client.resource.ProtectionResource;
 import org.keycloak.authorization.client.util.Http;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.function.Supplier;
 
 /**
  * <p>This is class serves as an entry point for clients looking for access to Keycloak Authorization Services.
@@ -37,6 +40,7 @@ import java.net.URI;
 public class AuthzClient {
 
     private final Http http;
+    private Supplier<String> patSupplier;
 
     public static AuthzClient create() {
         InputStream configStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("keycloak.json");
@@ -53,13 +57,17 @@ public class AuthzClient {
     }
 
     public static AuthzClient create(Configuration configuration) {
-        return new AuthzClient(configuration);
+        return new AuthzClient(configuration, configuration.getClientAuthenticator());
+    }
+
+    public static AuthzClient create(Configuration configuration, ClientAuthenticator authenticator) {
+        return new AuthzClient(configuration, authenticator);
     }
 
     private final ServerConfiguration serverConfiguration;
     private final Configuration deployment;
 
-    private AuthzClient(Configuration configuration) {
+    private AuthzClient(Configuration configuration, ClientAuthenticator authenticator) {
         if (configuration == null) {
             throw new IllegalArgumentException("Client configuration can not be null.");
         }
@@ -72,7 +80,9 @@ public class AuthzClient {
 
         configurationUrl += "/realms/" + configuration.getRealm() + "/.well-known/uma-configuration";
 
-        this.http = new Http(configuration);
+        this.deployment = configuration;
+
+        this.http = new Http(configuration, authenticator != null ? authenticator : configuration.getClientAuthenticator());
 
         try {
             this.serverConfiguration = this.http.<ServerConfiguration>get(URI.create(configurationUrl))
@@ -83,12 +93,14 @@ public class AuthzClient {
         }
 
         this.http.setServerConfiguration(this.serverConfiguration);
+    }
 
-        this.deployment = configuration;
+    private AuthzClient(Configuration configuration) {
+        this(configuration, null);
     }
 
     public ProtectionResource protection() {
-        return new ProtectionResource(this.http, obtainAccessToken().getToken());
+        return new ProtectionResource(this.http, createPatSupplier());
     }
 
     public AuthorizationResource authorization(String accesstoken) {
@@ -106,7 +118,7 @@ public class AuthzClient {
     public AccessTokenResponse obtainAccessToken() {
         return this.http.<AccessTokenResponse>post(this.serverConfiguration.getTokenEndpoint())
                 .authentication()
-                    .oauth2ClientCredentials()
+                    .client()
                 .response()
                     .json(AccessTokenResponse.class)
                 .execute();
@@ -127,5 +139,41 @@ public class AuthzClient {
 
     public Configuration getConfiguration() {
         return this.deployment;
+    }
+
+    private Supplier<String> createPatSupplier() {
+        if (patSupplier == null) {
+            patSupplier = new Supplier<String>() {
+                AccessTokenResponse clientToken = obtainAccessToken();
+
+                @Override
+                public String get() {
+                    String token = clientToken.getToken();
+
+                    try {
+                        AccessToken accessToken = JsonSerialization.readValue(new JWSInput(token).getContent(), AccessToken.class);
+
+                        if (accessToken.isActive()) {
+                            return token;
+                        }
+
+                        clientToken = http.<AccessTokenResponse>post(serverConfiguration.getTokenEndpoint())
+                                .authentication().client()
+                                .form()
+                                .param("grant_type", "refresh_token")
+                                .param("refresh_token", clientToken.getRefreshToken())
+                                .response()
+                                .json(AccessTokenResponse.class)
+                                .execute();
+                    } catch (Exception e) {
+                        patSupplier = null;
+                        throw new RuntimeException(e);
+                    }
+
+                    return clientToken.getToken();
+                }
+            };
+        }
+        return patSupplier;
     }
 }

@@ -23,8 +23,10 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.RoleUtils;
+import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.representations.IDToken;
 
+import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -91,19 +93,26 @@ abstract class AbstractUserRoleMappingMapper extends AbstractOIDCProtocolMapper 
         // get a set of all realm roles assigned to the user or its group
         Stream<RoleModel> clientUserRoles = getAllUserRolesStream(user).filter(restriction);
 
-        boolean dontLimitScope = userSession.getClientSessions().stream().anyMatch(cs -> cs.getClient().isFullScopeAllowed());
+        boolean dontLimitScope = userSession.getAuthenticatedClientSessions().values().stream().anyMatch(cs -> cs.getClient().isFullScopeAllowed());
         if (! dontLimitScope) {
-            Set<RoleModel> clientRoles = userSession.getClientSessions().stream()
+            Set<RoleModel> clientRoles = userSession.getAuthenticatedClientSessions().values().stream()
               .flatMap(cs -> cs.getClient().getScopeMappings().stream())
               .collect(Collectors.toSet());
 
             clientUserRoles = clientUserRoles.filter(clientRoles::contains);
         }
 
-        Set<String> realmRoleNames = clientUserRoles
+        List<String> realmRoleNames = clientUserRoles
           .map(m -> rolePrefix + m.getName())
-          .collect(Collectors.toSet());
+          .collect(Collectors.toList());
 
-        OIDCAttributeMapperHelper.mapClaim(token, mappingModel, realmRoleNames);
+        Object claimValue = realmRoleNames;
+
+        boolean multiValued = "true".equals(mappingModel.getConfig().get(ProtocolMapperUtils.MULTIVALUED));
+        if (!multiValued) {
+            claimValue = realmRoleNames.toString();
+        }
+
+        OIDCAttributeMapperHelper.mapClaim(token, mappingModel, claimValue);
     }
 }

@@ -23,8 +23,11 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.metadata.web.jboss.JBossWebMetaData;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
 
@@ -37,6 +40,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD
 public final class KeycloakAdapterConfigService {
 
     private static final String CREDENTIALS_JSON_NAME = "credentials";
+    
+    private static final String REDIRECT_REWRITE_RULE_JSON_NAME = "redirect-rewrite-rule";
 
     private static final KeycloakAdapterConfigService INSTANCE = new KeycloakAdapterConfigService();
 
@@ -48,6 +53,7 @@ public final class KeycloakAdapterConfigService {
 
     // keycloak-secured deployments
     private final Map<String, ModelNode> secureDeployments = new HashMap<String, ModelNode>();
+    private final Set<String> elytronEnabledDeployments = new HashSet<>();
 
 
     private KeycloakAdapterConfigService() {
@@ -66,9 +72,13 @@ public final class KeycloakAdapterConfigService {
         this.realms.remove(realmNameFromOp(operation));
     }
 
-    public void addSecureDeployment(ModelNode operation, ModelNode model) {
+    public void addSecureDeployment(ModelNode operation, ModelNode model, boolean elytronEnabled) {
         ModelNode deployment = model.clone();
-        this.secureDeployments.put(deploymentNameFromOp(operation), deployment);
+        String name = deploymentNameFromOp(operation);
+        this.secureDeployments.put(name, deployment);
+        if (elytronEnabled) {
+            elytronEnabledDeployments.add(name);
+        }
     }
 
     public void updateSecureDeployment(ModelNode operation, String attrName, ModelNode resolvedValue) {
@@ -77,7 +87,9 @@ public final class KeycloakAdapterConfigService {
     }
 
     public void removeSecureDeployment(ModelNode operation) {
-        this.secureDeployments.remove(deploymentNameFromOp(operation));
+        String name = deploymentNameFromOp(operation);
+        this.secureDeployments.remove(name);
+        elytronEnabledDeployments.remove(name);
     }
 
     public void addCredential(ModelNode operation, ModelNode model) {
@@ -129,23 +141,87 @@ public final class KeycloakAdapterConfigService {
         ModelNode deployment = this.secureDeployments.get(deploymentNameFromOp(operation));
         return deployment.get(CREDENTIALS_JSON_NAME);
     }
+    
+     public void addRedirectRewriteRule(ModelNode operation, ModelNode model) {
+        ModelNode redirectRewritesRules = redirectRewriteRuleFromOp(operation);
+        if (!redirectRewritesRules.isDefined()) {
+            redirectRewritesRules = new ModelNode();
+        }
+
+        String redirectRewriteRuleName = redirectRewriteRule(operation);
+        if (!redirectRewriteRuleName.contains(".")) {
+            redirectRewritesRules.get(redirectRewriteRuleName).set(model.get("value").asString());
+        } else {
+            String[] parts = redirectRewriteRuleName.split("\\.");
+            String provider = parts[0];
+            String property = parts[1];
+            ModelNode redirectRewriteRule = redirectRewritesRules.get(provider);
+            if (!redirectRewriteRule.isDefined()) {
+                redirectRewriteRule = new ModelNode();
+            }
+            redirectRewriteRule.get(property).set(model.get("value").asString());
+            redirectRewritesRules.set(provider, redirectRewriteRule);
+        }
+
+        ModelNode deployment = this.secureDeployments.get(deploymentNameFromOp(operation));
+        deployment.get(REDIRECT_REWRITE_RULE_JSON_NAME).set(redirectRewritesRules);
+    }
+
+    public void removeRedirectRewriteRule(ModelNode operation) {
+        ModelNode redirectRewritesRules = redirectRewriteRuleFromOp(operation);
+        if (!redirectRewritesRules.isDefined()) {
+            throw new RuntimeException("Can not remove redirect rewrite rule.  No rules defined for deployment in op " + operation.toString());
+        }
+
+        String ruleName = credentialNameFromOp(operation);
+        redirectRewritesRules.remove(ruleName);
+    }
+
+    public void updateRedirectRewriteRule(ModelNode operation, String attrName, ModelNode resolvedValue) {
+        ModelNode redirectRewritesRules = redirectRewriteRuleFromOp(operation);
+        if (!redirectRewritesRules.isDefined()) {
+            throw new RuntimeException("Can not update redirect rewrite rule.  No rules defined for deployment in op " + operation.toString());
+        }
+
+        String ruleName = credentialNameFromOp(operation);
+        redirectRewritesRules.get(ruleName).set(resolvedValue);
+    }
+
+    private ModelNode redirectRewriteRuleFromOp(ModelNode operation) {
+        ModelNode deployment = this.secureDeployments.get(deploymentNameFromOp(operation));
+        return deployment.get(REDIRECT_REWRITE_RULE_JSON_NAME);
+    }
 
     private String realmNameFromOp(ModelNode operation) {
         return valueFromOpAddress(RealmDefinition.TAG_NAME, operation);
     }
 
     private String deploymentNameFromOp(ModelNode operation) {
-        return valueFromOpAddress(SecureDeploymentDefinition.TAG_NAME, operation);
+        String deploymentName = valueFromOpAddress(SecureDeploymentDefinition.TAG_NAME, operation);
+
+        if (deploymentName == null) {
+            deploymentName = valueFromOpAddress(KeycloakHttpServerAuthenticationMechanismFactoryDefinition.TAG_NAME, operation);
+        }
+
+        if (deploymentName == null) {
+            deploymentName = valueFromOpAddress(SecureServerDefinition.TAG_NAME, operation);
+        }
+
+        if (deploymentName == null) throw new RuntimeException("Can't find deployment name in address " + operation);
+
+        return deploymentName;
     }
 
     private String credentialNameFromOp(ModelNode operation) {
         return valueFromOpAddress(CredentialDefinition.TAG_NAME, operation);
     }
+    
+    private String redirectRewriteRule(ModelNode operation) {
+        return valueFromOpAddress(RedirecRewritetRuleDefinition.TAG_NAME, operation);
+    }
 
     private String valueFromOpAddress(String addrElement, ModelNode operation) {
-        String deploymentName = getValueOfAddrElement(operation.get(ADDRESS), addrElement);
-        if (deploymentName == null) throw new RuntimeException("Can't find '" + addrElement + "' in address " + operation.toString());
-        return deploymentName;
+        return getValueOfAddrElement(operation.get(ADDRESS), addrElement);
     }
 
     private String getValueOfAddrElement(ModelNode address, String elementName) {
@@ -185,12 +261,28 @@ public final class KeycloakAdapterConfigService {
         return json.toJSONString(true);
     }
 
+    public String getJSON(String deploymentName) {
+        ModelNode deployment = this.secureDeployments.get(deploymentName);
+        String realmName = deployment.get(RealmDefinition.TAG_NAME).asString();
+        ModelNode realm = this.realms.get(realmName);
+
+        ModelNode json = new ModelNode();
+        json.get(RealmDefinition.TAG_NAME).set(realmName);
+
+        // Realm values set first.  Some can be overridden by deployment values.
+        if (realm != null) setJSONValues(json, realm);
+        setJSONValues(json, deployment);
+        return json.toJSONString(true);
+    }
+
     private void setJSONValues(ModelNode json, ModelNode values) {
-        for (Property prop : values.asPropertyList()) {
-            String name = prop.getName();
-            ModelNode value = prop.getValue();
-            if (value.isDefined()) {
-                json.get(name).set(value);
+        synchronized (values) {
+            for (Property prop : new ArrayList<>(values.asPropertyList())) {
+                String name = prop.getName();
+                ModelNode value = prop.getValue();
+                if (value.isDefined()) {
+                    json.get(name).set(value);
+                }
             }
         }
     }
@@ -200,6 +292,10 @@ public final class KeycloakAdapterConfigService {
 
         String deploymentName = preferredDeploymentName(deploymentUnit);
         return this.secureDeployments.containsKey(deploymentName);
+    }
+
+    public boolean isElytronEnabled(DeploymentUnit deploymentUnit) {
+        return elytronEnabledDeployments.contains(preferredDeploymentName(deploymentUnit));
     }
 
     private ModelNode getSecureDeployment(DeploymentUnit deploymentUnit) {

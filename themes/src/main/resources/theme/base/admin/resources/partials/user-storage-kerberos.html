@@ -16,6 +16,13 @@
                     <input class="form-control" id="providerId" type="text" ng-model="instance.id" readonly>
                 </div>
             </div>
+            <div class="form-group clearfix block">
+                <label class="col-md-2 control-label" for="enabled">{{:: 'enabled' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="instance.config['enabled'][0]" name="enabled" id="enabled" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'user-storage.enabled.tooltip' | translate}}</kc-tooltip>
+            </div>
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="consoleDisplayName">{{:: 'console-display-name' | translate}} </label>
                 <div class="col-md-6">
@@ -108,7 +115,7 @@
                 <kc-tooltip>{{:: 'userStorage.cachePolicy.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group" data-ng-show="instance.config['cachePolicy'][0] == 'EVICT_WEEKLY'">
-                <label for="evictionDay" class="col-md-2 control-label">{{:: 'userStorage.evictionDay' | translate}}</label>
+                <label for="evictionDay" class="col-md-2 control-label">{{:: 'userStorage.cachePolicy.evictionDay' | translate}}</label>
                 <div class="col-md-2">
                     <div>
                         <select id="evictionDay" ng-model="instance.config['evictionDay'][0]" class="form-control">

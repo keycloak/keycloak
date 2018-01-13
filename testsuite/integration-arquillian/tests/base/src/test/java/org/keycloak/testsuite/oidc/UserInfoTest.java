@@ -232,18 +232,35 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
             Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
 
-            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
 
             response.close();
 
             events.expect(EventType.USER_INFO_REQUEST_ERROR)
                     .error(Errors.USER_SESSION_NOT_FOUND)
-                    .client((String) null)
                     .user(Matchers.nullValue(String.class))
                     .session(Matchers.nullValue(String.class))
                     .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
                     .assertEvent();
 
+        } finally {
+            client.close();
+        }
+    }
+
+    @Test
+    public void testSessionExpiredOfflineAccess() throws Exception {
+        Client client = ClientBuilder.newClient();
+
+        try {
+            AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client, true);
+
+            testingClient.testing().removeUserSessions("test");
+
+            Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
+
+            testSuccessfulUserInfoResponse(response);
+            response.close();
         } finally {
             client.close();
         }
@@ -274,8 +291,12 @@ public class UserInfoTest extends AbstractKeycloakTest {
     }
 
     private AccessTokenResponse executeGrantAccessTokenRequest(Client client) {
+        return executeGrantAccessTokenRequest(client, false);
+    }
+
+    private AccessTokenResponse executeGrantAccessTokenRequest(Client client, boolean requestOfflineToken) {
         UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
-        URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
+            URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
         WebTarget grantTarget = client.target(grantUri);
 
         String header = BasicAuthHelper.createHeader("test-app", "password");
@@ -283,6 +304,9 @@ public class UserInfoTest extends AbstractKeycloakTest {
         form.param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD)
                 .param("username", "test-user@localhost")
                 .param("password", "password");
+        if( requestOfflineToken) {
+            form.param("scope", "offline_access");
+        }
 
         Response response = grantTarget.request()
                 .header(HttpHeaders.AUTHORIZATION, header)

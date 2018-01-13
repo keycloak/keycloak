@@ -244,4 +244,19 @@ public class UserModelDelegate implements UserModel {
     public boolean isMemberOf(GroupModel group) {
         return delegate.isMemberOf(group);
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof UserModel)) return false;
+
+        UserModel that = (UserModel) o;
+
+        return getDelegate() != null ? getDelegate().getId().equals(that.getId()) : false;
+    }
+
+    @Override
+    public int hashCode() {
+        return getDelegate().getId().hashCode();
+    }
 }

@@ -16,7 +16,7 @@
  */
 package org.keycloak.testsuite.pages;
 
-import org.keycloak.services.resources.AccountService;
+import org.keycloak.services.resources.account.AccountFormService;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -39,8 +39,14 @@ public class AccountTotpPage extends AbstractAccountPage {
     @FindBy(id = "remove-mobile")
     private WebElement removeLink;
 
+    @FindBy(id = "mode-barcode")
+    private WebElement barcodeLink;
+
+    @FindBy(id = "mode-manual")
+    private WebElement manualLink;
+
     private String getPath() {
-        return AccountService.totpUrl(UriBuilder.fromUri(getAuthServerRoot())).build("test").toString();
+        return AccountFormService.totpUrl(UriBuilder.fromUri(getAuthServerRoot())).build("test").toString();
     }
 
     public void configure(String totp) {
@@ -62,6 +68,14 @@ public class AccountTotpPage extends AbstractAccountPage {
 
     public void removeTotp() {
         removeLink.click();
+    }
+
+    public void clickManual() {
+        manualLink.click();
+    }
+
+    public void clickBarcode() {
+        barcodeLink.click();
     }
 
 }

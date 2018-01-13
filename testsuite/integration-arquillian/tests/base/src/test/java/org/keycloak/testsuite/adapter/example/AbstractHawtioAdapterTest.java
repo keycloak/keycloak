@@ -7,12 +7,15 @@ import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import org.keycloak.testsuite.adapter.page.HawtioPage;
+import org.openqa.selenium.By;
 
 import java.util.List;
 
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 import static org.keycloak.testsuite.util.IOUtil.loadRealm;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
+import static org.keycloak.testsuite.util.WaitUtils.pause;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
  * @author mhajas
@@ -32,15 +35,21 @@ public abstract class AbstractHawtioAdapterTest extends AbstractExampleAdapterTe
         testRealmLoginPage.setAuthRealm(DEMO);
 
         hawtioPage.navigateTo();
+        waitUntilElement(By.xpath("//body")).is().present();
+
         assertCurrentUrlStartsWith(testRealmLoginPage);
         testRealmLoginPage.form().login("root", "password");
 
-        assertCurrentUrlStartsWith(hawtioPage.getDriver(), hawtioPage.toString() + "/welcome");
+        waitUntilElement(By.xpath("//body")).is().present();
+        assertCurrentUrlStartsWith(hawtioPage.toString() + "/welcome", hawtioPage.getDriver());
 
         hawtioPage.logout();
+        pause(1000);
+        waitUntilElement(By.xpath("//body")).is().present();
         assertCurrentUrlStartsWith(testRealmLoginPage);
 
         hawtioPage.navigateTo();
+        waitUntilElement(By.xpath("//body")).is().present();
         assertCurrentUrlStartsWith(testRealmLoginPage);
     }
 }

@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-auth-server</artifactId>
-        <version>2.5.1.Final-SNAPSHOT</version>
+        <version>4.0.0.CR1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -29,6 +29,12 @@
     <name>Auth Server - Undertow</name>
 
     <dependencies>
+
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-testsuite-utils</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.jboss.arquillian.junit</groupId>
             <artifactId>arquillian-junit-container</artifactId>
@@ -69,6 +75,11 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-undertow-adapter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.testsuite</groupId>
+            <artifactId>integration-arquillian-testsuite-providers</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>

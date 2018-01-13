@@ -50,6 +50,7 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
     public List<ClientRepresentation> createProviderClients(SuiteContext suiteContext) {
         ClientRepresentation client = new ClientRepresentation();
         client.setId(CLIENT_ID);
+        client.setClientId(getIDPClientIdInProviderRealm(suiteContext));
         client.setName(CLIENT_ID);
         client.setSecret(CLIENT_SECRET);
         client.setEnabled(true);
@@ -104,7 +105,12 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
         IdentityProviderRepresentation idp = createIdentityProvider(IDP_OIDC_ALIAS, IDP_OIDC_PROVIDER_ID);
 
         Map<String, String> config = idp.getConfig();
+        applyDefaultConfiguration(suiteContext, config);
 
+        return idp;
+    }
+
+    protected void applyDefaultConfiguration(final SuiteContext suiteContext, final Map<String, String> config) {
         config.put("clientId", CLIENT_ID);
         config.put("clientSecret", CLIENT_SECRET);
         config.put("prompt", "login");
@@ -114,13 +120,16 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
         config.put("userInfoUrl", getAuthRoot(suiteContext) + "/auth/realms/" + REALM_PROV_NAME + "/protocol/openid-connect/userinfo");
         config.put("defaultScope", "email profile");
         config.put("backchannelSupported", "true");
-
-        return idp;
     }
 
     @Override
     public String getUserLogin() {
         return USER_LOGIN;
+    }
+
+    @Override
+    public String getIDPClientIdInProviderRealm(SuiteContext suiteContext) {
+        return CLIENT_ID;
     }
 
     @Override

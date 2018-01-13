@@ -30,6 +30,7 @@ import org.keycloak.provider.ProviderManager;
 import org.keycloak.provider.ProviderManagerDeployer;
 import org.keycloak.provider.ProviderManagerRegistry;
 import org.keycloak.provider.Spi;
+import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -93,6 +94,7 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
         }
         // make the session factory ready for hot deployment
         ProviderManagerRegistry.SINGLETON.setDeployer(this);
+        AdminPermissions.registerListener(this);
 
     }
     protected Map<Class<? extends Provider>, Map<String, ProviderFactory>> getFactoriesCopy() {
@@ -110,6 +112,7 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
     public void deploy(ProviderManager pm) {
         Map<Class<? extends Provider>, Map<String, ProviderFactory>> copy = getFactoriesCopy();
         Map<Class<? extends Provider>, Map<String, ProviderFactory>> newFactories = loadFactories(pm);
+        List<ProviderFactory> deployed = new LinkedList<>();
         List<ProviderFactory> undeployed = new LinkedList<>();
 
         for (Map.Entry<Class<? extends Provider>, Map<String, ProviderFactory>> entry : newFactories.entrySet()) {
@@ -118,6 +121,7 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
                 copy.put(entry.getKey(), entry.getValue());
             } else {
                 for (ProviderFactory f : entry.getValue().values()) {
+                    deployed.add(f);
                     ProviderFactory old = current.remove(f.getId());
                     if (old != null) undeployed.add(old);
                 }
@@ -128,6 +132,9 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
         factoriesMap = copy;
         for (ProviderFactory factory : undeployed) {
             factory.close();
+        }
+        for (ProviderFactory factory : deployed) {
+            factory.postInit(this);
         }
     }
 
@@ -359,7 +366,8 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
     }
 
     private boolean isInternal(ProviderFactory<?> factory) {
-        return factory.getClass().getPackage().getName().startsWith("org.keycloak");
+        String packageName = factory.getClass().getPackage().getName();
+        return packageName.startsWith("org.keycloak") && !packageName.startsWith("org.keycloak.examples");
     }
 
     /**

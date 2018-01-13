@@ -124,6 +124,12 @@ public class SharedAttributeDefinitons {
             .setAllowExpression(true)
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
             .build();
+    protected static final SimpleAttributeDefinition CORS_EXPOSED_HEADERS =
+            new SimpleAttributeDefinitionBuilder("cors-exposed-headers", ModelType.STRING, true)
+            .setXmlName("cors-exposed-headers")
+            .setAllowExpression(true)
+            .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
+            .build();
     protected static final SimpleAttributeDefinition EXPOSE_TOKEN =
             new SimpleAttributeDefinitionBuilder("expose-token", ModelType.BOOLEAN, true)
                     .setXmlName("expose-token")
@@ -166,7 +172,26 @@ public class SharedAttributeDefinitons {
                     .setAllowExpression(true)
                     .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
                     .build();
+    protected static final SimpleAttributeDefinition AUTODETECT_BEARER_ONLY =
+            new SimpleAttributeDefinitionBuilder("autodetect-bearer-only", ModelType.BOOLEAN, true)
+            .setXmlName("autodetect-bearer-only")
+            .setAllowExpression(true)
+            .setDefaultValue(new ModelNode(false))
+            .build();
 
+    protected static final SimpleAttributeDefinition IGNORE_OAUTH_QUERY_PARAMETER =
+            new SimpleAttributeDefinitionBuilder("ignore-oauth-query-parameter", ModelType.BOOLEAN, true)
+            .setXmlName("ignore-oauth-query-parameter")
+            .setAllowExpression(true)
+            .setDefaultValue(new ModelNode(false))
+            .build();
+
+    protected static final SimpleAttributeDefinition CONFIDENTIAL_PORT =
+            new SimpleAttributeDefinitionBuilder("confidential-port", ModelType.INT, true)
+                    .setXmlName("confidential-port")
+                    .setAllowExpression(true)
+                    .setDefaultValue(new ModelNode(8443))
+                    .build();
 
 
     protected static final List<SimpleAttributeDefinition> ATTRIBUTES = new ArrayList<SimpleAttributeDefinition>();
@@ -176,6 +201,7 @@ public class SharedAttributeDefinitons {
         ATTRIBUTES.add(TRUSTSTORE);
         ATTRIBUTES.add(TRUSTSTORE_PASSWORD);
         ATTRIBUTES.add(SSL_REQUIRED);
+        ATTRIBUTES.add(CONFIDENTIAL_PORT);
         ATTRIBUTES.add(ALLOW_ANY_HOSTNAME);
         ATTRIBUTES.add(DISABLE_TRUST_MANAGER);
         ATTRIBUTES.add(CONNECTION_POOL_SIZE);
@@ -186,6 +212,7 @@ public class SharedAttributeDefinitons {
         ATTRIBUTES.add(CORS_MAX_AGE);
         ATTRIBUTES.add(CORS_ALLOWED_HEADERS);
         ATTRIBUTES.add(CORS_ALLOWED_METHODS);
+        ATTRIBUTES.add(CORS_EXPOSED_HEADERS);
         ATTRIBUTES.add(EXPOSE_TOKEN);
         ATTRIBUTES.add(AUTH_SERVER_URL_FOR_BACKEND_REQUESTS);
         ATTRIBUTES.add(ALWAYS_REFRESH_TOKEN);
@@ -193,6 +220,8 @@ public class SharedAttributeDefinitons {
         ATTRIBUTES.add(REGISTER_NODE_PERIOD);
         ATTRIBUTES.add(TOKEN_STORE);
         ATTRIBUTES.add(PRINCIPAL_ATTRIBUTE);
+        ATTRIBUTES.add(AUTODETECT_BEARER_ONLY);
+        ATTRIBUTES.add(IGNORE_OAUTH_QUERY_PARAMETER);
     }
 
     private static boolean isSet(ModelNode attributes, SimpleAttributeDefinition def) {

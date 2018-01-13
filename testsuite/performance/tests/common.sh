@@ -1,0 +1,6 @@
+#!/bin/bash
+
+PROJECT_BASEDIR=${PROJECT_BASEDIR:-$(cd "$(dirname "$0")"; pwd)}
+PROJECT_BUILD_DIRECTORY=$PROJECT_BASEDIR/target
+
+export PROVISIONED_SYSTEM_PROPERTIES_FILE="$PROJECT_BUILD_DIRECTORY/provisioned-system.properties"

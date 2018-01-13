@@ -41,9 +41,9 @@ public interface AccountProvider extends Provider {
 
     Response createResponse(AccountPages page);
 
-    AccountProvider setError(String message, Object ... parameters);
+    AccountProvider setError(Response.Status status, String message, Object ... parameters);
 
-    AccountProvider setErrors(List<FormMessage> messages);
+    AccountProvider setErrors(Response.Status status, List<FormMessage> messages);
 
     AccountProvider setSuccess(String message, Object ... parameters);
 
@@ -52,8 +52,6 @@ public interface AccountProvider extends Provider {
     AccountProvider setUser(UserModel user);
 
     AccountProvider setProfileFormData(MultivaluedMap<String, String> formData);
-
-    AccountProvider setStatus(Response.Status status);
 
     AccountProvider setRealm(RealmModel realm);
 
@@ -68,4 +66,6 @@ public interface AccountProvider extends Provider {
     AccountProvider setStateChecker(String stateChecker);
 
     AccountProvider setFeatures(boolean social, boolean events, boolean passwordUpdateSupported);
+
+    AccountProvider setAttribute(String key, String value);
 }

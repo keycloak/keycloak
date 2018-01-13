@@ -39,6 +39,7 @@ public class URLProvider extends URLResourceProvider {
 
     protected final Logger log = Logger.getLogger(this.getClass());
 
+    public static final String BOUND_TO_ALL = "0.0.0.0";
     public static final String LOCALHOST_ADDRESS = "127.0.0.1";
     public static final String LOCALHOST_HOSTNAME = "localhost";
 
@@ -59,6 +60,7 @@ public class URLProvider extends URLResourceProvider {
         if (url != null) {
             try {
                 url = fixLocalhost(url);
+                url = fixBoundToAll(url);
                 url = removeTrailingSlash(url);
                 if (appServerSslRequired) {
                     url = fixSsl(url);
@@ -109,6 +111,14 @@ public class URLProvider extends URLResourceProvider {
         }
 
         return url;
+    }
+
+    public URL fixBoundToAll(URL url) throws MalformedURLException {
+        URL fixedUrl = url;
+        if (url.getHost().contains(BOUND_TO_ALL)) {
+            fixedUrl = new URL(fixedUrl.toExternalForm().replace(BOUND_TO_ALL, LOCALHOST_HOSTNAME));
+        }
+        return fixedUrl;
     }
 
     public URL fixLocalhost(URL url) throws MalformedURLException {

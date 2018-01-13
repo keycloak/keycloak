@@ -35,12 +35,27 @@ public class GreenMailRule extends ExternalResource {
 
     private GreenMail greenMail;
 
+    private int port = 3025;
+    private String host = "localhost";
+
+    public GreenMailRule() {
+    }
+
+    public GreenMailRule(int port, String host) {
+        this.port = port;
+        this.host = host;
+    }
+
     @Override
     protected void before() throws Throwable {
-        ServerSetup setup = new ServerSetup(3025, "localhost", "smtp");
+        ServerSetup setup = new ServerSetup(port, host, "smtp");
 
         greenMail = new GreenMail(setup);
         greenMail.start();
+    }
+
+    public void credentials(String username, String password) {
+        greenMail.setUser(username, password);
     }
 
     @Override
@@ -74,4 +89,38 @@ public class GreenMailRule extends ExternalResource {
         return greenMail.getReceivedMessages();
     }
 
+    /**
+     * Returns the very last received message. When no message is available, returns {@code null}.
+     * @return see description
+     */
+    public MimeMessage getLastReceivedMessage() {
+        MimeMessage[] receivedMessages = greenMail.getReceivedMessages();
+        return (receivedMessages == null || receivedMessages.length == 0)
+          ? null
+          : receivedMessages[receivedMessages.length - 1];
+    }
+
+    /**
+     * Use this method if you are sending email in a different thread from the one you're testing from.
+     * Block waits for an email to arrive in any mailbox for any user.
+     * Implementation Detail: No polling wait implementation
+     *
+     * @param timeout maximum time in ms to wait for emailCount of messages to arrive before giving up and returning false
+     * @param emailCount waits for these many emails to arrive before returning
+     * @return
+     * @throws InterruptedException
+     */
+    public boolean waitForIncomingEmail(long timeout, int emailCount) throws InterruptedException {
+        return greenMail.waitForIncomingEmail(timeout, emailCount);
+    }
+
+    /**
+     * Does the same thing as Object.wait(long, int) but with a timeout of 5000ms.
+     * @param emailCount waits for these many emails to arrive before returning
+     * @return
+     * @throws InterruptedException
+     */
+    public boolean waitForIncomingEmail(int emailCount) throws InterruptedException {
+        return greenMail.waitForIncomingEmail(emailCount);
+    }
 }

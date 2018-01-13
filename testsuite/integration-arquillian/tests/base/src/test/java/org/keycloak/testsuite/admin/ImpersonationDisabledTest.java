@@ -32,11 +32,13 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
  */
 public class ImpersonationDisabledTest extends AbstractAdminTest {
+    
+    public static boolean IMPERSONATION_DISABLED = "impersonation".equals(System.getProperty("feature.name")) 
+                && "disabled".equals(System.getProperty("feature.value"));
 
     @BeforeClass
     public static void enabled() {
-        Assume.assumeTrue("impersonation".equals(System.getProperty("feature.name")) 
-                && "disabled".equals(System.getProperty("feature.value")));
+        Assume.assumeTrue(IMPERSONATION_DISABLED);
     }
 
     @Test
@@ -44,6 +46,7 @@ public class ImpersonationDisabledTest extends AbstractAdminTest {
         String impersonatedUserId = adminClient.realm(TEST).users().search("test-user@localhost", 0, 1).get(0).getId();
         
         try {
+            log.debug("--Expected javax.ws.rs.WebApplicationException--");
             adminClient.realms().realm("test").users().get(impersonatedUserId).impersonate();
         } catch (ServerErrorException e) {
             assertEquals(Response.Status.NOT_IMPLEMENTED.getStatusCode(), e.getResponse().getStatus());

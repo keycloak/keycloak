@@ -75,13 +75,13 @@ public abstract class MultipleStepsExportProvider implements ExportProvider {
             @Override
             protected void runExportImportTask(KeycloakSession session) throws IOException {
                 RealmModel realm = session.realms().getRealmByName(realmName);
-                RealmRepresentation rep = ExportUtils.exportRealm(session, realm, exportUsersIntoRealmFile);
+                RealmRepresentation rep = ExportUtils.exportRealm(session, realm, exportUsersIntoRealmFile, true);
                 writeRealm(realmName + "-realm.json", rep);
                 logger.info("Realm '" + realmName + "' - data exported");
 
                 // Count total number of users
                 if (!exportUsersIntoRealmFile) {
-                    usersHolder.totalCount = session.users().getUsersCount(realm);
+                    usersHolder.totalCount = session.users().getUsersCount(realm, true);
                     federatedUsersHolder.totalCount = session.userFederatedStorage().getStoredUsersCount(realm);
                 }
             }

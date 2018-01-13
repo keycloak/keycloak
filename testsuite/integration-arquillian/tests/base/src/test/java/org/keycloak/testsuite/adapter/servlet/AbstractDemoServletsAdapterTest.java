@@ -16,13 +16,31 @@
  */
 package org.keycloak.testsuite.adapter.servlet;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.apache.commons.io.FileUtils;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.conn.params.ConnManagerParams;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
 
 import org.keycloak.OAuth2Constants;
@@ -30,26 +48,41 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Time;
 import org.keycloak.constants.AdapterConstants;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
+import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.VersionRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
-import org.keycloak.testsuite.adapter.page.*;
+import org.keycloak.testsuite.adapter.page.BasicAuth;
+import org.keycloak.testsuite.adapter.page.CustomerDb;
+import org.keycloak.testsuite.adapter.page.CustomerDbErrorPage;
+import org.keycloak.testsuite.adapter.page.CustomerPortal;
+import org.keycloak.testsuite.adapter.page.CustomerPortalNoConf;
+import org.keycloak.testsuite.adapter.page.InputPortal;
+import org.keycloak.testsuite.adapter.page.InputPortalNoAccessToken;
+import org.keycloak.testsuite.adapter.page.ProductPortal;
+import org.keycloak.testsuite.adapter.page.ProductPortalAutodetectBearerOnly;
+import org.keycloak.testsuite.adapter.page.SecurePortal;
+import org.keycloak.testsuite.adapter.page.SecurePortalWithCustomSessionConfig;
+import org.keycloak.testsuite.adapter.page.TokenMinTTLPage;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.account.Applications;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
 import org.keycloak.testsuite.console.page.events.Config;
 import org.keycloak.testsuite.console.page.events.LoginEvents;
+import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.util.BasicAuthHelper;
-
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebElement;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -58,28 +91,21 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Form;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import static org.junit.Assert.*;
-
-import org.keycloak.testsuite.util.Matchers;
-
 import javax.ws.rs.core.Response.Status;
 
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
-import static org.keycloak.testsuite.util.WaitUtils.pause;
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 /**
  *
@@ -102,7 +128,11 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     @Page
     private ProductPortal productPortal;
     @Page
+    private ProductPortalAutodetectBearerOnly productPortalAutodetectBearerOnly;
+    @Page
     private InputPortal inputPortal;
+    @Page
+    private InputPortalNoAccessToken inputPortalNoAccessToken;
     @Page
     private TokenMinTTLPage tokenMinTTLPage;
     @Page
@@ -115,6 +145,9 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     private BasicAuth basicAuthPage;
     @Page
     private Config configPage;
+
+    @Rule
+    public AssertEvents assertEvents = new AssertEvents(this);
 
     @Deployment(name = CustomerPortal.DEPLOYMENT_NAME)
     protected static WebArchive customerPortal() {
@@ -150,10 +183,20 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     protected static WebArchive productPortal() {
         return servletDeployment(ProductPortal.DEPLOYMENT_NAME, ProductServlet.class);
     }
+    
+    @Deployment(name = ProductPortalAutodetectBearerOnly.DEPLOYMENT_NAME)
+    protected static WebArchive productPortalAutodetectBearerOnly() {
+        return servletDeployment(ProductPortalAutodetectBearerOnly.DEPLOYMENT_NAME, ProductServlet.class);
+    }
 
     @Deployment(name = InputPortal.DEPLOYMENT_NAME)
     protected static WebArchive inputPortal() {
         return servletDeployment(InputPortal.DEPLOYMENT_NAME, "keycloak.json", InputServlet.class, ServletTestUtils.class);
+    }
+    
+    @Deployment(name = InputPortalNoAccessToken.DEPLOYMENT_NAME)
+    protected static WebArchive inputPortalNoAccessToken() {
+        return servletDeployment(InputPortalNoAccessToken.DEPLOYMENT_NAME, "keycloak.json", InputServlet.class, ServletTestUtils.class);
     }
 
     @Deployment(name = TokenMinTTLPage.DEPLOYMENT_NAME)
@@ -174,7 +217,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         applicationsPage.setAuthRealm(DEMO);
         loginEventsPage.setConsoleRealm(DEMO);
     }
-
+    
     @Before
     public void beforeDemoServletsAdapterTest() {
         // Delete all cookies from token-min-ttl page to be sure we are logged out
@@ -191,9 +234,10 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
 
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
-        assertCurrentUrlEquals(driver, inputPortal + "/secured/post");
+        assertCurrentUrlEquals(inputPortal + "/secured/post");
+        waitForPageToLoad();
         String pageSource = driver.getPageSource();
-        assertTrue(pageSource.contains("parameter=hello"));
+        assertThat(pageSource, containsString("parameter=hello"));
 
         String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder())
                 .queryParam(OAuth2Constants.REDIRECT_URI, customerPortal.toString())
@@ -311,7 +355,8 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         demoRealmRep.setSsoSessionIdleTimeout(1);
         testRealmResource().update(demoRealmRep);
 
-        pause(2000);
+        // Needs to add some additional time due the tolerance allowed by IDLE_TIMEOUT_WINDOW_SECONDS
+        setAdapterAndServerTimeOffset(2 + SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS);
 
         productPortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
@@ -339,7 +384,8 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         demoRealmRep.setSsoSessionIdleTimeout(1);
         testRealmResource().update(demoRealmRep);
 
-        pause(2000);
+        // Needs to add some additional time due the tolerance allowed by IDLE_TIMEOUT_WINDOW_SECONDS
+        setAdapterAndServerTimeOffset(2 + SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS);
 
         productPortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
@@ -353,6 +399,10 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
 
     @Test
     public void testLoginSSOMax() throws InterruptedException {
+        // Delete cookies
+        driver.navigate().to(customerPortal + "/error.html");
+        driver.manage().deleteAllCookies();
+
         // test login to customer-portal which does a bearer request to customer-db
         customerPortal.navigateTo();
         testRealmLoginPage.form().waitForUsernameInputPresent();
@@ -363,7 +413,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
 
         RealmRepresentation demoRealmRep = testRealmResource().toRepresentation();
-        int originalIdle = demoRealmRep.getSsoSessionMaxLifespan();
+        int originalMax = demoRealmRep.getSsoSessionMaxLifespan();
         demoRealmRep.setSsoSessionMaxLifespan(1);
         testRealmResource().update(demoRealmRep);
 
@@ -371,7 +421,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         productPortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
 
-        demoRealmRep.setSsoSessionIdleTimeout(originalIdle);
+        demoRealmRep.setSsoSessionMaxLifespan(originalMax);
         testRealmResource().update(demoRealmRep);
 
         String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder())
@@ -459,8 +509,10 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         assertNotNull(version2);
         assertNotNull(version2.getVersion());
         assertNotNull(version2.getBuildTime());
-        assertEquals(version.getVersion(), version2.getVersion());
-        assertEquals(version.getBuildTime(), version2.getBuildTime());
+        if (!suiteContext.isAdapterCompatTesting()) {
+            assertEquals(version.getVersion(), version2.getVersion());
+            assertEquals(version.getBuildTime(), version2.getBuildTime());
+        }
         client.close();
     }
 
@@ -552,7 +604,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
 
         // Test I need to reauthenticate with prompt=login
         String appUri = tokenMinTTLPage.getUriBuilder().queryParam(OIDCLoginProtocol.PROMPT_PARAM, OIDCLoginProtocol.PROMPT_VALUE_LOGIN).build().toString();
-        URLUtils.navigateToUri(driver, appUri, true);
+        URLUtils.navigateToUri(appUri, true);
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
         AccessToken token = tokenMinTTLPage.getAccessToken();
@@ -563,27 +615,79 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         setAdapterAndServerTimeOffset(0, tokenMinTTLPage.toString());
     }
 
+    private static Map<String, String> getQueryFromUrl(String url) {
+        try {
+            return URLEncodedUtils.parse(new URI(url), StandardCharsets.UTF_8).stream()
+                .collect(Collectors.toMap(p -> p.getName(), p -> p.getValue()));
+        } catch (URISyntaxException e) {
+            return null;
+        }
+    }
+
+    @Test
+    public void testOIDCUiLocalesParamForwarding() {
+        ProfileAssume.assumeCommunity();
+
+        RealmRepresentation demoRealmRep = testRealmResource().toRepresentation();
+        boolean enabled = demoRealmRep.isInternationalizationEnabled();
+        String defaultLocale = demoRealmRep.getDefaultLocale();
+        Set<String> locales = demoRealmRep.getSupportedLocales();
+        demoRealmRep.setInternationalizationEnabled(true);
+        demoRealmRep.setDefaultLocale("en");
+        demoRealmRep.setSupportedLocales(Stream.of("en", "de").collect(Collectors.toSet()));
+        testRealmResource().update(demoRealmRep);
+
+        // test login with ui_locales to de+en
+        String portalUri = securePortal.getUriBuilder().build().toString();
+        String appUri = securePortal.getUriBuilder().queryParam(OAuth2Constants.UI_LOCALES_PARAM, "de en").build().toString();
+        URLUtils.navigateToUri(appUri, true);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        // check the ui_locales param is there
+        Map<String, String> parameters = getQueryFromUrl(driver.getCurrentUrl());
+        assertEquals("de en", parameters.get(OAuth2Constants.UI_LOCALES_PARAM));
+        // check that the page is in german
+        String pageSource = driver.getPageSource();
+        assertTrue(pageSource.contains("Passwort"));
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
+        // check no ui_locales in the final url adapter url
+        assertCurrentUrlEquals(portalUri);
+        pageSource = driver.getPageSource();
+        assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
+        // logout
+        String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder())
+                .queryParam(OAuth2Constants.REDIRECT_URI, securePortal.toString()).build("demo").toString();
+        driver.navigate().to(logoutUri);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        securePortal.navigateTo();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+
+        demoRealmRep.setInternationalizationEnabled(enabled);
+        demoRealmRep.setDefaultLocale(defaultLocale);
+        demoRealmRep.setSupportedLocales(locales);
+        testRealmResource().update(demoRealmRep);
+    }
+
     @Test
     public void testBasicAuth() {
         String value = "hello";
-        Client client = ClientBuilder.newClient();
+        Client client = ClientBuilder.newBuilder().newClient();
 
         //pause(1000000);
 
         Response response = client.target(basicAuthPage
-                .setTemplateValues("mposolda", "password", value).buildUri()).request().get();
+                .setTemplateValues(value).buildUri()).request().header("Authorization", BasicAuthHelper.createHeader("mposolda", "password")).get();
 
         assertThat(response, Matchers.statusCodeIs(Status.OK));
         assertEquals(value, response.readEntity(String.class));
         response.close();
 
         response = client.target(basicAuthPage
-                .setTemplateValues("invalid-user", "password", value).buildUri()).request().get();
+                .setTemplateValues(value).buildUri()).request().header("Authorization", BasicAuthHelper.createHeader("invalid-user", "password")).get();
         assertThat(response, Matchers.statusCodeIs(Status.UNAUTHORIZED));
         assertThat(response, Matchers.body(anyOf(containsString("Unauthorized"), containsString("Status 401"))));
 
         response = client.target(basicAuthPage
-                .setTemplateValues("admin", "invalid-password", value).buildUri()).request().get();
+                .setTemplateValues(value).buildUri()).request().header("Authorization", BasicAuthHelper.createHeader("admin", "invalid-password")).get();
         assertThat(response, Matchers.statusCodeIs(Status.UNAUTHORIZED));
         assertThat(response, Matchers.body(anyOf(containsString("Unauthorized"), containsString("Status 401"))));
 
@@ -600,6 +704,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         RealmRepresentation realm = testRealmResource().toRepresentation();
         realm.setEventsEnabled(true);
         realm.setEnabledEventTypes(Arrays.asList("REVOKE_GRANT", "LOGIN"));
+        realm.setEventsListeners(Arrays.asList("jboss-logging", "event-queue"));
         testRealmResource().update(realm);
 
         customerPortal.navigateTo();
@@ -610,8 +715,30 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
 
         oAuthGrantPage.accept();
 
-        waitUntilElement(By.xpath("//body")).text().contains("Bill Burke");
-        waitUntilElement(By.xpath("//body")).text().contains("Stian Thorgersen");
+        String pageSource = driver.getPageSource();
+        waitForPageToLoad();
+        assertThat(pageSource, containsString("Bill Burke"));
+        assertThat(pageSource, containsString("Stian Thorgersen"));
+
+        String userId = ApiUtil.findUserByUsername(testRealmResource(), "bburke@redhat.com").getId();
+
+        assertEvents.expectLogin()
+                .realm(realm.getId())
+                .client("customer-portal")
+                .user(userId)
+                .detail(Details.USERNAME, "bburke@redhat.com")
+                .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
+                .detail(Details.REDIRECT_URI, customerPortal.getInjectedUrl().toString())
+                .removeDetail(Details.CODE_ID)
+                .assertEvent();
+
+        assertEvents.expectCodeToToken(null, null)
+                .realm(realm.getId())
+                .client("customer-portal")
+                .user(userId)
+                .session(AssertEvents.isUUID())
+                .removeDetail(Details.CODE_ID)
+                .assertEvent();
 
         applicationsPage.navigateTo();
         applicationsPage.revokeGrantForApplication("customer-portal");
@@ -620,42 +747,19 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
 
         assertTrue(oAuthGrantPage.isCurrent());
 
-        loginEventsPage.navigateTo();
+        assertEvents.expect(EventType.REVOKE_GRANT)
+                .realm(realm.getId())
+                .client("account")
+                .user(userId)
+                .detail(Details.REVOKED_CLIENT, "customer-portal")
+                .assertEvent();
 
-        if (!testContext.isAdminLoggedIn()) {
-            loginPage.form().login(adminUser);
-            testContext.setAdminLoggedIn(true);
-        }
+        assertEvents.assertEmpty();
 
-        loginEventsPage.table().filter();
-        loginEventsPage.table().filterForm().addEventType("REVOKE_GRANT");
-        loginEventsPage.table().update();
-
-        List<WebElement> resultList = loginEventsPage.table().rows();
-
-        assertEquals(1, resultList.size());
-
-        resultList.get(0).findElement(By.xpath(".//td[text()='REVOKE_GRANT']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='Client']/../td[text()='account']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='IP Address']/../td[text()='127.0.0.1' or text()='0:0:0:0:0:0:0:1']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='revoked_client']/../td[text()='customer-portal']"));
-
-        loginEventsPage.table().reset();
-        loginEventsPage.table().filterForm().addEventType("LOGIN");
-        loginEventsPage.table().update();
-        resultList = loginEventsPage.table().rows();
-
-        assertEquals(1, resultList.size());
-
-        resultList.get(0).findElement(By.xpath(".//td[text()='LOGIN']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='Client']/../td[text()='customer-portal']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='IP Address']/../td[text()='127.0.0.1' or text()='0:0:0:0:0:0:0:1']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='username']/../td[text()='bburke@redhat.com']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='consent']/../td[text()='consent_granted']"));
-
-        configPage.navigateTo();
-        configPage.form().clearLoginEvents();
-        driver.findElement(By.xpath("//div[@class='modal-dialog']//button[text()='Delete']")).click();
+        // Revert consent
+        client = clientResource.toRepresentation();
+        client.setConsentRequired(false);
+        clientResource.update(client);
     }
 
     @Test
@@ -663,62 +767,50 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         RealmRepresentation realm = testRealmResource().toRepresentation();
         realm.setEventsEnabled(true);
         realm.setEnabledEventTypes(Arrays.asList("LOGIN", "LOGIN_ERROR", "LOGOUT", "CODE_TO_TOKEN"));
+        realm.setEventsListeners(Arrays.asList("jboss-logging", "event-queue"));
         testRealmResource().update(realm);
 
         customerPortal.navigateTo();
 
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
 
-        waitUntilElement(By.xpath("//body")).text().contains("Bill Burke");
-        waitUntilElement(By.xpath("//body")).text().contains("Stian Thorgersen");
+        waitForPageToLoad();
+        String pageSource = driver.getPageSource();
+        assertThat(pageSource, containsString("Bill Burke"));
+        assertThat(pageSource, containsString("Stian Thorgersen"));
+
+        String userId = ApiUtil.findUserByUsername(testRealmResource(), "bburke@redhat.com").getId();
+
+        assertEvents.expectLogin()
+                .realm(realm.getId())
+                .client("customer-portal")
+                .user(userId)
+                .detail(Details.USERNAME, "bburke@redhat.com")
+                .detail(Details.CONSENT, Details.CONSENT_VALUE_NO_CONSENT_REQUIRED)
+                .detail(Details.REDIRECT_URI, customerPortal.getInjectedUrl().toString())
+                .removeDetail(Details.CODE_ID)
+                .assertEvent();
+
+        assertEvents.expectCodeToToken(null, null)
+                .realm(realm.getId())
+                .client("customer-portal")
+                .user(userId)
+                .session(AssertEvents.isUUID())
+                .removeDetail(Details.CODE_ID)
+                .assertEvent();
+
 
         driver.navigate().to(testRealmPage.getOIDCLogoutUrl() + "?redirect_uri=" + customerPortal);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
 
-        loginEventsPage.navigateTo();
+        assertEvents.expectLogout(null)
+                .realm(realm.getId())
+                .user(userId)
+                .session(AssertEvents.isUUID())
+                .detail(Details.REDIRECT_URI, customerPortal.getInjectedUrl().toString())
+                .assertEvent();
 
-        if (!testContext.isAdminLoggedIn()) {
-            loginPage.form().login(adminUser);
-            testContext.setAdminLoggedIn(true);
-        }
-
-        loginEventsPage.table().filter();
-        loginEventsPage.table().filterForm().addEventType("LOGOUT");
-        loginEventsPage.table().update();
-
-        List<WebElement> resultList = loginEventsPage.table().rows();
-
-        assertEquals(1, resultList.size());
-
-        resultList.get(0).findElement(By.xpath(".//td[text()='LOGOUT']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='Client']/../td[text()='']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='IP Address']/../td[text()='127.0.0.1' or text()='0:0:0:0:0:0:0:1']"));
-
-        loginEventsPage.table().reset();
-        loginEventsPage.table().filterForm().addEventType("LOGIN");
-        loginEventsPage.table().update();
-        resultList = loginEventsPage.table().rows();
-
-        assertEquals(1, resultList.size());
-
-        resultList.get(0).findElement(By.xpath(".//td[text()='LOGIN']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='Client']/../td[text()='customer-portal']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='IP Address']/../td[text()='127.0.0.1' or text()='0:0:0:0:0:0:0:1']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='username']/../td[text()='bburke@redhat.com']"));
-
-        loginEventsPage.table().reset();
-        loginEventsPage.table().filterForm().addEventType("CODE_TO_TOKEN");
-        loginEventsPage.table().update();
-        resultList = loginEventsPage.table().rows();
-
-        assertEquals(1, resultList.size());
-        resultList.get(0).findElement(By.xpath(".//td[text()='CODE_TO_TOKEN']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='Client']/../td[text()='customer-portal']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='IP Address']/../td[text()='127.0.0.1' or text()='0:0:0:0:0:0:0:1']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='refresh_token_type']/../td[text()='Refresh']"));
-
-        configPage.navigateTo();
-        configPage.form().clearLoginEvents();
-        driver.findElement(By.xpath("//div[@class='modal-dialog']//button[text()='Delete']")).click();
+        assertEvents.assertEmpty();
 
         String serverLogPath = null;
 
@@ -756,5 +848,175 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Forbidden") || pageSource.contains("HTTP Status 401"));
     }
+    
+    // KEYCLOAK-3509
+    @Test
+    public void testLoginEncodedRedirectUri() {
+        // test login to customer-portal which does a bearer request to customer-db
+        driver.navigate().to(productPortal.getInjectedUrl() + "?encodeTest=a%3Cb");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        
+        assertCurrentUrlEquals(productPortal + "?encodeTest=a%3Cb");
+        String pageSource = driver.getPageSource();
+        Assert.assertTrue(pageSource.contains("iPhone"));
+        Assert.assertTrue(pageSource.contains("uriEncodeTest=true"));
 
+        driver.navigate().to(productPortal.getInjectedUrl());
+        assertCurrentUrlEquals(productPortal);
+        System.out.println(driver.getCurrentUrl());
+        Assert.assertTrue(driver.getPageSource().contains("uriEncodeTest=false"));
+        
+        // test logout
+        String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder())
+                .queryParam(OAuth2Constants.REDIRECT_URI, customerPortal.toString())
+                .build("demo").toString();
+        driver.navigate().to(logoutUri);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        productPortal.navigateTo();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        customerPortal.navigateTo();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        
+    }
+    
+    @Test
+    public void testAutodetectBearerOnly() {
+        Client client = ClientBuilder.newClient();
+        
+        // Do not redirect client to login page if it's an XHR
+        System.out.println(productPortalAutodetectBearerOnly.getInjectedUrl().toString());
+        WebTarget target = client.target(productPortalAutodetectBearerOnly.getInjectedUrl().toString());
+        Response response = target.request().header("X-Requested-With", "XMLHttpRequest").get();
+        Assert.assertEquals(401, response.getStatus());
+        response.close();
+        
+        // Do not redirect client to login page if it's a partial Faces request
+        response = target.request().header("Faces-Request", "partial/ajax").get();
+        Assert.assertEquals(401, response.getStatus());
+        response.close();
+        
+        // Do not redirect client to login page if it's a SOAP request
+        response = target.request().header("SOAPAction", "").get();
+        Assert.assertEquals(401, response.getStatus());
+        response.close();
+
+        // Do not redirect client to login page if Accept header is missing
+        response = target.request().get();
+        Assert.assertEquals(401, response.getStatus());
+        response.close();
+
+        // Do not redirect client to login page if client does not understand HTML reponses
+        response = target.request().header(HttpHeaders.ACCEPT, "application/json,text/xml").get();
+        Assert.assertEquals(401, response.getStatus());
+        response.close();
+
+        // Redirect client to login page if it's not an XHR
+        response = target.request().header("X-Requested-With", "Dont-Know").header(HttpHeaders.ACCEPT, "*/*").get();
+        Assert.assertEquals(302, response.getStatus());
+        Assert.assertTrue(response.getHeaderString(HttpHeaders.LOCATION).contains("response_type=code"));
+        response.close();
+
+        // Redirect client to login page if client explicitely understands HTML responses
+        response = target.request().header(HttpHeaders.ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9").get();
+        Assert.assertEquals(302, response.getStatus());
+        Assert.assertTrue(response.getHeaderString(HttpHeaders.LOCATION).contains("response_type=code"));
+        response.close();
+
+        // Redirect client to login page if client understands all response types
+        response = target.request().header(HttpHeaders.ACCEPT, "*/*").get();
+        Assert.assertEquals(302, response.getStatus());
+        Assert.assertTrue(response.getHeaderString(HttpHeaders.LOCATION).contains("response_type=code"));
+        response.close();
+        client.close();
+    }
+
+    // KEYCLOAK-3016
+    @Test
+    public void testBasicAuthErrorHandling() {
+        Client client = ClientBuilder.newClient();
+        WebTarget target = client.target(customerDb.getInjectedUrl().toString());
+        Response response = target.request().get();
+        Assert.assertEquals(401, response.getStatus());
+        response.close();
+
+        // The number of iterations should be HttpClient's connection pool size + 1.
+        final int LIMIT = ConnManagerParams.DEFAULT_MAX_TOTAL_CONNECTIONS + 1;
+        for (int i = 0; i < LIMIT; i++) {
+            System.out.println("Testing Basic Auth with bad credentials " + i);
+            response = target.request().header(HttpHeaders.AUTHORIZATION, "Basic dXNlcm5hbWU6cGFzc3dvcmQ=").get();
+            Assert.assertEquals(401, response.getStatus());
+            response.close();
+        }
+
+        client.close();
+    }
+    
+    // KEYCLOAK-1733
+    @Test
+    public void testNullQueryParameterAccessToken() {
+        Client client = ClientBuilder.newClient();
+        
+        WebTarget target = client.target(customerDb.getInjectedUrl().toString());
+        Response response = target.request().get();
+        Assert.assertEquals(401, response.getStatus());
+        response.close();
+
+        target = client.target(customerDb.getInjectedUrl().toString() + "?access_token=");
+        response = target.request().get();
+        Assert.assertEquals(401, response.getStatus());
+        response.close();
+
+        client.close();
+    }
+    
+    // KEYCLOAK-1733
+    @Test
+    public void testRestCallWithAccessTokenAsQueryParameter() {
+
+        Client client = ClientBuilder.newClient();
+        try {
+            WebTarget webTarget = client.target(testRealmPage.toString() + "/protocol/openid-connect/token");
+
+            Form form = new Form();
+            form.param("grant_type", "password");
+            form.param("client_id", "customer-portal-public");
+            form.param("username", "bburke@redhat.com");
+            form.param("password", "password");
+            Response response = webTarget.request().post(Entity.form(form));
+
+            Assert.assertEquals(200, response.getStatus());
+            AccessTokenResponse tokenResponse = response.readEntity(AccessTokenResponse.class);
+            response.close();
+
+            String accessToken = tokenResponse.getToken();
+
+            // test without token
+            response = client.target(customerDb.getInjectedUrl().toString()).request().get();
+            Assert.assertEquals(401, response.getStatus());
+            response.close();
+            // test with access_token as QueryParamter
+            response = client.target(customerDb.getInjectedUrl().toString()).queryParam("access_token", accessToken).request().get();
+            Assert.assertEquals(200, response.getStatus());
+            response.close();
+        } finally {
+            client.close();
+        }
+    }
+    
+    //KEYCLOAK-4765
+    @Test
+    @Ignore
+    public void testCallURLWithAccessToken() {
+        // test login to customer-portal which does a bearer request to customer-db
+        String applicationURL = inputPortalNoAccessToken.getInjectedUrl().toString() + "?access_token=invalid_token";
+        driver.navigate().to(applicationURL);
+        System.out.println("Current url: " + driver.getCurrentUrl());
+
+        Assert.assertEquals(applicationURL, driver.getCurrentUrl());
+        System.out.println(driver.getPageSource());
+        inputPortalNoAccessToken.execute("hello");
+    }
 }

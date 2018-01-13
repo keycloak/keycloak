@@ -32,17 +32,19 @@ import java.util.Map;
 public class AuthorizationContext {
 
     private final AccessToken authzToken;
+    private final PathConfig current;
     private final Map<String, PathConfig> paths;
     private boolean granted;
 
-    public AuthorizationContext(AccessToken authzToken, Map<String, PathConfig> paths) {
+    public AuthorizationContext(AccessToken authzToken, PathConfig current, Map<String, PathConfig> paths) {
         this.authzToken = authzToken;
+        this.current = current;
         this.paths = paths;
         this.granted = true;
     }
 
     public AuthorizationContext() {
-        this(null, null);
+        this(null, null, null);
         this.granted = false;
     }
 
@@ -57,9 +59,15 @@ public class AuthorizationContext {
             return false;
         }
 
-        for (Permission permission : authorization.getPermissions()) {
-            for (PathConfig pathHolder : this.paths.values()) {
-                if (pathHolder.getName().equals(resourceName)) {
+        if (current != null) {
+            if (current.getName().equals(resourceName)) {
+                return true;
+            }
+        }
+
+        if (hasResourcePermission(resourceName)) {
+            for (Permission permission : authorization.getPermissions()) {
+                for (PathConfig pathHolder : paths.values()) {
                     if (pathHolder.getId().equals(permission.getResourceSetId())) {
                         if (permission.getScopes().contains(scopeName)) {
                             return true;
@@ -83,13 +91,15 @@ public class AuthorizationContext {
             return false;
         }
 
+        if (current != null) {
+            if (current.getName().equals(resourceName)) {
+                return true;
+            }
+        }
+
         for (Permission permission : authorization.getPermissions()) {
-            for (PathConfig pathHolder : this.paths.values()) {
-                if (pathHolder.getName().equals(resourceName)) {
-                    if (pathHolder.getId().equals(permission.getResourceSetId())) {
-                        return true;
-                    }
-                }
+            if (permission.getResourceSetName().equals(resourceName) || permission.getResourceSetId().equals(resourceName)) {
+                return true;
             }
         }
 

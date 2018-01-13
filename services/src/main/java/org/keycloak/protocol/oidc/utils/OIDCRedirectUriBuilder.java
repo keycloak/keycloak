@@ -91,7 +91,7 @@ public abstract class OIDCRedirectUriBuilder {
 
         @Override
         public OIDCRedirectUriBuilder addParam(String paramName, String paramValue) {
-            String param = paramName + "=" + Encode.encodeQueryParam(paramValue);
+            String param = paramName + "=" + Encode.encodeQueryParamAsIs(paramValue);
             if (fragment == null) {
                 fragment = new StringBuilder(param);
             } else {

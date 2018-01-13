@@ -7,7 +7,7 @@
      <kc-tabs-user></kc-tabs-user>
 
      <form class="form-horizontal" name="realmForm" novalidate>
-         <div class="form-group" kc-read-only="!access.manageUsers">
+         <div class="form-group" kc-read-only="!user.access.manageGroupMembership">
              <label class="col-md-1 control-label" class="control-label"></label>
 
              <div class="col-md-8" >
@@ -21,7 +21,7 @@
                                          <label class="control-label">{{:: 'group-membership' | translate}}</label>
                                          <kc-tooltip>{{:: 'group-membership.tooltip' | translate}}</kc-tooltip>
 
-                                         <div class="pull-right" data-ng-show="access.manageUsers">
+                                         <div class="pull-right" data-ng-show="user.access.manageGroupMembership">
                                              <button id="leaveGroups" class="btn btn-default" ng-click="leaveGroup()">{{:: 'leave' | translate}}</button>
                                          </div>
                                      </div>
@@ -53,7 +53,7 @@
                                          <label class="control-label">{{:: 'available-groups' | translate}}</label>
                                          <kc-tooltip>{{:: 'membership.available-groups.tooltip' | translate}}</kc-tooltip>
 
-                                         <div class="pull-right" data-ng-show="access.manageUsers">
+                                         <div class="pull-right" data-ng-show="user.access.manageGroupMembership">
                                              <button id="joinGroup" class="btn btn-default" ng-click="joinGroup()">{{:: 'join' | translate}}</button>
                                          </div>
                                      </div>

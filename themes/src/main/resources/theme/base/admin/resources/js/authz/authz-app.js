@@ -59,6 +59,23 @@ module.config(['$routeProvider', function ($routeProvider) {
             }
         },
         controller: 'ResourceServerDetailCtrl'
+    }).when('/realms/:realm/clients/:client/authz/resource-server/export-settings', {
+              templateUrl: resourceUrl + '/partials/authz/resource-server-export-settings.html',
+              resolve: {
+                  realm: function (RealmLoader) {
+                      return RealmLoader();
+                  },
+                  client : function(ClientLoader) {
+                      return ClientLoader();
+                  },
+                  clients: function (ClientListLoader) {
+                      return ClientListLoader();
+                  },
+                  serverInfo: function (ServerInfoLoader) {
+                      return ServerInfoLoader();
+                  }
+              },
+              controller: 'ResourceServerDetailCtrl'
     }).when('/realms/:realm/clients/:client/authz/resource-server/evaluate', {
         templateUrl: resourceUrl + '/partials/authz/policy/resource-server-policy-evaluate.html',
         resolve: {
@@ -307,7 +324,29 @@ module.config(['$routeProvider', function ($routeProvider) {
             }
         },
         controller: 'ResourceServerPolicyRoleDetailCtrl'
-    }).when('/realms/:realm/clients/:client/authz/resource-server/policy/js/create', {
+    }).when('/realms/:realm/clients/:client/authz/resource-server/policy/group/create', {
+          templateUrl: resourceUrl + '/partials/authz/policy/provider/resource-server-policy-group-detail.html',
+          resolve: {
+              realm: function (RealmLoader) {
+                  return RealmLoader();
+              },
+              client : function(ClientLoader) {
+                  return ClientLoader();
+              }
+          },
+          controller: 'ResourceServerPolicyGroupDetailCtrl'
+      }).when('/realms/:realm/clients/:client/authz/resource-server/policy/group/:id', {
+          templateUrl: resourceUrl + '/partials/authz/policy/provider/resource-server-policy-group-detail.html',
+          resolve: {
+              realm: function (RealmLoader) {
+                  return RealmLoader();
+              },
+              client : function(ClientLoader) {
+                  return ClientLoader();
+              }
+          },
+          controller: 'ResourceServerPolicyGroupDetailCtrl'
+      }).when('/realms/:realm/clients/:client/authz/resource-server/policy/js/create', {
         templateUrl: resourceUrl + '/partials/authz/policy/provider/resource-server-policy-js-detail.html',
         resolve: {
             realm: function (RealmLoader) {
@@ -373,7 +412,77 @@ module.config(['$routeProvider', function ($routeProvider) {
             }
         },
         controller: 'ResourceServerPolicyAggregateDetailCtrl'
-    });
+    }).when('/realms/:realm/roles/:role/permissions', {
+        templateUrl : resourceUrl + '/partials/authz/mgmt/realm-role-permissions.html',
+        resolve : {
+            realm : function(RealmLoader) {
+                return RealmLoader();
+            },
+            role : function(RoleLoader) {
+                return RoleLoader();
+            }
+        },
+        controller : 'RealmRolePermissionsCtrl'
+    }).when('/realms/:realm/clients/:client/roles/:role/permissions', {
+        templateUrl : resourceUrl + '/partials/authz/mgmt/client-role-permissions.html',
+        resolve : {
+            realm : function(RealmLoader) {
+                return RealmLoader();
+            },
+            client : function(ClientLoader) {
+                return ClientLoader();
+            },
+            role : function(RoleLoader) {
+                return RoleLoader();
+            }
+        },
+        controller : 'ClientRolePermissionsCtrl'
+    }).when('/realms/:realm/users-permissions', {
+        templateUrl : resourceUrl + '/partials/authz/mgmt/users-permissions.html',
+        resolve : {
+            realm : function(RealmLoader) {
+                return RealmLoader();
+            }
+        },
+        controller : 'UsersPermissionsCtrl'
+    })
+        .when('/realms/:realm/clients/:client/permissions', {
+            templateUrl : resourceUrl + '/partials/authz/mgmt/client-permissions.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                client : function(ClientLoader) {
+                    return ClientLoader();
+                }
+            },
+            controller : 'ClientPermissionsCtrl'
+        })
+        .when('/realms/:realm/groups/:group/permissions', {
+            templateUrl : resourceUrl + '/partials/authz/mgmt/group-permissions.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                group : function(GroupLoader) {
+                    return GroupLoader();
+                }
+            },
+            controller : 'GroupPermissionsCtrl'
+        })
+        .when('/realms/:realm/identity-provider-settings/provider/:provider_id/:alias/permissions', {
+            templateUrl : function(params){ return resourceUrl + '/partials/authz/mgmt/broker-permissions.html'; },
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                identityProvider : function(IdentityProviderLoader) {
+                    return IdentityProviderLoader();
+                }
+             },
+            controller : 'IdentityProviderPermissionCtrl'
+        })
+    ;
 }]);
 
 module.directive('kcTabsResourceServer', function () {

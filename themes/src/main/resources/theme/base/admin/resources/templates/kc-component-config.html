@@ -17,9 +17,7 @@
             </select>
         </div>
         <div class="col-md-6" data-ng-if="option.type == 'MultivaluedList'">
-            <select ui-select2 data-ng-model="config[ option.name ]" data-placeholder="{{:: 'selectMultiple' | translate}}..." multiple>
-                <option ng-repeat="val in option.options" value="{{val}}" ng-selected="true">{{val}}</option>
-            </select>
+            <input ui-select2="option.mvOptions" ng-model="config[ option.name ]" data-placeholder="{{:: 'selectMultiple' | translate}}..."/>
         </div>
         <div class="col-md-6" data-ng-if="option.type == 'Role'">
             <div class="row">
@@ -46,7 +44,7 @@
         </div>
 
         <div class="col-md-6" data-ng-if="option.type == 'Script'">
-            <div ng-model="config[option.name]" placeholder="Enter your script..." ui-ace="{ useWrapMode: true, showGutter: true, theme:'github', mode: 'javascript'}">
+            <div ng-model="config[option.name]" placeholder="Enter your script..." ui-ace="{ onLoad : initEditor, useWrapMode: true, showGutter: true, theme:'github', mode: 'javascript'}">
                 {{config[option.name]}}
             </div>
         </div>

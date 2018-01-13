@@ -142,11 +142,18 @@ public class ProvidersTest extends AbstractAuthenticationTest {
         addProviderInfo(result, "auth-spnego", "Kerberos", "Initiates the SPNEGO protocol.  Most often used with Kerberos.");
         addProviderInfo(result, "auth-username-password-form", "Username Password Form",
                 "Validates a username and password from login form.");
+        addProviderInfo(result, "auth-x509-client-username-form", "X509/Validate Username Form",
+                "Validates username and password from X509 client certificate received as a part of mutual SSL handshake.");
+        addProviderInfo(result, "direct-grant-auth-x509-username", "X509/Validate Username",
+                "Validates username and password from X509 client certificate received as a part of mutual SSL handshake.");
         addProviderInfo(result, "direct-grant-validate-otp", "OTP", "Validates the one time password supplied as a 'totp' form parameter in direct grant request");
         addProviderInfo(result, "direct-grant-validate-password", "Password",
                 "Validates the password supplied as a 'password' form parameter in direct grant request");
         addProviderInfo(result, "direct-grant-validate-username", "Username Validation",
                 "Validates the username supplied as a 'username' form parameter in direct grant request");
+        addProviderInfo(result, "docker-http-basic-authenticator", "Docker Authenticator", "Uses HTTP Basic authentication to validate docker users, returning a docker error token on auth failure");
+        addProviderInfo(result, "expected-param-authenticator", "TEST: Expected Parameter",
+                "You will be approved if you send query string parameter 'foo' with expected value.");
         addProviderInfo(result, "http-basic-authenticator", "HTTP Basic Authentication", "Validates username and password from Authorization HTTP header");
         addProviderInfo(result, "identity-provider-redirector", "Identity Provider Redirector", "Redirects to default Identity Provider or Identity Provider specified with kc_idp_hint query parameter");
         addProviderInfo(result, "idp-confirm-link", "Confirm link existing account", "Show the form where user confirms if he wants " +
@@ -159,6 +166,8 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "User reviews and updates profile data retrieved from Identity Provider in the displayed form");
         addProviderInfo(result, "idp-username-password-form", "Username Password Form for identity provider reauthentication",
                 "Validates a password from login form. Username is already known from identity provider authentication");
+        addProviderInfo(result, "push-button-authenticator", "TEST: Button Login",
+                "Just press the button to login.");
         addProviderInfo(result, "reset-credential-email", "Send Reset Email", "Send email to user and wait for response.");
         addProviderInfo(result, "reset-credentials-choose-user", "Choose User", "Choose a user to reset credentials for");
         addProviderInfo(result, "reset-otp", "Reset OTP", "Sets the Configure OTP required action if execution is REQUIRED.  " +
@@ -171,6 +180,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Testsuite Dummy authenticator.  Just passes through and is hardcoded to a specific user");
         addProviderInfo(result, "testsuite-dummy-registration", "Testsuite Dummy Pass Thru",
                 "Testsuite Dummy authenticator.  Just passes through and is hardcoded to a specific user");
+
         return result;
     }
 

@@ -17,6 +17,7 @@
 
 package org.keycloak.models.utils;
 
+import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
@@ -26,6 +27,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.storage.OnCreateComponent;
+import org.keycloak.storage.OnUpdateComponent;
 import org.keycloak.storage.UserStorageProviderFactory;
 
 import java.util.HashMap;
@@ -36,6 +38,8 @@ import java.util.Map;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class ComponentUtil {
+
+    private static final Logger logger = Logger.getLogger(ComponentUtil.class);
 
     public static Map<String, ProviderConfigProperty> getComponentConfigProperties(KeycloakSession session, ComponentRepresentation component) {
         return getComponentConfigProperties(session, component.getProviderType(), component.getProviderId());
@@ -53,7 +57,7 @@ public class ComponentUtil {
         return getComponentFactory(session, component.getProviderType(), component.getProviderId());
     }
 
-    private static Map<String, ProviderConfigProperty> getComponentConfigProperties(KeycloakSession session, String providerType, String providerId) {
+    public static Map<String, ProviderConfigProperty> getComponentConfigProperties(KeycloakSession session, String providerType, String providerId) {
         try {
             ComponentFactory componentFactory = getComponentFactory(session, providerType, providerId);
             List<ProviderConfigProperty> l = componentFactory.getConfigProperties();
@@ -94,9 +98,21 @@ public class ComponentUtil {
             ((OnCreateComponent)session.userStorageManager()).onCreate(session, realm, model);
         }
     }
-    public static void notifyUpdated(KeycloakSession session, RealmModel realm, ComponentModel model) {
-        ComponentFactory factory = getComponentFactory(session, model);
-        factory.onUpdate(session, realm, model);
+    public static void notifyUpdated(KeycloakSession session, RealmModel realm, ComponentModel oldModel, ComponentModel newModel) {
+        ComponentFactory factory = getComponentFactory(session, newModel);
+        factory.onUpdate(session, realm, oldModel, newModel);
+        if (factory instanceof UserStorageProviderFactory) {
+            ((OnUpdateComponent)session.userStorageManager()).onUpdate(session, realm, oldModel, newModel);
+        }
+    }
+    public static void notifyPreRemove(KeycloakSession session, RealmModel realm, ComponentModel model) {
+        try {
+            ComponentFactory factory = getComponentFactory(session, model);
+            factory.preRemove(session, realm, model);
+        } catch (IllegalArgumentException iae) {
+            // We allow to remove broken providers without throwing an exception
+            logger.warn(iae.getMessage());
+        }
     }
 
 }

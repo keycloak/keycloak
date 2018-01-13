@@ -65,9 +65,9 @@ public class AbstractPermissionService {
         return request.stream().map(request1 -> {
             String resourceSetId = request1.getResourceSetId();
             String resourceSetName = request1.getResourceSetName();
-            boolean resourceNotProvider = resourceSetId == null && resourceSetName == null;
+            boolean resourceNotProvided = resourceSetId == null && resourceSetName == null;
 
-            if (resourceNotProvider) {
+            if (resourceNotProvided) {
                 if ((request1.getScopes() == null || request1.getScopes().isEmpty())) {
                     throw new ErrorResponseException("invalid_resource_set_id", "Resource id or name not provided.", Response.Status.BAD_REQUEST);
                 }
@@ -75,7 +75,7 @@ public class AbstractPermissionService {
 
             Resource resource = null;
 
-            if (!resourceNotProvider) {
+            if (!resourceNotProvided) {
                 if (resourceSetId != null) {
                     resource = storeFactory.getResourceStore().findById(resourceSetId, resourceServer.getId());
                 } else {
@@ -114,7 +114,7 @@ public class AbstractPermissionService {
                 }
 
                 for (Resource baseResource : authorization.getStoreFactory().getResourceStore().findByType(resource.getType(), resourceServer.getId())) {
-                    if (baseResource.getOwner().equals(resource.getResourceServer().getClientId())) {
+                    if (baseResource.getOwner().equals(resource.getResourceServer().getId())) {
                         for (Scope baseScope : baseResource.getScopes()) {
                             if (baseScope.getName().equals(scopeName)) {
                                 return new ScopeRepresentation(scopeName);

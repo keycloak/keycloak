@@ -339,9 +339,9 @@ public class PartialImportTest extends AbstractAuthTest {
     @Test
     public void testAddUsersWithDuplicateEmailsAllowed() {
         
-        RealmRepresentation realmRep = new RealmRepresentation();
+        RealmRepresentation realmRep = testRealmResource().toRepresentation();
         realmRep.setDuplicateEmailsAllowed(true);
-        adminClient.realm(realmId).update(realmRep);
+        testRealmResource().update(realmRep);
                 
         assertAdminEvents.clear();
 
@@ -645,4 +645,17 @@ public class PartialImportTest extends AbstractAuthTest {
                 
         doImport();
     }
+
+    // KEYCLOAK-6058
+    @Test
+    public void testOverwriteExistingInternalClient() {
+        setOverwrite();
+        ClientRepresentation client = adminClient.realm(MASTER).clients().findByClientId("security-admin-console").get(0);
+        ClientRepresentation client2 = adminClient.realm(MASTER).clients().findByClientId("master-realm").get(0);
+        piRep.setClients(Arrays.asList(client, client2));
+
+        PartialImportResults result = doImport();
+        Assert.assertEquals(0, result.getOverwritten());
+    }
+
 }

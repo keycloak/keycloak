@@ -46,6 +46,13 @@ public abstract class AbstractClientTest extends AbstractAuthTest {
     @Rule
     public AssertAdminEvents assertAdminEvents = new AssertAdminEvents(this);
 
+    @Override
+    public void setDefaultPageUriParameters() {
+        super.setDefaultPageUriParameters();
+        testRealmPage.setAuthRealm("test");
+        accountPage.setAuthRealm("test");
+    }    
+
     @Before
     public void setupAdminEvents() {
         RealmRepresentation realm = testRealmResource().toRepresentation();
@@ -66,7 +73,7 @@ public abstract class AbstractClientTest extends AbstractAuthTest {
     }
 
     protected String getRealmId() {
-        return "master";
+        return "test";
     }
 
     // returns UserRepresentation retrieved from server, with all fields, including id
@@ -100,7 +107,9 @@ public abstract class AbstractClientTest extends AbstractAuthTest {
         clientRep.setPublicClient(Boolean.FALSE);
         clientRep.setAuthorizationServicesEnabled(Boolean.TRUE);
         clientRep.setServiceAccountsEnabled(Boolean.TRUE);
-        return createClient(clientRep);
+        String id = createClient(clientRep);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientResourcePath(id), ResourceType.AUTHORIZATION_RESOURCE_SERVER);
+        return id;
     }
 
     protected ClientRepresentation createOidcClientRep(String name) {

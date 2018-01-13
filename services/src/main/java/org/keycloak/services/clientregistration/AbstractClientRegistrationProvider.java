@@ -23,6 +23,7 @@ import org.keycloak.models.ClientInitialAccessModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -30,6 +31,8 @@ import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyManager;
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
+import org.keycloak.services.managers.ClientManager;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.validation.ValidationMessages;
 
 import javax.ws.rs.core.Response;
@@ -65,7 +68,8 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         }
 
         try {
-            ClientModel clientModel = RepresentationToModel.createClient(session, session.getContext().getRealm(), client, true);
+            RealmModel realm = session.getContext().getRealm();
+            ClientModel clientModel = new ClientManager(new RealmManager(session)).createClient(session, realm, client, true);
 
             ClientRegistrationPolicyManager.triggerAfterRegister(context, registrationAuth, clientModel);
 
@@ -78,7 +82,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
 
             if (auth.isInitialAccessToken()) {
                 ClientInitialAccessModel initialAccessModel = auth.getInitialAccessModel();
-                initialAccessModel.decreaseRemainingCount();
+                session.realms().decreaseRemainingCount(realm, initialAccessModel);
             }
 
             event.client(client.getClientId()).success();
@@ -95,9 +99,12 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         auth.requireView(client);
 
         ClientRepresentation rep = ModelToRepresentation.toRepresentation(client);
+        if (client.getSecret() != null) {
+            rep.setSecret(client.getSecret());
+        }
 
         if (auth.isRegistrationAccessToken()) {
-            String registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, client, auth.getRegistrationAuth());
+            String registrationAccessToken = ClientRegistrationTokenUtils.updateTokenSignature(session, auth);
             rep.setRegistrationAccessToken(registrationAccessToken);
         }
 
@@ -148,7 +155,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         ClientModel client = session.getContext().getRealm().getClientByClientId(clientId);
         auth.requireDelete(client);
 
-        if (session.getContext().getRealm().removeClient(client.getId())) {
+        if (new ClientManager(new RealmManager(session)).removeClient(session.getContext().getRealm(), client)) {
             event.client(client.getClientId()).success();
         } else {
             throw new ForbiddenException();

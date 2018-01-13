@@ -27,12 +27,17 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.protection.permission.PermissionService;
 import org.keycloak.authorization.protection.permission.PermissionsService;
 import org.keycloak.authorization.protection.resource.ResourceService;
+import org.keycloak.common.ClientConnection;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.resources.admin.AdminAuth;
+import org.keycloak.services.resources.admin.AdminEventBuilder;
 
 import javax.ws.rs.Path;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response.Status;
 
 /**
@@ -41,6 +46,8 @@ import javax.ws.rs.core.Response.Status;
 public class ProtectionService {
 
     private final AuthorizationProvider authorization;
+    @Context
+    protected ClientConnection clientConnection;
 
     public ProtectionService(AuthorizationProvider authorization) {
         this.authorization = authorization;
@@ -50,7 +57,12 @@ public class ProtectionService {
     public Object resource() {
         KeycloakIdentity identity = createIdentity();
         ResourceServer resourceServer = getResourceServer(identity);
-        ResourceSetService resourceManager = new ResourceSetService(resourceServer, this.authorization, null);
+        RealmModel realm = authorization.getRealm();
+        ClientModel client = realm.getClientById(identity.getId());
+        KeycloakSession keycloakSession = authorization.getKeycloakSession();
+        UserModel serviceAccount = keycloakSession.users().getServiceAccount(client);
+        AdminEventBuilder adminEvent = new AdminEventBuilder(realm, new AdminAuth(realm, identity.getAccessToken(), serviceAccount, client), keycloakSession, clientConnection);
+        ResourceSetService resourceManager = new ResourceSetService(resourceServer, this.authorization, null, adminEvent.realm(realm).authClient(client).authUser(serviceAccount));
 
         ResteasyProviderFactory.getInstance().injectProperties(resourceManager);
 
@@ -88,7 +100,7 @@ public class ProtectionService {
         ResourceServer resourceServer = getResourceServer(identity);
         KeycloakSession keycloakSession = authorization.getKeycloakSession();
         RealmModel realm = keycloakSession.getContext().getRealm();
-        ClientModel client = realm.getClientById(resourceServer.getClientId());
+        ClientModel client = realm.getClientById(resourceServer.getId());
 
         if (!identity.hasClientRole(client.getClientId(), "uma_protection")) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_SCOPE, "Requires uma_protection scope.", Status.FORBIDDEN);
@@ -105,7 +117,7 @@ public class ProtectionService {
             throw new ErrorResponseException("invalid_clientId", "Client application with id [" + identity.getId() + "] does not exist in realm [" + realm.getName() + "]", Status.BAD_REQUEST);
         }
 
-        ResourceServer resourceServer = this.authorization.getStoreFactory().getResourceServerStore().findByClient(identity.getId());
+        ResourceServer resourceServer = this.authorization.getStoreFactory().getResourceServerStore().findById(identity.getId());
 
         if (resourceServer == null) {
             throw new ErrorResponseException("invalid_clientId", "Client application [" + clientApplication.getClientId() + "] is not registered as resource server.", Status.FORBIDDEN);

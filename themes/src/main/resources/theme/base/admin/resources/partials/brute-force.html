@@ -15,6 +15,14 @@
                 </div>
             </div>
             <div class="form-group" data-ng-show="realm.bruteForceProtected">
+                <label class="col-md-2 control-label" for="permanentLockout">{{:: 'permanent-lockout' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="realm.permanentLockout" name="permanentLockout" id="permanentLockout" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'permanent-lockout.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group" data-ng-show="realm.bruteForceProtected">
                 <label class="col-md-2 control-label" for="failureFactor">{{:: 'max-login-failures' | translate}}</label>
 
                 <div class="col-md-6">
@@ -23,7 +31,7 @@
                 </div>
                 <kc-tooltip>{{:: 'max-login-failures.tooltip' | translate}}</kc-tooltip>
             </div>
-            <div class="form-group" data-ng-show="realm.bruteForceProtected">
+            <div class="form-group" data-ng-show="realm.bruteForceProtected && !realm.permanentLockout">
                 <label class="col-md-2 control-label" for="waitIncrement">{{:: 'wait-increment' | translate}}</label>
                 <div class="col-md-6 time-selector">
                     <input class="form-control" type="number" required min="1"
@@ -62,7 +70,7 @@
                 </div>
                 <kc-tooltip>{{:: 'min-quick-login-wait.tooltip' | translate}}</kc-tooltip>
             </div>
-            <div class="form-group" data-ng-show="realm.bruteForceProtected">
+            <div class="form-group" data-ng-show="realm.bruteForceProtected && !realm.permanentLockout">
                 <label class="col-md-2 control-label" for="maxFailureWait">{{:: 'max-wait' | translate}}</label>
                 <div class="col-md-6 time-selector">
                     <input class="form-control" type="number" required min="1"
@@ -77,7 +85,7 @@
                 </div>
                 <kc-tooltip>{{:: 'max-wait.tooltip' | translate}}</kc-tooltip>
             </div>
-            <div class="form-group" data-ng-show="realm.bruteForceProtected">
+            <div class="form-group" data-ng-show="realm.bruteForceProtected && !realm.permanentLockout">
                 <label class="col-md-2 control-label" for="maxDeltaTime">{{:: 'failure-reset-time' | translate}}</label>
                 <div class="col-md-6 time-selector">
                     <input class="form-control" type="number" required min="1"

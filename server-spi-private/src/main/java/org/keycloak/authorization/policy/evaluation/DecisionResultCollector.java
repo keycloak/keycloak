@@ -18,22 +18,23 @@
 
 package org.keycloak.authorization.policy.evaluation;
 
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.keycloak.authorization.Decision;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public abstract class DecisionResultCollector implements Decision<DefaultEvaluation> {
 
-    private Map<ResourcePermission, Result> results = new HashMap();
+    private Map<ResourcePermission, Result> results = new LinkedHashMap<>();
 
     @Override
     public void onDecision(DefaultEvaluation evaluation) {
@@ -49,19 +50,21 @@ public abstract class DecisionResultCollector implements Decision<DefaultEvaluat
     @Override
     public void onComplete() {
         for (Result result : results.values()) {
+            int deniedCount = result.getResults().size();
+
             for (Result.PolicyResult policyResult : result.getResults()) {
                 if (isGranted(policyResult)) {
                     policyResult.setStatus(Effect.PERMIT);
+                    deniedCount--;
                 } else {
                     policyResult.setStatus(Effect.DENY);
                 }
             }
 
-            if (result.getResults().stream()
-                    .filter(policyResult -> Effect.DENY.equals(policyResult.getStatus())).count() > 0) {
-                result.setStatus(Effect.DENY);
-            } else {
+            if (deniedCount == 0) {
                 result.setStatus(Effect.PERMIT);
+            } else {
+                result.setStatus(Effect.DENY);
             }
         }
 

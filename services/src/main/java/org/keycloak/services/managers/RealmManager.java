@@ -18,6 +18,7 @@ package org.keycloak.services.managers;
 
 import org.keycloak.Config;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.migration.MigrationModelManager;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.BrowserSecurityHeaders;
@@ -37,7 +38,6 @@ import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.models.utils.RealmImporter;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -48,6 +48,7 @@ import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.services.clientregistration.policy.DefaultClientRegistrationPolicies;
 
@@ -61,7 +62,7 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class RealmManager implements RealmImporter {
+public class RealmManager {
 
     protected KeycloakSession session;
     protected RealmProvider model;
@@ -149,16 +150,7 @@ public class RealmManager implements RealmImporter {
         adminConsole.setPublicClient(true);
         adminConsole.addRedirectUri(baseUrl + "/*");
         adminConsole.setFullScopeAllowed(false);
-
-        RoleModel adminRole;
-        if (realm.getName().equals(Config.getAdminRealm())) {
-            adminRole = realm.getRole(AdminRoles.ADMIN);
-        } else {
-            String realmAdminApplicationClientId = getRealmAdminClientId(realm);
-            ClientModel realmAdminApp = realm.getClientByClientId(realmAdminApplicationClientId);
-            adminRole = realmAdminApp.getRole(AdminRoles.REALM_ADMIN);
-        }
-        adminConsole.addScopeMapping(adminRole);
+        adminConsole.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
     }
 
     protected void setupAdminConsoleLocaleMapper(RealmModel realm) {
@@ -183,19 +175,22 @@ public class RealmManager implements RealmImporter {
             adminCli.setFullScopeAllowed(false);
             adminCli.setStandardFlowEnabled(false);
             adminCli.setDirectAccessGrantsEnabled(true);
-
-            RoleModel adminRole;
-            if (realm.getName().equals(Config.getAdminRealm())) {
-                adminRole = realm.getRole(AdminRoles.ADMIN);
-            } else {
-                String realmAdminApplicationClientId = getRealmAdminClientId(realm);
-                ClientModel realmAdminApp = realm.getClientByClientId(realmAdminApplicationClientId);
-                adminRole = realmAdminApp.getRole(AdminRoles.REALM_ADMIN);
-            }
-            adminCli.addScopeMapping(adminRole);
+            adminCli.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         }
 
     }
+    public void addQueryCompositeRoles(ClientModel realmAccess) {
+        RoleModel queryClients = realmAccess.getRole(AdminRoles.QUERY_CLIENTS);
+        RoleModel queryUsers = realmAccess.getRole(AdminRoles.QUERY_USERS);
+        RoleModel queryGroups = realmAccess.getRole(AdminRoles.QUERY_GROUPS);
+
+        RoleModel viewClients = realmAccess.getRole(AdminRoles.VIEW_CLIENTS);
+        viewClients.addCompositeRole(queryClients);
+        RoleModel viewUsers = realmAccess.getRole(AdminRoles.VIEW_USERS);
+        viewUsers.addCompositeRole(queryUsers);
+        viewUsers.addCompositeRole(queryGroups);
+    }
+
 
     public String getRealmAdminClientId(RealmModel realm) {
         return Constants.REALM_MANAGEMENT_CLIENT_ID;
@@ -212,6 +207,7 @@ public class RealmManager implements RealmImporter {
 
         // brute force
         realm.setBruteForceProtected(false); // default settings off for now todo set it on
+        realm.setPermanentLockout(false);
         realm.setMaxFailureWaitSeconds(900);
         realm.setMinimumQuickLoginWaitSeconds(60);
         realm.setWaitIncrementSeconds(60);
@@ -223,8 +219,6 @@ public class RealmManager implements RealmImporter {
         realm.setLoginWithEmailAllowed(true);
 
         realm.setEventsListeners(Collections.singleton("jboss-logging"));
-
-        realm.setPasswordPolicy(PasswordPolicy.parse(session, "hashIterations(20000)"));
     }
 
     public boolean removeRealm(RealmModel realm) {
@@ -244,6 +238,11 @@ public class RealmManager implements RealmImporter {
             UserSessionPersisterProvider sessionsPersister = session.getProvider(UserSessionPersisterProvider.class);
             if (sessionsPersister != null) {
                 sessionsPersister.onRealmRemoved(realm);
+            }
+
+            AuthenticationSessionProvider authSessions = session.authenticationSessions();
+            if (authSessions != null) {
+                authSessions.onRealmRemoved(realm);
             }
 
           // Refresh periodic sync tasks for configured storageProviders
@@ -319,6 +318,7 @@ public class RealmManager implements RealmImporter {
             role.setScopeParamRequired(false);
             adminRole.addCompositeRole(role);
         }
+        addQueryCompositeRoles(realmAdminApp);
     }
 
     private void checkMasterAdminManagementRoles(RealmModel realm) {
@@ -332,6 +332,7 @@ public class RealmManager implements RealmImporter {
                 addAndSetAdminRole(r, masterAdminClient, adminRole);
             }
         }
+        addQueryCompositeRoles(masterAdminClient);
     }
 
 
@@ -349,10 +350,12 @@ public class RealmManager implements RealmImporter {
         adminRole.setScopeParamRequired(false);
         realmAdminClient.setBearerOnly(true);
         realmAdminClient.setFullScopeAllowed(false);
+        realmAdminClient.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
         for (String r : AdminRoles.ALL_REALM_ROLES) {
             addAndSetAdminRole(r, realmAdminClient, adminRole);
         }
+        addQueryCompositeRoles(realmAdminClient);
     }
 
     private void addAndSetAdminRole(String roleName, ClientModel parentClient, RoleModel parentRole) {
@@ -376,6 +379,7 @@ public class RealmManager implements RealmImporter {
                 addAndSetAdminRole(r, realmAdminClient, adminRole);
             }
         }
+        addQueryCompositeRoles(realmAdminClient);
     }
 
 
@@ -390,6 +394,7 @@ public class RealmManager implements RealmImporter {
             String redirectUri = base + "/*";
             client.addRedirectUri(redirectUri);
             client.setBaseUrl(base);
+            client.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
             for (String role : AccountRoles.ALL) {
                 client.addDefaultRole(role);
@@ -397,6 +402,11 @@ public class RealmManager implements RealmImporter {
                 roleModel.setDescription("${role_" + role + "}");
                 roleModel.setScopeParamRequired(false);
             }
+            RoleModel manageAccountLinks = client.addRole(AccountRoles.MANAGE_ACCOUNT_LINKS);
+            manageAccountLinks.setDescription("${role_" + AccountRoles.MANAGE_ACCOUNT_LINKS + "}");
+            manageAccountLinks.setScopeParamRequired(false);
+            RoleModel manageAccount = client.getRole(AccountRoles.MANAGE_ACCOUNT);
+            manageAccount.addCompositeRole(manageAccountLinks);
         }
     }
 
@@ -411,6 +421,7 @@ public class RealmManager implements RealmImporter {
             client.setEnabled(true);
             client.setName("${client_" + Constants.BROKER_SERVICE_CLIENT_ID + "}");
             client.setFullScopeAllowed(false);
+            client.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
             for (String role : Constants.BROKER_SERVICE_ROLES) {
                 RoleModel roleModel = client.addRole(role);
@@ -420,8 +431,15 @@ public class RealmManager implements RealmImporter {
         }
     }
 
-    @Override
     public RealmModel importRealm(RealmRepresentation rep) {
+        return importRealm(rep, false);
+    }
+
+
+    /**
+     * if "skipUserDependent" is true, then import of any models, which needs users already imported in DB, will be skipped. For example authorization
+     */
+    public RealmModel importRealm(RealmRepresentation rep, boolean skipUserDependent) {
         String id = rep.getId();
         if (id == null) {
             id = KeycloakModelUtils.generateId();
@@ -463,7 +481,7 @@ public class RealmManager implements RealmImporter {
 
         if (!hasRealmRole(rep, Constants.OFFLINE_ACCESS_ROLE)) setupOfflineTokens(realm);
 
-        RepresentationToModel.importRealm(session, rep, realm);
+        RepresentationToModel.importRealm(session, rep, realm, skipUserDependent);
 
         setupAdminConsoleLocaleMapper(realm);
 
@@ -479,7 +497,8 @@ public class RealmManager implements RealmImporter {
         // I need to postpone impersonation because it needs "realm-management" client and its roles set
         if (postponeImpersonationSetup) {
             setupImpersonationService(realm);
-        }
+            String realmAdminClientId = getRealmAdminClientId(realm);
+         }
 
         if (postponeAdminCliSetup) {
             setupAdminCli(realm);
@@ -497,6 +516,10 @@ public class RealmManager implements RealmImporter {
 
         setupAuthorizationServices(realm);
         setupClientRegistrations(realm);
+
+        if (rep.getKeycloakVersion() != null) {
+            MigrationModelManager.migrateImport(session, realm, rep, skipUserDependent);
+        }
 
         fireRealmPostCreate(realm);
 

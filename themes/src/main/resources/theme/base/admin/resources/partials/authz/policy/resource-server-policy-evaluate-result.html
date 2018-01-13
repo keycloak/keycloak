@@ -45,7 +45,7 @@
                                         href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/permission/{{policyResult.policy.type}}/{{policyResult.policy.id}}">{{policyResult.policy.name}}</a></strong>
                                 decision was <span style="color: green" data-ng-show="policyResult.status == 'PERMIT'"><strong>{{policyResult.status}}</strong></span>
                                 <span style="color: red" data-ng-hide="policyResult.status == 'PERMIT'"><strong>{{policyResult.status}}</strong></span>
-                                by <strong>{{policyResult.policy.decisionStrategy}}</strong> decision. {{policyResult.scopes.length > 0 ? 'Denied Scopes:' : ''}} <span data-ng-repeat="scope in policyResult.scopes"><strong style="color: red">{{scope.name}}{{$last ? '' : ', '}}</strong></span>{{policyResult.scopes.length > 0 ? '.' : ''}}
+                                by <strong>{{policyResult.policy.decisionStrategy}}</strong> decision. {{policyResult.policy.scopes.length > 0 ? (policyResult.status == 'DENY' ? 'Denied Scopes:' : 'Granted Scopes:') : ''}} <span data-ng-repeat="scope in policyResult.policy.scopes"><strong style="color: {{(policyResult.status == 'DENY' ? 'red' : 'green')}}">{{scope}}{{$last ? '' : ', '}}</strong></span>{{policyResult.policy.scopes.length > 0 ? '.' : ''}}
                                 <ul>
                                     <li data-ng-repeat="subPolicy in policyResult.associatedPolicies">
                                         <strong><a

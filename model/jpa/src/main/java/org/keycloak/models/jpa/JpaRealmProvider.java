@@ -18,17 +18,21 @@
 package org.keycloak.models.jpa;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.migration.MigrationModel;
+import org.keycloak.models.ClientInitialAccessModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.jpa.entities.ClientEntity;
+import org.keycloak.models.jpa.entities.ClientInitialAccessEntity;
 import org.keycloak.models.jpa.entities.ClientTemplateEntity;
 import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.models.jpa.entities.RealmEntity;
@@ -37,12 +41,8 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -111,7 +111,7 @@ public class JpaRealmProvider implements RealmProvider {
         TypedQuery<String> query = em.createNamedQuery("getRealmIdByName", String.class);
         query.setParameter("name", name);
         List<String> entities = query.getResultList();
-        if (entities.size() == 0) return null;
+        if (entities.isEmpty()) return null;
         if (entities.size() > 1) throw new IllegalStateException("Should not be more than one realm with same name");
         String id = query.getResultList().get(0);
 
@@ -133,14 +133,6 @@ public class JpaRealmProvider implements RealmProvider {
 
         int num = em.createNamedQuery("deleteGroupRoleMappingsByRealm")
                 .setParameter("realm", realm).executeUpdate();
-        num = em.createNamedQuery("deleteGroupAttributesByRealm")
-                .setParameter("realm", realm).executeUpdate();
-        num = em.createNamedQuery("deleteGroupsByRealm")
-                .setParameter("realm", realm).executeUpdate();
-        num = em.createNamedQuery("deleteComponentConfigByRealm")
-                .setParameter("realm", realm).executeUpdate();
-        num = em.createNamedQuery("deleteComponentByRealm")
-                .setParameter("realm", realm).executeUpdate();
 
         TypedQuery<String> query = em.createNamedQuery("getClientIdsByRealm", String.class);
         query.setParameter("realm", realm.getId());
@@ -159,6 +151,12 @@ public class JpaRealmProvider implements RealmProvider {
             removeRole(adapter, role);
         }
 
+        for (GroupModel group : adapter.getGroups()) {
+            session.realms().removeGroup(adapter, group);
+        }
+        
+        num = em.createNamedQuery("removeClientInitialAccessByRealm")
+                .setParameter("realm", realm).executeUpdate();
 
         em.remove(realm);
 
@@ -186,11 +184,14 @@ public class JpaRealmProvider implements RealmProvider {
 
     @Override
     public RoleModel addRealmRole(RealmModel realm, String name) {
-        return addRealmRole(realm, KeycloakModelUtils.generateId(), name);
+       return addRealmRole(realm, KeycloakModelUtils.generateId(), name);
 
     }
     @Override
     public RoleModel addRealmRole(RealmModel realm, String id, String name) {
+        if (getRealmRole(realm, name) != null) {
+            throw new ModelDuplicateException();
+        }
         RoleEntity entity = new RoleEntity();
         entity.setId(id);
         entity.setName(name);
@@ -210,7 +211,7 @@ public class JpaRealmProvider implements RealmProvider {
         query.setParameter("name", name);
         query.setParameter("realm", realm.getId());
         List<String> roles = query.getResultList();
-        if (roles.size() == 0) return null;
+        if (roles.isEmpty()) return null;
         return session.realms().getRoleById(roles.get(0), realm);
     }
 
@@ -220,6 +221,9 @@ public class JpaRealmProvider implements RealmProvider {
     }
     @Override
     public RoleModel addClientRole(RealmModel realm, ClientModel client, String id, String name) {
+        if (getClientRole(realm, client, name) != null) {
+            throw new ModelDuplicateException();
+        }
         ClientEntity clientEntity = em.getReference(ClientEntity.class, client.getId());
         RoleEntity roleEntity = new RoleEntity();
         roleEntity.setId(id);
@@ -228,7 +232,6 @@ public class JpaRealmProvider implements RealmProvider {
         roleEntity.setClientRole(true);
         roleEntity.setRealmId(realm.getId());
         em.persist(roleEntity);
-        em.flush();
         RoleAdapter adapter = new RoleAdapter(session, realm, em, roleEntity);
         return adapter;
     }
@@ -240,7 +243,7 @@ public class JpaRealmProvider implements RealmProvider {
         List<String> roles = query.getResultList();
 
         if (roles.isEmpty()) return Collections.EMPTY_SET;
-        Set<RoleModel> list = new HashSet<RoleModel>();
+        Set<RoleModel> list = new HashSet<>();
         for (String id : roles) {
             list.add(session.realms().getRoleById(id, realm));
         }
@@ -253,14 +256,14 @@ public class JpaRealmProvider implements RealmProvider {
         query.setParameter("name", name);
         query.setParameter("client", client.getId());
         List<String> roles = query.getResultList();
-        if (roles.size() == 0) return null;
+        if (roles.isEmpty()) return null;
         return session.realms().getRoleById(roles.get(0), realm);
     }
 
 
     @Override
     public Set<RoleModel> getClientRoles(RealmModel realm, ClientModel client) {
-        Set<RoleModel> list = new HashSet<RoleModel>();
+        Set<RoleModel> list = new HashSet<>();
         TypedQuery<String> query = em.createNamedQuery("getClientRoleIds", String.class);
         query.setParameter("client", client.getId());
         List<String> roles = query.getResultList();
@@ -281,10 +284,11 @@ public class JpaRealmProvider implements RealmProvider {
         RoleEntity roleEntity = em.getReference(RoleEntity.class, role.getId());
         String compositeRoleTable = JpaUtils.getTableNameForNativeQuery("COMPOSITE_ROLE", em);
         em.createNativeQuery("delete from " + compositeRoleTable + " where CHILD_ROLE = :role").setParameter("role", roleEntity).executeUpdate();
-        em.createNamedQuery("deleteScopeMappingByRole").setParameter("role", roleEntity).executeUpdate();
+        realm.getClients().forEach(c -> c.deleteScopeMapping(role));
         em.createNamedQuery("deleteTemplateScopeMappingByRole").setParameter("role", roleEntity).executeUpdate();
         int val = em.createNamedQuery("deleteGroupRoleMappingsByRole").setParameter("roleId", roleEntity.getId()).executeUpdate();
 
+        em.flush();
         em.remove(roleEntity);
 
         session.getKeycloakSessionFactory().publish(new RoleContainerModel.RoleRemovedEvent() {
@@ -337,26 +341,62 @@ public class JpaRealmProvider implements RealmProvider {
 
     @Override
     public List<GroupModel> getGroups(RealmModel realm) {
-        List<String> groups =  em.createNamedQuery("getAllGroupIdsByRealm", String.class)
-                .setParameter("realm", realm.getId()).getResultList();
-        if (groups == null) return Collections.EMPTY_LIST;
-        List<GroupModel> list = new LinkedList<>();
-        for (String id : groups) {
-            list.add(session.realms().getGroupById(id, realm));
+        RealmEntity ref = em.getReference(RealmEntity.class, realm.getId());
+
+        return ref.getGroups().stream()
+                .map(g -> session.realms().getGroupById(g.getId(), realm))
+                .sorted(Comparator.comparing(GroupModel::getName))
+                .collect(Collectors.collectingAndThen(
+                        Collectors.toList(), Collections::unmodifiableList));
+    }
+
+    @Override
+    public Long getGroupsCount(RealmModel realm, Boolean onlyTopGroups) {
+        String query = "getGroupCount";
+        if(Objects.equals(onlyTopGroups, Boolean.TRUE)) {
+            query = "getTopLevelGroupCount";
         }
-        return Collections.unmodifiableList(list);
+        Long count = em.createNamedQuery(query, Long.class)
+                .setParameter("realm", realm.getId())
+                .getSingleResult();
+
+        return count;
+    }
+
+    @Override
+    public Long getGroupsCountByNameContaining(RealmModel realm, String search) {
+        return (long) searchForGroupByName(realm, search, null, null).size();
     }
 
     @Override
     public List<GroupModel> getTopLevelGroups(RealmModel realm) {
-        List<String> groups =  em.createNamedQuery("getTopLevelGroupIds", String.class)
+        RealmEntity ref = em.getReference(RealmEntity.class, realm.getId());
+
+        return ref.getGroups().stream()
+                .filter(g -> g.getParent() == null)
+                .map(g -> session.realms().getGroupById(g.getId(), realm))
+                .sorted(Comparator.comparing(GroupModel::getName))
+                .collect(Collectors.collectingAndThen(
+                        Collectors.toList(), Collections::unmodifiableList));
+    }
+
+    @Override
+    public List<GroupModel> getTopLevelGroups(RealmModel realm, Integer first, Integer max) {
+        List<String> groupIds =  em.createNamedQuery("getTopLevelGroupIds", String.class)
                 .setParameter("realm", realm.getId())
-                .getResultList();
-        if (groups == null) return Collections.EMPTY_LIST;
-        List<GroupModel> list = new LinkedList<>();
-        for (String id : groups) {
-            list.add(session.realms().getGroupById(id, realm));
+                .setFirstResult(first)
+                    .setMaxResults(max)
+                    .getResultList();
+        List<GroupModel> list = new ArrayList<>();
+        if(Objects.nonNull(groupIds) && !groupIds.isEmpty()) {
+            for (String id : groupIds) {
+                GroupModel group = getGroupById(id, realm);
+                list.add(group);
+            }
         }
+
+        list.sort(Comparator.comparing(GroupModel::getName));
+
         return Collections.unmodifiableList(list);
     }
 
@@ -366,20 +406,39 @@ public class JpaRealmProvider implements RealmProvider {
             return false;
         }
 
+        GroupModel.GroupRemovedEvent event = new GroupModel.GroupRemovedEvent() {
+            @Override
+            public RealmModel getRealm() {
+                return realm;
+            }
+
+            @Override
+            public GroupModel getGroup() {
+                return group;
+            }
+
+            @Override
+            public KeycloakSession getKeycloakSession() {
+                return session;
+            }
+        };
+        session.getKeycloakSessionFactory().publish(event);
+
         session.users().preRemove(realm, group);
 
         realm.removeDefaultGroup(group);
         for (GroupModel subGroup : group.getSubGroups()) {
             session.realms().removeGroup(realm, subGroup);
         }
-        moveGroup(realm, group, null);
         GroupEntity groupEntity = em.find(GroupEntity.class, group.getId());
-        if (!groupEntity.getRealm().getId().equals(realm.getId())) {
+        if ((groupEntity == null) || (!groupEntity.getRealm().getId().equals(realm.getId()))) {
             return false;
         }
-        // I don't think we need this as GroupEntity has cascade removal.  It causes batch errors if you turn this on.
-        // em.createNamedQuery("deleteGroupAttributesByGroup").setParameter("group", groupEntity).executeUpdate();
         em.createNamedQuery("deleteGroupRoleMappingsByGroup").setParameter("group", groupEntity).executeUpdate();
+
+        RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
+        realmEntity.getGroups().remove(groupEntity);
+
         em.remove(groupEntity);
         return true;
 
@@ -401,6 +460,8 @@ public class JpaRealmProvider implements RealmProvider {
         RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
         groupEntity.setRealm(realmEntity);
         em.persist(groupEntity);
+        em.flush();
+        realmEntity.getGroups().add(groupEntity);
 
         GroupAdapter adapter = new GroupAdapter(realm, em, groupEntity);
         return adapter;
@@ -494,9 +555,6 @@ public class JpaRealmProvider implements RealmProvider {
 
         ClientEntity clientEntity = ((ClientAdapter)client).getEntity();
 
-        em.createNamedQuery("deleteScopeMappingByClient").setParameter("client", clientEntity).executeUpdate();
-        em.flush();
-
         session.getKeycloakSessionFactory().publish(new RealmModel.ClientRemovedEvent() {
             @Override
             public ClientModel getClient() {
@@ -529,5 +587,108 @@ public class JpaRealmProvider implements RealmProvider {
         if (app == null || !realm.getId().equals(app.getRealm().getId())) return null;
         ClientTemplateAdapter adapter = new ClientTemplateAdapter(realm, em, session, app);
         return adapter;
+    }
+
+    @Override
+    public List<GroupModel> searchForGroupByName(RealmModel realm, String search, Integer first, Integer max) {
+        TypedQuery<String> query = em.createNamedQuery("getGroupIdsByNameContaining", String.class)
+                .setParameter("realm", realm.getId())
+                .setParameter("search", search);
+        if(Objects.nonNull(first) && Objects.nonNull(max)) {
+            query= query.setFirstResult(first).setMaxResults(max);
+        }
+        List<String> groups =  query.getResultList();
+        if (Objects.isNull(groups)) return Collections.EMPTY_LIST;
+        List<GroupModel> list = new ArrayList<>();
+        for (String id : groups) {
+            GroupModel groupById = session.realms().getGroupById(id, realm);
+            while(Objects.nonNull(groupById.getParentId())) {
+                groupById = session.realms().getGroupById(groupById.getParentId(), realm);
+            }
+            if(!list.contains(groupById)) {
+                list.add(groupById);
+            }
+        }
+        list.sort(Comparator.comparing(GroupModel::getName));
+
+        return Collections.unmodifiableList(list);
+    }
+
+    @Override
+    public ClientInitialAccessModel createClientInitialAccessModel(RealmModel realm, int expiration, int count) {
+        RealmEntity realmEntity = em.find(RealmEntity.class, realm.getId());
+
+        ClientInitialAccessEntity entity = new ClientInitialAccessEntity();
+        entity.setId(KeycloakModelUtils.generateId());
+        entity.setRealm(realmEntity);
+
+        entity.setCount(count);
+        entity.setRemainingCount(count);
+
+        int currentTime = Time.currentTime();
+        entity.setTimestamp(currentTime);
+        entity.setExpiration(expiration);
+
+        em.persist(entity);
+
+        return entityToModel(entity);
+    }
+
+    @Override
+    public ClientInitialAccessModel getClientInitialAccessModel(RealmModel realm, String id) {
+        ClientInitialAccessEntity entity = em.find(ClientInitialAccessEntity.class, id);
+        if (entity == null) {
+            return null;
+        } else {
+            return entityToModel(entity);
+        }
+    }
+
+    @Override
+    public void removeClientInitialAccessModel(RealmModel realm, String id) {
+        ClientInitialAccessEntity entity = em.find(ClientInitialAccessEntity.class, id);
+        if (entity != null) {
+            em.remove(entity);
+            em.flush();
+        }
+    }
+
+    @Override
+    public List<ClientInitialAccessModel> listClientInitialAccess(RealmModel realm) {
+        RealmEntity realmEntity = em.find(RealmEntity.class, realm.getId());
+
+        TypedQuery<ClientInitialAccessEntity> query = em.createNamedQuery("findClientInitialAccessByRealm", ClientInitialAccessEntity.class);
+        query.setParameter("realm", realmEntity);
+        List<ClientInitialAccessEntity> entities = query.getResultList();
+
+        return entities.stream()
+                .map(this::entityToModel)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void removeExpiredClientInitialAccess() {
+        int currentTime = Time.currentTime();
+
+        em.createNamedQuery("removeExpiredClientInitialAccess")
+                .setParameter("currentTime", currentTime)
+                .executeUpdate();
+    }
+
+    @Override
+    public void decreaseRemainingCount(RealmModel realm, ClientInitialAccessModel clientInitialAccess) {
+        em.createNamedQuery("decreaseClientInitialAccessRemainingCount")
+                .setParameter("id", clientInitialAccess.getId())
+                .executeUpdate();
+    }
+
+    private ClientInitialAccessModel entityToModel(ClientInitialAccessEntity entity) {
+        ClientInitialAccessModel model = new ClientInitialAccessModel();
+        model.setId(entity.getId());
+        model.setCount(entity.getCount());
+        model.setRemainingCount(entity.getRemainingCount());
+        model.setExpiration(entity.getExpiration());
+        model.setTimestamp(entity.getTimestamp());
+        return model;
     }
 }

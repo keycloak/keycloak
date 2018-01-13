@@ -1,0 +1,33 @@
+{
+  "name": "angular-resource",
+  "version": "1.6.6",
+  "description": "AngularJS module for interacting with RESTful server-side data sources",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/angular/angular.js.git"
+  },
+  "keywords": [
+    "angular",
+    "framework",
+    "browser",
+    "rest",
+    "client-side"
+  ],
+  "author": "Angular Core Team <angular-core+npm@google.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/angular/angular.js/issues"
+  },
+  "homepage": "http://angularjs.org",
+  "jspm": {
+    "shim": {
+      "angular-resource": {
+        "deps": ["angular"]
+      }
+    }
+  }
+}

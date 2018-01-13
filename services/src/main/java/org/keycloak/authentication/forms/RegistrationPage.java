@@ -36,7 +36,6 @@ import java.util.List;
  */
 public class RegistrationPage implements FormAuthenticator, FormAuthenticatorFactory {
 
-    public static final String EXECUTION = "execution";
     public static final String FIELD_PASSWORD_CONFIRM = "password-confirm";
     public static final String FIELD_PASSWORD = "password";
     public static final String FIELD_EMAIL = "email";

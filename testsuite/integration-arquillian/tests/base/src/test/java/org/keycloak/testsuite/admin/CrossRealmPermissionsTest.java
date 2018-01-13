@@ -17,36 +17,26 @@
 
 package org.keycloak.testsuite.admin;
 
-import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.resources.admin.RealmAuth.Resource;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.CredentialBuilder;
-import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.core.Response;
-import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 /**
@@ -59,8 +49,6 @@ public class CrossRealmPermissionsTest extends AbstractKeycloakTest {
 
     private RealmResource realm1;
     private RealmResource realm2;
-
-    @Rule public GreenMailRule greenMailRule = new GreenMailRule();
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {

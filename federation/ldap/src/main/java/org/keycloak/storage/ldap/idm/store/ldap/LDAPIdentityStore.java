@@ -103,6 +103,8 @@ public class LDAPIdentityStore implements IdentityStore {
 
     @Override
     public void update(LDAPObject ldapObject) {
+        checkRename(ldapObject);
+
         BasicAttributes updatedAttributes = extractAttributes(ldapObject, false);
         NamingEnumeration<Attribute> attributes = updatedAttributes.getAll();
 
@@ -111,6 +113,38 @@ public class LDAPIdentityStore implements IdentityStore {
 
         if (logger.isDebugEnabled()) {
             logger.debugf("Type with identifier [%s] and DN [%s] successfully updated to LDAP store.", ldapObject.getUuid(), entryDn);
+        }
+    }
+
+    protected void checkRename(LDAPObject ldapObject) {
+        String rdnAttrName = ldapObject.getRdnAttributeName();
+        if (ldapObject.getReadOnlyAttributeNames().contains(rdnAttrName.toLowerCase())) {
+            return;
+        }
+
+        String rdnAttrVal = ldapObject.getAttributeAsString(rdnAttrName);
+
+        // Could be the case when RDN attribute of the target object is not included in Keycloak mappers
+        if (rdnAttrVal == null) {
+            return;
+        }
+
+        String oldRdnAttrVal = ldapObject.getDn().getFirstRdnAttrValue();
+        if (!oldRdnAttrVal.equals(rdnAttrVal)) {
+            LDAPDn newLdapDn = ldapObject.getDn().getParentDn();
+            newLdapDn.addFirst(rdnAttrName, rdnAttrVal);
+
+            String oldDn = ldapObject.getDn().toString();
+            String newDn = newLdapDn.toString();
+
+            if (logger.isDebugEnabled()) {
+                logger.debugf("Renaming LDAP Object. Old DN: [%s], New DN: [%s]", oldDn, newDn);
+            }
+
+            // In case, that there is conflict (For example already existing "CN=John Anthony"), the different DN is returned
+            newDn = this.operationManager.renameEntry(oldDn, newDn, true);
+
+            ldapObject.setDn(LDAPDn.fromString(newDn));
         }
     }
 
@@ -413,9 +447,10 @@ public class LDAPIdentityStore implements IdentityStore {
             for (String objectClassValue : ldapObject.getObjectClasses()) {
                 objectClassAttribute.add(objectClassValue);
 
-                if (objectClassValue.equalsIgnoreCase(LDAPConstants.GROUP_OF_NAMES)
+                if ((objectClassValue.equalsIgnoreCase(LDAPConstants.GROUP_OF_NAMES)
                         || objectClassValue.equalsIgnoreCase(LDAPConstants.GROUP_OF_ENTRIES)
-                        || objectClassValue.equalsIgnoreCase(LDAPConstants.GROUP_OF_UNIQUE_NAMES)) {
+                        || objectClassValue.equalsIgnoreCase(LDAPConstants.GROUP_OF_UNIQUE_NAMES)) &&
+                        (entryAttributes.get(LDAPConstants.MEMBER) == null)) {
                     entryAttributes.put(LDAPConstants.MEMBER, LDAPConstants.EMPTY_MEMBER_ATTRIBUTE_VALUE);
                 }
             }

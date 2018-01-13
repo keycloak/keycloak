@@ -3,7 +3,7 @@
     <#if section = "title">
         ${msg("loginTitle",realm.displayName)}
     <#elseif section = "header">
-        ${msg("loginTitleHtml",realm.displayNameHtml)}
+        ${msg("loginTitleHtml",realm.displayNameHtml)?no_esc}
     <#elseif section = "form">
         <form id="kc-totp-login-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
             <div class="${properties.kcFormGroupClass!}">

@@ -115,7 +115,7 @@ public class ClientEntity {
 
     @ElementCollection
     @MapKeyColumn(name="NAME")
-    @Column(name="VALUE", length = 2048)
+    @Column(name="VALUE", length = 4000)
     @CollectionTable(name="CLIENT_ATTRIBUTES", joinColumns={ @JoinColumn(name="CLIENT_ID") })
     protected Map<String, String> attributes = new HashMap<String, String>();
 
@@ -161,6 +161,10 @@ public class ClientEntity {
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
     @JoinTable(name="CLIENT_DEFAULT_ROLES", joinColumns = { @JoinColumn(name="CLIENT_ID")}, inverseJoinColumns = { @JoinColumn(name="ROLE_ID")})
     Collection<RoleEntity> defaultRoles = new ArrayList<RoleEntity>();
+
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinTable(name="SCOPE_MAPPING", joinColumns = { @JoinColumn(name="CLIENT_ID")}, inverseJoinColumns = { @JoinColumn(name="ROLE_ID")})
+    protected Set<RoleEntity> scopeMapping = new HashSet<>();
 
     @ElementCollection
     @MapKeyColumn(name="NAME")
@@ -454,6 +458,14 @@ public class ClientEntity {
 
     public void setUseTemplateMappers(boolean useTemplateMappers) {
         this.useTemplateMappers = useTemplateMappers;
+    }
+
+    public Set<RoleEntity> getScopeMapping() {
+        return scopeMapping;
+    }
+
+    public void setScopeMapping(Set<RoleEntity> scopeMapping) {
+        this.scopeMapping = scopeMapping;
     }
 
     @Override

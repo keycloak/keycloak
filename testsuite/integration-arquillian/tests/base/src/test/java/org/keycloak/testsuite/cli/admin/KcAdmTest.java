@@ -123,7 +123,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
         exe = KcAdmExec.execute("set-password");
         assertExitCodeAndStdErrSize(exe, 1, 0);
         Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
-        Assert.assertEquals("help message", "Usage: " + CMD + " set-password (--username USERNAME | --userid ID) [--password PASSWORD] [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assert.assertEquals("help message", "Usage: " + CMD + " set-password (--username USERNAME | --userid ID) [--new-password PASSWORD] [ARGUMENTS]", exe.stdoutLines().get(0));
         //Assert.assertEquals("error message", "CLIENT not specified", exe.stderrLines().get(0));
 
         exe = KcAdmExec.execute("help");
@@ -174,7 +174,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
 
         exe = KcAdmExec.execute("set-password --help");
         assertExitCodeAndStdErrSize(exe, 0, 0);
-        Assert.assertEquals("stdout first line", "Usage: " + CMD + " set-password (--username USERNAME | --userid ID) [--password PASSWORD] [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assert.assertEquals("stdout first line", "Usage: " + CMD + " set-password (--username USERNAME | --userid ID) [--new-password PASSWORD] [ARGUMENTS]", exe.stdoutLines().get(0));
 
         exe = KcAdmExec.execute("config --help");
         assertExitCodeAndStdErrSize(exe, 0, 0);
@@ -255,6 +255,18 @@ public class KcAdmTest extends AbstractAdmCliTest {
 
         assertExitCodeAndStreamSizes(exe, 1, 0, 2);
         Assert.assertEquals("stderr first line", "Required option not specified: --realm", exe.stderrLines().get(0));
+        Assert.assertEquals("try help", "Try '" + CMD + " help config credentials' for more information", exe.stderrLines().get(1));
+    }
+
+    @Test
+    public void testCredentialsWithNoConfig() {
+        /*
+         *  Test with --no-config specified which is not supported
+         */
+        KcAdmExec exe = KcAdmExec.execute("config credentials --no-config --server " + serverUrl + " --realm master --user admin --password admin");
+
+        assertExitCodeAndStreamSizes(exe, 1, 0, 2);
+        Assert.assertEquals("stderr first line", "Unsupported option: --no-config", exe.stderrLines().get(0));
         Assert.assertEquals("try help", "Try '" + CMD + " help config credentials' for more information", exe.stderrLines().get(1));
     }
 

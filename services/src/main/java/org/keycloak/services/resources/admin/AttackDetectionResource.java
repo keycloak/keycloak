@@ -18,7 +18,9 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
@@ -26,6 +28,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.managers.BruteForceProtector;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -42,12 +45,13 @@ import java.util.Map;
 /**
  * Base resource class for the admin REST api of one realm
  *
+ * @resource Attack Detection
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class AttackDetectionResource {
     protected static final Logger logger = Logger.getLogger(AttackDetectionResource.class);
-    protected RealmAuth auth;
+    protected AdminPermissionEvaluator auth;
     protected RealmModel realm;
     private AdminEventBuilder adminEvent;
 
@@ -63,12 +67,10 @@ public class AttackDetectionResource {
     @Context
     protected HttpHeaders headers;
 
-    public AttackDetectionResource(RealmAuth auth, RealmModel realm, AdminEventBuilder adminEvent) {
+    public AttackDetectionResource(AdminPermissionEvaluator auth, RealmModel realm, AdminEventBuilder adminEvent) {
         this.auth = auth;
         this.realm = realm;
         this.adminEvent = adminEvent.realm(realm).resource(ResourceType.USER_LOGIN_FAILURE);
-
-        auth.init(RealmAuth.Resource.USER);
     }
 
     /**
@@ -82,7 +84,12 @@ public class AttackDetectionResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, Object> bruteForceUserStatus(@PathParam("userId") String userId) {
-        auth.requireView();
+        UserModel user = session.users().getUserById(userId, realm);
+        if (user == null) {
+            auth.users().requireView();
+        } else {
+            auth.users().requireView(user);
+        }
 
         Map<String, Object> data = new HashMap<>();
         data.put("disabled", false);
@@ -91,13 +98,20 @@ public class AttackDetectionResource {
         data.put("lastIPFailure", "n/a");
         if (!realm.isBruteForceProtected()) return data;
 
-        UserModel user = session.users().getUserById(userId, realm);
 
         UserLoginFailureModel model = session.sessions().getUserLoginFailure(realm, userId);
         if (model == null) return data;
-        if (session.getProvider(BruteForceProtector.class).isTemporarilyDisabled(session, realm, user)) {
+
+        boolean disabled;
+        if (user == null) {
+            disabled = Time.currentTime() < model.getFailedLoginNotBefore();
+        } else {
+            disabled = session.getProvider(BruteForceProtector.class).isTemporarilyDisabled(session, realm, user);
+        }
+        if (disabled) {
             data.put("disabled", true);
         }
+
         data.put("numFailures", model.getNumFailures());
         data.put("lastFailure", model.getLastFailure());
         data.put("lastIPFailure", model.getLastIPFailure());
@@ -114,8 +128,12 @@ public class AttackDetectionResource {
     @Path("brute-force/users/{userId}")
     @DELETE
     public void clearBruteForceForUser(@PathParam("userId") String userId) {
-        auth.requireManage();
-
+        UserModel user = session.users().getUserById(userId, realm);
+        if (user == null) {
+            auth.users().requireManage();
+        } else {
+            auth.users().requireManage(user);
+        }
         UserLoginFailureModel model = session.sessions().getUserLoginFailure(realm, userId);
         if (model != null) {
             session.sessions().removeUserLoginFailure(realm, userId);
@@ -132,7 +150,7 @@ public class AttackDetectionResource {
     @Path("brute-force/users")
     @DELETE
     public void clearAllBruteForce() {
-        auth.requireManage();
+        auth.users().requireManage();
 
         session.sessions().removeAllUserLoginFailures(realm);
         adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
