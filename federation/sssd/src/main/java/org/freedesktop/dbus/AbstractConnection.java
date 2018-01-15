@@ -1032,8 +1032,8 @@ public abstract class AbstractConnection {
                     transport.mout.writeMessage(new Error(m, e));
                 } catch (IOException IOe) {
                     if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, IOe);
-                } catch (DBusException IOe) {
-                    if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, e);
+                } catch (DBusException DBe) {
+                    if (EXCEPTION_DEBUG && Debug.debug) Debug.print(Debug.ERR, DBe);
                 }
             if (e instanceof IOException) disconnect();
         }
