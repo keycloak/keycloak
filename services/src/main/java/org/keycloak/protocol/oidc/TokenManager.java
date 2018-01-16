@@ -73,12 +73,12 @@ import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * Stateless object that creates tokens and manages oauth access codes
@@ -272,7 +272,7 @@ public class TokenManager {
     }
 
     private void validateTokenReuse(KeycloakSession session, RealmModel realm, RefreshToken refreshToken,
-            TokenValidation validation) throws OAuthErrorException {
+                                    TokenValidation validation) throws OAuthErrorException {
         if (realm.isRevokeRefreshToken()) {
             int clusterStartupTime = session.getProvider(ClusterProvider.class).getClusterStartupTime();
 
@@ -448,7 +448,7 @@ public class TokenManager {
     }
 
     public static Set<RoleModel> getAccess(String scopeParam, boolean applyScopeParam, ClientModel client, UserModel user) {
-        Set<RoleModel> requestedRoles = new HashSet<RoleModel>();
+        Set<RoleModel> requestedRoles = new HashSet<>();
 
         Set<RoleModel> mappings = user.getRoleMappings();
         Set<RoleModel> roleMappings = new HashSet<>();
@@ -462,7 +462,7 @@ public class TokenManager {
 
         boolean useTemplateScope = template != null && client.useTemplateScope();
 
-        if ( (useTemplateScope && template.isFullScopeAllowed()) || (client.isFullScopeAllowed())) {
+        if ((useTemplateScope && template.isFullScopeAllowed()) || (client.isFullScopeAllowed())) {
             logger.debug("Using full scope for client");
             requestedRoles = roleMappings;
         } else {
@@ -476,24 +476,19 @@ public class TokenManager {
             scopeMappings.addAll(clientScopeMappings);
             for (RoleModel role : roleMappings) {
                 for (RoleModel desiredRole : scopeMappings) {
-                    Set<RoleModel> visited = new HashSet<RoleModel>();
+                    Set<RoleModel> visited = new HashSet<>();
                     applyScope(role, desiredRole, visited, requestedRoles);
                 }
             }
         }
         if (applyScopeParam) {
-            Collection<String> scopeParamRoles;
-            if (scopeParam != null) {
-                String[] scopes = scopeParam.split(" ");
-                scopeParamRoles = Arrays.asList(scopes);
-            } else {
-                scopeParamRoles = Collections.emptyList();
-            }
+            ScopeGroup scopeGroup = ScopeGroup.from(scopeParam);
 
             Set<RoleModel> roles = new HashSet<>();
             for (RoleModel role : requestedRoles) {
                 String roleName = getRoleNameForScopeParam(role);
-                if (!role.isScopeParamRequired() || scopeParamRoles.contains(roleName)) {
+                //Match role name against matching patterns if scope parameter is required
+                if (!role.isScopeParamRequired() || scopeGroup.isMatchingAnyFullScopePattern(roleName)) {
                     roles.add(role);
                 } else {
                     if (logger.isTraceEnabled()) {
@@ -504,13 +499,11 @@ public class TokenManager {
 
             // Add all roles specified in scope parameter directly into requestedRoles, even if they are available just through composite role
             List<RoleModel> scopeRoles = new LinkedList<>();
-            for (String scopeParamPart : scopeParamRoles) {
-                RoleModel scopeParamRole = getRoleFromScopeParam(client.getRealm(), scopeParamPart);
-                if (scopeParamRole != null) {
-                    for (RoleModel role : roles) {
-                        if (role.hasRole(scopeParamRole)) {
-                            scopeRoles.add(scopeParamRole);
-                        }
+
+            for (RoleModel matchedRelamRole : scopeGroup.matchRealmRolesWithScopePatterns(client.getRealm())) {
+                for (RoleModel role : roles) {
+                    if (role.hasRole(matchedRelamRole)) {
+                        scopeRoles.add(matchedRelamRole);
                     }
                 }
             }
@@ -522,6 +515,9 @@ public class TokenManager {
         return requestedRoles;
     }
 
+
+
+
     // For now, just use "roleName" for realm roles and "clientId/roleName" for client roles
     private static String getRoleNameForScopeParam(RoleModel role) {
         if (role.getContainer() instanceof RealmModel) {
@@ -532,20 +528,11 @@ public class TokenManager {
         }
     }
 
-    // For now, just use "roleName" for realm roles and "clientId/roleName" for client roles
-    private static RoleModel getRoleFromScopeParam(RealmModel realm, String scopeParamRole) {
-        String[] parts = scopeParamRole.split("/");
-        if (parts.length == 1) {
-            return realm.getRole(parts[0]);
-        } else {
-            ClientModel roleClient = realm.getClientByClientId(parts[0]);
-            return roleClient!=null ? roleClient.getRole(parts[1]) : null;
-        }
-    }
 
     public void verifyAccess(AccessToken token, AccessToken newToken) throws OAuthErrorException {
         if (token.getRealmAccess() != null) {
-            if (newToken.getRealmAccess() == null) throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "User no long has permission for realm roles");
+            if (newToken.getRealmAccess() == null)
+                throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "User no long has permission for realm roles");
 
             for (String roleName : token.getRealmAccess().getRoles()) {
                 if (!newToken.getRealmAccess().getRoles().contains(roleName)) {
@@ -575,7 +562,7 @@ public class TokenManager {
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
         for (ProtocolMapperModel mapping : mappings) {
 
-            ProtocolMapper mapper = (ProtocolMapper)sessionFactory.getProviderFactory(ProtocolMapper.class, mapping.getProtocolMapper());
+            ProtocolMapper mapper = (ProtocolMapper) sessionFactory.getProviderFactory(ProtocolMapper.class, mapping.getProtocolMapper());
             if (mapper instanceof OIDCAccessTokenMapper) {
                 token = ((OIDCAccessTokenMapper) mapper).transformAccessToken(token, mapping, session, userSession, clientSession);
             }
@@ -585,12 +572,12 @@ public class TokenManager {
     }
 
     public AccessToken transformUserInfoAccessToken(KeycloakSession session, AccessToken token, RealmModel realm, ClientModel client, UserModel user,
-                                            UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
+                                                    UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
         Set<ProtocolMapperModel> mappings = ClientSessionCode.getRequestedProtocolMappers(clientSession.getProtocolMappers(), client);
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
         for (ProtocolMapperModel mapping : mappings) {
 
-            ProtocolMapper mapper = (ProtocolMapper)sessionFactory.getProviderFactory(ProtocolMapper.class, mapping.getProtocolMapper());
+            ProtocolMapper mapper = (ProtocolMapper) sessionFactory.getProviderFactory(ProtocolMapper.class, mapping.getProtocolMapper());
             if (mapper instanceof UserInfoTokenMapper) {
                 token = ((UserInfoTokenMapper) mapper).transformUserInfoToken(token, mapping, session, userSession, clientSession);
             }
@@ -600,12 +587,12 @@ public class TokenManager {
     }
 
     public void transformIDToken(KeycloakSession session, IDToken token, RealmModel realm, ClientModel client, UserModel user,
-                                      UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
+                                 UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
         Set<ProtocolMapperModel> mappings = ClientSessionCode.getRequestedProtocolMappers(clientSession.getProtocolMappers(), client);
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
         for (ProtocolMapperModel mapping : mappings) {
 
-            ProtocolMapper mapper = (ProtocolMapper)sessionFactory.getProviderFactory(ProtocolMapper.class, mapping.getProtocolMapper());
+            ProtocolMapper mapper = (ProtocolMapper) sessionFactory.getProviderFactory(ProtocolMapper.class, mapping.getProtocolMapper());
             if (mapper instanceof OIDCIDTokenMapper) {
                 token = ((OIDCIDTokenMapper) mapper).transformIDToken(token, mapping, session, userSession, clientSession);
             }
@@ -739,6 +726,7 @@ public class TokenManager {
             this.accessToken = accessToken;
             return this;
         }
+
         public AccessTokenResponseBuilder refreshToken(RefreshToken refreshToken) {
             this.refreshToken = refreshToken;
             return this;
@@ -918,8 +906,142 @@ public class TokenManager {
                         returnedScopes.add(s);
                     }
                 }
-            }       	
+            }
         }
+    }
+
+    /**
+     * Group of all scope matchers
+     */
+    private static class ScopeGroup {
+
+        public static final String SCOPE_SPLIT = " ";
+
+        private Collection<ScopeMatcher> scopeMatchers = new ArrayList<>();
+
+        private ScopeGroup(Collection<ScopeMatcher> scopeMatchers) {
+            this.scopeMatchers = scopeMatchers;
+        }
+
+        public static ScopeGroup from(String scopeParam) {
+            Collection<ScopeMatcher> scopeMatchers = new ArrayList<>();
+            if (scopeParam != null) {
+                String[] matchers = scopeParam.split(SCOPE_SPLIT);
+                for (String singleMatcher : matchers) {
+                    scopeMatchers.add(ScopeMatcher.from(singleMatcher));
+                }
+            }
+            return new ScopeGroup(scopeMatchers);
+        }
+
+        /**
+         * Match any forwarded scope matcher
+         * @param value
+         * @return
+         */
+        public boolean isMatchingAnyFullScopePattern(String value) {
+            for (ScopeMatcher pattern : scopeMatchers) {
+                if (pattern.matcherFull().matcher(value).matches()) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /**
+         * Match with realm client or role directly
+         * @param realm
+         * @return
+         */
+        public Set<RoleModel> matchRealmRolesWithScopePatterns(RealmModel realm) {
+            Set<RoleModel> matchedRealmRoles = new HashSet<>();
+            //Depending on requested scope param clientId/roleName or roleName
+            //Example: .*/.*  .*/roleName clientId/.* roleNameOnly ;
+            for (ScopeMatcher scopeMatcher : scopeMatchers) {
+                if (scopeMatcher.isRoleOnlyMatcher()) {
+                    Set<RoleModel> roles = realm.getRoles();
+                    //Go through all roles and matched with pattern
+                    for (RoleModel role : roles) {
+                        if (scopeMatcher.matcherRole().matcher(role.getName()).matches()) {
+                            matchedRealmRoles.add(role);
+                        }
+                    }
+                } else {
+                    for (ClientModel client : realm.getClients()) {
+                        if (scopeMatcher.matcherClient().matcher(client.getClientId()).matches()) {
+                            //Now find roles matching rolePattern
+                            for (RoleModel clientRole : client.getRoles()) {
+                                if (scopeMatcher.matcherRole().matcher(clientRole.getName()).matches()) {
+                                    matchedRealmRoles.add(clientRole);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return matchedRealmRoles;
+        }
+    }
+
+    /**
+     * Used to parse scope param to "roleName" only or "clientId/roleName" matcher
+     */
+    private static class ScopeMatcher {
+
+        private Pattern fullPattern;
+        private Pattern clientPattern;
+        private Pattern rolePattern;
+
+        private ScopeMatcher(Pattern fullPattern, Pattern clientPattern, Pattern rolePattern) {
+            this.fullPattern = fullPattern;
+            this.clientPattern = clientPattern;
+            this.rolePattern = rolePattern;
+        }
+
+        private ScopeMatcher(Pattern fullPattern, Pattern rolePattern) {
+            this.fullPattern = fullPattern;
+            this.rolePattern = rolePattern;
+        }
+
+
+        public static ScopeMatcher from(String scopeParam) {
+            String[] scopeClientRoleParams = scopeParam.split("/");
+            Pattern fullPattern = Pattern.compile(scopeParam, Pattern.CASE_INSENSITIVE);
+            if (scopeClientRoleParams.length == 1) {
+                Pattern rolePattern = Pattern.compile(scopeClientRoleParams[0], Pattern.CASE_INSENSITIVE);
+                return new ScopeMatcher(fullPattern, rolePattern);
+            } else {
+                Pattern clientPattern = Pattern.compile(scopeClientRoleParams[0], Pattern.CASE_INSENSITIVE);
+                Pattern rolePattern = Pattern.compile(scopeClientRoleParams[1], Pattern.CASE_INSENSITIVE);
+                return new ScopeMatcher(fullPattern, clientPattern, rolePattern);
+            }
+
+        }
+
+        public Pattern matcherFull() {
+            return fullPattern;
+        }
+
+        public Pattern matcherClient() {
+            return clientPattern;
+        }
+
+        public Pattern matcherRole() {
+            return rolePattern;
+        }
+
+        /**
+         * When scope param doesn't include client part
+         *
+         * @return
+         */
+        public boolean isRoleOnlyMatcher() {
+            if (clientPattern == null) {
+                return true;
+            }
+            return false;
+        }
+
     }
 
     public class RefreshResult {
