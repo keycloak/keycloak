@@ -193,7 +193,14 @@ By default the monitoring history is preserved. If you wish to delete it enable 
 
 To view monitoring dashboard open Grafana UI at: `http://localhost:3000/dashboard/file/resource-usage-combined.json`.
 
+### Sysstat metrics
 
+To enable recording of sysstat metrics use `-Psar`.
+This will run the `sar` command during the test and process its binary output to produce textual and CSV files with CPU utilisation stats.
+To also enable creation of PNG charts use `-Psar,gnuplot`. For this to work Gnuplot needs to be installed on the machine.
+To compress the binary output with bzip add `-Dbzip=true` to the commandline.
+
+Results will be stored in folder: `tests/target/sar`.
 
 ## Examples
 
