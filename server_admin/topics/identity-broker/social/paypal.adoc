@@ -24,7 +24,7 @@ image:images/paypal-register-app.png[]
 
 You will now be brought to the app settings page.
 
-==== Do the following changes:
+.Do the following changes:
 
 - Choose to configure either Sandbox or Live (choose Live if you haven't enabled the `Target Sandbox` switch on the `Add identity provider` page)
 - Copy Client ID and Secret so you can paste them into the {project_name} `Add identity provider` page.
