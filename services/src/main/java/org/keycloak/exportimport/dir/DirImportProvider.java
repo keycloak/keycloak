@@ -131,7 +131,7 @@ public class DirImportProvider implements ImportProvider {
 
         // Import realm first
         FileInputStream is = new FileInputStream(realmFile);
-        final RealmRepresentation realmRep = JsonSerialization.readValue(is, RealmRepresentation.class);
+        final RealmRepresentation realmRep = JsonSerialization.readValue(is, RealmRepresentation.class, true);
         final AtomicBoolean realmImported = new AtomicBoolean();
 
         KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
