@@ -93,8 +93,7 @@ public class AccountLoader {
 
     private Theme getTheme(KeycloakSession session) {
         try {
-            ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
-            return themeProvider.getTheme(session.getContext().getRealm().getAccountTheme(), Theme.Type.ACCOUNT);
+            return session.theme().getTheme(Theme.Type.ACCOUNT);
         } catch (IOException e) {
             throw new InternalServerErrorException(e);
         }

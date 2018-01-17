@@ -72,8 +72,7 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
         try {
             RealmModel realm = resolveRealm();
 
-            ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
-            Theme theme = themeProvider.getTheme(realm.getLoginTheme(), Theme.Type.LOGIN);
+            Theme theme = session.theme().getTheme(Theme.Type.LOGIN);
 
             Locale locale = LocaleHelper.getLocale(session, realm, null);
 
@@ -118,6 +117,8 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
         if (realm == null) {
             realm = realmManager.getRealmByName(Config.getAdminRealm());
         }
+
+        session.getContext().setRealm(realm);
 
         return realm;
     }

@@ -192,8 +192,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
      * @throws IOException in case of Theme loading problem
      */
     protected Theme getTheme() throws IOException {
-        ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
-        return themeProvider.getTheme(realm.getAccountTheme(), Theme.Type.ACCOUNT);
+        return session.theme().getTheme(Theme.Type.ACCOUNT);
     }
 
     /**

@@ -248,8 +248,7 @@ public class AdminRoot {
     }
 
     public static Theme getTheme(KeycloakSession session, RealmModel realm) throws IOException {
-        ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
-        return themeProvider.getTheme(realm.getAdminTheme(), Theme.Type.ADMIN);
+        return session.theme().getTheme(Theme.Type.ADMIN);
     }
 
     public static Properties getMessages(KeycloakSession session, RealmModel realm, String lang) {
