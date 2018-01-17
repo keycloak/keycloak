@@ -58,7 +58,7 @@ public class SAMLSloResponseParser extends SAMLStatusResponseTypeParser implemen
                 issuer.setValue(StaxParserUtil.getElementText(xmlEventReader));
                 response.setIssuer(issuer);
             } else if (JBossSAMLConstants.SIGNATURE.get().equals(elementName)) {
-                StaxParserUtil.bypassElementBlock(xmlEventReader, JBossSAMLConstants.SIGNATURE.get());
+                StaxParserUtil.bypassElementBlock(xmlEventReader, JBossSAMLConstants.SIGNATURE);
             } else if (JBossSAMLConstants.EXTENSIONS.get().equals(elementName)) {
                 SAMLExtensionsParser extensionsParser = new SAMLExtensionsParser();
                 response.setExtensions(extensionsParser.parse(xmlEventReader));

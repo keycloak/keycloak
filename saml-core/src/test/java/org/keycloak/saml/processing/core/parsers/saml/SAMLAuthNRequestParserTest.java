@@ -73,8 +73,9 @@ public class SAMLAuthNRequestParserTest {
             assertThat(req.getNameIDPolicy().getFormat().toString(), is("urn:oasis:names:tc:SAML:2.0:nameid-format:transient"));
 
             assertThat(req.getExtensions(), not(nullValue()));
-            assertThat(req.getExtensions().getAny().size(), is(1));
+            assertThat(req.getExtensions().getAny().size(), is(2));
             assertThat(req.getExtensions().getAny().get(0), instanceOf(Element.class));
+            assertThat(req.getExtensions().getAny().get(1), instanceOf(Element.class));
             Element el = (Element) req.getExtensions().getAny().get(0);
             assertThat(el.getLocalName(), is("KeyInfo"));
             assertThat(el.getNamespaceURI(), is("urn:keycloak:ext:key:1.0"));

@@ -4,5 +4,8 @@
     <samlp:NameIDPolicy AllowCreate="true" Format="urn:oasis:names:tc:SAML:2.0:nameid-format:transient"/>
     <samlp:Extensions>
         <kckey:KeyInfo xmlns:kckey="urn:keycloak:ext:key:1.0" MessageSigningKeyId="FJ86GcF3jTbNLOco4NvZkUCIUmfYCqoqtOQeMfbhNlE"/>
+        <saml:Invalid xmlns:a="urn:invalid">
+            <a:a>text</a:a>
+        </saml:Invalid>
     </samlp:Extensions>
 </samlp:AuthnRequest>
