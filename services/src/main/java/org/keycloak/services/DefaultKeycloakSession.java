@@ -26,6 +26,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransactionManager;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.RealmProvider;
+import org.keycloak.models.ThemeManager;
 import org.keycloak.models.UserCredentialManager;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionProvider;
@@ -36,6 +37,7 @@ import org.keycloak.provider.ProviderFactory;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.storage.UserStorageManager;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
+import org.keycloak.theme.DefaultThemeManager;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -62,6 +64,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private UserFederatedStorageProvider userFederatedStorageProvider;
     private KeycloakContext context;
     private KeyManager keyManager;
+    private ThemeManager themeManager;
 
     public DefaultKeycloakSession(DefaultKeycloakSessionFactory factory) {
         this.factory = factory;
@@ -251,6 +254,14 @@ public class DefaultKeycloakSession implements KeycloakSession {
             keyManager = new DefaultKeyManager(this);
         }
         return keyManager;
+    }
+
+    @Override
+    public ThemeManager theme() {
+        if (themeManager == null) {
+            themeManager = new DefaultThemeManager(this);
+        }
+        return themeManager;
     }
 
     public void close() {

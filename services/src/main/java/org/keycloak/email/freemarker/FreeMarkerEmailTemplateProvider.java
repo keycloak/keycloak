@@ -208,8 +208,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
     }
 
     protected Theme getTheme() throws IOException {
-        ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
-        return themeProvider.getTheme(realm.getEmailTheme(), Theme.Type.EMAIL);
+        return session.theme().getTheme(Theme.Type.EMAIL);
     }
     
     protected void send(String subjectKey, List<Object> subjectAttributes, String template, Map<String, Object> attributes) throws EmailException {

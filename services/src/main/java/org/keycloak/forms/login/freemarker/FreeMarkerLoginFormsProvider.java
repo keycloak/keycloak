@@ -261,8 +261,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
      * @throws IOException in case of Theme loading problem
      */
     protected Theme getTheme() throws IOException {
-        ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
-        return themeProvider.getTheme(realm.getLoginTheme(), Theme.Type.LOGIN);
+        return session.theme().getTheme(Theme.Type.LOGIN);
     }
 
     /**
