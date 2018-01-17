@@ -2,9 +2,13 @@ package org.keycloak.theme;
 
 import org.keycloak.Config;
 import org.keycloak.common.Version;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.KeycloakSession;
 
 public class DefaultThemeSelectorProvider implements ThemeSelectorProvider {
+
+    public static final String LOGIN_THEME_KEY = "login_theme";
 
     private final KeycloakSession session;
 
@@ -17,11 +21,29 @@ public class DefaultThemeSelectorProvider implements ThemeSelectorProvider {
         String name = null;
 
         switch (type) {
-            case ACCOUNT:
-                name = session.getContext().getRealm().getAccountTheme();
+            case WELCOME:
+                name = Config.scope("theme").get("welcomeTheme");
                 break;
             case LOGIN:
-                name = session.getContext().getRealm().getLoginTheme();
+                ClientModel client = session.getContext().getClient();
+                if (client != null) {
+                    name = client.getAttribute(LOGIN_THEME_KEY);
+
+                    if (name == null || name.isEmpty()) {
+                        ClientTemplateModel clientTemplate = client.getClientTemplate();
+                        if (clientTemplate != null) {
+                            name = clientTemplate.getAttribute(LOGIN_THEME_KEY);
+                        }
+                    }
+                }
+
+                if (name == null) {
+                    name = session.getContext().getRealm().getLoginTheme();
+                }
+                
+                break;
+            case ACCOUNT:
+                name = session.getContext().getRealm().getAccountTheme();
                 break;
             case EMAIL:
                 name = session.getContext().getRealm().getEmailTheme();
@@ -29,12 +51,9 @@ public class DefaultThemeSelectorProvider implements ThemeSelectorProvider {
             case ADMIN:
                 name = session.getContext().getRealm().getAdminTheme();
                 break;
-            case WELCOME:
-                name = Config.scope("theme").get("welcomeTheme");
-                break;
         }
 
-        if (name == null) {
+        if (name == null || name.isEmpty()) {
             name = Config.scope("theme").get("default", Version.NAME.toLowerCase());
         }
 
@@ -44,4 +63,6 @@ public class DefaultThemeSelectorProvider implements ThemeSelectorProvider {
     @Override
     public void close() {
     }
+
 }
+
