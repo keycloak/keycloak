@@ -25,6 +25,7 @@ import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.cache.infinispan.entities.CachedClient;
 
+import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -199,7 +200,7 @@ public class ClientAdapter implements ClientModel {
     }
 
     public boolean validateSecret(String secret) {
-        return secret.equals(getSecret());
+        return MessageDigest.isEqual(secret.getBytes(), getSecret().getBytes());
     }
 
     public String getSecret() {
