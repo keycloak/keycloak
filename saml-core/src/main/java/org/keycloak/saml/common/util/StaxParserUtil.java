@@ -94,6 +94,20 @@ public class StaxParserUtil {
     }
 
     /**
+     * Bypass an entire XML element block from startElement to endElement.
+     * It is expected that the {@code xmlEventReader} is positioned at (has not yet read)
+     * the start element of the block it should bypass.
+     *
+     * @param xmlEventReader
+     * @param tag Tag of the XML element that we need to bypass
+     *
+     * @throws org.keycloak.saml.common.exceptions.ParsingException
+     */
+    public static void bypassElementBlock(XMLEventReader xmlEventReader, JBossSAMLConstants tag) throws ParsingException {
+        bypassElementBlock(xmlEventReader, tag == null ? null : tag.get());
+    }
+
+    /**
      * Bypass an entire XML element block.
      * It is expected that the {@code xmlEventReader} is positioned at (has not yet read)
      * the start element of the block it should bypass.

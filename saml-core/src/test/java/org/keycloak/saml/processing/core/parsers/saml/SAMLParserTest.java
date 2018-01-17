@@ -42,6 +42,7 @@ import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
+import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.saml.common.exceptions.ParsingException;
@@ -249,6 +250,14 @@ public class SAMLParserTest {
         try (InputStream st = SAMLParserTest.class.getResourceAsStream("KEYCLOAK-4790-Empty-attribute-value-last.xml")) {
             Object parsedObject = parser.parse(st);
             assertThat(parsedObject, instanceOf(ResponseType.class));
+        }
+    }
+
+    @Test
+    public void testAuthnRequestScoping() throws Exception {
+        try (InputStream st = SAMLParserTest.class.getResourceAsStream("KEYCLOAK-6109-authnrequest-scoping.xml")) {
+            Object parsedObject = parser.parse(st);
+            assertThat(parsedObject, instanceOf(AuthnRequestType.class));
         }
     }
 
