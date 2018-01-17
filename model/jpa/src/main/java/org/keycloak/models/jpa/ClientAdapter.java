@@ -32,6 +32,7 @@ import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -208,7 +209,7 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
 
     @Override
     public boolean validateSecret(String secret) {
-        return secret.equals(entity.getSecret());
+        return MessageDigest.isEqual(secret.getBytes(), entity.getSecret().getBytes());
     }
 
     @Override
