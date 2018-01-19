@@ -26,6 +26,8 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.adapters.saml.SamlAuthenticationError;
+import org.keycloak.adapters.spi.AuthenticationError;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -59,7 +61,9 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
     @Deployment
     public static WebArchive deploy() {
         return RunOnServerDeployment.create(UserResource.class)
-                .addPackages(true, "org.keycloak.testsuite");
+                .addPackages(true, "org.keycloak.testsuite")
+                .addClass(SamlAuthenticationError.class)
+                .addClass(AuthenticationError.class);
     }
 
 
