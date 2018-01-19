@@ -253,13 +253,12 @@
             <!--see KEYCLOAK-4793-->
             <id>kie.maven.settings</id>
             <activation>
-                <property>
-                    <name>repo.url</name>
-                </property>
+                <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
                 <maven.repo.local>${user.home}/.m2/repository</maven.repo.local>
                 <settings.path>${user.home}/.m2/settings.xml</settings.path>
+                <repo.url/>
                 <kie.maven.settings>
                     -Dkie.maven.settings.custom=${settings.path}
                     -Dkie.maven.repo.local=${maven.repo.local}
