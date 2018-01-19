@@ -40,26 +40,5 @@ public abstract class AbstractDemoFilterServletAdapterTest extends AbstractDemoS
     public void testOIDCUiLocalesParamForwarding() {
 
     }
-  
-    @Test
-    @Override
-    @Ignore
-    public void testClientAuthenticatedInClientSecretJwt() {
-
-    }
-    
-    @Test
-    @Override
-    @Ignore
-    public void testClientNotAuthenticatedInClientSecretJwtBySharedSecretOutOfSync() {
-
-    }
-    
-    @Test
-    @Override
-    @Ignore
-    public void testClientNotAuthenticatedInClientSecretJwtByAuthnMethodOutOfSync() {
-
-    }
 
 }
