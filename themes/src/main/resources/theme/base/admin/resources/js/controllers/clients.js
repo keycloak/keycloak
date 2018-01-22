@@ -1002,7 +1002,15 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
         $scope.userInfoSignedResponseAlg = attrVal1==null ? 'unsigned' : attrVal1;
 
         var attrVal2 = $scope.client.attributes['request.object.signature.alg'];
-         $scope.requestObjectSignatureAlg = attrVal2==null ? 'any' : attrVal2;
+        $scope.requestObjectSignatureAlg = attrVal2==null ? 'any' : attrVal2;
+
+        if ($scope.client.attributes["exclude.session.state.from.auth.response"]) {
+            if ($scope.client.attributes["exclude.session.state.from.auth.response"] == "true") {
+                $scope.excludeSessionStateFromAuthResponse = true;
+            } else {
+                $scope.excludeSessionStateFromAuthResponse = false;
+            }
+        }
     }
 
     if (!$scope.create) {
@@ -1222,6 +1230,13 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
             $scope.clientEdit.attributes["saml.force.post.binding"] = "true";
         } else {
             $scope.clientEdit.attributes["saml.force.post.binding"] = "false";
+
+        }
+
+        if ($scope.excludeSessionStateFromAuthResponse == true) {
+            $scope.clientEdit.attributes["exclude.session.state.from.auth.response"] = "true";
+        } else {
+            $scope.clientEdit.attributes["exclude.session.state.from.auth.response"] = "false";
 
         }
 
