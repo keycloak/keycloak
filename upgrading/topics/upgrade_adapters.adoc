@@ -4,6 +4,18 @@ It is important that you upgrade {project_name} server first, and then upgrade t
 adapter might work with later versions of {project_name} server, but earlier versions of {project_name} server might not
 work with later versions of the adapter.
 
+[[_compatibility_with_older_adapters]]
+== Compatibility with older adapters
+
+As mentioned above, we try to support newer release versions of {project_name} server working with older release versions of the adapters.
+However, in some cases we need to include fixes on the {project_name} server side which may break compatibility with older versions
+of the adapters. For example, when we implement new aspects of the OpenID Connect specification, which older client adapter versions
+were not aware of.
+
+In those cases, we added Compatibility modes. For OpenId Connect clients, there is a section named `OpenID Connect Compatibility Modes`
+in the {project_name} admin console, on the page with client details. Here, you can disable some new aspects of the {project_name} server
+to preserve compatibility with older client adapters. More details are available in the tool tips of individual switches.
+
 
 [[_upgrade_eap_adapter]]
 == Upgrading the EAP Adapter

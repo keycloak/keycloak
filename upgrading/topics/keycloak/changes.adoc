@@ -1,5 +1,22 @@
 == Migration Changes
 
+=== Migrating to 3.4.2
+
+==== Added session_state parameter to OpenID Connect Authentication Response
+
+The OpenID Connect Session Management specification requires that the parameter `session_state` is present in the OpenID Connect Authentication Response.
+
+In past releases, we did not have this parameter, but now {project_name} adds this parameter by default, as required by the specification.
+
+However, some OpenID Connect / OAuth2 adapters, and especially older {project_name} adapters, may have issues with this new parameter.
+
+For example, the parameter will be always present in the browser URL after successful authentication to the client application.
+In these cases, it may be useful to disable adding the `session_state` parameter to the authentication response. This can be done
+for the particular client in the {project_name} admin console, in client details in the section with `OpenID Connect Compatibility Modes`,
+described in <<_compatibility_with_older_adapters>>. There is the `Exclude Session State From Authentication Response` switch,
+which can be turned on to prevent adding the `session_state` parameter to the Authentication Response.
+
+
 === Migrating to 3.2.0
 
 ==== New Password Hashing algorithms

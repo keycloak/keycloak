@@ -32,3 +32,17 @@ Microsoft JDBC Driver 6.0 requires additional dependency added to the JDBC drive
 ----
 <module name="javax.xml.bind.api"/>
 ----
+
+=== Added session_state parameter to OpenID Connect Authentication Response
+
+The OpenID Connect Session Management specification requires that the parameter `session_state` is present in the OpenID Connect Authentication Response.
+
+In RH-SSO 7.1, we did not have this parameter, but now {project_name} adds this parameter by default, as required by the specification.
+
+However, some OpenID Connect / OAuth2 adapters, and especially older {project_name} adapters (such as RH-SSO 7.1 and older), may have issues with this new parameter.
+
+For example, the parameter will be always present in the browser URL after successful authentication to the client application.
+If you use RH-SSO 7.1 or a legacy OAuth2 / OpenID Connect adapter, it may be useful to disable adding the `session_state` parameter to the authentication response.
+This can be done for the particular client in the {project_name} admin console, in client details in the section with `OpenID Connect Compatibility Modes`,
+described in <<_compatibility_with_older_adapters>>. There is the `Exclude Session State From Authentication Response` switch,
+which can be turned on to prevent adding the `session_state` parameter to the Authentication Response.
