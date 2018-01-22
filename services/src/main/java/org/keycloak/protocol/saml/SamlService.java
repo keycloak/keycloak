@@ -636,6 +636,8 @@ public class SamlService extends AuthorizationEndpointBase {
             return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REDIRECT_URI);
         }
 
+        session.getContext().setClient(client);
+
         AuthenticationSessionModel authSession = getOrCreateLoginSessionForIdpInitiatedSso(this.session, this.realm, client, relayState);
 
         return newBrowserAuthentication(authSession, false, false);
