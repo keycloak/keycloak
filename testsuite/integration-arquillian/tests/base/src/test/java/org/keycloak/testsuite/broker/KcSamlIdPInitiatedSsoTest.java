@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.keycloak.testsuite.broker;
 
 import org.keycloak.admin.client.resource.ClientsResource;
@@ -145,6 +140,10 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
         return getAuthRoot() + "/auth/realms/" + realmName + "/broker/saml-leaf/endpoint/clients/" + samlIdpInitiatedSsoUrlName;
     }
 
+    private String getSamlBrokerUrl(String realmName) {
+        return getAuthRoot() + "/auth/realms/" + realmName + "/broker/saml-leaf/endpoint";
+    }
+
     private void waitForPage(final String title) {
         WebDriverWait wait = new WebDriverWait(driver, 5);
 
@@ -166,6 +165,41 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
               assertThat(ob, Matchers.isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
               ResponseType resp = (ResponseType) ob;
               assertThat(resp.getDestination(), is(getSamlBrokerIdpInitiatedUrl(REALM_CONS_NAME, "sales")));
+              return ob;
+          })
+          .build()
+
+          .updateProfile().username(CONSUMER_CHOSEN_USERNAME).email("test@localhost").firstName("Firstname").lastName("Lastname").build()
+          .followOneRedirect()
+
+          // Obtain the response sent to the app
+          .getSamlResponse(Binding.POST);
+
+        assertThat(samlResponse.getSamlObject(), Matchers.isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+        ResponseType resp = (ResponseType) samlResponse.getSamlObject();
+        assertThat(resp.getDestination(), is("http://localhost:8180/auth/realms/" + REALM_CONS_NAME + "/app/auth"));
+    }
+
+    @Test
+    public void testConsumerIdpInitiatedLoginToApp() {
+        SAMLDocumentHolder samlResponse = new SamlClientBuilder()
+          .navigateTo(getSamlIdpInitiatedUrl(REALM_CONS_NAME, "sales"))
+          // Request login via saml-leaf
+          .login().idp("saml-leaf").build()
+
+          .processSamlResponse(Binding.POST)    // AuthnRequest to producer IdP
+            .targetAttributeSamlRequest()
+            .build()
+
+          // Login in provider realm
+          .login().user(PROVIDER_REALM_USER_NAME, PROVIDER_REALM_USER_PASSWORD).build()
+
+          // Send the response to the consumer realm
+          .processSamlResponse(Binding.POST)
+          .transformObject(ob -> {
+              assertThat(ob, Matchers.isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+              ResponseType resp = (ResponseType) ob;
+              assertThat(resp.getDestination(), is(getSamlBrokerUrl(REALM_CONS_NAME)));
               return ob;
           })
           .build()
