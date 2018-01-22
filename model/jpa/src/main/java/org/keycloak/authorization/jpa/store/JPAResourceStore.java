@@ -88,11 +88,20 @@ public class JPAResourceStore implements ResourceStore {
 
     @Override
     public List<Resource> findByOwner(String ownerId, String resourceServerId) {
-        TypedQuery<String> query = entityManager.createNamedQuery("findResourceIdByOwner", String.class);
+        String queryName = "findResourceIdByOwner";
+
+        if (resourceServerId == null) {
+            queryName = "findAnyResourceIdByOwner";
+        }
+
+        TypedQuery<String> query = entityManager.createNamedQuery(queryName, String.class);
 
         query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("owner", ownerId);
-        query.setParameter("serverId", resourceServerId);
+
+        if (resourceServerId != null) {
+            query.setParameter("serverId", resourceServerId);
+        }
 
         List<String> result = query.getResultList();
         List<Resource> list = new LinkedList<>();

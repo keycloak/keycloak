@@ -128,11 +128,8 @@ public class GroupPathPolicyTest extends AbstractAuthzTest {
     @Test
     public void testAllowParentAndChildren() {
         AuthzClient authzClient = getAuthzClient();
-        PermissionRequest request = new PermissionRequest();
-
-        request.setResourceSetName("Resource A");
-
-        String ticket = authzClient.protection().permission().forResource(request).getTicket();
+        PermissionRequest request = new PermissionRequest("Resource A");
+        String ticket = authzClient.protection().permission().create(request).getTicket();
         AuthorizationResponse response = authzClient.authorization("marta", "password").authorize(new AuthorizationRequest(ticket));
 
         assertNotNull(response.getRpt());
@@ -143,7 +140,7 @@ public class GroupPathPolicyTest extends AbstractAuthzTest {
 
         realm.users().get(user.getId()).joinGroup(group.getId());
 
-        ticket = authzClient.protection().permission().forResource(request).getTicket();
+        ticket = authzClient.protection().permission().create(request).getTicket();
         response = authzClient.authorization("kolo", "password").authorize(new AuthorizationRequest(ticket));
 
         assertNotNull(response.getRpt());
@@ -153,11 +150,8 @@ public class GroupPathPolicyTest extends AbstractAuthzTest {
     public void testOnlyChildrenPolicy() throws Exception {
         RealmResource realm = getRealm();
         AuthzClient authzClient = getAuthzClient();
-        PermissionRequest request = new PermissionRequest();
-
-        request.setResourceSetName("Resource B");
-
-        String ticket = authzClient.protection().permission().forResource(request).getTicket();
+        PermissionRequest request = new PermissionRequest("Resource B");
+        String ticket = authzClient.protection().permission().create(request).getTicket();
 
         try {
             authzClient.authorization("kolo", "password").authorize(new AuthorizationRequest(ticket));

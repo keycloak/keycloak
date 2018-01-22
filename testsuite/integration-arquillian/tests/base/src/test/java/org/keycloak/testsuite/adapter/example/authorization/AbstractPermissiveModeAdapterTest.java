@@ -33,7 +33,7 @@ public abstract class AbstractPermissiveModeAdapterTest extends AbstractServletA
     @Deployment(name = RESOURCE_SERVER_ID, managed = false)
     public static WebArchive deployment() throws IOException {
         return exampleDeployment(RESOURCE_SERVER_ID)
-                .addAsWebInfResource(new File(TEST_APPS_HOME_DIR + "/servlet-authz-app/servlet-authz-realm.json"), "keycloak.-permissive-authz-service.json");
+                .addAsWebInfResource(new File(TEST_APPS_HOME_DIR + "/servlet-authz-app/servlet-authz-realm.json"), "keycloak-permissive-authz-service.json");
     }
 
     @Test

@@ -26,6 +26,10 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
+import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.authorization.AuthorizationTokenService;
+import org.keycloak.authorization.authorization.representation.AuthorizationRequest;
+import org.keycloak.authorization.authorization.representation.AuthorizationRequestMetadata;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ExchangeExternalToken;
 import org.keycloak.broker.provider.IdentityProvider;
@@ -64,6 +68,7 @@ import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.idm.authorization.PermissionTicketToken;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorResponseException;
@@ -84,6 +89,7 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.ProfileHelper;
 
@@ -96,6 +102,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+
+import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
@@ -116,7 +124,7 @@ public class TokenEndpoint {
     private Map<String, String> clientAuthAttributes;
 
     private enum Action {
-        AUTHORIZATION_CODE, REFRESH_TOKEN, PASSWORD, CLIENT_CREDENTIALS, TOKEN_EXCHANGE
+        AUTHORIZATION_CODE, REFRESH_TOKEN, PASSWORD, CLIENT_CREDENTIALS, TOKEN_EXCHANGE, PERMISSION
     }
 
     // https://tools.ietf.org/html/rfc7636#section-4.2
@@ -179,6 +187,8 @@ public class TokenEndpoint {
                 return clientCredentialsGrant();
             case TOKEN_EXCHANGE:
                 return tokenExchange();
+            case PERMISSION:
+                return buildPermissionToken();
         }
 
         throw new RuntimeException("Unknown action " + action);
@@ -247,7 +257,9 @@ public class TokenEndpoint {
         } else if (grantType.equals(OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)) {
             event.event(EventType.TOKEN_EXCHANGE);
             action = Action.TOKEN_EXCHANGE;
-
+        } else if (grantType.equals(OAuth2Constants.UMA_GRANT_TYPE)) {
+            event.event(EventType.PERMISSION_TOKEN);
+            action = Action.PERMISSION;
         } else {
             throw new CorsErrorResponseException(cors, Errors.INVALID_REQUEST, "Invalid " + OIDCLoginProtocol.GRANT_TYPE_PARAM, Response.Status.BAD_REQUEST);
         }
@@ -973,6 +985,50 @@ public class TokenEndpoint {
         return user;
     }
 
+    public Response buildPermissionToken() {
+        event.detail(Details.AUTH_METHOD, "oauth_credentials");
+
+        AuthorizationRequest authorizationRequest = new AuthorizationRequest(formParams.getFirst("ticket"));
+
+        List<String> claimToken = formParams.get("claim_token");
+
+        if (claimToken == null) {
+            authorizationRequest.setClaimToken(AccessTokenResponse.class.cast(clientCredentialsGrant().getEntity()).getToken());
+        } else {
+            authorizationRequest.setClaimToken(claimToken.get(0));
+        }
+
+        authorizationRequest.setClaimTokenFormat(formParams.getFirst("claim_token_format"));
+        authorizationRequest.setPct(formParams.getFirst("pct"));
+        authorizationRequest.setRpt(formParams.getFirst("rpt"));
+        authorizationRequest.setScope(formParams.getFirst("scope"));
+
+        String permissions = formParams.getFirst("permissions");
+
+        if (permissions != null) {
+            try {
+                authorizationRequest.setPermissions(JsonSerialization.readValue(permissions.getBytes(), PermissionTicketToken.class));
+            } catch (IOException e) {
+                throw new CorsErrorResponseException(cors, Errors.INVALID_REQUEST, "Invalid permissions", Response.Status.BAD_REQUEST);
+            }
+        }
+
+        String metadata = formParams.getFirst("metadata");
+
+        if (metadata != null) {
+            try {
+                authorizationRequest.setMetadata(JsonSerialization.readValue(metadata.getBytes(), AuthorizationRequestMetadata.class));
+            } catch (IOException e) {
+                throw new CorsErrorResponseException(cors, Errors.INVALID_REQUEST, "Invalid permissions", Response.Status.BAD_REQUEST);
+            }
+        }
+
+        AuthorizationTokenService authorizationTokenService = new AuthorizationTokenService(session.getProvider(AuthorizationProvider.class));
+
+        ResteasyProviderFactory.getInstance().injectProperties(authorizationTokenService);
+
+        return authorizationTokenService.authorize(authorizationRequest);
+    }
 
     // https://tools.ietf.org/html/rfc7636#section-4.1
     private boolean isValidPkceCodeVerifier(String codeVerifier) {

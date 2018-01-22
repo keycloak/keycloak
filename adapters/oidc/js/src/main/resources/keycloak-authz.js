@@ -18,7 +18,7 @@
 
 (function( window, undefined ) {
 
-    var KeycloakAuthorization = function (keycloak) {
+    var KeycloakAuthorization = function (keycloak, options) {
         var _instance = this;
         this.rpt = null;
 
@@ -57,10 +57,10 @@
 
                         if (param[0] == 'ticket') {
                             var request = new XMLHttpRequest();
+                            var ticket = param[1].substring(1, param[1].length - 1).trim();
 
-                            request.open('POST', _instance.config.rpt_endpoint, true);
-                            request.setRequestHeader('Content-Type', 'application/json')
-                            request.setRequestHeader('Authorization', 'Bearer ' + keycloak.token)
+                            request.open('POST', _instance.config.token_endpoint, true);
+                            request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 
                             request.onreadystatechange = function () {
                                 if (request.readyState == 4) {
@@ -86,29 +86,19 @@
                                 }
                             };
 
-                            var ticket = param[1].substring(1, param[1].length - 1).trim();
+                            var params = "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket&" +
+                                        "client_id=" + keycloak.clientId + "&" +
+                                        "claim_token=" + keycloak.token + "&" +
+                                        "claim_token_format=urn:ietf:params:oauth:token-type:jwt&" +
+                                        "ticket=" + ticket;
 
-                            request.send(JSON.stringify(
-                                {
-                                    ticket: ticket,
-                                    rpt: _instance.rpt
-                                }
-                            ));
+                            if (_instance.rpt) {
+                                params += "&rpt=" + _instance.rpt;
+                            }
+
+                            request.send(params);
                         }
                     }
-                } else if (wwwAuthenticateHeader.indexOf('KC_ETT') != -1) {
-                    var params = wwwAuthenticateHeader.substring('KC_ETT'.length).trim().split(',');
-                    var clientId = null;
-
-                    for (i = 0; i < params.length; i++) {
-                        var param = params[i].split('=');
-
-                        if (param[0] == 'realm') {
-                            clientId = param[1].substring(1, param[1].length - 1).trim();
-                        }
-                    }
-
-                    _instance.entitlement(clientId).then(onGrant, onDeny, onError);
                 }
             };
 
@@ -116,13 +106,11 @@
         };
 
         /**
-         * Obtains all entitlements from a Keycloak Server based on a give resourceServerId.
+         * Obtains all entitlements from a Keycloak Server based on a given resourceServerId.
          */
-        this.entitlement = function (resourceSeververId, entitlementRequest     ) {
+        this.entitlement = function (resourceSeververId, entitlementRequest) {
             this.then = function (onGrant, onDeny, onError) {
                 var request = new XMLHttpRequest();
-
-
 
                 request.onreadystatechange = function () {
                     if (request.readyState == 4) {

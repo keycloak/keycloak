@@ -16,7 +16,6 @@
     }
   },
   "policy-enforcer": {
-    "user-managed-access" : {},
     "paths": [
       {
         "path" : "/album/*",

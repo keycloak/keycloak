@@ -102,11 +102,9 @@ public class RolePolicyTest extends AbstractAuthzTest {
     @Test
     public void testUserWithExpectedRole() {
         AuthzClient authzClient = getAuthzClient();
-        PermissionRequest request = new PermissionRequest();
+        PermissionRequest request = new PermissionRequest("Resource A");
 
-        request.setResourceSetName("Resource A");
-
-        String ticket = authzClient.protection().permission().forResource(request).getTicket();
+        String ticket = authzClient.protection().permission().create(request).getTicket();
         AuthorizationResponse response = authzClient.authorization("marta", "password").authorize(new AuthorizationRequest(ticket));
 
         assertNotNull(response.getRpt());
@@ -115,11 +113,8 @@ public class RolePolicyTest extends AbstractAuthzTest {
     @Test
     public void testUserWithoutExpectedRole() {
         AuthzClient authzClient = getAuthzClient();
-        PermissionRequest request = new PermissionRequest();
-
-        request.setResourceSetName("Resource A");
-
-        String ticket = authzClient.protection().permission().forResource(request).getTicket();
+        PermissionRequest request = new PermissionRequest("Resource A");
+        String ticket = authzClient.protection().permission().create(request).getTicket();
 
         try {
             authzClient.authorization("kolo", "password").authorize(new AuthorizationRequest(ticket));
@@ -128,16 +123,16 @@ public class RolePolicyTest extends AbstractAuthzTest {
 
         }
 
-        request.setResourceSetName("Resource B");
-        ticket = authzClient.protection().permission().forResource(request).getTicket();
+        request.setResourceSetId("Resource B");
+        ticket = authzClient.protection().permission().create(request).getTicket();
         assertNotNull(authzClient.authorization("kolo", "password").authorize(new AuthorizationRequest(ticket)));
 
         UserRepresentation user = getRealm().users().search("kolo").get(0);
         RoleRepresentation roleA = getRealm().roles().get("Role A").toRepresentation();
         getRealm().users().get(user.getId()).roles().realmLevel().add(Arrays.asList(roleA));
 
-        request.setResourceSetName("Resource A");
-        ticket = authzClient.protection().permission().forResource(request).getTicket();
+        request.setResourceSetId("Resource A");
+        ticket = authzClient.protection().permission().create(request).getTicket();
         assertNotNull(authzClient.authorization("kolo", "password").authorize(new AuthorizationRequest(ticket)));
     }
 
@@ -146,9 +141,9 @@ public class RolePolicyTest extends AbstractAuthzTest {
         AuthzClient authzClient = getAuthzClient();
         PermissionRequest request = new PermissionRequest();
 
-        request.setResourceSetName("Resource C");
+        request.setResourceSetId("Resource C");
 
-        String ticket = authzClient.protection().permission().forResource(request).getTicket();
+        String ticket = authzClient.protection().permission().create(request).getTicket();
         assertNotNull(authzClient.authorization("alice", "password").authorize(new AuthorizationRequest(ticket)));
 
         UserRepresentation user = getRealm().users().search("alice").get(0);
@@ -162,8 +157,8 @@ public class RolePolicyTest extends AbstractAuthzTest {
 
         }
 
-        request.setResourceSetName("Resource A");
-        ticket = authzClient.protection().permission().forResource(request).getTicket();
+        request.setResourceSetId("Resource A");
+        ticket = authzClient.protection().permission().create(request).getTicket();
 
         try {
             authzClient.authorization("alice", "password").authorize(new AuthorizationRequest(ticket));

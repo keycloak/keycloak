@@ -1,6 +1,6 @@
 {
   "realm": "photoz",
-  "auth-server-url": "http://localhost:8080/auth",
+  "auth-server-url": "http://localhost:8180/auth",
   "ssl-required": "external",
   "resource": "photoz-restful-api",
   "bearer-only" : true,
@@ -8,7 +8,6 @@
     "secret": "secret"
   },
   "policy-enforcer": {
-    "user-managed-access" : {},
     "paths": [
       {
         "path" : "/album/*",

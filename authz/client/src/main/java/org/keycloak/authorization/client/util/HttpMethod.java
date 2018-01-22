@@ -128,7 +128,9 @@ public class HttpMethod<R> {
     }
 
     public HttpMethod<R> param(String name, String value) {
-        this.params.put(name, value);
+        if (value != null) {
+            params.put(name, value);
+        }
         return this;
     }
 

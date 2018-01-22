@@ -331,7 +331,7 @@
                                                 <artifactId>integration-arquillian-test-apps-dist</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>zip</type>
-                                                <includes>**/*realm.json,**/*authz-service.json,**/testsaml.json</includes>
+                                                <includes>**/*realm.json,**/*authz-service.json,**/testsaml.json,**/*-keycloak.json</includes>
                                             </artifactItem>
                                         </artifactItems>
                                         <outputDirectory>${examples.home}</outputDirectory>

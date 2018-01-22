@@ -9,6 +9,7 @@
     "secret": "secret"
   },
   "policy-enforcer": {
+    "issue-permission-ticket": false,
     "enforcement-mode" : "PERMISSIVE",
     "on-deny-redirect-to" : "/servlet-authz-app/accessDenied.jsp"
   }

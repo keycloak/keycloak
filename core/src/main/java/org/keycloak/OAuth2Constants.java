@@ -111,6 +111,8 @@ public interface OAuth2Constants {
     String JWT_TOKEN_TYPE="urn:ietf:params:oauth:token-type:jwt";
     String ID_TOKEN_TYPE="urn:ietf:params:oauth:token-type:id_token";
 
+    String UMA_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:uma-ticket";
+
 
 }
 

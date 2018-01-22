@@ -19,34 +19,55 @@ package org.keycloak.authorization.client.resource;
 
 import java.util.concurrent.Callable;
 
+import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.representation.TokenIntrospectionResponse;
 import org.keycloak.authorization.client.util.Http;
 
 /**
+ * An entry point to access the Protection API endpoints.
+ *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class ProtectionResource {
 
     private final Callable<String> pat;
     private final Http http;
+    private Configuration configuration;
 
-    public ProtectionResource(Http http, Callable<String> pat) {
+    public ProtectionResource(Http http, Configuration configuration, Callable<String> pat) {
         if (pat == null) {
             throw new RuntimeException("No access token was provided when creating client for Protection API.");
         }
 
         this.http = http;
+        this.configuration = configuration;
         this.pat = pat;
     }
 
+    /**
+     * Creates a {@link ProtectedResource} which can be used to manage resources.
+     *
+     * @return a {@link ProtectedResource}
+     */
     public ProtectedResource resource() {
-        return new ProtectedResource(http, pat);
+        return new ProtectedResource(http, configuration, pat);
     }
 
+    /**
+     * Creates a {@link PermissionResource} which can be used to manage permission tickets.
+     *
+     * @return a {@link PermissionResource}
+     */
     public PermissionResource permission() {
-        return new PermissionResource(http, pat);
+        return new PermissionResource(http, configuration, pat);
     }
 
+    /**
+     * Introspects the given <code>rpt</code> using the token introspection endpoint.
+     *
+     * @param rpt the rpt to introspect
+     * @return the {@link TokenIntrospectionResponse}
+     */
     public TokenIntrospectionResponse introspectRequestingPartyToken(String rpt) {
         return this.http.<TokenIntrospectionResponse>post("/protocol/openid-connect/token/introspect")
                 .authentication()

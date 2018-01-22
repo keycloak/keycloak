@@ -37,25 +37,17 @@ public class PolicyEnforcerConfig {
     @JsonProperty("enforcement-mode")
     private EnforcementMode enforcementMode = EnforcementMode.ENFORCING;
 
-    @JsonProperty("user-managed-access")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    private UmaProtocolConfig userManagedAccess;
-
-    @JsonProperty("entitlement")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    private EntitlementProtocolConfig entitlement;
-
     @JsonProperty("paths")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private List<PathConfig> paths = new ArrayList<>();
 
-    @JsonProperty("online-introspection")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    private Boolean onlineIntrospection = Boolean.FALSE;
-
     @JsonProperty("on-deny-redirect-to")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String onDenyRedirectTo;
+
+    @JsonProperty("issue-permission-ticket")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Boolean issuePermissionTicket = Boolean.TRUE;
 
     public Boolean isCreateResources() {
         return this.createResources;
@@ -73,24 +65,8 @@ public class PolicyEnforcerConfig {
         this.enforcementMode = enforcementMode;
     }
 
-    public UmaProtocolConfig getUserManagedAccess() {
-        return this.userManagedAccess;
-    }
-
-    public EntitlementProtocolConfig getEntitlement() {
-        return this.entitlement;
-    }
-
-    public Boolean isOnlineIntrospection() {
-        return onlineIntrospection;
-    }
-
     public void setCreateResources(Boolean createResources) {
         this.createResources = createResources;
-    }
-
-    public void setOnlineIntrospection(Boolean onlineIntrospection) {
-        this.onlineIntrospection = onlineIntrospection;
     }
 
     public void setPaths(List<PathConfig> paths) {
@@ -101,16 +77,12 @@ public class PolicyEnforcerConfig {
         return onDenyRedirectTo;
     }
 
-    public void setUserManagedAccess(UmaProtocolConfig userManagedAccess) {
-        this.userManagedAccess = userManagedAccess;
-    }
-
-    public void setEntitlement(EntitlementProtocolConfig entitlement) {
-        this.entitlement = entitlement;
-    }
-
     public void setOnDenyRedirectTo(String onDenyRedirectTo) {
         this.onDenyRedirectTo = onDenyRedirectTo;
+    }
+
+    public Boolean getIssuePermissionTicket() {
+        return issuePermissionTicket;
     }
 
     public static class PathConfig {
@@ -257,13 +229,5 @@ public class PolicyEnforcerConfig {
     public enum ScopeEnforcementMode {
         ALL,
         ANY
-    }
-
-    public static class UmaProtocolConfig {
-
-    }
-
-    public static class EntitlementProtocolConfig {
-
     }
 }

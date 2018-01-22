@@ -111,6 +111,7 @@ public class AlbumService {
             ResourceRepresentation albumResource = new ResourceRepresentation(album.getName(), scopes, "/album/" + album.getId(), "http://photoz.com/album");
 
             albumResource.setOwner(album.getUserId());
+            albumResource.setOwnerManagedAccess(true);
 
             getAuthzClient().protection().resource().create(albumResource);
         } catch (Exception e) {
@@ -123,13 +124,13 @@ public class AlbumService {
 
         try {
             ProtectionResource protection = getAuthzClient().protection();
-            Set<String> search = protection.resource().findByFilter("uri=" + uri);
+            List<ResourceRepresentation> search = protection.resource().findByUri(uri);
 
             if (search.isEmpty()) {
                 throw new RuntimeException("Could not find protected resource with URI [" + uri + "]");
             }
 
-            protection.resource().delete(search.iterator().next());
+            protection.resource().delete(search.get(0).getId());
         } catch (Exception e) {
             throw new RuntimeException("Could not search protected resource.", e);
         }

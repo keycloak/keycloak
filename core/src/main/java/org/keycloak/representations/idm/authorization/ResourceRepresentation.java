@@ -47,6 +47,7 @@ public class ResourceRepresentation {
     @JsonProperty("icon_uri")
     private String iconUri;
     private ResourceOwnerRepresentation owner;
+    private Boolean ownerManagedAccess;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private List<PolicyRepresentation> policies;
@@ -169,12 +170,29 @@ public class ResourceRepresentation {
         this.owner = owner;
     }
 
+    public Boolean getOwnerManagedAccess() {
+        return ownerManagedAccess;
+    }
+
+    public void setOwnerManagedAccess(Boolean ownerManagedAccess) {
+        this.ownerManagedAccess = ownerManagedAccess;
+    }
+
     public void setTypedScopes(List<ScopeRepresentation> typedScopes) {
         this.typedScopes = typedScopes;
     }
 
     public List<ScopeRepresentation> getTypedScopes() {
         return typedScopes;
+    }
+
+    public void addScope(String... scopeNames) {
+        if (scopes == null) {
+            scopes = new HashSet<>();
+        }
+        for (String scopeName : scopeNames) {
+            scopes.add(new ScopeRepresentation(scopeName));
+        }
     }
 
     public boolean equals(Object o) {

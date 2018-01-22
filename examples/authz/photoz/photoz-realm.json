@@ -26,6 +26,9 @@
       "clientRoles": {
         "photoz-restful-api": [
           "manage-albums"
+        ],
+        "account": [
+          "manage-account"
         ]
       }
     },
@@ -47,6 +50,9 @@
       "clientRoles": {
         "photoz-restful-api": [
           "manage-albums"
+        ],
+        "account": [
+          "manage-account"
         ]
       }
     },

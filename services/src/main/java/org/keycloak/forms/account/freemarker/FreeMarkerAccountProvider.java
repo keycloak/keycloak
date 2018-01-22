@@ -23,6 +23,7 @@ import org.keycloak.forms.account.AccountProvider;
 import org.keycloak.forms.account.freemarker.model.AccountBean;
 import org.keycloak.forms.account.freemarker.model.AccountFederatedIdentityBean;
 import org.keycloak.forms.account.freemarker.model.ApplicationsBean;
+import org.keycloak.forms.account.freemarker.model.AuthorizationBean;
 import org.keycloak.forms.account.freemarker.model.FeaturesBean;
 import org.keycloak.forms.account.freemarker.model.LogBean;
 import org.keycloak.forms.account.freemarker.model.PasswordBean;
@@ -92,6 +93,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
 
     protected List<FormMessage> messages = null;
     protected MessageType messageType = MessageType.ERROR;
+    private boolean authorizationSupported;
 
     public FreeMarkerAccountProvider(KeycloakSession session, FreeMarkerUtil freeMarker) {
         this.session = session;
@@ -156,7 +158,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
             attributes.put("locale", new LocaleBean(realm, locale, b, messagesBundle));
         }
 
-        attributes.put("features", new FeaturesBean(identityProviderEnabled, eventsEnabled, passwordUpdateSupported));
+        attributes.put("features", new FeaturesBean(identityProviderEnabled, eventsEnabled, passwordUpdateSupported, authorizationSupported));
         attributes.put("account", new AccountBean(user, profileFormData));
 
         switch (page) {
@@ -179,7 +181,10 @@ public class FreeMarkerAccountProvider implements AccountProvider {
             case PASSWORD:
                 attributes.put("password", new PasswordBean(passwordSet));
                 break;
-            default:
+            case RESOURCES:
+                attributes.put("authorization", new AuthorizationBean(session, user, uriInfo));
+            case RESOURCE_DETAIL:
+                attributes.put("authorization", new AuthorizationBean(session, user, uriInfo));
         }
 
         return processTemplate(theme, page, attributes, locale);
@@ -187,7 +192,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
 
     /**
      * Get Theme used for page rendering.
-     * 
+     *
      * @return theme for page rendering, never null
      * @throws IOException in case of Theme loading problem
      */
@@ -197,7 +202,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
 
     /**
      * Load message bundle and place it into <code>msg</code> template attribute. Also load Theme properties and place them into <code>properties</code> template attribute.
-     * 
+     *
      * @param theme actual Theme to load bundle from
      * @param locale to load bundle for
      * @param attributes template attributes to add resources to
@@ -222,7 +227,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
 
     /**
      * Handle messages to be shown on the page - set them to template attributes
-     * 
+     *
      * @param locale to be used for message text loading
      * @param messagesBundle to be used for message text loading
      * @param attributes template attributes to messages related info to
@@ -247,7 +252,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
 
     /**
      * Process FreeMarker template and prepare Response. Some fields are used for rendering also.
-     * 
+     *
      * @param theme to be used (provided by <code>getTheme()</code>)
      * @param page to be rendered
      * @param attributes pushed to the template
@@ -358,10 +363,11 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     }
 
     @Override
-    public AccountProvider setFeatures(boolean identityProviderEnabled, boolean eventsEnabled, boolean passwordUpdateSupported) {
+    public AccountProvider setFeatures(boolean identityProviderEnabled, boolean eventsEnabled, boolean passwordUpdateSupported, boolean authorizationSupported) {
         this.identityProviderEnabled = identityProviderEnabled;
         this.eventsEnabled = eventsEnabled;
         this.passwordUpdateSupported = passwordUpdateSupported;
+        this.authorizationSupported = authorizationSupported;
         return this;
     }
 

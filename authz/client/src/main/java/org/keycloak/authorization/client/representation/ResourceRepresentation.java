@@ -45,6 +45,7 @@ public class ResourceRepresentation {
     @JsonProperty("icon_uri")
     private String iconUri;
     private String owner;
+    private Boolean ownerManagedAccess;
 
     /**
      * Creates a new instance.
@@ -151,6 +152,14 @@ public class ResourceRepresentation {
 
     public void setOwner(String owner) {
         this.owner = owner;
+    }
+
+    public void setOwnerManagedAccess(Boolean ownerManagedAccess) {
+        this.ownerManagedAccess = ownerManagedAccess;
+    }
+
+    public Boolean getOwnerManagedAccess() {
+        return ownerManagedAccess;
     }
 
     public void addScope(ScopeRepresentation scopeRepresentation) {

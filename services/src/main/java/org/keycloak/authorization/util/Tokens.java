@@ -48,10 +48,16 @@ public class Tokens {
         return null;
     }
 
-    public static String getAccessTokenAsString(KeycloakSession keycloakSession) {
+    public static AccessToken getAccessToken(String accessToken, KeycloakSession keycloakSession) {
         AppAuthManager authManager = new AppAuthManager();
+        KeycloakContext context = keycloakSession.getContext();
+        AuthResult authResult = authManager.authenticateBearerToken(accessToken, keycloakSession, context.getRealm(), context.getUri(), context.getConnection(), context.getRequestHeaders());
 
-        return authManager.extractAuthorizationHeaderToken(keycloakSession.getContext().getRequestHeaders());
+        if (authResult != null) {
+            return authResult.getToken();
+        }
+
+        return null;
     }
 
     public static boolean verifySignature(KeycloakSession keycloakSession, RealmModel realm, String token) {

@@ -38,7 +38,7 @@ import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.Configuration;
-import org.keycloak.authorization.client.representation.EntitlementResponse;
+import org.keycloak.authorization.client.representation.AuthorizationResponse;
 import org.keycloak.authorization.client.representation.ResourceRepresentation;
 import org.keycloak.authorization.client.representation.ScopeRepresentation;
 import org.keycloak.jose.jws.JWSInput;
@@ -49,7 +49,6 @@ import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -122,7 +121,7 @@ public class ConflictingScopePermissionTest extends AbstractAuthzTest {
 
     private List<Permission> getEntitlements(String username, String password) {
         AuthzClient authzClient = getAuthzClient();
-        EntitlementResponse response = authzClient.entitlement(authzClient.obtainAccessToken(username, password).getToken()).getAll("resource-server-test");
+        AuthorizationResponse response = authzClient.authorization(username, password).authorize();
         AccessToken accessToken;
 
         try {

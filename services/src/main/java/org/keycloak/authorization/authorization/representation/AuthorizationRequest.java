@@ -18,33 +18,91 @@
 
 package org.keycloak.authorization.authorization.representation;
 
+import org.keycloak.representations.idm.authorization.PermissionTicketToken;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class AuthorizationRequest {
 
-    private AuthorizationRequestMetadata metadata;
     private String ticket;
     private String rpt;
+    private String claimToken;
+    private String claimTokenFormat;
+    private String pct;
+    private String scope;
+    private PermissionTicketToken permissions;
+    private AuthorizationRequestMetadata metadata;
 
-    public AuthorizationRequest(String ticket, String rpt) {
+    public AuthorizationRequest(String ticket) {
         this.ticket = ticket;
-        this.rpt = rpt;
     }
 
     public AuthorizationRequest() {
-        this(null, null);
+        this(null);
     }
 
     public String getTicket() {
         return this.ticket;
     }
 
+    public void setTicket(String ticket) {
+        this.ticket = ticket;
+    }
+
     public String getRpt() {
         return this.rpt;
     }
 
+    public void setRpt(String rpt) {
+        this.rpt = rpt;
+    }
+
+    public void setClaimToken(String claimToken) {
+        this.claimToken = claimToken;
+    }
+
+    public String getClaimToken() {
+        return claimToken;
+    }
+
+    public void setClaimTokenFormat(String claimTokenFormat) {
+        this.claimTokenFormat = claimTokenFormat;
+    }
+
+    public String getClaimTokenFormat() {
+        return claimTokenFormat;
+    }
+
+    public void setPct(String pct) {
+        this.pct = pct;
+    }
+
+    private String getPct() {
+        return pct;
+    }
+
+    public void setScope(String scope) {
+        this.scope = scope;
+    }
+
+    public String getScope() {
+        return scope;
+    }
+
+    public void setPermissions(PermissionTicketToken permissions) {
+        this.permissions = permissions;
+    }
+
+    public PermissionTicketToken getPermissions() {
+        return permissions;
+    }
+
     public AuthorizationRequestMetadata getMetadata() {
         return metadata;
+    }
+
+    public void setMetadata(AuthorizationRequestMetadata metadata) {
+        this.metadata = metadata;
     }
 }

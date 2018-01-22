@@ -42,24 +42,8 @@ public class BearerTokenPolicyEnforcer extends AbstractPolicyEnforcer {
 
     @Override
     protected boolean challenge(PathConfig pathConfig, PolicyEnforcerConfig.MethodConfig methodConfig, OIDCHttpFacade facade) {
-        if (getEnforcerConfig().getUserManagedAccess() != null) {
-            challengeUmaAuthentication(pathConfig, methodConfig, facade);
-        } else {
-            challengeEntitlementAuthentication(facade);
-        }
+        challengeUmaAuthentication(pathConfig, methodConfig, facade);
         return true;
-    }
-
-    private void challengeEntitlementAuthentication(OIDCHttpFacade facade) {
-        HttpFacade.Response response = facade.getResponse();
-        AuthzClient authzClient = getAuthzClient();
-        String clientId = authzClient.getConfiguration().getResource();
-        String  authorizationServerUri = authzClient.getServerConfiguration().getIssuer().toString() + "/authz/entitlement";
-        response.setStatus(401);
-        response.setHeader("WWW-Authenticate", "KC_ETT realm=\"" + clientId + "\",as_uri=\"" + authorizationServerUri + "\"");
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Sending Entitlement challenge");
-        }
     }
 
     private void challengeUmaAuthentication(PathConfig pathConfig, PolicyEnforcerConfig.MethodConfig methodConfig, OIDCHttpFacade facade) {
@@ -69,18 +53,28 @@ public class BearerTokenPolicyEnforcer extends AbstractPolicyEnforcer {
         String clientId = authzClient.getConfiguration().getResource();
         String authorizationServerUri = authzClient.getServerConfiguration().getIssuer().toString() + "/authz/authorize";
         response.setStatus(401);
-        response.setHeader("WWW-Authenticate", "UMA realm=\"" + clientId + "\",as_uri=\"" + authorizationServerUri + "\",ticket=\"" + ticket + "\"");
+        StringBuilder wwwAuthenticate = new StringBuilder("UMA realm=\"").append(clientId).append("\"").append(",as_uri=\"").append(authorizationServerUri).append("\"");
+
+        if (ticket != null) {
+            wwwAuthenticate.append(",ticket=\"").append(ticket).append("\"");
+        }
+
+        response.setHeader("WWW-Authenticate", wwwAuthenticate.toString());
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Sending UMA challenge");
         }
     }
 
     private String getPermissionTicket(PathConfig pathConfig, PolicyEnforcerConfig.MethodConfig methodConfig, AuthzClient authzClient) {
-        ProtectionResource protection = authzClient.protection();
-        PermissionResource permission = protection.permission();
-        PermissionRequest permissionRequest = new PermissionRequest();
-        permissionRequest.setResourceSetId(pathConfig.getId());
-        permissionRequest.setScopes(new HashSet<>(methodConfig.getScopes()));
-        return permission.forResource(permissionRequest).getTicket();
+        if (Boolean.TRUE.equals(getEnforcerConfig().getIssuePermissionTicket())) {
+            ProtectionResource protection = authzClient.protection();
+            PermissionResource permission = protection.permission();
+            PermissionRequest permissionRequest = new PermissionRequest();
+            permissionRequest.setResourceSetId(pathConfig.getId());
+            permissionRequest.setScopes(new HashSet<>(methodConfig.getScopes()));
+            return permission.create(permissionRequest).getTicket();
+        }
+
+        return null;
     }
 }

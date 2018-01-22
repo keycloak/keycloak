@@ -156,7 +156,6 @@ public class KeycloakOIDCClientInstallation implements ClientInstallationProvide
 
             enforcerConfig.setEnforcementMode(null);
             enforcerConfig.setCreateResources(null);
-            enforcerConfig.setOnlineIntrospection(null);
 
             rep.setEnforcerConfig(enforcerConfig);
 

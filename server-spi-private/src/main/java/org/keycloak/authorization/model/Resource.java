@@ -112,5 +112,8 @@ public interface Resource {
      */
     String getOwner();
 
+    boolean isOwnerManagedAccess();
+    void setOwnerManagedAccess(boolean ownerManagedAccess);
+
     void updateScopes(Set<Scope> scopes);
 }

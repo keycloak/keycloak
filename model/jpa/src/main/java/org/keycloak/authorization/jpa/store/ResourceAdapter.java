@@ -122,6 +122,16 @@ public class ResourceAdapter implements Resource, JpaModel<ResourceEntity> {
     }
 
     @Override
+    public boolean isOwnerManagedAccess() {
+        return entity.isOwnerManagedAccess();
+    }
+
+    @Override
+    public void setOwnerManagedAccess(boolean ownerManagedAccess) {
+        entity.setOwnerManagedAccess(ownerManagedAccess);
+    }
+
+    @Override
     public void updateScopes(Set<Scope> toUpdate) {
         Set<String> ids = new HashSet<>();
         for (Scope scope : toUpdate) {

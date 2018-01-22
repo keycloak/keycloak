@@ -142,6 +142,10 @@ public final class Permissions {
         return permissions;
     }
 
+    public static List<Permission> permits(List<Result> evaluation, AuthorizationProvider authorizationProvider, ResourceServer resourceServer) {
+        return permits(evaluation, null, authorizationProvider, resourceServer);
+    }
+
     public static List<Permission> permits(List<Result> evaluation, AuthorizationRequestMetadata metadata, AuthorizationProvider authorizationProvider, ResourceServer resourceServer) {
         Map<String, Permission> permissions = new LinkedHashMap<>();
 

@@ -20,30 +20,71 @@ package org.keycloak.authorization.client.resource;
 
 import static org.keycloak.authorization.client.util.Throwables.handleAndWrapException;
 
+import java.util.function.Supplier;
+
+import org.keycloak.authorization.client.AuthorizationDeniedException;
+import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.representation.AuthorizationRequest;
 import org.keycloak.authorization.client.representation.AuthorizationResponse;
+import org.keycloak.authorization.client.representation.ServerConfiguration;
 import org.keycloak.authorization.client.util.Http;
-import org.keycloak.util.JsonSerialization;
 
 /**
+ * An entry point for obtaining permissions from the server.
+ *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class AuthorizationResource {
 
-    private final Http http;
-    private final String accessToken;
+    private Configuration configuration;
+    private ServerConfiguration serverConfiguration;
+    private Http http;
+    private Supplier<String> supplier;
 
-    public AuthorizationResource(Http http, String aat) {
+    public AuthorizationResource(Configuration configuration, ServerConfiguration serverConfiguration, Http http, Supplier<String> supplier) {
+        this.configuration = configuration;
+        this.serverConfiguration = serverConfiguration;
         this.http = http;
-        this.accessToken = aat;
+        this.supplier = supplier;
     }
 
-    public AuthorizationResponse authorize(AuthorizationRequest request) {
+    /**
+     * Query the server for all permissions.
+     *
+     * @return an {@link AuthorizationResponse} with a RPT holding all granted permissions
+     * @throws AuthorizationDeniedException in case the request was denied by the server
+     */
+    public AuthorizationResponse authorize() throws AuthorizationDeniedException {
+        return authorize(new AuthorizationRequest());
+    }
+
+    /**
+     * Query the server for permissions given an {@link AuthorizationRequest}.
+     *
+     * @param request an {@link AuthorizationRequest} (not {@code null})
+     * @return an {@link AuthorizationResponse} with a RPT holding all granted permissions
+     * @throws AuthorizationDeniedException in case the request was denied by the server
+     */
+    public AuthorizationResponse authorize(AuthorizationRequest request) throws AuthorizationDeniedException {
+        if (request == null) {
+            throw new IllegalArgumentException("Authorization request must not be null");
+        }
+
         try {
-            return this.http.<AuthorizationResponse>post("/authz/authorize")
-                    .authorizationBearer(this.accessToken)
-                    .json(JsonSerialization.writeValueAsBytes(request))
-                    .response().json(AuthorizationResponse.class).execute();
+            String claimToken = request.getClaimToken();
+
+            if (claimToken == null && supplier != null) {
+                claimToken = supplier.get();
+            }
+
+            request.setAudience(configuration.getResource());
+
+            return http.<AuthorizationResponse>post(serverConfiguration.getTokenEndpoint())
+                    .authentication()
+                    .uma(request.getTicket(), claimToken, request.getClaimTokenFormat(), request.getPct(), request.getRpt(), request.getScope(), request.getPermissions(), request.getMetadata())
+                    .response()
+                    .json(AuthorizationResponse.class)
+                    .execute();
         } catch (Exception cause) {
             throw handleAndWrapException("Failed to obtain authorization data", cause);
         }

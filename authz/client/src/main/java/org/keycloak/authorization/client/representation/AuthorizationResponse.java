@@ -17,26 +17,30 @@
  */
 package org.keycloak.authorization.client.representation;
 
+import org.keycloak.representations.AccessTokenResponse;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class AuthorizationResponse {
+public class AuthorizationResponse extends AccessTokenResponse {
 
     private String rpt;
 
-    public AuthorizationResponse(String rpt) {
-        this.rpt = rpt;
-    }
-
-    public AuthorizationResponse() {
-        this(null);
-    }
+    private boolean upgraded;
 
     public String getRpt() {
         return this.rpt;
     }
 
-    public void setRpt(final String rpt) {
+    public void setRpt(String rpt) {
         this.rpt = rpt;
+    }
+
+    public boolean isUpgraded() {
+        return upgraded;
+    }
+
+    public void setUpgraded(boolean upgraded) {
+        this.upgraded = upgraded;
     }
 }

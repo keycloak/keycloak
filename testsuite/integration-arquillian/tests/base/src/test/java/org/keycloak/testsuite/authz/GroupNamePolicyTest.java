@@ -138,11 +138,8 @@ public class GroupNamePolicyTest extends AbstractAuthzTest {
     @Test
     public void testExactNameMatch() {
         AuthzClient authzClient = getAuthzClient();
-        PermissionRequest request = new PermissionRequest();
-
-        request.setResourceSetName("Resource A");
-
-        String ticket = authzClient.protection().permission().forResource(request).getTicket();
+        PermissionRequest request = new PermissionRequest("Resource A");
+        String ticket = authzClient.protection().permission().create(request).getTicket();
         AuthorizationResponse response = authzClient.authorization("marta", "password").authorize(new AuthorizationRequest(ticket));
 
         assertNotNull(response.getRpt());
@@ -166,11 +163,8 @@ public class GroupNamePolicyTest extends AbstractAuthzTest {
     public void testOnlyChildrenPolicy() throws Exception {
         RealmResource realm = getRealm();
         AuthzClient authzClient = getAuthzClient();
-        PermissionRequest request = new PermissionRequest();
-
-        request.setResourceSetName("Resource B");
-
-        String ticket = authzClient.protection().permission().forResource(request).getTicket();
+        PermissionRequest request = new PermissionRequest("Resource B");
+        String ticket = authzClient.protection().permission().create(request).getTicket();
 
         try {
             authzClient.authorization("kolo", "password").authorize(new AuthorizationRequest(ticket));
@@ -190,14 +184,9 @@ public class GroupNamePolicyTest extends AbstractAuthzTest {
 
         }
 
-        request = new PermissionRequest();
-
-        request.setResourceSetName("Resource C");
-
-        ticket = authzClient.protection().permission().forResource(request).getTicket();
-
+        request = new PermissionRequest("Resource C");
+        ticket = authzClient.protection().permission().create(request).getTicket();
         response = authzClient.authorization("kolo", "password").authorize(new AuthorizationRequest(ticket));
-
         assertNotNull(response.getRpt());
     }
 

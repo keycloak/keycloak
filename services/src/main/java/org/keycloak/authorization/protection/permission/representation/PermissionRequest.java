@@ -29,24 +29,15 @@ import java.util.Set;
  */
 public class PermissionRequest {
 
-    @JsonProperty("resource_set_id")
-    private final String resourceSetId;
-
-    @JsonProperty("resource_set_name")
-    private final String resourceSetName;
-
-    private final Set<String> scopes;
+    private String resourceSetId;
+    private Set<String> scopes;
+    private String resourceServerId;
 
     public PermissionRequest(String resourceSetId, String... scopes) {
         this.resourceSetId = resourceSetId;
-
         if (scopes != null) {
             this.scopes = new HashSet(Arrays.asList(scopes));
-        } else {
-            this.scopes = new HashSet<>();
         }
-
-        this.resourceSetName = null;
     }
 
     public PermissionRequest() {
@@ -54,14 +45,53 @@ public class PermissionRequest {
     }
 
     public String getResourceSetId() {
-        return this.resourceSetId;
+        return resourceSetId;
     }
 
-    public String getResourceSetName() {
-        return resourceSetName;
+    @JsonProperty("resource_id")
+    public void setResourceId(String resourceSetId) {
+        this.resourceSetId = resourceSetId;
+    }
+
+    /**
+     * @deprecated UMA 1.0. Remove once we move to UMA 2.0.
+     */
+    @JsonProperty("resource_set_id")
+    public void setResourceSetId(String resourceSetId) {
+        this.resourceSetId = resourceSetId;
+    }
+
+    /**
+     * @deprecated UMA 1.0. Remove once we move to UMA 2.0.
+     */
+    @JsonProperty("resource_set_name")
+    public void setResourceSetName(String resourceSetName) {
+        this.resourceSetId = resourceSetName;
     }
 
     public Set<String> getScopes() {
-        return this.scopes;
+        return scopes;
+    }
+
+    /**
+     * @deprecated UMA 1.0. Remove once we move to UMA 2.0.
+     */
+    @JsonProperty("scopes")
+    public void setScopes(Set<String> scopes) {
+        this.scopes = scopes;
+    }
+
+    @JsonProperty("resource_scopes")
+    public void setResourceScopes(Set<String> scopes) {
+        this.scopes = scopes;
+    }
+
+    @JsonProperty("resource_server_id")
+    public void setResourceServerId(String resourceServerId) {
+        this.resourceServerId = resourceServerId;
+    }
+
+    public String getResourceServerId() {
+        return resourceServerId;
     }
 }

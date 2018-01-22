@@ -19,30 +19,40 @@ package org.keycloak.authorization.client.resource;
 
 import static org.keycloak.authorization.client.util.Throwables.handleAndWrapException;
 
-import java.util.Set;
 import java.util.concurrent.Callable;
 
+import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.representation.RegistrationResponse;
 import org.keycloak.authorization.client.representation.ResourceRepresentation;
 import org.keycloak.authorization.client.util.Http;
 import org.keycloak.util.JsonSerialization;
 
 /**
+ * An entry point for managing resources using the Protection API.
+ *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class ProtectedResource {
 
     private final Http http;
+    private Configuration configuration;
     private final Callable<String> pat;
 
-    public ProtectedResource(Http http, Callable<String> pat) {
+    ProtectedResource(Http http, Configuration configuration, Callable<String> pat) {
         this.http = http;
+        this.configuration = configuration;
         this.pat = pat;
     }
 
+    /**
+     * Creates a new resource.
+     *
+     * @param resource the resource data
+     * @return a {@link RegistrationResponse}
+     */
     public RegistrationResponse create(ResourceRepresentation resource) {
         try {
-            return this.http.<RegistrationResponse>post("/authz/protection/resource_set")
+            return this.http.<RegistrationResponse>post("/authz/protection/" + configuration.getResource() + "/resource_set")
                     .authorizationBearer(this.pat.call())
                     .json(JsonSerialization.writeValueAsBytes(resource))
                     .response().json(RegistrationResponse.class).execute();
@@ -51,9 +61,18 @@ public class ProtectedResource {
         }
     }
 
+    /**
+     * Updates a resource.
+     *
+     * @param resource the resource data
+     * @return a {@link RegistrationResponse}
+     */
     public void update(ResourceRepresentation resource) {
+        if (resource.getId() == null) {
+            throw new IllegalArgumentException("You must provide the resource id");
+        }
         try {
-            this.http.<RegistrationResponse>put("/authz/protection/resource_set/" + resource.getId())
+            this.http.<RegistrationResponse>put("/authz/protection/" + configuration.getResource() + "/resource_set/" + resource.getId())
                     .authorizationBearer(this.pat.call())
                     .json(JsonSerialization.writeValueAsBytes(resource)).execute();
         } catch (Exception cause) {
@@ -61,44 +80,116 @@ public class ProtectedResource {
         }
     }
 
-    public RegistrationResponse findById(String id) {
+    /**
+     * Query the server for a resource given its <code>id</code>.
+     *
+     * @param id the resource id
+     * @return a {@link ResourceRepresentation}
+     */
+    public ResourceRepresentation findById(String id) {
         try {
-            return this.http.<RegistrationResponse>get("/authz/protection/resource_set/" + id)
+            return this.http.<ResourceRepresentation>get("/authz/protection/" + configuration.getResource() + "/resource_set/" + id)
                     .authorizationBearer(this.pat.call())
-                    .response().json(RegistrationResponse.class).execute();
+                    .response().json(ResourceRepresentation.class).execute();
         } catch (Exception cause) {
             throw handleAndWrapException("Could not find resource", cause);
         }
     }
 
-    public Set<String> findByFilter(String filter) {
+    /**
+     * Query the server for a resource given its <code>name</code>.
+     *
+     * @param id the resource name
+     * @return a {@link ResourceRepresentation}
+     */
+    public ResourceRepresentation findByName(String name) {
+        String[] representations = find(null, name, null, null, null, null, null, null);
+
+        if (representations.length == 0) {
+            return null;
+        }
+
+        return findById(representations[0]);
+    }
+
+    /**
+     * Query the server for any resource with the matching arguments.
+     *
+     * @param id the resource id
+     * @param name the resource name
+     * @param uri the resource uri
+     * @param owner the resource owner
+     * @param type the resource type
+     * @param scope the resource scope
+     * @param firstResult the position of the first resource to retrieve
+     * @param maxResult the maximum number of resources to retrieve
+     * @return an array of strings with the resource ids
+     */
+    public String[] find(String id, String name, String uri, String owner, String type, String scope, Integer firstResult, Integer maxResult) {
         try {
-            return this.http.<Set>get("/authz/protection/resource_set")
+            return this.http.<String[]>get("/authz/protection/" + configuration.getResource() + "/resource_set")
                     .authorizationBearer(this.pat.call())
-                    .param("filter", filter)
-                    .response().json(Set.class).execute();
+                    .param("_id", id)
+                    .param("name", name)
+                    .param("uri", uri)
+                    .param("owner", owner)
+                    .param("type", type)
+                    .param("scope", scope)
+                    .param("deep", Boolean.FALSE.toString())
+                    .param("first", firstResult != null ? firstResult.toString() : null)
+                    .param("max", maxResult != null ? maxResult.toString() : null)
+                    .response().json(String[].class).execute();
         } catch (Exception cause) {
             throw handleAndWrapException("Could not find resource", cause);
         }
     }
 
-    public Set<String> findAll() {
+    /**
+     * Query the server for all resources.
+     *
+     * @return @return an array of strings with the resource ids
+     */
+    public String[] findAll() {
         try {
-            return this.http.<Set>get("/authz/protection/resource_set")
-                    .authorizationBearer(this.pat.call())
-                    .response().json(Set.class).execute();
+            return find(null,null , null, null, null, null, null, null);
         } catch (Exception cause) {
             throw handleAndWrapException("Could not find resource", cause);
         }
     }
 
+    /**
+     * Deletes a resource with the given <code>id</code>.
+     *
+     * @param id the resource id
+     */
     public void delete(String id) {
         try {
-            this.http.delete("/authz/protection/resource_set/" + id)
+            this.http.delete("/authz/protection/" + configuration.getResource() + "/resource_set/" + id)
                     .authorizationBearer(this.pat.call())
                     .execute();
         } catch (Exception cause) {
             throw handleAndWrapException("Could not delete resource", cause);
         }
+    }
+
+    /**
+     * Query the server for all resources with the given uri.
+     *
+     * @param uri the resource uri
+     */
+    public List<ResourceRepresentation> findByUri(String uri) {
+        String[] ids = find(null, null, uri, null, null, null, null, null);
+
+        if (ids.length == 0) {
+            return Collections.emptyList();
+        }
+
+        List<ResourceRepresentation> representations = new ArrayList<>();
+
+        for (String id : ids) {
+            representations.add(findById(id));
+        }
+
+        return representations;
     }
 }

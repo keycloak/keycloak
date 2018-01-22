@@ -17,6 +17,34 @@
  */
 package org.keycloak.authorization.admin;
 
+import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
+import static org.keycloak.models.utils.RepresentationToModel.toModel;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.UriInfo;
+
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
@@ -40,32 +68,6 @@ import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.UriInfo;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
-import static org.keycloak.models.utils.RepresentationToModel.toModel;
-
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
@@ -88,12 +90,32 @@ public class ResourceSetService {
     @Consumes("application/json")
     @Produces("application/json")
     public Response create(@Context UriInfo uriInfo, ResourceRepresentation resource) {
-        Response response = create(resource);
+        return create(uriInfo, resource, (Function<Resource, ResourceRepresentation>) resource1 -> {
+            ResourceRepresentation representation = new ResourceRepresentation();
+
+            representation.setId(resource1.getId());
+
+            return representation;
+        });
+    }
+
+    public Response create(@Context UriInfo uriInfo, ResourceRepresentation resource, Function<Resource, ?> toRepresentation) {
+        Response response = create(resource, toRepresentation);
         audit(uriInfo, resource, resource.getId(), OperationType.CREATE);
         return response;
     }
 
     public Response create(ResourceRepresentation resource) {
+        return create(resource, (Function<Resource, ResourceRepresentation>) resource1 -> {
+            ResourceRepresentation representation = new ResourceRepresentation();
+
+            representation.setId(resource1.getId());
+
+            return representation;
+        });
+    }
+
+    public Response create(ResourceRepresentation resource, Function<Resource, ?> toRepresentation) {
         requireManage();
         StoreFactory storeFactory = this.authorization.getStoreFactory();
         Resource existingResource = storeFactory.getResourceStore().findByName(resource.getName(), this.resourceServer.getId());
@@ -114,11 +136,7 @@ public class ResourceSetService {
             return ErrorResponse.exists("Resource with name [" + resource.getName() + "] already exists.");
         }
 
-        ResourceRepresentation representation = new ResourceRepresentation();
-
-        representation.setId(toModel(resource, this.resourceServer, authorization).getId());
-
-        return Response.status(Status.CREATED).entity(representation).build();
+        return Response.status(Status.CREATED).entity(toRepresentation.apply(toModel(resource, this.resourceServer, authorization))).build();
     }
 
     @Path("{id}")
@@ -179,6 +197,10 @@ public class ResourceSetService {
     @NoCache
     @Produces("application/json")
     public Response findById(@PathParam("id") String id) {
+        return findById(id, (Function<Resource, ResourceRepresentation>) resource -> toRepresentation(resource, resourceServer, authorization, true));
+    }
+
+    public Response findById(@PathParam("id") String id, Function<Resource, ?> toRepresentation) {
         requireView();
         StoreFactory storeFactory = authorization.getStoreFactory();
         Resource model = storeFactory.getResourceStore().findById(id, resourceServer.getId());
@@ -187,7 +209,7 @@ public class ResourceSetService {
             return Response.status(Status.NOT_FOUND).build();
         }
 
-        return Response.ok(toRepresentation(model, this.resourceServer, authorization, true)).build();
+        return Response.ok(toRepresentation.apply(model)).build();
     }
 
     @Path("{id}/scopes")
@@ -295,14 +317,27 @@ public class ResourceSetService {
     @NoCache
     @Produces("application/json")
     public Response find(@QueryParam("_id") String id,
-                            @QueryParam("name") String name,
-                            @QueryParam("uri") String uri,
-                            @QueryParam("owner") String owner,
-                            @QueryParam("type") String type,
-                            @QueryParam("scope") String scope,
-                            @QueryParam("deep") Boolean deep,
-                            @QueryParam("first") Integer firstResult,
-                            @QueryParam("max") Integer maxResult) {
+                         @QueryParam("name") String name,
+                         @QueryParam("uri") String uri,
+                         @QueryParam("owner") String owner,
+                         @QueryParam("type") String type,
+                         @QueryParam("scope") String scope,
+                         @QueryParam("deep") Boolean deep,
+                         @QueryParam("first") Integer firstResult,
+                         @QueryParam("max") Integer maxResult) {
+        return find(id, name, uri, owner, type, scope, deep, firstResult, maxResult, (BiFunction<Resource, Boolean, ResourceRepresentation>) (resource, deep1) -> toRepresentation(resource, resourceServer, authorization, deep1));
+    }
+
+    public Response find(@QueryParam("_id") String id,
+                         @QueryParam("name") String name,
+                         @QueryParam("uri") String uri,
+                         @QueryParam("owner") String owner,
+                         @QueryParam("type") String type,
+                         @QueryParam("scope") String scope,
+                         @QueryParam("deep") Boolean deep,
+                         @QueryParam("first") Integer firstResult,
+                         @QueryParam("max") Integer maxResult,
+                         BiFunction<Resource, Boolean, ?> toRepresentation) {
         requireView();
 
         StoreFactory storeFactory = authorization.getStoreFactory();
@@ -363,7 +398,7 @@ public class ResourceSetService {
         Boolean finalDeep = deep;
         return Response.ok(
                 storeFactory.getResourceStore().findByResourceServer(search, this.resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS).stream()
-                        .map(resource -> toRepresentation(resource, resourceServer, authorization, finalDeep))
+                        .map(resource -> toRepresentation.apply(resource, finalDeep))
                         .collect(Collectors.toList()))
                 .build();
     }

@@ -18,6 +18,7 @@
 package org.keycloak.models.utils;
 
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
@@ -802,6 +803,7 @@ public class ModelToRepresentation {
         resource.setName(model.getName());
         resource.setUri(model.getUri());
         resource.setIconUri(model.getIconUri());
+        resource.setOwnerManagedAccess(model.isOwnerManagedAccess());
 
         ResourceOwnerRepresentation owner = new ResourceOwnerRepresentation();
 
@@ -857,5 +859,20 @@ public class ModelToRepresentation {
         }
 
         return resource;
+    }
+
+    public static PermissionTicketRepresentation toRepresentation(PermissionTicket ticket) {
+        PermissionTicketRepresentation representation = new PermissionTicketRepresentation();
+
+        representation.setId(ticket.getId());
+        representation.setGranted(ticket.isGranted());
+        representation.setOwner(ticket.getOwner());
+        representation.setResource(ticket.getResource().getId());
+
+        if (ticket.getScope() != null) {
+            representation.setScope(ticket.getScope().getId());
+        }
+
+        return representation;
     }
 }
