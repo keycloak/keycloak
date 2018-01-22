@@ -401,6 +401,17 @@
             </div>
         </fieldset>
 
+        <fieldset data-ng-show="protocol == 'openid-connect'">
+            <legend collapsed><span class="text">{{:: 'oidc-compatibility-modes' | translate}}</span>  <kc-tooltip>{{:: 'oidc-compatibility-modes.tooltip' | translate}}</kc-tooltip></legend>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="excludeSessionStateFromAuthResponse">{{:: 'exclude-session-state-from-auth-response' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="excludeSessionStateFromAuthResponse" ng-click="switchChange()" name="excludeSessionStateFromAuthResponse" id="excludeSessionStateFromAuthResponse" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'exclude-session-state-from-auth-response.tooltip' | translate}}</kc-tooltip>
+            </div>
+        </fieldset>
+
         <div class="form-group">
             <div class="col-md-10 col-md-offset-2" data-ng-show="client.access.configure">
                 <button kc-save  data-ng-disabled="!changed">{{:: 'save' | translate}}</button>

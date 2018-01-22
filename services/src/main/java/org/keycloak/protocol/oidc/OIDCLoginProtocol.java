@@ -189,7 +189,10 @@ public class OIDCLoginProtocol implements LoginProtocol {
         if (state != null)
             redirectUri.addParam(OAuth2Constants.STATE, state);
 
-        redirectUri.addParam(OAuth2Constants.SESSION_STATE, userSession.getId());
+        OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(clientSession.getClient());
+        if (!clientConfig.isExcludeSessionStateFromAuthResponse()) {
+            redirectUri.addParam(OAuth2Constants.SESSION_STATE, userSession.getId());
+        }
 
         // Standard or hybrid flow
         String code = null;

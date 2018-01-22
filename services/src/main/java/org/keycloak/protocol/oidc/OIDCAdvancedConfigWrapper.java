@@ -36,6 +36,8 @@ public class OIDCAdvancedConfigWrapper {
 
     private static final String USE_JWKS_URL = "use.jwks.url";
 
+    private static final String EXCLUDE_SESSION_STATE_FROM_AUTH_RESPONSE = "exclude.session.state.from.auth.response";
+
     private final ClientModel clientModel;
     private final ClientRepresentation clientRep;
 
@@ -94,6 +96,16 @@ public class OIDCAdvancedConfigWrapper {
 
     public void setJwksUrl(String jwksUrl) {
         setAttribute(JWKS_URL, jwksUrl);
+    }
+
+    public boolean isExcludeSessionStateFromAuthResponse() {
+        String excludeSessionStateFromAuthResponse = getAttribute(EXCLUDE_SESSION_STATE_FROM_AUTH_RESPONSE);
+        return Boolean.parseBoolean(excludeSessionStateFromAuthResponse);
+    }
+
+    public void setExcludeSessionStateFromAuthResponse(boolean excludeSessionStateFromAuthResponse) {
+        String val = String.valueOf(excludeSessionStateFromAuthResponse);
+        setAttribute(EXCLUDE_SESSION_STATE_FROM_AUTH_RESPONSE, val);
     }
 
     private String getAttribute(String attrKey) {
