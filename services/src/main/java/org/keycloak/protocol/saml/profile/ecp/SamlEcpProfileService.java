@@ -147,7 +147,7 @@ public class SamlEcpProfileService extends SamlService {
     }
 
     @Override
-    protected AuthenticationFlowModel getAuthenticationFlow() {
+    protected AuthenticationFlowModel getAuthenticationFlow(AuthenticationSessionModel authSession) {
         for (AuthenticationFlowModel flowModel : realm.getAuthenticationFlows()) {
             if (flowModel.getAlias().equals(DefaultAuthenticationFlows.SAML_ECP_FLOW)) {
                 return flowModel;

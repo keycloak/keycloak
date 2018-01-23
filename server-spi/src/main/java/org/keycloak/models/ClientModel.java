@@ -118,6 +118,18 @@ public interface ClientModel extends RoleContainerModel,  ProtocolMapperContaine
     String getAttribute(String name);
     Map<String, String> getAttributes();
 
+    /**
+     * Get authentication flow binding override for this client.  Allows client to override an authentication flow binding.
+     *
+     * @param binding examples are "browser", "direct_grant"
+     *
+     * @return
+     */
+    public String getAuthenticationFlowBindingOverride(String binding);
+    public Map<String, String> getAuthenticationFlowBindingOverrides();
+    public void removeAuthenticationFlowBindingOverride(String binding);
+    public void setAuthenticationFlowBindingOverride(String binding, String flowId);
+
     boolean isFrontchannelLogout();
     void setFrontchannelLogout(boolean flag);
 

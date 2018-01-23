@@ -46,6 +46,7 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
     protected String registrationToken;
     protected String protocol;
     protected Map<String, String> attributes = new HashMap<String, String>();
+    protected Map<String, String> authFlowBindings = new HashMap<String, String>();
     protected boolean publicClient;
     protected boolean fullScopeAllowed;
     protected boolean frontchannelLogout;
@@ -83,6 +84,7 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
         enabled = model.isEnabled();
         protocol = model.getProtocol();
         attributes.putAll(model.getAttributes());
+        authFlowBindings.putAll(model.getAuthenticationFlowBindingOverrides());
         notBefore = model.getNotBefore();
         frontchannelLogout = model.isFrontchannelLogout();
         publicClient = model.isPublicClient();
@@ -255,5 +257,9 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
 
     public boolean isUseTemplateMappers() {
         return useTemplateMappers;
+    }
+
+    public Map<String, String> getAuthFlowBindings() {
+        return authFlowBindings;
     }
 }

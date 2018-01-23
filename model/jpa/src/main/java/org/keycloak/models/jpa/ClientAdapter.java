@@ -271,6 +271,29 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
     }
 
     @Override
+    public void setAuthenticationFlowBindingOverride(String name, String value) {
+        entity.getAuthFlowBindings().put(name, value);
+
+    }
+
+    @Override
+    public void removeAuthenticationFlowBindingOverride(String name) {
+        entity.getAuthFlowBindings().remove(name);
+    }
+
+    @Override
+    public String getAuthenticationFlowBindingOverride(String name) {
+        return entity.getAuthFlowBindings().get(name);
+    }
+
+    @Override
+    public Map<String, String> getAuthenticationFlowBindingOverrides() {
+        Map<String, String> copy = new HashMap<>();
+        copy.putAll(entity.getAuthFlowBindings());
+        return copy;
+    }
+
+    @Override
     public void setAttribute(String name, String value) {
         entity.getAttributes().put(name, value);
 
