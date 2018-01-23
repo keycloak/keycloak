@@ -164,6 +164,12 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
                 predicates.add(root.get(name).in(value));
             } else if (PermissionTicket.SCOPE.equals(name)) {
                 predicates.add(root.join("scope").get("id").in(value));
+            } else if (PermissionTicket.SCOPE_IS_NULL.equals(name)) {
+                if (Boolean.valueOf(value)) {
+                    predicates.add(builder.isNull(root.get("scope")));
+                } else {
+                    predicates.add(builder.isNotNull(root.get("scope")));
+                }
             } else if (PermissionTicket.RESOURCE.equals(name)) {
                 predicates.add(root.join("resource").get("id").in(value));
             } else if (PermissionTicket.OWNER.equals(name)) {

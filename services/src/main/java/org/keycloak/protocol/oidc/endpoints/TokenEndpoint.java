@@ -993,6 +993,8 @@ public class TokenEndpoint {
         List<String> claimToken = formParams.get("claim_token");
 
         if (claimToken == null) {
+            // Clients need to authenticate in order to obtain a RPT from the server.
+            // In order to support cases where the client is obtaining permissions on its on behalf, we issue a temporary access token
             authorizationRequest.setClaimToken(AccessTokenResponse.class.cast(clientCredentialsGrant().getEntity()).getToken());
         } else {
             authorizationRequest.setClaimToken(claimToken.get(0));
@@ -1024,11 +1026,7 @@ public class TokenEndpoint {
             }
         }
 
-        AuthorizationTokenService authorizationTokenService = new AuthorizationTokenService(session.getProvider(AuthorizationProvider.class));
-
-        ResteasyProviderFactory.getInstance().injectProperties(authorizationTokenService);
-
-        return authorizationTokenService.authorize(authorizationRequest, cors);
+        return new AuthorizationTokenService(session.getProvider(AuthorizationProvider.class), request, cors).authorize(authorizationRequest);
     }
 
     // https://tools.ietf.org/html/rfc7636#section-4.1
