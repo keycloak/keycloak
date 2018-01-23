@@ -19,7 +19,7 @@ The Entitlement API comes in two flavors:
 * Using HTTP **GET** in order to obtain all entitlements based on the resources owned by a specific user or/and general resources
 owned and managed by the resource server itself.
 
-* Using HTTP **POST** in order to obtain entitlements based on a a set of one or more resources and scopes sent along with an entitlement request.
+* Using HTTP **POST** in order to obtain entitlements based on a set of one or more resources and scopes sent along with an entitlement request.
 
 [NOTE]
 Using one or another depends on your use case and how much resources you have registered in {project_name}. Although the **GET** variant

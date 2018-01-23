@@ -46,6 +46,7 @@ The base URL of the {project_name} server. All other {project_name} pages and RE
 The client-id of the application. Each application has a client-id that is used to identify the application.
 
 * *credentials* (required)
++
 Specifies the credentials of the application. This is an object notation where the key is the credential type and the value is the value of the credential type.
 
 The configuration file is usually located in your application's classpath, the default location from where the client is going to try to find a ```keycloak.json``` file.

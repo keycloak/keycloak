@@ -65,7 +65,7 @@ image:images/policy-mgmt-process.png[alt="Permission and Policy Management Overv
 
 Policies define the conditions that must be satisfied to access or perform operations on something (resource or scope), but they are not tied to what they are protecting. They are generic and can be reused to build permissions or even more complex policies.
 
-For instance,to allow access to a group of resources only for users granted with a role "User Premium,"" you can use RBAC (Role-based Access Control).
+For instance,to allow access to a group of resources only for users granted with a role "User Premium", you can use RBAC (Role-based Access Control).
 
 {project_name} provides a few built-in policy types (and their respective policy providers) covering the most common access control mechanisms. You can even create policies based on rules written using JavaScript or JBoss Drools.
 
@@ -93,7 +93,7 @@ Each of these services provides a specific API covering the different steps invo
 
 === Protection API
 
-The *Protection API* is a https://kantarainitiative.org/confluence/display/uma/UMA+1.0+Core+Protocol[UMA-compliant] endpoint providing a small set of operations
+The *Protection API* is a https://docs.kantarainitiative.org/uma/rec-uma-core.html[UMA-compliant] endpoint providing a small set of operations
 for resource servers to help them manage their resources and scopes. Only resource servers are allowed to access this API, which also requires a
 *uma_protection* scope.
 
@@ -117,7 +117,7 @@ For more information, see <<_service_protection_api, Protection API>>.
 
 === Authorization API
 
-The Authorization API is also a https://kantarainitiative.org/confluence/display/uma/UMA+1.0+Core+Protocol[UMA-compliant] endpoint providing a single operation that exchanges an Access Token and <<_overview_terminology_permission_ticket, Permission Ticket>> with a Requesting Party Token (RPT).
+The Authorization API is also a https://docs.kantarainitiative.org/uma/rec-uma-core.html[UMA-compliant] endpoint providing a single operation that exchanges an Access Token and <<_overview_terminology_permission_ticket, Permission Ticket>> with a Requesting Party Token (RPT).
 
 The RPT contains all permissions granted to a client and can be used to call a resource server to get access to its protected resources.
 

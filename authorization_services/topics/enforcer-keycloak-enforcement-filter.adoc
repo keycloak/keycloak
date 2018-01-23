@@ -114,8 +114,9 @@ Currently a very basic logic for path matching is supported. Examples of valid p
 **** Patterns: /{version}/resource, /api/{version}/resource, /api/{version}/resource/*
 +
 *** *methods*
++
 The HTTP methods (for example, GET, POST, PATCH) to protect and how they are associated with the scopes for a given resource in the server.
-+[/'']
++
 **** *method*
 +
 The name of the HTTP method.
