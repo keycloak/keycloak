@@ -21,6 +21,7 @@ import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.util.SecurityActions;
 import org.keycloak.saml.common.util.SystemPropertiesUtil;
 
 import javax.xml.datatype.DatatypeConfigurationException;
