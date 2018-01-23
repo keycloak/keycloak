@@ -34,9 +34,10 @@
 <body class="${properties.kcBodyClass!}">
   <div class="${properties.kcLoginClass!}">
     <header class="${properties.kcHeaderClass!}">
-      <a href="${properties.kcLogoLink!'#'}">
+      <!-- <a href="${properties.kcLogoLink!'#'}">
         <img class="${properties.kcLogoClass!}" src="${url.resourcesPath}/img/keycloak-logo.png" />
-      </a>
+      </a> -->
+      <div id="kc-logo"><a href="${properties.kcLogoLink!'#'}"><div id="kc-logo-wrapper"></div></a></div>
     </header>
     <div class="${properties.kcFormCardClass!}">
       <header class="${properties.kcFormHeaderClass!}">
