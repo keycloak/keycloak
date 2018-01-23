@@ -101,7 +101,7 @@ public class AuthorizationRequest {
 
     public PermissionTicketToken getPermissions() {
         if (ticket == null && permissions == null) {
-            permissions = new PermissionTicketToken(resourcePermissions, audience);
+            permissions = new PermissionTicketToken(resourcePermissions);
         }
         return permissions;
     }

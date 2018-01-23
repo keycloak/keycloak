@@ -77,11 +77,12 @@ public class AuthorizationResource {
                 claimToken = supplier.get();
             }
 
+            request.setClaimToken(claimToken);
             request.setAudience(configuration.getResource());
 
             return http.<AuthorizationResponse>post(serverConfiguration.getTokenEndpoint())
                     .authentication()
-                    .uma(request.getTicket(), claimToken, request.getClaimTokenFormat(), request.getPct(), request.getRpt(), request.getScope(), request.getPermissions(), request.getMetadata())
+                    .uma(request)
                     .response()
                     .json(AuthorizationResponse.class)
                     .execute();

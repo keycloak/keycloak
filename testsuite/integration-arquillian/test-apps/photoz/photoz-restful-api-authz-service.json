@@ -180,6 +180,17 @@
       }
     },
     {
+      "name": "View Album Permission",
+      "description": "A policy that only allows the owner to view his albums.",
+      "type": "scope",
+      "logic": "POSITIVE",
+      "decisionStrategy": "UNANIMOUS",
+      "config": {
+        "applyPolicies": "[\"Only Owner and Administrators Policy\"]",
+        "scopes": "[\"urn:photoz.com:scopes:album:view\"]"
+      }
+    },
+    {
       "name": "Deny Policy",
       "type": "js",
       "logic": "POSITIVE",

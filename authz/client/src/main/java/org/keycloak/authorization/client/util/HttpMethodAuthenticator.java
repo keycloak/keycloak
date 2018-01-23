@@ -21,6 +21,7 @@ import java.io.IOException;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authorization.client.ClientAuthenticator;
+import org.keycloak.authorization.client.representation.AuthorizationRequest;
 import org.keycloak.authorization.client.representation.AuthorizationRequestMetadata;
 import org.keycloak.representations.idm.authorization.PermissionTicketToken;
 import org.keycloak.util.JsonSerialization;
@@ -58,23 +59,30 @@ public class HttpMethodAuthenticator<R> {
         return method;
     }
 
-    public HttpMethod<R> uma(String ticket, String claimToken, String claimTokenFormat, String pct, String rpt, String scope, PermissionTicketToken permissions, AuthorizationRequestMetadata metadata) {
+    public HttpMethod<R> uma(AuthorizationRequest request) {
+        String ticket = request.getTicket();
+        PermissionTicketToken permissions = request.getPermissions();
+
         if (ticket == null && permissions == null) {
             throw new IllegalArgumentException("You must either provide a permission ticket or the permissions you want to request.");
         }
+
         uma();
         method.param("ticket", ticket);
-        method.param("claim_token", claimToken);
-        method.param("claim_token_format", claimTokenFormat);
-        method.param("pct", pct);
-        method.param("rpt", rpt);
-        method.param("scope", scope);
+        method.param("claim_token", request.getClaimToken());
+        method.param("claim_token_format", request.getClaimTokenFormat());
+        method.param("pct", request.getPct());
+        method.param("rpt", request.getRpt());
+        method.param("scope", request.getScope());
+        method.param("audience", request.getAudience());
+
         try {
             method.param("permissions", permissions != null ? JsonSerialization.writeValueAsString(permissions) : null);
         } catch (IOException cause) {
             throw new RuntimeException("Failed to marshal permissions", cause);
         }
         try {
+            AuthorizationRequestMetadata metadata = request.getMetadata();
             method.param("metadata", metadata != null ? JsonSerialization.writeValueAsString(metadata) : null);
         } catch (IOException cause) {
             throw new RuntimeException("Failed to marshal metadata", cause);

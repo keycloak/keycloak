@@ -163,8 +163,12 @@ public final class Permissions {
 
                 if (Effect.PERMIT.equals(policyResult.getStatus())) {
                     if (isScopePermission(policy)) {
-                        // try to grant any scope from a scope-based permission
-                        grantedScopes.addAll(policyScopes);
+                        for (Scope scope : permission.getScopes()) {
+                            if (policyScopes.contains(scope)) {
+                                // try to grant any scope from a scope-based permission
+                                grantedScopes.add(scope);
+                            }
+                        }
                     } else if (isResourcePermission(policy)) {
                         // we assume that all requested scopes should be granted given that we are processing a resource-based permission.
                         // Later they will be filtered based on any denied scope, if any.

@@ -33,6 +33,7 @@ public class AuthorizationRequest {
     private String scope;
     private PermissionTicketToken permissions;
     private AuthorizationRequestMetadata metadata;
+    private String audience;
 
     public AuthorizationRequest(String ticket) {
         this.ticket = ticket;
@@ -104,5 +105,13 @@ public class AuthorizationRequest {
 
     public void setMetadata(AuthorizationRequestMetadata metadata) {
         this.metadata = metadata;
+    }
+
+    public void setAudience(String audience) {
+        this.audience = audience;
+    }
+
+    public String getAudience() {
+        return audience;
     }
 }

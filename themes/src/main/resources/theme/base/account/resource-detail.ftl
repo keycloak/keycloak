@@ -131,7 +131,7 @@
                         </div>
                         <div class="col-md-12">
                             <br/>
-                            <select class="form-control" name="scope_id" multiple>
+                            <select id="share-scopes" class="form-control" name="scope_id" multiple>
                                 <#list authorization.resource.scopes as scope>
                                     <option value="${scope.id}">${scope.name}</option>
                                 </#list>

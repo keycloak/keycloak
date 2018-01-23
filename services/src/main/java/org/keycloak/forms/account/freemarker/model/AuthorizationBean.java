@@ -96,6 +96,7 @@ public class AuthorizationBean {
     public List<ResourceBean> getUserResources() {
         if (userResources == null) {
             userResources = authorization.getStoreFactory().getResourceStore().findByOwner(user.getId(), null).stream()
+                    .filter(Resource::isOwnerManagedAccess)
                     .map(ResourceBean::new)
                     .collect(Collectors.toList());
         }
@@ -330,7 +331,13 @@ public class AuthorizationBean {
         Map<String, PermissionResourceBean> requests = new HashMap<>();
 
         for (PermissionTicket request : permissionRequests) {
-            PermissionResourceBean bean = requests.computeIfAbsent(request.getResource().getId(), resourceId -> new PermissionResourceBean(getResource(resourceId)));
+            Resource resource = request.getResource();
+
+            if (!resource.isOwnerManagedAccess()) {
+                continue;
+            }
+
+            PermissionResourceBean bean = requests.computeIfAbsent(resource.getId(), resourceId -> new PermissionResourceBean(getResource(resourceId)));
             bean.addRequester(request, authorization);
         }
 

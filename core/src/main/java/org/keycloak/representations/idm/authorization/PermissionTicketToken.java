@@ -19,6 +19,7 @@ package org.keycloak.representations.idm.authorization;
 import java.util.List;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.TokenIdGenerator;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
@@ -43,12 +44,14 @@ public class PermissionTicketToken extends JsonWebToken {
             issuedAt(accessToken.getIssuedAt());
             issuedFor(accessToken.getIssuedFor());
         }
-        audience(audience);
+        if (audience != null) {
+            audience(audience);
+        }
         this.resources = resources;
     }
 
-    public PermissionTicketToken(List<ResourcePermission> resourcePermissions, String resourceServerId) {
-        this(resourcePermissions, resourceServerId, null);
+    public PermissionTicketToken(List<ResourcePermission> resources) {
+        this(resources, null, null);
     }
 
     public List<ResourcePermission> getResources() {
@@ -57,15 +60,13 @@ public class PermissionTicketToken extends JsonWebToken {
 
     public static class ResourcePermission {
 
+        @JsonProperty("id")
         private String resourceId;
+
+        @JsonProperty("scopes")
         private Set<String> scopes;
-        private String ticket;
 
         public ResourcePermission() {
-        }
-
-        public ResourcePermission(String ticket) {
-            this.ticket = ticket;
         }
 
         public ResourcePermission(String resourceId, Set<String> scopes) {
@@ -79,10 +80,6 @@ public class PermissionTicketToken extends JsonWebToken {
 
         public Set<String> getScopes() {
             return scopes;
-        }
-
-        public String getTicket() {
-            return ticket;
         }
     }
 }

@@ -18,6 +18,7 @@ package org.keycloak.authorization.authorization;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -73,6 +74,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionTicketToken;
+import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.Cors;
 
@@ -130,7 +132,7 @@ public class AuthorizationTokenService {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response authorize(AuthorizationRequest authorizationRequest) {
+    public Response authorize(AuthorizationRequest authorizationRequest, Cors cors) {
         if (authorizationRequest == null) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Invalid authorization request.", Status.BAD_REQUEST);
         }
@@ -145,7 +147,7 @@ public class AuthorizationTokenService {
         BiFunction<AuthorizationRequest, AuthorizationProvider, KeycloakEvaluationContext> evaluationContextProvider = SUPPORTED_CLAIM_TOKEN_FORMATS.get(claimTokenFormat);
 
         if (evaluationContextProvider == null) {
-            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Claim token format [" + claimTokenFormat + "] not supported", Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Claim token format [" + claimTokenFormat + "] not supported", Status.BAD_REQUEST);
         }
 
         KeycloakEvaluationContext evaluationContext = evaluationContextProvider.apply(authorizationRequest, authorization);
@@ -158,24 +160,31 @@ public class AuthorizationTokenService {
                 ticket = verifyPermissionTicket(authorizationRequest);
             } else if (authorizationRequest.getPermissions() != null) {
                 ticket = authorizationRequest.getPermissions();
+                ticket.audience(authorizationRequest.getAudience());
                 persistTicket = false;
             } else {
-                throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "You must provide either a ticket or permissions", Status.BAD_REQUEST);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "You must provide either a ticket or permissions", Status.BAD_REQUEST);
             }
 
             StoreFactory storeFactory = authorization.getStoreFactory();
             ResourceServerStore resourceServerStore = storeFactory.getResourceServerStore();
-            String resourceServerId = ticket.getAudience()[0];
+            String[] audience = ticket.getAudience();
+
+            if (audience == null || audience.length == 0) {
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "You must provide the audience", Status.BAD_REQUEST);
+            }
+
+            String resourceServerId = audience[0];
             ResourceServer resourceServer = resourceServerStore.findById(resourceServerId);
 
             if (resourceServer == null) {
                 ClientModel clientModel = getRealm().getClientByClientId(resourceServerId);
                 if (clientModel == null) {
-                    throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Unknown resource server id.", Status.BAD_REQUEST);
+                    throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Unknown resource server id.", Status.BAD_REQUEST);
                 }
                 resourceServer = resourceServerStore.findById(clientModel.getId());
                 if (resourceServer == null) {
-                    throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client does not support permissions", Status.FORBIDDEN);
+                    throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Client does not support permissions", Status.BAD_REQUEST);
                 }
             }
 
@@ -193,7 +202,7 @@ public class AuthorizationTokenService {
 
                 if (rpt != null) {
                     if (!Tokens.verifySignature(session, getRealm(), rpt)) {
-                        throw new ErrorResponseException("invalid_rpt", "RPT signature is invalid", Status.FORBIDDEN);
+                        throw new CorsErrorResponseException(cors, "invalid_rpt", "RPT signature is invalid", Status.FORBIDDEN);
                     }
 
                     AccessToken requestingPartyToken;
@@ -201,7 +210,7 @@ public class AuthorizationTokenService {
                     try {
                         requestingPartyToken = new JWSInput(rpt).readJsonContent(AccessToken.class);
                     } catch (JWSInputException e) {
-                        throw new ErrorResponseException("invalid_rpt", "Invalid RPT", Status.FORBIDDEN);
+                        throw new CorsErrorResponseException(cors, "invalid_rpt", "Invalid RPT", Status.FORBIDDEN);
                     }
 
                     if (requestingPartyToken.isActive()) {
@@ -255,22 +264,32 @@ public class AuthorizationTokenService {
                     if (resource == null) {
                         resource = resourceStore.findByName(permission.getResourceId(), resourceServer.getId());
                         if (resource == null) {
-                            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Invalid resource from permission ticket", Status.BAD_REQUEST);
+                            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid resource from permission ticket", Status.BAD_REQUEST);
                         }
+                    }
+
+                    if (!resource.isOwnerManagedAccess()) {
+                        continue;
                     }
 
                     List<String> scopes = ticketResourceScopes.computeIfAbsent(resource.getId(), resourceId -> new ArrayList<>());
 
-                    if (permission.getScopes().isEmpty()) {
+                    Set<String> permissionScopes = permission.getScopes();
+
+                    if (permissionScopes == null) {
+                        permissionScopes = Collections.emptySet();
+                    }
+
+                    if (permissionScopes.isEmpty()) {
                         for (Scope scope : resource.getScopes()) {
                             scopes.add(scope.getId());
                         }
                     } else {
-                        for (String scopeName : permission.getScopes()) {
+                        for (String scopeName : permissionScopes) {
                             Scope scope = scopeStore.findByName(scopeName, resourceServer.getId());
 
                             if (scope == null) {
-                                throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Invalid scope from permission ticket", Status.BAD_REQUEST);
+                                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid scope from permission ticket", Status.BAD_REQUEST);
                             }
 
                             scopes.add(scope.getId());
@@ -297,7 +316,7 @@ public class AuthorizationTokenService {
             List<Permission> entitlements = Permissions.permits(result.get(), authorizationRequest.getMetadata(), authorization, resourceServer);
 
             if (entitlements.isEmpty()) {
-                throw new ErrorResponseException(OAuthErrorException.ACCESS_DENIED, "not_authorized", Status.FORBIDDEN);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "not_authorized", Status.FORBIDDEN);
             }
 
             String rpt = createRequestingPartyToken(entitlements, ticket, identity.getAccessToken(), resourceServer);
@@ -320,12 +339,12 @@ public class AuthorizationTokenService {
                     .allowedOrigins(identity.getAccessToken())
                     .allowedMethods("POST")
                     .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
-        } catch (ErrorResponseException cause) {
+        } catch (ErrorResponseException | CorsErrorResponseException cause) {
             logger.error("Error while evaluating permissions", cause);
             throw cause;
         } catch (Exception cause) {
             logger.error("Error while evaluating permissions", cause);
-            throw new ErrorResponseException(OAuthErrorException.SERVER_ERROR, "Error while evaluating permissions", Status.INTERNAL_SERVER_ERROR);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.SERVER_ERROR, "Error while evaluating permissions", Status.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -340,7 +359,13 @@ public class AuthorizationTokenService {
             if (limit != null && limit <= 0) {
                 break;
             }
+
             Set<String> requestedScopes = requestedResource.getScopes();
+
+            if (requestedResource.getScopes() == null) {
+                requestedScopes = new HashSet<>();
+            }
+
             Resource existingResource = null;
 
             if (requestedResource.getResourceId() != null) {

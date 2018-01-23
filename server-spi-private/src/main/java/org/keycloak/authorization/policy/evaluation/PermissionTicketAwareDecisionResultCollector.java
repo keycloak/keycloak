@@ -56,12 +56,8 @@ public abstract class PermissionTicketAwareDecisionResultCollector extends Decis
         Resource resource = permission.getResource();
         List<String> scopes = ticketResourceScopes.get(resource.getId());
 
-        for (PolicyResult policyResult : result.getResults()) {
-            if ("resource".equals(policyResult.getPolicy().getType())) {
-                if (scopes != null && scopes.isEmpty()) {
-                    ticketResourceScopes.remove(resource.getId());
-                }
-            } else {
+        if (scopes != null) {
+            for (PolicyResult policyResult : result.getResults()) {
                 for (Scope policyScope : policyResult.getPolicy().getScopes()) {
                     scopes.remove(policyScope.getId());
                     if (scopes.isEmpty()) {
@@ -69,6 +65,12 @@ public abstract class PermissionTicketAwareDecisionResultCollector extends Decis
                     }
                 }
             }
+        }
+
+        scopes = ticketResourceScopes.get(resource.getId());
+
+        if (scopes == null || scopes.isEmpty()) {
+            ticketResourceScopes.remove(resource.getId());
         }
 
         super.onGrant(result);
@@ -113,6 +115,8 @@ public abstract class PermissionTicketAwareDecisionResultCollector extends Decis
                                         }
                                     }
                                 }
+                            } else {
+                                permission.getScopes().remove(ticket.getScope());
                             }
                             if (requestedScopes != null && ticket.getScope() != null) {
                                 requestedScopes.remove(ticket.getScope().getId());
@@ -125,11 +129,13 @@ public abstract class PermissionTicketAwareDecisionResultCollector extends Decis
                 }
             }
 
-            for (String requestedScope : requestedScopes) {
-                Iterator<Scope> iterator = permission.getScopes().iterator();
-                while (iterator.hasNext()) {
-                    if (iterator.next().getId().equals(requestedScope)) {
-                        iterator.remove();
+            if (requestedScopes != null) {
+                for (String requestedScope : requestedScopes) {
+                    Iterator<Scope> iterator = permission.getScopes().iterator();
+                    while (iterator.hasNext()) {
+                        if (iterator.next().getId().equals(requestedScope)) {
+                            iterator.remove();
+                        }
                     }
                 }
             }
@@ -154,6 +160,9 @@ public abstract class PermissionTicketAwareDecisionResultCollector extends Decis
     }
 
     private void createPermissionTickets(Resource resource) {
+        if (!resource.isOwnerManagedAccess()) {
+            return;
+        }
         if (ticketResourceScopes.containsKey(resource.getId())) {
             List<String> scopeIds = ticketResourceScopes.get(resource.getId());
 

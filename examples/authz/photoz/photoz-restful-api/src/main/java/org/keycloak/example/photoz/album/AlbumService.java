@@ -85,7 +85,8 @@ public class AlbumService {
     @GET
     @Produces("application/json")
     public Response findAll() {
-        return Response.ok(this.entityManager.createQuery("from Album where userId = :id").setParameter("id", request.getUserPrincipal().getName()).getResultList()).build();
+//        return Response.ok(this.entityManager.createQuery("from Album where userId = :id").setParameter("id", request.getUserPrincipal().getName()).getResultList()).build();
+        return Response.ok(this.entityManager.createQuery("from Album").getResultList()).build();
     }
 
     @GET

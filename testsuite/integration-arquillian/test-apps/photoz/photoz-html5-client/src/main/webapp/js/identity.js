@@ -26,6 +26,7 @@
 
         this.claims = {};
         this.claims.name = keycloak.idTokenParsed.name;
+        this.claims.sub = keycloak.idTokenParsed.sub;
 
         this.authc = {};
         this.authc.token = keycloak.token;
@@ -44,6 +45,10 @@
         this.isAdmin = function () {
             return this.hasRole("admin");
         };
+
+        this.account = function () {
+            keycloak.accountManagement();
+        }
 
         this.authorization = new KeycloakAuthorization(keycloak);
     }

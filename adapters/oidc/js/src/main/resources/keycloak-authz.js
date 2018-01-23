@@ -108,9 +108,12 @@
         /**
          * Obtains all entitlements from a Keycloak Server based on a given resourceServerId.
          */
-        this.entitlement = function (resourceSeververId, entitlementRequest) {
+        this.entitlement = function (resourceServerId, authorizationRequest) {
             this.then = function (onGrant, onDeny, onError) {
                 var request = new XMLHttpRequest();
+
+                request.open('POST', _instance.config.token_endpoint, true);
+                request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 
                 request.onreadystatechange = function () {
                     if (request.readyState == 4) {
@@ -136,19 +139,32 @@
                     }
                 };
 
-                var erJson = null
+                var params = "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket&" +
+                            "client_id=" + keycloak.clientId + "&" +
+                            "claim_token=" + keycloak.token + "&" +
+                            "claim_token_format=urn:ietf:params:oauth:token-type:jwt&" +
+                            "audience=" + resourceServerId;
 
-                if(entitlementRequest) {
-                    request.open('POST', keycloak.authServerUrl + '/realms/' + keycloak.realm + '/authz/entitlement/' + resourceSeververId, true);
-                    request.setRequestHeader("Content-type", "application/json");
-                    erJson = JSON.stringify(entitlementRequest)
-                } else {
-                    request.open('GET', keycloak.authServerUrl + '/realms/' + keycloak.realm + '/authz/entitlement/' + resourceSeververId, true);
+                if (!authorizationRequest) {
+                    authorizationRequest = {
+                        "resources": [],
+                        "metadata": {}
+                    };
                 }
 
-                request.setRequestHeader('Authorization', 'Bearer ' + keycloak.token)
-                request.send(erJson);
+                if (authorizationRequest.resources) {
+                    params += "&permissions=" + JSON.stringify({"resources": authorizationRequest.resources});
+                }
 
+                if (authorizationRequest.metadata) {
+                    params += "&metadata=" + JSON.stringify(authorizationRequest.metadata);
+                }
+
+                if (_instance.rpt) {
+                    params += "&rpt=" + _instance.rpt;
+                }
+
+                request.send(params);
             };
 
             return this;

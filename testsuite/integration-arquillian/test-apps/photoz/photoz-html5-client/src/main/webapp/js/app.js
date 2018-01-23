@@ -60,6 +60,12 @@ module.controller('GlobalCtrl', function ($scope, $http, $route, $location, Albu
         $http.get(apiUrl + '/scope-all').success(function (data) {
         });
     }
+
+    $scope.getAllResources = function () {
+        Album.getAll(function (albums) {
+            $scope.albums = albums;
+        });
+    }
 });
 
 module.controller('TokenCtrl', function ($scope, Identity) {
@@ -78,8 +84,13 @@ module.controller('TokenCtrl', function ($scope, Identity) {
     }
     
     $scope.requestEntitlement = function () {
-        var param={"permissions" : [{"resource_set_name" : "Album Resource"}]};
-        Identity.authorization.entitlement('photoz-restful-api', param).then(function (rpt) {
+        Identity.authorization.entitlement('photoz-restful-api', {
+            "resources": [
+                {
+                    "id" : "Album Resource"
+                }
+            ]
+        }).then(function (rpt) {
             document.getElementById("output").innerHTML = JSON.stringify(jwt_decode(rpt), null, '  ');
         });
     }
@@ -93,6 +104,14 @@ module.controller('AlbumCtrl', function ($scope, $http, $routeParams, $location,
         $scope.album = Album.get({id: $routeParams.id});
     }
     $scope.create = function () {
+        var newAlbum = new Album($scope.album);
+        newAlbum.$save({}, function (data) {
+            $location.path('/');
+        });
+    };
+
+    $scope.createManaged = function () {
+        $scope.album.userManaged = true;
         var newAlbum = new Album($scope.album);
         newAlbum.$save({}, function (data) {
             $location.path('/');
@@ -127,7 +146,9 @@ module.controller('AdminAlbumCtrl', function ($scope, $http, $route, $location, 
 });
 
 module.factory('Album', ['$resource', function ($resource) {
-    return $resource(apiUrl + '/album/:id');
+    return $resource(apiUrl + '/album/:id', {id: '@id'}, {
+        getAll: {method: 'GET', params: {getAll: true}, isArray: true}
+    });
 }]);
 
 module.factory('Profile', ['$resource', function ($resource) {

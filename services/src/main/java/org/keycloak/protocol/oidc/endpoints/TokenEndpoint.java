@@ -1002,6 +1002,7 @@ public class TokenEndpoint {
         authorizationRequest.setPct(formParams.getFirst("pct"));
         authorizationRequest.setRpt(formParams.getFirst("rpt"));
         authorizationRequest.setScope(formParams.getFirst("scope"));
+        authorizationRequest.setAudience(formParams.getFirst("audience"));
 
         String permissions = formParams.getFirst("permissions");
 
@@ -1027,7 +1028,7 @@ public class TokenEndpoint {
 
         ResteasyProviderFactory.getInstance().injectProperties(authorizationTokenService);
 
-        return authorizationTokenService.authorize(authorizationRequest);
+        return authorizationTokenService.authorize(authorizationRequest, cors);
     }
 
     // https://tools.ietf.org/html/rfc7636#section-4.1

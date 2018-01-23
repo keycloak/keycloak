@@ -338,7 +338,7 @@ public class PermissionManagementTest extends AbstractResourceServerTest {
         } catch (RuntimeException cause) {
             assertTrue(HttpResponseException.class.isInstance(cause.getCause()));
             assertEquals(400, HttpResponseException.class.cast(cause.getCause()).getStatusCode());
-            assertTrue(cause.getCause().getMessage().contains("invalid_resource_id"));
+            assertTrue(new String(HttpResponseException.class.cast(cause.getCause()).getBytes()).contains("invalid_resource_id"));
         }
         try {
             getAuthzClient().protection().permission().create(new PermissionRequest());
@@ -347,8 +347,7 @@ public class PermissionManagementTest extends AbstractResourceServerTest {
             cause.printStackTrace();
             assertTrue(HttpResponseException.class.isInstance(cause.getCause()));
             assertEquals(400, HttpResponseException.class.cast(cause.getCause()).getStatusCode());
-            assertTrue(cause.getCause().getMessage().contains("invalid_resource_id"));
-
+            assertTrue(new String((HttpResponseException.class.cast(cause.getCause()).getBytes())).contains("invalid_resource_id"));
         }
     }
 
@@ -365,7 +364,7 @@ public class PermissionManagementTest extends AbstractResourceServerTest {
         } catch (RuntimeException cause) {
             assertTrue(HttpResponseException.class.isInstance(cause.getCause()));
             assertEquals(400, HttpResponseException.class.cast(cause.getCause()).getStatusCode());
-            assertTrue(cause.getCause().getMessage().contains("invalid_scope"));
+            assertTrue(new String((HttpResponseException.class.cast(cause.getCause()).getBytes())).contains("invalid_scope"));
         }
     }
 }

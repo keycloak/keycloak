@@ -26,7 +26,7 @@
                         <tr>
                             <td>
                                 ${resource.name}
-                                <a href="${url.getResourceDetailUrl(resource.id)}"><i class="fa fa-share" aria-hidden="true"></i></a>
+                                <a id="${resource.name}-detail" href="${url.getResourceDetailUrl(resource.id)}"><i class="fa fa-share" aria-hidden="true"></i></a>
                             </td>
                             <td>
                                 <#if resource.approvalRequests != 0>

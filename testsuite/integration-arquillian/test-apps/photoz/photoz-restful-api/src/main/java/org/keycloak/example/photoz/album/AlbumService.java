@@ -91,8 +91,12 @@ public class AlbumService {
 
     @GET
     @Produces("application/json")
-    public Response findAll() {
-        return Response.ok(this.entityManager.createQuery("from Album where userId = '" + request.getUserPrincipal().getName() + "'").getResultList()).build();
+    public Response findAll(@QueryParam("getAll") Boolean getAll) {
+        if (getAll != null && getAll) {
+            return Response.ok(this.entityManager.createQuery("from Album").getResultList()).build();
+        } else {
+            return Response.ok(this.entityManager.createQuery("from Album where userId = '" + request.getUserPrincipal().getName() + "'").getResultList()).build();
+        }
     }
 
     @GET
@@ -118,6 +122,10 @@ public class AlbumService {
             ResourceRepresentation albumResource = new ResourceRepresentation(album.getName(), scopes, "/album/" + album.getId(), "http://photoz.com/album");
 
             albumResource.setOwner(album.getUserId());
+
+            if (album.isUserManaged()) {
+                albumResource.setOwnerManagedAccess(true);
+            }
 
             getAuthzClient().protection().resource().create(albumResource);
         } catch (Exception e) {

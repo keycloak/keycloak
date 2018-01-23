@@ -20,7 +20,6 @@ import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.jboss.shrinkwrap.api.asset.FileAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -42,7 +41,6 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import org.keycloak.testsuite.adapter.page.PhotozClientAuthzTestApp;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.File;
@@ -360,6 +358,9 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
             loginToClientPage("alice", "alice");
             assertFalse(this.clientPage.wasDenied());
+            this.clientPage.createAlbum("Alice Family Album");
+            this.clientPage.viewAlbum("Alice Family Album");
+            assertFalse(this.clientPage.wasDenied());
 
             UsersResource usersResource = realmsResouce().realm(REALM_NAME).users();
             List<UserRepresentation> users = usersResource.search("alice", null, null, null, null, null);
@@ -382,9 +383,11 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
             roleResource.update(roleRepresentation);
 
             loginToClientPage("alice", "alice");
+            this.clientPage.viewAlbum("Alice Family Album");
             assertTrue(this.clientPage.wasDenied());
 
             loginToClientPage("alice", "alice", RESOURCE_SERVER_ID + "/manage-albums");
+            this.clientPage.viewAlbum("Alice Family Album", false);
             assertFalse(this.clientPage.wasDenied());
         } finally {
             this.deployer.undeploy(RESOURCE_SERVER_ID);
@@ -398,6 +401,10 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
             loginToClientPage("alice", "alice");
 
+            assertFalse(this.clientPage.wasDenied());
+
+            this.clientPage.createAlbum("Alice Family Album");
+            this.clientPage.viewAlbum("Alice Family Album");
             assertFalse(this.clientPage.wasDenied());
 
             UsersResource usersResource = realmsResouce().realm(REALM_NAME).users();
@@ -421,6 +428,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
             manageAlbumRole.update(roleRepresentation);
 
             loginToClientPage("alice", "alice");
+            this.clientPage.viewAlbum("Alice Family Album");
             assertTrue(this.clientPage.wasDenied());
 
             for (PolicyRepresentation policy : getAuthorizationResource().policies().policies()) {
@@ -440,6 +448,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
             }
 
             loginToClientPage("alice", "alice");
+            this.clientPage.viewAlbum("Alice Family Album");
             assertFalse(this.clientPage.wasDenied());
         } finally {
             this.deployer.undeploy(RESOURCE_SERVER_ID);
@@ -638,7 +647,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
             clientPage.requestEntitlement();
             String pageSource = driver.getPageSource();
             assertTrue(pageSource.contains("urn:photoz.com:scopes:album:view"));
-            assertFalse(pageSource.contains("urn:photoz.com:scopes:album:admin:manage"));
+            assertTrue(pageSource.contains("urn:photoz.com:scopes:album:delete"));
         } finally {
             this.deployer.undeploy(RESOURCE_SERVER_ID);
         }
@@ -653,6 +662,63 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
             assertTrue(this.clientPage.wasDenied());
             this.clientPage.requestResourceProtectedAnyScope();
             assertFalse(this.clientPage.wasDenied());
+        } finally {
+            this.deployer.undeploy(RESOURCE_SERVER_ID);
+        }
+    }
+
+    @Test
+    public void testRequestResourceToOwner() throws Exception {
+        try {
+            this.deployer.deploy(RESOURCE_SERVER_ID);
+            loginToClientPage("alice", "alice");
+            this.clientPage.createAlbum("Alice-Family-Album", true);
+
+            loginToClientPage("jdoe", "jdoe");
+            this.clientPage.viewAllAlbums();
+            this.clientPage.viewAlbum("Alice-Family-Album");
+            assertTrue(this.clientPage.wasDenied());
+
+            loginToClientPage("alice", "alice");
+            this.clientPage.accountGrantResource("Alice-Family-Album");
+
+            loginToClientPage("jdoe", "jdoe");
+            this.clientPage.viewAllAlbums();
+            this.clientPage.viewAlbum("Alice-Family-Album");
+            assertFalse(this.clientPage.wasDenied());
+
+            loginToClientPage("alice", "alice");
+            this.clientPage.accountRevokeResource("Alice-Family-Album");
+
+            loginToClientPage("jdoe", "jdoe");
+            this.clientPage.viewAllAlbums();
+            this.clientPage.viewAlbum("Alice-Family-Album");
+            assertTrue(this.clientPage.wasDenied());
+        } finally {
+            this.deployer.undeploy(RESOURCE_SERVER_ID);
+        }
+    }
+
+    @Test
+    public void testOwnerSharingResource() throws Exception {
+        try {
+            this.deployer.deploy(RESOURCE_SERVER_ID);
+            loginToClientPage("alice", "alice");
+            this.clientPage.createAlbum("Alice-Family-Album", true);
+            this.clientPage.accountShareResource("Alice-Family-Album", "jdoe");
+
+            loginToClientPage("jdoe", "jdoe");
+            this.clientPage.viewAllAlbums();
+            this.clientPage.viewAlbum("Alice-Family-Album");
+            assertFalse(this.clientPage.wasDenied());
+
+            loginToClientPage("alice", "alice");
+            this.clientPage.accountRevokeResource("Alice-Family-Album");
+
+            loginToClientPage("jdoe", "jdoe");
+            this.clientPage.viewAllAlbums();
+            this.clientPage.viewAlbum("Alice-Family-Album");
+            assertTrue(this.clientPage.wasDenied());
         } finally {
             this.deployer.undeploy(RESOURCE_SERVER_ID);
         }
