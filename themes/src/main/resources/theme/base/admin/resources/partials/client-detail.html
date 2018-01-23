@@ -314,6 +314,9 @@
                 <label class="col-md-2 control-label" for="urlReferenceName">{{:: 'idp-sso-url-ref' | translate}}</label>
                 <div class="col-sm-6">
                     <input ng-model="clientEdit.attributes.saml_idp_initiated_sso_url_name" class="form-control" type="text" name="urlReferenceName" id="urlReferenceName" />
+                    <div data-ng-show="clientEdit.attributes.saml_idp_initiated_sso_url_name">
+                        {{:: 'idp-sso-url-ref.urlhint' | translate}} {{samlIdpInitiatedUrl(clientEdit.attributes.saml_idp_initiated_sso_url_name)}}
+                    </div>
                 </div>
                 <kc-tooltip>{{:: 'idp-sso-url-ref.tooltip' | translate}}</kc-tooltip>
             </div>

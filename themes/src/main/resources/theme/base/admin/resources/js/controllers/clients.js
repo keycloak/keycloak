@@ -1052,6 +1052,10 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
     }
 
 
+    $scope.samlIdpInitiatedUrl = function(ssoName) {
+        return encodeURI($location.absUrl().replace(/\/admin.*/, "/realms/") + realm.realm + "/protocol/saml/clients/") + encodeURIComponent(ssoName)
+    }
+
     $scope.importFile = function(fileContent){
         console.debug(fileContent);
         ClientDescriptionConverter.save({
