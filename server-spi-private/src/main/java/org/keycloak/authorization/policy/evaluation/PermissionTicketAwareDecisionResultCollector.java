@@ -92,7 +92,8 @@ public class PermissionTicketAwareDecisionResultCollector extends DecisionResult
                         }
                     }
 
-                    permission.getScopes().retainAll(grantedScopes);
+                    permission.getScopes().clear();
+                    permission.getScopes().addAll(grantedScopes);
                 }
             }
         }

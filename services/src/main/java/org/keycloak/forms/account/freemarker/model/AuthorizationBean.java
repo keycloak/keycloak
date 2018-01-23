@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.core.UriInfo;
@@ -91,6 +92,19 @@ public class AuthorizationBean {
         }
 
         return userPermissionRequests;
+    }
+
+    public List<PermissionResourceBean> getUserPendingRequests() {
+        if (permissionRequests == null) {
+            HashMap<String, String> filters = new HashMap<>();
+
+            filters.put(PermissionTicket.OWNER, user.getId());
+            filters.put(PermissionTicket.GRANTED, Boolean.FALSE.toString());
+
+            permissionRequests = toRepresentation(findPermissions(filters)).values().stream().collect(Collectors.toList());
+        }
+
+        return permissionRequests;
     }
 
     public List<ResourceBean> getUserResources() {
@@ -263,14 +277,14 @@ public class AuthorizationBean {
 
     public class ResourceBean {
 
-        private final ClientModel resourceServer;
+        private final ResourceServerBean resourceServer;
         private final UserModel owner;
         private Resource resource;
         private PermissionResourceBean permission;
 
         public ResourceBean(Resource resource) {
             RealmModel realm = authorization.getRealm();
-            resourceServer = realm.getClientById(resource.getResourceServer().getId());
+            resourceServer = new ResourceServerBean(realm.getClientById(resource.getResourceServer().getId()));
             this.resource = resource;
             owner = authorization.getKeycloakSession().users().getUserById(resource.getOwner(), realm);
         }
@@ -316,14 +330,14 @@ public class AuthorizationBean {
 
                 filters.put(PermissionTicket.RESOURCE, resource.getId());
 
-                permission = toRepresentation(findPermissions(filters)).getOrDefault(resource.getId(), null);
+                permission = toRepresentation(findPermissions(filters)).getOrDefault(resource.getId(), new PermissionResourceBean(this));
             }
 
             return permission;
         }
 
-        public String getResourceServerName() {
-            return resourceServer.getClientId();
+        public ResourceServerBean getResourceServer() {
+            return resourceServer;
         }
     }
 
@@ -348,4 +362,32 @@ public class AuthorizationBean {
         return authorization.getStoreFactory().getPermissionTicketStore().find(filters, null, -1, -1);
     }
 
+    public class ResourceServerBean {
+
+        private ClientModel clientModel;
+
+        public ResourceServerBean(ClientModel clientModel) {
+            this.clientModel = clientModel;
+        }
+
+        public String getName() {
+            String name = clientModel.getName();
+
+            if (name != null) {
+                return name;
+            }
+
+            return clientModel.getClientId();
+        }
+
+        public String getRedirectUri() {
+            Set<String> redirectUris = clientModel.getRedirectUris();
+
+            if (redirectUris.isEmpty()) {
+                return null;
+            }
+
+            return redirectUris.iterator().next();
+        }
+    }
 }

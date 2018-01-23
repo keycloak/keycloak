@@ -680,7 +680,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
             assertTrue(this.clientPage.wasDenied());
 
             loginToClientPage("alice", "alice");
-            this.clientPage.accountGrantResource("Alice-Family-Album");
+            this.clientPage.accountGrantResource("Alice-Family-Album", "jdoe");
 
             loginToClientPage("jdoe", "jdoe");
             this.clientPage.viewAllAlbums();

@@ -15,48 +15,6 @@
     </#if>
 
     <div class="row">
-        <div class="col-md-12">
-            <table class="table table-striped table-bordered">
-                <thead>
-                    <tr>
-                        <td>${msg("requester")}</td>
-                        <td>${msg("actions")}</td>
-                        <td>${msg("doGrant")}</td>
-                    </tr>
-                </thead>
-                <tbody>
-                    <#if authorization.resource.permission?? && authorization.resource.permission.pending?size != 0>
-                        <form action="${url.getResourceGrant(authorization.resource.id)}" name="approveForm" method="post">
-                            <input type="hidden" name="action" value="grant">
-                            <#list authorization.resource.permission.pending as permission>
-                                <tr>
-                                    <td>${permission.requester}</td>
-                                    <td>
-                                        <select class="form-control" name="permission_id" multiple>
-                                            <#list permission.scopes as scope>
-                                                <#if !scope.granted>
-                                                    <option value="${scope.id}">${scope.scope.name}</option>
-                                                </#if>
-                                            </#list>
-                                        </select>
-                                    </td>
-                                    <td width="20%" align="middle" style="vertical-align: middle">
-                                        <a href="#" onclick="document.forms['approveForm']['action'].value = 'grant';document.forms['approveForm'].submit();" type="submit" id="grant-${permission.id}" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}">${msg("doGrant")}</a>
-                                        <a href="#" onclick="document.forms['approveForm']['action'].value = 'deny';document.forms['approveForm'].submit();" type="submit" id="grant-${permission.id}" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}">${msg("doDeny")}</a>
-                                    </td>
-                                </tr>
-                            </#list>
-                        </form>
-                    <#else>
-                        <tr>
-                            <td colspan="3">No permissions requests to approve</td>
-                        </tr>
-                    </#if>
-                </tbody>
-            </table>
-        </div>
-    </div>
-    <div class="row">
         <div class="col-md-10">
             <h2>
                 ${msg("shares")}
@@ -77,8 +35,9 @@
                     <tbody>
                         <#if authorization.resource.permission?? && authorization.resource.permission.granted?size != 0>
                             <form action="${url.getResourceGrant(authorization.resource.id)}" name="revokeForm" method="post">
-                                <input type="hidden" name="action" value="revoke">
                                 <#list authorization.resource.permission.granted as permission>
+                                    <input type="hidden" name="action" value="revoke">
+                                    <input type="hidden" name="requester" value="${permission.requester}">
                                     <tr>
                                         <td>${permission.requester}</td>
                                         <td>

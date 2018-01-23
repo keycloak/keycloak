@@ -106,13 +106,13 @@
     {
       "clientId": "photoz-html5-client",
       "enabled": true,
-      "adminUrl": "/photoz-html5-client",
-      "baseUrl": "/photoz-html5-client",
+      "adminUrl": "http://localhost:8080/photoz-html5-client",
+      "baseUrl": "http://localhost:8080/photoz-html5-client",
       "publicClient": true,
       "consentRequired" : true,
       "fullScopeAllowed" : true,
       "redirectUris": [
-        "/photoz-html5-client/*"
+        "http://localhost:8080/photoz-html5-client/*"
       ],
       "webOrigins": ["http://localhost:8080"]
     },
@@ -120,10 +120,10 @@
       "clientId": "photoz-restful-api",
       "secret": "secret",
       "enabled": true,
-      "baseUrl": "/photoz-restful-api",
+      "baseUrl": "http://localhost:8080/photoz-restful-api",
       "authorizationServicesEnabled" : true,
       "redirectUris": [
-        "/photoz-restful-api/*"
+        "http://localhost:8080/photoz-html5-client"
       ],
       "webOrigins" : ["http://localhost:8080"]
     }

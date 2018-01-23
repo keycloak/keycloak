@@ -34,8 +34,8 @@ import java.util.UUID;
 @Transaction
 public class AlbumService {
 
-    public static final String SCOPE_ALBUM_VIEW = "urn:photoz.com:scopes:album:view";
-    public static final String SCOPE_ALBUM_DELETE = "urn:photoz.com:scopes:album:delete";
+    public static final String SCOPE_ALBUM_VIEW = "album:view";
+    public static final String SCOPE_ALBUM_DELETE = "album:delete";
 
     @Inject
     private EntityManager entityManager;

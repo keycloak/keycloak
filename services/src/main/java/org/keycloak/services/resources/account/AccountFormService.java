@@ -710,7 +710,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
     @Path("resource/{resource_id}/grant")
     @POST
-    public Response grantPermission(@PathParam("resource_id") String resourceId, @FormParam("action") String action, @FormParam("permission_id") String[] permissionId) {
+    public Response grantPermission(@PathParam("resource_id") String resourceId, @FormParam("action") String action, @FormParam("permission_id") String[] permissionId, @FormParam("requester") String requester) {
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
         PermissionTicketStore ticketStore = authorization.getStoreFactory().getPermissionTicketStore();
         Resource resource = authorization.getStoreFactory().getResourceStore().findById(resourceId, null);
@@ -724,9 +724,11 @@ public class AccountFormService extends AbstractSecuredLocalService {
         }
 
         boolean isGrant = "grant".equals(action);
+        boolean isDeny = "deny".equals(action);
         Map<String, String> filters = new HashMap<>();
 
         filters.put(PermissionTicket.RESOURCE, resource.getId());
+        filters.put(PermissionTicket.REQUESTER, session.users().getUserByUsername(requester, realm).getId());
 
         if ("revoke".equals(action)) {
             filters.put(PermissionTicket.GRANTED, Boolean.TRUE.toString());
@@ -749,6 +751,10 @@ public class AccountFormService extends AbstractSecuredLocalService {
             if (isGrant && !ticket.isGranted()) {
                 ticket.setGrantedTimestamp(System.currentTimeMillis());
                 iterator.remove();
+            } else if (isDeny) {
+                if (permissionId != null && permissionId.length > 0 && Arrays.asList(permissionId).contains(ticket.getId())) {
+                    iterator.remove();
+                }
             }
         }
 

@@ -206,9 +206,9 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
         pause(WAIT_AFTER_OPERATION);
     }
 
-    public void accountGrantResource(String name) throws InterruptedException {
-        accountMyResource(name);
-        this.driver.findElement(By.xpath("//a[text() = 'Grant']")).click();
+    public void accountGrantResource(String name, String requester) throws InterruptedException {
+        accountMyResources();
+        this.driver.findElement(By.id("grant-" + name + "-" + requester)).click();
         waitForPageToLoad();
     }
 
