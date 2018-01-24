@@ -49,7 +49,7 @@
             <p>${msg("totpManualStep3")}</p>
             <ul>
                 <li id="kc-totp-type">${msg("totpType")}: ${msg("totp." + totp.policy.type)}</li>
-                <li id="kc-totp-algorithm">${msg("totpAlgorithm")}: ${totp.policy.algorithm}</li>
+                <li id="kc-totp-algorithm">${msg("totpAlgorithm")}: ${totp.policy.getAlgorithmKey()}</li>
                 <li id="kc-totp-digits">${msg("totpDigits")}: ${totp.policy.digits}</li>
                 <#if totp.policy.type = "totp">
                     <li id="kc-totp-period">${msg("totpInterval")}: ${totp.policy.period}</li>
