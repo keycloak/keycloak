@@ -197,10 +197,6 @@ public class OAuthClient {
         origin = null;
     }
 
-    public void setClientId(String clientId) {
-        this.clientId = clientId;
-    }
-
     public AuthorizationEndpointResponse doLogin(String username, String password) {
         openLoginForm();
         fillLoginForm(username, password);

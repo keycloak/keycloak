@@ -201,7 +201,7 @@ public class FlowOverrideTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testWithClientBrowserOverride() throws Exception {
-        oauth.setClientId(TEST_APP_FLOW);
+        oauth.clientId(TEST_APP_FLOW);
         String loginFormUrl = oauth.getLoginFormUrl();
         log.info("loginFormUrl: " + loginFormUrl);
 
@@ -231,7 +231,7 @@ public class FlowOverrideTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void testNoOverrideBrowser(String clientId) {
-        oauth.setClientId(clientId);
+        oauth.clientId(clientId);
         String loginFormUrl = oauth.getLoginFormUrl();
         log.info("loginFormUrl: " + loginFormUrl);
 

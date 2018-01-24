@@ -27,6 +27,6 @@
                 <constraints nullable="false"/>
             </column>
         </createTable>
-        <addPrimaryKey columnNames="CLIENT_ID, BINDING_NAME" constraintName="CONSTRAINT_CLIENT_AUTH_FLOW_BINDINGS" tableName="CLIENT_AUTH_FLOW_BINDINGS"/>
+        <addPrimaryKey columnNames="CLIENT_ID, BINDING_NAME" constraintName="C_CLI_FLOW_BIND" tableName="CLIENT_AUTH_FLOW_BINDINGS"/>
     </changeSet>
 </databaseChangeLog>
