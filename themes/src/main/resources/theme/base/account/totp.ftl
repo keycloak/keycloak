@@ -5,7 +5,7 @@
 <h2>${msg("authenticatorTitle")}</h2>
 
 <table class="table table-bordered table-striped">
-    <thead
+    <thead>
         <tr>
             <th colspan="2">${msg("configureAuthenticators")}</th>
             </tr>
@@ -30,7 +30,7 @@
 
 <ol>
     <li>
-        <p>${msg("totpStep1")}</p>
+        <p>${msg("totpStep1")?no_esc}</p>
 
         <ul>
             <#list totp.policy.supportedApplications as app>
