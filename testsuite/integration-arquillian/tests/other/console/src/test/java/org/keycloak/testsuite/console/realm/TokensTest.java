@@ -35,6 +35,7 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -138,6 +139,23 @@ public class TokensTest extends AbstractRealmTest {
         assertThat(userActionTokens, Matchers.hasEntry(VerifyEmailActionToken.TOKEN_TYPE, (int)(TimeUnit.DAYS.toSeconds(TIMEOUT))));
         assertThat(userActionTokens, Matchers.hasEntry(ResetCredentialsActionToken.TOKEN_TYPE, (int)(TimeUnit.HOURS.toSeconds(TIMEOUT))));
 
+    }
+
+    @Test
+    public void testButtonDisabledForEmptyAttributes() throws InterruptedException {
+        tokenSettingsPage.form().setOperation(VerifyEmailActionToken.TOKEN_TYPE, TIMEOUT, TimeUnit.DAYS);
+        tokenSettingsPage.form().save();
+        assertAlertSuccess();
+
+        loginToTestRealmConsoleAs(testUser);
+        driver.navigate().refresh();
+
+        tokenSettingsPage.navigateTo();
+        tokenSettingsPage.form().selectOperation(VerifyEmailActionToken.TOKEN_TYPE);
+        tokenSettingsPage.form().selectOperation(ResetCredentialsActionToken.TOKEN_TYPE);
+
+        assertFalse("Save button should be disabled", tokenSettingsPage.form().saveBtn().isEnabled());
+        assertFalse("Cancel button should be disabled", tokenSettingsPage.form().cancelBtn().isEnabled());
     }
 
     @Test

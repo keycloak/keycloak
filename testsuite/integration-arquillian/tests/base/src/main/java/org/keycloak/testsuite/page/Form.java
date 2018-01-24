@@ -46,7 +46,6 @@ public class Form {
     private WebElement cancel;
 
     public void save() {
-//        guardAjax(save).click();
         clickLink(save);
     }
 
@@ -70,5 +69,11 @@ public class Form {
             // TODO log warning
         }
     }
+    public WebElement saveBtn() {
+        return save;
+    }
 
+    public WebElement cancelBtn() {
+        return cancel;
+    }
 }
