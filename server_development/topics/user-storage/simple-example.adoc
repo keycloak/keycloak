@@ -257,7 +257,7 @@ The class files for our provider implementation should be placed in a jar.  You 
 org.keycloak.examples.federation.properties.FilePropertiesStorageFactory
 ----
 
-Once you create the jar you can deploy it using regular JBoss/Wildfly means: copy the jar into the `deploy/` directory or using the JBoss CLI.
+Once you create the jar you can deploy it using regular {appserver_name} means: copy the jar into the `deploy/` directory or using the JBoss CLI.
 
 ==== Enabling the Provider in the Administration Console
 

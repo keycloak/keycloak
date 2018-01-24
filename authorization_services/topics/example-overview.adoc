@@ -31,5 +31,5 @@ Here is a brief description of each example:
 | A simple application based on HTML5+AngularJS+JAX-RS that demonstrates how to enable fine-grained permissions to RESTFul based services and HTML5 clients.
 
 | https://github.com/keycloak/keycloak/tree/{project_version}/examples/authz/servlet-authz[servlet-authz]
-| A simple Servlet-based application that demonstrates how to enable fine-grained authorization to a JBoss/Wildfly Servlet Application.
+| A simple Servlet-based application that demonstrates how to enable fine-grained authorization to a {appserver_name} Servlet Application.
 |===

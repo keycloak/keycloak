@@ -540,7 +540,7 @@ Facebook admin console).
 === Migrating from 1.0 Alpha 1 to Alpha 2
 
 * DB Schema has changed.  We don't have any data migration utilities yet as of Alpha 2.
-* JBoss and Wildfly adapters are now installed via a JBoss/Wildfly subsystem.  Please review the adapter
+* JBoss and Wildfly adapters are now installed via a {appserver_name} subsystem.  Please review the adapter
   installation documentation.  Edits to standalone.xml are now required.
 * There is a new credential type "secret".  Unlike other credential types, it is stored in plain text in
   the database and can be viewed in the admin console.
