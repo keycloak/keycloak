@@ -49,3 +49,8 @@ WARNING: For the performance purposes, {project_name} caches the public keys of 
 was compromised, it is obviously good to update your keys, but it's also good to clear the keys cache. See <<_clear-cache, Clearing the cache>>
 section for more details.
 
+.Signed JWT with Client Secret
+
+If you select this option in the `Client Authenticator` list box, you can use a JWT signed by client secret instead of the private key.
+
+This client secret will be used to sign the JWT by the client.
