@@ -8,7 +8,7 @@ This default behavior is defined by the SSL/HTTPS mode of each {project_name} re
 link:{adminguide_link}[{adminguide_name}], but let's give some context and a brief overview of these modes.
 
 external requests::
-  {project_name} can run out of the box without SSL so long as you stick to private IP addresses like `localhost`, `127.0.0.1`, `10.0.x.x`, `192.168.x.x`, and `172..16.x.x`.
+  {project_name} can run out of the box without SSL so long as you stick to private IP addresses like `localhost`, `127.0.0.1`, `10.0.x.x`, `192.168.x.x`, and `172.16.x.x`.
   If you don’t have SSL/HTTPS configured on the server or you try to access {project_name} over HTTP from a non-private IP adress you will get an error.
 
 none::
