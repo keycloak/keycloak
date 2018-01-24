@@ -30,7 +30,11 @@
                     <li id="kc-totp-type">${msg("loginTotpType")}: ${msg("loginTotp." + totp.policy.type)}</li>
                     <li id="kc-totp-algorithm">${msg("loginTotpAlgorithm")}: ${totp.policy.algorithm}</li>
                     <li id="kc-totp-digits">${msg("loginTotpDigits")}: ${totp.policy.digits}</li>
-                    <li id="kc-totp-period">${msg("loginTotpInterval")}: ${totp.policy.period}</li>
+                    <#if totp.policy.type = "totp">
+                        <li id="kc-totp-period">${msg("loginTotpInterval")}: ${totp.policy.period}</li>
+                    <#elseif totp.policy.type = "hotp">
+                        <li id="kc-totp-counter">${msg("loginTotpCounter")}: ${totp.policy.initialCounter}</li>
+                    </#if>
                 </ul>
             </li>
         <#else>

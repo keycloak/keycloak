@@ -219,7 +219,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
             assertEquals("Type: Counter-based", driver.findElement(By.id("kc-totp-type")).getText());
             assertEquals("Algorithm: HmacSHA256", driver.findElement(By.id("kc-totp-algorithm")).getText());
             assertEquals("Digits: 8", driver.findElement(By.id("kc-totp-digits")).getText());
-            assertEquals("Interval: 30", driver.findElement(By.id("kc-totp-period")).getText());
+            assertEquals("Counter: 0", driver.findElement(By.id("kc-totp-counter")).getText());
         } finally {
             rep.setOtpPolicyDigits(6);
             rep.setOtpPolicyType("totp");
