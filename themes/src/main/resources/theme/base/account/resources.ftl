@@ -83,6 +83,16 @@
                 tbody.removeChild(tr);
             }
         }
+
+        function selectAllCheckBoxes(formName, elm, name) {
+            var shares = document.forms[formName].getElementsByTagName('input');
+
+            for (i = 0; i < shares.length; i++) {
+                if (shares[i].name == name) {
+                    shares[i].checked = elm.checked;
+                }
+            }
+        }
     </script>
     <div class="row">
         <div class="col-md-10">
@@ -109,7 +119,7 @@
                     <#list authorization.userResources as resource>
                         <tr>
                             <td>
-                                <a id="${resource.name}-detail" href="${url.getResourceDetailUrl(resource.id)}">${resource.name}</a>
+                                <a id="detail-${resource.name}" href="${url.getResourceDetailUrl(resource.id)}">${resource.name}</a>
                             </td>
                             <td>
                                 <#if resource.permission.granted?size != 0>
@@ -149,12 +159,12 @@
     </div>
     <div class="row">
         <div class="col-md-12">
-            <form action="${url.resourceUrl}" name="cancelForm" method="post">
+            <form action="${url.resourceUrl}" name="shareForm" method="post">
                 <input type="hidden" name="action" value="cancel"/>
                 <table class="table table-striped table-bordered">
                     <thead>
                         <tr>
-                            <td width="5%"><input type="checkbox" disabled="authorization.userSharedResources?size == 0"/></td>
+                            <td width="5%"><input type="checkbox" onclick="selectAllCheckBoxes('shareForm', this, 'resource_id');" <#if authorization.userSharedResources?size == 0>disabled="true"</#if></td>
                             <td>${msg("resource")}</td>
                             <td>${msg("owner")}</td>
                             <td>${msg("actions")}</td>
@@ -207,7 +217,7 @@
         </div>
         <#if authorization.userSharedResources?size != 0>
         <div class="col-md-12">
-            <a href="#" onclick="document.forms['cancelForm'].submit();" type="submit" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}">${msg("doRemove")}</a>
+            <a href="#" onclick="document.forms['shareForm'].submit();" type="submit" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}">${msg("doRemove")}</a>
         </div>
         </#if>
     </div>
@@ -246,21 +256,25 @@
                                                     <#if !scope.granted>
                                                         <div class="search-box">
                                                             ${scope.scope.name}
-                                                            <button class="close-icon" type="button" name="removeScope-${resourcePermission.resource}-${permission.requester}" onclick="removeScopeElm(this.parentNode);document.forms['approveForm-${resourcePermission.resource}-${permission.requester}']['action'].value = 'deny';document.forms['approveForm-${resourcePermission.resource}-${permission.requester}'].submit();"><i class="fa fa-times" aria-hidden="true"></i></button>
+                                                            <button class="close-icon" type="button" id="grant-remove-scope-${resourcePermission.resource.name}-${permission.requester}-${scope.scope.name}" name="removeScope-${resourcePermission.resource}-${permission.requester}" onclick="removeScopeElm(this.parentNode);document.forms['approveForm-${resourcePermission.resource}-${permission.requester}']['action'].value = 'deny';document.forms['approveForm-${resourcePermission.resource}-${permission.requester}'].submit();"><i class="fa fa-times" aria-hidden="true"></i></button>
                                                             <input type="hidden" name="permission_id" value="${scope.id}"/>
                                                         </div>
                                                     </#if>
                                                 </#list>
                                             </td>
                                             <td width="20%" align="middle" style="vertical-align: middle">
-                                                <a href="#" id="grant-${resourcePermission.resource.name}-${permission.requester}" onclick="document.forms['approveForm-${resourcePermission.resource}-${permission.requester}']['action'].value = 'grant';document.forms['approveForm-${resourcePermission.resource}-${permission.requester}'].submit();" type="submit" id="grant-${permission.id}" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}">${msg("doGrant")}</a>
-                                                <a href="#" id="deny-${resourcePermission.resource.name}-${permission.requester}" onclick="removeAllScopes('${resourcePermission.resource}-${permission.requester}');document.forms['approveForm-${resourcePermission.resource}-${permission.requester}']['action'].value = 'deny';document.forms['approveForm-${resourcePermission.resource}-${permission.requester}'].submit();" type="submit" id="grant-${permission.id}" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}">${msg("doDeny")}</a>
+                                                <a href="#" id="grant-${resourcePermission.resource.name}-${permission.requester}" onclick="document.forms['approveForm-${resourcePermission.resource}-${permission.requester}']['action'].value = 'grant';document.forms['approveForm-${resourcePermission.resource}-${permission.requester}'].submit();" type="submit" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}">${msg("doGrant")}</a>
+                                                <a href="#" id="deny-${resourcePermission.resource.name}-${permission.requester}" onclick="removeAllScopes('${resourcePermission.resource}-${permission.requester}');document.forms['approveForm-${resourcePermission.resource}-${permission.requester}']['action'].value = 'deny';document.forms['approveForm-${resourcePermission.resource}-${permission.requester}'].submit();" type="submit" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}">${msg("doDeny")}</a>
                                             </td>
                                         </tr>
                                     </form>
                                 </#list>
                             </form>
                         </#list>
+                    <#else>
+                        <tr>
+                            <td colspan="4">There are no approval requests.</td>
+                        </tr>
                     </#if>
                 </tbody>
             </table>
@@ -293,12 +307,12 @@
             </div>
             <div class="row" id="waitingApproval" style="display:none">
                 <div class="col-md-12">
-                    <form action="${url.resourceUrl}" name="cancelRequestForm" method="post">
+                    <form action="${url.resourceUrl}" name="waitingApprovalForm" method="post">
                         <input type="hidden" name="action" value="cancelRequest"/>
                         <table class="table table-striped table-bordered">
                             <thead>
                                 <tr>
-                                    <td></td>
+                                    <td width="5%"><input type="checkbox" onclick="selectAllCheckBoxes('waitingApprovalForm', this, 'resource_id');" <#if authorization.userPermissionRequests?size == 0>disabled="true"</#if></td>
                                     <td>${msg("name")}</td>
                                     <td>${msg("owner")}</td>
                                     <td>${msg("actions")}</td>
@@ -340,7 +354,7 @@
                     </form>
                 </div>
                 <div class="col-md-12">
-                    <a href="#" onclick="document.forms['cancelRequestForm'].submit();" type="submit" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}">${msg("doRemove")}</a>
+                    <a href="#" onclick="document.forms['waitingApprovalForm'].submit();" type="submit" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}">${msg("doRemove")}</a>
                 </div>
             </div>
         </div>

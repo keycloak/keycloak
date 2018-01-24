@@ -24,11 +24,11 @@
         "methods" : [
           {
             "method": "DELETE",
-            "scopes" : ["urn:photoz.com:scopes:album:delete"]
+            "scopes" : ["album:delete"]
           },
           {
             "method": "GET",
-            "scopes" : ["urn:photoz.com:scopes:album:view"]
+            "scopes" : ["album:view"]
           }
         ]
       },

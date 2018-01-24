@@ -69,9 +69,6 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
     @FindBy(id = "output")
     private WebElement output;
 
-    @FindBy(id = "share-scopes")
-    private Select shareScopes;
-    
     public void createAlbum(String name) {
         createAlbum(name, false);
     }
@@ -201,7 +198,7 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
 
     public void accountMyResource(String name) throws InterruptedException {
         accountMyResources();
-        this.driver.findElement(By.id(name + "-detail")).click();
+        this.driver.findElement(By.id("detail-" + name)).click();
         waitForPageToLoad();
         pause(WAIT_AFTER_OPERATION);
     }
@@ -212,19 +209,30 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
         waitForPageToLoad();
     }
 
-    public void accountRevokeResource(String name) throws InterruptedException {
+    public void accountGrantRemoveScope(String name, String requester, String scope) throws InterruptedException {
+        accountMyResources();
+        this.driver.findElement(By.id("grant-remove-scope-" + name + "-" + requester + "-" + scope)).click();
+        waitForPageToLoad();
+    }
+
+    public void accountRevokeResource(String name, String requester) throws InterruptedException {
         accountMyResource(name);
-        this.driver.findElement(By.xpath("//a[text() = 'Revoke']")).click();
+        this.driver.findElement(By.id("revoke-" + name + "-" + requester)).click();
         waitForPageToLoad();
     }
 
     public void accountShareResource(String name, String user) throws InterruptedException {
         accountMyResource(name);
         this.driver.findElement(By.id("user_id")).sendKeys(user);
-        for (WebElement webElement : shareScopes.getOptions()) {
-            shareScopes.selectByVisibleText(webElement.getText());
-        }
-        this.driver.findElement(By.xpath("//a[text() = 'Share']")).click();
+        this.driver.findElement(By.id("share-button")).click();
+        waitForPageToLoad();
+    }
+
+    public void accountShareRemoveScope(String name, String user, String scope) throws InterruptedException {
+        accountMyResource(name);
+        this.driver.findElement(By.id("user_id")).sendKeys(user);
+        this.driver.findElement(By.id("share-remove-scope-" + name + "-" + scope)).click();
+        this.driver.findElement(By.id("share-button")).click();
         waitForPageToLoad();
     }
 

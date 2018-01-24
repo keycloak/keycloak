@@ -220,7 +220,7 @@ public class AuthorizationBean {
         }
 
         public boolean isGranted() {
-            return (granted && scopes.isEmpty()) || scopes.stream().filter(permissionScopeBean -> permissionScopeBean.isGranted()).count() == scopes.size();
+            return (granted && scopes.isEmpty()) || scopes.stream().filter(permissionScopeBean -> permissionScopeBean.isGranted()).count() > 0;
         }
 
         public Date getCreatedDate() {

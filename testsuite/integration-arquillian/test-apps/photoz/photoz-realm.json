@@ -58,6 +58,29 @@
       }
     },
     {
+      "username": "pedroigor",
+      "enabled": true,
+      "email": "pedroigor@keycloak.org",
+      "firstName": "Pedro Igor",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "pedroigor"
+        }
+      ],
+      "realmRoles": [
+        "user", "uma_authorization"
+      ],
+      "clientRoles": {
+        "photoz-restful-api": [
+          "manage-albums"
+        ],
+        "account": [
+          "manage-account"
+        ]
+      }
+    },
+    {
       "username": "admin",
       "enabled": true,
       "email": "admin@admin.com",

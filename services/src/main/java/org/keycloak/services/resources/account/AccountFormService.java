@@ -725,12 +725,14 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
         boolean isGrant = "grant".equals(action);
         boolean isDeny = "deny".equals(action);
+        boolean isRevoke = "revoke".equals(action);
+
         Map<String, String> filters = new HashMap<>();
 
         filters.put(PermissionTicket.RESOURCE, resource.getId());
         filters.put(PermissionTicket.REQUESTER, session.users().getUserByUsername(requester, realm).getId());
 
-        if ("revoke".equals(action)) {
+        if (isRevoke) {
             filters.put(PermissionTicket.GRANTED, Boolean.TRUE.toString());
         } else {
             filters.put(PermissionTicket.GRANTED, Boolean.FALSE.toString());
@@ -751,7 +753,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
             if (isGrant && !ticket.isGranted()) {
                 ticket.setGrantedTimestamp(System.currentTimeMillis());
                 iterator.remove();
-            } else if (isDeny) {
+            } else if (isDeny || isRevoke) {
                 if (permissionId != null && permissionId.length > 0 && Arrays.asList(permissionId).contains(ticket.getId())) {
                     iterator.remove();
                 }
@@ -760,6 +762,10 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
         for (PermissionTicket ticket : tickets) {
             ticketStore.delete(ticket.getId());
+        }
+
+        if (isRevoke) {
+            return forwardToPage("resource-detail", AccountPages.RESOURCE_DETAIL);
         }
 
         return forwardToPage("resources", AccountPages.RESOURCES);
@@ -838,7 +844,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
             }
         }
 
-        return forwardToPage("resources", AccountPages.RESOURCES);
+        return forwardToPage("resource-detail", AccountPages.RESOURCE_DETAIL);
     }
 
     @Path("resource")

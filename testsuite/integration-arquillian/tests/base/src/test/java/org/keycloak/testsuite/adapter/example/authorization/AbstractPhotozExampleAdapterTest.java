@@ -16,6 +16,24 @@
  */
 package org.keycloak.testsuite.adapter.example.authorization;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.util.IOUtil.loadJson;
+import static org.keycloak.testsuite.util.IOUtil.loadRealm;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
 import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
@@ -42,24 +60,6 @@ import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import org.keycloak.testsuite.adapter.page.PhotozClientAuthzTestApp;
 import org.keycloak.util.JsonSerialization;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.util.IOUtil.loadJson;
-import static org.keycloak.testsuite.util.IOUtil.loadRealm;
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -642,12 +642,12 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
             loginToClientPage("admin", "admin");
 
             clientPage.requestEntitlements();
-            assertTrue(driver.getPageSource().contains("urn:photoz.com:scopes:album:admin:manage"));
+            assertTrue(driver.getPageSource().contains("admin:manage"));
             
             clientPage.requestEntitlement();
             String pageSource = driver.getPageSource();
-            assertTrue(pageSource.contains("urn:photoz.com:scopes:album:view"));
-            assertTrue(pageSource.contains("urn:photoz.com:scopes:album:delete"));
+            assertTrue(pageSource.contains("album:view"));
+            assertTrue(pageSource.contains("album:delete"));
         } finally {
             this.deployer.undeploy(RESOURCE_SERVER_ID);
         }
@@ -678,6 +678,10 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
             this.clientPage.viewAllAlbums();
             this.clientPage.viewAlbum("Alice-Family-Album");
             assertTrue(this.clientPage.wasDenied());
+            this.clientPage.navigateTo();
+            this.clientPage.viewAllAlbums();
+            this.clientPage.deleteAlbum("Alice-Family-Album");
+            assertTrue(this.clientPage.wasDenied());
 
             loginToClientPage("alice", "alice");
             this.clientPage.accountGrantResource("Alice-Family-Album", "jdoe");
@@ -686,13 +690,34 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
             this.clientPage.viewAllAlbums();
             this.clientPage.viewAlbum("Alice-Family-Album");
             assertFalse(this.clientPage.wasDenied());
+            this.clientPage.navigateTo();
+            this.clientPage.viewAllAlbums();
+            this.clientPage.deleteAlbum("Alice-Family-Album");
+            assertFalse(this.clientPage.wasDenied());
 
             loginToClientPage("alice", "alice");
-            this.clientPage.accountRevokeResource("Alice-Family-Album");
+            this.clientPage.createAlbum("Alice-Family-Album", true);
 
             loginToClientPage("jdoe", "jdoe");
             this.clientPage.viewAllAlbums();
             this.clientPage.viewAlbum("Alice-Family-Album");
+            assertTrue(this.clientPage.wasDenied());
+            this.clientPage.navigateTo();
+            this.clientPage.viewAllAlbums();
+            this.clientPage.deleteAlbum("Alice-Family-Album");
+            assertTrue(this.clientPage.wasDenied());
+
+            loginToClientPage("alice", "alice");
+            this.clientPage.accountGrantRemoveScope("Alice-Family-Album", "jdoe", "album:delete");
+            this.clientPage.accountGrantResource("Alice-Family-Album", "jdoe");
+
+            loginToClientPage("jdoe", "jdoe");
+            this.clientPage.viewAllAlbums();
+            this.clientPage.viewAlbum("Alice-Family-Album");
+            assertFalse(this.clientPage.wasDenied());
+            this.clientPage.navigateTo();
+            this.clientPage.viewAllAlbums();
+            this.clientPage.deleteAlbum("Alice-Family-Album");
             assertTrue(this.clientPage.wasDenied());
         } finally {
             this.deployer.undeploy(RESOURCE_SERVER_ID);
@@ -711,9 +736,26 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
             this.clientPage.viewAllAlbums();
             this.clientPage.viewAlbum("Alice-Family-Album");
             assertFalse(this.clientPage.wasDenied());
+            this.clientPage.navigateTo();
+            this.clientPage.viewAllAlbums();
+            this.clientPage.deleteAlbum("Alice-Family-Album");
+            assertFalse(this.clientPage.wasDenied());
 
             loginToClientPage("alice", "alice");
-            this.clientPage.accountRevokeResource("Alice-Family-Album");
+            this.clientPage.createAlbum("Alice-Family-Album", true);
+            this.clientPage.accountShareRemoveScope("Alice-Family-Album", "jdoe", "album:delete");
+
+            loginToClientPage("jdoe", "jdoe");
+            this.clientPage.viewAllAlbums();
+            this.clientPage.viewAlbum("Alice-Family-Album");
+            assertFalse(this.clientPage.wasDenied());
+            this.clientPage.navigateTo();
+            this.clientPage.viewAllAlbums();
+            this.clientPage.deleteAlbum("Alice-Family-Album");
+            assertTrue(this.clientPage.wasDenied());
+
+            loginToClientPage("alice", "alice");
+            this.clientPage.accountRevokeResource("Alice-Family-Album", "jdoe");
 
             loginToClientPage("jdoe", "jdoe");
             this.clientPage.viewAllAlbums();
