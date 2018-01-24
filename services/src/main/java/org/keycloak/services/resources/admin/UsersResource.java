@@ -35,6 +35,9 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.*;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -118,7 +121,8 @@ public class UsersResource {
             UserResource.updateUserFromRep(user, rep, emptySet, realm, session, false);
             RepresentationToModel.createCredentials(rep, session, realm, user, true);
             adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, user.getId()).representation(rep).success();
-
+            // Role mappings
+            createRoleMappings(rep, user, realm);
             if (session.getTransactionManager().isActive()) {
                 session.getTransactionManager().commit();
             }
@@ -137,6 +141,44 @@ public class UsersResource {
             return ErrorResponse.exists("Could not create user");
         }
     }
+    
+    // Role mappings
+    public static void createRoleMappings(UserRepresentation userRep, UserModel user, RealmModel realm) {
+        if (userRep.getRealmRoles() != null) {
+            for (String roleString : userRep.getRealmRoles()) {
+                RoleModel role = realm.getRole(roleString.trim());
+                if (role == null) {
+                    role = realm.addRole(roleString.trim());
+                }
+                user.grantRole(role);
+            }
+        }
+        if (userRep.getClientRoles() != null) {
+            for (Map.Entry<String, List<String>> entry : userRep.getClientRoles().entrySet()) {
+                ClientModel client = realm.getClientByClientId(entry.getKey());
+                if (client == null) {
+                    throw new RuntimeException("Unable to find client role mappings for client: " + entry.getKey());
+                }
+                createClientRoleMappings(client, user, entry.getValue());
+            }
+        }
+    }
+    
+    public static void createClientRoleMappings(ClientModel clientModel, UserModel user, List<String> roleNames) {
+        if (user == null) {
+            throw new RuntimeException("User not found");
+        }
+
+        for (String roleName : roleNames) {
+            RoleModel role = clientModel.getRole(roleName.trim());
+            if (role == null) {
+                role = clientModel.addRole(roleName.trim());
+            }
+            user.grantRole(role);
+
+        }
+    }
+    
     /**
      * Get representation of the user
      *
