@@ -300,6 +300,17 @@
             "adminUrl": "/basic-auth",
             "baseUrl": "/basic-auth",
             "secret": "password"
+        },
+        {
+            "clientId": "client-secret-jwt-secure-portal",
+            "enabled": true,
+            "adminUrl": "/client-secret-jwt-secure-portal",
+            "baseUrl": "/client-secret-jwt-secure-portal",
+            "clientAuthenticatorType": "client-secret-jwt",
+            "redirectUris": [
+                "/client-secret-jwt-secure-portal/*"
+            ],
+            "secret": "234234-234234-234234"
         }
     ]
 }
