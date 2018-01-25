@@ -68,6 +68,10 @@ public class OTPPolicy implements Serializable {
 
     public static OTPPolicy DEFAULT_POLICY = new OTPPolicy(UserCredentialModel.TOTP, HmacOTP.HMAC_SHA1, 0, 6, 1, 30);
 
+    public String getAlgorithmKey() {
+        return algToKeyUriAlg.containsKey(algorithm) ? algToKeyUriAlg.get(algorithm) : algorithm;
+    }
+
     public String getType() {
         return type;
     }

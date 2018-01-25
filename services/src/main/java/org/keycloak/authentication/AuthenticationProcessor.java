@@ -38,6 +38,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.AuthenticationFlowResolver;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.LoginProtocol;
@@ -646,7 +647,7 @@ public class AuthenticationProcessor {
                 AuthenticationProcessor processor = new AuthenticationProcessor();
                 processor.setAuthenticationSession(clone)
                         .setFlowPath(LoginActionsService.AUTHENTICATE_PATH)
-                        .setFlowId(realm.getBrowserFlow().getId())
+                        .setFlowId(AuthenticationFlowResolver.resolveBrowserFlow(clone).getId())
                         .setForwardedErrorMessage(reset.getErrorMessage())
                         .setForwardedSuccessMessage(reset.getSuccessMessage())
                         .setConnection(connection)

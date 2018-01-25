@@ -30,6 +30,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.AuthenticationFlowResolver;
 import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -107,7 +108,7 @@ public abstract class AuthorizationEndpointBase {
      * @return response to be returned to the browser
      */
     protected Response handleBrowserAuthenticationRequest(AuthenticationSessionModel authSession, LoginProtocol protocol, boolean isPassive, boolean redirectToAuthentication) {
-        AuthenticationFlowModel flow = getAuthenticationFlow();
+        AuthenticationFlowModel flow = getAuthenticationFlow(authSession);
         String flowId = flow.getId();
         AuthenticationProcessor processor = createProcessor(authSession, flowId, LoginActionsService.AUTHENTICATE_PATH);
         event.detail(Details.CODE_ID, authSession.getParentSession().getId());
@@ -149,8 +150,8 @@ public abstract class AuthorizationEndpointBase {
         }
     }
 
-    protected AuthenticationFlowModel getAuthenticationFlow() {
-        return realm.getBrowserFlow();
+    protected AuthenticationFlowModel getAuthenticationFlow(AuthenticationSessionModel authSession) {
+        return AuthenticationFlowResolver.resolveBrowserFlow(authSession);
     }
 
     protected void checkSsl() {

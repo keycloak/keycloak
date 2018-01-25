@@ -88,7 +88,7 @@ public class DockerEndpoint extends AuthorizationEndpointBase {
     }
 
     @Override
-    protected AuthenticationFlowModel getAuthenticationFlow() {
+    protected AuthenticationFlowModel getAuthenticationFlow(AuthenticationSessionModel authSession) {
         return realm.getDockerAuthenticationFlow();
     }
 

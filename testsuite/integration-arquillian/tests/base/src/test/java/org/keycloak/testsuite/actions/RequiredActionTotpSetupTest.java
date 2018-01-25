@@ -177,7 +177,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         assertTrue(driver.findElement(By.id("kc-totp-secret-key")).getText().matches("[\\w]{4}( [\\w]{4}){7}"));
 
         assertEquals("Type: Time-based", driver.findElement(By.id("kc-totp-type")).getText());
-        assertEquals("Algorithm: HmacSHA1", driver.findElement(By.id("kc-totp-algorithm")).getText());
+        assertEquals("Algorithm: SHA1", driver.findElement(By.id("kc-totp-algorithm")).getText());
         assertEquals("Digits: 6", driver.findElement(By.id("kc-totp-digits")).getText());
         assertEquals("Interval: 30", driver.findElement(By.id("kc-totp-period")).getText());
 
@@ -217,9 +217,9 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
             totpPage.clickManual();
 
             assertEquals("Type: Counter-based", driver.findElement(By.id("kc-totp-type")).getText());
-            assertEquals("Algorithm: HmacSHA256", driver.findElement(By.id("kc-totp-algorithm")).getText());
+            assertEquals("Algorithm: SHA256", driver.findElement(By.id("kc-totp-algorithm")).getText());
             assertEquals("Digits: 8", driver.findElement(By.id("kc-totp-digits")).getText());
-            assertEquals("Interval: 30", driver.findElement(By.id("kc-totp-period")).getText());
+            assertEquals("Counter: 0", driver.findElement(By.id("kc-totp-counter")).getText());
         } finally {
             rep.setOtpPolicyDigits(6);
             rep.setOtpPolicyType("totp");

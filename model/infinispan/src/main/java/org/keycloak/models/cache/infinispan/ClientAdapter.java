@@ -346,6 +346,34 @@ public class ClientAdapter implements ClientModel {
     }
 
     @Override
+    public void setAuthenticationFlowBindingOverride(String name, String value) {
+        getDelegateForUpdate();
+        updated.setAuthenticationFlowBindingOverride(name, value);
+
+    }
+
+    @Override
+    public void removeAuthenticationFlowBindingOverride(String name) {
+        getDelegateForUpdate();
+        updated.removeAuthenticationFlowBindingOverride(name);
+
+    }
+
+    @Override
+    public String getAuthenticationFlowBindingOverride(String name) {
+        if (isUpdated()) return updated.getAuthenticationFlowBindingOverride(name);
+        return cached.getAuthFlowBindings().get(name);
+    }
+
+    @Override
+    public Map<String, String> getAuthenticationFlowBindingOverrides() {
+        if (isUpdated()) return updated.getAuthenticationFlowBindingOverrides();
+        Map<String, String> copy = new HashMap<String, String>();
+        copy.putAll(cached.getAuthFlowBindings());
+        return copy;
+    }
+
+    @Override
     public Set<ProtocolMapperModel> getProtocolMappers() {
         if (isUpdated()) return updated.getProtocolMappers();
         return cached.getProtocolMappers();
