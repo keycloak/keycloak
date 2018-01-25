@@ -20,12 +20,36 @@ to preserve compatibility with older client adapters. More details are available
 [[_upgrade_eap_adapter]]
 == Upgrading the EAP Adapter
 
+ifeval::[{project_product}==true]
+
+If you originally installed the adapter using a downloaded archive, to upgrade the {appserver_name} adapter, complete the following steps:
+
+. Download the new adapter archive.
+. Remove the previous adapter modules by deleting the `{appserver_dirref}/modules/system/add-ons/keycloak/` directory.
+. Unzip the downloaded archive into {appserver_dirref}.
+
+If you originally installed the adapter using RPM, to upgrade the adapter, complete the following steps:
+
+. Use Yum to uninstall any adapters you currently have installed.
+. Use Yum to upgrade the {project_name} server.
+
+[source,bash,options="nowrap"]
+----
+yum update
+----
+
+. Use Yum to install the new version of any adapters you require.
+endif::[]
+
+ifeval::[{project_community}==true]
+
 To upgrade the {appserver_name} adapter, complete the following steps:
 
 . Download the new adapter archive.
 . Remove the previous adapter modules by deleting the `{appserver_dirref}/modules/system/add-ons/keycloak/` directory.
 . Unzip the downloaded archive into {appserver_dirref}.
 
+endif::[]
 
 [[_upgrade_js_adapter]]
 == Upgrading the JavaScript Adapter
