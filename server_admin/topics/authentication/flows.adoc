@@ -57,7 +57,7 @@ Custom authenticators. Authentication scripts must at least provide one of the f
 `authenticate(..)` which is called from `Authenticator#authenticate(AuthenticationFlowContext)`
 `action(..)` which is called from `Authenticator#action(AuthenticationFlowContext)`
 
-Custom `Authenticator`'s should at least provide the `authenticate(..)` function.
+Custom `Authenticator` should at least provide the `authenticate(..)` function.
 The following script `javax.script.Bindings` are available for convenient use within script code.
 
 `script`::

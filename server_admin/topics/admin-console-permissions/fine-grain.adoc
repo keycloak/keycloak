@@ -99,7 +99,7 @@ IMPORTANT If you do not set the `query-clients` role, restricted admins like `sa
 
 ===== Testing It Out.
 
-Next we log out of the master realm and and re-login to the <<_per_realm_admin_permissions, dedicated admin console>> for the `test` realm
+Next we log out of the master realm and re-login to the <<_per_realm_admin_permissions, dedicated admin console>> for the `test` realm
 using the `sales-admin` as a username.  This is located under `/auth/admin/test/console`.
 
 .Sales Admin Login
@@ -163,7 +163,7 @@ image:{project_images}/fine-grain-add-view-users.png[]
 
 ===== Testing It Out.
 
-Next we log out of the master realm and and re-login to the <<_per_realm_admin_permissions, dedicated admin console>> for the `test` realm
+Next we log out of the master realm and re-login to the <<_per_realm_admin_permissions, dedicated admin console>> for the `test` realm
 using the `sales-admin` as a username.  This is located under `/auth/admin/test/console`.
 
 You will see that now the `sales-admin` can view users in the system.  If you select one of the

@@ -11,7 +11,7 @@ To configure a federated LDAP store go to the Admin Console.
 Click on the `User Federation` left menu option.
 When you get to this page there is an `Add Provider` select box.
 You should see _ldap_ within this list.
-Selecting _ldap_ will bring you to the ldap configuration page.
+Selecting _ldap_ will bring you to the LDAP configuration page.
 
 ==== Storage Mode
 

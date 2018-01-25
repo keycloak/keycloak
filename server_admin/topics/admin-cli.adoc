@@ -908,7 +908,7 @@ $ kcadm.sh get users -r demorealm -q username=testuser
 ----
 [NOTE]
 ====
-Filtering does not use exact matching. For example, the above example would match the value of the [filename]`username` attribute against the [filename]`\*testuser*`` pattern.
+Filtering does not use exact matching. For example, the above example would match the value of the [filename]`username` attribute against the [filename]`\*testuser*` pattern.
 ====
 You can also filter across multiple attributes by specifying multiple [command]`-q` options, which return only users that match the condition for all the attributes.
 
