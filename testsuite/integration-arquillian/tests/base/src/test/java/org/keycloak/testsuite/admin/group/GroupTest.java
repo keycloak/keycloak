@@ -47,11 +47,13 @@ import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 import javax.ws.rs.ClientErrorException;
+import javax.ws.rs.core.Response.Status;
 import static org.hamcrest.Matchers.*;
 
 import static org.junit.Assert.*;
@@ -401,6 +403,38 @@ public class GroupTest extends AbstractGroupTest {
 
         members = realm.groups().group(groupId).members(0, 10);
         assertNames(members, "user-b");
+    }
+
+    
+    @Test
+    //KEYCLOAK-6300
+    public void groupMembershipUsersOrder() {
+        RealmResource realm = adminClient.realms().realm("test");
+
+        GroupRepresentation group = new GroupRepresentation();
+        group.setName("group");
+        String groupId = createGroup(realm, group).getId();
+
+        List<String> usernames = new ArrayList<>();
+        for (int i = 0; i < 9; i++) {
+            UserRepresentation user = UserBuilder.create().username("user" + i).build();
+            usernames.add(user.getUsername());
+            
+            Response create = realm.users().create(user);
+            assertEquals(Status.CREATED, create.getStatusInfo());
+            
+            String userAId = ApiUtil.getCreatedId(create);
+            realm.users().get(userAId).joinGroup(groupId);
+            
+            create.close();
+        }
+        
+        List<String> memberUsernames = new ArrayList<>();
+        for (UserRepresentation member : realm.groups().group(groupId).members(0, 10)) {
+            memberUsernames.add(member.getUsername());
+        }
+        assertArrayEquals("Expected: " + usernames + ", was: " + memberUsernames, 
+                usernames.toArray(), memberUsernames.toArray());
     }
 
     @Test
