@@ -51,7 +51,7 @@ public class GroupAdapter implements GroupModel {
     protected void getDelegateForUpdate() {
         if (updated == null) {
             cacheSession.registerGroupInvalidation(cached.getId());
-            updated = cacheSession.getDelegate().getGroupById(cached.getId(), realm);
+            updated = cacheSession.getRealmDelegate().getGroupById(cached.getId(), realm);
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
     }
@@ -64,7 +64,7 @@ public class GroupAdapter implements GroupModel {
     protected boolean isUpdated() {
         if (updated != null) return true;
         if (!invalidated) return false;
-        updated = cacheSession.getDelegate().getGroupById(cached.getId(), realm);
+        updated = cacheSession.getRealmDelegate().getGroupById(cached.getId(), realm);
         if (updated == null) throw new IllegalStateException("Not found in database");
         return true;
     }

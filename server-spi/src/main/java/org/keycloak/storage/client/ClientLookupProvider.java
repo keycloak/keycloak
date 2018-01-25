@@ -14,25 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.keycloak.storage.client;
 
-package org.keycloak.models.cache;
-
-import org.keycloak.models.RealmProvider;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.RealmModel;
 
 /**
+ * Abstraction interface for lookoup of clients by id and clientId.  These methods required for participating in login flows.
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface CacheRealmProvider extends RealmProvider {
-    void clear();
-    RealmProvider getRealmDelegate();
-
-    void registerRealmInvalidation(String id, String name);
-
-    void registerClientInvalidation(String id, String clientId, String realmId);
-    void registerClientTemplateInvalidation(String id);
-
-    void registerRoleInvalidation(String id, String roleName, String roleContainerId);
-
-    void registerGroupInvalidation(String id);
+public interface ClientLookupProvider {
+    ClientModel getClientById(String id, RealmModel realm);
+    ClientModel getClientByClientId(String clientId, RealmModel realm);
 }

@@ -22,6 +22,8 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.client.ClientStorageProvider;
+import org.keycloak.storage.client.ClientStorageProviderModel;
 
 import java.util.*;
 
@@ -338,6 +340,16 @@ public interface RealmModel extends RoleContainerModel {
             list.add(new UserStorageProviderModel(component));
         }
         Collections.sort(list, UserStorageProviderModel.comparator);
+        return list;
+    }
+
+    default
+    List<ClientStorageProviderModel> getClientStorageProviders() {
+        List<ClientStorageProviderModel> list = new LinkedList<>();
+        for (ComponentModel component : getComponents(getId(), ClientStorageProvider.class.getName())) {
+            list.add(new ClientStorageProviderModel(component));
+        }
+        Collections.sort(list, ClientStorageProviderModel.comparator);
         return list;
     }
 

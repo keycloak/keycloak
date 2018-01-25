@@ -49,7 +49,7 @@ public class RealmAdapter implements CachedRealmModel {
     public RealmModel getDelegateForUpdate() {
         if (updated == null) {
             cacheSession.registerRealmInvalidation(cached.getId(), cached.getName());
-            updated = cacheSession.getDelegate().getRealm(cached.getId());
+            updated = cacheSession.getRealmDelegate().getRealm(cached.getId());
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
         return updated;
@@ -81,7 +81,7 @@ public class RealmAdapter implements CachedRealmModel {
     protected boolean isUpdated() {
         if (updated != null) return true;
         if (!invalidated) return false;
-        updated = cacheSession.getDelegate().getRealm(cached.getId());
+        updated = cacheSession.getRealmDelegate().getRealm(cached.getId());
         if (updated == null) throw new IllegalStateException("Not found in database");
         return true;
     }
