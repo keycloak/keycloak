@@ -50,6 +50,15 @@
                 </div>
             </form>
         </#if>
+        <#if realm.password && social.providers??>
+            <div id="kc-social-providers" class="${properties.kcFormSocialAccountContentClass!} ${properties.kcFormSocialAccountClass!}">
+                <ul class="${properties.kcFormSocialAccountListClass!} ${properties.kcFormSocialAccountDoubleListClass!}">
+                    <#list social.providers as p>
+                        <li class="${properties.kcFormSocialAccountListLinkClass!}"><a href="${p.loginUrl}" id="zocial-${p.alias}" class="zocial ${p.providerId}"> <span>${p.displayName}</span></a></li>
+                    </#list>
+                </ul>
+            </div>
+        </#if>
     <#elseif section = "info" >
         <#if realm.password && realm.registrationAllowed && !usernameEditDisabled??>
             <div id="kc-registration">
@@ -57,14 +66,5 @@
             </div>
         </#if>
 
-        <#if realm.password && social.providers??>
-            <div id="kc-social-providers">
-                <ul>
-                    <#list social.providers as p>
-                        <li><a href="${p.loginUrl}" id="zocial-${p.alias}" class="zocial ${p.providerId}"> <span class="text">${p.displayName}</span></a></li>
-                    </#list>
-                </ul>
-            </div>
-        </#if>
     </#if>
 </@layout.registrationLayout>

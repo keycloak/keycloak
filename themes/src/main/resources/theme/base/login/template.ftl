@@ -34,12 +34,9 @@
 <body class="${properties.kcBodyClass!}">
   <div class="${properties.kcLoginClass!}">
     <header class="${properties.kcHeaderClass!}">
-      <!-- <a href="${properties.kcLogoLink!'#'}">
-        <img class="${properties.kcLogoClass!}" src="${url.resourcesPath}/img/keycloak-logo.png" />
-      </a> -->
       <div id="kc-logo"><a href="${properties.kcLogoLink!'#'}"><div id="kc-logo-wrapper"></div></a></div>
     </header>
-    <div class="${properties.kcFormCardClass!}">
+    <div class="${properties.kcFormCardClass!} <#if realm.password && social.providers??>${properties.kcFormCardAccountClass!}</#if>">
       <header class="${properties.kcFormHeaderClass!}">
         <#if realm.internationalizationEnabled>
             <div id="kc-locale">
@@ -58,94 +55,36 @@
         <h1> ${msg("doLogIn")} </h1>
       </header>
       <div id="kc-content">
-            <div id="kc-content-wrapper">
+        <div id="kc-content-wrapper">
 
-                <#if displayMessage && message?has_content>
-                    <div class="alert alert-${message.type}">
-                        <#if message.type = 'success'><span class="${properties.kcFeedbackSuccessIcon!}"></span></#if>
-                        <#if message.type = 'warning'><span class="${properties.kcFeedbackWarningIcon!}"></span></#if>
-                        <#if message.type = 'error'><span class="${properties.kcFeedbackErrorIcon!}"></span></#if>
-                        <#if message.type = 'info'><span class="${properties.kcFeedbackInfoIcon!}"></span></#if>
-                        <span class="kc-feedback-text">${message.summary?no_esc}</span>
-                    </div>
-                </#if>
+          <#if displayMessage && message?has_content>
+              <div class="alert alert-${message.type}">
+                  <#if message.type = 'success'><span class="${properties.kcFeedbackSuccessIcon!}"></span></#if>
+                  <#if message.type = 'warning'><span class="${properties.kcFeedbackWarningIcon!}"></span></#if>
+                  <#if message.type = 'error'><span class="${properties.kcFeedbackErrorIcon!}"></span></#if>
+                  <#if message.type = 'info'><span class="${properties.kcFeedbackInfoIcon!}"></span></#if>
+                  <span class="kc-feedback-text">${message.summary?no_esc}</span>
+              </div>
+          </#if>
 
-                <div id="kc-form">
-                    <div id="kc-form-wrapper">
-                        <#nested "form">
-                    </div>
-                </div>
-
-                <#if displayInfo>
-                    <div id="kc-info" class="${properties.kcSignUpClass!}">
-                        <div id="kc-info-wrapper" class="${properties.kcInfoAreaWrapperClass!}">
-                            <#nested "info">
-                        </div>
-                    </div>
-                </#if>
+          <div id="kc-form" <#if realm.password && social.providers??>class="${properties.kcContentWrapperClass!}"</#if>>
+            <div id="kc-form-wrapper" <#if realm.password && social.providers??>class="${properties.kcFormSocialAccountContentClass!} ${properties.kcFormSocialAccountClass!}"</#if>>
+                <#nested "form">
             </div>
+          </div>
+
+          <#if displayInfo>
+              <div id="kc-info" class="${properties.kcSignUpClass!}">
+                  <div id="kc-info-wrapper" class="${properties.kcInfoAreaWrapperClass!}">
+                      <#nested "info">
+                  </div>
+              </div>
+          </#if>
         </div>
+      </div>
 
     </div>
   </div>
-
-
-    <!-- <div id="kc-logo"><a href="${properties.kcLogoLink!'#'}"><div id="kc-logo-wrapper"></div></a></div>
-
-    <div id="kc-container" class="${properties.kcContainerClass!}">
-        <div id="kc-container-wrapper" class="${properties.kcContainerWrapperClass!}">
-
-            <div id="kc-header" class="${properties.kcHeaderClass!}">
-                <div id="kc-header-wrapper" class="${properties.kcHeaderWrapperClass!}"><#nested "header"></div>
-            </div>
-
-            <#if realm.internationalizationEnabled>
-                <div id="kc-locale" class="${properties.kcLocaleClass!}">
-                    <div id="kc-locale-wrapper" class="${properties.kcLocaleWrapperClass!}">
-                        <div class="kc-dropdown" id="kc-locale-dropdown">
-                            <a href="#" id="kc-current-locale-link">${locale.current}</a>
-                            <ul>
-                                <#list locale.supported as l>
-                                    <li class="kc-dropdown-item"><a href="${l.url}">${l.label}</a></li>
-                                </#list>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </#if>
-
-            <div id="kc-content" class="${properties.kcContentClass!}">
-                <div id="kc-content-wrapper" class="${properties.kcContentWrapperClass!}">
-
-                    <#if displayMessage && message?has_content>
-                        <div class="${properties.kcFeedbackAreaClass!}">
-                            <div class="alert alert-${message.type}">
-                                <#if message.type = 'success'><span class="${properties.kcFeedbackSuccessIcon!}"></span></#if>
-                                <#if message.type = 'warning'><span class="${properties.kcFeedbackWarningIcon!}"></span></#if>
-                                <#if message.type = 'error'><span class="${properties.kcFeedbackErrorIcon!}"></span></#if>
-                                <#if message.type = 'info'><span class="${properties.kcFeedbackInfoIcon!}"></span></#if>
-                                <span class="kc-feedback-text">${message.summary?no_esc}</span>
-                            </div>
-                        </div>
-                    </#if>
-
-                    <div id="kc-form" class="${properties.kcFormAreaClass!}">
-                        <div id="kc-form-wrapper" class="${properties.kcFormAreaWrapperClass!}">
-                            <#nested "form">
-                        </div>
-                    </div>
-
-                    <#if displayInfo>
-                        <div id="kc-info" class="${properties.kcInfoAreaClass!}">
-                            <div id="kc-info-wrapper" class="${properties.kcInfoAreaWrapperClass!}">
-                                <#nested "info">
-                            </div>
-                        </div>
-                    </#if>
-                </div>
-            </div>
-        </div>
-    </div> -->
 </body>
 </html>
 </#macro>
