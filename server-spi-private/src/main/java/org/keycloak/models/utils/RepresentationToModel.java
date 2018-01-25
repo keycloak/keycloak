@@ -1084,6 +1084,17 @@ public class RepresentationToModel {
         }
 
 
+        if (resourceRep.getAuthenticationFlowBindingOverrides() != null) {
+            for (Map.Entry<String, String> entry : resourceRep.getAuthenticationFlowBindingOverrides().entrySet()) {
+                if (entry.getValue() == null || entry.getValue().trim().equals("")) {
+                    continue;
+                } else {
+                    client.setAuthenticationFlowBindingOverride(entry.getKey(), entry.getValue());
+                }
+            }
+        }
+
+
         if (resourceRep.getRedirectUris() != null) {
             for (String redirectUri : resourceRep.getRedirectUris()) {
                 client.addRedirectUri(redirectUri);
@@ -1199,6 +1210,22 @@ public class RepresentationToModel {
         if (rep.getAttributes() != null) {
             for (Map.Entry<String, String> entry : rep.getAttributes().entrySet()) {
                 resource.setAttribute(entry.getKey(), entry.getValue());
+            }
+        }
+        if (rep.getAttributes() != null) {
+            for (Map.Entry<String, String> entry : rep.getAttributes().entrySet()) {
+                resource.setAttribute(entry.getKey(), entry.getValue());
+            }
+        }
+
+        if (rep.getAuthenticationFlowBindingOverrides() != null) {
+            for (Map.Entry<String, String> entry : rep.getAuthenticationFlowBindingOverrides().entrySet()) {
+                if (entry.getValue() == null || entry.getValue().trim().equals("")) {
+                    resource.removeAuthenticationFlowBindingOverride(entry.getKey());
+                } else {
+                    resource.setAuthenticationFlowBindingOverride(entry.getKey(), entry.getValue());
+
+                }
             }
         }
 

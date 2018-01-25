@@ -119,6 +119,12 @@ public class ClientEntity {
     @CollectionTable(name="CLIENT_ATTRIBUTES", joinColumns={ @JoinColumn(name="CLIENT_ID") })
     protected Map<String, String> attributes = new HashMap<String, String>();
 
+    @ElementCollection
+    @MapKeyColumn(name="BINDING_NAME")
+    @Column(name="FLOW_ID", length = 4000)
+    @CollectionTable(name="CLIENT_AUTH_FLOW_BINDINGS", joinColumns={ @JoinColumn(name="CLIENT_ID") })
+    protected Map<String, String> authFlowBindings = new HashMap<String, String>();
+
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "client", cascade = CascadeType.REMOVE)
     Collection<ClientIdentityProviderMappingEntity> identityProviders = new ArrayList<ClientIdentityProviderMappingEntity>();
 
@@ -290,6 +296,14 @@ public class ClientEntity {
 
     public void setAttributes(Map<String, String> attributes) {
         this.attributes = attributes;
+    }
+
+    public Map<String, String> getAuthFlowBindings() {
+        return authFlowBindings;
+    }
+
+    public void setAuthFlowBindings(Map<String, String> authFlowBindings) {
+        this.authFlowBindings = authFlowBindings;
     }
 
     public String getProtocol() {

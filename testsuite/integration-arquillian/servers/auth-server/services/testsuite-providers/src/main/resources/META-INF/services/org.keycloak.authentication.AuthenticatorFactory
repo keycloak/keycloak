@@ -20,3 +20,4 @@ org.keycloak.testsuite.forms.PassThroughRegistration
 org.keycloak.testsuite.forms.ClickThroughAuthenticator
 org.keycloak.testsuite.authentication.ExpectedParamAuthenticatorFactory
 org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory
+org.keycloak.testsuite.forms.UsernameOnlyAuthenticator

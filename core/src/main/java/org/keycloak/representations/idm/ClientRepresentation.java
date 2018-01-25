@@ -56,6 +56,7 @@ public class ClientRepresentation {
     protected Boolean frontchannelLogout;
     protected String protocol;
     protected Map<String, String> attributes;
+    protected Map<String, String> authenticationFlowBindingOverrides;
     protected Boolean fullScopeAllowed;
     protected Integer nodeReRegistrationTimeout;
     protected Map<String, Integer> registeredNodes;
@@ -294,6 +295,14 @@ public class ClientRepresentation {
 
     public void setAttributes(Map<String, String> attributes) {
         this.attributes = attributes;
+    }
+
+    public Map<String, String> getAuthenticationFlowBindingOverrides() {
+        return authenticationFlowBindingOverrides;
+    }
+
+    public void setAuthenticationFlowBindingOverrides(Map<String, String> authenticationFlowBindingOverrides) {
+        this.authenticationFlowBindingOverrides = authenticationFlowBindingOverrides;
     }
 
     public Integer getNodeReRegistrationTimeout() {
