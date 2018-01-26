@@ -39,7 +39,7 @@ The fact that both providers above have a property called `foo` is just a
 coincidence.
 
 The type of each property value is interpreted by the provider.  However, there
-is one exception.  Consider the `jpa` provider for the `eventStore` API:
+is one exception.  Consider the `jpa` provider for the `eventsStore` SPI:
 [source,xml]
 ----
 <spi name="eventsStore">

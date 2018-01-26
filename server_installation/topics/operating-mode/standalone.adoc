@@ -40,5 +40,5 @@ is also used to configure non-infrastructure level things that are specific to {
 image:{project_images}/standalone-config-file.png[]
 
 WARNING: Any changes you make to this file while the server is running will not take effect and may even be overwritten
-      by the server.  Instead use the the command line scripting or the web console of {appserver_name}.  See
+      by the server.  Instead use the command line scripting or the web console of {appserver_name}.  See
       the link:{appserver_admindoc_link}[_{appserver_admindoc_name}_] for more information.

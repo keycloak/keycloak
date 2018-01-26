@@ -4,11 +4,11 @@
 Typical cluster deployment consists of the load balancer (reverse proxy) and 2 or more {project_name} servers on private network. For performance purposes,
 it may be useful if load balancer forwards all requests related to particular browser session to the same {project_name} backend node.
 
-The reason is, that {project_name} is using infinispan distributed cache under the covers for save data related to current authentication session and user session.
+The reason is, that {project_name} is using Infinispan distributed cache under the covers for save data related to current authentication session and user session.
 The Infinispan distributed caches are configured with one owner by default. That means that particular session is saved just on one cluster node and the other nodes need
 to lookup the session remotely if they want to access it.
 
-For example if authentication session with ID `123` is saved in the infinispan cache on `node1`, and then `node2` needs to lookup this session,
+For example if authentication session with ID `123` is saved in the Infinispan cache on `node1`, and then `node2` needs to lookup this session,
 it needs to send the request to `node1` over the network to return the particular session entity.
 
 It is beneficial if particular session entity is always available locally, which can be done with the help of sticky sessions.
@@ -20,7 +20,7 @@ but can be chosen according to some other criterias (client IP address etc). It 
 * {project_name} creates authentication session with random ID (eg. 123) and saves it to the Infinispan cache.
 * Infinispan distributed cache assigns the primary owner of the session based on the hash of session ID.
 See link:http://infinispan.org/docs/8.2.x/user_guide/user_guide.html#distribution_mode[Infinispan documentation] for more details around this.
-Let's assume that infinispan assigned `node2` to be the owner of this session.
+Let's assume that Infinispan assigned `node2` to be the owner of this session.
 * {project_name} creates the cookie `AUTH_SESSION_ID` with the format like `<session-id>.<owner-node-id>` . In our example case, it will be `123.node2` .
 * Response is returned to the user with the {project_name} login screen and the AUTH_SESSION_ID cookie in the browser
 
@@ -36,7 +36,7 @@ to the name of your route. For example, `-Djboss.node.name=node1` will use `node
 Infinispan caches and will be attached to the AUTH_SESSION_ID cookie when the node is the owner of the particular key. An example of the
 start up command with this system property can be seen in <<_example-setup-with-mod-cluster,Mod Cluster Example>>.
 
-Typically, the route name be the same name as your backend host, but it is not necessary. You can use a different route name,
+Typically, the route name should be the same name as your backend host, but it is not necessary. You can use a different route name,
 for example if you want to hide the host name of your {project_name} server inside your private network.
 
 ==== Disable adding the route
@@ -72,7 +72,7 @@ dedicated protocol called MCMP and they notify loadbalancer about various events
 
 Example setup will consist of the one {appserver_name} {appserver_version} load balancer node and two {project_name} nodes.
 
-Clustering example require MULTICAST to be enabled on machine's loopback network interface. This can be done by running the following commands under root privileges (on linux):
+Clustering example require MULTICAST to be enabled on machine's loopback network interface. This can be done by running the following commands under root privileges (on Linux):
 
 [source]
 ----

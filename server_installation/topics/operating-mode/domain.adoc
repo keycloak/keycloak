@@ -63,9 +63,9 @@ You'll be configuring things here like network connections, caches, and database
     <profiles>
         <profile name="auth-server-standalone">
             ...
-         </profile>
-       <profile name="auth-server-clustered">
-           ...
+        </profile>
+        <profile name="auth-server-clustered">
+            ...
         </profile>
 ----
 

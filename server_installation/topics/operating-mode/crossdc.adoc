@@ -16,7 +16,7 @@ image:{project_images}/cross-dc-architecture.png[]
 
 
 [[prerequisites]]
-==== Prerequisities
+==== Prerequisites
 
 As this is an advanced topic, we recommend you first read the following, which provide valuable background knowledge:
 
@@ -38,7 +38,7 @@ This section provides an introduction to the concepts and details of how {projec
 
 * A database is used to persist permanent data, such as user information.
 * An Infinispan cache is used to cache persistent data from the database and also to save some short-lived and frequently-changing metadata, such as for user sessions. 
-Infinispan is usually much faster then a database, however the data saved using Infinispan are not permanent and is not expected to persist across cluster restarts.  
+Infinispan is usually much faster than a database, however the data saved using Infinispan are not permanent and is not expected to persist across cluster restarts.  
 
 In our example architecture, there are two data centers called `site1` and `site2`. For Cross-Datacenter Replication, we must make sure that both sources of data work reliably and that {project_name} 
 servers from `site1` are eventually able to read the data saved by {project_name} servers on `site2` . 
@@ -105,7 +105,7 @@ endif::[]
 
 .Caching and invalidation of persistent data
 
-{project_name} uses Infinispan to cache persistent data to avoid many unecessary requests to the database. 
+{project_name} uses Infinispan to cache persistent data to avoid many unnecessary requests to the database. 
 Caching improves performance, however it adds an additional challenge. When some {project_name} server updates any data, all other {project_name} servers in all data centers need to be aware of it, so they invalidate particular data from their caches. {project_name} uses local Infinispan caches called `realms`, `users`, and `authorization` to cache persistent data.
 
 We use a separate cache, `work`, which is replicated across all data centers. The work cache itself does not cache 
@@ -123,7 +123,7 @@ sessions, which are valid for the length of a user's browser session. The caches
 .Brute force protection
 
 Finally the `loginFailures` cache is used to track data about failed logins, such as how many times the user `john` 
-entered a bad password. The details are described link:{adminguide_bruteforce_link}[here]. It is up to the admin whether this cache should be replicated across data centers. To have an accurate count of login failures, the replication is needed. On the other hand, not replicating this data can save some performance. So if performance is more important then accurate counts of login failures, the replication can be avoided. 
+entered a bad password. The details are described link:{adminguide_bruteforce_link}[here]. It is up to the admin whether this cache should be replicated across data centers. To have an accurate count of login failures, the replication is needed. On the other hand, not replicating this data can save some performance. So if performance is more important than accurate counts of login failures, the replication can be avoided. 
 
 For more detail about how caches can be configured see <<tuningcache>>.
 
@@ -519,7 +519,7 @@ This section contains some tips and options related to Cross-Datacenter Replicat
 
 * Every data center can have more database nodes if you want to support database failover and better reliability. Refer to the documentation of your database and JDBC driver for the details how to set this up on the database side and how the `KeycloakDS` datasource on Keycloak side needs to be configured.  
 
-* Every datacenter can have more {jdgserver_name} servers running in the cluster. This is useful if you want some failover and better fault tolerance. The HotRod protocol used for communication between {jdgserver_name} servers and {project_name} servers has a feature that {jdgserver_name} servers will automatically send new topology to the {project_name} servers about the change in the {jdgserver_name} cluster, so the remote store on {project_name} side will know to which {jdgserver_name} servers it can connect. Read the {jdgserver_name} and Wildfly documentation for more details.
+* Every datacenter can have more {jdgserver_name} servers running in the cluster. This is useful if you want some failover and better fault tolerance. The HotRod protocol used for communication between {jdgserver_name} servers and {project_name} servers has a feature that {jdgserver_name} servers will automatically send new topology to the {project_name} servers about the change in the {jdgserver_name} cluster, so the remote store on {project_name} side will know to which {jdgserver_name} servers it can connect. Read the {jdgserver_name} and WildFly documentation for more details.
  
 * It is highly recommended that a master {jdgserver_name} server is running in every site before the {project_name} servers in **any** site are started. As in our example, we started both `jdg1` and `jdg2` first, before all {project_name} servers. If you still need to run the {project_name} server and the backup site is offline, it is recommended to manually switch the backup site offline on the {jdgserver_name} servers on your site, as described in <<onoffline>>. If you do not manually switch the unavailable site offline, the first startup may fail or they may be some exceptions during startup until the backup site is taken offline automatically due the configured count of failed operations.
 
@@ -675,7 +675,7 @@ For example you have 2 sites LON and NYC. As long as your applications are deplo
 
 Generally, if you are in doubt and performance is not a blocker for you, it's safer to keep the caches in `SYNC` strategy.
 
-WARNING: Regarding the switch to SYNC/ASYNC backup, make sure that you edit the `strategy` attribute of the the `backup` element. For example like this:
+WARNING: Regarding the switch to SYNC/ASYNC backup, make sure that you edit the `strategy` attribute of the `backup` element. For example like this:
 ```xml
 <backup site="site2" failure-policy="FAIL" strategy="ASYNC" enabled="true">
 ```
