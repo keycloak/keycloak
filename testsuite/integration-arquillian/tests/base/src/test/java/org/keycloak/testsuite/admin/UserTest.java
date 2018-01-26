@@ -685,11 +685,11 @@ public class UserTest extends AbstractAdminTest {
 
         assertTrue(body.getText().contains("Update Password"));
         assertTrue(body.getText().contains("your Admin-client-test account"));
-        assertTrue(body.getText().contains("This link will expire within 720 minutes"));
+        assertTrue(body.getText().contains("This link will expire within 12 hours"));
 
         assertTrue(body.getHtml().contains("Update Password"));
         assertTrue(body.getHtml().contains("your Admin-client-test account"));
-        assertTrue(body.getHtml().contains("This link will expire within 720 minutes"));
+        assertTrue(body.getHtml().contains("This link will expire within 12 hours"));
 
         String link = MailUtils.getPasswordResetEmailLink(body);
 
