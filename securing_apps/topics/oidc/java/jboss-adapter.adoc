@@ -26,7 +26,7 @@ Both methods are described in this section.
 
 Adapters are available as a separate archive depending on what server version you are using.
 
-NOTE: Neither WildFly nor EAP should be running when you install the adapter. If you have either one running, you must stop it before installing and then restart it after installation is complete.
+NOTE: {appserver_name} should be running when you install the adapter. If you have either one running, you must stop it before installing and then restart it after installation is complete.
 
 ifeval::[{project_community}==true]
 Install on Wildfly 9, 10 or 11:
