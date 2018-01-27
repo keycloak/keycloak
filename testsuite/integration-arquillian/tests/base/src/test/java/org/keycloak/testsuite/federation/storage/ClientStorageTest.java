@@ -132,6 +132,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
     public void testBrowser() throws Exception {
         String clientId = "hardcoded-client";
         testBrowser(clientId);
+        //Thread.sleep(10000000);
     }
 
     private void testBrowser(String clientId) {

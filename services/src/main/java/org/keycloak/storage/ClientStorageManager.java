@@ -25,14 +25,13 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.storage.client.ClientLookupProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.client.ClientStorageProviderFactory;
 import org.keycloak.storage.client.ClientStorageProviderModel;
-import org.keycloak.storage.user.UserLookupProvider;
 
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -163,9 +162,12 @@ public class ClientStorageManager implements ClientProvider {
         return session.clientLocalStorage().addClient(realm, id, clientId);
     }
 
+
+
+
     @Override
     public List<ClientModel> getClients(RealmModel realm) {
-        return session.clientLocalStorage().getClients(realm);
+       return session.clientLocalStorage().getClients(realm);
     }
 
     @Override

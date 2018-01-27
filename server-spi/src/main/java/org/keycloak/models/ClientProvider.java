@@ -27,11 +27,11 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public interface ClientProvider extends ClientLookupProvider, Provider {
+    List<ClientModel> getClients(RealmModel realm);
+
     ClientModel addClient(RealmModel realm, String clientId);
 
     ClientModel addClient(RealmModel realm, String id, String clientId);
-
-    List<ClientModel> getClients(RealmModel realm);
 
     RoleModel addClientRole(RealmModel realm, ClientModel client, String name);
 

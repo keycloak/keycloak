@@ -23,7 +23,6 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.storage.StorageId;
-import org.keycloak.storage.client.AbstractClientStorageAdapter;
 import org.keycloak.storage.client.AbstractReadOnlyClientStorageAdapter;
 import org.keycloak.storage.client.ClientLookupProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
@@ -55,13 +54,13 @@ public class HardcodedClientStorageProvider implements ClientStorageProvider, Cl
     public ClientModel getClientById(String id, RealmModel realm) {
         StorageId storageId = new StorageId(id);
         final String clientId = storageId.getExternalId();
-        if (clientId.equals(clientId)) return new ClientAdapter(realm);
+        if (this.clientId.equals(clientId)) return new ClientAdapter(realm);
         return null;
     }
 
     @Override
     public ClientModel getClientByClientId(String clientId, RealmModel realm) {
-        if (clientId.equals(clientId)) return new ClientAdapter(realm);
+        if (this.clientId.equals(clientId)) return new ClientAdapter(realm);
         return null;
     }
 
@@ -155,7 +154,7 @@ public class HardcodedClientStorageProvider implements ClientStorageProvider, Cl
 
         @Override
         public String getProtocol() {
-            return null;
+            return "openid-connect";
         }
 
         @Override

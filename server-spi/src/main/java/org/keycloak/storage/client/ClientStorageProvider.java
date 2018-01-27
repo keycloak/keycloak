@@ -25,6 +25,9 @@ import org.keycloak.storage.client.ClientLookupProvider;
 /**
  * Base interface for components that want to provide an alternative storage mechanism for clients
  *
+ * This is currently a private incomplete SPI.  Please discuss on dev list if you want us to complete it or want to do the work yourself.
+ * This work is described in KEYCLOAK-6408 JIRA issue.
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */

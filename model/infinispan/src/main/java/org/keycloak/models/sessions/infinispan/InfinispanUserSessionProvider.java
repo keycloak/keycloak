@@ -296,17 +296,48 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         return getUserSessions(realm, client, firstResult, maxResults, false);
     }
 
+    @Override
+    public List<UserSessionModel> getOfflineUserSessions(RealmModel realm) {
+        return getOfflineUserSessions(realm, -1, -1);
+    }
+
+    @Override
+    public List<UserSessionModel> getOfflineUserSessions(RealmModel realm, int first, int max) {
+        return getUserSessions(realm, first, max, true);
+    }
+
     protected List<UserSessionModel> getUserSessions(final RealmModel realm, ClientModel client, int firstResult, int maxResults, final boolean offline) {
+        final String clientUuid = client.getId();
+        UserSessionPredicate predicate = UserSessionPredicate.create(realm.getId()).client(clientUuid);
+
+        return getUserSessionModels(realm, firstResult, maxResults, offline, predicate);
+    }
+
+    @Override
+    public List<UserSessionModel> getUserSessions(RealmModel realm) {
+        return getUserSessions(realm, -1, -1);
+    }
+
+    @Override
+    public List<UserSessionModel> getUserSessions(RealmModel realm, int firstResult, int maxResults) {
+        return getUserSessions(realm, firstResult, maxResults, false);
+    }
+
+    protected List<UserSessionModel> getUserSessions(final RealmModel realm, int firstResult, int maxResults, final boolean offline) {
+        UserSessionPredicate predicate = UserSessionPredicate.create(realm.getId());
+
+        return getUserSessionModels(realm, firstResult, maxResults, offline, predicate);
+    }
+
+    protected List<UserSessionModel> getUserSessionModels(RealmModel realm, int firstResult, int maxResults, boolean offline, UserSessionPredicate predicate) {
         Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getCache(offline);
         cache = CacheDecorators.skipCacheLoaders(cache);
 
         Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache = getClientSessionCache(offline);
         Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCacheDecorated = CacheDecorators.skipCacheLoaders(clientSessionCache);
 
-        final String clientUuid = client.getId();
-
         Stream<UserSessionEntity> stream = cache.entrySet().stream()
-                .filter(UserSessionPredicate.create(realm.getId()).client(clientUuid))
+                .filter(predicate)
                 .map(Mappers.userSessionEntity())
                 .sorted(Comparators.userSessionLastSessionRefresh());
 
@@ -329,7 +360,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
         return sessions;
     }
-
 
     @Override
     public UserSessionModel getUserSessionWithPredicate(RealmModel realm, String id, boolean offline, Predicate<UserSessionModel> predicate) {

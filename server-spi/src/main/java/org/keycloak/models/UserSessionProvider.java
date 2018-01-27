@@ -35,9 +35,11 @@ public interface UserSessionProvider extends Provider {
     UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId);
     UserSessionModel createUserSession(String id, RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId);
     UserSessionModel getUserSession(RealmModel realm, String id);
+    List<UserSessionModel> getUserSessions(RealmModel realm);
     List<UserSessionModel> getUserSessions(RealmModel realm, UserModel user);
     List<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client);
     List<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client, int firstResult, int maxResults);
+    List<UserSessionModel> getUserSessions(RealmModel realm, int firstResult, int maxResults);
     List<UserSessionModel> getUserSessionByBrokerUserId(RealmModel realm, String brokerUserId);
     UserSessionModel getUserSessionByBrokerSessionId(RealmModel realm, String brokerSessionId);
 
@@ -75,9 +77,11 @@ public interface UserSessionProvider extends Provider {
     /** Will automatically attach newly created offline client session to the offlineUserSession **/
     AuthenticatedClientSessionModel createOfflineClientSession(AuthenticatedClientSessionModel clientSession, UserSessionModel offlineUserSession);
     List<UserSessionModel> getOfflineUserSessions(RealmModel realm, UserModel user);
+    List<UserSessionModel> getOfflineUserSessions(RealmModel realm);
 
     long getOfflineSessionsCount(RealmModel realm, ClientModel client);
     List<UserSessionModel> getOfflineUserSessions(RealmModel realm, ClientModel client, int first, int max);
+    List<UserSessionModel> getOfflineUserSessions(RealmModel realm, int first, int max);
 
     /** Triggered by persister during pre-load. It optionally imports authenticatedClientSessions too if requested. Otherwise the imported UserSession will have empty list of AuthenticationSessionModel **/
     UserSessionModel importUserSession(UserSessionModel persistentUserSession, boolean offline, boolean importAuthenticatedClientSessions);
