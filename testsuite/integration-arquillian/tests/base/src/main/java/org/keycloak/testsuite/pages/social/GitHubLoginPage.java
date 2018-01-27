@@ -17,6 +17,8 @@
 
 package org.keycloak.testsuite.pages.social;
 
+import org.keycloak.testsuite.util.UIUtils;
+import org.keycloak.testsuite.util.URLUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -33,11 +35,21 @@ public class GitHubLoginPage extends AbstractSocialLoginPage {
     @FindBy(name = "commit")
     private WebElement loginButton;
 
+    @FindBy(xpath = "//input[@type='submit']")
+    private WebElement logoutButton;
+
     @Override
     public void login(String user, String password) {
         usernameInput.clear();
         usernameInput.sendKeys(user);
         passwordInput.sendKeys(password);
         loginButton.click();
+    }
+
+    @Override
+    public void logout() {
+        log.info("performing logout from GitHub");
+        URLUtils.navigateToUri("https://github.com/logout", true);
+        UIUtils.clickLink(logoutButton);
     }
 }

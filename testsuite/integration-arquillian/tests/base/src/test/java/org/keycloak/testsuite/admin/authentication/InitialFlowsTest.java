@@ -140,10 +140,12 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
         flow = newFlow("clients", "Base authentication for clients", "client-flow", true, true);
         addExecExport(flow, null, false, "client-secret", false, null, ALTERNATIVE, 10);
         addExecExport(flow, null, false, "client-jwt", false, null, ALTERNATIVE, 20);
+        addExecExport(flow, null, false, "client-secret-jwt", false, null, ALTERNATIVE, 30);
 
         execs = new LinkedList<>();
         addExecInfo(execs, "Client Id and Secret", "client-secret", false, 0, 0, ALTERNATIVE, null, new String[]{ALTERNATIVE, DISABLED});
         addExecInfo(execs, "Signed Jwt", "client-jwt", false, 0, 1, ALTERNATIVE, null, new String[]{ALTERNATIVE, DISABLED});
+        addExecInfo(execs, "Signed Jwt with Client Secret", "client-secret-jwt", false, 0, 2, ALTERNATIVE, null, new String[]{ALTERNATIVE, DISABLED});
         expected.add(new FlowExecutions(flow, execs));
 
         flow = newFlow("direct grant", "OpenID Connect Resource Owner Grant", "basic-flow", true, true);

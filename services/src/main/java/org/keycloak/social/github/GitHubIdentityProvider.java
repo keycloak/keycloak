@@ -18,6 +18,8 @@
 package org.keycloak.social.github;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import java.util.Iterator;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
@@ -36,6 +38,7 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
 	public static final String AUTH_URL = "https://github.com/login/oauth/authorize";
 	public static final String TOKEN_URL = "https://github.com/login/oauth/access_token";
 	public static final String PROFILE_URL = "https://api.github.com/user";
+	public static final String EMAIL_URL = "https://api.github.com/user/emails";
 	public static final String DEFAULT_SCOPE = "user:email";
 
 	public GitHubIdentityProvider(KeycloakSession session, OAuth2IdentityProviderConfig config) {
@@ -78,10 +81,33 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
 		try {
 			JsonNode profile = SimpleHttp.doGet(PROFILE_URL, session).header("Authorization", "Bearer " + accessToken).asJson();
 
-			return extractIdentityFromProfile(null, profile);
+			BrokeredIdentityContext user = extractIdentityFromProfile(null, profile);
+
+			if (user.getEmail() == null) {
+				user.setEmail(searchEmail(accessToken));
+			}
+
+			return user;
 		} catch (Exception e) {
 			throw new IdentityBrokerException("Could not obtain user profile from github.", e);
 		}
+	}
+
+	private String searchEmail(String accessToken) {
+		try {
+			ArrayNode emails = (ArrayNode) SimpleHttp.doGet(EMAIL_URL, session).header("Authorization", "Bearer " + accessToken).asJson();
+
+			Iterator<JsonNode> loop = emails.elements();
+			while (loop.hasNext()) {
+				JsonNode mail = loop.next();
+				if (mail.get("primary").asBoolean()) {
+					return getJsonProperty(mail, "email");
+				}
+			}
+		} catch (Exception e) {
+			throw new IdentityBrokerException("Could not obtain user email from github.", e);
+		}
+		throw new IdentityBrokerException("Primary email from github is not found.");
 	}
 
 	@Override
