@@ -33,7 +33,7 @@ public class ClientStorageProviderSpi implements Spi {
 
     @Override
     public boolean isInternal() {
-        return false;
+        return true;
     }
 
     @Override

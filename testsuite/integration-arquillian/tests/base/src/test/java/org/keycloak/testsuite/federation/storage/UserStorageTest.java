@@ -41,7 +41,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import static org.keycloak.storage.UserStorageProviderModel.CACHE_POLICY;
-import org.keycloak.storage.UserStorageProviderModel.CachePolicy;
+import org.keycloak.storage.CacheableStorageProviderModel.CachePolicy;
 import static org.keycloak.storage.UserStorageProviderModel.EVICTION_DAY;
 import static org.keycloak.storage.UserStorageProviderModel.EVICTION_HOUR;
 import static org.keycloak.storage.UserStorageProviderModel.EVICTION_MINUTE;

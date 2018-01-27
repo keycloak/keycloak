@@ -137,7 +137,7 @@ public class CacheableStorageProviderModel extends PrioritizedComponentModel {
         getConfig().putSingle(CACHE_INVALID_BEFORE, Long.toString(cacheInvalidBefore));
     }
 
-    public static enum CachePolicy {
+    public enum CachePolicy {
         NO_CACHE,
         DEFAULT,
         EVICT_DAILY,

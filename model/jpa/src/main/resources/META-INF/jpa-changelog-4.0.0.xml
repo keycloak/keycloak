@@ -29,4 +29,36 @@
         </createTable>
         <addPrimaryKey columnNames="CLIENT_ID, BINDING_NAME" constraintName="C_CLI_FLOW_BIND" tableName="CLIENT_AUTH_FLOW_BINDINGS"/>
     </changeSet>
+    <changeSet author="bburke@redhat.com" id="4.0.0-CLEANUP-UNUSED-TABLE">
+        <dropIndex tableName="CLIENT_IDENTITY_PROV_MAPPING" indexName="IDX_CLIENT_ID_PROV_MAP_CLIENT"/>
+        <dropPrimaryKey tableName="CLIENT_IDENTITY_PROV_MAPPING" constraintName="CONSTR_CLIENT_IDEN_PROV_MAP"/>
+        <dropUniqueConstraint tableName="CLIENT_IDENTITY_PROV_MAPPING" constraintName="UK_7CAELWNIBJI49AVXSRTUF6XJ12"/>
+        <dropTable tableName="CLIENT_IDENTITY_PROV_MAPPING"/>
+    </changeSet>
+    <changeSet author="bburke@redhat.com" id="4.0.0-KEYCLOAK-6228">
+        <!-- Modifying some columns so that CLIENT_ID is 255.  Drop foreign key constraints too that referenced CLIENT tablename.
+             This is needed for client storage SPI but only needed for tables that might reference a federated client -->
+
+        <!--  Modify USER_CONSENT -->
+        <dropUniqueConstraint constraintName="UK_JKUWUVD56ONTGSUHOGM8UEWRT" tableName="USER_CONSENT"/>
+        <modifyDataType tableName="USER_CONSENT" columnName="CLIENT_ID" newDataType="VARCHAR(255)"/>
+        <addUniqueConstraint columnNames="CLIENT_ID, USER_ID" constraintName="UK_JKUWUVD56ONTGSUHOGM8UEWRT" tableName="USER_CONSENT"/>
+
+        <!-- Modify CLIENT_NODE_REGISTRATIONS -->
+        <dropForeignKeyConstraint constraintName="FK4129723BA992F594" baseTableName="CLIENT"/>
+        <modifyDataType tableName="CLIENT_NODE_REGISTRATIONS" columnName="CLIENT_ID" newDataType="VARCHAR(255)"/>
+
+        <!-- Modify OFFLINE_CLIENT_SESSION -->
+        <dropPrimaryKey tableName="OFFLINE_CLIENT_SESSION" constraintName="CONSTRAINT_OFFL_CL_SES_PK3"/>
+        <modifyDataType tableName="OFFLINE_CLIENT_SESSION" columnName="CLIENT_ID" newDataType="VARCHAR(255)"/>
+        <addPrimaryKey columnNames="USER_SESSION_ID,CLIENT_ID, OFFLINE_FLAG" constraintName="CONSTRAINT_OFFL_CL_SES_PK3" tableName="OFFLINE_CLIENT_SESSION"/>
+
+        <!-- FED_USER_CONSENT -->
+        <dropIndex tableName="FED_USER_CONSENT" indexName="IDX_FU_CONSENT"/>
+        <modifyDataType tableName="FED_USER_CONSENT" columnName="CLIENT_ID" newDataType="VARCHAR(255)"/>
+        <createIndex tableName="FED_USER_CONSENT" indexName="IDX_FU_CONSENT">
+            <column name="USER_ID" type="VARCHAR(255)" />
+            <column name="CLIENT_ID" type="VARCHAR(36)" />
+        </createIndex>
+    </changeSet>
 </databaseChangeLog>

@@ -479,13 +479,13 @@ public class RealmCacheSession implements CacheRealmProvider {
 
     @Override
     public ClientModel addClient(RealmModel realm, String clientId) {
-        ClientModel client = getClientDelegate().addClient(realm, clientId);
+        ClientModel client = getRealmDelegate().addClient(realm, clientId);
         return addedClient(realm, client);
     }
 
     @Override
     public ClientModel addClient(RealmModel realm, String id, String clientId) {
-        ClientModel client = getClientDelegate().addClient(realm, id, clientId);
+        ClientModel client = getRealmDelegate().addClient(realm, id, clientId);
         return addedClient(realm, client);
     }
 
@@ -550,7 +550,7 @@ public class RealmCacheSession implements CacheRealmProvider {
             if (client == null) {
                 // TODO: Handle with cluster invalidations too
                 invalidations.add(cacheKey);
-                return getClientDelegate().getClients(realm);
+                return getRealmDelegate().getClients(realm);
             }
             list.add(client);
         }
@@ -573,7 +573,7 @@ public class RealmCacheSession implements CacheRealmProvider {
         for (RoleModel role : client.getRoles()) {
             roleRemovalInvalidations(role.getId(), role.getName(), client.getId());
         }
-        return getClientDelegate().removeClient(id, realm);
+        return getRealmDelegate().removeClient(id, realm);
     }
 
 
@@ -636,7 +636,7 @@ public class RealmCacheSession implements CacheRealmProvider {
         String cacheKey = getRolesCacheKey(client.getId());
         boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(client.getId());
         if (queryDB) {
-            return getClientDelegate().getClientRoles(realm, client);
+            return getRealmDelegate().getClientRoles(realm, client);
         }
 
         RoleListQuery query = cache.get(cacheKey, RoleListQuery.class);
@@ -646,7 +646,7 @@ public class RealmCacheSession implements CacheRealmProvider {
 
         if (query == null) {
             Long loaded = cache.getCurrentRevision(cacheKey);
-            Set<RoleModel> model = getClientDelegate().getClientRoles(realm, client);
+            Set<RoleModel> model = getRealmDelegate().getClientRoles(realm, client);
             if (model == null) return null;
             Set<String> ids = new HashSet<>();
             for (RoleModel role : model) ids.add(role.getId());
@@ -660,7 +660,7 @@ public class RealmCacheSession implements CacheRealmProvider {
             RoleModel role = session.realms().getRoleById(id, realm);
             if (role == null) {
                 invalidations.add(cacheKey);
-                return getClientDelegate().getClientRoles(realm, client);
+                return getRealmDelegate().getClientRoles(realm, client);
             }
             list.add(role);
         }
@@ -674,7 +674,7 @@ public class RealmCacheSession implements CacheRealmProvider {
 
     @Override
     public RoleModel addClientRole(RealmModel realm, ClientModel client, String id, String name) {
-        RoleModel role = getClientDelegate().addClientRole(realm, client, id, name);
+        RoleModel role = getRealmDelegate().addClientRole(realm, client, id, name);
         addedRole(role.getId(), client.getId());
         return role;
     }
@@ -714,7 +714,7 @@ public class RealmCacheSession implements CacheRealmProvider {
         String cacheKey = getRoleByNameCacheKey(client.getId(), name);
         boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(client.getId());
         if (queryDB) {
-            return getClientDelegate().getClientRole(realm, client, name);
+            return getRealmDelegate().getClientRole(realm, client, name);
         }
 
         RoleListQuery query = cache.get(cacheKey, RoleListQuery.class);
@@ -724,7 +724,7 @@ public class RealmCacheSession implements CacheRealmProvider {
 
         if (query == null) {
             Long loaded = cache.getCurrentRevision(cacheKey);
-            RoleModel model = getClientDelegate().getClientRole(realm, client, name);
+            RoleModel model = getRealmDelegate().getClientRole(realm, client, name);
             if (model == null) return null;
             query = new RoleListQuery(loaded, cacheKey, realm, model.getId(), client.getClientId());
             logger.tracev("adding client role cache miss: client {0} key {1}", client.getClientId(), cacheKey);
@@ -734,7 +734,7 @@ public class RealmCacheSession implements CacheRealmProvider {
         RoleModel role = getRoleById(query.getRoles().iterator().next(), realm);
         if (role == null) {
             invalidations.add(cacheKey);
-            return getClientDelegate().getClientRole(realm, client, name);
+            return getRealmDelegate().getClientRole(realm, client, name);
         }
         return role;
     }
@@ -1025,7 +1025,7 @@ public class RealmCacheSession implements CacheRealmProvider {
             logger.tracev("adding client by id cache miss: {0}", cached.getClientId());
             cache.addRevisioned(cached, startupRevision);
         } else if (invalidations.contains(id)) {
-            return getClientDelegate().getClientById(id, realm);
+            return getRealmDelegate().getClientById(id, realm);
         } else if (managedApplications.containsKey(id)) {
             return managedApplications.get(id);
         }

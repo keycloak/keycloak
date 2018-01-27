@@ -32,6 +32,7 @@ import org.keycloak.storage.client.ClientStorageProviderFactory;
 import org.keycloak.storage.client.ClientStorageProviderModel;
 import org.keycloak.storage.user.UserLookupProvider;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -186,7 +187,8 @@ public class ClientStorageManager implements ClientProvider {
     @Override
     public RoleModel getClientRole(RealmModel realm, ClientModel client, String name) {
         if (!StorageId.isLocalStorage(client.getId())) {
-            throw new RuntimeException("Federated clients do not support this operation");
+            //throw new RuntimeException("Federated clients do not support this operation");
+            return null;
         }
         return session.clientLocalStorage().getClientRole(realm, client, name);
     }
@@ -194,9 +196,15 @@ public class ClientStorageManager implements ClientProvider {
     @Override
     public Set<RoleModel> getClientRoles(RealmModel realm, ClientModel client) {
         if (!StorageId.isLocalStorage(client.getId())) {
-            throw new RuntimeException("Federated clients do not support this operation");
+            //throw new RuntimeException("Federated clients do not support this operation");
+            return Collections.EMPTY_SET;
         }
         return session.clientLocalStorage().getClientRoles(realm, client);
+    }
+
+    @Override
+    public void close() {
+
     }
 
     @Override
@@ -206,5 +214,7 @@ public class ClientStorageManager implements ClientProvider {
         }
         return session.clientLocalStorage().removeClient(id, realm);
     }
+
+
 
 }
