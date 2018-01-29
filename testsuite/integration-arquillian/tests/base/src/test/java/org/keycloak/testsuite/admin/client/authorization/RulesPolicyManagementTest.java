@@ -97,7 +97,7 @@ public class RulesPolicyManagementTest extends AbstractPolicyManagementTest {
         representation.setLogic(Logic.NEGATIVE);
         representation.setArtifactGroupId("org.keycloak");
         representation.setArtifactId("photoz-authz-policy");
-        representation.setArtifactVersion(Version.VERSION);
+        representation.setArtifactVersion(System.getProperty("project.version"));
         representation.setModuleName("PhotozAuthzOwnerPolicy");
         representation.setSessionName("MainOwnerSession");
         representation.setScannerPeriod("1");
