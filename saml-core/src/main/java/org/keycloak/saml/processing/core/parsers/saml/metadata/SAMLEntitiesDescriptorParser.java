@@ -23,7 +23,7 @@ import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ParsingException;
-import org.keycloak.saml.common.parsers.ParserNamespaceSupport;
+import org.keycloak.saml.common.parsers.AbstractParser;
 import org.keycloak.saml.common.util.StaxParserUtil;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 import org.w3c.dom.Element;
@@ -34,6 +34,7 @@ import javax.xml.stream.events.Attribute;
 import javax.xml.stream.events.EndElement;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
+import org.keycloak.saml.common.parsers.StaxParser;
 
 /**
  * Parse the SAML Entities Descriptor
@@ -41,15 +42,13 @@ import javax.xml.stream.events.XMLEvent;
  * @author Anil.Saldhana@redhat.com
  * @since Jan 31, 2011
  */
-public class SAMLEntitiesDescriptorParser extends AbstractDescriptorParser implements ParserNamespaceSupport {
+public class SAMLEntitiesDescriptorParser extends AbstractParser {
 
     private static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
 
-    private final String EDT = JBossSAMLConstants.ENTITIES_DESCRIPTOR.get();
+    private static final String EDT = JBossSAMLConstants.ENTITIES_DESCRIPTOR.get();
 
     public Object parse(XMLEventReader xmlEventReader) throws ParsingException {
-
-        xmlEventReader = filterWhiteSpaceCharacters(xmlEventReader);
 
         StartElement startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
         StaxParserUtil.validate(startElement, EDT);
@@ -93,7 +92,7 @@ public class SAMLEntitiesDescriptorParser extends AbstractDescriptorParser imple
             if (JBossSAMLConstants.ENTITY_DESCRIPTOR.get().equals(localPart)) {
                 SAMLEntityDescriptorParser entityParser = new SAMLEntityDescriptorParser();
                 entitiesDescriptorType.addEntityDescriptor(entityParser.parse(xmlEventReader));
-            } else if (JBossSAMLConstants.EXTENSIONS.get().equalsIgnoreCase(localPart)) {
+            } else if (JBossSAMLConstants.EXTENSIONS__METADATA.get().equalsIgnoreCase(localPart)) {
                 entitiesDescriptorType.setExtensions(parseExtensions(xmlEventReader));
             } else if (JBossSAMLConstants.ENTITIES_DESCRIPTOR.get().equalsIgnoreCase(localPart)) {
                 SAMLEntitiesDescriptorParser parser = new SAMLEntitiesDescriptorParser();
@@ -106,12 +105,6 @@ public class SAMLEntitiesDescriptorParser extends AbstractDescriptorParser imple
         return entitiesDescriptorType;
     }
 
-    public boolean supports(QName qname) {
-        String nsURI = qname.getNamespaceURI();
-        String localPart = qname.getLocalPart();
-
-        return nsURI.equals(JBossSAMLURIConstants.ASSERTION_NSURI.get()) && localPart.equals(EDT);
-    }
 
     private ExtensionsType parseExtensions(XMLEventReader xmlEventReader) throws ParsingException {
         ExtensionsType extensions = new ExtensionsType();

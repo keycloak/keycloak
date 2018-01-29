@@ -49,7 +49,6 @@ import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.util.StaxParserUtil;
 import org.keycloak.saml.processing.core.parsers.saml.SAML11SubjectParser;
 import org.keycloak.saml.processing.core.saml.v1.SAML11Constants;
-import org.keycloak.saml.processing.core.saml.v2.util.SignatureUtil;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 
 import org.w3c.dom.Element;
@@ -61,6 +60,8 @@ import javax.xml.stream.events.EndElement;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 import java.net.URI;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 /**
  * Utility for parsing SAML 1.1 payload
@@ -106,11 +107,11 @@ public class SAML11ParserUtil {
             if (xmlEvent instanceof EndElement) {
                 xmlEvent = StaxParserUtil.getNextEvent(xmlEventReader);
                 EndElement endElement = (EndElement) xmlEvent;
-                String endElementTag = StaxParserUtil.getEndElementName(endElement);
+                String endElementTag = StaxParserUtil.getElementName(endElement);
                 if (endElementTag.equals(SAML11Constants.AUTHENTICATION_STATEMENT))
                     break;
                 else
-                    throw logger.parserUnknownEndElement(endElementTag);
+                    throw logger.parserUnknownEndElement(endElementTag, xmlEvent.getLocation());
             }
             startElement = null;
 
@@ -122,7 +123,7 @@ public class SAML11ParserUtil {
             if (startElement == null)
                 break;
 
-            String tag = StaxParserUtil.getStartElementName(startElement);
+            String tag = StaxParserUtil.getElementName(startElement);
 
             if (JBossSAMLConstants.SUBJECT.get().equalsIgnoreCase(tag)) {
                 SAML11SubjectParser subjectParser = new SAML11SubjectParser();
@@ -199,7 +200,7 @@ public class SAML11ParserUtil {
             if (xmlEvent instanceof StartElement) {
                 startElement = (StartElement) xmlEvent;
 
-                String startTag = StaxParserUtil.getStartElementName(startElement);
+                String startTag = StaxParserUtil.getElementName(startElement);
 
                 if (startTag.equals(SAML11Constants.CONFIRMATION_METHOD)) {
                     startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
@@ -264,7 +265,7 @@ public class SAML11ParserUtil {
         XMLEvent xmlEvent = StaxParserUtil.peek(xmlEventReader);
         if (!(xmlEvent instanceof EndElement)) {
             startElement = StaxParserUtil.peekNextStartElement(xmlEventReader);
-            String tag = StaxParserUtil.getStartElementName(startElement);
+            String tag = StaxParserUtil.getElementName(startElement);
             if (tag.equals(WSTrustConstants.XMLDSig.KEYINFO)) {
                 KeyInfoType keyInfo = parseKeyInfo(xmlEventReader);
                 subjectConfirmationData.setAnyType(keyInfo);
@@ -371,7 +372,7 @@ public class SAML11ParserUtil {
             startElement = StaxParserUtil.peekNextStartElement(xmlEventReader);
             if (startElement == null)
                 break;
-            String tag = StaxParserUtil.getStartElementName(startElement);
+            String tag = StaxParserUtil.getElementName(startElement);
 
             if (JBossSAMLConstants.ATTRIBUTE.get().equals(tag))
                 break;
@@ -440,7 +441,7 @@ public class SAML11ParserUtil {
             startElement = StaxParserUtil.peekNextStartElement(xmlEventReader);
             if (startElement == null)
                 break;
-            String tag = StaxParserUtil.getStartElementName(startElement);
+            String tag = StaxParserUtil.getElementName(startElement);
 
             if (SAML11Constants.ACTION.equals(tag)) {
                 startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
@@ -512,14 +513,14 @@ public class SAML11ParserUtil {
             startElement = StaxParserUtil.peekNextStartElement(xmlEventReader);
             if (startElement == null)
                 break;
-            String tag = StaxParserUtil.getStartElementName(startElement);
+            String tag = StaxParserUtil.getElementName(startElement);
 
             if (SAML11Constants.AUDIENCE_RESTRICTION_CONDITION.equals(tag)) {
                 startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
                 SAML11AudienceRestrictionCondition restrictCond = new SAML11AudienceRestrictionCondition();
 
                 startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
-                if (StaxParserUtil.getStartElementName(startElement).equals(JBossSAMLConstants.AUDIENCE.get())) {
+                if (StaxParserUtil.getElementName(startElement).equals(JBossSAMLConstants.AUDIENCE.get())) {
                     restrictCond.add(URI.create(StaxParserUtil.getElementText(xmlEventReader)));
                 }
                 EndElement theEndElement = StaxParserUtil.getNextEndElement(xmlEventReader);
@@ -542,15 +543,15 @@ public class SAML11ParserUtil {
         while (xmlEventReader.hasNext()) {
             xmlEvent = StaxParserUtil.peek(xmlEventReader);
             if (xmlEvent instanceof EndElement) {
-                tag = StaxParserUtil.getEndElementName((EndElement) xmlEvent);
+                tag = StaxParserUtil.getElementName((EndElement) xmlEvent);
                 if (tag.equals(WSTrustConstants.XMLDSig.KEYINFO)) {
                     xmlEvent = StaxParserUtil.getNextEndElement(xmlEventReader);
                     break;
                 } else
-                    throw logger.parserUnknownEndElement(tag);
+                    throw logger.parserUnknownEndElement(tag, xmlEvent.getLocation());
             }
             startElement = (StartElement) xmlEvent;
-            tag = StaxParserUtil.getStartElementName(startElement);
+            tag = StaxParserUtil.getElementName(startElement);
             if (tag.equals(WSTrustConstants.XMLEnc.ENCRYPTED_KEY)) {
                 keyInfo.addContent(StaxParserUtil.getDOMElement(xmlEventReader));
             } else if (tag.equals(WSTrustConstants.XMLDSig.X509DATA)) {
@@ -574,7 +575,7 @@ public class SAML11ParserUtil {
                 KeyValueType keyValue = null;
 
                 startElement = StaxParserUtil.peekNextStartElement(xmlEventReader);
-                tag = StaxParserUtil.getStartElementName(startElement);
+                tag = StaxParserUtil.getElementName(startElement);
                 if (tag.equals(WSTrustConstants.XMLDSig.RSA_KEYVALUE)) {
                     keyValue = parseRSAKeyValue(xmlEventReader);
                 } else if (tag.equals(WSTrustConstants.XMLDSig.DSA_KEYVALUE)) {
@@ -603,16 +604,16 @@ public class SAML11ParserUtil {
         while (xmlEventReader.hasNext()) {
             xmlEvent = StaxParserUtil.peek(xmlEventReader);
             if (xmlEvent instanceof EndElement) {
-                tag = StaxParserUtil.getEndElementName((EndElement) xmlEvent);
+                tag = StaxParserUtil.getElementName((EndElement) xmlEvent);
                 if (tag.equals(WSTrustConstants.XMLDSig.RSA_KEYVALUE)) {
                     xmlEvent = StaxParserUtil.getNextEndElement(xmlEventReader);
                     break;
                 } else
-                    throw logger.parserUnknownEndElement(tag);
+                    throw logger.parserUnknownEndElement(tag, xmlEvent.getLocation());
             }
 
             startElement = (StartElement) xmlEvent;
-            tag = StaxParserUtil.getStartElementName(startElement);
+            tag = StaxParserUtil.getElementName(startElement);
             if (tag.equals(WSTrustConstants.XMLDSig.MODULUS)) {
                 startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
                 String text = StaxParserUtil.getElementText(xmlEventReader);
@@ -632,7 +633,48 @@ public class SAML11ParserUtil {
         StaxParserUtil.validate(startElement, WSTrustConstants.XMLDSig.DSA_KEYVALUE);
 
         Element dsaElement = StaxParserUtil.getDOMElement(xmlEventReader);
-        return SignatureUtil.getDSAKeyValue(dsaElement);
+        return getDSAKeyValue(dsaElement);
+    }
+
+    /**
+     * Given a dsig:DSAKeyValue element, return {@link DSAKeyValueType}
+     *
+     * @param element
+     *
+     * @return
+     *
+     * @throws org.keycloak.saml.common.exceptions.ParsingException
+     */
+    private static DSAKeyValueType getDSAKeyValue(Element element) throws ParsingException {
+        DSAKeyValueType dsa = new DSAKeyValueType();
+        NodeList nl = element.getChildNodes();
+        int length = nl.getLength();
+
+        for (int i = 0; i < length; i++) {
+            Node node = nl.item(i);
+            if (node instanceof Element) {
+                Element childElement = (Element) node;
+                String tag = childElement.getLocalName();
+
+                byte[] text = childElement.getTextContent().getBytes(GeneralConstants.SAML_CHARSET);
+
+                if (WSTrustConstants.XMLDSig.P.equals(tag)) {
+                    dsa.setP(text);
+                } else if (WSTrustConstants.XMLDSig.Q.equals(tag)) {
+                    dsa.setQ(text);
+                } else if (WSTrustConstants.XMLDSig.G.equals(tag)) {
+                    dsa.setG(text);
+                } else if (WSTrustConstants.XMLDSig.Y.equals(tag)) {
+                    dsa.setY(text);
+                } else if (WSTrustConstants.XMLDSig.SEED.equals(tag)) {
+                    dsa.setSeed(text);
+                } else if (WSTrustConstants.XMLDSig.PGEN_COUNTER.equals(tag)) {
+                    dsa.setPgenCounter(text);
+                }
+            }
+        }
+
+        return dsa;
     }
 
     /**
@@ -655,13 +697,13 @@ public class SAML11ParserUtil {
                 if (StaxParserUtil.matches(endElement, SAML11Constants.ATTRIBUTE_QUERY))
                     break;
                 else
-                    throw logger.parserUnknownEndElement(StaxParserUtil.getEndElementName(endElement));
+                    throw logger.parserUnknownEndElement(StaxParserUtil.getElementName(endElement), xmlEvent.getLocation());
             }
 
             if (xmlEvent instanceof StartElement) {
                 startElement = (StartElement) xmlEvent;
 
-                String startTag = StaxParserUtil.getStartElementName(startElement);
+                String startTag = StaxParserUtil.getElementName(startElement);
 
                 if (startTag.equals(JBossSAMLConstants.SUBJECT.get())) {
                     SAML11SubjectParser parser = new SAML11SubjectParser();
@@ -694,13 +736,13 @@ public class SAML11ParserUtil {
                 if (StaxParserUtil.matches(endElement, SAML11Constants.AUTHENTICATION_QUERY))
                     break;
                 else
-                    throw logger.parserUnknownEndElement(StaxParserUtil.getEndElementName(endElement));
+                    throw logger.parserUnknownEndElement(StaxParserUtil.getElementName(endElement), xmlEvent.getLocation());
             }
 
             if (xmlEvent instanceof StartElement) {
                 startElement = (StartElement) xmlEvent;
 
-                String startTag = StaxParserUtil.getStartElementName(startElement);
+                String startTag = StaxParserUtil.getElementName(startElement);
 
                 if (startTag.equals(JBossSAMLConstants.SUBJECT.get())) {
                     SAML11SubjectParser parser = new SAML11SubjectParser();
@@ -733,13 +775,13 @@ public class SAML11ParserUtil {
                 if (StaxParserUtil.matches(endElement, SAML11Constants.AUTHORIZATION_DECISION_QUERY))
                     break;
                 else
-                    throw logger.parserUnknownEndElement(StaxParserUtil.getEndElementName(endElement));
+                    throw logger.parserUnknownEndElement(StaxParserUtil.getElementName(endElement), xmlEvent.getLocation());
             }
 
             if (xmlEvent instanceof StartElement) {
                 startElement = (StartElement) xmlEvent;
 
-                String startTag = StaxParserUtil.getStartElementName(startElement);
+                String startTag = StaxParserUtil.getElementName(startElement);
 
                 if (startTag.equals(JBossSAMLConstants.SUBJECT.get())) {
                     SAML11SubjectParser parser = new SAML11SubjectParser();

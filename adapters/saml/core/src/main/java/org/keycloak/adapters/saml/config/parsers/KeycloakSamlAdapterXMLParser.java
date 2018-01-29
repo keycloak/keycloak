@@ -42,7 +42,7 @@ public class KeycloakSamlAdapterXMLParser extends AbstractParser {
             startElement = StaxParserUtil.peekNextStartElement(xmlEventReader);
             if (startElement == null)
                 break;
-            String tag = StaxParserUtil.getStartElementName(startElement);
+            String tag = StaxParserUtil.getElementName(startElement);
             if (tag.equals(ConfigXmlConstants.SP_ELEMENT)) {
                 SPXmlParser parser = new SPXmlParser();
                 SP sp = (SP)parser.parse(xmlEventReader);
@@ -55,8 +55,4 @@ public class KeycloakSamlAdapterXMLParser extends AbstractParser {
         return adapter;
     }
 
-    @Override
-    public boolean supports(QName qname) {
-        return false;
-    }
 }

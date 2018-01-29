@@ -14,28 +14,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.keycloak.saml.processing.core.parsers.saml.assertion;
 
-package org.keycloak.saml.processing.core.parsers.saml.metadata;
-
+import org.keycloak.dom.saml.v2.assertion.EncryptedAssertionType;
 import org.keycloak.saml.common.exceptions.ParsingException;
-import org.keycloak.saml.common.parsers.AbstractParser;
-
+import org.keycloak.saml.common.parsers.StaxParser;
+import org.keycloak.saml.common.util.StaxParserUtil;
 import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLStreamException;
 
-/**
- * <p>Abstract entity descriptor parser, which provides common parser functionality</p>
- *
- * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
- */
-public abstract class AbstractDescriptorParser extends AbstractParser {
+public class SAMLEncryptedAssertionParser implements StaxParser {
 
-    protected XMLEventReader filterWhiteSpaceCharacters(XMLEventReader xmlEventReader) throws ParsingException {
-        try {
-            return filterWhitespaces(xmlEventReader);
-        } catch (XMLStreamException e) {
-            throw new ParsingException(e);
-        }
+    private static final SAMLEncryptedAssertionParser INSTANCE = new SAMLEncryptedAssertionParser();
+
+    public static SAMLEncryptedAssertionParser getInstance() {
+        return INSTANCE;
     }
 
+    @Override
+    public EncryptedAssertionType parse(XMLEventReader xmlEventReader) throws ParsingException {
+        EncryptedAssertionType res = new EncryptedAssertionType();
+        res.setEncryptedElement(StaxParserUtil.getDOMElement(xmlEventReader));
+        return res;
+    }
 }

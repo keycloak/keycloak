@@ -26,20 +26,18 @@ import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
 import org.keycloak.saml.common.constants.GeneralConstants;
-import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.common.util.StaxUtil;
-import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
+import org.keycloak.saml.processing.api.saml.v2.response.SAML2Response;
+import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLProtocolQNames;
 import org.keycloak.saml.processing.core.saml.v2.writers.SAMLRequestWriter;
 import org.keycloak.saml.processing.core.saml.v2.writers.SAMLResponseWriter;
 import org.keycloak.testsuite.util.SamlClient.Step;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamWriter;
 import org.junit.Assert;
 import org.w3c.dom.Document;
-import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_NSURI;
 
 /**
  *
@@ -81,7 +79,7 @@ public abstract class SamlDocumentStepBuilder<T extends SAML2Object, This extend
             }
 
             final ByteArrayInputStream baos = new ByteArrayInputStream(originalTransformed.getBytes());
-            final T saml2Object = (T) new SAMLParser().parse(baos);
+            final T saml2Object = (T) new SAML2Response().getSAML2ObjectFromStream(baos);
             final T transformed = tr.transform(saml2Object);
 
             if (transformed == null) {
@@ -104,7 +102,7 @@ public abstract class SamlDocumentStepBuilder<T extends SAML2Object, This extend
             } else if (transformed instanceof ArtifactResponseType) {
                 new SAMLResponseWriter(xmlStreamWriter).write((ArtifactResponseType) transformed);
             } else if (transformed instanceof StatusResponseType) {
-                new SAMLResponseWriter(xmlStreamWriter).write((StatusResponseType) transformed, new QName(PROTOCOL_NSURI.get(), JBossSAMLConstants.LOGOUT_RESPONSE.get(), "samlp"));
+                new SAMLResponseWriter(xmlStreamWriter).write((StatusResponseType) transformed, SAMLProtocolQNames.LOGOUT_RESPONSE.getQName("samlp"));
             } else {
                 Assert.assertNotNull("Unknown type: <null>", transformed);
                 Assert.fail("Unknown type: " + transformed.getClass().getName());

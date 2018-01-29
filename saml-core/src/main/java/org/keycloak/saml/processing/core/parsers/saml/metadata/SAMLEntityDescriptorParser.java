@@ -31,7 +31,6 @@ import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.keycloak.dom.saml.v2.metadata.LocalizedNameType;
 import org.keycloak.dom.saml.v2.metadata.LocalizedURIType;
 import org.keycloak.dom.saml.v2.metadata.OrganizationType;
-import org.keycloak.dom.saml.v2.metadata.RequestedAttributeType;
 import org.keycloak.dom.saml.v2.metadata.RoleDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
 import org.keycloak.dom.xmlsec.w3.xmlenc.EncryptionMethodType;
@@ -41,9 +40,10 @@ import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ParsingException;
-import org.keycloak.saml.common.parsers.ParserNamespaceSupport;
+import org.keycloak.saml.common.parsers.AbstractParser;
 import org.keycloak.saml.common.util.StaxParserUtil;
-import org.keycloak.saml.processing.core.parsers.util.SAMLParserUtil;
+import org.keycloak.saml.common.util.StringUtil;
+import org.keycloak.saml.processing.core.parsers.saml.assertion.SAMLAttributeParser;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 
 import org.w3c.dom.Element;
@@ -56,7 +56,10 @@ import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 import java.math.BigInteger;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.StringTokenizer;
+import org.keycloak.saml.common.parsers.StaxParser;
 
 /**
  * Parse the SAML Metadata element "EntityDescriptor"
@@ -64,15 +67,13 @@ import java.util.List;
  * @author Anil.Saldhana@redhat.com
  * @since Dec 14, 2010
  */
-public class SAMLEntityDescriptorParser extends AbstractDescriptorParser implements ParserNamespaceSupport {
+public class SAMLEntityDescriptorParser extends AbstractParser {
 
     private static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
 
-    private final String EDT = JBossSAMLConstants.ENTITY_DESCRIPTOR.get();
+    private static final String EDT = JBossSAMLConstants.ENTITY_DESCRIPTOR.get();
 
     public Object parse(XMLEventReader xmlEventReader) throws ParsingException {
-
-        xmlEventReader = filterWhiteSpaceCharacters(xmlEventReader);
 
         StartElement startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
         StaxParserUtil.validate(startElement, EDT);
@@ -142,8 +143,8 @@ public class SAMLEntityDescriptorParser extends AbstractDescriptorParser impleme
                 entityDescriptorType.addContactPerson(parseContactPerson(xmlEventReader));
             } else if (JBossSAMLConstants.ADDITIONAL_METADATA_LOCATION.get().equals(localPart)) {
                 throw logger.unsupportedType("AdditionalMetadataLocation");
-            } else if (JBossSAMLConstants.EXTENSIONS.get().equalsIgnoreCase(localPart)) {
-                entityDescriptorType.setExtensions(parseExtensions(xmlEventReader));
+            } else if (JBossSAMLConstants.EXTENSIONS__PROTOCOL.get().equalsIgnoreCase(localPart)) {
+                entityDescriptorType.setExtensions(SAMLExtensionsParser.getInstance().parse(xmlEventReader));
             } else if (JBossSAMLConstants.ROLE_DESCRIPTOR.get().equalsIgnoreCase(localPart)) {
                 RoleDescriptorType roleDescriptor = parseRoleDescriptor(xmlEventReader);
 
@@ -157,19 +158,12 @@ public class SAMLEntityDescriptorParser extends AbstractDescriptorParser impleme
         return entityDescriptorType;
     }
 
-    public boolean supports(QName qname) {
-        String nsURI = qname.getNamespaceURI();
-        String localPart = qname.getLocalPart();
-
-        return nsURI.equals(JBossSAMLURIConstants.ASSERTION_NSURI.get())
-                && localPart.equals(JBossSAMLConstants.ENTITY_DESCRIPTOR.get());
-    }
 
     private SPSSODescriptorType parseSPSSODescriptor(XMLEventReader xmlEventReader) throws ParsingException {
         StartElement startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
         StaxParserUtil.validate(startElement, JBossSAMLConstants.SP_SSO_DESCRIPTOR.get());
 
-        List<String> protocolEnum = SAMLParserUtil.parseProtocolEnumeration(startElement);
+        List<String> protocolEnum = parseProtocolEnumeration(startElement);
         SPSSODescriptorType spSSODescriptor = new SPSSODescriptorType(protocolEnum);
 
         Attribute wantAssertionsSigned = startElement.getAttributeByName(new QName(JBossSAMLConstants.WANT_ASSERTIONS_SIGNED
@@ -224,7 +218,7 @@ public class SAMLEntityDescriptorParser extends AbstractDescriptorParser impleme
                 spSSODescriptor.addNameIDFormat(StaxParserUtil.getElementText(xmlEventReader));
             } else if (JBossSAMLConstants.KEY_DESCRIPTOR.get().equalsIgnoreCase(localPart)) {
                 spSSODescriptor.addKeyDescriptor(parseKeyDescriptor(xmlEventReader));
-            } else if (JBossSAMLConstants.EXTENSIONS.get().equalsIgnoreCase(localPart)) {
+            } else if (JBossSAMLConstants.EXTENSIONS__PROTOCOL.get().equalsIgnoreCase(localPart)) {
                 spSSODescriptor.setExtensions(parseExtensions(xmlEventReader));
             } else
                 throw logger.parserUnknownTag(localPart, startElement.getLocation());
@@ -236,7 +230,7 @@ public class SAMLEntityDescriptorParser extends AbstractDescriptorParser impleme
         StartElement startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
         StaxParserUtil.validate(startElement, JBossSAMLConstants.IDP_SSO_DESCRIPTOR.get());
 
-        List<String> protocolEnum = SAMLParserUtil.parseProtocolEnumeration(startElement);
+        List<String> protocolEnum = parseProtocolEnumeration(startElement);
         IDPSSODescriptorType idpSSODescriptor = new IDPSSODescriptorType(protocolEnum);
 
         Attribute wantAuthnSigned = startElement.getAttributeByName(new QName(JBossSAMLConstants.WANT_AUTHN_REQUESTS_SIGNED
@@ -304,11 +298,11 @@ public class SAMLEntityDescriptorParser extends AbstractDescriptorParser impleme
                 startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
                 idpSSODescriptor.addNameIDFormat(StaxParserUtil.getElementText(xmlEventReader));
             } else if (JBossSAMLConstants.ATTRIBUTE.get().equalsIgnoreCase(localPart)) {
-                AttributeType attribute = SAMLParserUtil.parseAttribute(xmlEventReader);
+                AttributeType attribute = SAMLAttributeParser.getInstance().parse(xmlEventReader);
                 idpSSODescriptor.addAttribute(attribute);
             } else if (JBossSAMLConstants.KEY_DESCRIPTOR.get().equalsIgnoreCase(localPart)) {
                 idpSSODescriptor.addKeyDescriptor(parseKeyDescriptor(xmlEventReader));
-            } else if (JBossSAMLConstants.EXTENSIONS.get().equalsIgnoreCase(localPart)) {
+            } else if (JBossSAMLConstants.EXTENSIONS__PROTOCOL.get().equalsIgnoreCase(localPart)) {
                 idpSSODescriptor.setExtensions(parseExtensions(xmlEventReader));
             } else
                 throw logger.parserUnknownTag(localPart, startElement.getLocation());
@@ -335,7 +329,7 @@ public class SAMLEntityDescriptorParser extends AbstractDescriptorParser impleme
             throws ParsingException {
         StartElement startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
         StaxParserUtil.validate(startElement, JBossSAMLConstants.ATTRIBUTE_AUTHORITY_DESCRIPTOR.get());
-        List<String> protocolEnum = SAMLParserUtil.parseProtocolEnumeration(startElement);
+        List<String> protocolEnum = parseProtocolEnumeration(startElement);
         AttributeAuthorityDescriptorType attributeAuthority = new AttributeAuthorityDescriptorType(protocolEnum);
 
         while (xmlEventReader.hasNext()) {
@@ -363,17 +357,25 @@ public class SAMLEntityDescriptorParser extends AbstractDescriptorParser impleme
                 StaxParserUtil.validate(endElement, JBossSAMLConstants.ATTRIBUTE_SERVICE.get());
 
                 attributeAuthority.addAttributeService(endpoint);
+            } else if (JBossSAMLConstants.ASSERTION_ID_REQUEST_SERVICE.get().equals(localPart)) {
+                startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
+                EndpointType endpoint = getEndpointType(startElement);
+
+                EndElement endElement = StaxParserUtil.getNextEndElement(xmlEventReader);
+                StaxParserUtil.validate(endElement, JBossSAMLConstants.ASSERTION_ID_REQUEST_SERVICE.get());
+
+                attributeAuthority.addAssertionIDRequestService(endpoint);
             } else if (JBossSAMLConstants.ATTRIBUTE_PROFILE.get().equalsIgnoreCase(localPart)) {
                 startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
                 attributeAuthority.addAttributeProfile(StaxParserUtil.getElementText(xmlEventReader));
             } else if (JBossSAMLConstants.ATTRIBUTE.get().equalsIgnoreCase(localPart)) {
-                attributeAuthority.addAttribute(SAMLParserUtil.parseAttribute(xmlEventReader));
+                attributeAuthority.addAttribute(SAMLAttributeParser.getInstance().parse(xmlEventReader));
             } else if (JBossSAMLConstants.KEY_DESCRIPTOR.get().equalsIgnoreCase(localPart)) {
                 attributeAuthority.addKeyDescriptor(parseKeyDescriptor(xmlEventReader));
             } else if (JBossSAMLConstants.NAMEID_FORMAT.get().equalsIgnoreCase(localPart)) {
                 startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
                 attributeAuthority.addNameIDFormat(StaxParserUtil.getElementText(xmlEventReader));
-            } else if (JBossSAMLConstants.EXTENSIONS.get().equalsIgnoreCase(localPart)) {
+            } else if (JBossSAMLConstants.EXTENSIONS__PROTOCOL.get().equalsIgnoreCase(localPart)) {
                 attributeAuthority.setExtensions(parseExtensions(xmlEventReader));
             } else
                 throw logger.parserUnknownTag(localPart, startElement.getLocation());
@@ -415,7 +417,7 @@ public class SAMLEntityDescriptorParser extends AbstractDescriptorParser impleme
                 LocalizedURIType localName = new LocalizedURIType(langVal);
                 localName.setValue(URI.create(StaxParserUtil.getElementText(xmlEventReader)));
                 org.addOrganizationURL(localName);
-            } else if (JBossSAMLConstants.EXTENSIONS.get().equalsIgnoreCase(localPart)) {
+            } else if (JBossSAMLConstants.EXTENSIONS__PROTOCOL.get().equalsIgnoreCase(localPart)) {
                 org.setExtensions(parseExtensions(xmlEventReader));
             } else
                 throw logger.parserUnknownTag(localPart, startElement.getLocation());
@@ -531,7 +533,7 @@ public class SAMLEntityDescriptorParser extends AbstractDescriptorParser impleme
             } else if (JBossSAMLConstants.TELEPHONE_NUMBER.get().equals(localPart)) {
                 startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
                 contactType.addTelephone(StaxParserUtil.getElementText(xmlEventReader));
-            } else if (JBossSAMLConstants.EXTENSIONS.get().equalsIgnoreCase(localPart)) {
+            } else if (JBossSAMLConstants.EXTENSIONS__PROTOCOL.get().equalsIgnoreCase(localPart)) {
                 contactType.setExtensions(parseExtensions(xmlEventReader));
             } else
                 throw logger.parserUnknownTag(localPart, startElement.getLocation());
@@ -619,34 +621,12 @@ public class SAMLEntityDescriptorParser extends AbstractDescriptorParser impleme
                 LocalizedNameType localName = getLocalizedName(xmlEventReader, startElement);
                 attributeConsumer.addServiceDescription(localName);
             } else if (JBossSAMLConstants.REQUESTED_ATTRIBUTE.get().equals(localPart)) {
-                RequestedAttributeType attType = parseRequestedAttributeType(xmlEventReader, startElement);
-                attributeConsumer.addRequestedAttribute(attType);
+                attributeConsumer.addRequestedAttribute(SAMLRequestedAttributeParser.getInstance().parse(xmlEventReader));
             } else
                 throw logger.parserUnknownTag(localPart, startElement.getLocation());
         }
 
         return attributeConsumer;
-    }
-
-    private RequestedAttributeType parseRequestedAttributeType(XMLEventReader xmlEventReader, StartElement startElement)
-            throws ParsingException {
-        startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
-        StaxParserUtil.validate(startElement, JBossSAMLConstants.REQUESTED_ATTRIBUTE.get());
-        RequestedAttributeType attributeType = null;
-
-        Attribute name = startElement.getAttributeByName(new QName(JBossSAMLConstants.NAME.get()));
-        if (name == null)
-            throw logger.parserRequiredAttribute("Name");
-        attributeType = new RequestedAttributeType(StaxParserUtil.getAttributeValue(name));
-
-        Attribute isRequired = startElement.getAttributeByName(new QName(JBossSAMLConstants.IS_REQUIRED.get()));
-        if (isRequired != null) {
-            attributeType.setIsRequired(Boolean.parseBoolean(StaxParserUtil.getAttributeValue(isRequired)));
-        }
-
-        SAMLParserUtil.parseAttributeType(xmlEventReader, startElement, JBossSAMLConstants.REQUESTED_ATTRIBUTE.get(),
-                attributeType);
-        return attributeType;
     }
 
     private ExtensionsType parseExtensions(XMLEventReader xmlEventReader) throws ParsingException {
@@ -659,7 +639,7 @@ public class SAMLEntityDescriptorParser extends AbstractDescriptorParser impleme
     private RoleDescriptorType parseRoleDescriptor(XMLEventReader xmlEventReader) throws ParsingException {
         StartElement startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
         StaxParserUtil.validate(startElement, JBossSAMLConstants.ROLE_DESCRIPTOR.get());
-        List<String> protocolEnum = SAMLParserUtil.parseProtocolEnumeration(startElement);
+        List<String> protocolEnum = parseProtocolEnumeration(startElement);
         RoleDescriptorType roleDescriptorType = new RoleDescriptorType(protocolEnum) {};
 
         while (xmlEventReader.hasNext()) {
@@ -682,5 +662,26 @@ public class SAMLEntityDescriptorParser extends AbstractDescriptorParser impleme
         }
 
         return roleDescriptorType;
+    }
+
+    /**
+     * Parse a space delimited list of strings
+     *
+     * @param startElement
+     *
+     * @return
+     */
+    public static List<String> parseProtocolEnumeration(StartElement startElement) {
+        List<String> protocolEnum = new ArrayList<>();
+        Attribute proto = startElement.getAttributeByName(JBossSAMLConstants.PROTOCOL_SUPPORT_ENUMERATION.getAsQName());
+        String val = StaxParserUtil.getAttributeValue(proto);
+        if (StringUtil.isNotNull(val)) {
+            StringTokenizer st = new StringTokenizer(val);
+            while (st.hasMoreTokens()) {
+                protocolEnum.add(st.nextToken());
+            }
+
+        }
+        return protocolEnum;
     }
 }
