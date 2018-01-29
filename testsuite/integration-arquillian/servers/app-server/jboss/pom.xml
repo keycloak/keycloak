@@ -36,6 +36,7 @@
         <security.xslt>security.xsl</security.xslt>
         <oidc-adapter.version>${project.version}</oidc-adapter.version>
         <saml-adapter.version>${project.version}</saml-adapter.version>
+        <app.server.elytron.adapter.supported>false</app.server.elytron.adapter.supported>
     </properties>
 
     <profiles>
