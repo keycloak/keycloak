@@ -106,7 +106,7 @@ public class EntityDescriptorDescriptionConverter implements ClientDescriptionCo
     private static ClientRepresentation loadEntityDescriptors(InputStream is) {
         Object metadata;
         try {
-            metadata = new SAMLParser().parse(is);
+            metadata = SAMLParser.getInstance().parse(is);
         } catch (ParsingException e) {
             throw new RuntimeException(e);
         }

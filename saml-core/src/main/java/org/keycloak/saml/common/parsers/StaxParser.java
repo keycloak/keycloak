@@ -18,22 +18,12 @@ package org.keycloak.saml.common.parsers;
 
 import org.keycloak.saml.common.exceptions.ParsingException;
 
-import javax.xml.namespace.QName;
 import javax.xml.stream.XMLEventReader;
 
 /**
- * <p>
- * Interface to indicate the parser supports a particular namespace.
- * </p>
- *
- * <p>
- * This class needs to be moved to the security common project.
- * </p>
- *
- * @author Anil.Saldhana@redhat.com
- * @since Feb 5, 2010
+ * Interface to indicate the parser.
  */
-public interface ParserNamespaceSupport {
+public interface StaxParser {
     /**
      * Parse the event stream
      *
@@ -42,12 +32,4 @@ public interface ParserNamespaceSupport {
      * @throws ParsingException
      */
     Object parse(XMLEventReader xmlEventReader) throws ParsingException;
-
-    /**
-     * Returns whether the parser supports parsing a particular namespace
-     *
-     * @param qname
-     * @return
-     */
-    boolean supports(QName qname);
 }

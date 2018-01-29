@@ -47,16 +47,16 @@ public class KeysXmlParser extends AbstractParser {
                 break;
             if (xmlEvent instanceof EndElement) {
                 EndElement endElement = (EndElement) StaxParserUtil.getNextEvent(xmlEventReader);
-                String endElementName = StaxParserUtil.getEndElementName(endElement);
+                String endElementName = StaxParserUtil.getElementName(endElement);
                 if (endElementName.equals(ConfigXmlConstants.KEYS_ELEMENT))
                     break;
                 else
-                    throw logger.parserUnknownEndElement(endElementName);
+                    throw logger.parserUnknownEndElement(endElementName, xmlEvent.getLocation());
             }
             startElement = StaxParserUtil.peekNextStartElement(xmlEventReader);
             if (startElement == null)
                 break;
-            String tag = StaxParserUtil.getStartElementName(startElement);
+            String tag = StaxParserUtil.getElementName(startElement);
             if (tag.equals(ConfigXmlConstants.KEY_ELEMENT)) {
                 KeyXmlParser parser = new KeyXmlParser();
                 Key key = (Key)parser.parse(xmlEventReader);
@@ -69,8 +69,4 @@ public class KeysXmlParser extends AbstractParser {
         return keys;
     }
 
-    @Override
-    public boolean supports(QName qname) {
-        return false;
-    }
 }

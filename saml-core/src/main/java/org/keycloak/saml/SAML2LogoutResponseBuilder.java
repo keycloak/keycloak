@@ -30,7 +30,6 @@ import org.keycloak.saml.processing.core.saml.v2.common.IDGenerator;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 import org.w3c.dom.Document;
 
-import java.net.URI;
 import java.util.LinkedList;
 import java.util.List;
 import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
@@ -73,7 +72,7 @@ public class SAML2LogoutResponseBuilder implements SamlProtocolExtensionsAwareBu
         // Status
         StatusType statusType = new StatusType();
         StatusCodeType statusCodeType = new StatusCodeType();
-        statusCodeType.setValue(URI.create(JBossSAMLURIConstants.STATUS_SUCCESS.get()));
+        statusCodeType.setValue(JBossSAMLURIConstants.STATUS_SUCCESS.getUri());
         statusType.setStatusCode(statusCodeType);
 
         statusResponse.setStatus(statusType);

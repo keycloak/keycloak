@@ -276,7 +276,7 @@ public class LogoutTest extends AbstractSamlTest {
           .processSamlResponse(REDIRECT)
             .transformDocument(doc -> {
               // Expect logout request for sales-post2
-              SAML2Object so = (SAML2Object) new SAMLParser().parse(new DOMSource(doc));
+              SAML2Object so = (SAML2Object) SAMLParser.getInstance().parse(new DOMSource(doc));
               assertThat(so, isSamlLogoutRequest("http://url-to-sales-2"));
 
               // Emulate successful logout response from sales-post2 logout

@@ -47,16 +47,16 @@ public class KeyXmlParser extends AbstractParser {
                 break;
             if (xmlEvent instanceof EndElement) {
                 EndElement endElement = (EndElement) StaxParserUtil.getNextEvent(xmlEventReader);
-                String endElementName = StaxParserUtil.getEndElementName(endElement);
+                String endElementName = StaxParserUtil.getElementName(endElement);
                 if (endElementName.equals(ConfigXmlConstants.KEY_ELEMENT))
                     break;
                 else
-                    throw logger.parserUnknownEndElement(endElementName);
+                    throw logger.parserUnknownEndElement(endElementName, xmlEvent.getLocation());
             }
             startElement = StaxParserUtil.peekNextStartElement(xmlEventReader);
             if (startElement == null)
                 break;
-            String tag = StaxParserUtil.getStartElementName(startElement);
+            String tag = StaxParserUtil.getElementName(startElement);
             if (tag.equals(ConfigXmlConstants.KEYS_STORE_ELEMENT)) {
                 key.setKeystore(parseKeyStore(xmlEventReader));
             } else if (tag.equals(ConfigXmlConstants.CERTIFICATE_PEM_ELEMENT)) {
@@ -100,7 +100,7 @@ public class KeyXmlParser extends AbstractParser {
                 break;
             if (xmlEvent instanceof EndElement) {
                 EndElement endElement = (EndElement) StaxParserUtil.getNextEvent(xmlEventReader);
-                String endElementName = StaxParserUtil.getEndElementName(endElement);
+                String endElementName = StaxParserUtil.getElementName(endElement);
                 if (endElementName.equals(ConfigXmlConstants.KEYS_STORE_ELEMENT))
                     break;
                 else
@@ -109,7 +109,7 @@ public class KeyXmlParser extends AbstractParser {
             startElement = StaxParserUtil.peekNextStartElement(xmlEventReader);
             if (startElement == null)
                 break;
-            String tag = StaxParserUtil.getStartElementName(startElement);
+            String tag = StaxParserUtil.getElementName(startElement);
             if (tag.equals(ConfigXmlConstants.CERTIFICATE_ELEMENT)) {
                 StartElement element = StaxParserUtil.getNextStartElement(xmlEventReader);
                 keyStore.setCertificateAlias(SPXmlParser.getAttributeValue(element, ConfigXmlConstants.ALIAS_ATTR));
@@ -138,8 +138,4 @@ public class KeyXmlParser extends AbstractParser {
 
     }
 
-    @Override
-    public boolean supports(QName qname) {
-        return false;
-    }
 }

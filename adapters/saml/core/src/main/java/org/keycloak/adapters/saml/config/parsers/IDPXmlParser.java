@@ -61,7 +61,7 @@ public class IDPXmlParser extends AbstractParser {
                 break;
             if (xmlEvent instanceof EndElement) {
                 EndElement endElement = (EndElement) StaxParserUtil.getNextEvent(xmlEventReader);
-                String endElementName = StaxParserUtil.getEndElementName(endElement);
+                String endElementName = StaxParserUtil.getElementName(endElement);
                 if (endElementName.equals(ConfigXmlConstants.IDP_ELEMENT))
                     break;
                 else
@@ -70,7 +70,7 @@ public class IDPXmlParser extends AbstractParser {
             startElement = StaxParserUtil.peekNextStartElement(xmlEventReader);
             if (startElement == null)
                 break;
-            String tag = StaxParserUtil.getStartElementName(startElement);
+            String tag = StaxParserUtil.getElementName(startElement);
             if (tag.equals(ConfigXmlConstants.SINGLE_SIGN_ON_SERVICE_ELEMENT)) {
                 IDP.SingleSignOnService sso = parseSingleSignOnService(xmlEventReader, signaturesRequired);
                 idp.setSingleSignOnService(sso);
@@ -142,22 +142,18 @@ public class IDPXmlParser extends AbstractParser {
                 break;
             if (xmlEvent instanceof EndElement) {
                 EndElement endElement = (EndElement) StaxParserUtil.getNextEvent(xmlEventReader);
-                String endElementName = StaxParserUtil.getEndElementName(endElement);
+                String endElementName = StaxParserUtil.getElementName(endElement);
                 if (endElementName.equals(ConfigXmlConstants.ROLE_IDENTIFIERS_ELEMENT))
                     break;
                 else
                     continue;
             }
 
-            String tag = StaxParserUtil.getStartElementName(startElement);
+            String tag = StaxParserUtil.getElementName(startElement);
             StaxParserUtil.bypassElementBlock(xmlEventReader, tag);
         }
 
         return config;
     }
 
-    @Override
-    public boolean supports(QName qname) {
-        return false;
-    }
 }

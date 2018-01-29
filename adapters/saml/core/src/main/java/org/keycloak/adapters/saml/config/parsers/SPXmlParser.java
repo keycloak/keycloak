@@ -97,7 +97,7 @@ public class SPXmlParser extends AbstractParser {
                 break;
             if (xmlEvent instanceof EndElement) {
                 EndElement endElement = (EndElement) StaxParserUtil.getNextEvent(xmlEventReader);
-                String endElementName = StaxParserUtil.getEndElementName(endElement);
+                String endElementName = StaxParserUtil.getElementName(endElement);
                 if (endElementName.equals(ConfigXmlConstants.SP_ELEMENT))
                     break;
                 else
@@ -106,7 +106,7 @@ public class SPXmlParser extends AbstractParser {
             startElement = StaxParserUtil.peekNextStartElement(xmlEventReader);
             if (startElement == null)
                 break;
-            String tag = StaxParserUtil.getStartElementName(startElement);
+            String tag = StaxParserUtil.getElementName(startElement);
             if (tag.equals(ConfigXmlConstants.KEYS_ELEMENT)) {
                 KeysXmlParser parser = new KeysXmlParser();
                 List<Key> keys = (List<Key>) parser.parse(xmlEventReader);
@@ -148,7 +148,7 @@ public class SPXmlParser extends AbstractParser {
                 break;
             if (xmlEvent instanceof EndElement) {
                 EndElement endElement = (EndElement) StaxParserUtil.getNextEvent(xmlEventReader);
-                String endElementName = StaxParserUtil.getEndElementName(endElement);
+                String endElementName = StaxParserUtil.getElementName(endElement);
                 if (endElementName.equals(ConfigXmlConstants.ROLE_IDENTIFIERS_ELEMENT))
                     break;
                 else
@@ -157,7 +157,7 @@ public class SPXmlParser extends AbstractParser {
             startElement = StaxParserUtil.peekNextStartElement(xmlEventReader);
             if (startElement == null)
                 break;
-            String tag = StaxParserUtil.getStartElementName(startElement);
+            String tag = StaxParserUtil.getElementName(startElement);
             if (tag.equals(ConfigXmlConstants.ATTRIBUTE_ELEMENT)) {
                 StartElement element = StaxParserUtil.getNextStartElement(xmlEventReader);
                 String attributeValue = getAttributeValue(element, ConfigXmlConstants.NAME_ATTR);
@@ -174,8 +174,4 @@ public class SPXmlParser extends AbstractParser {
         sp.setRoleAttributes(roleAttributes);
     }
 
-    @Override
-    public boolean supports(QName qname) {
-        return false;
-    }
 }

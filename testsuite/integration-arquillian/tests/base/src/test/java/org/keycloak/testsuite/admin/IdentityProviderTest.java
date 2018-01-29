@@ -35,8 +35,7 @@ import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.saml.common.exceptions.ParsingException;
-import org.keycloak.saml.common.util.StaxParserUtil;
-import org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLEntityDescriptorParser;
+import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.w3c.dom.NodeList;
@@ -599,8 +598,8 @@ public class IdentityProviderTest extends AbstractAdminTest {
     private void assertSamlExport(String body) throws ParsingException, URISyntaxException {
         //System.out.println(body);
 
-        Object entBody = new SAMLEntityDescriptorParser().parse(StaxParserUtil.getXMLEventReader(
-                new ByteArrayInputStream(body.getBytes(Charset.forName("utf-8")))));
+        Object entBody = SAMLParser.getInstance().parse(
+                new ByteArrayInputStream(body.getBytes(Charset.forName("utf-8"))));
 
         Assert.assertEquals("Parsed export type", EntityDescriptorType.class, entBody.getClass());
         EntityDescriptorType entity = (EntityDescriptorType) entBody;

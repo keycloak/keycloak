@@ -604,7 +604,7 @@ public class AssertionUtil {
         newDoc.appendChild(importedNode);
 
         Element decryptedDocumentElement = XMLEncryptionUtil.decryptElementInDocument(newDoc, privateKey);
-        SAMLParser parser = new SAMLParser();
+        SAMLParser parser = SAMLParser.getInstance();
 
         JAXPValidationUtil.checkSchemaValidation(decryptedDocumentElement);
         AssertionType assertion = (AssertionType) parser.parse(parser.createEventReader(DocumentUtil
