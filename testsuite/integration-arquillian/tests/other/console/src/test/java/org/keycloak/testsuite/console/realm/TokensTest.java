@@ -106,7 +106,6 @@ public class TokensTest extends AbstractRealmTest {
         assertAlertSuccess();
 
         loginToTestRealmConsoleAs(testUser);
-        driver.navigate().refresh();
 
         tokenSettingsPage.navigateTo();
         tokenSettingsPage.form().selectOperation(VerifyEmailActionToken.TOKEN_TYPE);
@@ -124,7 +123,6 @@ public class TokensTest extends AbstractRealmTest {
         assertAlertSuccess();
 
         loginToTestRealmConsoleAs(testUser);
-        driver.navigate().refresh();
 
         tokenSettingsPage.navigateTo();
         assertTrue("User action token for verify e-mail expected",
@@ -150,7 +148,6 @@ public class TokensTest extends AbstractRealmTest {
         assertAlertSuccess();
 
         loginToTestRealmConsoleAs(testUser);
-        driver.navigate().refresh();
 
         tokenSettingsPage.navigateTo();
         assertTrue("User action token for verify e-mail expected",
