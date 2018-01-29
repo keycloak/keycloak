@@ -259,7 +259,10 @@ public class HardcodedClientStorageProvider implements ClientStorageProvider, Cl
 
         @Override
         public Set<RoleModel> getScopeMappings() {
-            return Collections.EMPTY_SET;
+            RoleModel offlineAccess = realm.getRole("offline_access");
+            Set<RoleModel> set = new HashSet<>();
+            set.add(offlineAccess);
+            return set;
         }
 
         @Override
