@@ -600,7 +600,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
             resourcesResource.resources().forEach(resource -> {
                 if (resource.getName().equals(resourceName)) {
-                    resource.setScopes(resource.getScopes().stream().filter(scope -> !scope.getName().equals("urn:photoz.com:scopes:album:view")).collect(Collectors.toSet()));
+                    resource.setScopes(resource.getScopes().stream().filter(scope -> !scope.getName().equals("album:view")).collect(Collectors.toSet()));
                     resourcesResource.resource(resource.getId()).update(resource);
                 }
             });

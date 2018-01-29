@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import javax.ws.rs.core.Response.Status;
 
 import org.keycloak.authorization.AuthorizationProvider;
@@ -43,6 +44,7 @@ import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.representations.idm.authorization.Permission;
+import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 import org.keycloak.services.ErrorResponseException;
 
 /**
@@ -181,38 +183,35 @@ public final class Permissions {
                         // store all scopes associated with the scope-based permission
                         deniedScopes.addAll(policyScopes);
                     } else if (isResourcePermission(policy)) {
-                        // we should not grant anything
                         resourceDenied = true;
-                        break;
+                        deniedScopes.addAll(permission.getResource().getScopes());
                     }
                 }
             }
 
-            if (!resourceDenied) {
-                // remove any scope denied from the list of granted scopes
-                if (!deniedScopes.isEmpty()) {
-                    grantedScopes.removeAll(deniedScopes);
-                }
+            // remove any scope denied from the list of granted scopes
+            if (!deniedScopes.isEmpty()) {
+                grantedScopes.removeAll(deniedScopes);
+            }
 
-                // if there are no policy results is because the permission didn't match any policy.
-                // In this case, if results is empty is because we are in permissive mode.
-                if (!results.isEmpty()) {
-                    // update the current permission with the granted scopes
-                    permission.getScopes().clear();
-                    permission.getScopes().addAll(grantedScopes);
-                }
+            // if there are no policy results is because the permission didn't match any policy.
+            // In this case, if results is empty is because we are in permissive mode.
+            if (!results.isEmpty()) {
+                // update the current permission with the granted scopes
+                permission.getScopes().clear();
+                permission.getScopes().addAll(grantedScopes);
+            }
 
-                if (deniedCount == 0) {
+            if (deniedCount == 0) {
+                result.setStatus(Effect.PERMIT);
+                grantPermission(authorizationProvider, permissions, permission, resourceServer, metadata);
+            } else {
+                // if a full deny or resource denied or the requested scopes were denied
+                if (deniedCount == results.size() || resourceDenied || (!deniedScopes.isEmpty() && grantedScopes.isEmpty())) {
+                    result.setStatus(Effect.DENY);
+                } else {
                     result.setStatus(Effect.PERMIT);
                     grantPermission(authorizationProvider, permissions, permission, resourceServer, metadata);
-                } else {
-                    // if a full deny or resource denied or the requested scopes were denied
-                    if (deniedCount == results.size() || resourceDenied || (!deniedScopes.isEmpty() && grantedScopes.isEmpty())) {
-                        result.setStatus(Effect.DENY);
-                    } else {
-                        result.setStatus(Effect.PERMIT);
-                        grantPermission(authorizationProvider, permissions, permission, resourceServer, metadata);
-                    }
                 }
             }
         }
