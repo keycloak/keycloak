@@ -11,13 +11,15 @@ import java.net.URL;
 import static org.keycloak.services.resources.admin.ClientAttributeCertificateResource.CERTIFICATE_PEM;
 import static org.keycloak.common.util.KeystoreUtil.KeystoreFormat.JKS;
 import static org.keycloak.common.util.KeystoreUtil.KeystoreFormat.PKCS12;
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.keycloak.testsuite.util.UIUtils.sendKeysToInvisibleElement;
 
 /**
  * @author <a href="mailto:bruno@abstractj.org">Bruno Oliveira</a>
  */
 public class SAMLClientCredentialsForm extends Form {
 
-    private static final String PATH_PREFIX = "saml-keys" + File.separator;
+    private static final String PATH_PREFIX = "saml-keys/";
 
     @FindBy(linkText = "SAML Keys")
     private WebElement samlKeysLink;
@@ -68,21 +70,19 @@ public class SAMLClientCredentialsForm extends Form {
     }
 
     private void uploadFile(String file) {
-        URL fileUrl = (getClass().getClassLoader().getResource(file));
-        selectFileButton.sendKeys(fileUrl.getFile());
-        uploadButton.click();
+        URL fileUrl = getClass().getClassLoader().getResource(file);
+        String absolutePath = new File(fileUrl.getFile()).getAbsolutePath(); // For Windows, we need to use File.getAbsolutePath()
+        sendKeysToInvisibleElement(selectFileButton, absolutePath);
+        clickLink(uploadButton);
     }
 
     private void fillCredentials() {
-        uploadKeyAlias.clear();
-        uploadKeyAlias.sendKeys("samlKey");
-
-        uploadStorePassword.clear();
-        uploadStorePassword.sendKeys("secret");
+        setInputValue(uploadKeyAlias, "samlKey");
+        setInputValue(uploadStorePassword, "secret");
     }
 
     private void navigateToImport() {
-        samlKeysLink.click();
-        importButton.click();
+        clickLink(samlKeysLink);
+        clickLink(importButton);
     }
 }
