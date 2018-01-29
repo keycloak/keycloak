@@ -228,49 +228,6 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
         events.clear();
     }
 
-    /*
-
-    @Test
-    public void testDailyEviction() {
-
-        // set eviction to 1 hour from now
-        Calendar eviction = Calendar.getInstance();
-        eviction.add(Calendar.HOUR, 1);
-        ComponentRepresentation propProviderRW = testRealmResource().components().component(propProviderRWId).toRepresentation();
-        propProviderRW.getConfig().putSingle(CACHE_POLICY, CacheableStorageProviderModel.CachePolicy.EVICT_DAILY.name());
-        propProviderRW.getConfig().putSingle(EVICTION_HOUR, Integer.toString(eviction.get(HOUR_OF_DAY)));
-        propProviderRW.getConfig().putSingle(EVICTION_MINUTE, Integer.toString(eviction.get(MINUTE)));
-        testRealmResource().components().component(propProviderRWId).update(propProviderRW);
-
-        // now
-        testingClient.server().run(session -> {
-            RealmModel realm = session.realms().getRealmByName("test");
-            UserModel user = session.users().getUserByUsername("thor", realm);
-        });
-
-        // run twice to make sure its in cache.
-        testingClient.server().run(session -> {
-            RealmModel realm = session.realms().getRealmByName("test");
-            UserModel user = session.users().getUserByUsername("thor", realm);
-            System.out.println("User class: " + user.getClass());
-            Assert.assertTrue(user instanceof CachedUserModel); // should still be cached
-        });
-
-        setTimeOffset(2 * 60 * 60); // 2 hours in future
-
-        testingClient.server().run(session -> {
-            RealmModel realm = session.realms().getRealmByName("test");
-            UserModel user = session.users().getUserByUsername("thor", realm);
-            System.out.println("User class: " + user.getClass());
-            Assert.assertFalse(user instanceof CachedUserModel); // should be evicted
-        });
-
-    }
-
-
-        */
-
-
     @Test
     public void testDailyEviction() {
         testIsCached();

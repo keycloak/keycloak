@@ -23,6 +23,7 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.cache.CachedObject;
 import org.keycloak.models.cache.infinispan.entities.CachedClient;
 
 import java.security.MessageDigest;
@@ -36,7 +37,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ClientAdapter implements ClientModel {
+public class ClientAdapter implements ClientModel, CachedObject {
     protected RealmCacheSession cacheSession;
     protected RealmModel cachedRealm;
 
@@ -67,6 +68,11 @@ public class ClientAdapter implements ClientModel {
         updated = cacheSession.getRealmDelegate().getClientById(cached.getId(), cachedRealm);
         if (updated == null) throw new IllegalStateException("Not found in database");
         return true;
+    }
+
+    @Override
+    public long getCacheTimestamp() {
+        return cached.getCacheTimestamp();
     }
 
     @Override

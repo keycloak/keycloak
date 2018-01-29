@@ -1336,8 +1336,14 @@ public class RealmAdapter implements CachedRealmModel {
 
     public void executeEvictions(ComponentModel model) {
         if (model == null) return;
-        // test that this is a realm component
-        if (model.getParentId() != null && !model.getParentId().equals(getId())) return;
+        // If not realm component, check to see if it is a user storage provider child component (i.e. LDAP mapper)
+        if (model.getParentId() != null && !model.getParentId().equals(getId())) {
+            ComponentModel parent = getComponent(model.getParentId());
+            if (parent != null && UserStorageProvider.class.getName().equals(parent.getProviderType())) {
+                session.userCache().evict(this);
+            }
+            return;
+        }
 
         // invalidate entire user cache if we're dealing with user storage SPI
         if (UserStorageProvider.class.getName().equals(model.getProviderType())) {
