@@ -18,7 +18,6 @@
 package org.keycloak.storage;
 
 import org.keycloak.component.ComponentModel;
-import org.keycloak.component.PrioritizedComponentModel;
 
 /**
  * Stored configuration of a User Storage provider instance.
@@ -32,7 +31,6 @@ public class UserStorageProviderModel extends CacheableStorageProviderModel {
     public static final String FULL_SYNC_PERIOD = "fullSyncPeriod";
     public static final String CHANGED_SYNC_PERIOD = "changedSyncPeriod";
     public static final String LAST_SYNC = "lastSync";
-    public static final String ENABLED = "enabled";
 
     public UserStorageProviderModel() {
         setProviderType(UserStorageProvider.class.getName());
@@ -46,7 +44,6 @@ public class UserStorageProviderModel extends CacheableStorageProviderModel {
     private transient Integer changedSyncPeriod;
     private transient Integer lastSync;
     private transient Boolean importEnabled;
-    private transient Boolean enabled;
 
     public boolean isImportEnabled() {
         if (importEnabled == null) {
@@ -66,24 +63,6 @@ public class UserStorageProviderModel extends CacheableStorageProviderModel {
         getConfig().putSingle(IMPORT_ENABLED, Boolean.toString(flag));
     }
 
-    public void setEnabled(boolean flag) {
-        enabled = flag;
-        getConfig().putSingle(ENABLED, Boolean.toString(flag));
-    }
-
-
-    public boolean isEnabled() {
-        if (enabled == null) {
-            String val = getConfig().getFirst(ENABLED);
-            if (val == null) {
-                enabled = true;
-            } else {
-                enabled = Boolean.valueOf(val);
-            }
-        }
-        return enabled;
-
-    }
 
     public int getFullSyncPeriod() {
         if (fullSyncPeriod == null) {

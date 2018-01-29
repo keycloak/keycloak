@@ -16,8 +16,12 @@
  */
 package org.keycloak.storage;
 
+import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.PrioritizedComponentModel;
+import org.keycloak.models.cache.CachedObject;
+
+import java.util.Calendar;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -30,6 +34,7 @@ public class CacheableStorageProviderModel extends PrioritizedComponentModel {
     public static final String EVICTION_MINUTE = "evictionMinute";
     public static final String EVICTION_DAY = "evictionDay";
     public static final String CACHE_INVALID_BEFORE = "cacheInvalidBefore";
+    public static final String ENABLED = "enabled";
 
     private transient CachePolicy cachePolicy;
     private transient long maxLifespan = -1;
@@ -37,6 +42,7 @@ public class CacheableStorageProviderModel extends PrioritizedComponentModel {
     private transient int evictionMinute = -1;
     private transient int evictionDay = -1;
     private transient long cacheInvalidBefore = -1;
+    private transient Boolean enabled;
 
     public CacheableStorageProviderModel() {
     }
@@ -136,6 +142,117 @@ public class CacheableStorageProviderModel extends PrioritizedComponentModel {
         this.cacheInvalidBefore = cacheInvalidBefore;
         getConfig().putSingle(CACHE_INVALID_BEFORE, Long.toString(cacheInvalidBefore));
     }
+
+    public void setEnabled(boolean flag) {
+        enabled = flag;
+        getConfig().putSingle(ENABLED, Boolean.toString(flag));
+    }
+
+    public boolean isEnabled() {
+        if (enabled == null) {
+            String val = getConfig().getFirst(ENABLED);
+            if (val == null) {
+                enabled = true;
+            } else {
+                enabled = Boolean.valueOf(val);
+            }
+        }
+        return enabled;
+
+    }
+
+    public long getLifespan() {
+        UserStorageProviderModel.CachePolicy policy = getCachePolicy();
+        long lifespan = -1;
+        if (policy == null || policy == UserStorageProviderModel.CachePolicy.DEFAULT) {
+            lifespan = -1;
+        } else if (policy == CacheableStorageProviderModel.CachePolicy.EVICT_DAILY) {
+            if (getEvictionHour() > -1 && getEvictionMinute() > -1) {
+                lifespan = dailyTimeout(getEvictionHour(), getEvictionMinute()) - Time.currentTimeMillis();
+            }
+        } else if (policy == CacheableStorageProviderModel.CachePolicy.EVICT_WEEKLY) {
+            if (getEvictionDay() > 0 && getEvictionHour() > -1 && getEvictionMinute() > -1) {
+                lifespan = weeklyTimeout(getEvictionDay(), getEvictionHour(), getEvictionMinute()) - Time.currentTimeMillis();
+            }
+        } else if (policy == CacheableStorageProviderModel.CachePolicy.MAX_LIFESPAN) {
+            lifespan = getMaxLifespan();
+        }
+        return lifespan;
+    }
+
+    public boolean shouldInvalidate(CachedObject cached) {
+        boolean invalidate = false;
+        if (!isEnabled()) {
+            invalidate = true;
+        } else {
+            CacheableStorageProviderModel.CachePolicy policy = getCachePolicy();
+            if (policy != null) {
+                //String currentTime = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(new Date(Time.currentTimeMillis()));
+                if (policy == CacheableStorageProviderModel.CachePolicy.NO_CACHE) {
+                    invalidate = true;
+                } else if (cached.getCacheTimestamp() < getCacheInvalidBefore()) {
+                    invalidate = true;
+                } else if (policy == CacheableStorageProviderModel.CachePolicy.MAX_LIFESPAN) {
+                    if (cached.getCacheTimestamp() + getMaxLifespan() < Time.currentTimeMillis()) {
+                        invalidate = true;
+                    }
+                } else if (policy == CacheableStorageProviderModel.CachePolicy.EVICT_DAILY) {
+                    long dailyTimeout = dailyTimeout(getEvictionHour(), getEvictionMinute());
+                    dailyTimeout = dailyTimeout - (24 * 60 * 60 * 1000);
+                    //String timeout = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(new Date(dailyTimeout));
+                    //String stamp = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(new Date(cached.getCacheTimestamp()));
+                    if (cached.getCacheTimestamp() <= dailyTimeout) {
+                        invalidate = true;
+                    }
+                } else if (policy == CacheableStorageProviderModel.CachePolicy.EVICT_WEEKLY) {
+                    int oneWeek = 7 * 24 * 60 * 60 * 1000;
+                    long weeklyTimeout = weeklyTimeout(getEvictionDay(), getEvictionHour(), getEvictionMinute());
+                    long lastTimeout = weeklyTimeout - oneWeek;
+                    //String timeout = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(new Date(weeklyTimeout));
+                    //String stamp = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(new Date(cached.getCacheTimestamp()));
+                    if (cached.getCacheTimestamp() <= lastTimeout) {
+                        invalidate = true;
+                    }
+                }
+            }
+        }
+        return invalidate;
+    }
+
+
+    public static long dailyTimeout(int hour, int minute) {
+        Calendar cal = Calendar.getInstance();
+        Calendar cal2 = Calendar.getInstance();
+        cal.setTimeInMillis(Time.currentTimeMillis());
+        cal2.setTimeInMillis(Time.currentTimeMillis());
+        cal2.set(Calendar.HOUR_OF_DAY, hour);
+        cal2.set(Calendar.MINUTE, minute);
+        if (cal2.getTimeInMillis() < cal.getTimeInMillis()) {
+            int add = (24 * 60 * 60 * 1000);
+            cal.add(Calendar.MILLISECOND, add);
+        } else {
+            cal.add(Calendar.MILLISECOND, (int)(cal2.getTimeInMillis() - cal.getTimeInMillis()));
+        }
+        return cal.getTimeInMillis();
+    }
+
+    public static long weeklyTimeout(int day, int hour, int minute) {
+        Calendar cal = Calendar.getInstance();
+        Calendar cal2 = Calendar.getInstance();
+        cal.setTimeInMillis(Time.currentTimeMillis());
+        cal2.setTimeInMillis(Time.currentTimeMillis());
+        cal2.set(Calendar.HOUR_OF_DAY, hour);
+        cal2.set(Calendar.MINUTE, minute);
+        cal2.set(Calendar.DAY_OF_WEEK, day);
+        if (cal2.getTimeInMillis() < cal.getTimeInMillis()) {
+            int add = (7 * 24 * 60 * 60 * 1000);
+            cal2.add(Calendar.MILLISECOND, add);
+        }
+
+        return cal2.getTimeInMillis();
+    }
+
+
 
     public enum CachePolicy {
         NO_CACHE,

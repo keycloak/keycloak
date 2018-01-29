@@ -24,6 +24,7 @@ import org.keycloak.models.*;
 import org.keycloak.models.cache.CachedRealmModel;
 import org.keycloak.models.cache.infinispan.entities.CachedRealm;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.client.ClientStorageProvider;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,7 +37,6 @@ public class RealmAdapter implements CachedRealmModel {
     protected CachedRealm cached;
     protected RealmCacheSession cacheSession;
     protected volatile RealmModel updated;
-    protected RealmCache cache;
     protected KeycloakSession session;
 
     public RealmAdapter(KeycloakSession session, CachedRealm cached, RealmCacheSession cacheSession) {
@@ -1323,35 +1323,37 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public ComponentModel addComponentModel(ComponentModel model) {
         getDelegateForUpdate();
-        evictUsers(model);
+        executeEvictions(model);
         return updated.addComponentModel(model);
     }
 
     @Override
     public ComponentModel importComponentModel(ComponentModel model) {
         getDelegateForUpdate();
-        evictUsers(model);
+        executeEvictions(model);
         return updated.importComponentModel(model);
     }
 
-    public void evictUsers(ComponentModel model) {
-        String parentId = model.getParentId();
-        evictUsers(parentId);
-    }
+    public void executeEvictions(ComponentModel model) {
+        if (model == null) return;
+        // test that this is a realm component
+        if (model.getParentId() != null && !model.getParentId().equals(getId())) return;
 
-    public void evictUsers(String parentId) {
-        if (parentId != null && !parentId.equals(getId())) {
-            ComponentModel parent = getComponent(parentId);
-            if (parent != null && UserStorageProvider.class.getName().equals(parent.getProviderType())) {
-                session.userCache().evict(this);
-            }
+        // invalidate entire user cache if we're dealing with user storage SPI
+        if (UserStorageProvider.class.getName().equals(model.getProviderType())) {
+            session.userCache().evict(this);
+        }
+        // invalidate entire realm if we're dealing with client storage SPI
+        // entire realm because of client roles, client lists, and clients
+        if (ClientStorageProvider.class.getName().equals(model.getProviderType())) {
+            cacheSession.evictRealmOnRemoval(this);
         }
     }
 
     @Override
     public void updateComponent(ComponentModel component) {
         getDelegateForUpdate();
-        evictUsers(component);
+        executeEvictions(component);
         updated.updateComponent(component);
 
     }
@@ -1359,7 +1361,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public void removeComponent(ComponentModel component) {
         getDelegateForUpdate();
-        evictUsers(component);
+        executeEvictions(component);
         updated.removeComponent(component);
 
     }
@@ -1367,7 +1369,6 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public void removeComponents(String parentId) {
         getDelegateForUpdate();
-        evictUsers(parentId);
         updated.removeComponents(parentId);
 
     }

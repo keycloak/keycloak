@@ -30,17 +30,21 @@ import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.events.Details;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowBindings;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.cache.infinispan.ClientAdapter;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.storage.CacheableStorageProviderModel;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
+import org.keycloak.storage.client.ClientStorageProviderModel;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -66,9 +70,18 @@ import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.Calendar;
 import java.util.List;
 
+import static java.util.Calendar.DAY_OF_WEEK;
+import static java.util.Calendar.HOUR_OF_DAY;
+import static java.util.Calendar.MINUTE;
 import static org.junit.Assert.assertEquals;
+import static org.keycloak.storage.CacheableStorageProviderModel.CACHE_POLICY;
+import static org.keycloak.storage.CacheableStorageProviderModel.EVICTION_DAY;
+import static org.keycloak.storage.CacheableStorageProviderModel.EVICTION_HOUR;
+import static org.keycloak.storage.CacheableStorageProviderModel.EVICTION_MINUTE;
+import static org.keycloak.storage.CacheableStorageProviderModel.MAX_LIFESPAN;
 
 /**
  * Test that clients can override auth flows
@@ -91,6 +104,8 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
     }
+
+    protected String providerId;
 
     @Deployment
     public static WebArchive deploy() {
@@ -116,7 +131,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
         provider.getConfig().putSingle(HardcodedClientStorageProviderFactory.CLIENT_ID, "hardcoded-client");
         provider.getConfig().putSingle(HardcodedClientStorageProviderFactory.REDIRECT_URI, oauth.getRedirectUri());
 
-        String providerId = addComponent(provider);
+        providerId = addComponent(provider);
     }
 
 
@@ -211,5 +226,177 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
 
         httpClient.close();
         events.clear();
+    }
+
+    /*
+
+    @Test
+    public void testDailyEviction() {
+
+        // set eviction to 1 hour from now
+        Calendar eviction = Calendar.getInstance();
+        eviction.add(Calendar.HOUR, 1);
+        ComponentRepresentation propProviderRW = testRealmResource().components().component(propProviderRWId).toRepresentation();
+        propProviderRW.getConfig().putSingle(CACHE_POLICY, CacheableStorageProviderModel.CachePolicy.EVICT_DAILY.name());
+        propProviderRW.getConfig().putSingle(EVICTION_HOUR, Integer.toString(eviction.get(HOUR_OF_DAY)));
+        propProviderRW.getConfig().putSingle(EVICTION_MINUTE, Integer.toString(eviction.get(MINUTE)));
+        testRealmResource().components().component(propProviderRWId).update(propProviderRW);
+
+        // now
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel user = session.users().getUserByUsername("thor", realm);
+        });
+
+        // run twice to make sure its in cache.
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel user = session.users().getUserByUsername("thor", realm);
+            System.out.println("User class: " + user.getClass());
+            Assert.assertTrue(user instanceof CachedUserModel); // should still be cached
+        });
+
+        setTimeOffset(2 * 60 * 60); // 2 hours in future
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel user = session.users().getUserByUsername("thor", realm);
+            System.out.println("User class: " + user.getClass());
+            Assert.assertFalse(user instanceof CachedUserModel); // should be evicted
+        });
+
+    }
+
+
+        */
+
+
+    @Test
+    public void testDailyEviction() {
+        testIsCached();
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            ClientStorageProviderModel model = realm.getClientStorageProviders().get(0);
+            Calendar eviction = Calendar.getInstance();
+            eviction.add(Calendar.HOUR, 1);
+            model.setCachePolicy(CacheableStorageProviderModel.CachePolicy.EVICT_DAILY);
+            model.setEvictionHour(eviction.get(HOUR_OF_DAY));
+            model.setEvictionMinute(eviction.get(MINUTE));
+            realm.updateComponent(model);
+        });
+        testIsCached();
+        setTimeOffset(2 * 60 * 60); // 2 hours in future
+        testNotCached();
+        testIsCached();
+
+        setDefaultCachePolicy();
+        testIsCached();
+
+    }
+    @Test
+    public void testWeeklyEviction() {
+        testIsCached();
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            ClientStorageProviderModel model = realm.getClientStorageProviders().get(0);
+            Calendar eviction = Calendar.getInstance();
+            eviction.add(Calendar.HOUR, 4 * 24);
+            model.setCachePolicy(CacheableStorageProviderModel.CachePolicy.EVICT_WEEKLY);
+            model.setEvictionDay(eviction.get(DAY_OF_WEEK));
+            model.setEvictionHour(eviction.get(HOUR_OF_DAY));
+            model.setEvictionMinute(eviction.get(MINUTE));
+            realm.updateComponent(model);
+        });
+        testIsCached();
+        setTimeOffset(2 * 24 * 60 * 60); // 2 days in future
+        testIsCached();
+        setTimeOffset(5 * 24 * 60 * 60); // 5 days in future
+        testNotCached();
+        testIsCached();
+
+        setDefaultCachePolicy();
+        testIsCached();
+
+    }
+    @Test
+    public void testMaxLifespan() {
+        testIsCached();
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            ClientStorageProviderModel model = realm.getClientStorageProviders().get(0);
+            model.setCachePolicy(CacheableStorageProviderModel.CachePolicy.MAX_LIFESPAN);
+            model.setMaxLifespan(1 * 60 * 60 * 1000);
+            realm.updateComponent(model);
+        });
+        testIsCached();
+
+        setTimeOffset(1/2 * 60 * 60); // 1/2 hour in future
+
+        testIsCached();
+
+        setTimeOffset(2 * 60 * 60); // 2 hours in future
+
+        testNotCached();
+        testIsCached();
+
+        setDefaultCachePolicy();
+        testIsCached();
+
+    }
+
+    private void testNotCached() {
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            ClientModel hardcoded = realm.getClientByClientId("hardcoded-client");
+            Assert.assertNotNull(hardcoded);
+            Assert.assertFalse(hardcoded instanceof ClientAdapter);
+        });
+    }
+
+
+    @Test
+    public void testIsCached() {
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            ClientModel hardcoded = realm.getClientByClientId("hardcoded-client");
+            Assert.assertNotNull(hardcoded);
+            Assert.assertTrue(hardcoded instanceof org.keycloak.models.cache.infinispan.ClientAdapter);
+        });
+    }
+
+
+    @Test
+    public void testNoCache() {
+        testIsCached();
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            ClientStorageProviderModel model = realm.getClientStorageProviders().get(0);
+            model.setCachePolicy(CacheableStorageProviderModel.CachePolicy.NO_CACHE);
+            realm.updateComponent(model);
+        });
+
+        testNotCached();
+
+        // test twice because updating component should evict
+        testNotCached();
+
+        // set it back
+        setDefaultCachePolicy();
+        testIsCached();
+
+
+    }
+
+    private void setDefaultCachePolicy() {
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            ClientStorageProviderModel model = realm.getClientStorageProviders().get(0);
+            model.setCachePolicy(CacheableStorageProviderModel.CachePolicy.DEFAULT);
+            realm.updateComponent(model);
+        });
     }
 }

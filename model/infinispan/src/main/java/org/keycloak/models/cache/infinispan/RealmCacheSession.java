@@ -19,6 +19,7 @@ package org.keycloak.models.cache.infinispan;
 
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.migration.MigrationModel;
 import org.keycloak.models.*;
 import org.keycloak.models.cache.CacheRealmProvider;
@@ -26,6 +27,9 @@ import org.keycloak.models.cache.CachedRealmModel;
 import org.keycloak.models.cache.infinispan.entities.*;
 import org.keycloak.models.cache.infinispan.events.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.storage.CacheableStorageProviderModel;
+import org.keycloak.storage.StorageId;
+import org.keycloak.storage.client.ClientStorageProviderModel;
 
 import java.util.*;
 
@@ -100,7 +104,7 @@ public class RealmCacheSession implements CacheRealmProvider {
     protected boolean setRollbackOnly;
 
     protected Map<String, RealmAdapter> managedRealms = new HashMap<>();
-    protected Map<String, ClientAdapter> managedApplications = new HashMap<>();
+    protected Map<String, ClientModel> managedApplications = new HashMap<>();
     protected Map<String, ClientTemplateAdapter> managedClientTemplates = new HashMap<>();
     protected Map<String, RoleAdapter> managedRoles = new HashMap<>();
     protected Map<String, GroupAdapter> managedGroups = new HashMap<>();
@@ -173,8 +177,8 @@ public class RealmCacheSession implements CacheRealmProvider {
 
     private void invalidateClient(String id) {
         invalidations.add(id);
-        ClientAdapter adapter = managedApplications.get(id);
-        if (adapter != null) adapter.invalidate();
+        ClientModel adapter = managedApplications.get(id);
+        if (adapter != null && adapter instanceof ClientAdapter) ((ClientAdapter)adapter).invalidate();
     }
 
     @Override
@@ -204,9 +208,9 @@ public class RealmCacheSession implements CacheRealmProvider {
         invalidations.addAll(newInvalidations);
         // need to make sure that scope and group mapping clients and groups are invalidated
         for (String id : newInvalidations) {
-            ClientAdapter adapter = managedApplications.get(id);
-            if (adapter != null) {
-                adapter.invalidate();
+            ClientModel adapter = managedApplications.get(id);
+            if (adapter != null && adapter instanceof ClientAdapter){
+                ((ClientAdapter)adapter).invalidate();
                 continue;
             }
             GroupAdapter group = managedGroups.get(id);
@@ -329,7 +333,6 @@ public class RealmCacheSession implements CacheRealmProvider {
             @Override
             public void commit() {
                 try {
-                    if (realmDelegate == null) return;
                     if (clearAll) {
                         cache.clear();
                     }
@@ -470,10 +473,14 @@ public class RealmCacheSession implements CacheRealmProvider {
         RealmModel realm = getRealm(id);
         if (realm == null) return false;
 
-        cache.invalidateObject(id);
-        invalidationEvents.add(RealmRemovedEvent.create(id, realm.getName()));
-        cache.realmRemoval(id, realm.getName(), invalidations);
+        evictRealmOnRemoval(realm);
         return getRealmDelegate().removeRealm(id);
+    }
+
+    public void evictRealmOnRemoval(RealmModel realm) {
+        cache.invalidateObject(realm.getId());
+        invalidationEvents.add(RealmRemovedEvent.create(realm.getId(), realm.getName()));
+        cache.realmRemoval(realm.getId(), realm.getName(), invalidations);
     }
 
 
@@ -1020,19 +1027,77 @@ public class RealmCacheSession implements CacheRealmProvider {
             Long loaded = cache.getCurrentRevision(id);
             ClientModel model = getClientDelegate().getClientById(id, realm);
             if (model == null) return null;
-            if (invalidations.contains(id)) return model;
-            cached = new CachedClient(loaded, realm, model);
-            logger.tracev("adding client by id cache miss: {0}", cached.getClientId());
-            cache.addRevisioned(cached, startupRevision);
+            ClientModel adapter = cacheClient(realm, model, loaded);
+            managedApplications.put(id, adapter);
+            return adapter;
         } else if (invalidations.contains(id)) {
             return getRealmDelegate().getClientById(id, realm);
         } else if (managedApplications.containsKey(id)) {
             return managedApplications.get(id);
         }
-        ClientAdapter adapter = new ClientAdapter(realm, cached, this, null);
+        ClientModel adapter = validateCache(realm, cached);
         managedApplications.put(id, adapter);
         return adapter;
     }
+
+    protected ClientModel cacheClient(RealmModel realm, ClientModel delegate, Long revision) {
+        if (invalidations.contains(delegate.getId())) return delegate;
+        StorageId storageId = new StorageId(delegate.getId());
+        CachedClient cached = null;
+        ClientAdapter adapter = null;
+
+        if (!storageId.isLocal()) {
+            ComponentModel component = realm.getComponent(storageId.getProviderId());
+            ClientStorageProviderModel model = new ClientStorageProviderModel(component);
+            if (!model.isEnabled()) {
+                return delegate;
+            }
+            ClientStorageProviderModel.CachePolicy policy = model.getCachePolicy();
+            if (policy != null && policy == ClientStorageProviderModel.CachePolicy.NO_CACHE) {
+                return delegate;
+            }
+
+            cached = new CachedClient(revision, realm, delegate);
+            adapter = new ClientAdapter(realm, cached, this);
+
+            long lifespan = model.getLifespan();
+            if (lifespan > 0) {
+                cache.addRevisioned(cached, startupRevision, lifespan);
+            } else {
+                cache.addRevisioned(cached, startupRevision);
+            }
+        } else {
+            cached = new CachedClient(revision, realm, delegate);
+            adapter = new ClientAdapter(realm, cached, this);
+            cache.addRevisioned(cached, startupRevision);
+        }
+
+        return adapter;
+    }
+
+
+    protected ClientModel validateCache(RealmModel realm, CachedClient cached) {
+        if (!realm.getId().equals(cached.getRealm())) {
+            return null;
+        }
+
+        StorageId storageId = new StorageId(cached.getId());
+        if (!storageId.isLocal()) {
+            ComponentModel component = realm.getComponent(storageId.getProviderId());
+            ClientStorageProviderModel model = new ClientStorageProviderModel(component);
+
+            // although we do set a timeout, Infinispan has no guarantees when the user will be evicted
+            // its also hard to test stuff
+            if (model.shouldInvalidate(cached)) {
+                registerClientInvalidation(cached.getId(), cached.getClientId(), realm.getId());
+                return getClientDelegate().getClientById(cached.getId(), realm);
+            }
+        }
+        ClientAdapter adapter = new ClientAdapter(realm, cached, this);
+
+        return adapter;
+    }
+
 
     @Override
     public ClientModel getClientByClientId(String clientId, RealmModel realm) {

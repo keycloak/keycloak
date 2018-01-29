@@ -39,14 +39,12 @@ import java.util.Set;
 public class ClientAdapter implements ClientModel {
     protected RealmCacheSession cacheSession;
     protected RealmModel cachedRealm;
-    protected RealmCache cache;
 
     protected ClientModel updated;
     protected CachedClient cached;
 
-    public ClientAdapter(RealmModel cachedRealm, CachedClient cached, RealmCacheSession cacheSession, RealmCache cache) {
+    public ClientAdapter(RealmModel cachedRealm, CachedClient cached, RealmCacheSession cacheSession) {
         this.cachedRealm = cachedRealm;
-        this.cache = cache;
         this.cacheSession = cacheSession;
         this.cached = cached;
     }

@@ -1,6 +1,7 @@
 package org.keycloak.models.cache.infinispan.entities;
 
 import org.keycloak.common.util.Time;
+import org.keycloak.models.cache.CachedObject;
 
 import java.io.Serializable;
 
@@ -8,7 +9,7 @@ import java.io.Serializable;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class AbstractRevisioned implements Revisioned, Serializable {
+public class AbstractRevisioned implements Revisioned, Serializable, CachedObject {
     private String id;
     private Long revision;
     private final long cacheTimestamp = Time.currentTimeMillis();
@@ -38,6 +39,7 @@ public class AbstractRevisioned implements Revisioned, Serializable {
      *
      * @return
      */
+    @Override
     public long getCacheTimestamp() {
         return cacheTimestamp;
     }
