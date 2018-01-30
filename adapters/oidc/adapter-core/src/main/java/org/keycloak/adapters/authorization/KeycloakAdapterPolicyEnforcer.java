@@ -113,7 +113,7 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
             AccessToken accessToken = securityContext.getToken();
             AuthorizationRequest authzRequest;
 
-            if (Boolean.TRUE.equals(getEnforcerConfig().getIssuePermissionTicket())) {
+            if (getEnforcerConfig().getUserManagedAccess() != null) {
                 PermissionResponse permissionResponse = authzClient.protection().permission().create(permissionRequest);
                 authzRequest = new AuthorizationRequest();
                 authzRequest.setTicket(permissionResponse.getTicket());

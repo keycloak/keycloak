@@ -42,6 +42,9 @@ module.controller('GlobalCtrl', function ($scope, $http, $route, $location, Albu
     Album.query(function (albums) {
         $scope.albums = albums;
     });
+    Album.shares(function (albums) {
+        $scope.shares = albums;
+    });
 
     $scope.Identity = Identity;
 
@@ -49,6 +52,23 @@ module.controller('GlobalCtrl', function ($scope, $http, $route, $location, Albu
         new Album(album).$delete({id: album.id}, function () {
             $route.reload();
         });
+    }
+
+    $scope.requestDeleteAccess = function (album) {
+        new Album(album).$delete({id: album.id}, function () {
+            // no-op
+        }, function () {
+            document.getElementById("output").innerHTML = 'Sent authorization request to resource owner, please, wait for approval.';
+        });
+    }
+
+    $scope.hasAccess = function (share, scope) {
+        for (i = 0; i < share.scopes.length; i++) {
+            if (share.scopes[i] == scope) {
+                return true;
+            }
+        }
+        return false;
     }
 });
 
@@ -98,7 +118,9 @@ module.controller('AdminAlbumCtrl', function ($scope, $http, $route, $location, 
 });
 
 module.factory('Album', ['$resource', function ($resource) {
-    return $resource(apiUrl + '/album/:id');
+    return $resource(apiUrl + '/album/:id', {id: '@id'}, {
+            shares: {url: apiUrl + '/album/shares', method: 'GET', isArray: true}
+        });
 }]);
 
 module.factory('Profile', ['$resource', function ($resource) {

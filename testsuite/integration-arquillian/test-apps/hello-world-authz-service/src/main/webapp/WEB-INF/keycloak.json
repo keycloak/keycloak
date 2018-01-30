@@ -8,7 +8,6 @@
     "secret": "secret"
   },
   "policy-enforcer": {
-    "issue-permission-ticket": false,
     "on-deny-redirect-to" : "/hello-world-authz-service/error.jsp"
   }
 }

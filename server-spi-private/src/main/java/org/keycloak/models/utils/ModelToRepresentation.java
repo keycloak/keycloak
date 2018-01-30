@@ -862,15 +862,31 @@ public class ModelToRepresentation {
     }
 
     public static PermissionTicketRepresentation toRepresentation(PermissionTicket ticket) {
+        return toRepresentation(ticket, false);
+    }
+
+    public static PermissionTicketRepresentation toRepresentation(PermissionTicket ticket, boolean returnNames) {
         PermissionTicketRepresentation representation = new PermissionTicketRepresentation();
 
         representation.setId(ticket.getId());
         representation.setGranted(ticket.isGranted());
         representation.setOwner(ticket.getOwner());
-        representation.setResource(ticket.getResource().getId());
 
-        if (ticket.getScope() != null) {
-            representation.setScope(ticket.getScope().getId());
+        Resource resource = ticket.getResource();
+
+        representation.setResource(resource.getId());
+
+        if (returnNames) {
+            representation.setResourceName(resource.getName());
+        }
+
+        Scope scope = ticket.getScope();
+
+        if (scope != null) {
+            representation.setScope(scope.getId());
+            if (returnNames) {
+                representation.setScopeName(scope.getName());
+            }
         }
 
         return representation;

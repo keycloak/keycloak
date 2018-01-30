@@ -169,7 +169,7 @@ public class PermissionTicketAwareDecisionResultCollector extends DecisionResult
         this.results = results;
     }
 
-    public List<Result> getResults() {
+    public List<Result> results() {
         return results;
     }
 }

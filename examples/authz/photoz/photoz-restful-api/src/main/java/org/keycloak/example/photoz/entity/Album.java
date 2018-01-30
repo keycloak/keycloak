@@ -17,6 +17,9 @@
  */
 package org.keycloak.example.photoz.entity;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -42,6 +45,9 @@ public class Album {
 
     @Column(nullable = false)
     private String userId;
+
+    @Column
+    private String externalId;
 
     public String getId() {
         return this.id;
@@ -73,5 +79,13 @@ public class Album {
 
     public String getUserId() {
         return this.userId;
+    }
+
+    public void setExternalId(String externalId) {
+        this.externalId = externalId;
+    }
+
+    public String getExternalId() {
+        return externalId;
     }
 }

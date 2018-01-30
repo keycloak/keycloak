@@ -66,7 +66,7 @@ public class BearerTokenPolicyEnforcer extends AbstractPolicyEnforcer {
     }
 
     private String getPermissionTicket(PathConfig pathConfig, PolicyEnforcerConfig.MethodConfig methodConfig, AuthzClient authzClient) {
-        if (Boolean.TRUE.equals(getEnforcerConfig().getIssuePermissionTicket())) {
+        if (getEnforcerConfig().getUserManagedAccess() != null) {
             ProtectionResource protection = authzClient.protection();
             PermissionResource permission = protection.permission();
             PermissionRequest permissionRequest = new PermissionRequest();
@@ -74,7 +74,6 @@ public class BearerTokenPolicyEnforcer extends AbstractPolicyEnforcer {
             permissionRequest.setScopes(new HashSet<>(methodConfig.getScopes()));
             return permission.create(permissionRequest).getTicket();
         }
-
         return null;
     }
 }

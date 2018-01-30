@@ -81,7 +81,7 @@ public class AuthorizationTokenService {
 
     static {
         SUPPORTED_CLAIM_TOKEN_FORMATS = new HashMap<>();
-        SUPPORTED_CLAIM_TOKEN_FORMATS.put("urn:ietf:params:oauth:token-type:jwt", (authorizationRequest, authorization) -> new KeycloakEvaluationContext(authorizationRequest.getClaimToken(), authorization.getKeycloakSession()));
+        SUPPORTED_CLAIM_TOKEN_FORMATS.put("urn:ietf:params:oauth:token-type:jwt", (authorizationRequest, authorization) -> new KeycloakEvaluationContext(new KeycloakIdentity(authorization.getKeycloakSession(), Tokens.getAccessToken(authorizationRequest.getClaimToken(), authorization.getKeycloakSession())), authorization.getKeycloakSession()));
         SUPPORTED_CLAIM_TOKEN_FORMATS.put("http://openid.net/specs/openid-connect-core-1_0.html#IDToken", (authorizationRequest, authorization) -> {
             try {
                 KeycloakSession keycloakSession = authorization.getKeycloakSession();
@@ -103,60 +103,75 @@ public class AuthorizationTokenService {
         this.cors = cors;
     }
 
-    public Response authorize(AuthorizationRequest authorizationRequest) {
-        if (authorizationRequest == null) {
+    public Response authorize(AuthorizationRequest request) {
+        if (request == null) {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid authorization request.", Status.BAD_REQUEST);
         }
 
         try {
-            PermissionTicketToken ticket = createPermissionTicket(authorizationRequest);
+            PermissionTicketToken ticket = getPermissionTicket(request);
             ResourceServer resourceServer = getResourceServer(ticket);
-            KeycloakEvaluationContext evaluationContext = createEvaluationContext(authorizationRequest);
-            KeycloakIdentity identity = (KeycloakIdentity) evaluationContext.getIdentity();
+            KeycloakEvaluationContext evaluationContext = createEvaluationContext(request);
+            KeycloakIdentity identity = KeycloakIdentity.class.cast(evaluationContext.getIdentity());
             List<Result> results;
 
-            if ((ticket.getResources() == null || ticket.getResources().isEmpty()) && authorizationRequest.getRpt() == null) {
-                results = authorization.evaluators().from(Permissions.all(resourceServer, identity, authorization), evaluationContext).evaluate();
+            if (isEntitlementRequest(request, ticket)) {
+                results = evaluateAllPermissions(resourceServer, evaluationContext, identity);
             } else {
-                List<ResourcePermission> permissions = createPermissions(ticket, authorizationRequest, resourceServer, authorization);
-                PermissionTicketAwareDecisionResultCollector decision = new PermissionTicketAwareDecisionResultCollector(ticket, evaluationContext.getIdentity(), resourceServer, authorization);
-
-                authorization.evaluators().from(permissions, evaluationContext).evaluate(decision);
-
-                results = decision.getResults();
+                results = evaluatePermissions(request, ticket, resourceServer, evaluationContext, identity);
             }
 
-            List<Permission> entitlements = Permissions.permits(results, authorizationRequest.getMetadata(), authorization, resourceServer);
+            List<Permission> entitlements = Permissions.permits(results, request.getMetadata(), authorization, resourceServer);
 
-            if (entitlements.isEmpty()) {
-                throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "not_authorized", Status.FORBIDDEN);
-            }
-
-            AuthorizationResponse response = new AuthorizationResponse();
-
-            response.setToken(createRequestingPartyToken(entitlements, ticket, identity.getAccessToken(), resourceServer));
-            response.setTokenType("bearer");
-
-            if (authorizationRequest.getRpt() != null) {
-                response.setUpgraded(true);
-            }
-
-            return Cors.add(httpRequest, Response.status(Status.CREATED).type(MediaType.APPLICATION_JSON_TYPE).entity(response))
-                    .allowedOrigins(identity.getAccessToken())
-                    .allowedMethods(HttpMethod.POST)
-                    .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
+            return handleResponse(request, ticket, resourceServer, identity, entitlements);
         } catch (ErrorResponseException | CorsErrorResponseException cause) {
             if (logger.isDebugEnabled()) {
                 logger.debug("Error while evaluating permissions", cause);
             }
             throw cause;
         } catch (Exception cause) {
-            logger.error("Error while evaluating permissions", cause);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.SERVER_ERROR, "Error while evaluating permissions", Status.INTERNAL_SERVER_ERROR);
+            logger.error("Unexpected error while evaluating permissions", cause);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.SERVER_ERROR, "Unexpected error while evaluating permissions", Status.INTERNAL_SERVER_ERROR);
         }
     }
 
-    private PermissionTicketToken createPermissionTicket(AuthorizationRequest authorizationRequest) {
+    private List<Result> evaluatePermissions(AuthorizationRequest authorizationRequest, PermissionTicketToken ticket, ResourceServer resourceServer, KeycloakEvaluationContext evaluationContext, KeycloakIdentity identity) {
+        return authorization.evaluators()
+                .from(createPermissions(ticket, authorizationRequest, resourceServer, authorization), evaluationContext)
+                .evaluate(new PermissionTicketAwareDecisionResultCollector(ticket, identity, resourceServer, authorization)).results();
+    }
+
+    private List<Result> evaluateAllPermissions(ResourceServer resourceServer, KeycloakEvaluationContext evaluationContext, KeycloakIdentity identity) {
+        return authorization.evaluators()
+                .from(Permissions.all(resourceServer, identity, authorization), evaluationContext)
+                .evaluate();
+    }
+
+    private Response handleResponse(AuthorizationRequest request, PermissionTicketToken ticket, ResourceServer resourceServer, KeycloakIdentity identity, List<Permission> entitlements) {
+        if (entitlements.isEmpty()) {
+            throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "not_authorized", Status.FORBIDDEN);
+        }
+
+        AuthorizationResponse response = new AuthorizationResponse();
+
+        response.setToken(createRequestingPartyToken(entitlements, ticket, identity.getAccessToken(), resourceServer));
+        response.setTokenType("bearer");
+
+        if (request.getRpt() != null) {
+            response.setUpgraded(true);
+        }
+
+        return Cors.add(httpRequest, Response.status(Status.CREATED).type(MediaType.APPLICATION_JSON_TYPE).entity(response))
+                .allowedOrigins(identity.getAccessToken())
+                .allowedMethods(HttpMethod.POST)
+                .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
+    }
+
+    private boolean isEntitlementRequest(AuthorizationRequest authorizationRequest, PermissionTicketToken ticket) {
+        return (ticket.getResources() == null || ticket.getResources().isEmpty()) && authorizationRequest.getRpt() == null;
+    }
+
+    private PermissionTicketToken getPermissionTicket(AuthorizationRequest authorizationRequest) {
         if (authorizationRequest.getTicket() != null) {
             return verifyPermissionTicket(authorizationRequest);
         }
@@ -344,14 +359,6 @@ public class AuthorizationTokenService {
                 }).collect(Collectors.toList());
     }
 
-    private KeycloakSession getKeycloakSession() {
-        return this.authorization.getKeycloakSession();
-    }
-
-    private RealmModel getRealm() {
-        return getKeycloakSession().getContext().getRealm();
-    }
-
     private String createRequestingPartyToken(List<Permission> permissions, PermissionTicketToken ticket, AccessToken accessToken, ResourceServer resourceServer) {
         AccessToken.Authorization authorization = new AccessToken.Authorization();
 
@@ -385,5 +392,13 @@ public class AuthorizationTokenService {
         } catch (JWSInputException e) {
             throw new CorsErrorResponseException(cors, "invalid_ticket", "Could not parse permission ticket.", Status.FORBIDDEN);
         }
+    }
+
+    private KeycloakSession getKeycloakSession() {
+        return this.authorization.getKeycloakSession();
+    }
+
+    private RealmModel getRealm() {
+        return getKeycloakSession().getContext().getRealm();
     }
 }

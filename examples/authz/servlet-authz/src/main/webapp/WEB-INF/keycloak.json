@@ -6,7 +6,5 @@
   "credentials": {
     "secret": "secret"
   },
-  "policy-enforcer": {
-    "issue-permission-ticket": false
-  }
+  "policy-enforcer": {}
 }

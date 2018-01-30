@@ -17,6 +17,7 @@
  */
 package org.keycloak.authorization.protection.permission;
 
+import org.jboss.resteasy.annotations.Query;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.common.KeycloakIdentity;
@@ -24,6 +25,7 @@ import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.protection.permission.representation.PermissionRequest;
 import org.keycloak.authorization.store.PermissionTicketStore;
+import org.keycloak.models.Constants;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.authorization.PermissionTicketRepresentation;
@@ -39,7 +41,10 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -103,16 +108,42 @@ public class PermissionService extends AbstractPermissionService {
 
     @GET
     @Produces("application/json")
-    public Response find(@QueryParam("scopeId") String scopeId, @QueryParam("resourceId") String resourceId) {
-        List<PermissionTicketRepresentation> result = Collections.emptyList();
+    public Response find(@QueryParam("scopeId") String scopeId,
+                         @QueryParam("resourceId") String resourceId,
+                         @QueryParam("owner") String owner,
+                         @QueryParam("requester") String requester,
+                         @QueryParam("granted") Boolean granted,
+                         @QueryParam("returnNames") Boolean returnNames,
+                         @QueryParam("first") Integer firstResult,
+                         @QueryParam("max") Integer maxResult) {
         PermissionTicketStore permissionTicketStore = authorization.getStoreFactory().getPermissionTicketStore();
 
-        if (scopeId != null) {
-            result = permissionTicketStore.findByScope(scopeId, resourceServer.getId()).stream().map(ModelToRepresentation::toRepresentation).collect(Collectors.toList());
-        } else if (resourceId != null) {
-            result = permissionTicketStore.findByResource(resourceId, resourceServer.getId()).stream().map(ModelToRepresentation::toRepresentation).collect(Collectors.toList());
+        Map<String, String> filters = new HashMap<>();
+
+        if (resourceId != null) {
+            filters.put(PermissionTicket.RESOURCE, resourceId);
         }
 
-        return Response.ok().entity(result).build();
+        if (scopeId != null) {
+            filters.put(PermissionTicket.SCOPE, scopeId);
+        }
+
+        if (owner != null) {
+            filters.put(PermissionTicket.OWNER, owner);
+        }
+
+        if (requester != null) {
+            filters.put(PermissionTicket.REQUESTER, requester);
+        }
+
+        if (granted != null) {
+            filters.put(PermissionTicket.GRANTED, granted.toString());
+        }
+
+        return Response.ok().entity(permissionTicketStore.find(filters, resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS)
+                    .stream()
+                        .map(permissionTicket -> ModelToRepresentation.toRepresentation(permissionTicket, returnNames == null ? false : returnNames))
+                        .collect(Collectors.toList()))
+                .build();
     }
 }

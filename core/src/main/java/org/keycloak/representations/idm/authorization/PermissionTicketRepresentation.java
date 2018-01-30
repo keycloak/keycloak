@@ -26,6 +26,8 @@ public class PermissionTicketRepresentation {
     private String resource;
     private String scope;
     private boolean granted;
+    private String scopeName;
+    private String resourceName;
 
     public String getId() {
         return id;
@@ -65,5 +67,21 @@ public class PermissionTicketRepresentation {
 
     public void setGranted(boolean granted) {
         this.granted = granted;
+    }
+
+    public void setScopeName(String scopeName) {
+        this.scopeName = scopeName;
+    }
+
+    public String getScopeName() {
+        return scopeName;
+    }
+
+    public void setResourceName(String resourceName) {
+        this.resourceName = resourceName;
+    }
+
+    public String getResourceName() {
+        return resourceName;
     }
 }

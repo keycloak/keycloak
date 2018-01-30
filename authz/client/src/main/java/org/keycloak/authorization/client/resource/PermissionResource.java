@@ -19,6 +19,7 @@ package org.keycloak.authorization.client.resource;
 
 import static org.keycloak.authorization.client.util.Throwables.handleAndWrapException;
 
+import java.util.List;
 import java.util.concurrent.Callable;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -125,6 +126,28 @@ public class PermissionResource {
         return http.<List<PermissionTicketRepresentation>>get("/authz/protection/" + configuration.getResource() + "/permission")
                 .authorizationBearer(this.pat.get())
                 .param("resourceId", resourceId)
+                .response().json(new TypeReference<List<PermissionTicketRepresentation>>() {
+                }).execute();
+    }
+
+    public List<PermissionTicketRepresentation> find(String resourceId,
+                                                     String scopeId,
+                                                     String owner,
+                                                     String requester,
+                                                     Boolean granted,
+                                                     Boolean returnNames,
+                                                     Integer firstResult,
+                                                     Integer maxResult) {
+        return http.<List<PermissionTicketRepresentation>>get("/authz/protection/" + configuration.getResource() + "/permission")
+                .authorizationBearer(this.pat.get())
+                .param("resourceId", resourceId)
+                .param("scopeId", scopeId)
+                .param("owner", owner)
+                .param("requester", requester)
+                .param("granted", granted == null ? null : granted.toString())
+                .param("returnNames", returnNames == null ? null : returnNames.toString())
+                .param("firstResult", firstResult == null ? null : firstResult.toString())
+                .param("maxResult", maxResult == null ? null : maxResult.toString())
                 .response().json(new TypeReference<List<PermissionTicketRepresentation>>() {
                 }).execute();
     }

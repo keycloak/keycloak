@@ -17,13 +17,12 @@
  */
 package org.keycloak.representations.adapters.config;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -45,9 +44,9 @@ public class PolicyEnforcerConfig {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String onDenyRedirectTo;
 
-    @JsonProperty("issue-permission-ticket")
+    @JsonProperty("user-managed-access")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    private Boolean issuePermissionTicket = Boolean.TRUE;
+    private UserManagedAccessConfig userManagedAccess;
 
     public Boolean isCreateResources() {
         return this.createResources;
@@ -65,6 +64,10 @@ public class PolicyEnforcerConfig {
         this.enforcementMode = enforcementMode;
     }
 
+    public UserManagedAccessConfig getUserManagedAccess() {
+        return this.userManagedAccess;
+    }
+
     public void setCreateResources(Boolean createResources) {
         this.createResources = createResources;
     }
@@ -77,12 +80,12 @@ public class PolicyEnforcerConfig {
         return onDenyRedirectTo;
     }
 
-    public void setOnDenyRedirectTo(String onDenyRedirectTo) {
-        this.onDenyRedirectTo = onDenyRedirectTo;
+    public void setUserManagedAccess(UserManagedAccessConfig userManagedAccess) {
+        this.userManagedAccess = userManagedAccess;
     }
 
-    public Boolean getIssuePermissionTicket() {
-        return issuePermissionTicket;
+    public void setOnDenyRedirectTo(String onDenyRedirectTo) {
+        this.onDenyRedirectTo = onDenyRedirectTo;
     }
 
     public static class PathConfig {
@@ -229,5 +232,9 @@ public class PolicyEnforcerConfig {
     public enum ScopeEnforcementMode {
         ALL,
         ANY
+    }
+
+    public static class UserManagedAccessConfig {
+
     }
 }

@@ -1,14 +1,11 @@
 package org.keycloak.example.photoz.album;
 
-import org.keycloak.KeycloakSecurityContext;
-import org.keycloak.authorization.client.AuthzClient;
-import org.keycloak.authorization.client.ClientAuthorizationContext;
-import org.keycloak.authorization.client.representation.ResourceRepresentation;
-import org.keycloak.authorization.client.representation.ScopeRepresentation;
-import org.keycloak.authorization.client.resource.ProtectionResource;
-import org.keycloak.example.photoz.ErrorResponse;
-import org.keycloak.example.photoz.entity.Album;
-import org.keycloak.example.photoz.util.Transaction;
+import java.security.Principal;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
@@ -24,11 +21,18 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import java.security.Principal;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+
+import org.keycloak.KeycloakSecurityContext;
+import org.keycloak.authorization.client.AuthzClient;
+import org.keycloak.authorization.client.ClientAuthorizationContext;
+import org.keycloak.authorization.client.representation.RegistrationResponse;
+import org.keycloak.authorization.client.representation.ResourceRepresentation;
+import org.keycloak.authorization.client.representation.ScopeRepresentation;
+import org.keycloak.authorization.client.resource.ProtectionResource;
+import org.keycloak.example.photoz.ErrorResponse;
+import org.keycloak.example.photoz.entity.Album;
+import org.keycloak.example.photoz.util.Transaction;
+import org.keycloak.representations.idm.authorization.PermissionTicketRepresentation;
 
 @Path("/album")
 @Transaction
@@ -60,9 +64,12 @@ public class AlbumService {
             throw new ErrorResponse("Name [" + newAlbum.getName() + "] already taken. Choose another one.", Status.CONFLICT);
         }
 
-        this.entityManager.persist(newAlbum);
-
-        createProtectedResource(newAlbum);
+        try {
+            this.entityManager.persist(newAlbum);
+            createProtectedResource(newAlbum);
+        } catch (Exception e) {
+            getAuthzClient().protection().resource().delete(newAlbum.getExternalId());
+        }
 
         return Response.ok(newAlbum).build();
     }
@@ -85,8 +92,25 @@ public class AlbumService {
     @GET
     @Produces("application/json")
     public Response findAll() {
-//        return Response.ok(this.entityManager.createQuery("from Album where userId = :id").setParameter("id", request.getUserPrincipal().getName()).getResultList()).build();
-        return Response.ok(this.entityManager.createQuery("from Album").getResultList()).build();
+        return Response.ok(this.entityManager.createQuery("from Album where userId = :id").setParameter("id", request.getUserPrincipal().getName()).getResultList()).build();
+    }
+
+    @GET
+    @Path("/shares")
+    @Produces("application/json")
+    public Response findShares() {
+        List<PermissionTicketRepresentation> permissions = getAuthzClient().protection().permission().find(null, null, null, getKeycloakSecurityContext().getToken().getSubject(), true, true, null, null);
+        Map<String, SharedAlbum> shares = new HashMap<>();
+
+        for (PermissionTicketRepresentation permission : permissions) {
+            SharedAlbum share = shares.computeIfAbsent(permission.getResource(), s -> new SharedAlbum(Album.class.cast(entityManager.createQuery("from Album where externalId = :externalId").setParameter("externalId", permission.getResource()).getSingleResult())));
+
+            if (permission.getScope() != null) {
+                share.addScope(permission.getScopeName());
+            }
+        }
+
+        return Response.ok(shares.values()).build();
     }
 
     @GET
@@ -114,7 +138,9 @@ public class AlbumService {
             albumResource.setOwner(album.getUserId());
             albumResource.setOwnerManagedAccess(true);
 
-            getAuthzClient().protection().resource().create(albumResource);
+            RegistrationResponse response = getAuthzClient().protection().resource().create(albumResource);
+
+            album.setExternalId(response.getId());
         } catch (Exception e) {
             throw new RuntimeException("Could not register protected resource.", e);
         }

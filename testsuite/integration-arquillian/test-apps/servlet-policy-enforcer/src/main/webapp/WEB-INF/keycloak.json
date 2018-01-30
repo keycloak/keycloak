@@ -7,7 +7,6 @@
         "secret": "secret"
     },
     "policy-enforcer": {
-        "issue-permission-ticket": false,
         "on-deny-redirect-to": "/servlet-policy-enforcer/denied.jsp",
         "paths": [
             {

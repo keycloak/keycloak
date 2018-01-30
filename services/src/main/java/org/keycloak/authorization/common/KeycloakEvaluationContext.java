@@ -19,7 +19,6 @@
 package org.keycloak.authorization.common;
 
 import org.keycloak.authorization.identity.Identity;
-import org.keycloak.authorization.util.Tokens;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.AccessToken;
 
@@ -34,17 +33,9 @@ public class KeycloakEvaluationContext extends DefaultEvaluationContext {
 
     private final KeycloakIdentity identity;
 
-    public KeycloakEvaluationContext(KeycloakSession keycloakSession) {
-        this(new KeycloakIdentity(keycloakSession), keycloakSession);
-    }
-
     public KeycloakEvaluationContext(KeycloakIdentity identity, KeycloakSession keycloakSession) {
         super(identity, keycloakSession);
         this.identity = identity;
-    }
-
-    public KeycloakEvaluationContext(String claimToken, KeycloakSession keycloakSession) {
-        this(new KeycloakIdentity(keycloakSession, Tokens.getAccessToken(claimToken, keycloakSession)), keycloakSession);
     }
 
     @Override

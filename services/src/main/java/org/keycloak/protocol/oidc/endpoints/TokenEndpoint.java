@@ -24,8 +24,6 @@ import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
-import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
-import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.authorization.AuthorizationTokenService;
 import org.keycloak.authorization.authorization.representation.AuthorizationRequest;
@@ -51,7 +49,6 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -61,7 +58,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
@@ -69,9 +65,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.authorization.PermissionTicketToken;
-import org.keycloak.services.ErrorPage;
 import org.keycloak.services.CorsErrorResponseException;
-import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -80,10 +74,8 @@ import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.IdentityBrokerService;
-import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.services.validation.Validation;
@@ -104,7 +96,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
 import java.io.IOException;
-import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -188,7 +179,7 @@ public class TokenEndpoint {
             case TOKEN_EXCHANGE:
                 return tokenExchange();
             case PERMISSION:
-                return buildPermissionToken();
+                return permissionGrant();
         }
 
         throw new RuntimeException("Unknown action " + action);
@@ -985,7 +976,7 @@ public class TokenEndpoint {
         return user;
     }
 
-    public Response buildPermissionToken() {
+    public Response permissionGrant() {
         event.detail(Details.AUTH_METHOD, "oauth_credentials");
 
         AuthorizationRequest authorizationRequest = new AuthorizationRequest(formParams.getFirst("ticket"));

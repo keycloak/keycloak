@@ -9,6 +9,7 @@
   },
   "policy-enforcer": {
     "enforcement-mode": "PERMISSIVE",
+    "user-managed-access": {},
     "paths": [
       {
         "name" : "Album Resource",
@@ -23,6 +24,11 @@
             "scopes" : ["album:view"]
           }
         ]
+      },
+      {
+        "name" : "Album Resource",
+        "path" : "/album/shares",
+        "enforcement-mode": "DISABLED"
       },
       {
         "path" : "/profile"
