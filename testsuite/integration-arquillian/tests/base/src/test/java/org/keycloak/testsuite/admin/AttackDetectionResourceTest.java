@@ -63,7 +63,7 @@ public class AttackDetectionResourceTest extends AbstractAdminTest {
         oauthClient.doLogin("test-user2", "invalid");
         oauthClient.doLogin("nosuchuser", "invalid");
 
-        assertBruteForce(detection.bruteForceUserStatus(findUser("test-user@localhost").getId()), 2, true, true);
+        assertBruteForce(detection.bruteForceUserStatus(findUser("test-user@localhost").getId()), 3, true, true);
         assertBruteForce(detection.bruteForceUserStatus(findUser("test-user2").getId()), 2, true, true);
         assertBruteForce(detection.bruteForceUserStatus("nosuchuser"), 0, false, false);
 
