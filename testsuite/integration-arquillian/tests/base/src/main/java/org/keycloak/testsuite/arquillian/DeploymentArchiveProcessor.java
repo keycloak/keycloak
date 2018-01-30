@@ -74,7 +74,8 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
 
     protected final Logger log = org.jboss.logging.Logger.getLogger(this.getClass());
 
-    private final boolean authServerSslRequired = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required"));
+    private static final boolean AUTH_SERVER_SSL_REQUIRED = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required"));
+    private static final boolean APP_SERVER_SSL_REQUIRED = Boolean.parseBoolean(System.getProperty("app.server.ssl.required"));
 
     public static final String WEBXML_PATH = "/WEB-INF/web.xml";
     public static final String ADAPTER_CONFIG_PATH = "/WEB-INF/keycloak.json";
@@ -141,7 +142,7 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
                 log.info("Modifying saml adapter config in " + archive.getName());
 
                 Document doc = loadXML(archive.get("WEB-INF/keycloak-saml.xml").getAsset().openStream());
-                if (authServerSslRequired) {
+                if (AUTH_SERVER_SSL_REQUIRED) {
                     modifyDocElementAttribute(doc, "SingleSignOnService", "bindingUrl", "8080", System.getProperty("auth.server.https.port"));
                     modifyDocElementAttribute(doc, "SingleSignOnService", "bindingUrl", "http", "https");
                     modifyDocElementAttribute(doc, "SingleSignOnService", "assertionConsumerServiceUrl", "8081", System.getProperty("app.server.https.port"));
@@ -159,7 +160,9 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
 
                 archive.add(new StringAsset(IOUtil.documentToString(doc)), adapterConfigPath);
 
-
+                if (APP_SERVER_SSL_REQUIRED) {
+                    ((WebArchive) archive).addAsResource(new File(DeploymentArchiveProcessor.class.getResource("/keystore/keycloak.truststore").getFile()));
+                }
                 // For running SAML tests it is necessary to have few dependencies on app-server side.
                 // Few of them are not in adapter zip so we need to add them manually here
             } else { // OIDC adapter config
