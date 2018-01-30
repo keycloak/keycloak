@@ -54,6 +54,7 @@ import org.keycloak.storage.CacheableStorageProviderModel;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.client.ClientStorageProvider;
 
 import java.util.Calendar;
 import java.util.HashMap;
@@ -853,7 +854,7 @@ public class UserCacheSession implements UserCache {
 
     @Override
     public void preRemove(RealmModel realm, ComponentModel component) {
-        if (!component.getProviderType().equals(UserStorageProvider.class.getName())) return;
+        if (!component.getProviderType().equals(UserStorageProvider.class.getName()) && !component.getProviderType().equals(ClientStorageProvider.class.getName())) return;
         addRealmInvalidation(realm.getId()); // easier to just invalidate whole realm
         getDelegate().preRemove(realm, component);
 

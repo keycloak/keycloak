@@ -48,6 +48,7 @@ public class HardcodedClientStorageProviderFactory implements ClientStorageProvi
     public static final String CLIENT_ID = "client_id";
 
     public static final String REDIRECT_URI = "redirect_uri";
+    public static final String CONSENT = "consent";
 
     static {
         CONFIG_PROPERTIES = ProviderConfigurationBuilder.create()
@@ -58,10 +59,16 @@ public class HardcodedClientStorageProviderFactory implements ClientStorageProvi
                 .defaultValue("hardcoded-client")
                 .add()
                 .property().name(REDIRECT_URI)
-                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .type(ProviderConfigProperty.STRING_TYPE)
                 .label("Redirect Uri")
                 .helpText("Valid redirect uri.  Only one allowed")
                 .defaultValue("http://localhost:8180/*")
+                .add()
+                .property().name(CONSENT)
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .label("Consent Required")
+                .helpText("Is consent required")
+                .defaultValue("false")
                 .add()
                 .build();
     }

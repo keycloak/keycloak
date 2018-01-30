@@ -42,12 +42,14 @@ public class HardcodedClientStorageProvider implements ClientStorageProvider, Cl
     protected ClientStorageProviderModel component;
     protected String clientId;
     protected String redirectUri;
+    protected boolean consent;
 
     public HardcodedClientStorageProvider(KeycloakSession session, ClientStorageProviderModel component) {
         this.session = session;
         this.component = component;
         this.clientId = component.getConfig().getFirst(HardcodedClientStorageProviderFactory.CLIENT_ID);
         this.redirectUri = component.getConfig().getFirst(HardcodedClientStorageProviderFactory.REDIRECT_URI);
+        this.consent = "true".equals(component.getConfig().getFirst(HardcodedClientStorageProviderFactory.CONSENT));
     }
 
     @Override
@@ -189,7 +191,7 @@ public class HardcodedClientStorageProvider implements ClientStorageProvider, Cl
 
         @Override
         public boolean isConsentRequired() {
-            return false;
+            return consent;
         }
 
         @Override

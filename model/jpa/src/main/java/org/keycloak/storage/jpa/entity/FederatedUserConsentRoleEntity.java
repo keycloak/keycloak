@@ -38,6 +38,8 @@ import java.io.Serializable;
         @NamedQuery(name="deleteFederatedUserConsentRolesByStorageProvider", query="delete from FederatedUserConsentRoleEntity grantedRole where grantedRole.userConsent IN (select consent from FederatedUserConsentEntity consent where consent.storageProviderId = :storageProviderId)"),
         @NamedQuery(name="deleteFederatedUserConsentRolesByRole", query="delete from FederatedUserConsentRoleEntity grantedRole where grantedRole.roleId = :roleId"),
         @NamedQuery(name="deleteFederatedUserConsentRolesByClient", query="delete from FederatedUserConsentRoleEntity grantedRole where grantedRole.userConsent IN (select consent from FederatedUserConsentEntity consent where consent.clientId = :clientId)"),
+        @NamedQuery(name="deleteFederatedUserConsentRolesByExternalClient", query="delete from FederatedUserConsentRoleEntity grantedRole where grantedRole.userConsent IN (select consent from FederatedUserConsentEntity consent where consent.clientStorageProvider = :clientStorageProvider and consent.externalClientId = :externalClientId)"),
+        @NamedQuery(name="deleteFederatedUserConsentRolesByClientStorageProvider", query="delete from FederatedUserConsentRoleEntity grantedRole where grantedRole.userConsent IN (select consent from FederatedUserConsentEntity consent where consent.clientStorageProvider = :clientStorageProvider)"),
 })
 @Entity
 @Table(name="FED_USER_CONSENT_ROLE")
