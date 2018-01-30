@@ -19,7 +19,7 @@ package org.keycloak.authorization.client.resource;
 
 import java.util.concurrent.Callable;
 
-import org.keycloak.authorization.client.Configuration;
+import org.keycloak.authorization.client.representation.ServerConfiguration;
 import org.keycloak.authorization.client.representation.TokenIntrospectionResponse;
 import org.keycloak.authorization.client.util.Http;
 
@@ -32,15 +32,15 @@ public class ProtectionResource {
 
     private final Callable<String> pat;
     private final Http http;
-    private Configuration configuration;
+    private ServerConfiguration serverConfiguration;
 
-    public ProtectionResource(Http http, Configuration configuration, Callable<String> pat) {
+    public ProtectionResource(Http http, ServerConfiguration serverConfiguration, Callable<String> pat) {
         if (pat == null) {
             throw new RuntimeException("No access token was provided when creating client for Protection API.");
         }
 
         this.http = http;
-        this.configuration = configuration;
+        this.serverConfiguration = serverConfiguration;
         this.pat = pat;
     }
 
@@ -50,7 +50,7 @@ public class ProtectionResource {
      * @return a {@link ProtectedResource}
      */
     public ProtectedResource resource() {
-        return new ProtectedResource(http, configuration, pat);
+        return new ProtectedResource(http, serverConfiguration, pat);
     }
 
     /**
@@ -59,7 +59,7 @@ public class ProtectionResource {
      * @return a {@link PermissionResource}
      */
     public PermissionResource permission() {
-        return new PermissionResource(http, configuration, pat);
+        return new PermissionResource(http, serverConfiguration, pat);
     }
 
     /**

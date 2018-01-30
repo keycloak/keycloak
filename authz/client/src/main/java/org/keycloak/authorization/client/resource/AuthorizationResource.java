@@ -82,9 +82,9 @@ public class AuthorizationResource {
 
             return http.<AuthorizationResponse>post(serverConfiguration.getTokenEndpoint())
                     .authentication()
-                    .uma(request)
+                        .uma(request)
                     .response()
-                    .json(AuthorizationResponse.class)
+                        .json(AuthorizationResponse.class)
                     .execute();
         } catch (Exception cause) {
             throw handleAndWrapException("Failed to obtain authorization data", cause);

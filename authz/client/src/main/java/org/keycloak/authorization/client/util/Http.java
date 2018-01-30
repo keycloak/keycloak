@@ -39,27 +39,19 @@ public class Http {
     }
 
     public <R> HttpMethod<R> get(String path) {
-        return method(RequestBuilder.get().setUri(this.serverConfiguration.getIssuer() + path));
-    }
-
-    public <R> HttpMethod<R> get(URI path) {
         return method(RequestBuilder.get().setUri(path));
     }
 
-    public <R> HttpMethod<R> post(URI path) {
+    public <R> HttpMethod<R> post(String path) {
         return method(RequestBuilder.post().setUri(path));
     }
 
-    public <R> HttpMethod<R> post(String path) {
-        return method(RequestBuilder.post().setUri(this.serverConfiguration.getIssuer() + path));
-    }
-
     public <R> HttpMethod<R> put(String path) {
-        return method(RequestBuilder.put().setUri(this.serverConfiguration.getIssuer() + path));
+        return method(RequestBuilder.put().setUri(path));
     }
 
     public <R> HttpMethod<R> delete(String path) {
-        return method(RequestBuilder.delete().setUri(this.serverConfiguration.getIssuer() + path));
+        return method(RequestBuilder.delete().setUri(path));
     }
 
     private <R> HttpMethod<R> method(RequestBuilder builder) {

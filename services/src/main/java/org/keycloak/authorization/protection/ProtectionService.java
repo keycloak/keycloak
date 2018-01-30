@@ -22,10 +22,8 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.admin.ResourceSetService;
 import org.keycloak.authorization.common.KeycloakIdentity;
-import org.keycloak.authorization.identity.Identity;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.protection.permission.PermissionService;
-import org.keycloak.authorization.protection.permission.PermissionsService;
 import org.keycloak.authorization.protection.resource.ResourceService;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.models.ClientModel;
@@ -46,20 +44,18 @@ import javax.ws.rs.core.Response.Status;
 public class ProtectionService {
 
     private final AuthorizationProvider authorization;
-    private String resourceServerId;
 
     @Context
     protected ClientConnection clientConnection;
 
-    public ProtectionService(AuthorizationProvider authorization, String resourceServerId) {
+    public ProtectionService(AuthorizationProvider authorization) {
         this.authorization = authorization;
-        this.resourceServerId = resourceServerId;
     }
 
     @Path("/resource_set")
     public Object resource() {
         KeycloakIdentity identity = createIdentity(true);
-        ResourceServer resourceServer = getResourceServer();
+        ResourceServer resourceServer = getResourceServer(identity);
         RealmModel realm = authorization.getRealm();
         ClientModel client = realm.getClientById(identity.getId());
         KeycloakSession keycloakSession = authorization.getKeycloakSession();
@@ -80,18 +76,7 @@ public class ProtectionService {
     public Object permission() {
         KeycloakIdentity identity = createIdentity(false);
 
-        PermissionService resource = new PermissionService(identity, getResourceServer(), this.authorization);
-
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-
-        return resource;
-    }
-
-    @Path("/permissions")
-    public Object permissions() {
-        KeycloakIdentity identity = createIdentity(false);
-
-        PermissionsService resource = new PermissionsService(identity, getResourceServer(), this.authorization);
+        PermissionService resource = new PermissionService(identity, getResourceServer(identity), this.authorization);
 
         ResteasyProviderFactory.getInstance().injectProperties(resource);
 
@@ -100,7 +85,7 @@ public class ProtectionService {
 
     private KeycloakIdentity createIdentity(boolean checkProtectionScope) {
         KeycloakIdentity identity = new KeycloakIdentity(this.authorization.getKeycloakSession());
-        ResourceServer resourceServer = getResourceServer();
+        ResourceServer resourceServer = getResourceServer(identity);
         KeycloakSession keycloakSession = authorization.getKeycloakSession();
         RealmModel realm = keycloakSession.getContext().getRealm();
         ClientModel client = realm.getClientById(resourceServer.getId());
@@ -114,22 +99,23 @@ public class ProtectionService {
         return identity;
     }
 
-    private ResourceServer getResourceServer() {
-        RealmModel realm = this.authorization.getKeycloakSession().getContext().getRealm();
-        ClientModel clientApplication = realm.getClientByClientId(resourceServerId);
+    private ResourceServer getResourceServer(KeycloakIdentity identity) {
+        String clientId = identity.getAccessToken().getIssuedFor();
+        RealmModel realm = authorization.getKeycloakSession().getContext().getRealm();
+        ClientModel clientModel = realm.getClientByClientId(clientId);
 
-        if (clientApplication == null) {
-            clientApplication = realm.getClientById(resourceServerId);
+        if (clientModel == null) {
+            clientModel = realm.getClientById(clientId);
 
-            if (clientApplication == null) {
-                throw new ErrorResponseException("invalid_clientId", "Client application with id [" + resourceServerId + "] does not exist in realm [" + realm.getName() + "]", Status.BAD_REQUEST);
+            if (clientModel == null) {
+                throw new ErrorResponseException("invalid_clientId", "Client application with id [" + clientId + "] does not exist in realm [" + realm.getName() + "]", Status.BAD_REQUEST);
             }
         }
 
-        ResourceServer resourceServer = this.authorization.getStoreFactory().getResourceServerStore().findById(clientApplication.getId());
+        ResourceServer resourceServer = this.authorization.getStoreFactory().getResourceServerStore().findById(clientModel.getId());
 
         if (resourceServer == null) {
-            throw new ErrorResponseException("invalid_clientId", "Client application [" + clientApplication.getClientId() + "] is not registered as a resource server.", Status.FORBIDDEN);
+            throw new ErrorResponseException("invalid_clientId", "Client application [" + clientModel.getClientId() + "] is not registered as a resource server.", Status.FORBIDDEN);
         }
 
         return resourceServer;

@@ -19,11 +19,14 @@ package org.keycloak.authorization.client.resource;
 
 import static org.keycloak.authorization.client.util.Throwables.handleAndWrapException;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.Callable;
 
-import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.representation.RegistrationResponse;
 import org.keycloak.authorization.client.representation.ResourceRepresentation;
+import org.keycloak.authorization.client.representation.ServerConfiguration;
 import org.keycloak.authorization.client.util.Http;
 import org.keycloak.util.JsonSerialization;
 
@@ -35,12 +38,12 @@ import org.keycloak.util.JsonSerialization;
 public class ProtectedResource {
 
     private final Http http;
-    private Configuration configuration;
+    private ServerConfiguration serverConfiguration;
     private final Callable<String> pat;
 
-    ProtectedResource(Http http, Configuration configuration, Callable<String> pat) {
+    ProtectedResource(Http http, ServerConfiguration serverConfiguration, Callable<String> pat) {
         this.http = http;
-        this.configuration = configuration;
+        this.serverConfiguration = serverConfiguration;
         this.pat = pat;
     }
 
@@ -52,7 +55,7 @@ public class ProtectedResource {
      */
     public RegistrationResponse create(ResourceRepresentation resource) {
         try {
-            return this.http.<RegistrationResponse>post("/authz/protection/" + configuration.getResource() + "/resource_set")
+            return this.http.<RegistrationResponse>post(serverConfiguration.getResourceRegistrationEndpoint())
                     .authorizationBearer(this.pat.call())
                     .json(JsonSerialization.writeValueAsBytes(resource))
                     .response().json(RegistrationResponse.class).execute();
@@ -72,7 +75,7 @@ public class ProtectedResource {
             throw new IllegalArgumentException("You must provide the resource id");
         }
         try {
-            this.http.<RegistrationResponse>put("/authz/protection/" + configuration.getResource() + "/resource_set/" + resource.getId())
+            this.http.<RegistrationResponse>put(serverConfiguration.getResourceRegistrationEndpoint() + "/" + resource.getId())
                     .authorizationBearer(this.pat.call())
                     .json(JsonSerialization.writeValueAsBytes(resource)).execute();
         } catch (Exception cause) {
@@ -88,7 +91,7 @@ public class ProtectedResource {
      */
     public ResourceRepresentation findById(String id) {
         try {
-            return this.http.<ResourceRepresentation>get("/authz/protection/" + configuration.getResource() + "/resource_set/" + id)
+            return this.http.<ResourceRepresentation>get(serverConfiguration.getResourceRegistrationEndpoint() + "/" + id)
                     .authorizationBearer(this.pat.call())
                     .response().json(ResourceRepresentation.class).execute();
         } catch (Exception cause) {
@@ -127,7 +130,7 @@ public class ProtectedResource {
      */
     public String[] find(String id, String name, String uri, String owner, String type, String scope, Integer firstResult, Integer maxResult) {
         try {
-            return this.http.<String[]>get("/authz/protection/" + configuration.getResource() + "/resource_set")
+            return this.http.<String[]>get(serverConfiguration.getResourceRegistrationEndpoint())
                     .authorizationBearer(this.pat.call())
                     .param("_id", id)
                     .param("name", name)
@@ -164,7 +167,7 @@ public class ProtectedResource {
      */
     public void delete(String id) {
         try {
-            this.http.delete("/authz/protection/" + configuration.getResource() + "/resource_set/" + id)
+            this.http.delete(serverConfiguration.getResourceRegistrationEndpoint() + "/" + id)
                     .authorizationBearer(this.pat.call())
                     .execute();
         } catch (Exception cause) {

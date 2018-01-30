@@ -348,7 +348,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         // must have two permission tickets, one persisted during the first authorize call for ScopeA and another for the second call to authorize for ScopeB
         assertEquals(2, permissionTickets.size());
 
-        for (PermissionTicketRepresentation representation : permissionTickets) {
+        for (PermissionTicketRepresentation representation : new ArrayList<>(permissionTickets)) {
             if (representation.isGranted()) {
                 permissionTickets.remove(representation);
             }

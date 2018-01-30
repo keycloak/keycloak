@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.representations.idm.authorization.PermissionTicketToken;
 
 /**
@@ -36,7 +37,7 @@ public class AuthorizationRequest {
     private String pct;
     private String scope;
     private PermissionTicketToken permissions;
-    private AuthorizationRequestMetadata metadata;
+    private Metadata metadata;
     private String audience;
     private List<PermissionTicketToken.ResourcePermission> resourcePermissions = new ArrayList<>();
 
@@ -121,11 +122,11 @@ public class AuthorizationRequest {
         addPermission(resource, Collections.<String>emptySet());
     }
 
-    public void setMetadata(AuthorizationRequestMetadata metadata) {
+    public void setMetadata(Metadata metadata) {
         this.metadata = metadata;
     }
 
-    public AuthorizationRequestMetadata getMetadata() {
+    public Metadata getMetadata() {
         return metadata;
     }
 
@@ -158,6 +159,31 @@ public class AuthorizationRequest {
 
         public Set<String> getScopes() {
             return scopes;
+        }
+    }
+
+    public static class Metadata {
+        public static final String INCLUDE_RESOURCE_NAME = "include_resource_name";
+
+        @JsonProperty(INCLUDE_RESOURCE_NAME)
+        private boolean includeResourceName = true;
+
+        private int limit;
+
+        public boolean isIncludeResourceName() {
+            return includeResourceName;
+        }
+
+        public void setIncludeResourceName(boolean includeResourceName) {
+            this.includeResourceName = includeResourceName;
+        }
+
+        public void setLimit(int limit) {
+            this.limit = limit;
+        }
+
+        public int getLimit() {
+            return limit;
         }
     }
 }

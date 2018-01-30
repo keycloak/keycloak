@@ -19,7 +19,6 @@
 package org.keycloak.authorization;
 
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authorization.protection.ProtectionService;
@@ -35,9 +34,9 @@ public class AuthorizationService {
         this.authorization = authorization;
     }
 
-    @Path("/protection/{resource_server_id}")
-    public Object getProtectionService(@PathParam("resource_server_id") String resourceServerId) {
-        ProtectionService service = new ProtectionService(authorization, resourceServerId);
+    @Path("/protection")
+    public Object getProtectionService() {
+        ProtectionService service = new ProtectionService(authorization);
 
         ResteasyProviderFactory.getInstance().injectProperties(service);
 

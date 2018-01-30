@@ -34,7 +34,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.representation.AuthorizationRequest;
-import org.keycloak.authorization.client.representation.AuthorizationRequestMetadata;
+import org.keycloak.authorization.client.representation.AuthorizationRequest.Metadata;
 import org.keycloak.authorization.client.representation.AuthorizationResponse;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -106,7 +106,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
     @Test
     public void testRptRequestWithoutResourceName() {
-        AuthorizationRequestMetadata metadata = new AuthorizationRequestMetadata();
+        Metadata metadata = new Metadata();
 
         metadata.setIncludeResourceName(false);
 
@@ -122,7 +122,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
     @Test
     public void testRptRequestWithResourceName() {
-        AuthorizationRequestMetadata metadata = new AuthorizationRequestMetadata();
+        Metadata metadata = new Metadata();
 
         metadata.setIncludeResourceName(true);
 
@@ -148,7 +148,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
             request.addPermission("Resource " + i);
         }
 
-        AuthorizationRequestMetadata metadata = new AuthorizationRequestMetadata();
+        Metadata metadata = new Metadata();
 
         metadata.setLimit(10);
 
@@ -247,7 +247,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         assertEquals("resource-server-test", rpt.getAudience()[0]);
     }
 
-    private void assertResponse(AuthorizationRequestMetadata metadata, Supplier<AuthorizationResponse> responseSupplier) {
+    private void assertResponse(Metadata metadata, Supplier<AuthorizationResponse> responseSupplier) {
         AccessToken.Authorization authorization = toAccessToken(responseSupplier.get().getRpt()).getAuthorization();
 
         List<Permission> permissions = authorization.getPermissions();

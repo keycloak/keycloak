@@ -100,7 +100,7 @@ public class AuthzClient {
      * @return a {@link ProtectionResource}
      */
     public ProtectionResource protection() {
-        return new ProtectionResource(this.http, this.configuration, createPatSupplier());
+        return new ProtectionResource(this.http, this.serverConfiguration, createPatSupplier());
     }
 
     /**
@@ -110,7 +110,7 @@ public class AuthzClient {
      * @return a {@link ProtectionResource}
      */
     public ProtectionResource protection(final String accessToken) {
-        return new ProtectionResource(this.http, this.configuration, new Supplier<String>() {
+        return new ProtectionResource(this.http, this.serverConfiguration, new Supplier<String>() {
             @Override
             public String get() {
                 return accessToken;
@@ -126,7 +126,7 @@ public class AuthzClient {
      * @return a {@link ProtectionResource}
      */
     public ProtectionResource protection(String userName, String password) {
-        return new ProtectionResource(this.http, this.configuration, createPatSupplier(userName, password));
+        return new ProtectionResource(this.http, this.serverConfiguration, createPatSupplier(userName, password));
     }
 
     /**
@@ -221,14 +221,14 @@ public class AuthzClient {
             throw new IllegalArgumentException("Configuration URL can not be null.");
         }
 
-        configurationUrl += "/realms/" + configuration.getRealm() + "/.well-known/uma-configuration";
+        configurationUrl += "/realms/" + configuration.getRealm() + "/.well-known/uma2-configuration";
 
         this.configuration = configuration;
 
         this.http = new Http(configuration, authenticator != null ? authenticator : configuration.getClientAuthenticator());
 
         try {
-            this.serverConfiguration = this.http.<ServerConfiguration>get(URI.create(configurationUrl))
+            this.serverConfiguration = this.http.<ServerConfiguration>get(configurationUrl)
                     .response().json(ServerConfiguration.class)
                     .execute();
         } catch (Exception e) {

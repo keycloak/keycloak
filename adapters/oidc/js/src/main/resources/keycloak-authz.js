@@ -25,7 +25,7 @@
         this.init = function () {
             var request = new XMLHttpRequest();
 
-            request.open('GET', keycloak.authServerUrl + '/realms/' + keycloak.realm + '/.well-known/uma-configuration');
+            request.open('GET', keycloak.authServerUrl + '/realms/' + keycloak.realm + '/.well-known/uma2-configuration');
             request.onreadystatechange = function () {
                 if (request.readyState == 4) {
                     if (request.status == 200) {

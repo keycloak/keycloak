@@ -19,13 +19,14 @@ package org.keycloak.authorization.client.resource;
 
 import static org.keycloak.authorization.client.util.Throwables.handleAndWrapException;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.representation.PermissionRequest;
 import org.keycloak.authorization.client.representation.PermissionResponse;
+import org.keycloak.authorization.client.representation.ServerConfiguration;
 import org.keycloak.authorization.client.util.Http;
 import org.keycloak.representations.idm.authorization.PermissionTicketRepresentation;
 import org.keycloak.util.JsonSerialization;
@@ -38,12 +39,12 @@ import org.keycloak.util.JsonSerialization;
 public class PermissionResource {
 
     private final Http http;
-    private final Configuration configuration;
+    private final ServerConfiguration serverConfiguration;
     private final Callable<String> pat;
 
-    public PermissionResource(Http http, Configuration configuration, Callable<String> pat) {
+    public PermissionResource(Http http, ServerConfiguration serverConfiguration, Callable<String> pat) {
         this.http = http;
-        this.configuration = configuration;
+        this.serverConfiguration = serverConfiguration;
         this.pat = pat;
     }
 
@@ -64,17 +65,7 @@ public class PermissionResource {
      * @return a permission response holding a permission ticket with the requested permissions
      */
     public PermissionResponse create(PermissionRequest request) {
-        if (request == null) {
-            throw new IllegalArgumentException("Permission request must not be null");
-        }
-        try {
-            return this.http.<PermissionResponse>post("/authz/protection/" + configuration.getResource() + "/permission")
-                    .authorizationBearer(this.pat.call())
-                    .json(JsonSerialization.writeValueAsBytes(request))
-                    .response().json(PermissionResponse.class).execute();
-        } catch (Exception cause) {
-            throw handleAndWrapException("Error obtaining permission ticket", cause);
-        }
+        return create(Arrays.asList(request));
     }
 
     /**
@@ -88,8 +79,8 @@ public class PermissionResource {
             throw new IllegalArgumentException("Permission request must not be null or empty");
         }
         try {
-            return http.<PermissionResponse>post("/authz/protection/" + configuration.getResource() + "/permissions")
-                    .authorizationBearer(this.pat.get())
+            return http.<PermissionResponse>post(serverConfiguration.getPermissionEndpoint())
+                    .authorizationBearer(this.pat.call())
                     .json(JsonSerialization.writeValueAsBytes(requests))
                     .response().json(PermissionResponse.class).execute();
         } catch (Exception cause) {
@@ -107,10 +98,10 @@ public class PermissionResource {
         if (scopeId == null) {
             throw new IllegalArgumentException("Scope id must not be null");
         }
-        return http.<List<PermissionTicketRepresentation>>get("/authz/protection/" + configuration.getResource() + "/permission")
-                .authorizationBearer(this.pat.get())
+        return http.<List<PermissionTicketRepresentation>>get(serverConfiguration.getPermissionEndpoint())
+                .authorizationBearer(this.pat.call())
                 .param("scopeId", scopeId)
-                .response().json(new TypeReference<List<PermissionTicketRepresentation>>() {}).execute();
+                .response().json(new TypeReference<List<PermissionTicketRepresentation>>(){}).execute();
     }
 
     /**
@@ -123,13 +114,25 @@ public class PermissionResource {
         if (resourceId == null) {
             throw new IllegalArgumentException("Resource id must not be null");
         }
-        return http.<List<PermissionTicketRepresentation>>get("/authz/protection/" + configuration.getResource() + "/permission")
-                .authorizationBearer(this.pat.get())
+        return http.<List<PermissionTicketRepresentation>>get(serverConfiguration.getPermissionEndpoint())
+                .authorizationBearer(this.pat.call())
                 .param("resourceId", resourceId)
-                .response().json(new TypeReference<List<PermissionTicketRepresentation>>() {
-                }).execute();
+                .response().json(new TypeReference<List<PermissionTicketRepresentation>>(){}).execute();
     }
 
+    /**
+     * Query the server for any permission ticket with the matching arguments.
+     *
+     * @param resourceId the resource id or name
+     * @param scopeId the scope id or name
+     * @param owner the owner id or name
+     * @param requester the requester id or name
+     * @param granted if true, only permission tickets marked as granted are returned.
+     * @param returnNames if the response should include names for resource, scope and owner
+     * @param firstResult the position of the first resource to retrieve
+     * @param maxResult the maximum number of resources to retrieve
+     * @return a list of permission tickets with the matching arguments
+     */
     public List<PermissionTicketRepresentation> find(String resourceId,
                                                      String scopeId,
                                                      String owner,
@@ -138,18 +141,21 @@ public class PermissionResource {
                                                      Boolean returnNames,
                                                      Integer firstResult,
                                                      Integer maxResult) {
-        return http.<List<PermissionTicketRepresentation>>get("/authz/protection/" + configuration.getResource() + "/permission")
-                .authorizationBearer(this.pat.get())
-                .param("resourceId", resourceId)
-                .param("scopeId", scopeId)
-                .param("owner", owner)
-                .param("requester", requester)
-                .param("granted", granted == null ? null : granted.toString())
-                .param("returnNames", returnNames == null ? null : returnNames.toString())
-                .param("firstResult", firstResult == null ? null : firstResult.toString())
-                .param("maxResult", maxResult == null ? null : maxResult.toString())
-                .response().json(new TypeReference<List<PermissionTicketRepresentation>>() {
-                }).execute();
+        try {
+            return http.<List<PermissionTicketRepresentation>>get(serverConfiguration.getPermissionEndpoint())
+                    .authorizationBearer(this.pat.call())
+                    .param("resourceId", resourceId)
+                    .param("scopeId", scopeId)
+                    .param("owner", owner)
+                    .param("requester", requester)
+                    .param("granted", granted == null ? null : granted.toString())
+                    .param("returnNames", returnNames == null ? null : returnNames.toString())
+                    .param("firstResult", firstResult == null ? null : firstResult.toString())
+                    .param("maxResult", maxResult == null ? null : maxResult.toString())
+                    .response().json(new TypeReference<List<PermissionTicketRepresentation>>(){}).execute();
+        } catch (Exception cause) {
+            throw handleAndWrapException("Error querying permission ticket", cause);
+        }
     }
 
     /**
@@ -165,9 +171,9 @@ public class PermissionResource {
             throw new IllegalArgumentException("Permission ticket must have an id");
         }
         try {
-            http.<List>put("/authz/protection/" + configuration.getResource() + "/permission")
+            http.<List>put(serverConfiguration.getPermissionEndpoint())
                     .json(JsonSerialization.writeValueAsBytes(ticket))
-                    .authorizationBearer(this.pat.get())
+                    .authorizationBearer(this.pat.call())
                     .response().json(List.class).execute();
         } catch (Exception cause) {
             throw handleAndWrapException("Error updating permission ticket", cause);

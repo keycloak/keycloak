@@ -22,7 +22,7 @@ import java.io.IOException;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authorization.client.ClientAuthenticator;
 import org.keycloak.authorization.client.representation.AuthorizationRequest;
-import org.keycloak.authorization.client.representation.AuthorizationRequestMetadata;
+import org.keycloak.authorization.client.representation.AuthorizationRequest.Metadata;
 import org.keycloak.representations.idm.authorization.PermissionTicketToken;
 import org.keycloak.util.JsonSerialization;
 
@@ -82,7 +82,7 @@ public class HttpMethodAuthenticator<R> {
             throw new RuntimeException("Failed to marshal permissions", cause);
         }
         try {
-            AuthorizationRequestMetadata metadata = request.getMetadata();
+            Metadata metadata = request.getMetadata();
             method.param("metadata", metadata != null ? JsonSerialization.writeValueAsString(metadata) : null);
         } catch (IOException cause) {
             throw new RuntimeException("Failed to marshal metadata", cause);

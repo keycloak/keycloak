@@ -39,12 +39,9 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -64,8 +61,8 @@ public class PermissionService extends AbstractPermissionService {
     @POST
     @Consumes("application/json")
     @Produces("application/json")
-    public Response create(PermissionRequest request) {
-        return create(Arrays.asList(request));
+    public Response create(List<PermissionRequest> request) {
+        return super.create(request);
     }
 
     @PUT

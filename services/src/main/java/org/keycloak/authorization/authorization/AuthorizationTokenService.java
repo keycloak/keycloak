@@ -105,7 +105,7 @@ public class AuthorizationTokenService {
 
     public Response authorize(AuthorizationRequest request) {
         if (request == null) {
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid authorization request.", Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Invalid authorization request.", Status.BAD_REQUEST);
         }
 
         try {
@@ -155,7 +155,7 @@ public class AuthorizationTokenService {
         AuthorizationResponse response = new AuthorizationResponse();
 
         response.setToken(createRequestingPartyToken(entitlements, ticket, identity.getAccessToken(), resourceServer));
-        response.setTokenType("bearer");
+        response.setTokenType("Bearer");
 
         if (request.getRpt() != null) {
             response.setUpgraded(true);
@@ -184,7 +184,7 @@ public class AuthorizationTokenService {
             return permissions;
         }
 
-        throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "You must provide either a ticket or permissions", Status.BAD_REQUEST);
+        throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "You must provide either a ticket or permissions", Status.BAD_REQUEST);
     }
 
     private ResourceServer getResourceServer(PermissionTicketToken ticket) {

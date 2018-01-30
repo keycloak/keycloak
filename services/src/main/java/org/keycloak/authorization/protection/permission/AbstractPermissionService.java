@@ -57,7 +57,7 @@ public class AbstractPermissionService {
     }
 
     public Response create(List<PermissionRequest> request) {
-        if (request == null) {
+        if (request == null || request.isEmpty()) {
             throw new ErrorResponseException("invalid_permission_request", "Invalid permission request.", Response.Status.BAD_REQUEST);
         }
 
