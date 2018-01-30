@@ -1,0 +1,24 @@
+ifeval::[{project_product}==true]
+[WARNING]
+====
+In future releases we will update our User-Managed Access(UMA) implementation to conform
+to the latest version of the UMA specification, version 2.0.
+
+Due to differences between versions 1.0 (currently supported) and 2.0 of UMA, we are deprecating specific functionalities,
+in order to keep compliance with the new version. Here is a list of deprecated features:
+
+* *Entitlement API*
+
+  This REST API will be removed in future releases in favor of a more OAuth2 based way to obtain permissions from the server using a specific grant type. This grant type
+  is based on UMA 2.0 with extensions to make it work without permission tickets. This will have the same behavior as the Entitlement API.
+
+* *Authorization API*
+
+  This REST API was removed by UMA working group in version 2.0. As a consequence, we will be removing it too. It will
+  be replaced by a specific OAuth2 grant type, as defined by UMA 2.0 specification.
+
+Other related changes will occur with the Policy Enforcer, Authorization Client Java API and configuration. Changes to these are minimal, specially regarding policy enforcer configuration.
+
+We'll be updating docs accordingly, specially on how to migrate to the new version.
+====
+endif::[]
