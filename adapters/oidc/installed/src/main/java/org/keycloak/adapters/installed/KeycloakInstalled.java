@@ -17,7 +17,6 @@
 
 package org.keycloak.adapters.installed;
 
-import org.apache.commons.codec.Charsets;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.adapters.KeycloakDeployment;
