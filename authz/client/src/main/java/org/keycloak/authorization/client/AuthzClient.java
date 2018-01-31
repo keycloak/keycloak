@@ -30,7 +30,7 @@ import org.keycloak.util.JsonSerialization;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.util.function.Supplier;
+import java.util.concurrent.Callable;
 
 /**
  * <p>This is class serves as an entry point for clients looking for access to Keycloak Authorization Services.
@@ -40,7 +40,7 @@ import java.util.function.Supplier;
 public class AuthzClient {
 
     private final Http http;
-    private Supplier<String> patSupplier;
+    private Callable<String> patSupplier;
 
     public static AuthzClient create() {
         InputStream configStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("keycloak.json");
@@ -141,13 +141,13 @@ public class AuthzClient {
         return this.deployment;
     }
 
-    private Supplier<String> createPatSupplier() {
+    private Callable<String> createPatSupplier() {
         if (patSupplier == null) {
-            patSupplier = new Supplier<String>() {
+            patSupplier = new Callable<String>() {
                 AccessTokenResponse clientToken = obtainAccessToken();
 
                 @Override
-                public String get() {
+                public String call() {
                     String token = clientToken.getToken();
 
                     try {
