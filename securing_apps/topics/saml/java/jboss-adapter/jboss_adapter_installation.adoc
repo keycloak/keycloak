@@ -13,10 +13,7 @@ Install on Wildfly 9 or 10, 11 or JBoss EAP 7:
 $ cd $WILDFLY_HOME
 $ unzip keycloak-saml-wildfly-adapter-dist.zip
 ----
-endif::[]
 
-
-ifeval::[{project_community}==true]
 Install on JBoss EAP 6.x:
 [source]
 ----
@@ -27,20 +24,20 @@ $ unzip keycloak-saml-eap6-adapter-dist.zip
 endif::[]
 
 ifeval::[{project_product}==true]
-Install on JBoss EAP 6.x:
-[source]
-----
-
-$ cd $JBOSS_HOME
-$ unzip rh-sso-saml-eap6-adapter.zip
-----
-
 Install on JBoss EAP 7.x:
 [source]
 ----
 
-$ cd $JBOSS_HOME
+$ cd $EAP_HOME
 $ unzip rh-sso-saml-eap7-adapter.zip
+----
+
+Install on JBoss EAP 6.x:
+[source]
+----
+
+$ cd $EAP_HOME
+$ unzip rh-sso-saml-eap6-adapter.zip
 ----
 endif::[]
 
@@ -58,15 +55,33 @@ ifeval::[{project_community}==true]
 ----
 $ ./bin/jboss-cli.sh --file=adapter-elytron-install-saml.cli
 ----
-endif::[]
 
-.Any other server but Wildfly 11
+.WildFly 10 and older
 [source]
 ----
 
 $ cd $JBOSS_HOME/bin
 $ jboss-cli.sh -c --file=adapter-install-saml.cli
-----        
+----
+endif::[]
+
+ifeval::[{project_product}==true]
+.JBoss EAP 7.1
+[source]
+----
+$ ./bin/jboss-cli.sh --file=adapter-elytron-install-saml.cli
+----
+
+.JBoss EAP 7.0 and EAP 6
+[source]
+----
+
+$ cd $JBOSS_HOME/bin
+$ jboss-cli.sh -c --file=adapter-install-saml.cli
+----
+endif::[]
+
+
 The script will add the extension, subsystem, and optional security-domain as described below. 
 
 [source,xml]

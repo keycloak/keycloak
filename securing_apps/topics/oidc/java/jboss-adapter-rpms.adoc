@@ -1,0 +1,75 @@
+[[_jboss_adapter_rpm]]
+==== Installing JBoss EAP Adapter from an RPM
+
+Install the EAP 7 Adapters from an RPM:
+
+NOTE: With Red Hat Enterprise Linux 7, the term channel was replaced with the term repository. In these instructions only the term repository is used.
+
+You must subscribe to the JBoss EAP 7.0 repository before you can install the EAP 7 adapters from an RPM.
+
+.Prerequisites
+
+. Ensure that your Red Hat Enterprise Linux system is registered to your account using Red Hat Subscription Manager. For more information see the link:https://access.redhat.com/documentation/en-us/red_hat_subscription_management/1/html-single/quick_registration_for_rhel/index[Red Hat Subscription Management documentation].
+
+. If you are already subscribed to another JBoss EAP repository, you must unsubscribe from that repository first.
+
+Using Red Hat Subscription Manager, subscribe to the JBoss EAP 7.0 repository using the following command. Replace <RHEL_VERSION> with either 6 or 7 depending on your Red Hat Enterprise Linux version.
+
+----
+$ sudo subscription-manager repos --enable=jb-eap-7-for-rhel-<RHEL_VERSION>-server-rpms
+----
+
+Install the EAP 7 adapters for OIDC using the following command:
+
+----
+$ sudo yum install eap7-keycloak-adapter-sso7_2
+----
+
+NOTE: The default EAP_HOME path for the RPM installation is /opt/rh/eap7/root/usr/share/wildfly.
+
+Run the appropriate module installation script.
+
+For the OIDC module, enter the following command:
+
+----
+$ {EAP_HOME}/bin/jboss-cli.sh -c --file=${EAP_HOME}/bin/adapter-install.cli
+----
+
+Your installation is complete.
+
+
+Install the EAP 6 Adapters from an RPM:
+
+NOTE: With Red Hat Enterprise Linux 7, the term channel was replaced with the term repository. In these instructions only the term repository is used.
+
+You must subscribe to the JBoss EAP 6.0 repository before you can install the EAP 6 adapters from an RPM.
+
+.Prerequisites
+
+. Ensure that your Red Hat Enterprise Linux system is registered to your account using Red Hat Subscription Manager. For more information see the link:https://access.redhat.com/documentation/en-us/red_hat_subscription_management/1/html-single/quick_registration_for_rhel/index[Red Hat Subscription Management documentation].
+
+. If you are already subscribed to another JBoss EAP repository, you must unsubscribe from that repository first.
+
+Using Red Hat Subscription Manager, subscribe to the JBoss EAP 6.0 repository using the following command. Replace <RHEL_VERSION> with either 6 or 7 depending on your Red Hat Enterprise Linux version.
+
+----
+$ sudo subscription-manager repos --enable=jb-eap-6-for-rhel-<RHEL_VERSION>-server-rpms
+----
+
+Install the EAP 6 adapters for OIDC using the following command:
+
+----
+$ sudo yum install keycloak-adapter-sso7_2-eap6
+----
+
+NOTE: The default EAP_HOME path for the RPM installation is /opt/rh/eap6/root/usr/share/wildfly.
+
+Run the appropriate module installation script.
+
+For the OIDC module, enter the following command:
+
+----
+$ {EAP_HOME}/bin/jboss-cli.sh -c --file=${EAP_HOME}/bin/adapter-install.cli
+----
+
+Your installation is complete.
