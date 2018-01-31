@@ -80,7 +80,7 @@
         <update tableName="OFFLINE_CLIENT_SESSION">
             <column name="CLIENT_STORAGE_PROVIDER" value="local"/>
         </update>
-        <update tableName="EXTERNAL_CLIENT_ID">
+        <update tableName="OFFLINE_CLIENT_SESSION">
             <column name="EXTERNAL_CLIENT_ID" value="local"/>
         </update>
         <dropPrimaryKey tableName="OFFLINE_CLIENT_SESSION" constraintName="CONSTRAINT_OFFL_CL_SES_PK3"/>
