@@ -77,7 +77,9 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static java.util.Calendar.DAY_OF_WEEK;
 import static java.util.Calendar.HOUR_OF_DAY;
@@ -153,9 +155,27 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
 
 
 
-    //@Test
-    public void testRunConsole() throws Exception {
-        Thread.sleep(10000000);
+    @Test
+    public void testClientStats() throws Exception {
+        testDirectGrant("hardcoded-client");
+        testDirectGrant("hardcoded-client");
+        testBrowser("test-app");
+        offlineTokenDirectGrantFlowNoRefresh();
+        List<Map<String, String>> list = adminClient.realm("test").getClientSessionStats();
+        boolean hardTested = false;
+        boolean testAppTested = false;
+        for (Map<String, String> entry : list) {
+            if (entry.get("clientId").equals("hardcoded-client")) {
+                Assert.assertEquals("3", entry.get("active"));
+                Assert.assertEquals("1", entry.get("offline"));
+                hardTested = true;
+            } else if (entry.get("clientId").equals("test-app")) {
+                Assert.assertEquals("1", entry.get("active"));
+                Assert.assertEquals("0", entry.get("offline"));
+                testAppTested = true;
+            }
+        }
+        Assert.assertTrue(hardTested && testAppTested);
     }
 
 
@@ -166,10 +186,10 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
         //Thread.sleep(10000000);
     }
 
-    private void testBrowser(String clientId) {
+     private void testBrowser(String clientId) {
         oauth.clientId(clientId);
         String loginFormUrl = oauth.getLoginFormUrl();
-        log.info("loginFormUrl: " + loginFormUrl);
+        //log.info("loginFormUrl: " + loginFormUrl);
 
         //Thread.sleep(10000000);
 
@@ -404,6 +424,15 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
 
         // Assert same token can be refreshed again
         testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, token.getSessionState(), userId);
+    }
+    public void offlineTokenDirectGrantFlowNoRefresh() throws Exception {
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.clientId("hardcoded-client");
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        Assert.assertNull(tokenResponse.getErrorDescription());
+        AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
+        String offlineTokenString = tokenResponse.getRefreshToken();
+        RefreshToken offlineToken = oauth.verifyRefreshToken(offlineTokenString);
     }
 
     private String testRefreshWithOfflineToken(AccessToken oldToken, RefreshToken offlineToken, String offlineTokenString,

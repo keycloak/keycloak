@@ -507,19 +507,7 @@ public class RealmAdminResource {
 
         Map<String, Map<String, String>> data = new HashMap();
         {
-            List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm);
-            Map<String, Long> activeCount = new HashMap<>();
-            // we have to iterate over all realm user sessions as clients coming from client storage provider might not be reachable from getClients()
-            for (UserSessionModel userSession : userSessions) {
-                for (String id : userSession.getAuthenticatedClientSessions().keySet()) {
-                    Long number = activeCount.get(id);
-                    if (number == null) {
-                        activeCount.put(id, new Long(1));
-                    } else {
-                        activeCount.put(id, number + 1);
-                    }
-                }
-            }
+            Map<String, Long> activeCount =session.sessions().getActiveClientSessionStats(realm, false);
             for (Map.Entry<String, Long> entry : activeCount.entrySet()) {
                 Map<String, String> map = new HashMap<>();
                 ClientModel client = realm.getClientById(entry.getKey());
@@ -532,19 +520,7 @@ public class RealmAdminResource {
             }
         }
         {
-            Map<String, Long> offlineCount = new HashMap<>();
-            // we have to iterate over all realm user sessions as clients coming from client storage provider might not be reachable from getClients()
-            List<UserSessionModel> offlineSessions = session.sessions().getOfflineUserSessions(realm);
-            for (UserSessionModel userSession : offlineSessions) {
-                for (String id : userSession.getAuthenticatedClientSessions().keySet()) {
-                    Long number = offlineCount.get(id);
-                    if (number == null) {
-                        offlineCount.put(id, new Long(1));
-                    } else {
-                        offlineCount.put(id, number + 1);
-                    }
-                }
-            }
+            Map<String, Long> offlineCount = session.sessions().getActiveClientSessionStats(realm, true);
             for (Map.Entry<String, Long> entry : offlineCount.entrySet()) {
                 Map<String, String> map = data.get(entry.getKey());
                 if (map == null) {

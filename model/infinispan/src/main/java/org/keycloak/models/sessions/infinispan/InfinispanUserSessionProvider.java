@@ -20,6 +20,7 @@ package org.keycloak.models.sessions.infinispan;
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.context.Flag;
+import org.infinispan.stream.CacheCollectors;
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Time;
@@ -68,7 +69,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -296,35 +300,9 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         return getUserSessions(realm, client, firstResult, maxResults, false);
     }
 
-    @Override
-    public List<UserSessionModel> getOfflineUserSessions(RealmModel realm) {
-        return getOfflineUserSessions(realm, -1, -1);
-    }
-
-    @Override
-    public List<UserSessionModel> getOfflineUserSessions(RealmModel realm, int first, int max) {
-        return getUserSessions(realm, first, max, true);
-    }
-
     protected List<UserSessionModel> getUserSessions(final RealmModel realm, ClientModel client, int firstResult, int maxResults, final boolean offline) {
         final String clientUuid = client.getId();
         UserSessionPredicate predicate = UserSessionPredicate.create(realm.getId()).client(clientUuid);
-
-        return getUserSessionModels(realm, firstResult, maxResults, offline, predicate);
-    }
-
-    @Override
-    public List<UserSessionModel> getUserSessions(RealmModel realm) {
-        return getUserSessions(realm, -1, -1);
-    }
-
-    @Override
-    public List<UserSessionModel> getUserSessions(RealmModel realm, int firstResult, int maxResults) {
-        return getUserSessions(realm, firstResult, maxResults, false);
-    }
-
-    protected List<UserSessionModel> getUserSessions(final RealmModel realm, int firstResult, int maxResults, final boolean offline) {
-        UserSessionPredicate predicate = UserSessionPredicate.create(realm.getId());
 
         return getUserSessionModels(realm, firstResult, maxResults, offline, predicate);
     }
@@ -426,6 +404,25 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     @Override
     public long getActiveUserSessions(RealmModel realm, ClientModel client) {
         return getUserSessionsCount(realm, client, false);
+    }
+
+    @Override
+    public Map<String, Long> getActiveClientSessionStats(RealmModel realm, boolean offline) {
+        Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getCache(offline);
+        cache = CacheDecorators.skipCacheLoaders(cache);
+        return cache.entrySet().stream()
+                .filter(UserSessionPredicate.create(realm.getId()))
+                .map(Mappers.authClientSessionSetMapper())
+                .flatMap(Mappers::toStream)
+                .collect(
+                        countingGroupingCollector()
+                );
+    }
+
+    public static Collector<String, ?, Map<String, Long>> countingGroupingCollector() {
+        return CacheCollectors.serializableCollector(
+                () -> Collectors.groupingBy(Function.identity(), Collectors.counting())
+        );
     }
 
     protected long getUserSessionsCount(RealmModel realm, ClientModel client, boolean offline) {

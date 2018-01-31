@@ -20,6 +20,7 @@ package org.keycloak.models;
 import org.keycloak.provider.Provider;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.Predicate;
 
@@ -35,11 +36,9 @@ public interface UserSessionProvider extends Provider {
     UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId);
     UserSessionModel createUserSession(String id, RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId);
     UserSessionModel getUserSession(RealmModel realm, String id);
-    List<UserSessionModel> getUserSessions(RealmModel realm);
     List<UserSessionModel> getUserSessions(RealmModel realm, UserModel user);
     List<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client);
     List<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client, int firstResult, int maxResults);
-    List<UserSessionModel> getUserSessions(RealmModel realm, int firstResult, int maxResults);
     List<UserSessionModel> getUserSessionByBrokerUserId(RealmModel realm, String brokerUserId);
     UserSessionModel getUserSessionByBrokerSessionId(RealmModel realm, String brokerSessionId);
 
@@ -50,6 +49,15 @@ public interface UserSessionProvider extends Provider {
     UserSessionModel getUserSessionWithPredicate(RealmModel realm, String id, boolean offline, Predicate<UserSessionModel> predicate);
 
     long getActiveUserSessions(RealmModel realm, ClientModel client);
+
+    /**
+     * Returns a summary of client sessions key is client.getId()
+     *
+     * @param realm
+     * @param offline
+     * @return
+     */
+    Map<String, Long> getActiveClientSessionStats(RealmModel realm, boolean offline);
 
     /** This will remove attached ClientLoginSessionModels too **/
     void removeUserSession(RealmModel realm, UserSessionModel session);
@@ -77,11 +85,9 @@ public interface UserSessionProvider extends Provider {
     /** Will automatically attach newly created offline client session to the offlineUserSession **/
     AuthenticatedClientSessionModel createOfflineClientSession(AuthenticatedClientSessionModel clientSession, UserSessionModel offlineUserSession);
     List<UserSessionModel> getOfflineUserSessions(RealmModel realm, UserModel user);
-    List<UserSessionModel> getOfflineUserSessions(RealmModel realm);
 
     long getOfflineSessionsCount(RealmModel realm, ClientModel client);
     List<UserSessionModel> getOfflineUserSessions(RealmModel realm, ClientModel client, int first, int max);
-    List<UserSessionModel> getOfflineUserSessions(RealmModel realm, int first, int max);
 
     /** Triggered by persister during pre-load. It optionally imports authenticatedClientSessions too if requested. Otherwise the imported UserSession will have empty list of AuthenticationSessionModel **/
     UserSessionModel importUserSession(UserSessionModel persistentUserSession, boolean offline, boolean importAuthenticatedClientSessions);
