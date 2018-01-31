@@ -39,7 +39,7 @@ By default, the server recognizes the Client Registration CLI as the [filename]`
 . Create a new client (for example, [filename]`reg-cli`) if you want to use a separate client configuration for the Client Registration CLI.
 . Specify which [filename]`clientId` to use (for example, [command]`--client reg-cli`) when running [command]`kcreg config credentials`.
 . Enable service accounts if you want to use a service account associated with the client by selecting a client to edit in the *Clients* section of the `Admin Console`.
-. Under *Settings*, change the *Access Type* to *Confidential*, toggle the *Service Accounts Enabled* setting to *On*, and click [btn]`Save`.
+. Under *Settings*, change the *Access Type* to *Confidential*, toggle the *Service Accounts Enabled* setting to *On*, and click *Save*.
 +
 [NOTE]
 ====
@@ -51,9 +51,9 @@ You can configure either [filename]`Client Id and Secret` or [filename]`Signed J
 [[_installing_client_registration_cli]]
 === Installing the Client Registration CLI
 
-The Client Registration CLI is packaged inside the Keycloak Server distribution. You can find execution scripts inside the [filename]`bin` directory. The Linux script is called [filename]`kcreg.sh`, and the Windows script is called [filename]`kcreg.bat`.
+The Client Registration CLI is packaged inside the {project_name} Server distribution. You can find execution scripts inside the [filename]`bin` directory. The Linux script is called [filename]`kcreg.sh`, and the Windows script is called [filename]`kcreg.bat`.
 
-Add the Keycloak server directory to your [filename]`PATH` when setting up the client for use from any location on the file system.
+Add the {project_name} server directory to your [filename]`PATH` when setting up the client for use from any location on the file system.
 
 For example, on:
 
@@ -70,7 +70,7 @@ c:\> set PATH=%PATH%;%KEYCLOAK_HOME%\bin
 c:\> kcreg
 ----
 
-[filename]`KEYCLOAK_HOME` refers to a directory where the Keycloak Server distribution was unpacked.
+[filename]`KEYCLOAK_HOME` refers to a directory where the {project_name} Server distribution was unpacked.
 
 
 [[_using_client_registration_cli]]
@@ -100,7 +100,7 @@ c:\> kcreg get my_client
 +
 [NOTE]
 ====
-In a production environment, Keycloak has to be accessed with [filename]`https:` to avoid exposing tokens to network sniffers.
+In a production environment, {project_name} has to be accessed with [filename]`https:` to avoid exposing tokens to network sniffers.
 ====
 . If a server's certificate is not issued by one of the trusted certificate authorities (CAs) that are included in Java's default certificate truststore, prepare a [filename]`truststore.jks` file and instruct the Client Registration CLI to use it.
 +
@@ -166,7 +166,7 @@ You might want to avoid storing secrets inside a configuration file by using the
 [[_initial_access_and_registration_access_tokens]]
 ==== Initial Access and Registration Access Tokens
 
-Developers who do not have an account configured at the Keycloak server they want to use can use the Client Registration CLI. That is possible when the realm administrator issues a developer an Initial Access Token. It is up to the realm administrator to decide how to issue and distribute these tokens. The realm administrator can limit the maximum age of the Initial Access Token and the total number of clients that can be created with it.
+Developers who do not have an account configured at the {project_name} server they want to use can use the Client Registration CLI. This is possible only when the realm administrator issues a developer an Initial Access Token. It is up to the realm administrator to decide how and when to issue and distribute these tokens. The realm administrator can limit the maximum age of the Initial Access Token and the total number of clients that can be created with it.
 
 Once a developer has an Initial Access Token, the developer can use it to create new clients without authenticating with [command]`kcreg config credentials`. The Initial Access Token can be stored in the configuration file or specified as part of the [command]`kcreg create` command.
 
