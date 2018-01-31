@@ -20,7 +20,6 @@ package org.keycloak.example.photoz.entity;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import java.util.ArrayList;
@@ -33,8 +32,7 @@ import java.util.List;
 public class Album {
 
     @Id
-    @GeneratedValue
-    private Long id;
+    private String id;
 
     @Column(nullable = false)
     private String name;
@@ -45,11 +43,11 @@ public class Album {
     @Column(nullable = false)
     private String userId;
 
-    public Long getId() {
+    public String getId() {
         return this.id;
     }
 
-    public void setId(final Long id) {
+    public void setId(final String id) {
         this.id = id;
     }
 

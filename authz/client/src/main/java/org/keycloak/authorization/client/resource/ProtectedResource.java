@@ -20,7 +20,7 @@ package org.keycloak.authorization.client.resource;
 import static org.keycloak.authorization.client.util.Throwables.handleAndWrapException;
 
 import java.util.Set;
-import java.util.function.Supplier;
+import java.util.concurrent.Callable;
 
 import org.keycloak.authorization.client.representation.RegistrationResponse;
 import org.keycloak.authorization.client.representation.ResourceRepresentation;
@@ -33,9 +33,9 @@ import org.keycloak.util.JsonSerialization;
 public class ProtectedResource {
 
     private final Http http;
-    private final Supplier<String> pat;
+    private final Callable<String> pat;
 
-    public ProtectedResource(Http http, Supplier<String> pat) {
+    public ProtectedResource(Http http, Callable<String> pat) {
         this.http = http;
         this.pat = pat;
     }
@@ -43,7 +43,7 @@ public class ProtectedResource {
     public RegistrationResponse create(ResourceRepresentation resource) {
         try {
             return this.http.<RegistrationResponse>post("/authz/protection/resource_set")
-                    .authorizationBearer(this.pat.get())
+                    .authorizationBearer(this.pat.call())
                     .json(JsonSerialization.writeValueAsBytes(resource))
                     .response().json(RegistrationResponse.class).execute();
         } catch (Exception cause) {
@@ -54,7 +54,7 @@ public class ProtectedResource {
     public void update(ResourceRepresentation resource) {
         try {
             this.http.<RegistrationResponse>put("/authz/protection/resource_set/" + resource.getId())
-                    .authorizationBearer(this.pat.get())
+                    .authorizationBearer(this.pat.call())
                     .json(JsonSerialization.writeValueAsBytes(resource)).execute();
         } catch (Exception cause) {
             throw handleAndWrapException("Could not update resource", cause);
@@ -64,7 +64,7 @@ public class ProtectedResource {
     public RegistrationResponse findById(String id) {
         try {
             return this.http.<RegistrationResponse>get("/authz/protection/resource_set/" + id)
-                    .authorizationBearer(this.pat.get())
+                    .authorizationBearer(this.pat.call())
                     .response().json(RegistrationResponse.class).execute();
         } catch (Exception cause) {
             throw handleAndWrapException("Could not find resource", cause);
@@ -74,7 +74,7 @@ public class ProtectedResource {
     public Set<String> findByFilter(String filter) {
         try {
             return this.http.<Set>get("/authz/protection/resource_set")
-                    .authorizationBearer(this.pat.get())
+                    .authorizationBearer(this.pat.call())
                     .param("filter", filter)
                     .response().json(Set.class).execute();
         } catch (Exception cause) {
@@ -85,7 +85,7 @@ public class ProtectedResource {
     public Set<String> findAll() {
         try {
             return this.http.<Set>get("/authz/protection/resource_set")
-                    .authorizationBearer(this.pat.get())
+                    .authorizationBearer(this.pat.call())
                     .response().json(Set.class).execute();
         } catch (Exception cause) {
             throw handleAndWrapException("Could not find resource", cause);
@@ -95,7 +95,7 @@ public class ProtectedResource {
     public void delete(String id) {
         try {
             this.http.delete("/authz/protection/resource_set/" + id)
-                    .authorizationBearer(this.pat.get())
+                    .authorizationBearer(this.pat.call())
                     .execute();
         } catch (Exception cause) {
             throw handleAndWrapException("Could not delete resource", cause);

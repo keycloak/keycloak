@@ -28,6 +28,7 @@ import java.security.Principal;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 @Path("/album")
 @Transaction
@@ -47,6 +48,7 @@ public class AlbumService {
     public Response create(Album newAlbum) {
         Principal userPrincipal = request.getUserPrincipal();
 
+        newAlbum.setId(UUID.randomUUID().toString());
         newAlbum.setUserId(userPrincipal.getName());
 
         Query queryDuplicatedAlbum = this.entityManager.createQuery("from Album where name = :name and userId = :userId");
@@ -68,7 +70,7 @@ public class AlbumService {
     @Path("{id}")
     @DELETE
     public Response delete(@PathParam("id") String id) {
-        Album album = this.entityManager.find(Album.class, Long.valueOf(id));
+        Album album = this.entityManager.find(Album.class, id);
 
         try {
             deleteProtectedResource(album);
@@ -90,7 +92,7 @@ public class AlbumService {
     @Path("{id}")
     @Produces("application/json")
     public Response findById(@PathParam("id") String id) {
-        List result = this.entityManager.createQuery("from Album where id = :id").setParameter("id", Long.valueOf(id)).getResultList();
+        List result = this.entityManager.createQuery("from Album where id = :id").setParameter("id", id).getResultList();
 
         if (result.isEmpty()) {
             return Response.status(Status.NOT_FOUND).build();
