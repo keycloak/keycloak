@@ -21,6 +21,7 @@ import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.context.Flag;
 import org.infinispan.stream.CacheCollectors;
+import org.infinispan.stream.SerializableSupplier;
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Time;
@@ -60,10 +61,12 @@ import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
 import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 
+import java.io.Serializable;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
@@ -413,19 +416,15 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         return cache.entrySet().stream()
                 .filter(UserSessionPredicate.create(realm.getId()))
                 .map(Mappers.authClientSessionSetMapper())
-                .flatMap(Mappers::toStream)
+                .flatMap((Serializable & Function<Set<String>, Stream<? extends String>>)Mappers::toStream)
                 .collect(
-                        countingGroupingCollector()
+                        CacheCollectors.serializableCollector(
+                                () -> Collectors.groupingBy(Function.identity(), Collectors.counting())
+                        )
                 );
     }
 
-    public static Collector<String, ?, Map<String, Long>> countingGroupingCollector() {
-        return CacheCollectors.serializableCollector(
-                () -> Collectors.groupingBy(Function.identity(), Collectors.counting())
-        );
-    }
-
-    protected long getUserSessionsCount(RealmModel realm, ClientModel client, boolean offline) {
+     protected long getUserSessionsCount(RealmModel realm, ClientModel client, boolean offline) {
         Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getCache(offline);
         cache = CacheDecorators.skipCacheLoaders(cache);
 
