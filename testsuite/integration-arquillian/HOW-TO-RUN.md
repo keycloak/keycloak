@@ -273,20 +273,17 @@ mvn -f testsuite/integration-arquillian/tests/other/console/pom.xml \
 ```
 
 ## Welcome Page tests
-The Welcome Page tests need to be run on WildFly/EAP and with `-Dskip.add.user.json` switch. So that they are disabled by default and are meant to be run separately.
+The Welcome Page tests need to be run on WildFly/EAP. So that they are disabled by default and are meant to be run separately.
 
 
     # Prepare servers
     mvn -f testsuite/integration-arquillian/servers/pom.xml \
         clean install \
-        -Pauth-server-wildfly \
-        -Papp-server-wildfly
+        -Pauth-server-wildfly
 
     # Run tests
-    mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
+    mvn -f testsuite/integration-arquillian/tests/other/welcome-page/pom.xml \
         clean test \
-        -Dtest=WelcomePageTest \
-        -Dskip.add.user.json \
         -Pauth-server-wildfly
 
 
