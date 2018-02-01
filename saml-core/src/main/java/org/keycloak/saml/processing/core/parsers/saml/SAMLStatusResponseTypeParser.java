@@ -178,8 +178,7 @@ public abstract class SAMLStatusResponseTypeParser {
                     break;
                 else
                     throw logger.parserUnknownEndElement(StaxParserUtil.getEndElementName(endElement));
-            } else
-                break;
+            }
         }
         return status;
     }
