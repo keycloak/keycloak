@@ -34,17 +34,19 @@ The Administrator can issue Initial Access Tokens from the Admin Console through
 
 By default, the server recognizes the Client Registration CLI as the [filename]`admin-cli` client, which is configured automatically for every new realm. No additional client configuration is necessary when logging in with a user name.
 
-. Strengthen the security by configuring the client [filename]`Access Type` as [filename]`Confidential` and selecting *Credentials > ClientId and Secret*.
-. Provide a secret when running [command]`kcreg config credentials` by using the [command]`--secret` option.
 . Create a new client (for example, [filename]`reg-cli`) if you want to use a separate client configuration for the Client Registration CLI.
-. Specify which [filename]`clientId` to use (for example, [command]`--client reg-cli`) when running [command]`kcreg config credentials`.
-. Enable service accounts if you want to use a service account associated with the client by selecting a client to edit in the *Clients* section of the `Admin Console`.
-. Under *Settings*, change the *Access Type* to *Confidential*, toggle the *Service Accounts Enabled* setting to *On*, and click *Save*.
-+
+. Toggle the *Standard Flow Enabled* setting it to *Off*.
+. Strengthen the security by configuring the client [filename]`Access Type` as [filename]`Confidential` and selecting *Credentials > ClientId and Secret*.
 [NOTE]
 ====
 You can configure either [filename]`Client Id and Secret` or [filename]`Signed JWT` under the *Credentials* tab .
 ====
+. Enable service accounts if you want to use a service account associated with the client by selecting a client to edit in the *Clients* section of the `Admin Console`.
+.. Under *Settings*, change the *Access Type* to *Confidential*, toggle the *Service Accounts Enabled* setting to *On*, and click *Save*.
+.. Click *Service Account Roles* and select desired roles to configure the access for the service account. For the details on what roles to select, see <<_configuring_a_user_for_client_registration_cli>>.
+. Toggle the *Direct Access Grants Enabled* setting it to *On* if you want to use a regular user account instead of a service account.
+. If the client is configured as [filename]`Confidential`, provide the configured secret when running [command]`kcreg config credentials` by using the [command]`--secret` option.
+. Specify which [filename]`clientId` to use (for example, [command]`--client reg-cli`) when running [command]`kcreg config credentials`.
 . With the service account enabled, you can omit specifying the user when running [command]`kcreg config credentials` and only provide the client secret or keystore information.
 
 
