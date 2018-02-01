@@ -132,7 +132,7 @@ public class GroupPathPolicyTest extends AbstractAuthzTest {
         String ticket = authzClient.protection().permission().create(request).getTicket();
         AuthorizationResponse response = authzClient.authorization("marta", "password").authorize(new AuthorizationRequest(ticket));
 
-        assertNotNull(response.getRpt());
+        assertNotNull(response.getToken());
 
         RealmResource realm = getRealm();
         GroupRepresentation group = getGroup("/Group A/Group B/Group C");
@@ -143,7 +143,7 @@ public class GroupPathPolicyTest extends AbstractAuthzTest {
         ticket = authzClient.protection().permission().create(request).getTicket();
         response = authzClient.authorization("kolo", "password").authorize(new AuthorizationRequest(ticket));
 
-        assertNotNull(response.getRpt());
+        assertNotNull(response.getToken());
     }
 
     @Test
@@ -167,7 +167,7 @@ public class GroupPathPolicyTest extends AbstractAuthzTest {
 
         AuthorizationResponse response = authzClient.authorization("kolo", "password").authorize(new AuthorizationRequest(ticket));
 
-        assertNotNull(response.getRpt());
+        assertNotNull(response.getToken());
 
         try {
             authzClient.authorization("marta", "password").authorize(new AuthorizationRequest(ticket));

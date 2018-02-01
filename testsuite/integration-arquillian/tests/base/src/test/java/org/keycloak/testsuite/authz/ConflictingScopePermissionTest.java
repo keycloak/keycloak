@@ -125,7 +125,7 @@ public class ConflictingScopePermissionTest extends AbstractAuthzTest {
         AccessToken accessToken;
 
         try {
-            accessToken = new JWSInput(response.getRpt()).readJsonContent(AccessToken.class);
+            accessToken = new JWSInput(response.getToken()).readJsonContent(AccessToken.class);
         } catch (JWSInputException cause) {
             throw new RuntimeException("Failed to deserialize RPT", cause);
         }

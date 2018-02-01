@@ -114,7 +114,7 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
         String ticket = ticketResponse.getTicket();
 
         AuthorizationResponse authorizationResponse = authzClient.authorization("marta", "password").authorize(new AuthorizationRequest(ticket));
-        String rpt = authorizationResponse.getRpt();
+        String rpt = authorizationResponse.getToken();
 
         assertNotNull(rpt);
 

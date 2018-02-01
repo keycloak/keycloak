@@ -28,6 +28,7 @@ import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.authorization.AuthorizationTokenService;
 import org.keycloak.authorization.authorization.representation.AuthorizationRequest;
 import org.keycloak.authorization.authorization.representation.AuthorizationRequestMetadata;
+import org.keycloak.authorization.util.Tokens;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ExchangeExternalToken;
 import org.keycloak.broker.provider.IdentityProvider;
@@ -68,6 +69,7 @@ import org.keycloak.representations.idm.authorization.PermissionTicketToken;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
+import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.BruteForceProtector;
@@ -85,6 +87,7 @@ import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.ProfileHelper;
 
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -93,9 +96,11 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -165,7 +170,10 @@ public class TokenEndpoint {
         checkSsl();
         checkRealm();
         checkGrantType();
-        checkClient();
+
+        if (!action.equals(Action.PERMISSION)) {
+            checkClient();
+        }
 
         switch (action) {
             case AUTHORIZATION_CODE:
@@ -979,30 +987,54 @@ public class TokenEndpoint {
     public Response permissionGrant() {
         event.detail(Details.AUTH_METHOD, "oauth_credentials");
 
-        AuthorizationRequest authorizationRequest = new AuthorizationRequest(formParams.getFirst("ticket"));
+        String accessTokenString = null;
+        String authorizationHeader = headers.getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
-        List<String> claimToken = formParams.get("claim_token");
-
-        if (claimToken == null) {
-            // Clients need to authenticate in order to obtain a RPT from the server.
-            // In order to support cases where the client is obtaining permissions on its on behalf, we issue a temporary access token
-            authorizationRequest.setClaimToken(AccessTokenResponse.class.cast(clientCredentialsGrant().getEntity()).getToken());
-        } else {
-            authorizationRequest.setClaimToken(claimToken.get(0));
+        if (authorizationHeader != null && authorizationHeader.toLowerCase().startsWith("bearer")) {
+            accessTokenString = new AppAuthManager().extractAuthorizationHeaderToken(headers);
         }
 
+        if (accessTokenString != null) {
+            AccessToken accessToken = Tokens.getAccessToken(session);
+
+            if (accessToken == null) {
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Invalid bearer token", Status.UNAUTHORIZED);
+            }
+
+            cors.allowedOrigins(uriInfo, realm.getClientByClientId(accessToken.getIssuedFor()));
+        }
+
+        String claimToken = null;
+
+        // claim_token is optional, if provided we just grab it from the request
+        if (formParams.containsKey("claim_token")) {
+            claimToken = formParams.get("claim_token").get(0);
+        }
+
+        if (accessTokenString == null) {
+            // in case no bearer token is provided, we force client authentication
+            checkClient();
+            // Clients need to authenticate in order to obtain a RPT from the server.
+            // In order to support cases where the client is obtaining permissions on its on behalf, we issue a temporary access token
+            accessTokenString = AccessTokenResponse.class.cast(clientCredentialsGrant().getEntity()).getToken();
+        }
+
+        AuthorizationRequest authorizationRequest = new AuthorizationRequest(formParams.getFirst("ticket"));
+
+        authorizationRequest.setClaimToken(claimToken);
         authorizationRequest.setClaimTokenFormat(formParams.getFirst("claim_token_format"));
         authorizationRequest.setPct(formParams.getFirst("pct"));
         authorizationRequest.setRpt(formParams.getFirst("rpt"));
         authorizationRequest.setScope(formParams.getFirst("scope"));
         authorizationRequest.setAudience(formParams.getFirst("audience"));
+        authorizationRequest.setAccessToken(accessTokenString);
 
         String permissions = formParams.getFirst("permissions");
 
         if (permissions != null) {
             try {
-                authorizationRequest.setPermissions(JsonSerialization.readValue(permissions.getBytes(), PermissionTicketToken.class));
-            } catch (IOException e) {
+                authorizationRequest.setPermissions(JsonSerialization.readValue(Base64Url.decode(new String(permissions.getBytes(), Charset.forName("UTF-8"))), PermissionTicketToken.class));
+            } catch (Exception e) {
                 throw new CorsErrorResponseException(cors, Errors.INVALID_REQUEST, "Invalid permissions", Response.Status.BAD_REQUEST);
             }
         }
@@ -1012,12 +1044,12 @@ public class TokenEndpoint {
         if (metadata != null) {
             try {
                 authorizationRequest.setMetadata(JsonSerialization.readValue(metadata.getBytes(), AuthorizationRequestMetadata.class));
-            } catch (IOException e) {
+            } catch (Exception e) {
                 throw new CorsErrorResponseException(cors, Errors.INVALID_REQUEST, "Invalid permissions", Response.Status.BAD_REQUEST);
             }
         }
 
-        return new AuthorizationTokenService(session.getProvider(AuthorizationProvider.class), request, cors).authorize(authorizationRequest);
+        return new AuthorizationTokenService(session.getProvider(AuthorizationProvider.class), tokenManager, event, request, cors).authorize(authorizationRequest);
     }
 
     // https://tools.ietf.org/html/rfc7636#section-4.1

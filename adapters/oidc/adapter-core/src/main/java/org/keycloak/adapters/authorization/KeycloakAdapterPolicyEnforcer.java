@@ -134,7 +134,7 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
             AuthorizationResponse authzResponse = authzClient.authorization().authorize(authzRequest);
 
             if (authzResponse != null) {
-                return AdapterRSATokenVerifier.verifyToken(authzResponse.getRpt(), deployment);
+                return AdapterRSATokenVerifier.verifyToken(authzResponse.getToken(), deployment);
             }
 
             return null;

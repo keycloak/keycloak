@@ -128,8 +128,8 @@ public class PermissionClaimTest extends AbstractAuthzTest {
         String ticket = authzClient.protection().permission().create(request).getTicket();
         AuthorizationResponse response = authzClient.authorization(accessToken).authorize(new AuthorizationRequest(ticket));
 
-        assertNotNull(response.getRpt());
-        AccessToken rpt = toAccessToken(response.getRpt());
+        assertNotNull(response.getToken());
+        AccessToken rpt = toAccessToken(response.getToken());
         Authorization authorizationClaim = rpt.getAuthorization();
         List<Permission> permissions = authorizationClaim.getPermissions();
 
@@ -164,8 +164,8 @@ public class PermissionClaimTest extends AbstractAuthzTest {
         String ticket = authzClient.protection().permission().forResource(request).getTicket();
         AuthorizationResponse response = authzClient.authorization(accessToken).authorize(new AuthorizationRequest(ticket));
 
-        assertNotNull(response.getRpt());
-        AccessToken rpt = toAccessToken(response.getRpt());
+        assertNotNull(response.getToken());
+        AccessToken rpt = toAccessToken(response.getToken());
         Authorization authorizationClaim = rpt.getAuthorization();
         List<Permission> permissions = authorizationClaim.getPermissions();
 

@@ -49,7 +49,7 @@ public class AuthorizationClientExample {
         // send the authorization request to the server in order to
         // obtain an RPT with all permissions granted to the user
         AuthorizationResponse response = authzClient.authorization("alice", "alice").authorize();
-        String rpt = response.getRpt();
+        String rpt = response.getToken();
 
         TokenIntrospectionResponse requestingPartyToken = authzClient.protection().introspectRequestingPartyToken(rpt);
 
@@ -138,7 +138,7 @@ public class AuthorizationClientExample {
         // send the entitlement request to the server in order to
         // obtain an RPT with permissions for a single resource
         AuthorizationResponse response = authzClient.authorization("alice", "alice").authorize(request);
-        String rpt = response.getRpt();
+        String rpt = response.getToken();
 
         System.out.println("You got a RPT: " + rpt);
 
@@ -155,7 +155,7 @@ public class AuthorizationClientExample {
         // send the entitlement request to the server in order to
         // obtain an RPT with all permissions granted to the user
         AuthorizationResponse response = authzClient.authorization("alice", "alice").authorize(request);
-        String rpt = response.getRpt();
+        String rpt = response.getToken();
 
         System.out.println("You got a RPT: " + rpt);
 

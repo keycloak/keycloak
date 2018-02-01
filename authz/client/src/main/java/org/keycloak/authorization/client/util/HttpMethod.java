@@ -43,7 +43,7 @@ public class HttpMethod<R> {
 
     private final HttpClient httpClient;
     private final ClientAuthenticator authenticator;
-    private final RequestBuilder builder;
+    protected final RequestBuilder builder;
     protected final Configuration configuration;
     protected final HashMap<String, String> headers;
     protected final HashMap<String, String> params;

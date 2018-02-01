@@ -141,14 +141,14 @@ public class AuthzClient {
     /**
      * <p>Creates a {@link AuthorizationResource} instance which can be used to obtain permissions from the server.
      *
-     * @param claimToken an ID Token or Access Token representing an identity and/or access context
+     * @param accessToken the Access Token that will be used as a bearer to access the token endpoint
      * @return a {@link AuthorizationResource}
      */
-    public AuthorizationResource authorization(final String claimToken) {
+    public AuthorizationResource authorization(final String accessToken) {
         return new AuthorizationResource(configuration, serverConfiguration, this.http, new Supplier<String>() {
             @Override
             public String get() {
-                return claimToken;
+                return accessToken;
             }
         });
     }

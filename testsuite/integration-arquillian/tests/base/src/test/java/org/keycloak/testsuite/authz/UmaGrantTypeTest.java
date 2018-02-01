@@ -72,27 +72,6 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
     }
 
     @Test
-    public void testObtainRptWithResourceOwnerCredentials() throws Exception {
-        AuthorizationResponse response = authorize("marta", "password", "Resource A", new String[] {"ScopeA", "ScopeB"});
-        String rpt = response.getToken();
-
-        assertNotNull(rpt);
-        assertFalse(response.isUpgraded());
-
-        AccessToken accessToken = toAccessToken(rpt);
-        AccessToken.Authorization authorization = accessToken.getAuthorization();
-
-        assertNotNull(authorization);
-
-        List<Permission> permissions = authorization.getPermissions();
-
-        assertNotNull(permissions);
-        assertPermissions(permissions, "Resource A", "ScopeA", "ScopeB");
-
-        assertTrue(permissions.isEmpty());
-    }
-
-    @Test
     public void testObtainRptWithClientAdditionalScopes() throws Exception {
         AuthorizationResponse response = authorize("marta", "password", "Resource A", new String[] {"ScopeA", "ScopeB"}, new String[] {"ScopeC"});
         AccessToken accessToken = toAccessToken(response.getToken());
@@ -180,9 +159,9 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
     }
 
     @Test
-    public void testObtainRptWithPublicClientUsingAccessToken() throws Exception {
+    public void testObtainRpttUsingAccessToken() throws Exception {
         AccessTokenResponse accessTokenResponse = getAuthzClient().obtainAccessToken("marta", "password");
-        AuthorizationResponse response = authorize("Resource A", new String[] {"ScopeA", "ScopeB"}, accessTokenResponse.getToken());
+        AuthorizationResponse response = authorize(null, null, null, null, accessTokenResponse.getToken(), null, null, new PermissionRequest("Resource A", new HashSet<>(Arrays.asList(new String[] {"ScopeA", "ScopeB"}))));
         String rpt = response.getToken();
 
         assertNotNull(rpt);

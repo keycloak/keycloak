@@ -28,6 +28,7 @@ import org.keycloak.authorization.client.representation.AuthorizationRequest;
 import org.keycloak.authorization.client.representation.AuthorizationResponse;
 import org.keycloak.authorization.client.representation.ServerConfiguration;
 import org.keycloak.authorization.client.util.Http;
+import org.keycloak.authorization.client.util.HttpMethod;
 
 /**
  * An entry point for obtaining permissions from the server.
@@ -71,16 +72,15 @@ public class AuthorizationResource {
         }
 
         try {
-            String claimToken = request.getClaimToken();
-
-            if (claimToken == null && supplier != null) {
-                claimToken = supplier.get();
-            }
-
-            request.setClaimToken(claimToken);
             request.setAudience(configuration.getResource());
 
-            return http.<AuthorizationResponse>post(serverConfiguration.getTokenEndpoint())
+            HttpMethod<AuthorizationResponse> method = http.<AuthorizationResponse>post(serverConfiguration.getTokenEndpoint());
+
+            if (supplier != null) {
+                method = method.authorizationBearer(supplier.get());
+            }
+
+            return method
                     .authentication()
                         .uma(request)
                     .response()

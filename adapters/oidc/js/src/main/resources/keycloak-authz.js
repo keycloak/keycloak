@@ -47,58 +47,52 @@
          * necessary information to ask a Keycloak server for authorization data using both UMA and Entitlement protocol,
          * depending on how the policy enforcer at the resource server was configured.
          */
-        this.authorize = function (wwwAuthenticateHeader) {
+        this.authorize = function (authorizationRequest) {
             this.then = function (onGrant, onDeny, onError) {
-                if (wwwAuthenticateHeader.indexOf('UMA') != -1) {
-                    var params = wwwAuthenticateHeader.split(',');
+                if (authorizationRequest && authorizationRequest.ticket) {
+                    var request = new XMLHttpRequest();
 
-                    for (i = 0; i < params.length; i++) {
-                        var param = params[i].split('=');
+                    request.open('POST', _instance.config.token_endpoint, true);
+                    request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                    request.setRequestHeader('Authorization', 'Bearer ' + keycloak.token);
 
-                        if (param[0] == 'ticket') {
-                            var request = new XMLHttpRequest();
-                            var ticket = param[1].substring(1, param[1].length - 1).trim();
+                    request.onreadystatechange = function () {
+                        if (request.readyState == 4) {
+                            var status = request.status;
 
-                            request.open('POST', _instance.config.token_endpoint, true);
-                            request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-
-                            request.onreadystatechange = function () {
-                                if (request.readyState == 4) {
-                                    var status = request.status;
-
-                                    if (status >= 200 && status < 300) {
-                                        var rpt = JSON.parse(request.responseText).rpt;
-                                        _instance.rpt = rpt;
-                                        onGrant(rpt);
-                                    } else if (status == 403) {
-                                        if (onDeny) {
-                                            onDeny();
-                                        } else {
-                                            console.error('Authorization request was denied by the server.');
-                                        }
-                                    } else {
-                                        if (onError) {
-                                            onError();
-                                        } else {
-                                            console.error('Could not obtain authorization data from server.');
-                                        }
-                                    }
+                            if (status >= 200 && status < 300) {
+                                var rpt = JSON.parse(request.responseText).access_token;
+                                _instance.rpt = rpt;
+                                onGrant(rpt);
+                            } else if (status == 403) {
+                                if (onDeny) {
+                                    onDeny();
+                                } else {
+                                    console.error('Authorization request was denied by the server.');
                                 }
-                            };
-
-                            var params = "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket&" +
-                                        "client_id=" + keycloak.clientId + "&" +
-                                        "claim_token=" + keycloak.token + "&" +
-                                        "claim_token_format=urn:ietf:params:oauth:token-type:jwt&" +
-                                        "ticket=" + ticket;
-
-                            if (_instance.rpt) {
-                                params += "&rpt=" + _instance.rpt;
+                            } else {
+                                if (onError) {
+                                    onError();
+                                } else {
+                                    console.error('Could not obtain authorization data from server.');
+                                }
                             }
-
-                            request.send(params);
                         }
+                    };
+
+                    var params = "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket&" +
+                                "client_id=" + keycloak.clientId + "&" +
+                                "ticket=" + authorizationRequest.ticket;
+
+                    if (authorizationRequest.metadata) {
+                        params += "&metadata=" + btoa(JSON.stringify(authorizationRequest.metadata));
                     }
+
+                    if (_instance.rpt) {
+                        params += "&rpt=" + _instance.rpt;
+                    }
+
+                    request.send(params);
                 }
             };
 
@@ -114,13 +108,14 @@
 
                 request.open('POST', _instance.config.token_endpoint, true);
                 request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                request.setRequestHeader('Authorization', 'Bearer ' + keycloak.token);
 
                 request.onreadystatechange = function () {
                     if (request.readyState == 4) {
                         var status = request.status;
 
                         if (status >= 200 && status < 300) {
-                            var rpt = JSON.parse(request.responseText).rpt;
+                            var rpt = JSON.parse(request.responseText).access_token;
                             _instance.rpt = rpt;
                             onGrant(rpt);
                         } else if (status == 403) {
@@ -140,24 +135,30 @@
                 };
 
                 var params = "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket&" +
-                            "client_id=" + keycloak.clientId + "&" +
-                            "claim_token=" + keycloak.token + "&" +
-                            "claim_token_format=urn:ietf:params:oauth:token-type:jwt&" +
-                            "audience=" + resourceServerId;
+                            "client_id=" + keycloak.clientId;
 
                 if (!authorizationRequest) {
-                    authorizationRequest = {
-                        "resources": [],
-                        "metadata": {}
-                    };
+                    authorizationRequest = {};
                 }
 
-                if (authorizationRequest.resources) {
-                    params += "&permissions=" + JSON.stringify({"resources": authorizationRequest.resources});
+                if (authorizationRequest.claimToken) {
+                    params += "&claim_token=" + authorizationRequest.claimToken;
+
+                    if (authorizationRequest.claimTokenFormat) {
+                        params += "&claim_token_format=" + authorizationRequest.claimTokenFormat;
+                    }
                 }
+
+                params += "&audience=" + resourceServerId;
+
+                if (!authorizationRequest.permissions) {
+                    authorizationRequest.permissions = {"resources": []};
+                }
+
+                params += "&permissions=" + btoa(JSON.stringify(authorizationRequest.permissions));
 
                 if (authorizationRequest.metadata) {
-                    params += "&metadata=" + JSON.stringify(authorizationRequest.metadata);
+                    params += "&metadata=" + btoa(JSON.stringify(authorizationRequest.metadata));
                 }
 
                 if (_instance.rpt) {

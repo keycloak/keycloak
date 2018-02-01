@@ -19,10 +19,12 @@ package org.keycloak.authorization.client.util;
 
 import java.io.IOException;
 
+import org.apache.http.Header;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authorization.client.ClientAuthenticator;
 import org.keycloak.authorization.client.representation.AuthorizationRequest;
 import org.keycloak.authorization.client.representation.AuthorizationRequest.Metadata;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.representations.idm.authorization.PermissionTicketToken;
 import org.keycloak.util.JsonSerialization;
 
@@ -54,7 +56,13 @@ public class HttpMethodAuthenticator<R> {
     }
 
     public HttpMethod<R> uma() {
-        client();
+        // if there is an authorization bearer header authenticate using bearer token
+        Header authorizationHeader = method.builder.getFirstHeader("Authorization");
+
+        if (!(authorizationHeader != null && authorizationHeader.getValue().toLowerCase().startsWith("bearer"))) {
+            client();
+        }
+
         method.params.put(OAuth2Constants.GRANT_TYPE, OAuth2Constants.UMA_GRANT_TYPE);
         return method;
     }
@@ -77,7 +85,7 @@ public class HttpMethodAuthenticator<R> {
         method.param("audience", request.getAudience());
 
         try {
-            method.param("permissions", permissions != null ? JsonSerialization.writeValueAsString(permissions) : null);
+            method.param("permissions", permissions != null ? Base64Url.encode(JsonSerialization.writeValueAsBytes(permissions)) : null);
         } catch (IOException cause) {
             throw new RuntimeException("Failed to marshal permissions", cause);
         }

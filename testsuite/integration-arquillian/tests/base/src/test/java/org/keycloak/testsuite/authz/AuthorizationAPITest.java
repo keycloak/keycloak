@@ -108,7 +108,7 @@ public class AuthorizationAPITest extends AbstractAuthzTest {
         String ticket = authzClient.protection().permission().create(request).getTicket();
         AuthorizationResponse response = authzClient.authorization("marta", "password").authorize(new AuthorizationRequest(ticket));
 
-        assertNotNull(response.getRpt());
+        assertNotNull(response.getToken());
     }
 
     @Test
@@ -122,8 +122,8 @@ public class AuthorizationAPITest extends AbstractAuthzTest {
         String ticket = authzClient.protection().permission().create(request).getTicket();
         AuthorizationResponse response = authzClient.authorization(accessToken).authorize(new AuthorizationRequest(ticket));
 
-        assertNotNull(response.getRpt());
-        AccessToken rpt = toAccessToken(response.getRpt());
+        assertNotNull(response.getToken());
+        AccessToken rpt = toAccessToken(response.getToken());
         assertEquals("resource-server-test", rpt.getAudience()[0]);
     }
 

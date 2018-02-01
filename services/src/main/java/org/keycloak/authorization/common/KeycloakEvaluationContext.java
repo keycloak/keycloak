@@ -18,13 +18,13 @@
 
 package org.keycloak.authorization.common;
 
-import org.keycloak.authorization.identity.Identity;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.representations.AccessToken;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
+
+import org.keycloak.authorization.identity.Identity;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.representations.AccessToken;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

@@ -57,11 +57,15 @@ import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.authorization.util.Permissions;
 import org.keycloak.authorization.util.Tokens;
+import org.keycloak.events.EventBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
@@ -81,7 +85,15 @@ public class AuthorizationTokenService {
 
     static {
         SUPPORTED_CLAIM_TOKEN_FORMATS = new HashMap<>();
-        SUPPORTED_CLAIM_TOKEN_FORMATS.put("urn:ietf:params:oauth:token-type:jwt", (authorizationRequest, authorization) -> new KeycloakEvaluationContext(new KeycloakIdentity(authorization.getKeycloakSession(), Tokens.getAccessToken(authorizationRequest.getClaimToken(), authorization.getKeycloakSession())), authorization.getKeycloakSession()));
+        SUPPORTED_CLAIM_TOKEN_FORMATS.put("urn:ietf:params:oauth:token-type:jwt", (authorizationRequest, authorization) -> {
+            String claimToken = authorizationRequest.getClaimToken();
+
+            if (claimToken == null) {
+                claimToken = authorizationRequest.getAccessToken();
+            }
+
+            return new KeycloakEvaluationContext(new KeycloakIdentity(authorization.getKeycloakSession(), Tokens.getAccessToken(claimToken, authorization.getKeycloakSession())), authorization.getKeycloakSession());
+        });
         SUPPORTED_CLAIM_TOKEN_FORMATS.put("http://openid.net/specs/openid-connect-core-1_0.html#IDToken", (authorizationRequest, authorization) -> {
             try {
                 KeycloakSession keycloakSession = authorization.getKeycloakSession();
@@ -93,11 +105,15 @@ public class AuthorizationTokenService {
         });
     }
 
+    private final TokenManager tokenManager;
+    private final EventBuilder event;
     private final HttpRequest httpRequest;
     private final AuthorizationProvider authorization;
     private final Cors cors;
 
-    public AuthorizationTokenService(AuthorizationProvider authorization, HttpRequest httpRequest, Cors cors) {
+    public AuthorizationTokenService(AuthorizationProvider authorization, TokenManager tokenManager, EventBuilder event, HttpRequest httpRequest, Cors cors) {
+        this.tokenManager = tokenManager;
+        this.event = event;
         this.httpRequest = httpRequest;
         this.authorization = authorization;
         this.cors = cors;
@@ -152,9 +168,18 @@ public class AuthorizationTokenService {
             throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "not_authorized", Status.FORBIDDEN);
         }
 
+        KeycloakSession keycloakSession = getKeycloakSession();
+        AccessToken accessToken = identity.getAccessToken();
+        UserSessionModel userSessionModel = keycloakSession.sessions().getUserSession(getRealm(), accessToken.getSessionState());
+        ClientModel targetClient = getRealm().getClientByClientId(accessToken.getIssuedFor());
+        AuthenticatedClientSessionModel clientSession = userSessionModel.getAuthenticatedClientSessionByClient(targetClient.getId());
+        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(getRealm(), clientSession.getClient(), event, keycloakSession, userSessionModel, clientSession)
+                .generateAccessToken();
+        responseBuilder.getAccessToken().issuedFor(targetClient.getClientId());
+
         AuthorizationResponse response = new AuthorizationResponse();
 
-        response.setToken(createRequestingPartyToken(entitlements, ticket, identity.getAccessToken(), resourceServer));
+        response.setToken(createRequestingPartyToken(entitlements, ticket, accessToken, resourceServer));
         response.setTokenType("Bearer");
 
         if (request.getRpt() != null) {
@@ -162,7 +187,7 @@ public class AuthorizationTokenService {
         }
 
         return Cors.add(httpRequest, Response.status(Status.CREATED).type(MediaType.APPLICATION_JSON_TYPE).entity(response))
-                .allowedOrigins(identity.getAccessToken())
+                .allowedOrigins(accessToken)
                 .allowedMethods(HttpMethod.POST)
                 .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
     }

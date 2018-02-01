@@ -79,12 +79,12 @@ public abstract class AbstractResourceServerTest extends AbstractKeycloakTest {
                 .build());
     }
 
-    protected AuthorizationResponse authorize(String resourceName, String[] scopeNames, String accessToken) {
-        return authorize(null, null, resourceName, scopeNames, null, null, accessToken);
+    protected AuthorizationResponse authorize(String resourceName, String[] scopeNames, String claimToken) {
+        return authorize(null, null, resourceName, scopeNames, null, null, claimToken);
     }
 
-    protected AuthorizationResponse authorize(String resourceName, String[] scopeNames, String accessToken, String tokenFormat) {
-        return authorize(null, null, null, null, accessToken, tokenFormat, new PermissionRequest(resourceName, new HashSet<>(Arrays.asList(scopeNames))));
+    protected AuthorizationResponse authorize(String resourceName, String[] scopeNames, String claimToken, String tokenFormat) {
+        return authorize(null, null, null, null, null, claimToken, tokenFormat, new PermissionRequest(resourceName, new HashSet<>(Arrays.asList(scopeNames))));
     }
 
     protected AuthorizationResponse authorize(String resourceName, String[] scopeNames) {
@@ -96,7 +96,7 @@ public abstract class AbstractResourceServerTest extends AbstractKeycloakTest {
     }
 
     protected AuthorizationResponse authorize(String userName, String password, PermissionRequest... permissions) {
-        return authorize(userName, password, null, null, null, null, permissions);
+        return authorize(userName, password, null, null, null, null, null, permissions);
     }
 
     protected AuthorizationResponse authorize(String userName, String password, String resourceName, String[] scopeNames, String rpt) {
@@ -107,11 +107,11 @@ public abstract class AbstractResourceServerTest extends AbstractKeycloakTest {
         return authorize(userName, password, resourceName, scopeNames, additionalScopes, null, null);
     }
 
-    protected AuthorizationResponse authorize(String userName, String password, String resourceName, String[] scopeNames, String[] additionalScopes, String rpt, String accessToken) {
-        return authorize(userName, password, additionalScopes, rpt, accessToken, null, new PermissionRequest(resourceName, new HashSet<>(Arrays.asList(scopeNames))));
+    protected AuthorizationResponse authorize(String userName, String password, String resourceName, String[] scopeNames, String[] additionalScopes, String rpt, String claimToken) {
+        return authorize(userName, password, additionalScopes, rpt, null, claimToken, null, new PermissionRequest(resourceName, new HashSet<>(Arrays.asList(scopeNames))));
     }
 
-    protected AuthorizationResponse authorize(String userName, String password, String[] additionalScopes, String rpt, String accessToken, String tokenFormat, PermissionRequest... permissions) {
+    protected AuthorizationResponse authorize(String userName, String password, String[] additionalScopes, String rpt, String accessToken, String claimToken, String tokenFormat, PermissionRequest... permissions) {
         ProtectionResource protection;
 
         if (userName != null) {
@@ -139,12 +139,14 @@ public abstract class AbstractResourceServerTest extends AbstractKeycloakTest {
 
         authorizationRequest.setRpt(rpt);
         authorizationRequest.setClaimTokenFormat(tokenFormat);
-        authorizationRequest.setClaimToken(accessToken);
+        authorizationRequest.setClaimToken(claimToken);
 
         org.keycloak.authorization.client.resource.AuthorizationResource authorization;
 
         if (userName != null) {
             authorization = getAuthzClient().authorization(userName, password);
+        } else if (accessToken != null) {
+            authorization = getAuthzClient().authorization(accessToken);
         } else {
             authorization = getAuthzClient().authorization();
         }

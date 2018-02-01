@@ -102,7 +102,7 @@ public class RolePolicyTest extends AbstractAuthzTest {
         String ticket = authzClient.protection().permission().create(request).getTicket();
         AuthorizationResponse response = authzClient.authorization("marta", "password").authorize(new AuthorizationRequest(ticket));
 
-        assertNotNull(response.getRpt());
+        assertNotNull(response.getToken());
     }
 
     @Test

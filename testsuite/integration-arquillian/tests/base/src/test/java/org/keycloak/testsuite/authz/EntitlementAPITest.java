@@ -155,7 +155,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         request.setMetadata(metadata);
 
         AuthorizationResponse response = getAuthzClient().authorization("marta", "password").authorize(request);
-        AccessToken rpt = toAccessToken(response.getRpt());
+        AccessToken rpt = toAccessToken(response.getToken());
 
         List<Permission> permissions = rpt.getAuthorization().getPermissions();
 
@@ -172,10 +172,10 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         }
 
         request.setMetadata(metadata);
-        request.setRpt(response.getRpt());
+        request.setRpt(response.getToken());
 
         response = getAuthzClient().authorization("marta", "password").authorize(request);
-        rpt = toAccessToken(response.getRpt());
+        rpt = toAccessToken(response.getToken());
 
         permissions = rpt.getAuthorization().getPermissions();
 
@@ -196,10 +196,10 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         }
 
         request.setMetadata(metadata);
-        request.setRpt(response.getRpt());
+        request.setRpt(response.getToken());
 
         response = getAuthzClient().authorization("marta", "password").authorize(request);
-        rpt = toAccessToken(response.getRpt());
+        rpt = toAccessToken(response.getToken());
 
         permissions = rpt.getAuthorization().getPermissions();
 
@@ -219,10 +219,10 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
         metadata.setLimit(5);
         request.setMetadata(metadata);
-        request.setRpt(response.getRpt());
+        request.setRpt(response.getToken());
 
         response = getAuthzClient().authorization("marta", "password").authorize(request);
-        rpt = toAccessToken(response.getRpt());
+        rpt = toAccessToken(response.getToken());
 
         permissions = rpt.getAuthorization().getPermissions();
 
@@ -242,13 +242,13 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
         String accessToken = new OAuthClient().realm("authz-test").clientId("test-client").doGrantAccessTokenRequest("secret", "marta", "password").getAccessToken();
         AuthorizationResponse response = getAuthzClient().authorization(accessToken).authorize(request);
-        AccessToken rpt = toAccessToken(response.getRpt());
+        AccessToken rpt = toAccessToken(response.getToken());
 
         assertEquals("resource-server-test", rpt.getAudience()[0]);
     }
 
     private void assertResponse(Metadata metadata, Supplier<AuthorizationResponse> responseSupplier) {
-        AccessToken.Authorization authorization = toAccessToken(responseSupplier.get().getRpt()).getAuthorization();
+        AccessToken.Authorization authorization = toAccessToken(responseSupplier.get().getToken()).getAuthorization();
 
         List<Permission> permissions = authorization.getPermissions();
 

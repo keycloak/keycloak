@@ -142,7 +142,7 @@ public class GroupNamePolicyTest extends AbstractAuthzTest {
         String ticket = authzClient.protection().permission().create(request).getTicket();
         AuthorizationResponse response = authzClient.authorization("marta", "password").authorize(new AuthorizationRequest(ticket));
 
-        assertNotNull(response.getRpt());
+        assertNotNull(response.getToken());
 
         try {
             authzClient.authorization("kolo", "password").authorize(new AuthorizationRequest(ticket));
@@ -175,7 +175,7 @@ public class GroupNamePolicyTest extends AbstractAuthzTest {
 
         AuthorizationResponse response = authzClient.authorization("alice", "password").authorize(new AuthorizationRequest(ticket));
 
-        assertNotNull(response.getRpt());
+        assertNotNull(response.getToken());
 
         try {
             authzClient.authorization("marta", "password").authorize(new AuthorizationRequest(ticket));
@@ -187,7 +187,7 @@ public class GroupNamePolicyTest extends AbstractAuthzTest {
         request = new PermissionRequest("Resource C");
         ticket = authzClient.protection().permission().create(request).getTicket();
         response = authzClient.authorization("kolo", "password").authorize(new AuthorizationRequest(ticket));
-        assertNotNull(response.getRpt());
+        assertNotNull(response.getToken());
     }
 
     private void createGroupPolicy(String name, String groupPath, boolean extendChildren) {

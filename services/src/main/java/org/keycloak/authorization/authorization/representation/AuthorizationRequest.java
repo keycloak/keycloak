@@ -34,6 +34,7 @@ public class AuthorizationRequest {
     private PermissionTicketToken permissions;
     private AuthorizationRequestMetadata metadata;
     private String audience;
+    private String accessToken;
 
     public AuthorizationRequest(String ticket) {
         this.ticket = ticket;
@@ -113,5 +114,13 @@ public class AuthorizationRequest {
 
     public String getAudience() {
         return audience;
+    }
+
+    public void setAccessToken(String accessToken) {
+        this.accessToken = accessToken;
+    }
+
+    public String getAccessToken() {
+        return accessToken;
     }
 }

@@ -24,17 +24,7 @@ import org.keycloak.representations.AccessTokenResponse;
  */
 public class AuthorizationResponse extends AccessTokenResponse {
 
-    private String rpt;
-
     private boolean upgraded;
-
-    public String getRpt() {
-        return this.rpt;
-    }
-
-    public void setRpt(String rpt) {
-        this.rpt = rpt;
-    }
 
     public boolean isUpgraded() {
         return upgraded;
