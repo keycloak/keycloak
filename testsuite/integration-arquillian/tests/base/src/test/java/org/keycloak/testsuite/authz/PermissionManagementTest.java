@@ -33,11 +33,11 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ResourceScopesResource;
 import org.keycloak.authorization.client.AuthzClient;
-import org.keycloak.authorization.client.representation.AuthorizationRequest;
-import org.keycloak.authorization.client.representation.PermissionRequest;
-import org.keycloak.authorization.client.representation.PermissionResponse;
 import org.keycloak.authorization.client.util.HttpResponseException;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest;
+import org.keycloak.representations.idm.authorization.PermissionRequest;
+import org.keycloak.representations.idm.authorization.PermissionResponse;
 import org.keycloak.representations.idm.authorization.PermissionTicketRepresentation;
 import org.keycloak.representations.idm.authorization.PermissionTicketToken;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
@@ -68,7 +68,7 @@ public class PermissionManagementTest extends AbstractResourceServerTest {
     public void testCreatePermissionTicketWithResourceId() throws Exception {
         ResourceRepresentation resource = addResource("Resource A", "kolo", true);
         AuthzClient authzClient = getAuthzClient();
-        PermissionResponse response = authzClient.protection("marta", "password").permission().create(new PermissionRequest(resource.getId(), Collections.emptySet()));
+        PermissionResponse response = authzClient.protection("marta", "password").permission().create(new PermissionRequest(resource.getId()));
         AuthorizationRequest request = new AuthorizationRequest();
         request.setTicket(response.getTicket());
         request.setClaimToken(authzClient.obtainAccessToken("marta", "password").getToken());
@@ -86,7 +86,7 @@ public class PermissionManagementTest extends AbstractResourceServerTest {
     public void testCreatePermissionTicketWithScopes() throws Exception {
         ResourceRepresentation resource = addResource("Resource A", "kolo", true, "ScopeA", "ScopeB", "ScopeC");
         AuthzClient authzClient = getAuthzClient();
-        PermissionResponse response = authzClient.protection("marta", "password").permission().create(new PermissionRequest(resource.getId(), new HashSet<>(Arrays.asList("ScopeA", "ScopeB", "ScopeC"))));
+        PermissionResponse response = authzClient.protection("marta", "password").permission().create(new PermissionRequest(resource.getId(), "ScopeA", "ScopeB", "ScopeC"));
         AuthorizationRequest request = new AuthorizationRequest();
         request.setTicket(response.getTicket());
         request.setClaimToken(authzClient.obtainAccessToken("marta", "password").getToken());
@@ -164,7 +164,7 @@ public class PermissionManagementTest extends AbstractResourceServerTest {
     @Test
     public void testRemoveScopeFromResource() throws Exception {
         ResourceRepresentation resource = addResource("Resource A", "kolo", true, "ScopeA", "ScopeB");
-        PermissionRequest permissionRequest = new PermissionRequest(resource.getName(), new HashSet<>(Arrays.asList("ScopeA", "ScopeB")));
+        PermissionRequest permissionRequest = new PermissionRequest(resource.getName(), "ScopeA", "ScopeB");
         AuthzClient authzClient = getAuthzClient();
         PermissionResponse response = authzClient.protection("marta", "password").permission().create(permissionRequest);
 
@@ -210,7 +210,7 @@ public class PermissionManagementTest extends AbstractResourceServerTest {
     public void testTicketNotCreatedWhenResourceOwner() throws Exception {
         ResourceRepresentation resource = addResource("Resource A", "marta", true);
         AuthzClient authzClient = getAuthzClient();
-        PermissionResponse response = authzClient.protection("marta", "password").permission().create(new PermissionRequest(resource.getId(), Collections.emptySet()));
+        PermissionResponse response = authzClient.protection("marta", "password").permission().create(new PermissionRequest(resource.getId()));
         assertNotNull(response.getTicket());
         AuthorizationRequest request = new AuthorizationRequest();
         request.setTicket(response.getTicket());
@@ -225,7 +225,7 @@ public class PermissionManagementTest extends AbstractResourceServerTest {
         List permissions = authzClient.protection().permission().findByResource(resource.getId());
         assertTrue(permissions.isEmpty());
 
-        response = authzClient.protection("kolo", "password").permission().create(new PermissionRequest(resource.getId(), Collections.emptySet()));
+        response = authzClient.protection("kolo", "password").permission().create(new PermissionRequest(resource.getId()));
         assertNotNull(response.getTicket());
         request = new AuthorizationRequest();
         request.setTicket(response.getTicket());

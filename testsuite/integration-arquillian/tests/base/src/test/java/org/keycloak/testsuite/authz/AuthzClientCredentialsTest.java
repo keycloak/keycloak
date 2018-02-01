@@ -23,9 +23,12 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -39,10 +42,6 @@ import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.ClientAuthenticator;
 import org.keycloak.authorization.client.Configuration;
-import org.keycloak.authorization.client.representation.AuthorizationRequest;
-import org.keycloak.authorization.client.representation.AuthorizationResponse;
-import org.keycloak.authorization.client.representation.PermissionRequest;
-import org.keycloak.authorization.client.representation.PermissionResponse;
 import org.keycloak.authorization.client.representation.ResourceRepresentation;
 import org.keycloak.authorization.client.resource.ProtectionResource;
 import org.keycloak.authorization.client.util.HttpResponseException;
@@ -52,7 +51,11 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest;
+import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 import org.keycloak.representations.idm.authorization.Permission;
+import org.keycloak.representations.idm.authorization.PermissionRequest;
+import org.keycloak.representations.idm.authorization.PermissionResponse;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -200,8 +203,12 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
 
         return AuthzClient.create(new Configuration(deployment.getAuthServerBaseUrl(), deployment.getRealm(), deployment.getResourceName(), deployment.getResourceCredentials(), deployment.getClient()), new ClientAuthenticator() {
             @Override
-            public void configureClientCredentials(HashMap<String, String> requestParams, HashMap<String, String> requestHeaders) {
-                ClientCredentialsProviderUtils.setClientCredentials(deployment, requestHeaders, requestParams);
+            public void configureClientCredentials(Map<String, List<String>> requestParams, Map<String, String> requestHeaders) {
+                Map<String, String> formparams = new HashMap<>();
+                ClientCredentialsProviderUtils.setClientCredentials(deployment, requestHeaders, formparams);
+                for (Entry<String, String> param : formparams.entrySet()) {
+                    requestParams.put(param.getKey(), Arrays.asList(param.getValue()));
+                }
             }
         });
     }

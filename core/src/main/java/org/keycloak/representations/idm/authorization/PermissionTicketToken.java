@@ -16,6 +16,7 @@
  */
 package org.keycloak.representations.idm.authorization;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -32,7 +33,7 @@ public class PermissionTicketToken extends JsonWebToken {
     private final List<ResourcePermission> resources;
 
     public PermissionTicketToken() {
-        this.resources = null;
+        this(new ArrayList<ResourcePermission>());
     }
 
     public PermissionTicketToken(List<ResourcePermission> resources, String audience, AccessToken accessToken) {

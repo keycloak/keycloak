@@ -17,13 +17,12 @@
  */
 package org.keycloak.authorization.protection.permission;
 
-import org.jboss.resteasy.annotations.Query;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.common.KeycloakIdentity;
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.authorization.protection.permission.representation.PermissionRequest;
+import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.ModelToRepresentation;

@@ -27,8 +27,6 @@ public interface PermissionTicket {
     String SCOPE_IS_NULL = "scope_is_null";
     String OWNER = "owner";
     String GRANTED = "granted";
-    String CREATED_TIMESTAMP = "createdTimestamp";
-    String GRANTED_TIMESTAMP = "grantedTimestamp";
     String REQUESTER = "requester";
     String REQUESTER_IS_NULL = "requester_is_null";
 

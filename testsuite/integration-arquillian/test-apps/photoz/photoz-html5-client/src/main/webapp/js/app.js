@@ -85,7 +85,7 @@ module.controller('TokenCtrl', function ($scope, Identity) {
     
     $scope.requestEntitlement = function () {
         Identity.authorization.entitlement('photoz-restful-api', {
-            "resources": [
+            "permissions": [
                 {
                     "id" : "Album Resource"
                 }

@@ -18,11 +18,13 @@
 package org.keycloak.adapters.authorization;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.jboss.logging.Logger;
 import org.keycloak.AuthorizationContext;
@@ -60,8 +62,12 @@ public class PolicyEnforcer {
         Configuration configuration = new Configuration(adapterConfig.getAuthServerUrl(), adapterConfig.getRealm(), adapterConfig.getResource(), adapterConfig.getCredentials(), deployment.getClient());
         this.authzClient = AuthzClient.create(configuration, new ClientAuthenticator() {
             @Override
-            public void configureClientCredentials(HashMap<String, String> requestParams, HashMap<String, String> requestHeaders) {
-                ClientCredentialsProviderUtils.setClientCredentials(PolicyEnforcer.this.deployment, requestHeaders, requestParams);
+            public void configureClientCredentials(Map<String, List<String>> requestParams, Map<String, String> requestHeaders) {
+                Map<String, String> formparams = new HashMap<>();
+                ClientCredentialsProviderUtils.setClientCredentials(PolicyEnforcer.this.deployment, requestHeaders, formparams);
+                for (Entry<String, String> param : formparams.entrySet()) {
+                    requestParams.put(param.getKey(), Arrays.asList(param.getValue()));
+                }
             }
         });
         this.pathMatcher = new PathMatcher(this.authzClient);

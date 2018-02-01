@@ -28,14 +28,14 @@ import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.AuthzClient;
-import org.keycloak.authorization.client.representation.AuthorizationRequest;
-import org.keycloak.authorization.client.representation.AuthorizationResponse;
-import org.keycloak.authorization.client.representation.PermissionRequest;
-import org.keycloak.authorization.client.representation.PermissionResponse;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.PathConfig;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest;
+import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 import org.keycloak.representations.idm.authorization.Permission;
+import org.keycloak.representations.idm.authorization.PermissionRequest;
+import org.keycloak.representations.idm.authorization.PermissionResponse;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -120,7 +120,7 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
             } else {
                 authzRequest = new AuthorizationRequest();
                 if (accessToken.getAuthorization() != null) {
-                    authzRequest.addPermission(pathConfig.getId(), new HashSet<>(methodConfig.getScopes()));
+                    authzRequest.addPermission(pathConfig.getId(), methodConfig.getScopes());
                 }
             }
 

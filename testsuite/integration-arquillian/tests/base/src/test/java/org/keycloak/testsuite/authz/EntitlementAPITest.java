@@ -33,11 +33,11 @@ import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.Configuration;
-import org.keycloak.authorization.client.representation.AuthorizationRequest;
-import org.keycloak.authorization.client.representation.AuthorizationRequest.Metadata;
-import org.keycloak.authorization.client.representation.AuthorizationResponse;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest.Metadata;
+import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
@@ -256,7 +256,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         assertFalse(permissions.isEmpty());
 
         for (Permission permission : permissions) {
-            if (metadata.isIncludeResourceName()) {
+            if (metadata.getIncludeResourceName()) {
                 assertNotNull(permission.getResourceSetName());
             } else {
                 assertNull(permission.getResourceSetName());

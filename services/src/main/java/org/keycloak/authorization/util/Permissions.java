@@ -32,7 +32,6 @@ import javax.ws.rs.core.Response.Status;
 
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.Decision.Effect;
-import org.keycloak.authorization.authorization.representation.AuthorizationRequestMetadata;
 import org.keycloak.authorization.identity.Identity;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
@@ -43,8 +42,8 @@ import org.keycloak.authorization.policy.evaluation.Result;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest.Metadata;
 import org.keycloak.representations.idm.authorization.Permission;
-import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 import org.keycloak.services.ErrorResponseException;
 
 /**
@@ -148,7 +147,7 @@ public final class Permissions {
         return permits(evaluation, null, authorizationProvider, resourceServer);
     }
 
-    public static List<Permission> permits(List<Result> evaluation, AuthorizationRequestMetadata metadata, AuthorizationProvider authorizationProvider, ResourceServer resourceServer) {
+    public static List<Permission> permits(List<Result> evaluation, Metadata metadata, AuthorizationProvider authorizationProvider, ResourceServer resourceServer) {
         Map<String, Permission> permissions = new LinkedHashMap<>();
 
         for (Result result : evaluation) {
@@ -227,7 +226,7 @@ public final class Permissions {
         return "scope".equals(policy.getType());
     }
 
-    private static void grantPermission(AuthorizationProvider authorizationProvider, Map<String, Permission> permissions, ResourcePermission permission, ResourceServer resourceServer, AuthorizationRequestMetadata metadata) {
+    private static void grantPermission(AuthorizationProvider authorizationProvider, Map<String, Permission> permissions, ResourcePermission permission, ResourceServer resourceServer, Metadata metadata) {
         List<Resource> resources = new ArrayList<>();
         Resource resource = permission.getResource();
         Set<String> scopes = permission.getScopes().stream().map(Scope::getName).collect(Collectors.toSet());
@@ -246,7 +245,7 @@ public final class Permissions {
         if (!resources.isEmpty()) {
             for (Resource allowedResource : resources) {
                 String resourceId = allowedResource.getId();
-                String resourceName = metadata == null || metadata.isIncludeResourceName() ? allowedResource.getName() : null;
+                String resourceName = metadata == null || metadata.getIncludeResourceName() ? allowedResource.getName() : null;
                 Permission evalPermission = permissions.get(allowedResource.getId());
 
                 if (evalPermission == null) {

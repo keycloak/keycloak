@@ -17,16 +17,16 @@
  */
 package org.keycloak.authorization.client.util;
 
-import java.io.IOException;
+import java.util.Arrays;
+import java.util.Set;
 
 import org.apache.http.Header;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authorization.client.ClientAuthenticator;
-import org.keycloak.authorization.client.representation.AuthorizationRequest;
-import org.keycloak.authorization.client.representation.AuthorizationRequest.Metadata;
-import org.keycloak.common.util.Base64Url;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest.Metadata;
 import org.keycloak.representations.idm.authorization.PermissionTicketToken;
-import org.keycloak.util.JsonSerialization;
+import org.keycloak.representations.idm.authorization.PermissionTicketToken.ResourcePermission;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -42,16 +42,16 @@ public class HttpMethodAuthenticator<R> {
     }
 
     public HttpMethod<R> client() {
-        this.method.params.put(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS);
+        this.method.params.put(OAuth2Constants.GRANT_TYPE, Arrays.asList(OAuth2Constants.CLIENT_CREDENTIALS));
         authenticator.configureClientCredentials(this.method.params, this.method.headers);
         return this.method;
     }
 
     public HttpMethod<R> oauth2ResourceOwnerPassword(String userName, String password) {
         client();
-        this.method.params.put(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD);
-        this.method.params.put("username", userName);
-        this.method.params.put("password", password);
+        this.method.params.put(OAuth2Constants.GRANT_TYPE, Arrays.asList(OAuth2Constants.PASSWORD));
+        this.method.params.put("username", Arrays.asList(userName));
+        this.method.params.put("password", Arrays.asList(password));
         return this.method;
     }
 
@@ -63,7 +63,7 @@ public class HttpMethodAuthenticator<R> {
             client();
         }
 
-        method.params.put(OAuth2Constants.GRANT_TYPE, OAuth2Constants.UMA_GRANT_TYPE);
+        method.params.put(OAuth2Constants.GRANT_TYPE, Arrays.asList(OAuth2Constants.UMA_GRANT_TYPE));
         return method;
     }
 
@@ -84,17 +84,42 @@ public class HttpMethodAuthenticator<R> {
         method.param("scope", request.getScope());
         method.param("audience", request.getAudience());
 
-        try {
-            method.param("permissions", permissions != null ? Base64Url.encode(JsonSerialization.writeValueAsBytes(permissions)) : null);
-        } catch (IOException cause) {
-            throw new RuntimeException("Failed to marshal permissions", cause);
+        if (permissions != null) {
+            for (ResourcePermission permission : permissions.getResources()) {
+                String resourceId = permission.getResourceId();
+                Set<String> scopes = permission.getScopes();
+                StringBuilder value = new StringBuilder();
+
+                if (resourceId != null) {
+                    value.append(resourceId);
+                }
+
+                if (scopes != null && !scopes.isEmpty()) {
+                    value.append("#");
+                    for (String scope : scopes) {
+                        if (!value.toString().endsWith("#")) {
+                            value.append(",");
+                        }
+                        value.append(scope);
+                    }
+                }
+
+                method.params("permission", value.toString());
+            }
         }
-        try {
-            Metadata metadata = request.getMetadata();
-            method.param("metadata", metadata != null ? JsonSerialization.writeValueAsString(metadata) : null);
-        } catch (IOException cause) {
-            throw new RuntimeException("Failed to marshal metadata", cause);
+
+        Metadata metadata = request.getMetadata();
+
+        if (metadata != null) {
+            if (metadata.getIncludeResourceName() != null) {
+                method.param("response_include_resource_name", metadata.getIncludeResourceName().toString());
+            }
+
+            if (metadata.getLimit() != null) {
+                method.param("response_permissions_limit", metadata.getLimit().toString());
+            }
         }
+
         return method;
     }
 }

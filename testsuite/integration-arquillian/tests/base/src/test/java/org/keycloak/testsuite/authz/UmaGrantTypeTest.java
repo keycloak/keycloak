@@ -20,8 +20,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 
 import javax.ws.rs.core.Response;
@@ -30,12 +28,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.authorization.client.representation.AuthorizationResponse;
-import org.keycloak.authorization.client.representation.PermissionRequest;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Permission;
+import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -125,8 +123,8 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         getClient(getRealm()).authorization().permissions().resource().create(permission).close();
 
         AuthorizationResponse response = authorize("marta", "password",
-                new PermissionRequest(resourceA.getName(), new HashSet<>(Arrays.asList("ScopeA", "ScopeB"))),
-                new PermissionRequest(resourceB.getName(), new HashSet<>(Arrays.asList("ScopeC"))));
+                new PermissionRequest(resourceA.getName(), "ScopeA", "ScopeB"),
+                new PermissionRequest(resourceB.getName(), "ScopeC"));
         String rpt = response.getToken();
         AccessToken.Authorization authorization = toAccessToken(rpt).getAuthorization();
         List<Permission> permissions = authorization.getPermissions();
@@ -161,7 +159,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
     @Test
     public void testObtainRpttUsingAccessToken() throws Exception {
         AccessTokenResponse accessTokenResponse = getAuthzClient().obtainAccessToken("marta", "password");
-        AuthorizationResponse response = authorize(null, null, null, null, accessTokenResponse.getToken(), null, null, new PermissionRequest("Resource A", new HashSet<>(Arrays.asList(new String[] {"ScopeA", "ScopeB"}))));
+        AuthorizationResponse response = authorize(null, null, null, null, accessTokenResponse.getToken(), null, null, new PermissionRequest("Resource A", "ScopeA", "ScopeB"));
         String rpt = response.getToken();
 
         assertNotNull(rpt);

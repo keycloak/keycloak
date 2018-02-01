@@ -23,11 +23,11 @@ import org.jboss.logging.Logger;
 import org.keycloak.adapters.OIDCHttpFacade;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.authorization.client.AuthzClient;
-import org.keycloak.authorization.client.representation.PermissionRequest;
 import org.keycloak.authorization.client.resource.PermissionResource;
 import org.keycloak.authorization.client.resource.ProtectionResource;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.PathConfig;
+import org.keycloak.representations.idm.authorization.PermissionRequest;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

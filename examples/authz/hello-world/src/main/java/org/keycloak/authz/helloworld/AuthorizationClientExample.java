@@ -18,16 +18,14 @@
 package org.keycloak.authz.helloworld;
 
 import org.keycloak.authorization.client.AuthzClient;
-import org.keycloak.authorization.client.representation.AuthorizationRequest;
-import org.keycloak.authorization.client.representation.AuthorizationResponse;
 import org.keycloak.authorization.client.representation.RegistrationResponse;
 import org.keycloak.authorization.client.representation.ResourceRepresentation;
 import org.keycloak.authorization.client.representation.ScopeRepresentation;
 import org.keycloak.authorization.client.representation.TokenIntrospectionResponse;
 import org.keycloak.authorization.client.resource.ProtectedResource;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest;
+import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 import org.keycloak.representations.idm.authorization.Permission;
-
-import java.util.Set;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

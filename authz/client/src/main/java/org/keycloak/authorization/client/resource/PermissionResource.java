@@ -24,10 +24,10 @@ import java.util.List;
 import java.util.concurrent.Callable;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import org.keycloak.authorization.client.representation.PermissionRequest;
-import org.keycloak.authorization.client.representation.PermissionResponse;
 import org.keycloak.authorization.client.representation.ServerConfiguration;
 import org.keycloak.authorization.client.util.Http;
+import org.keycloak.representations.idm.authorization.PermissionRequest;
+import org.keycloak.representations.idm.authorization.PermissionResponse;
 import org.keycloak.representations.idm.authorization.PermissionTicketRepresentation;
 import org.keycloak.util.JsonSerialization;
 

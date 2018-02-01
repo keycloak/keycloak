@@ -26,8 +26,7 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.authorization.AuthorizationTokenService;
-import org.keycloak.authorization.authorization.representation.AuthorizationRequest;
-import org.keycloak.authorization.authorization.representation.AuthorizationRequestMetadata;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.authorization.util.Tokens;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ExchangeExternalToken;
@@ -65,7 +64,7 @@ import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.representations.idm.authorization.PermissionTicketToken;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest.Metadata;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
@@ -87,7 +86,6 @@ import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.ProfileHelper;
 
-import javax.ws.rs.HeaderParam;
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -99,8 +97,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
-import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -1029,25 +1025,37 @@ public class TokenEndpoint {
         authorizationRequest.setAudience(formParams.getFirst("audience"));
         authorizationRequest.setAccessToken(accessTokenString);
 
-        String permissions = formParams.getFirst("permissions");
+        List<String> permissions = formParams.get("permission");
 
         if (permissions != null) {
-            try {
-                authorizationRequest.setPermissions(JsonSerialization.readValue(Base64Url.decode(new String(permissions.getBytes(), Charset.forName("UTF-8"))), PermissionTicketToken.class));
-            } catch (Exception e) {
-                throw new CorsErrorResponseException(cors, Errors.INVALID_REQUEST, "Invalid permissions", Response.Status.BAD_REQUEST);
+            for (String permission : permissions) {
+                String[] parts = permission.split("#");
+                String resource = parts[0];
+
+                if (parts.length == 1) {
+                    authorizationRequest.addPermission(resource);
+                } else {
+                    String[] scopes = parts[1].split(",");
+                    authorizationRequest.addPermission(parts[0], scopes);
+                }
             }
         }
 
-        String metadata = formParams.getFirst("metadata");
+        Metadata metadata = new Metadata();
 
-        if (metadata != null) {
-            try {
-                authorizationRequest.setMetadata(JsonSerialization.readValue(metadata.getBytes(), AuthorizationRequestMetadata.class));
-            } catch (Exception e) {
-                throw new CorsErrorResponseException(cors, Errors.INVALID_REQUEST, "Invalid permissions", Response.Status.BAD_REQUEST);
-            }
+        String responseIncludeResourceName = formParams.getFirst("response_include_resource_name");
+
+        if (responseIncludeResourceName != null) {
+            metadata.setIncludeResourceName(Boolean.parseBoolean(responseIncludeResourceName));
         }
+
+        String responsePermissionsLimit = formParams.getFirst("response_permissions_limit");
+
+        if (responsePermissionsLimit != null) {
+            metadata.setLimit(Integer.parseInt(responsePermissionsLimit));
+        }
+
+        authorizationRequest.setMetadata(metadata);
 
         return new AuthorizationTokenService(session.getProvider(AuthorizationProvider.class), tokenManager, event, request, cors).authorize(authorizationRequest);
     }

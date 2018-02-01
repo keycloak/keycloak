@@ -1,13 +1,12 @@
 /*
- * JBoss, Home of Professional Open Source.
- * Copyright 2016 Red Hat, Inc., and individual contributors
- * as indicated by the @author tags.
+ * Copyright 2018 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,9 +15,14 @@
  * limitations under the License.
  */
 
-package org.keycloak.authorization.authorization.representation;
+package org.keycloak.representations.idm.authorization;
 
-import org.keycloak.representations.idm.authorization.PermissionTicketToken;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+
+import org.keycloak.representations.idm.authorization.PermissionTicketToken.ResourcePermission;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -31,8 +35,8 @@ public class AuthorizationRequest {
     private String claimTokenFormat;
     private String pct;
     private String scope;
-    private PermissionTicketToken permissions;
-    private AuthorizationRequestMetadata metadata;
+    private PermissionTicketToken permissions = new PermissionTicketToken();
+    private Metadata metadata;
     private String audience;
     private String accessToken;
 
@@ -80,7 +84,7 @@ public class AuthorizationRequest {
         this.pct = pct;
     }
 
-    private String getPct() {
+    public String getPct() {
         return pct;
     }
 
@@ -100,11 +104,11 @@ public class AuthorizationRequest {
         return permissions;
     }
 
-    public AuthorizationRequestMetadata getMetadata() {
+    public Metadata getMetadata() {
         return metadata;
     }
 
-    public void setMetadata(AuthorizationRequestMetadata metadata) {
+    public void setMetadata(Metadata metadata) {
         this.metadata = metadata;
     }
 
@@ -122,5 +126,56 @@ public class AuthorizationRequest {
 
     public String getAccessToken() {
         return accessToken;
+    }
+
+    public void addPermission(String resourceId, List<String> scopes) {
+        addPermission(resourceId, scopes.toArray(new String[scopes.size()]));
+    }
+
+    public void addPermission(String resourceId, String... scopes) {
+        if (permissions == null) {
+            permissions = new PermissionTicketToken(new ArrayList<ResourcePermission>());
+        }
+
+        ResourcePermission permission = null;
+
+        for (ResourcePermission resourcePermission : permissions.getResources()) {
+            if (resourcePermission.getResourceId().equals(resourceId)) {
+                permission = resourcePermission;
+                break;
+            }
+        }
+
+        if (permission == null) {
+            permission = new ResourcePermission(resourceId, new HashSet<String>());
+            permissions.getResources().add(permission);
+        }
+
+        permission.getScopes().addAll(Arrays.asList(scopes));
+    }
+
+    public static class Metadata {
+
+        private Boolean includeResourceName;
+        private Integer limit;
+
+        public Boolean getIncludeResourceName() {
+            if (includeResourceName == null) {
+                includeResourceName = Boolean.TRUE;
+            }
+            return includeResourceName;
+        }
+
+        public void setIncludeResourceName(Boolean includeResourceName) {
+            this.includeResourceName = includeResourceName;
+        }
+
+        public Integer getLimit() {
+            return limit;
+        }
+
+        public void setLimit(Integer limit) {
+            this.limit = limit;
+        }
     }
 }

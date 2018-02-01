@@ -40,9 +40,8 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.authorization.representation.AuthorizationRequest;
-import org.keycloak.authorization.authorization.representation.AuthorizationRequestMetadata;
-import org.keycloak.authorization.authorization.representation.AuthorizationResponse;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest;
+import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 import org.keycloak.authorization.common.KeycloakEvaluationContext;
 import org.keycloak.authorization.common.KeycloakIdentity;
 import org.keycloak.authorization.model.Resource;
@@ -64,11 +63,11 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest.Metadata;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionTicketToken;
 import org.keycloak.services.CorsErrorResponseException;
@@ -131,10 +130,12 @@ public class AuthorizationTokenService {
             KeycloakIdentity identity = KeycloakIdentity.class.cast(evaluationContext.getIdentity());
             List<Result> results;
 
-            if (isEntitlementRequest(request, ticket)) {
+            if (ticket.getResources().isEmpty() && request.getRpt() == null) {
                 results = evaluateAllPermissions(resourceServer, evaluationContext, identity);
-            } else {
+            } else if(!request.getPermissions().getResources().isEmpty()) {
                 results = evaluatePermissions(request, ticket, resourceServer, evaluationContext, identity);
+            } else {
+                results = evaluateUserManagedPermissions(request, ticket, resourceServer, evaluationContext, identity);
             }
 
             List<Permission> entitlements = Permissions.permits(results, request.getMetadata(), authorization, resourceServer);
@@ -152,6 +153,12 @@ public class AuthorizationTokenService {
     }
 
     private List<Result> evaluatePermissions(AuthorizationRequest authorizationRequest, PermissionTicketToken ticket, ResourceServer resourceServer, KeycloakEvaluationContext evaluationContext, KeycloakIdentity identity) {
+        return authorization.evaluators()
+                .from(createPermissions(ticket, authorizationRequest, resourceServer, authorization), evaluationContext)
+                .evaluate();
+    }
+
+    private List<Result> evaluateUserManagedPermissions(AuthorizationRequest authorizationRequest, PermissionTicketToken ticket, ResourceServer resourceServer, KeycloakEvaluationContext evaluationContext, KeycloakIdentity identity) {
         return authorization.evaluators()
                 .from(createPermissions(ticket, authorizationRequest, resourceServer, authorization), evaluationContext)
                 .evaluate(new PermissionTicketAwareDecisionResultCollector(ticket, identity, resourceServer, authorization)).results();
@@ -192,24 +199,16 @@ public class AuthorizationTokenService {
                 .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
     }
 
-    private boolean isEntitlementRequest(AuthorizationRequest authorizationRequest, PermissionTicketToken ticket) {
-        return (ticket.getResources() == null || ticket.getResources().isEmpty()) && authorizationRequest.getRpt() == null;
-    }
-
     private PermissionTicketToken getPermissionTicket(AuthorizationRequest authorizationRequest) {
         if (authorizationRequest.getTicket() != null) {
             return verifyPermissionTicket(authorizationRequest);
         }
 
-        if (authorizationRequest.getPermissions() != null) {
-            PermissionTicketToken permissions = authorizationRequest.getPermissions();
+        PermissionTicketToken permissions = authorizationRequest.getPermissions();
 
-            permissions.audience(authorizationRequest.getAudience());
+        permissions.audience(authorizationRequest.getAudience());
 
-            return permissions;
-        }
-
-        throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "You must provide either a ticket or permissions", Status.BAD_REQUEST);
+        return permissions;
     }
 
     private ResourceServer getResourceServer(PermissionTicketToken ticket) {
@@ -257,8 +256,8 @@ public class AuthorizationTokenService {
         StoreFactory storeFactory = authorization.getStoreFactory();
         Map<String, Set<String>> permissionsToEvaluate = new LinkedHashMap<>();
         ResourceStore resourceStore = storeFactory.getResourceStore();
-        AuthorizationRequestMetadata metadata = request.getMetadata();
-        Integer limit = metadata != null && metadata.getLimit() > 0 ? metadata.getLimit() : null;
+        Metadata metadata = request.getMetadata();
+        Integer limit = metadata != null ? metadata.getLimit() : null;
 
         for (PermissionTicketToken.ResourcePermission requestedResource : ticket.getResources()) {
             if (limit != null && limit <= 0) {

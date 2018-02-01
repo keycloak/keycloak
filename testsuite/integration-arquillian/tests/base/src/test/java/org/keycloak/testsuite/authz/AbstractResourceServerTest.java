@@ -33,14 +33,14 @@ import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.Configuration;
-import org.keycloak.authorization.client.representation.AuthorizationRequest;
-import org.keycloak.authorization.client.representation.AuthorizationResponse;
-import org.keycloak.authorization.client.representation.PermissionRequest;
 import org.keycloak.authorization.client.resource.ProtectionResource;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest;
+import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 import org.keycloak.representations.idm.authorization.Permission;
+import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
@@ -84,7 +84,7 @@ public abstract class AbstractResourceServerTest extends AbstractKeycloakTest {
     }
 
     protected AuthorizationResponse authorize(String resourceName, String[] scopeNames, String claimToken, String tokenFormat) {
-        return authorize(null, null, null, null, null, claimToken, tokenFormat, new PermissionRequest(resourceName, new HashSet<>(Arrays.asList(scopeNames))));
+        return authorize(null, null, null, null, null, claimToken, tokenFormat, new PermissionRequest(resourceName, scopeNames));
     }
 
     protected AuthorizationResponse authorize(String resourceName, String[] scopeNames) {
@@ -108,7 +108,7 @@ public abstract class AbstractResourceServerTest extends AbstractKeycloakTest {
     }
 
     protected AuthorizationResponse authorize(String userName, String password, String resourceName, String[] scopeNames, String[] additionalScopes, String rpt, String claimToken) {
-        return authorize(userName, password, additionalScopes, rpt, null, claimToken, null, new PermissionRequest(resourceName, new HashSet<>(Arrays.asList(scopeNames))));
+        return authorize(userName, password, additionalScopes, rpt, null, claimToken, null, new PermissionRequest(resourceName, scopeNames));
     }
 
     protected AuthorizationResponse authorize(String userName, String password, String[] additionalScopes, String rpt, String accessToken, String claimToken, String tokenFormat, PermissionRequest... permissions) {

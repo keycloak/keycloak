@@ -80,12 +80,16 @@
                         }
                     };
 
-                    var params = "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket&" +
-                                "client_id=" + keycloak.clientId + "&" +
-                                "ticket=" + authorizationRequest.ticket;
+                    var params = "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket&client_id=" + keycloak.clientId + "&ticket=" + authorizationRequest.ticket;
+                    var metadata = authorizationRequest.metadata;
 
-                    if (authorizationRequest.metadata) {
-                        params += "&metadata=" + btoa(JSON.stringify(authorizationRequest.metadata));
+                    if (metadata) {
+                        if (metadata.responseIncludeResourceName) {
+                            params += "&response_include_resource_name=" + metadata.responseIncludeResourceName;
+                        }
+                        if (metadata.responsePermissionsLimit) {
+                            params += "&response_permissions_limit=" + metadata.responsePermissionsLimit;
+                        }
                     }
 
                     if (_instance.rpt) {
@@ -134,12 +138,11 @@
                     }
                 };
 
-                var params = "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket&" +
-                            "client_id=" + keycloak.clientId;
-
                 if (!authorizationRequest) {
                     authorizationRequest = {};
                 }
+
+                var params = "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket&client_id=" + keycloak.clientId;
 
                 if (authorizationRequest.claimToken) {
                     params += "&claim_token=" + authorizationRequest.claimToken;
@@ -151,14 +154,39 @@
 
                 params += "&audience=" + resourceServerId;
 
-                if (!authorizationRequest.permissions) {
-                    authorizationRequest.permissions = {"resources": []};
+                var permissions = authorizationRequest.permissions;
+
+                if (!permissions) {
+                    permissions = [];
                 }
 
-                params += "&permissions=" + btoa(JSON.stringify(authorizationRequest.permissions));
+                for (i = 0; i < permissions.length; i++) {
+                    var resource = permissions[i];
+                    var permission = resource.id;
 
-                if (authorizationRequest.metadata) {
-                    params += "&metadata=" + btoa(JSON.stringify(authorizationRequest.metadata));
+                    if (resource.scopes && resource.scopes.length > 0) {
+                        permission += "#";
+                        for (j = 0; j < resource.scopes.length; j++) {
+                            var scope = resource.scopes[j];
+                            if (permission.indexOf('#') != permission.length - 1) {
+                                permission += ",";
+                            }
+                            permission += scope;
+                        }
+                    }
+
+                    params += "&permission=" + permission;
+                }
+
+                var metadata = authorizationRequest.metadata;
+
+                if (metadata) {
+                    if (metadata.responseIncludeResourceName) {
+                        params += "&response_include_resource_name=" + metadata.responseIncludeResourceName;
+                    }
+                    if (metadata.responsePermissionsLimit) {
+                        params += "&response_permissions_limit=" + metadata.responsePermissionsLimit;
+                    }
                 }
 
                 if (_instance.rpt) {

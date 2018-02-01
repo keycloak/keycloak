@@ -17,7 +17,7 @@
  */
 package org.keycloak.authorization.client;
 
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -78,7 +78,7 @@ public class Configuration extends AdapterConfig {
     private ClientAuthenticator createDefaultClientAuthenticator() {
         return new ClientAuthenticator() {
             @Override
-            public void configureClientCredentials(HashMap<String, String> requestParams, HashMap<String, String> requestHeaders) {
+            public void configureClientCredentials(Map<String, List<String>> requestParams, Map<String, String> requestHeaders) {
                 String secret = (String) getCredentials().get("secret");
 
                 if (secret == null) {
