@@ -100,6 +100,7 @@ import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -504,17 +505,38 @@ public class RealmAdminResource {
     public List<Map<String, String>> getClientSessionStats() {
         auth.realm().requireViewRealm();
 
-        List<Map<String, String>> data = new LinkedList<Map<String, String>>();
-        for (ClientModel client : realm.getClients()) {
-            long size = session.sessions().getActiveUserSessions(client.getRealm(), client);
-            if (size == 0) continue;
-            Map<String, String> map = new HashMap<>();
-            map.put("id", client.getId());
-            map.put("clientId", client.getClientId());
-            map.put("active", size + "");
-            data.add(map);
+        Map<String, Map<String, String>> data = new HashMap();
+        {
+            Map<String, Long> activeCount =session.sessions().getActiveClientSessionStats(realm, false);
+            for (Map.Entry<String, Long> entry : activeCount.entrySet()) {
+                Map<String, String> map = new HashMap<>();
+                ClientModel client = realm.getClientById(entry.getKey());
+                map.put("id", client.getId());
+                map.put("clientId", client.getClientId());
+                map.put("active", entry.getValue().toString());
+                map.put("offline", "0");
+                data.put(client.getId(), map);
+
+            }
         }
-        return data;
+        {
+            Map<String, Long> offlineCount = session.sessions().getActiveClientSessionStats(realm, true);
+            for (Map.Entry<String, Long> entry : offlineCount.entrySet()) {
+                Map<String, String> map = data.get(entry.getKey());
+                if (map == null) {
+                    map = new HashMap<>();
+                    ClientModel client = realm.getClientById(entry.getKey());
+                    map.put("id", client.getId());
+                    map.put("clientId", client.getClientId());
+                    map.put("active", "0");
+                    data.put(client.getId(), map);
+                }
+                map.put("offline", entry.getValue().toString());
+            }
+        }
+        List<Map<String, String>> result = new LinkedList<>();
+        for (Map<String, String> item : data.values()) result.add(item);
+        return result;
     }
 
     /**

@@ -38,6 +38,8 @@ import java.io.Serializable;
         @NamedQuery(name="deleteUserConsentRolesByUser", query="delete from UserConsentRoleEntity grantedRole where grantedRole.userConsent IN (select consent from UserConsentEntity consent where consent.user = :user)"),
         @NamedQuery(name="deleteUserConsentRolesByRole", query="delete from UserConsentRoleEntity grantedRole where grantedRole.roleId = :roleId)"),
         @NamedQuery(name="deleteUserConsentRolesByClient", query="delete from UserConsentRoleEntity grantedRole where grantedRole.userConsent IN (select consent from UserConsentEntity consent where consent.clientId = :clientId)"),
+        @NamedQuery(name="deleteUserConsentRolesByExternalClient", query="delete from UserConsentRoleEntity grantedRole where grantedRole.userConsent IN (select consent from UserConsentEntity consent where consent.clientStorageProvider = :clientStorageProvider and consent.externalClientId = :externalClientId)"),
+        @NamedQuery(name="deleteUserConsentRolesByClientStorageProvider", query="delete from UserConsentRoleEntity grantedRole where grantedRole.userConsent IN (select consent from UserConsentEntity consent where consent.clientStorageProvider = :clientStorageProvider)"),
 })
 @Entity
 @Table(name="USER_CONSENT_ROLE")

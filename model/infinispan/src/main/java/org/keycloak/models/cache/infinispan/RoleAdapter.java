@@ -49,7 +49,7 @@ public class RoleAdapter implements RoleModel {
     protected void getDelegateForUpdate() {
         if (updated == null) {
             cacheSession.registerRoleInvalidation(cached.getId(), cached.getName(), getContainerId());
-            updated = cacheSession.getDelegate().getRoleById(cached.getId(), realm);
+            updated = cacheSession.getRealmDelegate().getRoleById(cached.getId(), realm);
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
     }
@@ -62,7 +62,7 @@ public class RoleAdapter implements RoleModel {
     protected boolean isUpdated() {
         if (updated != null) return true;
         if (!invalidated) return false;
-        updated = cacheSession.getDelegate().getRoleById(cached.getId(), realm);
+        updated = cacheSession.getRealmDelegate().getRoleById(cached.getId(), realm);
         if (updated == null) throw new IllegalStateException("Not found in database");
         return true;
     }

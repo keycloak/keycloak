@@ -485,6 +485,8 @@ public class ModelToRepresentation {
     public static ClientRepresentation toRepresentation(ClientModel clientModel) {
         ClientRepresentation rep = new ClientRepresentation();
         rep.setId(clientModel.getId());
+        String providerId = StorageId.resolveProviderId(clientModel);
+        rep.setOrigin(providerId);
         rep.setClientId(clientModel.getClientId());
         rep.setName(clientModel.getName());
         rep.setDescription(clientModel.getDescription());

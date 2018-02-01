@@ -1813,6 +1813,16 @@ module.factory('UserStorageOperations', function($resource) {
 });
 
 
+module.factory('ClientStorageOperations', function($resource) {
+    var object = {}
+    object.simpleName = $resource(authUrl + '/admin/realms/:realm/client-storage/:componentId/name', {
+        realm : '@realm',
+        componentId : '@componentId'
+    });
+    return object;
+});
+
+
 module.factory('ClientRegistrationPolicyProviders', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/client-registration-policy/providers', {
         realm : '@realm',

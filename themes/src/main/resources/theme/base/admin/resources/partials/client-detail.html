@@ -37,6 +37,13 @@
                 </div>
                 <kc-tooltip>{{:: 'client.enabled.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group clearfix block" data-ng-show="client.origin">
+                <label class="col-md-2 control-label">{{:: 'client-origin-link' | translate}}</label>
+                <div class="col-md-6">
+                    {{originName}}
+                </div>
+                <kc-tooltip>{{:: 'client-origin.tooltip' | translate}}</kc-tooltip>
+            </div>
             <div class="form-group clearfix block" data-ng-show="protocol != 'docker-v2'">
                 <label class="col-md-2 control-label" for="consentRequired">{{:: 'consent-required' | translate}}</label>
                 <div class="col-sm-6">

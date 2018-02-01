@@ -40,6 +40,7 @@ import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.ComponentUtil;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
 import org.keycloak.services.managers.UserStorageSyncManager;
+import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserBulkUpdateProvider;
@@ -696,6 +697,11 @@ public class UserStorageManager implements UserProvider, OnUserCache, OnCreateCo
 
     @Override
     public void preRemove(RealmModel realm, ComponentModel component) {
+        if (component.getProviderType().equals(ClientStorageProvider.class.getName())) {
+            localStorage().preRemove(realm, component);
+            if (getFederatedStorage() != null) getFederatedStorage().preRemove(realm, component);
+            return;
+        }
         if (!component.getProviderType().equals(UserStorageProvider.class.getName())) return;
         localStorage().preRemove(realm, component);
         if (getFederatedStorage() != null) getFederatedStorage().preRemove(realm, component);

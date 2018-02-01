@@ -17,6 +17,7 @@
 
 package org.keycloak.models.sessions.infinispan.stream;
 
+import org.infinispan.stream.SerializableSupplier;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
@@ -25,9 +26,15 @@ import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
 import java.io.Serializable;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -124,5 +131,23 @@ public class Mappers {
             return entry.getKey();
         }
     }
+
+    private static class AuthClientSessionSetMapper implements Function<Map.Entry<String, SessionEntityWrapper<UserSessionEntity>>, Set<String>>, Serializable {
+
+        @Override
+        public Set<String> apply(Map.Entry<String, SessionEntityWrapper<UserSessionEntity>> entry) {
+            UserSessionEntity entity = entry.getValue().getEntity();
+            return entity.getAuthenticatedClientSessions().keySet();
+        }
+    }
+
+    public static <T> Stream<T> toStream(Collection<T> collection) {
+        return collection.stream();
+    }
+
+    public static Function<Map.Entry<String, SessionEntityWrapper<UserSessionEntity>>, Set<String>> authClientSessionSetMapper() {
+        return new AuthClientSessionSetMapper();
+    }
+
 
 }
