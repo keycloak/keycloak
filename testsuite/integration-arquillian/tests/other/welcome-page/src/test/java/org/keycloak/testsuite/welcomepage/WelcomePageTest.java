@@ -38,6 +38,8 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
+import static org.keycloak.testsuite.util.URLUtils.navigateToUri;
+
 /**
  *
  */
@@ -49,18 +51,6 @@ public class WelcomePageTest extends AbstractKeycloakTest {
 
     @Page
     protected OIDCLogin loginPage;
-
-    /*
-     * Assume adding user is skipped.
-     *
-     * Assume we are not testing migration. In migration scenario there is admin user 
-     * migrated from previous version.
-     */
-    @BeforeClass
-    public static void beforeWelcomePageTest() {
-        Assume.assumeTrue(Boolean.parseBoolean(System.getProperty("skip.add.user.json")));
-        Assume.assumeFalse(Boolean.parseBoolean(System.getProperty("skip.welcome.page.test")));
-    }
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -119,7 +109,7 @@ public class WelcomePageTest extends AbstractKeycloakTest {
 
     @Test
     public void test_2_RemoteAccessNoAdmin() throws Exception {
-        driver.navigate().to(getPublicServerUrl());
+        navigateToUri(getPublicServerUrl().toString(), true);
         Assert.assertFalse("Welcome page did not ask to create a new admin user.", welcomePage.isPasswordSet());
     }
 
@@ -135,7 +125,7 @@ public class WelcomePageTest extends AbstractKeycloakTest {
 
     @Test
     public void test_4_RemoteAccessWithAdmin() throws Exception {
-        driver.navigate().to(getPublicServerUrl());
+        navigateToUri(getPublicServerUrl().toString(), true);
         Assert.assertTrue("Welcome page asked to set admin password.", welcomePage.isPasswordSet());
     }
 
