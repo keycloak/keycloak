@@ -25,4 +25,19 @@
         </addColumn>
     </changeSet>
 
+    <changeSet author="maria.pavlova@quest.com" id="3.3.0">
+        <createIndex indexName="IDX_EVENT_ENTITY_TIME" tableName="EVENT_ENTITY">
+            <column name="EVENT_TIME" type="BIGINT"/>
+        </createIndex>
+        <createIndex indexName="IDX_EVENT_ENTITY_TYPE" tableName="EVENT_ENTITY">
+            <column name="TYPE" type="VARCHAR(255)"/>
+        </createIndex>
+        <createIndex indexName="IDX_EVENT_ENTITY_USER_ID" tableName="EVENT_ENTITY">
+            <column name="USER_ID" type="VARCHAR(255)"/>
+        </createIndex>
+        <createIndex indexName="IDX_EVENT_ENTITY_CLIENT_ID" tableName="EVENT_ENTITY">
+            <column name="CLIENT_ID" type="VARCHAR(255)"/>
+        </createIndex>
+    </changeSet>
+
 </databaseChangeLog>
