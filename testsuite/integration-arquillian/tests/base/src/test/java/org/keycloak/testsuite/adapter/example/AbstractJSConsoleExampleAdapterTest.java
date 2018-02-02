@@ -448,9 +448,9 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         waitUntilElement(jsConsoleTestAppPage.getOutputElement()).text().contains("Init Success (Authenticated)");
 
         jsConsoleTestAppPage.createUserRequest();
+        pause(200);
 
         UsersResource userResource = testRealmResource().users();
-
         List<UserRepresentation> users = userResource.search("mhajas", 0, 1);
         assertEquals("There should be created user mhajas", 1, users.size());
         waitUntilElement(jsConsoleTestAppPage.getOutputElement()).text()
