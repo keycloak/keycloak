@@ -399,6 +399,20 @@
                 </div>
                 <kc-tooltip>{{:: 'request-object-signature-alg.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="requestObjectSignatureAlg">{{:: 'idp-sso-url-ref' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="clientEdit.attributes.saml_idp_initiated_sso_url_name" class="form-control" type="text" name="idpSsoUrlRef" id="idpSsoUrlRef" />
+                </div>
+                <kc-tooltip>{{:: 'idp-sso-url-ref.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="requestObjectSignatureAlg">{{:: 'idp-initiated-default-url' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="clientEdit.attributes.saml_assertion_consumer_url_redirect" class="form-control" type="text" name="idpInitiatedDefaultUrl" id="idpInitiatedDefaultUrl" />
+                </div>
+                <kc-tooltip>{{:: 'idp-initiated-default-url.tooltip' | translate}}</kc-tooltip>
+            </div>
         </fieldset>
 
         <fieldset data-ng-show="protocol == 'openid-connect'">

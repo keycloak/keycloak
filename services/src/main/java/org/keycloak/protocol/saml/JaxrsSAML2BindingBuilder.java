@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.saml;
 
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.saml.BaseSAML2BindingBuilder;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
@@ -77,6 +78,30 @@ public class JaxrsSAML2BindingBuilder extends BaseSAML2BindingBuilder<JaxrsSAML2
                     .header("Cache-Control", "no-cache, no-store").build();
         }
 
+    }
+
+    /**
+     * Used for redirecting to SP/RP for Idp-Initiated SSO involving non SAML target SPs (i.e. OIDC RP).
+     */
+    public static class PlainRedirectBindingBuilder extends BaseRedirectBindingBuilder {
+        public PlainRedirectBindingBuilder(JaxrsSAML2BindingBuilder builder, Document document) throws ProcessingException {
+            super(builder, document);
+        }
+        @Override
+        public URI responseURI(String actionUrl) throws ConfigurationException, ProcessingException, IOException {
+            return KeycloakUriBuilder.fromUri(actionUrl).build();
+        }
+
+        public Response response(String redirect) throws ProcessingException, ConfigurationException, IOException {
+            URI uri = responseURI(redirect);
+            return Response.status(302).location(uri)
+                    .header("Pragma", "no-cache")
+                    .header("Cache-Control", "no-cache, no-store").build();
+        }
+    }
+
+    public PlainRedirectBindingBuilder plainRedirectBinding(Document document) throws ProcessingException  {
+        return new PlainRedirectBindingBuilder(this, document);
     }
 
     public RedirectBindingBuilder redirectBinding(Document document) throws ProcessingException  {
