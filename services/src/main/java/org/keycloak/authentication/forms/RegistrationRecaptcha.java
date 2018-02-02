@@ -52,6 +52,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -93,6 +94,9 @@ public class RegistrationRecaptcha implements FormAction, FormActionFactory, Con
     @Override
     public void buildPage(FormContext context, LoginFormsProvider form) {
         AuthenticatorConfigModel captchaConfig = context.getAuthenticatorConfig();
+        Locale userLocale = context.getSession().getContext().resolveLocale(context.getUser());
+        String userLocaleStr = userLocale.toString().replaceAll(NON_WORD_REG_EXP, "-");
+
         if (captchaConfig == null || captchaConfig.getConfig() == null
                 || captchaConfig.getConfig().get(SITE_KEY) == null
                 || captchaConfig.getConfig().get(SITE_SECRET) == null
@@ -100,10 +104,11 @@ public class RegistrationRecaptcha implements FormAction, FormActionFactory, Con
             form.addError(new FormMessage(null, Messages.RECAPTCHA_NOT_CONFIGURED));
             return;
         }
+
         String siteKey = captchaConfig.getConfig().get(SITE_KEY);
         form.setAttribute("recaptchaRequired", true);
         form.setAttribute("recaptchaSiteKey", siteKey);
-        form.addScript("https://www.google.com/recaptcha/api.js");
+        form.addScript("https://www.google.com/recaptcha/api.js?hl=" + (REFINED_LANGUAGE_CODES.contains(userLocaleStr) ? userLocaleStr : userLocale.getLanguage()));
     }
 
     @Override
@@ -215,7 +220,9 @@ public class RegistrationRecaptcha implements FormAction, FormActionFactory, Con
         return "Adds Google Recaptcha button.  Recaptchas verify that the entity that is registering is a human.  This can only be used on the internet and must be configured after you add it.";
     }
 
-    private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
+    private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = new ArrayList<>();
+    private static final List<String> REFINED_LANGUAGE_CODES = new ArrayList<>();
+    private static final String NON_WORD_REG_EXP = "[\\W_]+";
 
     static {
         ProviderConfigProperty property;
@@ -224,19 +231,29 @@ public class RegistrationRecaptcha implements FormAction, FormActionFactory, Con
         property.setLabel("Recaptcha Site Key");
         property.setType(ProviderConfigProperty.STRING_TYPE);
         property.setHelpText("Google Recaptcha Site Key");
-        configProperties.add(property);
+        CONFIG_PROPERTIES.add(property);
         property = new ProviderConfigProperty();
         property.setName(SITE_SECRET);
         property.setLabel("Recaptcha Secret");
         property.setType(ProviderConfigProperty.STRING_TYPE);
         property.setHelpText("Google Recaptcha Secret");
-        configProperties.add(property);
+        CONFIG_PROPERTIES.add(property);
 
+        REFINED_LANGUAGE_CODES.add("zh-HK");
+        REFINED_LANGUAGE_CODES.add("zh-CN");
+        REFINED_LANGUAGE_CODES.add("zh-TW");
+        REFINED_LANGUAGE_CODES.add("en-GB");
+        REFINED_LANGUAGE_CODES.add("fr-CA");
+        REFINED_LANGUAGE_CODES.add("de-AT");
+        REFINED_LANGUAGE_CODES.add("de-CH");
+        REFINED_LANGUAGE_CODES.add("pt-BR");
+        REFINED_LANGUAGE_CODES.add("pt-PT");
+        REFINED_LANGUAGE_CODES.add("es-419");
     }
 
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return configProperties;
+        return CONFIG_PROPERTIES;
     }
 }
