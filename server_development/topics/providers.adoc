@@ -143,7 +143,7 @@ public class MyEventListenerProvider implements EventListenerProvider {
 ----
 
 [[_providers_admin_console]]
-==== Show info from you SPI implementation in Keycloak admin console
+==== Show info from your SPI implementation in Keycloak admin console
 
 Sometimes it is useful to show additional info about your Provider to a Keycloak administrator. You can show provider build time informations (eg. version of
 custom provider currently installed), current configuration of the provider (eg. url of remote system your provider talks to) or some operational info
@@ -265,7 +265,7 @@ For example to disable the Infinispan user cache provider add:
 
 === Leveraging Java EE
 
-The can be packaged within any Java EE component so long as you set up the `META-INF/services`
+The service providers can be packaged within any Java EE component so long as you set up the `META-INF/services`
 file correctly to point to your providers.  For example, if your provider needs to use third party libraries, you
 can package up your provider within an ear and store these third pary libraries in the ear's `lib/` directory.
 Also note that provider jars can make use of the `jboss-deployment-structure.xml` file that EJBs, WARS, and EARs
@@ -273,7 +273,7 @@ can use in a {appserver_name} environment.  See the {appserver_name} documentati
 allows you to pull in external dependencies among other fine grain actions.
 
 `ProviderFactory` implementations are required to be plain java objects.  But, we also currently support
-implementing provider classes as Stateful EJBs.  TThis is how you would do it:
+implementing provider classes as Stateful EJBs.  This is how you would do it:
 
 [source,java]
 ----

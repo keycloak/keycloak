@@ -63,7 +63,7 @@ that it implements from the `CredentialInputValidator` and `CredentialInputUpdat
 from a validation or update will just result in {project_name} seeing if it can validate or update using
 local storage.
 
-Also notice that we are proxying the local user using the `org.keycloak.models.utils.UserModelDelegate' class.
+Also notice that we are proxying the local user using the `org.keycloak.models.utils.UserModelDelegate` class.
 This class is an implementation of `UserModel`. Every method just delegates to the `UserModel` it was instantiated with.
 We override the `setUsername()` method of this delegate class to synchronize automatically with the property file.
 For your providers, you can use this to _intercept_ other methods on the local `UserModel` to perform synchronization

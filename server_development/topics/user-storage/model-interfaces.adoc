@@ -45,5 +45,5 @@ The component id is the id returned from `ComponentModel.getId()`. The `Componen
 f:332a234e31234:wburke
 ----
 
-When the runtime does a lookup by id, the id is parsed to obtain the component id. The component id is used to locate the `UserStorageProvider` that was originally used to load the user. That provider is then passed the id. The provider again parses the id to obtain the external id it will use to locate the user in external user storage.
+When the runtime does a lookup by id, the id is parsed to obtain the component id. The component id is used to locate the `UserStorageProvider` that was originally used to load the user. That provider is then passed the id. The provider again parses the id to obtain the external id and it will use to locate the user in external user storage.
 

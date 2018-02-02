@@ -322,7 +322,7 @@ The contents of `META-INF/keycloak-themes.json` in this case would be:
 
 A single archive can contain multiple themes and each theme can support one or more types.
 
-The deploy the archive to {project_name} you can either manually create a module in `modules` or use the `jboss-cli` command. It's simplest to use
+To deploy the archive to {project_name} you can either manually create a module in `modules` or use the `jboss-cli` command. It's simplest to use
 `jboss-cli` as it creates the required directories and module descriptor for you.
 
 To deploy `mytheme.zip` on Linux run:
