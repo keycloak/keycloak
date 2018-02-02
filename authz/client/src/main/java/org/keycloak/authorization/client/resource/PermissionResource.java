@@ -98,10 +98,14 @@ public class PermissionResource {
         if (scopeId == null) {
             throw new IllegalArgumentException("Scope id must not be null");
         }
-        return http.<List<PermissionTicketRepresentation>>get(serverConfiguration.getPermissionEndpoint())
-                .authorizationBearer(this.pat.call())
-                .param("scopeId", scopeId)
-                .response().json(new TypeReference<List<PermissionTicketRepresentation>>(){}).execute();
+        try {
+            return http.<List<PermissionTicketRepresentation>>get(serverConfiguration.getPermissionEndpoint())
+                    .authorizationBearer(this.pat.call())
+                    .param("scopeId", scopeId)
+                    .response().json(new TypeReference<List<PermissionTicketRepresentation>>(){}).execute();
+        } catch (Exception cause) {
+            throw handleAndWrapException("Error querying permission ticket by scope", cause);
+        }
     }
 
     /**
@@ -114,10 +118,14 @@ public class PermissionResource {
         if (resourceId == null) {
             throw new IllegalArgumentException("Resource id must not be null");
         }
-        return http.<List<PermissionTicketRepresentation>>get(serverConfiguration.getPermissionEndpoint())
-                .authorizationBearer(this.pat.call())
-                .param("resourceId", resourceId)
-                .response().json(new TypeReference<List<PermissionTicketRepresentation>>(){}).execute();
+        try {
+            return http.<List<PermissionTicketRepresentation>>get(serverConfiguration.getPermissionEndpoint())
+                    .authorizationBearer(this.pat.call())
+                    .param("resourceId", resourceId)
+                    .response().json(new TypeReference<List<PermissionTicketRepresentation>>(){}).execute();
+        } catch (Exception cause) {
+            throw handleAndWrapException("Error querying permission ticket by resource", cause);
+        }
     }
 
     /**

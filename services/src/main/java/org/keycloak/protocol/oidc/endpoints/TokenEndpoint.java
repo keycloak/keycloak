@@ -1025,6 +1025,7 @@ public class TokenEndpoint {
         authorizationRequest.setAudience(formParams.getFirst("audience"));
         authorizationRequest.setAccessToken(accessTokenString);
 
+        // permissions have a format like RESOURCE#SCOPE1,SCOPE2
         List<String> permissions = formParams.get("permission");
 
         if (permissions != null) {

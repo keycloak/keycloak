@@ -40,8 +40,6 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.representations.idm.authorization.AuthorizationRequest;
-import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 import org.keycloak.authorization.common.KeycloakEvaluationContext;
 import org.keycloak.authorization.common.KeycloakIdentity;
 import org.keycloak.authorization.model.Resource;
@@ -65,9 +63,15 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.oidc.TokenManager.AccessTokenResponseBuilder;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.AccessToken.Authorization;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
+import org.keycloak.representations.RefreshToken;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest.Metadata;
+import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionTicketToken;
 import org.keycloak.services.CorsErrorResponseException;
@@ -128,19 +132,29 @@ public class AuthorizationTokenService {
             ResourceServer resourceServer = getResourceServer(ticket);
             KeycloakEvaluationContext evaluationContext = createEvaluationContext(request);
             KeycloakIdentity identity = KeycloakIdentity.class.cast(evaluationContext.getIdentity());
-            List<Result> results;
+            List<Result> evaluation;
 
             if (ticket.getResources().isEmpty() && request.getRpt() == null) {
-                results = evaluateAllPermissions(resourceServer, evaluationContext, identity);
+                evaluation = evaluateAllPermissions(resourceServer, evaluationContext, identity);
             } else if(!request.getPermissions().getResources().isEmpty()) {
-                results = evaluatePermissions(request, ticket, resourceServer, evaluationContext, identity);
+                evaluation = evaluatePermissions(request, ticket, resourceServer, evaluationContext, identity);
             } else {
-                results = evaluateUserManagedPermissions(request, ticket, resourceServer, evaluationContext, identity);
+                evaluation = evaluateUserManagedPermissions(request, ticket, resourceServer, evaluationContext, identity);
             }
 
-            List<Permission> entitlements = Permissions.permits(results, request.getMetadata(), authorization, resourceServer);
+            List<Permission> permissions = Permissions.permits(evaluation, request.getMetadata(), authorization, resourceServer);
 
-            return handleResponse(request, ticket, resourceServer, identity, entitlements);
+            if (permissions.isEmpty()) {
+                throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "not_authorized", Status.FORBIDDEN);
+            }
+
+            ClientModel targetClient = this.authorization.getRealm().getClientById(resourceServer.getId());
+            AuthorizationResponse response = new AuthorizationResponse(createRequestingPartyToken(identity, permissions, targetClient), request.getRpt() != null);
+
+            return Cors.add(httpRequest, Response.status(Status.CREATED).type(MediaType.APPLICATION_JSON_TYPE).entity(response))
+                    .allowedOrigins(getKeycloakSession().getContext().getUri(), targetClient)
+                    .allowedMethods(HttpMethod.POST)
+                    .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
         } catch (ErrorResponseException | CorsErrorResponseException cause) {
             if (logger.isDebugEnabled()) {
                 logger.debug("Error while evaluating permissions", cause);
@@ -170,43 +184,50 @@ public class AuthorizationTokenService {
                 .evaluate();
     }
 
-    private Response handleResponse(AuthorizationRequest request, PermissionTicketToken ticket, ResourceServer resourceServer, KeycloakIdentity identity, List<Permission> entitlements) {
-        if (entitlements.isEmpty()) {
-            throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "not_authorized", Status.FORBIDDEN);
-        }
-
+    private AccessTokenResponse createRequestingPartyToken(KeycloakIdentity identity, List<Permission> entitlements, ClientModel targetClient) {
         KeycloakSession keycloakSession = getKeycloakSession();
         AccessToken accessToken = identity.getAccessToken();
         UserSessionModel userSessionModel = keycloakSession.sessions().getUserSession(getRealm(), accessToken.getSessionState());
-        ClientModel targetClient = getRealm().getClientByClientId(accessToken.getIssuedFor());
-        AuthenticatedClientSessionModel clientSession = userSessionModel.getAuthenticatedClientSessionByClient(targetClient.getId());
-        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(getRealm(), clientSession.getClient(), event, keycloakSession, userSessionModel, clientSession)
-                .generateAccessToken();
-        responseBuilder.getAccessToken().issuedFor(targetClient.getClientId());
+        ClientModel client = getRealm().getClientByClientId(accessToken.getIssuedFor());
+        AuthenticatedClientSessionModel clientSession = userSessionModel.getAuthenticatedClientSessionByClient(client.getId());
+        AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(getRealm(), clientSession.getClient(), event, keycloakSession, userSessionModel, clientSession)
+                .generateAccessToken()
+                .generateRefreshToken();
 
-        AuthorizationResponse response = new AuthorizationResponse();
+        AccessToken rpt = responseBuilder.getAccessToken();
 
-        response.setToken(createRequestingPartyToken(entitlements, ticket, accessToken, resourceServer));
-        response.setTokenType("Bearer");
+        rpt.issuedFor(client.getClientId());
 
-        if (request.getRpt() != null) {
-            response.setUpgraded(true);
+        Authorization authorization = new Authorization();
+
+        authorization.setPermissions(entitlements);
+
+        rpt.setAuthorization(authorization);
+
+        RefreshToken refreshToken = responseBuilder.getRefreshToken();
+
+        refreshToken.issuedFor(client.getClientId());
+        refreshToken.setAuthorization(authorization);
+
+        if (!rpt.hasAudience(targetClient.getClientId())) {
+            rpt.audience(targetClient.getClientId());
         }
 
-        return Cors.add(httpRequest, Response.status(Status.CREATED).type(MediaType.APPLICATION_JSON_TYPE).entity(response))
-                .allowedOrigins(accessToken)
-                .allowedMethods(HttpMethod.POST)
-                .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
+        return responseBuilder.build();
     }
 
-    private PermissionTicketToken getPermissionTicket(AuthorizationRequest authorizationRequest) {
-        if (authorizationRequest.getTicket() != null) {
-            return verifyPermissionTicket(authorizationRequest);
+    private PermissionTicketToken getPermissionTicket(AuthorizationRequest request) {
+        // if there is a ticket is because it is a UMA flow and the ticket was sent by the client after obtaining it from the target resource server
+        if (request.getTicket() != null) {
+            return verifyPermissionTicket(request);
         }
 
-        PermissionTicketToken permissions = authorizationRequest.getPermissions();
+        // if there is no ticket, we use the permissions the client is asking for.
+        // This is a Keycloak extension to UMA flow where clients are capable of obtaining a RPT without a ticket
+        PermissionTicketToken permissions = request.getPermissions();
 
-        permissions.audience(authorizationRequest.getAudience());
+        // an audience must be set by the client when doing this method of obtaining RPT, that is how we know the target resource server
+        permissions.audience(request.getAudience());
 
         return permissions;
     }
@@ -220,19 +241,18 @@ public class AuthorizationTokenService {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "You must provide the audience", Status.BAD_REQUEST);
         }
 
-        String resourceServerId = audience[0];
-        ResourceServer resourceServer = resourceServerStore.findById(resourceServerId);
+        ClientModel clientModel = getRealm().getClientByClientId(audience[0]);
+
+        if (clientModel == null) {
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Unknown resource server id.", Status.BAD_REQUEST);
+        }
+
+        ResourceServer resourceServer = resourceServerStore.findById(clientModel.getId());
 
         if (resourceServer == null) {
-            ClientModel clientModel = getRealm().getClientByClientId(resourceServerId);
-            if (clientModel == null) {
-                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Unknown resource server id.", Status.BAD_REQUEST);
-            }
-            resourceServer = resourceServerStore.findById(clientModel.getId());
-            if (resourceServer == null) {
-                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Client does not support permissions", Status.BAD_REQUEST);
-            }
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Client does not support permissions", Status.BAD_REQUEST);
         }
+
         return resourceServer;
     }
 
@@ -381,21 +401,6 @@ public class AuthorizationTokenService {
                         return Permissions.createResourcePermissions(entryResource, entry.getValue(), authorization).stream();
                     }
                 }).collect(Collectors.toList());
-    }
-
-    private String createRequestingPartyToken(List<Permission> permissions, PermissionTicketToken ticket, AccessToken accessToken, ResourceServer resourceServer) {
-        AccessToken.Authorization authorization = new AccessToken.Authorization();
-
-        authorization.setPermissions(permissions);
-        accessToken.setAuthorization(authorization);
-
-        ClientModel clientModel = this.authorization.getRealm().getClientById(resourceServer.getId());
-
-        if (!accessToken.hasAudience(clientModel.getClientId())) {
-            accessToken.audience(clientModel.getClientId());
-        }
-
-        return new TokenManager().encodeToken(getKeycloakSession(), getRealm(), accessToken);
     }
 
     private PermissionTicketToken verifyPermissionTicket(AuthorizationRequest request) {

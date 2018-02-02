@@ -19,17 +19,30 @@ package org.keycloak.testsuite.authz;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
 
+import java.net.URI;
 import java.util.List;
 
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Form;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Permission;
@@ -37,6 +50,7 @@ import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.util.BasicAuthHelper;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -157,7 +171,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
     }
 
     @Test
-    public void testObtainRpttUsingAccessToken() throws Exception {
+    public void testObtainRptUsingAccessToken() throws Exception {
         AccessTokenResponse accessTokenResponse = getAuthzClient().obtainAccessToken("marta", "password");
         AuthorizationResponse response = authorize(null, null, null, null, accessTokenResponse.getToken(), null, null, new PermissionRequest("Resource A", "ScopeA", "ScopeB"));
         String rpt = response.getToken();
@@ -174,7 +188,57 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
         assertNotNull(permissions);
         assertPermissions(permissions, "Resource A", "ScopeA", "ScopeB");
+        assertTrue(permissions.isEmpty());
+    }
 
+    @Test
+    public void testRefreshRpt() throws Exception {
+        AccessTokenResponse accessTokenResponse = getAuthzClient().obtainAccessToken("marta", "password");
+        AuthorizationResponse response = authorize(null, null, null, null, accessTokenResponse.getToken(), null, null, new PermissionRequest("Resource A", "ScopeA", "ScopeB"));
+        String rpt = response.getToken();
+
+        assertNotNull(rpt);
+
+        AccessToken accessToken = toAccessToken(rpt);
+        AccessToken.Authorization authorization = accessToken.getAuthorization();
+
+        assertNotNull(authorization);
+
+        List<Permission> permissions = authorization.getPermissions();
+
+        assertNotNull(permissions);
+        assertPermissions(permissions, "Resource A", "ScopeA", "ScopeB");
+        assertTrue(permissions.isEmpty());
+
+        String refreshToken = response.getRefreshToken();
+
+        assertNotNull(refreshToken);
+
+        Client client = ClientBuilder.newClient();
+        UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
+        URI uri = OIDCLoginProtocolService.tokenUrl(builder).build(REALM_NAME);
+        WebTarget target = client.target(uri);
+
+        Form parameters = new Form();
+
+        parameters.param("grant_type", OAuth2Constants.REFRESH_TOKEN);
+        parameters.param(OAuth2Constants.REFRESH_TOKEN, refreshToken);
+
+        AccessTokenResponse refreshTokenResponse = target.request()
+                .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader("resource-server-test", "secret"))
+                .post(Entity.form(parameters)).readEntity(AccessTokenResponse.class);
+
+        assertNotNull(refreshTokenResponse.getToken());
+
+        AccessToken refreshedToken = toAccessToken(rpt);
+        authorization = refreshedToken.getAuthorization();
+
+        assertNotNull(authorization);
+
+        permissions = authorization.getPermissions();
+
+        assertNotNull(permissions);
+        assertPermissions(permissions, "Resource A", "ScopeA", "ScopeB");
         assertTrue(permissions.isEmpty());
     }
 

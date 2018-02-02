@@ -56,9 +56,11 @@ import org.keycloak.util.JsonSerialization;
  */
 public abstract class AbstractResourceServerTest extends AbstractKeycloakTest {
 
+    protected static final String REALM_NAME = "authz-test";
+
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
-        testRealms.add(RealmBuilder.create().name("authz-test")
+        testRealms.add(RealmBuilder.create().name(REALM_NAME)
                 .roles(RolesBuilder.create()
                         .realmRole(RoleBuilder.create().name("uma_authorization").build())
                         .realmRole(RoleBuilder.create().name("uma_protection").build())

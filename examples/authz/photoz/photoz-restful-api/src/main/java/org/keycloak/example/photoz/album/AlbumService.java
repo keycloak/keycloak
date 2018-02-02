@@ -103,7 +103,12 @@ public class AlbumService {
         Map<String, SharedAlbum> shares = new HashMap<>();
 
         for (PermissionTicketRepresentation permission : permissions) {
-            SharedAlbum share = shares.computeIfAbsent(permission.getResource(), s -> new SharedAlbum(Album.class.cast(entityManager.createQuery("from Album where externalId = :externalId").setParameter("externalId", permission.getResource()).getSingleResult())));
+            SharedAlbum share = shares.get(permission.getResource());
+
+            if (share == null) {
+                share = new SharedAlbum(Album.class.cast(entityManager.createQuery("from Album where externalId = :externalId").setParameter("externalId", permission.getResource()).getSingleResult()));
+                shares.put(permission.getResource(), share);
+            }
 
             if (permission.getScope() != null) {
                 share.addScope(permission.getScopeName());

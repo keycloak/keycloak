@@ -26,6 +26,19 @@ public class AuthorizationResponse extends AccessTokenResponse {
 
     private boolean upgraded;
 
+    public AuthorizationResponse() {
+    }
+
+    public AuthorizationResponse(AccessTokenResponse response, boolean upgraded) {
+        setToken(response.getToken());
+        setTokenType("Bearer");
+        setRefreshToken(response.getRefreshToken());
+        setRefreshExpiresIn(response.getRefreshExpiresIn());
+        setExpiresIn(response.getExpiresIn());
+        setNotBeforePolicy(response.getNotBeforePolicy());
+        this.upgraded = upgraded;
+    }
+
     public boolean isUpgraded() {
         return upgraded;
     }

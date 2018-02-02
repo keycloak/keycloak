@@ -110,9 +110,9 @@ public class AuthzClient {
      * @return a {@link ProtectionResource}
      */
     public ProtectionResource protection(final String accessToken) {
-        return new ProtectionResource(this.http, this.serverConfiguration, new Supplier<String>() {
+        return new ProtectionResource(this.http, this.serverConfiguration, new Callable<String>() {
             @Override
-            public String get() {
+            public String call() {
                 return accessToken;
             }
         });
@@ -145,9 +145,9 @@ public class AuthzClient {
      * @return a {@link AuthorizationResource}
      */
     public AuthorizationResource authorization(final String accessToken) {
-        return new AuthorizationResource(configuration, serverConfiguration, this.http, new Supplier<String>() {
+        return new AuthorizationResource(configuration, serverConfiguration, this.http, new Callable<String>() {
             @Override
-            public String get() {
+            public String call() {
                 return accessToken;
             }
         });

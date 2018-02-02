@@ -21,6 +21,7 @@ import org.keycloak.authorization.common.KeycloakIdentity;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.models.ClientModel;
 import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.PermissionResponse;
 import org.keycloak.authorization.store.ResourceStore;
@@ -147,7 +148,9 @@ public class AbstractPermissionService {
         }).collect(Collectors.toList());
 
         KeyManager.ActiveRsaKey keys = this.authorization.getKeycloakSession().keys().getActiveRsaKey(this.authorization.getRealm());
-        return new JWSBuilder().kid(keys.getKid()).jsonContent(new PermissionTicketToken(permissions, this.resourceServer.getId(), this.identity.getAccessToken()))
+        ClientModel targetClient = authorization.getRealm().getClientById(resourceServer.getId());
+
+        return new JWSBuilder().kid(keys.getKid()).jsonContent(new PermissionTicketToken(permissions, targetClient.getClientId(), this.identity.getAccessToken()))
                 .rsa256(keys.getPrivateKey());
     }
 }

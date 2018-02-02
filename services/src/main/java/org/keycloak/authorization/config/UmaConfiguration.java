@@ -53,6 +53,7 @@ public class UmaConfiguration extends OIDCConfigurationRepresentation {
         configuration.setTokenEndpointAuthMethodsSupported(oidcConfig.getTokenEndpointAuthMethodsSupported());
         configuration.setTokenEndpointAuthSigningAlgValuesSupported(oidcConfig.getTokenEndpointAuthSigningAlgValuesSupported());
         configuration.setTokenIntrospectionEndpoint(oidcConfig.getTokenIntrospectionEndpoint());
+        configuration.setLogoutEndpoint(oidcConfig.getLogoutEndpoint());
 
         UriBuilder uriBuilder = session.getContext().getUri().getBaseUriBuilder();
 

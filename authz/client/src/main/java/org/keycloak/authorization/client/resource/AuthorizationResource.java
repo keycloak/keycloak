@@ -20,6 +20,7 @@ package org.keycloak.authorization.client.resource;
 
 import static org.keycloak.authorization.client.util.Throwables.handleAndWrapException;
 
+import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
 import org.keycloak.authorization.client.AuthorizationDeniedException;
@@ -40,9 +41,9 @@ public class AuthorizationResource {
     private Configuration configuration;
     private ServerConfiguration serverConfiguration;
     private Http http;
-    private Supplier<String> supplier;
+    private Callable<String> supplier;
 
-    public AuthorizationResource(Configuration configuration, ServerConfiguration serverConfiguration, Http http, Supplier<String> supplier) {
+    public AuthorizationResource(Configuration configuration, ServerConfiguration serverConfiguration, Http http, Callable<String> supplier) {
         this.configuration = configuration;
         this.serverConfiguration = serverConfiguration;
         this.http = http;
@@ -77,7 +78,7 @@ public class AuthorizationResource {
             HttpMethod<AuthorizationResponse> method = http.<AuthorizationResponse>post(serverConfiguration.getTokenEndpoint());
 
             if (supplier != null) {
-                method = method.authorizationBearer(supplier.get());
+                method = method.authorizationBearer(supplier.call());
             }
 
             return method
