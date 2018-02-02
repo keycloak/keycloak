@@ -1,0 +1,6 @@
+[
+  { "id": 1, "name": "abc", "data1": 1200, "data2": 500 },
+  { "id": 2, "name": "efg", "data1": 900,  "data2": 600 },
+  { "id": 3, "name": "pqr", "data1": 1150, "data2": 300 },
+  { "id": 4, "name": "xyz", "data1": 1020, "data2": 900 }
+]

@@ -1,0 +1,86 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="/css/c3.css">
+  </head>
+  <body>
+    <div id="chart"></div>
+
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="/js/c3.js"></script>
+    <script>
+      var chart = c3.generate({
+        bindto: '#chart',
+        data: {
+          x : 'x',
+          columns: [
+            ['x', 'www.google.com', 'www.amazon.com', 'www.facebook.com', 'www.apple.com'],
+            ['download', 30, 200, 100, 400],
+            ['loading', 90, 100, 140, 200],
+          ],
+          groups: [
+            ['download', 'loading']
+          ],
+          type: 'bar'
+        },
+        axis: {
+          x: {
+            type: 'categorized',
+            label: 'X Label'
+          },
+          y: {
+            label: {
+              text: 'Y Label',
+              position: 'outer-middle'
+            }
+          }
+        }
+      });
+
+      setTimeout(function () {
+        chart.load({
+          columns: [
+            ['x', 'www.yahoo.com', 'www.rakuten.com', 'www.mixi.com', 'www.sony.com'],
+            ['download', 130, 300, 200, 470],
+            ['loading', 190, 130, 240, 340],
+          ],
+        });
+      }, 1000);
+
+      setTimeout(function () {
+        chart.load({
+          columns: [
+            ['x', 'www.hogehoge.com', 'www.aaaa.com', 'www.aaaa.com'],
+            ['download', 130, 300, 200],
+            ['loading', 190, 130, 240],
+          ],
+        });
+      }, 2000);
+
+      setTimeout(function () {
+        chart.load({
+          columns: [
+            ['x', 'www.yahoo.com', 'www.rakuten.com', 'www.mixi.com', 'www.sony.com'],
+            ['download', 130, 300, 200, 470],
+            ['loading', 190, 130, 240, 340],
+          ],
+        });
+      }, 3000);
+
+      setTimeout(function () {
+        chart.load({
+          columns: [
+            ['download', 30, 30, 20, 170],
+            ['loading', 90, 30, 40, 40],
+          ],
+        });
+      }, 4000);
+
+      setTimeout(function () {
+        chart.load({
+          url: '/data/c3_test3.csv'
+        });
+      }, 5000);
+
+    </script>
+  </body>
+</html>

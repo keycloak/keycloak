@@ -1,0 +1,30 @@
+{
+    "name": "drmonty/datatables-colvis",
+    "description": "End user column visibility options plug-in for DataTables",
+    "type": "component",
+    "homepage": "http://www.datatables.net/",
+    "author": {
+        "name": "Allan Jardine",
+        "url": "http://sprymedia.co.uk"
+    },
+    "require": {
+        "robloach/component-installer": "*"
+    },
+    "require": {
+        "components/jquery": ">=1.7.0"
+    },
+    "extra": {
+        "component": {
+            "scripts": [
+                "js/dataTables.colVis.js"
+            ],
+            "files": [
+                "js/dataTables.colVis.min.js",
+                "css/dataTables.colVis.min.css"
+            ],
+            "shim": {
+                "deps": ["jquery"]
+            }
+        }
+    }
+}

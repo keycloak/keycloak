@@ -1,0 +1,54 @@
+<html>
+  <head>
+    <link href="/css/c3.css" rel="stylesheet" type="text/css">
+  </head>
+  <body>
+    <div id="chart1"></div>
+    <div id="chart2"></div>
+
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="/js/c3.js"></script>
+    <script>
+
+      var chart1 = c3.generate({
+        bindto: '#chart1',
+        data: {
+          x: 'x',
+          columns: [
+            ['x', '1e-3', '1e-2', '1'],
+            ['data1', 30, 200, 100, 400, 150, 250, 50, 100, 250]
+          ]
+        },
+        axis: {
+          x: {
+            type: 'categorized'
+          }
+        }
+      });
+
+      var chart2 = c3.generate({
+        bindto: '#chart2',
+        data: {
+          columns: [
+            ['data1', 30, 200, 100, 400, 150, 250, 50, 100, 250]
+          ]
+        },
+        axis: {
+          x: {
+            categories: ['1e-3', '1e-2', '1e-1', '0', 'hoge'],
+            type: 'categorized'
+          }
+        }
+      });
+
+      setTimeout(function () {
+        chart1.load({columns:[['data2', 30, 20, 50, 40, 60, 50, 100, 200, 300,100]]});
+      }, 1000);
+
+      setTimeout(function () {
+        chart2.load({columns:[['data2', 30, 20, 50, 40, 60, 50, 100, 200, 300,100]]});
+      }, 2000);
+
+    </script>
+  </body>
+</html>

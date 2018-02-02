@@ -1,0 +1,138 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="/css/c3.css">
+<style type="text/css">
+<!--
+.c3 svg {
+/*    font-size: 13px;*/
+}
+-->
+</style>
+  </head>
+  <body>
+    <div id="chart1"></div>
+    <div id="chart2"></div>
+    <div id="chart3"></div>
+    <div id="chart4"></div>
+    <div id="chart5"></div>
+    <div id="chart6"></div>
+    <div id="chart7"></div>
+    <div id="chart8"></div>
+    <div id="chart9"></div>
+    <div id="chart10"></div>
+
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="/js/c3.js"></script>
+    <script>
+
+      var option = {
+        padding: {
+          top: 50,
+          right: 200,
+          bottom: 50,
+          left: 200,
+        },
+        data: {
+          columns: [
+            ['data1', 30, 200, 100, 400, 150, 250],
+            ['data2', 130, 100, 200, 100, 150, 150]
+          ],
+          axes: {
+            data2: 'y2'
+          },
+        },
+        axis: {
+          rotated: true,
+          y: {
+            label: {
+              text: 'Y Label', 
+              position: 'outer-center'
+            }
+          },
+          y2: {
+            show: true,
+            label: {
+              text: 'Y2 Label',
+              position: 'outer-center'
+            }
+          }
+        },
+        legend: {
+          position: 'bottom'
+        },
+        subchart: {
+          show: false
+        },
+        grid: {
+          x: {
+            show: true,
+          },
+          y: {
+            show: true,
+          }
+        }
+      };
+
+
+      option.bindto = '#chart1';
+      var chart1 = c3.generate(option);
+
+      option.bindto = '#chart2';
+      option.legend.position = 'right'
+      var chart2 = c3.generate(option);
+
+      option.bindto = '#chart3';
+      option.legend.position = 'bottom';
+      option.subchart.show = true;
+      var chart3 = c3.generate(option);
+
+      option.bindto = '#chart4';
+      option.legend.position = 'right';
+      option.subchart.show = true;
+      var chart4 = c3.generate(option);
+
+      option.bindto = '#chart5';
+      option.padding = {
+          top: 0,
+          right: 0,
+          bottom: 0,
+          left: 0,
+      };
+      option.subchart.show = false;
+      option.legend.position = 'bottom';
+      var chart5 = c3.generate(option);
+
+
+      option.axis.rotated = false;
+
+      option.bindto = '#chart6';
+      var chart6 = c3.generate(option);
+
+      option.bindto = '#chart7';
+      option.legend.position = 'right'
+      var chart7 = c3.generate(option);
+
+      option.bindto = '#chart8';
+      option.legend.position = 'bottom';
+      option.subchart.show = true;
+      var chart8 = c3.generate(option);
+
+      option.bindto = '#chart9';
+      option.legend.position = 'right';
+      option.subchart.show = true;
+      var chart9 = c3.generate(option);
+
+      option.bindto = '#chart10';
+      option.padding = {
+          top: 0,
+          right: 0,
+          bottom: 0,
+          left: 0,
+      };
+      option.subchart.show = false;
+      option.legend.position = 'bottom';
+      var chart10 = c3.generate(option);
+
+    </script>
+  </body>
+</html>

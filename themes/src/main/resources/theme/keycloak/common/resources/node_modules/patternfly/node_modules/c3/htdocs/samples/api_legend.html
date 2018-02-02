@@ -1,0 +1,136 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="/css/c3.css">
+  </head>
+  <body>
+    <div id="chart"></div>
+
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="/js/c3.js"></script>
+    <script>
+
+      var columns = [];
+      for (var i = 0; i < 5; i++ ) {
+        columns[i] = ['datahogehogeohgeohoge' + i, 10 * i, 20 * i, 30 * i];
+      }
+
+      var chart = c3.generate({
+        data: {
+          columns: columns,
+        },
+        axis: {
+          x: {
+            type: 'category'
+          }
+        }
+      });
+
+      setTimeout(function () {
+        chart.legend.hide();
+      }, 1000);
+
+      setTimeout(function () {
+        chart = c3.generate({
+          data: {
+            columns: columns,
+          },
+          axis: {
+            x: {
+              type: 'category'
+            }
+          },
+          legend: {
+            position: 'right'
+          }
+        });
+      }, 2000);
+
+      setTimeout(function () {
+        chart.legend.hide();
+      }, 3000);
+
+      setTimeout(function () {
+        chart = c3.generate({
+          data: {
+            columns: columns,
+          },
+          axis: {
+            rotated: true
+          }
+        });
+      }, 4000);
+
+      setTimeout(function () {
+        chart.legend.hide();
+      }, 5000);
+
+      setTimeout(function () {
+        chart = c3.generate({
+          data: {
+            columns: columns,
+          },
+          legend: {
+            position: 'right'
+          },
+          axis: {
+            rotated: true
+          }
+        });
+      }, 6000);
+
+      setTimeout(function () {
+        chart.legend.hide();
+      }, 7000);
+
+      setTimeout(function () {
+        chart = c3.generate({
+          data: {
+            columns: columns,
+          },
+          legend: {
+            show: false
+          }
+        });
+      }, 8000);
+
+      setTimeout(function () {
+        chart.legend.show();
+      }, 9000);
+
+      setTimeout(function () {
+        chart = c3.generate({
+          data: {
+            columns: columns,
+          },
+          legend: {
+            show: false
+          },
+          axis: {
+            rotated: true
+          }
+        });
+      }, 10000);
+
+      setTimeout(function () {
+        chart.legend.show();
+      }, 11000);
+
+      setTimeout(function () {
+        chart = c3.generate({
+          data: {
+            columns: columns,
+          },
+          legend: {
+            position: 'right',
+            show: false
+          }
+        });
+      }, 12000);
+
+      setTimeout(function () {
+        chart.legend.show();
+      }, 13000);
+
+    </script>
+  </body>
+</html>

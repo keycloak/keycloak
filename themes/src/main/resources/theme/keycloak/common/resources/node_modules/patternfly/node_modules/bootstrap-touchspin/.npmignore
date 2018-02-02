@@ -1,0 +1,8 @@
+.hg
+.hgignore
+.idea
+*.log
+nbproject
+index_demo_site.html
+node_modules
+bower_components

@@ -1,0 +1,46 @@
+<html>
+  <head>
+    <link href="/css/c3.css" rel="stylesheet" type="text/css">
+  </head>
+  <body>
+    <div id="chart"></div>
+
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="/js/c3.js"></script>
+    <script>
+      var chart = c3.generate({
+        data: {
+          columns: [
+            ['data1', 30, 200, 100, 400, 150, 250],
+            ['data2', 50, 20, 10, 40, 15, 25]
+          ],
+          labels: {
+//            format: function (v, id) { return "Default Format on " + id; },
+            format: {
+              data1: function (v, id) { return "data1 Format"; },
+              data2: function (v, id) { return "data2 Format"; }
+            }
+          },
+          axes: {
+            data1: 'y',
+            data2: 'y2',
+          }
+        },
+        axis: {
+          y2: {
+            show: true
+          }
+        },
+        tooltip: {
+//          enabled: false
+        },
+        zoom: {
+//          enabled: true
+        },
+        subchart: {
+//          show: true
+        }
+      });
+    </script>
+  </body>
+</html>

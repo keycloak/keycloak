@@ -1,0 +1,23 @@
+{
+  "name": "bootstrap-select/bootstrap-select",
+  "description": "Bootstrap-select is a jQuery plugin that utilizes Bootstrap's dropdown.js to style and bring additional functionality to standard select elements.",
+  "keywords": [
+    "form",
+    "bootstrap",
+    "select",
+    "replacement"
+  ],
+  "homepage": "http://silviomoreto.github.io/bootstrap-select",
+  "version": "1.12.4",
+  "authors": [
+    {
+      "name": "Silvio Moreto",
+      "homepage": "https://github.com/silviomoreto"
+    }
+  ],
+  "license": "MIT",
+  "suggest": {
+    "components/jquery": ">=1.8",
+    "twbs/bootstrap": "~3.0.0"
+  }
+}

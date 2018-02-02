@@ -1,0 +1,87 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="/css/c3.css">
+  </head>
+  <body>
+    <div id="chart1"></div>
+    <div id="chart2"></div>
+    <div id="chart3"></div>
+    <div id="chart4"></div>
+    <div id="chart5"></div>
+    <div id="chart6"></div>
+
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="/js/c3.js"></script>
+    <script>
+
+      var columns = [];
+      for (var i = 0; i < 28; i++ ) {
+        columns[i] = ['datahogehogeohgeohoge' + i, 10 * i, 20 * i];
+      }
+
+      c3.generate({
+        bindto: '#chart1',
+        data: {
+          columns: columns,
+        },
+      });
+
+      c3.generate({
+        bindto: '#chart2',
+        data: {
+          columns: columns,
+        },
+        legend: {
+          position: 'right'
+        },
+      });
+
+      c3.generate({
+        bindto: '#chart3',
+        data: {
+          columns: columns,
+        },
+        legend: {
+          position: 'inset',
+        },
+      });
+
+      c3.generate({
+        bindto: '#chart4',
+        data: {
+          columns: columns,
+        },
+        axis: {
+          rotated: true,
+        },
+      });
+
+      c3.generate({
+        bindto: '#chart5',
+        data: {
+          columns: columns,
+        },
+        legend: {
+          position: 'right'
+        },
+        axis: {
+          rotated: true,
+        },
+      });
+
+      c3.generate({
+        bindto: '#chart6',
+        data: {
+          columns: columns,
+        },
+        legend: {
+          position: 'inset'
+        },
+        axis: {
+          rotated: true,
+        },
+      });
+
+    </script>
+  </body>
+</html>

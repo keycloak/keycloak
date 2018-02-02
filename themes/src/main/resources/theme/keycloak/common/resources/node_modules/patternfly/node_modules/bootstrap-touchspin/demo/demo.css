@@ -1,0 +1,383 @@
+body {
+    font-family: Arial, Ubuntu, Helvetica, sans-serif;
+    color: #333;
+    padding-top: 20px;
+}
+
+h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+    font-family: Arial, Ubuntu, Helvetica, sans-serif;
+    font-weight: normal;
+}
+
+hr {
+    border-color: #ccc;
+}
+
+a,
+a:hover {
+    color: #d64513;
+}
+
+p {
+    margin-bottom: 15px;
+}
+
+h1 {
+    font-family: "Century Gothic", Arial, Ubuntu, Helvetica, sans-serif;
+    font-size: 28px;
+}
+
+h1 small {
+    font-size: 22px;
+}
+
+h2 {
+    font-family: "Century Gothic", Arial, Ubuntu, Helvetica, sans-serif;
+    font-size: 26px;
+    margin: 30px 0 20px;
+}
+
+h2 small {
+    font-size: 18px;
+}
+
+h3 {
+    margin-top: 25px;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+h3 small {
+    font-size: 16px;
+}
+
+h4 {
+    font-size: 18px;
+}
+
+h4 small {
+    font-size: 14px;
+}
+
+h5 {
+    font-size: 16px;
+}
+
+h5 small {
+    font-size: 12px;
+}
+
+h6 {
+    font-size: 14px;
+}
+
+h6 small {
+    font-size: 10px;
+}
+
+.dl-horizontal dt {
+    width: 200px;
+}
+
+.dl-horizontal dd {
+    margin-left: 220px;
+}
+
+small {
+    font-size: 12px;
+}
+
+.navbar-brand {
+    padding: 5px 0px 5px;
+}
+
+.navbar-default {
+    font-family: "Century Gothic", Arial, sans-serif;
+    background: #000 url(img/bg-menu.png) repeat-x left top; /*#377fa0;*/
+    color: #fff;
+    text-transform: uppercase;
+    border: none;
+    box-shadow: 0px 0px 1px #000;
+    /*background-image: linear-gradient(to top, rgb(62, 86, 112) 0%, rgb(69, 94, 122) 100%)*/;
+}
+
+.navbar-default .navbar-nav > .dropdown > a .caret,
+.navbar-default .navbar-nav > .dropdown > a:hover .caret,
+.navbar-default .navbar-nav > .dropdown > a:focus .caret {
+    border-top-color: #fff;
+    border-bottom-color: #fff;
+}
+
+.navbar > .container .navbar-brand {
+    margin-left: 0;
+}
+
+.navbar .nav > li > a {
+    color: #fff;
+}
+
+.navbar-default .navbar-brand,
+.navbar-default .navbar-brand:hover,
+.navbar-default .navbar-brand:focus {
+    color: #fff;
+}
+
+.navbar .nav > .active {
+}
+
+.navbar .nav > .active > a,
+.navbar .nav > .active > a:hover,
+.navbar .nav > .active > a:focus,
+.navbar .nav li.dropdown.active > .dropdown-toggle,
+.navbar .nav li.dropdown.open.active > .dropdown-toggle {
+    background: url(img/bg-menu-selected.png) no-repeat center bottom; /*#a5360f;*/
+    background: #BC451B;
+    color: #fff;
+    /*height: 65px;*/
+}
+
+.navbar .nav > li > a:focus,
+.navbar .nav > li > a:hover,
+.navbar .nav li.dropdown.open > .dropdown-toggle {
+    background: rgba(188, 69, 27, 0.6);
+    color: #fff;
+}
+
+
+.dropdown-menu {
+    border-radius: 0;
+    padding: 10px 0;
+}
+
+.dropdown-menu > li > a:hover, .dropdown-menu > li > a:focus, .dropdown-submenu:hover > a, .dropdown-submenu:focus > a,
+.dropdown-menu > .active > a, .dropdown-menu > .active > a:hover, .dropdown-menu > .active > a:focus {
+    background: #d64513;
+}
+
+.nav-tabs .open .dropdown-toggle, .nav-pills .open .dropdown-toggle, .nav > li.dropdown.open.active > a:hover {
+    border: none;
+}
+
+.dropdown-menu > li > a {
+    padding: 10px 20px;
+    color: #585858;
+}
+
+.navbar .addthis_toolbox {
+    margin-top: 9px;
+    float: right;
+    margin-left: 15px;
+}
+
+.navbar .followus {
+    display: none;
+    float: right;
+    color: white;
+    margin-top: 15px;
+    margin-right: 10px;
+}
+
+.panel {
+    border-radius: 10px;
+    background: #f5f5f5;
+    box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.2);
+    -webkit-box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.2);
+    -moz-box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.panel-heading {
+    border-bottom: 1px solid #ddd;
+    color: #4d4d4d;
+    font-size: 14px;
+    margin: 0;
+}
+
+.panel-heading a {
+    color: #4d4d4d;
+}
+
+.panel-body {
+    border-top: 1px solid #fff;
+}
+
+.abstract {
+    min-height: 60px;
+}
+
+.btn-info {
+    border: none;
+    background: #d64513;
+    color: #fff;
+    box-shadow: none;
+    text-shadow: none;
+}
+
+.btn-info:hover, .btn-info:focus, .btn-info:active, .btn-info.active, .btn-info.disabled, .btn-info[disabled] {
+    background: #a5360f;
+}
+
+.socialbuttons,
+.addthis_toolbox {
+    min-height: 26px;
+}
+
+.row-fluid .socialbuttons {
+    margin-bottom: 15px;
+}
+
+.navbar .socialbuttons {
+    float: right;
+    height: 20px;
+    width: 220px;
+    white-space: nowrap;
+    margin-top: 15px;
+}
+
+.navbar .btn-navbar {
+    background: #474747;
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+    box-shadow: none;
+}
+
+.navbar .btn-navbar {
+    background: #a5360f;
+    border: none;
+    border-radius: 0;
+}
+
+.navbar .btn-navbar:hover, .navbar .btn-navbar:focus, .navbar .btn-navbar:active, .navbar .btn-navbar.active, .navbar .btn-navbar.disabled, .navbar .btn-navbar[disabled] {
+    background: #474747;
+}
+
+.nav-collapse .nav > li > a, .nav-collapse .dropdown-menu a {
+    border-radius: 0;
+}
+
+
+/* woodpaul on board */
+.hero-unit {
+    text-align: center;
+    margin: 0 0 50px;
+}
+
+.hero-unit h1 {
+    font-size: 48px;
+    text-align: center;
+    text-shadow: 1px 1px 0px rgba(255,255,255,1);
+}
+
+.hero-unit h1 small {
+    display: block;
+}
+
+.hero-unit .btn {
+    margin: 0;
+}
+
+.socialbuttons {
+    text-align: center;
+    margin: 0 0 -15px;
+}
+
+.socialbuttons iframe {
+    display: inline-block;
+}
+
+.socialbuttons .addthis_toolbox {
+    width: 420px;
+    display: inline-block;
+}
+
+.socialbuttons .share-github {
+    position: relative;
+    top: -5px;
+}
+
+.socialbuttons .addthis_button_facebook_like {
+    margin: 0 30px 0 0;
+}
+
+hr{
+    background-color: transparent;
+    border-top: 1px solid #ddd;
+    border-bottom: 1px solid #fff;
+}
+
+.controls-row {
+    margin: 0 0 10px;
+}
+
+/* table */
+.table thead th {
+    font-family: "Century Gothic", Arial, sans-serif;
+    text-transform: uppercase;
+    font-weight: normal;
+    background-color: #bc451b;
+    color: #fff;
+    vertical-align: middle!important;
+}
+
+code {
+    padding: 1px 4px;
+}
+
+@media (min-width: 768px) {
+    .navbar-collapse {
+        float: left;
+    }
+
+    .dropdown:hover .dropdown-menu {
+        display: block;
+    }
+}
+
+@media (max-width: 1000px) {
+    .navbar .followus {
+        display: none;
+    }
+}
+
+@media (max-width: 767px) {
+    body {
+        padding-top: 110px;
+    }
+
+    .navbar-default .navbar-nav .open .dropdown-menu > li > a {
+        color: #fff;
+    }
+
+    .navbar-collapse {
+        background: #000 url(img/bg-menu.png) repeat-x left top; /*#377fa0;*/
+        color: #fff;
+    }
+
+    .navbar .nav > .active > a, .navbar .nav > .active > a:hover, .navbar .nav > .active > a:focus, .navbar .nav li.dropdown.active > .dropdown-toggle, .navbar .nav li.dropdown.open.active > .dropdown-toggle,
+    .navbar-default .navbar-nav .open .dropdown-menu > .active > a, .navbar-default .navbar-nav .open .dropdown-menu > .active > a:hover, .navbar-default .navbar-nav .open .dropdown-menu > .active > a:focus,
+    .navbar-default .navbar-nav .open .dropdown-menu > li > a:hover, .navbar-default .navbar-nav .open .dropdown-menu > li > a:focus {
+        background: #d64513;
+        color: #fff;
+        height: auto;
+    }
+
+    .navbar-fixed-top > .container {
+        position: relative;
+    }
+
+    .navbar > .container .navbar-brand {
+        margin-left: 15px;
+    }
+
+    .navbar .socialbuttons {
+        position: absolute;
+        right: 100px;
+        top: 0;
+        width: 200px;
+        margin-top: 12px;
+    }
+
+    .navbar .addthis_toolbox {
+        display: none;
+    }
+}
+

@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+    <metadata>
+        <id>bootstrap-select</id>
+        <version>1.12.4</version>
+        <title>bootstrap-select</title>
+        <authors>Silvio Moreto,Ana Carolina,caseyjhol,Matt Bryson,and t0xicCode.</authors>
+        <owners>Silvio Moreto</owners>
+        <projectUrl>https://github.com/silviomoreto/bootstrap-select</projectUrl>
+        <description>Bootstrap-select is a jQuery plugin that utilizes Bootstrap's dropdown.js to style and bring additional functionality to standard select elements.</description>
+        <tags>bootstrap dropdown select</tags>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <dependencies>
+            <dependency id="jQuery" version="1.8.0" />
+        </dependencies>
+    </metadata>
+    <files>
+        <file src="dist\js\bootstrap-select*.*" target="content\Scripts" />
+        <file src="dist\js\i18n\*.*" target="content\Scripts\i18n" />
+        <file src="dist\css\*.*" target="content\Content" />
+    </files>
+</package>

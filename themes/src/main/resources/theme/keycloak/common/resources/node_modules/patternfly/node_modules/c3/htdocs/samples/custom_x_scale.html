@@ -1,0 +1,59 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="/css/c3.css">
+  </head>
+  <body>
+    <div id="chart"></div>
+
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="/js/c3.js"></script>
+    <script>
+      var chart = c3.generate({
+        bindto: '#chart',
+        data: {
+          x : 'x',
+          columns: [
+            ['x', 100, 120, 130, 200, 240, 500],
+            ['data1', 30, 200, 100, 400, 150, 250],
+            ['data2', 130, 100, 300, 200, 250, 350],
+          ],
+          selection: {
+            enabled: true
+          },
+          onmouseover: function (d) { console.log("onmouseover", d); },
+          onmouseout: function (d) { console.log("onmouseout", d); }
+        },
+      });
+
+      setTimeout(function () {
+        chart.load({
+          columns: [
+            ['data1', 100, 210, 150, 200, 100, 150],
+          ]
+        });
+      }, 1000);
+
+      setTimeout(function () {
+        chart.x([200, 210, 350, 400, 550, 750]);
+      }, 2000);
+
+      setTimeout(function () {
+        chart.load({
+          columns: [
+            ['data3', 300, 410, 350, 400, 500, 350],
+          ]
+        });
+      }, 3000);
+
+      setTimeout(function () {
+        chart.load({
+          columns: [
+            ['x', 130, 140, 200, 300, 450, 550],
+            ['sample', 200, 350, 100, 200, 50, 100]
+          ]
+        })
+      }, 4000);
+
+    </script>
+  </body>
+</html>

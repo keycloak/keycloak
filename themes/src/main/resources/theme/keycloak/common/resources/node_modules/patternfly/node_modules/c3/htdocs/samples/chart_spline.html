@@ -1,0 +1,25 @@
+<html>
+  <head>
+    <link href="/css/c3.css" rel="stylesheet" type="text/css">
+  </head>
+  <body>
+    <div id="chart"></div>
+
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="/js/c3.min.js"></script>
+    <script>
+      var chart = c3.generate({
+        data: {
+          columns: [
+            ['data1', 30, 200, 100, 400, 150, 250],
+            ['data2', 130, 100, 140, 200, 150, 50]
+          ],
+          types: {
+            data1: 'spline',
+            data2: 'spline'
+          }
+        }
+      });
+    </script>
+  </body>
+</html>

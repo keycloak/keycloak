@@ -1,0 +1,46 @@
+.bs-docs-header
+  .container
+    h1 Methods
+
+.container
+  p In #{title}, every option is also a method.
+  p If the second parameter is omitted, the method returns the current value.
+  p You can invoke methods as follows:
+  pre: code $('input[name="my-checkbox"]').bootstrapSwitch('state', true, true);
+
+  h2 Additional Methods
+
+  table.table.table-bordered.table-striped.table-responsive
+    thead
+      tr
+        th Name
+        th Description
+    tbody
+      tr
+        td toggleState
+        td Toggle the switch state
+      tr
+        td toggleAnimate
+        td Toggle the animate option
+      tr
+        td toggleDisabled
+        td Toggle the disabled state
+      tr
+        td toggleReadonly
+        td Toggle the readonly state
+      tr
+        td toggleIndeterminate
+        td Toggle the indeterminate state
+      tr
+        td toggleInverse
+        td Toggle the inverse option
+      tr
+        td destroy
+        td Destroy the instance of #{title}
+
+  h2 Special Behaviours
+
+  ul
+    li The method <code>state</code> can receive an optional third parameter <code>skip</code>. if true, <code>switchChange</code> event is not executed. The default is false.
+    li The method <code>toggleState</code> can receive an optional second parameter <code>skip</code>. if true, <code>switchChange</code> event is not executed. The default is false.
+    li The method <code>wrapperClass</code> can accept a falsy value as second parameter. If so, it resets the class to its default.

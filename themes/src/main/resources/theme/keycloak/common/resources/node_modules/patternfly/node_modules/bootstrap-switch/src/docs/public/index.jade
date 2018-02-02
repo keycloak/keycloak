@@ -1,0 +1,46 @@
+.bs-docs-masthead
+  .container
+    h1.title= title
+
+    p.lead
+      | Turn checkboxes &nbsp;
+      input(type='checkbox', checked, data-switch-no-init)
+      | &nbsp; and radio buttons &nbsp;
+      input(type='radio', checked, data-switch-no-init)
+      | &nbsp; into toggle switches &nbsp;
+      input(type='checkbox', checked)
+
+    p.lead
+      a.btn.btn-outline-inverse.btn-lg(href='https://github.com/Bttstrp/bootstrap-switch/archive/master.zip') Download #{title}
+    p.bs-docs-social
+      iframe(src='https://ghbtns.com/github-btn.html?user=Bttstrp&repo=bootstrap-switch&type=watch&count=true&size=large', allowtransparency='true', frameborder='0', scrolling='0', width='184', height='30')
+      iframe(src='https://ghbtns.com/github-btn.html?user=Bttstrp&repo=bootstrap-switch&type=fork&count=true&size=large', allowtransparency='true', frameborder='0', scrolling='0', width='144', height='30')
+    br
+    p.version
+      | Currently v#{version} · Compatible with Bootstrap 2 and 3
+
+.container
+  h2.page-header Getting Started
+
+  p Include the dependencies: jQuery, Bootstrap and #{title} CSS + Javascript.
+  pre: code
+    | [...]
+    | &lt;link href="bootstrap.css" rel="stylesheet"&gt;
+    | &lt;link href="bootstrap-switch.css" rel="stylesheet"&gt;
+    | &lt;script src="jquery.js"&gt;&lt;/script&gt;
+    | &lt;script src="bootstrap-switch.js"&gt;&lt;/script&gt;
+    | [...]
+
+  p Add your checkbox.
+  pre: code &lt;input type="checkbox" name="my-checkbox" checked&gt;
+
+  p Initialize #{title}.
+  pre: code $("[name='my-checkbox']").bootstrapSwitch();
+
+  p Enjoy.
+
+  .text-center
+    a.btn.btn-lg.btn-primary(href='examples.html') See Examples
+    | &nbsp;
+    a.btn.btn-lg.btn-outline(href='options.html') Browse Documentation
+

@@ -1,0 +1,9 @@
+language: node_js
+sudo: false
+node_js:
+  - 0.10
+
+before_script:
+  - npm install -g grunt-cli
+
+script: grunt build:travis

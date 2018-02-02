@@ -1,0 +1,31 @@
+{
+  "name": "bootstrap-combobox",
+  "version": "1.1.7",
+  "homepage": "https://github.com/danielfarrell/bootstrap-combobox",
+  "authors": [
+    "Daniel Farrell <danielfarrell76@gmail.com>",
+    "Patrick Wiseman",
+    "James Martin <wagedomain@gmail.com"
+  ],
+  "main": [
+    "less/combobox.less",
+    "css/bootstrap-combobox.css",
+    "js/bootstrap-combobox.js"
+  ],
+  "license": "Apache 2.0",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "description": "A bootstrap styled combobox with typeahead searching",
+  "moduleType": [],
+  "keywords": [
+    "bootstrap",
+    "jquery",
+    "combobox",
+    "typeahead"
+  ]
+}

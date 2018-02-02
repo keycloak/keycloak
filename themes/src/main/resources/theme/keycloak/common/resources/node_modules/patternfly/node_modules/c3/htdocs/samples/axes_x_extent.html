@@ -1,0 +1,76 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="/css/c3.css">
+  </head>
+  <body>
+    <div id="chart1"></div>
+    <div id="chart2"></div>
+    <div id="chart3"></div>
+
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="/js/c3.js"></script>
+    <script>
+
+      var chart1 = c3.generate({
+        bindto: '#chart1',
+        data: {
+          columns: [
+            ['data1', 100, 200, 50, 300, 400, 290],
+            ['data2', 10, 20, 50, 30, 10, 100],
+          ],
+        },
+        axis: {
+          x: {
+            extent: [2, 4.5]
+          }
+        },
+        subchart: {
+          show: true
+        }
+      });
+
+      var chart2 = c3.generate({
+        bindto: '#chart2',
+        data: {
+          x: 'x',
+          columns: [
+            ['x', '2014-01-01', '2014-02-01', '2014-03-01', '2014-04-01', '2014-05-01', '2014-06-01'],
+            ['data1', 100, 200, 50, 300, 400, 290],
+            ['data2', 10, 20, 50, 30, 10, 100],
+          ],
+        },
+        axis: {
+          x: {
+            type: 'timeseries',
+            extent: ['2014-03-01', '2014-04-20']
+          }
+        },
+        subchart: {
+          show: true
+        }
+      });
+
+      var chart3 = c3.generate({
+        bindto: '#chart3',
+        data: {
+          columns: [
+            ['data1', 100, 200, 50, 300, 400, 290],
+            ['data2', 10, 20, 50, 30, 10, 100],
+          ],
+        },
+        axis: {
+          x: {
+            extent: [1, 4.2]
+          }
+        },
+        zoom: {
+          enabled: true
+        },
+        subchart: {
+          show: true
+        }
+      });
+
+    </script>
+  </body>
+</html>

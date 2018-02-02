@@ -1,0 +1,37 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="/css/c3.css">
+  </head>
+  <body>
+    <div id="chart"></div>
+
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="/js/c3.js"></script>
+    <script>
+
+      var chart = c3.generate({
+        data: {
+          columns: [
+//            ['data1', 100, 200],
+          ],
+          empty: {
+            label: {
+              text: 'No Data'
+            }
+          }
+        },
+        subchart: {
+          show: true
+        }
+      });
+
+      setTimeout(function () {
+        chart.load({
+          columns: [
+            ['data1', 100, 200],
+          ],
+        });
+      }, 1000);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,173 @@
+<html>
+  <head>
+    <link href="/css/c3.css" rel="stylesheet" type="text/css">
+  </head>
+  <body>
+    grouped => true, multiple => true
+    <div id="chart1"></div>
+
+    grouped => true, multiple => true, tooltip.grouped = false
+    <div id="chart1-1"></div>
+
+    grouped => true, multiple => false
+    <div id="chart2"></div>
+
+    grouped => true, multiple => false, tooltip.grouped = false
+    <div id="chart2-1"></div>
+
+    grouped => false, multiple => true
+    <div id="chart3"></div>
+
+    grouped => false, multiple => true, tooltip.grouped = false
+    <div id="chart3-1"></div>
+
+    grouped => false, multiple => false
+    <div id="chart4"></div>
+
+    grouped => false, multiple => false, tooltip.grouped = false
+    <div id="chart4-1"></div>
+
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="/js/c3.js"></script>
+    <script>
+
+      var chart1 = c3.generate({
+        bindto: '#chart1',
+        data: {
+          columns: [
+            ['data1', 30, 200, 100, 400, 150, 250],
+            ['data2', 50, 20, 10, 40, 15, 25]
+          ],
+          selection: {
+            enabled: true,
+            grouped: true,
+            multiple: true,
+          },
+          onclick: function (d, element) { console.log("onclick", d, element); },
+          onselected: function (d, element) { console.log("onselected", d, element); },
+          onunselected: function (d, element) { console.log("onunselected", d, element); },
+          ondragstart: function () { console.log("ondragstart"); },
+          ondragend: function () { console.log("ondragend"); },
+        },
+      });
+
+      var chart11 = c3.generate({
+        bindto: '#chart1-1',
+        data: {
+          columns: [
+            ['data1', 30, 200, 100, 400, 150, 250],
+            ['data2', 50, 20, 10, 40, 15, 25]
+          ],
+          selection: {
+            enabled: true,
+            grouped: true,
+            multiple: true,
+          },
+        },
+        tooltip: {
+          grouped: false
+        }
+      });
+
+      var chart2 = c3.generate({
+        bindto: '#chart2',
+        data: {
+          columns: [
+            ['data1', 30, 200, 100, 400, 150, 250],
+            ['data2', 50, 20, 10, 40, 15, 25]
+          ],
+          selection: {
+            enabled: true,
+            grouped: true,
+            multiple: false,
+          }
+        }
+      });
+
+      var chart21 = c3.generate({
+        bindto: '#chart2-1',
+        data: {
+          columns: [
+            ['data1', 30, 200, 100, 400, 150, 250],
+            ['data2', 50, 20, 10, 40, 15, 25]
+          ],
+          selection: {
+            enabled: true,
+            grouped: true,
+            multiple: false,
+          }
+        },
+        tooltip: {
+          grouped: false
+        }
+      });
+
+      var chart3 = c3.generate({
+        bindto: '#chart3',
+        data: {
+          columns: [
+            ['data1', 30, 200, 100, 400, 150, 250],
+            ['data2', 50, 20, 10, 40, 15, 25]
+          ],
+          selection: {
+            enabled: true,
+            grouped: false,
+            multiple: true,
+          }
+        }
+      });
+
+      var chart31 = c3.generate({
+        bindto: '#chart3-1',
+        data: {
+          columns: [
+            ['data1', 30, 200, 100, 400, 150, 250],
+            ['data2', 50, 20, 10, 40, 15, 25]
+          ],
+          selection: {
+            enabled: true,
+            grouped: false,
+            multiple: true,
+          }
+        },
+        tooltip: {
+          grouped: false
+        }
+      });
+
+      var chart4 = c3.generate({
+        bindto: '#chart4',
+        data: {
+          columns: [
+            ['data1', 30, 200, 100, 400, 150, 250],
+            ['data2', 50, 20, 10, 40, 15, 25]
+          ],
+          selection: {
+            enabled: true,
+            grouped: false,
+            multiple: false,
+          }
+        }
+      });
+
+      var chart41 = c3.generate({
+        bindto: '#chart4-1',
+        data: {
+          columns: [
+            ['data1', 30, 200, 100, 400, 150, 250],
+            ['data2', 50, 20, 10, 40, 15, 25]
+          ],
+          selection: {
+            enabled: true,
+            grouped: false,
+            multiple: false,
+          }
+        },
+        tooltip: {
+          grouped: false
+        }
+      });
+
+    </script>
+  </body>
+</html>

@@ -1,0 +1,27 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="/css/c3.css">
+  </head>
+  <body>
+    <div id="chart"></div>
+
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="/js/c3.min.js"></script>
+    <script>
+      var chart = c3.generate({
+        bindto: '#chart',
+        data: {
+          columns: [
+            ['data1', 30, 200, 100, 400, 150, 250],
+            ['data2', 130, 300, 200, 600, 250, 150]
+          ]
+        },
+        point: {
+            show: function(d) {
+                return d.value > 200;
+            }
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset='UTF-8' />
+    <meta http-equiv='content-type' content='text/html; charset=utf-8' />
+
+    <title>bootstrap-treeview.js Tests</title>
+
+    <link rel='stylesheet' href='./lib/qunit-1.12.0.css'>
+
+    <script src='./lib/jquery.js'></script>
+    <script src='./lib/qunit-1.12.0.js'></script>
+    <script src="./lib/blanket.min.js"></script>
+
+    <script data-cover src='./lib/bootstrap-treeview.js'></script>
+
+    <!-- your tests, any and all to run with the given fixtures below -->
+    <script src='./tests.js'></script>
+  </head>
+  <body>
+    <div id="qunit"></div> <!-- QUnit fills this with results, etc -->
+    <div id='qunit-fixture'>
+ 
+      <!-- any HTML you want to be present in each test (will be reset for each test) -->
+      <div id="treeview"></div>
+    </div>
+  </body>
+</html>

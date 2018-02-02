@@ -1,0 +1,26 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="/css/c3.css">
+  </head>
+  <body>
+    <div id="chart"></div>
+
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="/js/c3.js"></script>
+    <script>
+      var chart = c3.generate({
+        data: {
+          columns: [
+            ['data1'],
+            ['data2'],
+          ],
+        },
+        axis: {
+          y: {
+            default: [-100, 100]
+          }
+        }
+      });
+    </script>
+  </body>
+</html>
