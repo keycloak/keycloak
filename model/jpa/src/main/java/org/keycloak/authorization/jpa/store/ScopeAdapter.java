@@ -61,6 +61,16 @@ public class ScopeAdapter implements Scope, JpaModel<ScopeEntity> {
     }
 
     @Override
+    public String getDisplayName() {
+        return entity.getDisplayName();
+    }
+
+    @Override
+    public void setDisplayName(String name) {
+        entity.setDisplayName(name);
+    }
+
+    @Override
     public String getIconUri() {
         return entity.getIconUri();
     }

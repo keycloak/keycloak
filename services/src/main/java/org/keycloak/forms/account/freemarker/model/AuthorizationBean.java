@@ -297,6 +297,10 @@ public class AuthorizationBean {
             return resource.getName();
         }
 
+        public String getDisplayName() {
+            return resource.getDisplayName();
+        }
+
         public String getIconUri() {
             return resource.getIconUri();
         }

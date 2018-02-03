@@ -21,6 +21,8 @@ import static org.junit.Assert.assertNull;
 
 import org.junit.Test;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.testsuite.console.page.clients.authorization.resource.Resource;
+import org.keycloak.testsuite.console.page.clients.authorization.scope.Scope;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -33,9 +35,11 @@ public class ScopeManagementTest extends AbstractAuthorizationSettingsTest {
         String previousName = expected.getName();
 
         expected.setName("changed");
+        expected.setDisplayName("changed");
 
         authorizationPage.navigateTo();
         authorizationPage.authorizationTabs().scopes().update(previousName, expected);
+
         assertAlertSuccess();
         assertScope(expected);
     }
@@ -62,9 +66,11 @@ public class ScopeManagementTest extends AbstractAuthorizationSettingsTest {
         ScopeRepresentation expected = new ScopeRepresentation();
 
         expected.setName("Test Scope");
+        expected.setDisplayName("Test Scope Display Name");
 
         authorizationPage.authorizationTabs().scopes().create(expected);
         assertAlertSuccess();
+        assertScope(expected);
 
         return expected;
     }
@@ -75,5 +81,9 @@ public class ScopeManagementTest extends AbstractAuthorizationSettingsTest {
 
         assertEquals(expected.getName(), actual.getName());
         assertEquals(expected.getIconUri(), actual.getIconUri());
+
+        ScopeRepresentation scope = authorizationPage.authorizationTabs().scopes().name(expected.getName()).toRepresentation();
+
+        assertEquals(expected.getDisplayName(), scope.getDisplayName());
     }
 }

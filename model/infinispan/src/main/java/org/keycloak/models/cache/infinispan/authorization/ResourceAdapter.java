@@ -98,7 +98,19 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
         getDelegateForUpdate();
         cacheSession.registerResourceInvalidation(cached.getId(), name, cached.getType(), cached.getUri(), cached.getScopesIds(), cached.getResourceServerId(), cached.getOwner());
         updated.setName(name);
+    }
 
+    @Override
+    public String getDisplayName() {
+        if (isUpdated()) return updated.getDisplayName();
+        return cached.getDisplayName();
+    }
+
+    @Override
+    public void setDisplayName(String name) {
+        getDelegateForUpdate();
+        cacheSession.registerResourceInvalidation(cached.getId(), name, cached.getType(), cached.getUri(), cached.getScopesIds(), cached.getResourceServerId(), cached.getOwner());
+        updated.setDisplayName(name);
     }
 
     @Override

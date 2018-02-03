@@ -56,5 +56,17 @@
                 <constraints nullable="false" />
             </column>
         </addColumn>
+
+        <addColumn tableName="RESOURCE_SERVER_RESOURCE">
+            <column name="DISPLAY_NAME" type="VARCHAR(255)" >
+                <constraints nullable="true" />
+            </column>
+        </addColumn>
+
+        <addColumn tableName="RESOURCE_SERVER_SCOPE">
+            <column name="DISPLAY_NAME" type="VARCHAR(255)" >
+                <constraints nullable="true" />
+            </column>
+        </addColumn>
     </changeSet>
 </databaseChangeLog>

@@ -17,8 +17,6 @@
  */
 package org.keycloak.authorization.client.resource;
 
-import static org.keycloak.authorization.client.util.Throwables.handleAndWrapException;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -28,6 +26,8 @@ import org.keycloak.authorization.client.representation.RegistrationResponse;
 import org.keycloak.authorization.client.representation.ResourceRepresentation;
 import org.keycloak.authorization.client.representation.ServerConfiguration;
 import org.keycloak.authorization.client.util.Http;
+import org.keycloak.authorization.client.util.Throwables;
+import org.keycloak.authorization.client.util.TokenCallable;
 import org.keycloak.util.JsonSerialization;
 
 /**
@@ -39,9 +39,9 @@ public class ProtectedResource {
 
     private final Http http;
     private ServerConfiguration serverConfiguration;
-    private final Callable<String> pat;
+    private final TokenCallable pat;
 
-    ProtectedResource(Http http, ServerConfiguration serverConfiguration, Callable<String> pat) {
+    ProtectedResource(Http http, ServerConfiguration serverConfiguration, TokenCallable pat) {
         this.http = http;
         this.serverConfiguration = serverConfiguration;
         this.pat = pat;
@@ -53,14 +53,20 @@ public class ProtectedResource {
      * @param resource the resource data
      * @return a {@link RegistrationResponse}
      */
-    public RegistrationResponse create(ResourceRepresentation resource) {
+    public RegistrationResponse create(final ResourceRepresentation resource) {
+        Callable<RegistrationResponse> callable = new Callable<RegistrationResponse>() {
+            @Override
+            public RegistrationResponse call() throws Exception {
+                return http.<RegistrationResponse>post(serverConfiguration.getResourceRegistrationEndpoint())
+                        .authorizationBearer(pat.call())
+                        .json(JsonSerialization.writeValueAsBytes(resource))
+                        .response().json(RegistrationResponse.class).execute();
+            }
+        };
         try {
-            return this.http.<RegistrationResponse>post(serverConfiguration.getResourceRegistrationEndpoint())
-                    .authorizationBearer(this.pat.call())
-                    .json(JsonSerialization.writeValueAsBytes(resource))
-                    .response().json(RegistrationResponse.class).execute();
+            return callable.call();
         } catch (Exception cause) {
-            throw handleAndWrapException("Could not create resource", cause);
+            return Throwables.retryAndWrapExceptionIfNecessary(callable, pat, "Could not create resource", cause);
         }
     }
 
@@ -70,16 +76,24 @@ public class ProtectedResource {
      * @param resource the resource data
      * @return a {@link RegistrationResponse}
      */
-    public void update(ResourceRepresentation resource) {
+    public void update(final ResourceRepresentation resource) {
         if (resource.getId() == null) {
             throw new IllegalArgumentException("You must provide the resource id");
         }
+
+        Callable callable = new Callable() {
+            @Override
+            public Object call() throws Exception {
+                http.<RegistrationResponse>put(serverConfiguration.getResourceRegistrationEndpoint() + "/" + resource.getId())
+                        .authorizationBearer(pat.call())
+                        .json(JsonSerialization.writeValueAsBytes(resource)).execute();
+                return null;
+            }
+        };
         try {
-            this.http.<RegistrationResponse>put(serverConfiguration.getResourceRegistrationEndpoint() + "/" + resource.getId())
-                    .authorizationBearer(this.pat.call())
-                    .json(JsonSerialization.writeValueAsBytes(resource)).execute();
+            callable.call();
         } catch (Exception cause) {
-            throw handleAndWrapException("Could not update resource", cause);
+            Throwables.retryAndWrapExceptionIfNecessary(callable, pat, "Could not update resource", cause);
         }
     }
 
@@ -89,13 +103,19 @@ public class ProtectedResource {
      * @param id the resource id
      * @return a {@link ResourceRepresentation}
      */
-    public ResourceRepresentation findById(String id) {
+    public ResourceRepresentation findById(final String id) {
+        Callable<ResourceRepresentation> callable = new Callable<ResourceRepresentation>() {
+            @Override
+            public ResourceRepresentation call() throws Exception {
+                return http.<ResourceRepresentation>get(serverConfiguration.getResourceRegistrationEndpoint() + "/" + id)
+                        .authorizationBearer(pat.call())
+                        .response().json(ResourceRepresentation.class).execute();
+            }
+        };
         try {
-            return this.http.<ResourceRepresentation>get(serverConfiguration.getResourceRegistrationEndpoint() + "/" + id)
-                    .authorizationBearer(this.pat.call())
-                    .response().json(ResourceRepresentation.class).execute();
+            return callable.call();
         } catch (Exception cause) {
-            throw handleAndWrapException("Could not find resource", cause);
+            return Throwables.retryAndWrapExceptionIfNecessary(callable, pat, "Could not find resource", cause);
         }
     }
 
@@ -128,22 +148,28 @@ public class ProtectedResource {
      * @param maxResult the maximum number of resources to retrieve
      * @return an array of strings with the resource ids
      */
-    public String[] find(String id, String name, String uri, String owner, String type, String scope, Integer firstResult, Integer maxResult) {
+    public String[] find(final String id, final String name, final String uri, final String owner, final String type, final String scope, final Integer firstResult, final Integer maxResult) {
+        Callable<String[]> callable = new Callable<String[]>() {
+            @Override
+            public String[] call() throws Exception {
+                return http.<String[]>get(serverConfiguration.getResourceRegistrationEndpoint())
+                        .authorizationBearer(pat.call())
+                        .param("_id", id)
+                        .param("name", name)
+                        .param("uri", uri)
+                        .param("owner", owner)
+                        .param("type", type)
+                        .param("scope", scope)
+                        .param("deep", Boolean.FALSE.toString())
+                        .param("first", firstResult != null ? firstResult.toString() : null)
+                        .param("max", maxResult != null ? maxResult.toString() : null)
+                        .response().json(String[].class).execute();
+            }
+        };
         try {
-            return this.http.<String[]>get(serverConfiguration.getResourceRegistrationEndpoint())
-                    .authorizationBearer(this.pat.call())
-                    .param("_id", id)
-                    .param("name", name)
-                    .param("uri", uri)
-                    .param("owner", owner)
-                    .param("type", type)
-                    .param("scope", scope)
-                    .param("deep", Boolean.FALSE.toString())
-                    .param("first", firstResult != null ? firstResult.toString() : null)
-                    .param("max", maxResult != null ? maxResult.toString() : null)
-                    .response().json(String[].class).execute();
+            return callable.call();
         } catch (Exception cause) {
-            throw handleAndWrapException("Could not find resource", cause);
+            return Throwables.retryAndWrapExceptionIfNecessary(callable, pat, "Could not find resource", cause);
         }
     }
 
@@ -156,7 +182,7 @@ public class ProtectedResource {
         try {
             return find(null,null , null, null, null, null, null, null);
         } catch (Exception cause) {
-            throw handleAndWrapException("Could not find resource", cause);
+            throw Throwables.handleWrapException("Could not find resource", cause);
         }
     }
 
@@ -165,13 +191,20 @@ public class ProtectedResource {
      *
      * @param id the resource id
      */
-    public void delete(String id) {
+    public void delete(final String id) {
+        Callable callable = new Callable() {
+            @Override
+            public Object call() throws Exception {
+                http.delete(serverConfiguration.getResourceRegistrationEndpoint() + "/" + id)
+                        .authorizationBearer(pat.call())
+                        .execute();
+                return null;
+            }
+        };
         try {
-            this.http.delete(serverConfiguration.getResourceRegistrationEndpoint() + "/" + id)
-                    .authorizationBearer(this.pat.call())
-                    .execute();
+            callable.call();
         } catch (Exception cause) {
-            throw handleAndWrapException("Could not delete resource", cause);
+            Throwables.retryAndWrapExceptionIfNecessary(callable, pat, "", cause);
         }
     }
 

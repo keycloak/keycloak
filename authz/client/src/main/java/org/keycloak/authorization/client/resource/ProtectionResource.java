@@ -17,11 +17,10 @@
  */
 package org.keycloak.authorization.client.resource;
 
-import java.util.concurrent.Callable;
-
 import org.keycloak.authorization.client.representation.ServerConfiguration;
 import org.keycloak.authorization.client.representation.TokenIntrospectionResponse;
 import org.keycloak.authorization.client.util.Http;
+import org.keycloak.authorization.client.util.TokenCallable;
 
 /**
  * An entry point to access the Protection API endpoints.
@@ -30,11 +29,11 @@ import org.keycloak.authorization.client.util.Http;
  */
 public class ProtectionResource {
 
-    private final Callable<String> pat;
+    private final TokenCallable pat;
     private final Http http;
     private ServerConfiguration serverConfiguration;
 
-    public ProtectionResource(Http http, ServerConfiguration serverConfiguration, Callable<String> pat) {
+    public ProtectionResource(Http http, ServerConfiguration serverConfiguration, TokenCallable pat) {
         if (pat == null) {
             throw new RuntimeException("No access token was provided when creating client for Protection API.");
         }

@@ -18,16 +18,15 @@
 package org.keycloak.authorization.client.resource;
 
 
-import static org.keycloak.authorization.client.util.Throwables.handleAndWrapException;
-
 import java.util.concurrent.Callable;
-import java.util.function.Supplier;
 
 import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.representation.ServerConfiguration;
 import org.keycloak.authorization.client.util.Http;
 import org.keycloak.authorization.client.util.HttpMethod;
+import org.keycloak.authorization.client.util.Throwables;
+import org.keycloak.authorization.client.util.TokenCallable;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 
@@ -41,13 +40,13 @@ public class AuthorizationResource {
     private Configuration configuration;
     private ServerConfiguration serverConfiguration;
     private Http http;
-    private Callable<String> supplier;
+    private TokenCallable token;
 
-    public AuthorizationResource(Configuration configuration, ServerConfiguration serverConfiguration, Http http, Callable<String> supplier) {
+    public AuthorizationResource(Configuration configuration, ServerConfiguration serverConfiguration, Http http, TokenCallable token) {
         this.configuration = configuration;
         this.serverConfiguration = serverConfiguration;
         this.http = http;
-        this.supplier = supplier;
+        this.token = token;
     }
 
     /**
@@ -67,28 +66,34 @@ public class AuthorizationResource {
      * @return an {@link AuthorizationResponse} with a RPT holding all granted permissions
      * @throws AuthorizationDeniedException in case the request was denied by the server
      */
-    public AuthorizationResponse authorize(AuthorizationRequest request) throws AuthorizationDeniedException {
+    public AuthorizationResponse authorize(final AuthorizationRequest request) throws AuthorizationDeniedException {
         if (request == null) {
             throw new IllegalArgumentException("Authorization request must not be null");
         }
 
-        try {
-            request.setAudience(configuration.getResource());
+        Callable<AuthorizationResponse> callable = new Callable<AuthorizationResponse>() {
+            @Override
+            public AuthorizationResponse call() throws Exception {
+                request.setAudience(configuration.getResource());
 
-            HttpMethod<AuthorizationResponse> method = http.<AuthorizationResponse>post(serverConfiguration.getTokenEndpoint());
+                HttpMethod<AuthorizationResponse> method = http.<AuthorizationResponse>post(serverConfiguration.getTokenEndpoint());
 
-            if (supplier != null) {
-                method = method.authorizationBearer(supplier.call());
-            }
+                if (token != null) {
+                    method = method.authorizationBearer(token.call());
+                }
 
-            return method
-                    .authentication()
+                return method
+                        .authentication()
                         .uma(request)
-                    .response()
+                        .response()
                         .json(AuthorizationResponse.class)
-                    .execute();
+                        .execute();
+            }
+        };
+        try {
+            return callable.call();
         } catch (Exception cause) {
-            throw handleAndWrapException("Failed to obtain authorization data", cause);
+            return Throwables.retryAndWrapExceptionIfNecessary(callable, token, "Failed to obtain authorization data", cause);
         }
     }
 }

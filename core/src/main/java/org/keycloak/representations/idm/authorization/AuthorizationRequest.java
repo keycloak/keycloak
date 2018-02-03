@@ -39,6 +39,7 @@ public class AuthorizationRequest {
     private Metadata metadata;
     private String audience;
     private String accessToken;
+    private boolean submitRequest;
 
     public AuthorizationRequest(String ticket) {
         this.ticket = ticket;
@@ -152,6 +153,14 @@ public class AuthorizationRequest {
         }
 
         permission.getScopes().addAll(Arrays.asList(scopes));
+    }
+
+    public void setSubmitRequest(boolean submitRequest) {
+        this.submitRequest = submitRequest;
+    }
+
+    public boolean isSubmitRequest() {
+        return submitRequest;
     }
 
     public static class Metadata {

@@ -34,6 +34,7 @@ import org.keycloak.authorization.policy.evaluation.Result.PolicyResult;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.PermissionTicketToken;
 
 /**
@@ -41,13 +42,15 @@ import org.keycloak.representations.idm.authorization.PermissionTicketToken;
  */
 public class PermissionTicketAwareDecisionResultCollector extends DecisionResultCollector {
 
+    private final AuthorizationRequest request;
     private PermissionTicketToken ticket;
     private final Identity identity;
     private ResourceServer resourceServer;
     private final AuthorizationProvider authorization;
     private List<Result> results;
 
-    public PermissionTicketAwareDecisionResultCollector(PermissionTicketToken ticket, Identity identity, ResourceServer resourceServer, AuthorizationProvider authorization) {
+    public PermissionTicketAwareDecisionResultCollector(AuthorizationRequest request, PermissionTicketToken ticket, Identity identity, ResourceServer resourceServer, AuthorizationProvider authorization) {
+        this.request = request;
         this.ticket = ticket;
         this.identity = identity;
         this.resourceServer = resourceServer;
@@ -104,59 +107,62 @@ public class PermissionTicketAwareDecisionResultCollector extends DecisionResult
     @Override
     public void onComplete() {
         super.onComplete();
-        StoreFactory storeFactory = authorization.getStoreFactory();
-        ResourceStore resourceStore = storeFactory.getResourceStore();
 
-        if (ticket.getResources() != null) {
-            for (PermissionTicketToken.ResourcePermission permission : ticket.getResources()) {
-                Resource resource = resourceStore.findById(permission.getResourceId(), resourceServer.getId());
+        if (request.isSubmitRequest()) {
+            StoreFactory storeFactory = authorization.getStoreFactory();
+            ResourceStore resourceStore = storeFactory.getResourceStore();
 
-                if (resource == null) {
-                    resource = resourceStore.findByName(permission.getResourceId(), resourceServer.getId());
-                }
+            if (ticket.getResources() != null) {
+                for (PermissionTicketToken.ResourcePermission permission : ticket.getResources()) {
+                    Resource resource = resourceStore.findById(permission.getResourceId(), resourceServer.getId());
 
-                if (!resource.isOwnerManagedAccess() || resource.getOwner().equals(identity.getId()) || resource.getOwner().equals(resourceServer.getId())) {
-                    continue;
-                }
-
-                Set<String> scopes = permission.getScopes();
-
-                if (scopes.isEmpty()) {
-                    scopes = resource.getScopes().stream().map(Scope::getName).collect(Collectors.toSet());
-                }
-
-                if (scopes.isEmpty()) {
-                    Map<String, String> filters = new HashMap<>();
-
-                    filters.put(PermissionTicket.RESOURCE, resource.getId());
-                    filters.put(PermissionTicket.REQUESTER, identity.getId());
-                    filters.put(PermissionTicket.SCOPE_IS_NULL, Boolean.TRUE.toString());
-
-                    List<PermissionTicket> permissions = authorization.getStoreFactory().getPermissionTicketStore().find(filters, resource.getResourceServer().getId(), -1, -1);
-
-                    if (permissions.isEmpty()) {
-                        authorization.getStoreFactory().getPermissionTicketStore().create(resource.getId(), null, identity.getId(), resource.getResourceServer());
+                    if (resource == null) {
+                        resource = resourceStore.findByName(permission.getResourceId(), resourceServer.getId());
                     }
-                } else {
-                    ScopeStore scopeStore = authorization.getStoreFactory().getScopeStore();
 
-                    for (String scopeId : scopes) {
-                        Scope scope = scopeStore.findByName(scopeId, resourceServer.getId());
+                    if (!resource.isOwnerManagedAccess() || resource.getOwner().equals(identity.getId()) || resource.getOwner().equals(resourceServer.getId())) {
+                        continue;
+                    }
 
-                        if (scope == null) {
-                            scope = scopeStore.findById(scopeId, resourceServer.getId());
-                        }
+                    Set<String> scopes = permission.getScopes();
 
+                    if (scopes.isEmpty()) {
+                        scopes = resource.getScopes().stream().map(Scope::getName).collect(Collectors.toSet());
+                    }
+
+                    if (scopes.isEmpty()) {
                         Map<String, String> filters = new HashMap<>();
 
                         filters.put(PermissionTicket.RESOURCE, resource.getId());
                         filters.put(PermissionTicket.REQUESTER, identity.getId());
-                        filters.put(PermissionTicket.SCOPE, scope.getId());
+                        filters.put(PermissionTicket.SCOPE_IS_NULL, Boolean.TRUE.toString());
 
                         List<PermissionTicket> permissions = authorization.getStoreFactory().getPermissionTicketStore().find(filters, resource.getResourceServer().getId(), -1, -1);
 
                         if (permissions.isEmpty()) {
-                            authorization.getStoreFactory().getPermissionTicketStore().create(resource.getId(), scope.getId(), identity.getId(), resource.getResourceServer());
+                            authorization.getStoreFactory().getPermissionTicketStore().create(resource.getId(), null, identity.getId(), resource.getResourceServer());
+                        }
+                    } else {
+                        ScopeStore scopeStore = authorization.getStoreFactory().getScopeStore();
+
+                        for (String scopeId : scopes) {
+                            Scope scope = scopeStore.findByName(scopeId, resourceServer.getId());
+
+                            if (scope == null) {
+                                scope = scopeStore.findById(scopeId, resourceServer.getId());
+                            }
+
+                            Map<String, String> filters = new HashMap<>();
+
+                            filters.put(PermissionTicket.RESOURCE, resource.getId());
+                            filters.put(PermissionTicket.REQUESTER, identity.getId());
+                            filters.put(PermissionTicket.SCOPE, scope.getId());
+
+                            List<PermissionTicket> permissions = authorization.getStoreFactory().getPermissionTicketStore().find(filters, resource.getResourceServer().getId(), -1, -1);
+
+                            if (permissions.isEmpty()) {
+                                authorization.getStoreFactory().getPermissionTicketStore().create(resource.getId(), scope.getId(), identity.getId(), resource.getResourceServer());
+                            }
                         }
                     }
                 }

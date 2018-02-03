@@ -40,6 +40,9 @@ public class ResourceForm extends Form {
     @FindBy(id = "name")
     private WebElement name;
 
+    @FindBy(id = "displayName")
+    private WebElement displayName;
+
     @FindBy(id = "type")
     private WebElement type;
 
@@ -63,6 +66,7 @@ public class ResourceForm extends Form {
 
     public void populate(ResourceRepresentation expected) {
         setInputValue(name, expected.getName());
+        setInputValue(displayName, expected.getDisplayName());
         setInputValue(type, expected.getType());
         setInputValue(uri, expected.getUri());
         setInputValue(iconUri, expected.getIconUri());
@@ -102,6 +106,7 @@ public class ResourceForm extends Form {
         ResourceRepresentation representation = new ResourceRepresentation();
 
         representation.setName(getInputValue(name));
+        representation.setDisplayName(getInputValue(displayName));
         representation.setType(getInputValue(type));
         representation.setUri(getInputValue(uri));
         representation.setIconUri(getInputValue(iconUri));

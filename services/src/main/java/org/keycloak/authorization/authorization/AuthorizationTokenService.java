@@ -145,7 +145,11 @@ public class AuthorizationTokenService {
             List<Permission> permissions = Permissions.permits(evaluation, request.getMetadata(), authorization, resourceServer);
 
             if (permissions.isEmpty()) {
-                throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "not_authorized", Status.FORBIDDEN);
+                if (request.isSubmitRequest()) {
+                    throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "request_submitted", Status.FORBIDDEN);
+                } else {
+                    throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "not_authorized", Status.FORBIDDEN);
+                }
             }
 
             ClientModel targetClient = this.authorization.getRealm().getClientById(resourceServer.getId());
@@ -172,10 +176,10 @@ public class AuthorizationTokenService {
                 .evaluate();
     }
 
-    private List<Result> evaluateUserManagedPermissions(AuthorizationRequest authorizationRequest, PermissionTicketToken ticket, ResourceServer resourceServer, KeycloakEvaluationContext evaluationContext, KeycloakIdentity identity) {
+    private List<Result> evaluateUserManagedPermissions(AuthorizationRequest request, PermissionTicketToken ticket, ResourceServer resourceServer, KeycloakEvaluationContext evaluationContext, KeycloakIdentity identity) {
         return authorization.evaluators()
-                .from(createPermissions(ticket, authorizationRequest, resourceServer, authorization), evaluationContext)
-                .evaluate(new PermissionTicketAwareDecisionResultCollector(ticket, identity, resourceServer, authorization)).results();
+                .from(createPermissions(ticket, request, resourceServer, authorization), evaluationContext)
+                .evaluate(new PermissionTicketAwareDecisionResultCollector(request, ticket, identity, resourceServer, authorization)).results();
     }
 
     private List<Result> evaluateAllPermissions(ResourceServer resourceServer, KeycloakEvaluationContext evaluationContext, KeycloakIdentity identity) {

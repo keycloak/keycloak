@@ -742,6 +742,7 @@ public class ModelToRepresentation {
 
         scope.setId(model.getId());
         scope.setName(model.getName());
+        scope.setDisplayName(model.getDisplayName());
         scope.setIconUri(model.getIconUri());
 
         return scope;
@@ -801,6 +802,7 @@ public class ModelToRepresentation {
         resource.setId(model.getId());
         resource.setType(model.getType());
         resource.setName(model.getName());
+        resource.setDisplayName(model.getDisplayName());
         resource.setUri(model.getUri());
         resource.setIconUri(model.getIconUri());
         resource.setOwnerManagedAccess(model.isOwnerManagedAccess());

@@ -2311,6 +2311,7 @@ public class RepresentationToModel {
 
         if (existing != null) {
             existing.setName(resource.getName());
+            existing.setDisplayName(resource.getDisplayName());
             existing.setType(resource.getType());
             existing.setUri(resource.getUri());
             existing.setIconUri(resource.getIconUri());
@@ -2360,6 +2361,7 @@ public class RepresentationToModel {
 
         Resource model = resourceStore.create(resource.getName(), resourceServer, ownerId);
 
+        model.setDisplayName(resource.getDisplayName());
         model.setType(resource.getType());
         model.setUri(resource.getUri());
         model.setIconUri(resource.getIconUri());
@@ -2389,12 +2391,16 @@ public class RepresentationToModel {
 
         if (existing != null) {
             existing.setName(scope.getName());
+            existing.setDisplayName(scope.getDisplayName());
             existing.setIconUri(scope.getIconUri());
             return existing;
         }
 
         Scope model = scopeStore.create(scope.getName(), resourceServer);
+
+        model.setDisplayName(scope.getDisplayName());
         model.setIconUri(scope.getIconUri());
+
         scope.setId(model.getId());
 
         return model;

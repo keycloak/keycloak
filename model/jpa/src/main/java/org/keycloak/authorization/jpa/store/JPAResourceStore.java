@@ -170,13 +170,17 @@ public class JPAResourceStore implements ResourceStore {
         querybuilder.select(root.get("id"));
         List<Predicate> predicates = new ArrayList();
 
-        predicates.add(builder.equal(root.get("resourceServer").get("id"), resourceServerId));
+        if (resourceServerId != null) {
+            predicates.add(builder.equal(root.get("resourceServer").get("id"), resourceServerId));
+        }
 
         attributes.forEach((name, value) -> {
             if ("id".equals(name)) {
                 predicates.add(root.get(name).in(value));
             } else if ("scope".equals(name)) {
                 predicates.add(root.join("scopes").get("id").in(value));
+            } else if ("ownerManagedAccess".equals(name)) {
+                predicates.add(builder.equal(root.get(name), Boolean.valueOf(value[0])));
             } else {
                 predicates.add(builder.like(builder.lower(root.get(name)), "%" + value[0].toLowerCase() + "%"));
             }

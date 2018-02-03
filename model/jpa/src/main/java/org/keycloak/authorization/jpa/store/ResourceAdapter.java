@@ -63,6 +63,16 @@ public class ResourceAdapter implements Resource, JpaModel<ResourceEntity> {
     }
 
     @Override
+    public String getDisplayName() {
+        return entity.getDisplayName();
+    }
+
+    @Override
+    public void setDisplayName(String name) {
+        entity.setDisplayName(name);
+    }
+
+    @Override
     public void setName(String name) {
         entity.setName(name);
 

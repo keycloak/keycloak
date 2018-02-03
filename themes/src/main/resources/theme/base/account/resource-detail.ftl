@@ -11,10 +11,12 @@
             margin-top: 50px;
         }
         .search-box {
-            border: 1px solid #ccc;
+            font-weight: 600;
+            color: white;
+            border: 1px solid #006e9c;
             outline: 0;
             border-radius: 15px;
-            background-color: #c7e5f0;
+            background-color: #0085cf;
             padding: 5px;
         }
         .search-box:focus {
@@ -101,7 +103,7 @@
     <div class="row">
         <div class="col-md-10">
             <h2>
-                <a href="${url.resourceUrl}">My Resources</a> <i class="fa fa-angle-right"></i> ${authorization.resource.name}
+                <a href="${url.resourceUrl}">My Resources</a> <i class="fa fa-angle-right"></i> <#if authorization.resource.displayName??>${authorization.resource.displayName}<#else>${authorization.resource.name}</#if>
             </h2>
         </div>
     </div>
@@ -113,9 +115,9 @@
 
     <div class="row">
         <div class="col-md-10">
-            <h2>
+            <h3>
                 ${msg("shares")}
-            </h2>
+            </h3>
         </div>
     </div>
     <div class="row">
@@ -123,10 +125,10 @@
                 <table class="table table-striped table-bordered">
                     <thead>
                         <tr>
-                            <td>${msg("user")}</td>
-                            <td>${msg("actions")}</td>
-                            <td>${msg("date")}</td>
-                            <td>${msg("doRevoke")}</td>
+                            <th>${msg("user")}</th>
+                            <th>${msg("action")}</th>
+                            <th>${msg("date")}</th>
+                            <th>${msg("doRevoke")}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -142,7 +144,11 @@
                                                 <#list permission.scopes as scope>
                                                     <#if scope.granted>
                                                         <div class="search-box">
-                                                            ${scope.scope.name}
+                                                            <#if scope.scope.displayName??>
+                                                                ${scope.scope.displayName}
+                                                            <#else>
+                                                                ${scope.scope.name}
+                                                            </#if>
                                                             <button class="close-icon" type="button" name="removeScope-${authorization.resource.id}-${permission.requester}" onclick="removeScopeElm(this.parentNode);document.forms['revokeForm-${authorization.resource.id}-${permission.requester}'].submit();"><i class="fa fa-times" aria-hidden="true"></i></button>
                                                             <input type="hidden" name="permission_id" value="${scope.id}"/>
                                                         </div>
@@ -156,7 +162,7 @@
                                             ${permission.createdDate?datetime}
                                         </td>
                                         <td width="20%" align="middle" style="vertical-align: middle">
-                                            <a href="#" id="revoke-${authorization.resource.name}-${permission.requester}" onclick="removeAllScopes('${authorization.resource.id}-${permission.requester}');document.forms['revokeForm-${authorization.resource.id}-${permission.requester}'].submit();" type="submit" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}">${msg("doRevoke")}</a>
+                                            <a href="#" id="revoke-${authorization.resource.name}-${permission.requester}" onclick="removeAllScopes('${authorization.resource.id}-${permission.requester}');document.forms['revokeForm-${authorization.resource.id}-${permission.requester}'].submit();" type="submit" class="btn btn-primary">${msg("doRevoke")}</a>
                                         </td>
                                     </tr>
                                 </form>
@@ -173,9 +179,9 @@
     </div>
     <div class="row">
         <div class="col-md-10">
-            <h2>
+            <h3>
                 ${msg("shareWithOthers")}
-            </h2>
+            </h3>
         </div>
     </div>
     <div class="row">
@@ -193,7 +199,11 @@
                             <br/>
                             <#list authorization.resource.scopes as scope>
                                 <div id="scope" class="search-box">
-                                    ${scope.name}
+                                    <#if scope.displayName??>
+                                        ${scope.displayName}
+                                    <#else>
+                                        ${scope.name}
+                                    </#if>
                                     <button class="close-icon" id="share-remove-scope-${authorization.resource.name}-${scope.name}" type="button" onclick="if (getChildren(this.parentNode.parentNode, 'scope').length > 1) {removeScopeElm(this.parentNode)}"><i class="fa fa-times" aria-hidden="true"></i></button>
                                     <input type="hidden" name="scope_id" value="${scope.id}"/>
                                 </div>
@@ -201,7 +211,7 @@
                         </div>
                         <div class="col-md-12">
                             <br/>
-                            <a href="#" onclick="document.forms['shareForm'].submit()" type="submit" id="share-button" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}">${msg("Share")}</a>
+                            <a href="#" onclick="document.forms['shareForm'].submit()" type="submit" id="share-button" class="btn btn-primary">${msg("Share")}</a>
                         </div>
                     </div>
                 </div>

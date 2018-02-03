@@ -81,6 +81,11 @@
                     };
 
                     var params = "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket&client_id=" + keycloak.clientId + "&ticket=" + authorizationRequest.ticket;
+
+                    if (authorizationRequest.submitRequest != undefined) {
+                        params += "&submit_request=" + authorizationRequest.submitRequest;
+                    }
+
                     var metadata = authorizationRequest.metadata;
 
                     if (metadata) {
@@ -92,7 +97,7 @@
                         }
                     }
 
-                    if (_instance.rpt) {
+                    if (_instance.rpt && (authorizationRequest.incrementalAuthorization == undefined || authorizationRequest.incrementalAuthorization)) {
                         params += "&rpt=" + _instance.rpt;
                     }
 

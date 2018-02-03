@@ -19,15 +19,12 @@ package org.keycloak.authorization.client;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
-import java.util.concurrent.Callable;
 
 import org.keycloak.authorization.client.representation.ServerConfiguration;
 import org.keycloak.authorization.client.resource.AuthorizationResource;
 import org.keycloak.authorization.client.resource.ProtectionResource;
 import org.keycloak.authorization.client.util.Http;
-import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.representations.AccessToken;
+import org.keycloak.authorization.client.util.TokenCallable;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
 
@@ -43,7 +40,7 @@ import org.keycloak.util.JsonSerialization;
 public class AuthzClient {
 
     private final Http http;
-    private Callable<String> patSupplier;
+    private TokenCallable patSupplier;
 
     /**
      * <p>Creates a new instance.
@@ -110,10 +107,15 @@ public class AuthzClient {
      * @return a {@link ProtectionResource}
      */
     public ProtectionResource protection(final String accessToken) {
-        return new ProtectionResource(this.http, this.serverConfiguration, new Callable<String>() {
+        return new ProtectionResource(this.http, this.serverConfiguration, new TokenCallable(http, configuration, serverConfiguration) {
             @Override
             public String call() {
                 return accessToken;
+            }
+
+            @Override
+            protected boolean isRetry() {
+                return false;
             }
         });
     }
@@ -145,10 +147,15 @@ public class AuthzClient {
      * @return a {@link AuthorizationResource}
      */
     public AuthorizationResource authorization(final String accessToken) {
-        return new AuthorizationResource(configuration, serverConfiguration, this.http, new Callable<String>() {
+        return new AuthorizationResource(configuration, serverConfiguration, this.http, new TokenCallable(http, configuration, serverConfiguration) {
             @Override
             public String call() {
                 return accessToken;
+            }
+
+            @Override
+            protected boolean isRetry() {
+                return false;
             }
         });
     }
@@ -238,55 +245,18 @@ public class AuthzClient {
         this.http.setServerConfiguration(this.serverConfiguration);
     }
 
-    private Callable<String> createPatSupplier(String userName, String password) {
+    private TokenCallable createPatSupplier(String userName, String password) {
         if (patSupplier == null) {
             patSupplier = createRefreshableAccessTokenSupplier(userName, password);
         }
         return patSupplier;
     }
 
-    private Callable<String> createPatSupplier() {
+    private TokenCallable createPatSupplier() {
         return createPatSupplier(null, null);
     }
 
-    private Callable<String> createRefreshableAccessTokenSupplier(final String userName, final String password) {
-        return new Callable<String>() {
-            AccessTokenResponse clientToken;
-
-            @Override
-            public String call() {
-                if (clientToken == null) {
-                    if (userName == null || password == null) {
-                        clientToken = obtainAccessToken();
-                    } else {
-                        clientToken = obtainAccessToken(userName, password);
-                    }
-                }
-
-                String token = clientToken.getToken();
-
-                try {
-                    AccessToken accessToken = JsonSerialization.readValue(new JWSInput(token).getContent(), AccessToken.class);
-
-                    if (accessToken.isActive()) {
-                        return token;
-                    }
-
-                    clientToken = http.<AccessTokenResponse>post(serverConfiguration.getTokenEndpoint())
-                            .authentication().client()
-                            .form()
-                            .param("grant_type", "refresh_token")
-                            .param("refresh_token", clientToken.getRefreshToken())
-                            .response()
-                            .json(AccessTokenResponse.class)
-                            .execute();
-                } catch (Exception e) {
-                    patSupplier = null;
-                    throw new RuntimeException(e);
-                }
-
-                return clientToken.getToken();
-            }
-        };
+    private TokenCallable createRefreshableAccessTokenSupplier(final String userName, final String password) {
+        return new TokenCallable(userName, password, http, configuration, serverConfiguration);
     }
 }

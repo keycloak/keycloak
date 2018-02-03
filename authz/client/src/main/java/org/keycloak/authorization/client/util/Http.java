@@ -22,8 +22,6 @@ import org.keycloak.authorization.client.ClientAuthenticator;
 import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.representation.ServerConfiguration;
 
-import java.net.URI;
-
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */

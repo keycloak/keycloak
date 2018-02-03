@@ -64,6 +64,9 @@ public class ResourceEntity {
     @Column(name = "NAME")
     private String name;
 
+    @Column(name = "DISPLAY_NAME")
+    private String displayName;
+
     @Column(name = "URI")
     private String uri;
 
@@ -105,6 +108,14 @@ public class ResourceEntity {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 
     public String getUri() {

@@ -52,6 +52,7 @@ public class ResourceRepresentation {
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private List<PolicyRepresentation> policies;
     private List<ScopeRepresentation> typedScopes;
+    private String displayName;
 
     /**
      * Creates a new instance.
@@ -122,6 +123,10 @@ public class ResourceRepresentation {
         return this.name;
     }
 
+    public String getDisplayName() {
+        return displayName;
+    }
+
     public String getUri() {
         return this.uri;
     }
@@ -144,6 +149,10 @@ public class ResourceRepresentation {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 
     public void setUri(String uri) {

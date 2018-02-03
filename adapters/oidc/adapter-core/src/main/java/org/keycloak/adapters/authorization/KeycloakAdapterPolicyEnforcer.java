@@ -124,14 +124,12 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
                 }
             }
 
-            authzRequest.setClaimToken(accessTokenString);
-
             if (accessToken.getAuthorization() != null) {
                 authzRequest.setRpt(accessTokenString);
             }
 
             LOGGER.debug("Obtaining authorization for authenticated user.");
-            AuthorizationResponse authzResponse = authzClient.authorization().authorize(authzRequest);
+            AuthorizationResponse authzResponse = authzClient.authorization(accessTokenString).authorize(authzRequest);
 
             if (authzResponse != null) {
                 return AdapterRSATokenVerifier.verifyToken(authzResponse.getToken(), deployment);
