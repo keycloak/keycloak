@@ -52,7 +52,7 @@ import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.runonserver.RunHelpers;
-import org.keycloak.testsuite.updaters.RealmRemover;
+import org.keycloak.testsuite.updaters.RealmCreator;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.CredentialBuilder;
@@ -224,14 +224,9 @@ public class RealmTest extends AbstractAdminTest {
     //KEYCLOAK-6146
     @Test
     public void createRealmWithPasswordPolicyFromJsonWithValidPasswords() throws IOException {
-        //realm with password policies and users have passwords in correct state
         RealmRepresentation rep = loadJson(getClass().getResourceAsStream("/import/testrealm-keycloak-6146.json"), RealmRepresentation.class);
-        adminClient.realms().create(rep);
-        
-        RealmResource secureApp = adminClient.realms().realm("secure-app");
-        RealmRepresentation created = secureApp.toRepresentation();
-        
-        try (Closeable c = new RealmRemover(secureApp).remove()) {
+        try (RealmCreator c = new RealmCreator(adminClient, rep)) {
+            RealmRepresentation created = c.realm().toRepresentation();
             assertRealm(rep, created);
         }
     }
