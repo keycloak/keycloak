@@ -20,35 +20,21 @@ package org.keycloak.testsuite.pages.social;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
-
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class StackOverflowLoginPage extends AbstractSocialLoginPage {
-    @FindBy(xpath = "//a[@title='log in with Stack_Exchange']")
-    private WebElement loginInitButton;
-
-    @FindBy(id = "affiliate-signin-iframe")
-    private WebElement loginFrame;
-
-    @FindBy(name = "email")
+    @FindBy(id = "email")
     private WebElement usernameInput;
 
     @FindBy(id = "password")
     private WebElement passwordInput;
 
-    @FindBy(xpath = "//input[@value='Sign In']")
+    @FindBy(xpath = "//input[@value='Log in']")
     private WebElement loginButton;
 
     @Override
     public void login(String user, String password) {
-        waitUntilElement(loginInitButton).is().visible();
-        loginInitButton.click();
-
-        driver.switchTo().frame(loginFrame);
-
-        usernameInput.clear();
         usernameInput.sendKeys(user);
         passwordInput.sendKeys(password);
 
