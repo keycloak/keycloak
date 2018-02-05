@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2018 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,28 +16,35 @@
  */
 package org.keycloak.testsuite.updaters;
 
+import org.keycloak.admin.client.Keycloak;
 import java.io.Closeable;
 import javax.ws.rs.NotFoundException;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.representations.idm.RealmRepresentation;
+import java.io.IOException;
 
 /**
- *
- * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
+ *  Creates a temporary realm and makes sure it is removed.
  */
-public class RealmRemover {
+public class RealmCreator implements Closeable {
 
     private final RealmResource realmResource;
 
-    public RealmRemover(RealmResource realmResource) {
-        this.realmResource = realmResource;
+    public RealmCreator(Keycloak adminClient, RealmRepresentation rep) {
+        adminClient.realms().create(rep);
+        this.realmResource = adminClient.realm(rep.getRealm());
     }
 
-    public Closeable remove() {
-        return () -> {
-            try {
-                realmResource.remove();
-            } catch (NotFoundException e) {
-            }
-        };
+    public RealmResource realm() {
+        return this.realmResource;
+    }
+
+    @Override
+    public void close() throws IOException {
+        try {
+            realmResource.remove();
+        } catch (NotFoundException e) {
+            // ignore
+        }
     }
 }
