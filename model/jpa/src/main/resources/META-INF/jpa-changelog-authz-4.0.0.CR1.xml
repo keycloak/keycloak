@@ -68,5 +68,11 @@
                 <constraints nullable="true" />
             </column>
         </addColumn>
+
+        <addColumn tableName="REALM">
+            <column name="ALLOW_USER_MANAGED_ACCESS" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
     </changeSet>
 </databaseChangeLog>
