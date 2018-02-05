@@ -53,6 +53,7 @@ import org.keycloak.utils.MediaType;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
@@ -182,8 +183,14 @@ public class FreeMarkerAccountProvider implements AccountProvider {
                 attributes.put("password", new PasswordBean(passwordSet));
                 break;
             case RESOURCES:
+                if (!realm.isUserManagedAccessAllowed()) {
+                    return Response.status(Status.FORBIDDEN).build();
+                }
                 attributes.put("authorization", new AuthorizationBean(session, user, uriInfo));
             case RESOURCE_DETAIL:
+                if (!realm.isUserManagedAccessAllowed()) {
+                    return Response.status(Status.FORBIDDEN).build();
+                }
                 attributes.put("authorization", new AuthorizationBean(session, user, uriInfo));
         }
 

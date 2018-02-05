@@ -17,7 +17,8 @@
             outline: 0;
             border-radius: 15px;
             background-color: #0085cf;
-            padding: 5px;
+            padding: 2px 5px;
+
         }
         .search-box:focus {
             box-shadow: 0 0 15px 5px #b0e0ee;
@@ -116,7 +117,7 @@
     <div class="row">
         <div class="col-md-10">
             <h3>
-                ${msg("shares")}
+                ${msg("peopleAccessResource")}
             </h3>
         </div>
     </div>
@@ -126,19 +127,21 @@
                     <thead>
                         <tr>
                             <th>${msg("user")}</th>
-                            <th>${msg("action")}</th>
+                            <th>${msg("permission")}</th>
                             <th>${msg("date")}</th>
-                            <th>${msg("doRevoke")}</th>
+                            <th>${msg("action")}</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <#if authorization.resource.permission?? && authorization.resource.permission.granted?size != 0>
-                            <#list authorization.resource.permission.granted as permission>
-                                <form action="${url.getResourceGrant(authorization.resource.id)}" name="revokeForm-${authorization.resource.id}-${permission.requester}" method="post">
+                        <#if authorization.resource.shares?size != 0>
+                            <#list authorization.resource.shares as permission>
+                                <form action="${url.getResourceGrant(authorization.resource.id)}" name="revokeForm-${authorization.resource.id}-${permission.requester.username}" method="post">
                                     <input type="hidden" name="action" value="revoke">
-                                    <input type="hidden" name="requester" value="${permission.requester}">
+                                    <input type="hidden" name="requester" value="${permission.requester.username}">
                                     <tr>
-                                        <td>${permission.requester}</td>
+                                        <td>
+                                            <#if permission.requester.email??>${permission.requester.email}<#else>${permission.requester.username}</#if>
+                                        </td>
                                         <td>
                                             <#if permission.scopes?size != 0>
                                                 <#list permission.scopes as scope>
@@ -149,7 +152,7 @@
                                                             <#else>
                                                                 ${scope.scope.name}
                                                             </#if>
-                                                            <button class="close-icon" type="button" name="removeScope-${authorization.resource.id}-${permission.requester}" onclick="removeScopeElm(this.parentNode);document.forms['revokeForm-${authorization.resource.id}-${permission.requester}'].submit();"><i class="fa fa-times" aria-hidden="true"></i></button>
+                                                            <button class="close-icon" type="button" name="removeScope-${authorization.resource.id}-${permission.requester.username}" onclick="removeScopeElm(this.parentNode);document.forms['revokeForm-${authorization.resource.id}-${permission.requester.username}'].submit();"><i class="fa fa-times" aria-hidden="true"></i></button>
                                                             <input type="hidden" name="permission_id" value="${scope.id}"/>
                                                         </div>
                                                     </#if>
@@ -162,7 +165,7 @@
                                             ${permission.createdDate?datetime}
                                         </td>
                                         <td width="20%" align="middle" style="vertical-align: middle">
-                                            <a href="#" id="revoke-${authorization.resource.name}-${permission.requester}" onclick="removeAllScopes('${authorization.resource.id}-${permission.requester}');document.forms['revokeForm-${authorization.resource.id}-${permission.requester}'].submit();" type="submit" class="btn btn-primary">${msg("doRevoke")}</a>
+                                            <a href="#" id="revoke-${authorization.resource.name}-${permission.requester.username}" onclick="removeAllScopes('${authorization.resource.id}-${permission.requester.username}');document.forms['revokeForm-${authorization.resource.id}-${permission.requester.username}'].submit();" type="submit" class="btn btn-primary">${msg("doRevoke")}</a>
                                         </td>
                                     </tr>
                                 </form>
