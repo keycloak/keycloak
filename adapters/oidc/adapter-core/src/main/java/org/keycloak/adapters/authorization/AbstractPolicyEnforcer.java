@@ -18,7 +18,6 @@
 package org.keycloak.adapters.authorization;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -139,7 +138,7 @@ public abstract class AbstractPolicyEnforcer {
         boolean hasPermission = false;
 
         for (Permission permission : permissions) {
-            if (permission.getResourceSetId() != null) {
+            if (permission.getResourceId() != null) {
                 if (isResourcePermission(actualPathConfig, permission)) {
                     hasPermission = true;
 
@@ -292,6 +291,6 @@ public abstract class AbstractPolicyEnforcer {
     }
 
     private boolean matchResourcePermission(PathConfig actualPathConfig, Permission permission) {
-        return permission.getResourceSetId().equals(actualPathConfig.getId());
+        return permission.getResourceId().equals(actualPathConfig.getId());
     }
 }

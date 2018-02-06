@@ -69,7 +69,7 @@ public class AbstractPermissionService {
         ResourceStore resourceStore = authorization.getStoreFactory().getResourceStore();
 
         return request.stream().map(permissionRequest -> {
-            String resourceSetId = permissionRequest.getResourceSetId();
+            String resourceSetId = permissionRequest.getResourceId();
             Resource resource = null;
 
             if (resourceSetId == null) {

@@ -107,7 +107,7 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
             KeycloakDeployment deployment = getPolicyEnforcer().getDeployment();
             PermissionRequest permissionRequest = new PermissionRequest();
 
-            permissionRequest.setResourceSetId(pathConfig.getId());
+            permissionRequest.setResourceId(pathConfig.getId());
             permissionRequest.setScopes(new HashSet<>(methodConfig.getScopes()));
 
             AccessToken accessToken = securityContext.getToken();

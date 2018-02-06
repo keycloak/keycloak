@@ -17,23 +17,23 @@
 
 package org.keycloak.representations.idm.authorization;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class PermissionRequest {
 
-    private String resourceSetId;
+    private String resourceId;
     private Set<String> scopes;
     private String resourceServerId;
 
-    public PermissionRequest(String resourceSetId, String... scopes) {
-        this.resourceSetId = resourceSetId;
+    public PermissionRequest(String resourceId, String... scopes) {
+        this.resourceId = resourceId;
         if (scopes != null) {
             this.scopes = new HashSet(Arrays.asList(scopes));
         }
@@ -43,45 +43,21 @@ public class PermissionRequest {
         this(null, null);
     }
 
-    public String getResourceSetId() {
-        return resourceSetId;
+    public String getResourceId() {
+        return resourceId;
     }
 
     @JsonProperty("resource_id")
     public void setResourceId(String resourceSetId) {
-        this.resourceSetId = resourceSetId;
-    }
-
-    /**
-     * @deprecated UMA 1.0. Remove once we move to UMA 2.0.
-     */
-    @JsonProperty("resource_set_id")
-    public void setResourceSetId(String resourceSetId) {
-        this.resourceSetId = resourceSetId;
-    }
-
-    /**
-     * @deprecated UMA 1.0. Remove once we move to UMA 2.0.
-     */
-    @JsonProperty("resource_set_name")
-    public void setResourceSetName(String resourceSetName) {
-        this.resourceSetId = resourceSetName;
+        this.resourceId = resourceSetId;
     }
 
     public Set<String> getScopes() {
         return scopes;
     }
 
-    /**
-     * @deprecated UMA 1.0. Remove once we move to UMA 2.0.
-     */
-    @JsonProperty("scopes")
-    public void setScopes(Set<String> scopes) {
-        this.scopes = scopes;
-    }
-
     @JsonProperty("resource_scopes")
-    public void setResourceScopes(Set<String> scopes) {
+    public void setScopes(Set<String> scopes) {
         this.scopes = scopes;
     }
 

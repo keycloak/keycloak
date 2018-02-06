@@ -367,7 +367,7 @@ public class AuthorizationTokenService {
                                 break;
                             }
 
-                            Resource resourcePermission = resourceStore.findById(permission.getResourceSetId(), ticket.getAudience()[0]);
+                            Resource resourcePermission = resourceStore.findById(permission.getResourceId(), ticket.getAudience()[0]);
 
                             if (resourcePermission != null) {
                                 Set<String> scopes = permissionsToEvaluate.get(resourcePermission.getId());

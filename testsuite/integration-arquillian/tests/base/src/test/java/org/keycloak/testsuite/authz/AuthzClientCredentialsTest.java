@@ -130,7 +130,7 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
         List<Permission> permissions = authorization.getPermissions();
 
         assertFalse(permissions.isEmpty());
-        assertEquals("Default Resource", permissions.get(0).getResourceSetName());
+        assertEquals("Default Resource", permissions.get(0).getResourceName());
     }
 
     @Test

@@ -70,7 +70,7 @@ public class BearerTokenPolicyEnforcer extends AbstractPolicyEnforcer {
             ProtectionResource protection = authzClient.protection();
             PermissionResource permission = protection.permission();
             PermissionRequest permissionRequest = new PermissionRequest();
-            permissionRequest.setResourceSetId(pathConfig.getId());
+            permissionRequest.setResourceId(pathConfig.getId());
             permissionRequest.setScopes(new HashSet<>(methodConfig.getScopes()));
             return permission.create(permissionRequest).getTicket();
         }

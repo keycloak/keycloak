@@ -95,7 +95,7 @@ public class ConflictingScopePermissionTest extends AbstractAuthzTest {
         List<Permission> permissions = getEntitlements("marta", "password");
 
         for (Permission permission : new ArrayList<>(permissions)) {
-            String resourceSetName = permission.getResourceSetName();
+            String resourceSetName = permission.getResourceName();
 
             switch (resourceSetName) {
                 case "Resource A":

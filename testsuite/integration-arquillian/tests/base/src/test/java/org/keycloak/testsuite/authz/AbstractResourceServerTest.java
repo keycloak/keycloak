@@ -20,7 +20,6 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -183,7 +182,7 @@ public abstract class AbstractResourceServerTest extends AbstractKeycloakTest {
         while (iterator.hasNext()) {
             Permission permission = iterator.next();
 
-            if (permission.getResourceSetName().equalsIgnoreCase(expectedResource)) {
+            if (permission.getResourceName().equalsIgnoreCase(expectedResource)) {
                 Set<String> scopes = permission.getScopes();
 
                 assertEquals(expectedScopes.length, scopes.size());

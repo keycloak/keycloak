@@ -116,7 +116,7 @@ public class AuthorizationAPITest extends AbstractAuthzTest {
         AuthzClient authzClient = getAuthzClient();
         PermissionRequest request = new PermissionRequest();
 
-        request.setResourceSetName("Resource A");
+        request.setResourceId("Resource A");
 
         String accessToken = new OAuthClient().realm("authz-test").clientId("test-client").doGrantAccessTokenRequest("secret", "marta", "password").getAccessToken();
         String ticket = authzClient.protection().permission().create(request).getTicket();

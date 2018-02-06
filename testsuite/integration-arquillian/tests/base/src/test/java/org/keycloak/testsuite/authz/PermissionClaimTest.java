@@ -118,7 +118,7 @@ public class PermissionClaimTest extends AbstractAuthzTest {
 
         PermissionRequest request = new PermissionRequest();
 
-        request.setResourceSetId(resource.getName());
+        request.setResourceId(resource.getName());
 
         String accessToken = new OAuthClient().realm("authz-test").clientId("test-client").doGrantAccessTokenRequest("secret", "marta", "password").getAccessToken();
         AuthzClient authzClient = getAuthzClient();
@@ -154,7 +154,7 @@ public class PermissionClaimTest extends AbstractAuthzTest {
 
         PermissionRequest request = new PermissionRequest();
 
-        request.setResourceSetName(resource.getName());
+        request.setResourceId(resource.getName());
 
         String accessToken = new OAuthClient().realm("authz-test").clientId("test-client").doGrantAccessTokenRequest("secret", "marta", "password").getAccessToken();
         AuthzClient authzClient = getAuthzClient();
