@@ -32,47 +32,15 @@ import java.util.Map;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class JarThemeProviderFactory implements ThemeProviderFactory {
+public class JarThemeProviderFactory extends ClasspathThemeProviderFactory {
 
-    protected static final String KEYCLOAK_THEMES_JSON = "META-INF/keycloak-themes.json";
-    protected static Map<Theme.Type, Map<String, ClassLoaderTheme>> themes = new HashMap<>();
-
-    public static class ThemeRepresentation {
-        private String name;
-        private String[] types;
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public String[] getTypes() {
-            return types;
-        }
-
-        public void setTypes(String[] types) {
-            this.types = types;
-        }
-    }
-
-    public static class ThemesRepresentation {
-        private ThemeRepresentation[] themes;
-
-        public ThemeRepresentation[] getThemes() {
-            return themes;
-        }
-
-        public void setThemes(ThemeRepresentation[] themes) {
-            this.themes = themes;
-        }
+    public JarThemeProviderFactory() {
+        super("jar");
     }
 
     @Override
     public ThemeProvider create(KeycloakSession session) {
-        return new JarThemeProvider(themes);
+        return new ClasspathThemeProvider(themes);
     }
 
     @Override
@@ -84,37 +52,6 @@ public class JarThemeProviderFactory implements ThemeProviderFactory {
                 loadThemes(classLoader, resources.nextElement().openStream());
             }
         } catch (IOException e) {
-            throw new RuntimeException("Failed to load themes", e);
-        }
-    }
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-    }
-
-    @Override
-    public void close() {
-    }
-
-    @Override
-    public String getId() {
-        return "jar";
-    }
-
-    protected void loadThemes(ClassLoader classLoader, InputStream themesInputStream) {
-        try {
-            ThemesRepresentation themesRep = JsonSerialization.readValue(themesInputStream, ThemesRepresentation.class);
-
-            for (ThemeRepresentation themeRep : themesRep.getThemes()) {
-                for (String t : themeRep.getTypes()) {
-                    Theme.Type type = Theme.Type.valueOf(t.toUpperCase());
-                    if (!themes.containsKey(type)) {
-                        themes.put(type, new HashMap<String, ClassLoaderTheme>());
-                    }
-                    themes.get(type).put(themeRep.getName(), new ClassLoaderTheme(themeRep.getName(), type, classLoader));
-                }
-            }
-        } catch (Exception e) {
             throw new RuntimeException("Failed to load themes", e);
         }
     }

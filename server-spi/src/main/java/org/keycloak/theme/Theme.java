@@ -40,10 +40,6 @@ public interface Theme {
 
     URL getTemplate(String name) throws IOException;
 
-    InputStream getTemplateAsStream(String name) throws IOException;
-
-    URL getResource(String path) throws IOException;
-
     InputStream getResourceAsStream(String path) throws IOException;
 
     /**

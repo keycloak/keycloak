@@ -25,11 +25,11 @@ import java.util.Set;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class JarThemeProvider implements ThemeProvider {
+public class ClasspathThemeProvider implements ThemeProvider {
 
     private Map<Theme.Type, Map<String, ClassLoaderTheme>> themes;
 
-    public JarThemeProvider(Map<Theme.Type, Map<String, ClassLoaderTheme>> themes) {
+    public ClasspathThemeProvider(Map<Theme.Type, Map<String, ClassLoaderTheme>> themes) {
         this.themes = themes;
     }
 

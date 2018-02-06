@@ -15,21 +15,34 @@
  * limitations under the License.
  */
 
-package org.keycloak.provider;
+package org.keycloak.theme;
+
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.Spi;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class DefaultProviderLoaderFactory implements ProviderLoaderFactory {
+public class ThemeResourceSpi implements Spi {
 
     @Override
-    public boolean supports(String type) {
+    public boolean isInternal() {
         return false;
     }
 
     @Override
-    public ProviderLoader create(KeycloakDeploymentInfo info, ClassLoader baseClassLoader, String resource) {
-        return new DefaultProviderLoader(info, baseClassLoader);
+    public String getName() {
+        return "themeResource";
     }
 
+    @Override
+    public Class<? extends Provider> getProviderClass() {
+        return ThemeResourceProvider.class;
+    }
+
+    @Override
+    public Class<? extends ProviderFactory> getProviderFactoryClass() {
+        return ThemeResourceProviderFactory.class;
+    }
 }

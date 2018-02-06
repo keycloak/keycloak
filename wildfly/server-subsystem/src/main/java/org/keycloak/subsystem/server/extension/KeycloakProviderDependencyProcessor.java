@@ -24,12 +24,12 @@ import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.deployment.module.ModuleDependency;
 import org.jboss.as.server.deployment.module.ModuleSpecification;
 import org.jboss.as.server.deployment.module.ResourceRoot;
-import org.jboss.logging.Logger;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.vfs.VirtualFile;
 import org.jboss.vfs.util.AbstractVirtualFileFilterWithAttributes;
+import org.keycloak.provider.KeycloakDeploymentInfo;
 
 import java.io.IOException;
 import java.util.List;
@@ -48,8 +48,6 @@ public class KeycloakProviderDependencyProcessor implements DeploymentUnitProces
     private static final ModuleIdentifier RESTEASY = ModuleIdentifier.create("org.jboss.resteasy.resteasy-jaxrs");
     private static final ModuleIdentifier APACHE = ModuleIdentifier.create("org.apache.httpcomponents");
 
-    private static final Logger logger = Logger.getLogger(KeycloakProviderDependencyProcessor.class);
-
     @Override
     public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
         DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
@@ -60,53 +58,66 @@ public class KeycloakProviderDependencyProcessor implements DeploymentUnitProces
             return;
         }
 
-        if (!isKeycloakProviderDeployment(deploymentUnit)) return;
-
-        final ModuleSpecification moduleSpecification = deploymentUnit.getAttachment(Attachments.MODULE_SPECIFICATION);
-        final ModuleLoader moduleLoader = Module.getBootModuleLoader();
-        moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_COMMON, false, false, false, false));
-        moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_CORE, false, false, false, false));
-        moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_SERVER_SPI, false, false, false, false));
-        moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_SERVER_SPI_PRIVATE, false, false, false, false));
-        moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, JAXRS, false, false, false, false));
-        moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, RESTEASY, false, false, false, false));
-        moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, APACHE, false, false, false, false));
-        moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_JPA, false, false, false, false));
-
-
+        KeycloakDeploymentInfo info = getKeycloakProviderDeploymentInfo(deploymentUnit);
+        if (info.hasServices()) {
+            final ModuleSpecification moduleSpecification = deploymentUnit.getAttachment(Attachments.MODULE_SPECIFICATION);
+            final ModuleLoader moduleLoader = Module.getBootModuleLoader();
+            moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_COMMON, false, false, false, false));
+            moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_CORE, false, false, false, false));
+            moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_SERVER_SPI, false, false, false, false));
+            moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_SERVER_SPI_PRIVATE, false, false, false, false));
+            moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, JAXRS, false, false, false, false));
+            moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, RESTEASY, false, false, false, false));
+            moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, APACHE, false, false, false, false));
+            moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_JPA, false, false, false, false));
+        }
     }
 
     public KeycloakProviderDependencyProcessor() {
         super();
     }
 
-    public static boolean isKeycloakProviderDeployment(DeploymentUnit du) {
-        final ResourceRoot resourceRoot = du.getAttachment(Attachments.DEPLOYMENT_ROOT);
-        if (resourceRoot == null) {
-            return false;
-        }
-        final VirtualFile deploymentRoot = resourceRoot.getRoot();
-        if (deploymentRoot == null || !deploymentRoot.exists()) {
-            return false;
-        }
-        VirtualFile services = deploymentRoot.getChild("META-INF/services");
-        if (!services.exists()) return false;
-        try {
-            List<VirtualFile> archives = services.getChildren(new AbstractVirtualFileFilterWithAttributes(){
-                @Override
-                public boolean accepts(VirtualFile file) {
-                    return file.getName().startsWith("org.keycloak");
-                }
-            });
-            return !archives.isEmpty();
-        } catch (IOException e) {
+    public static KeycloakDeploymentInfo getKeycloakProviderDeploymentInfo(DeploymentUnit du) {
+        KeycloakDeploymentInfo info = KeycloakDeploymentInfo.create();
+        info.name(du.getName());
 
+        final ResourceRoot resourceRoot = du.getAttachment(Attachments.DEPLOYMENT_ROOT);
+        if (resourceRoot != null) {
+            final VirtualFile deploymentRoot = resourceRoot.getRoot();
+            if (deploymentRoot != null && deploymentRoot.exists()) {
+                if (deploymentRoot.getChild("META-INF/keycloak-themes.json").exists() && deploymentRoot.getChild("theme").exists()) {
+                    info.themes();
+                }
+
+                if (deploymentRoot.getChild("theme-resources").exists()) {
+                    info.themeResources();
+                }
+
+                VirtualFile services = deploymentRoot.getChild("META-INF/services");
+                if(services.exists()) {
+                    try {
+                        List<VirtualFile> archives = services.getChildren(new AbstractVirtualFileFilterWithAttributes() {
+                            @Override
+                            public boolean accepts(VirtualFile file) {
+                                return file.getName().startsWith("org.keycloak");
+                            }
+                        });
+                        if (!archives.isEmpty()) {
+                            info.services();
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
         }
-        return false;
+
+        return info;
     }
 
     @Override
     public void undeploy(DeploymentUnit context) {
 
     }
+
 }
