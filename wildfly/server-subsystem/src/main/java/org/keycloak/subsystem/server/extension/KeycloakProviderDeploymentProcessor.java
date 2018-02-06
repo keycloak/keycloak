@@ -24,6 +24,7 @@ import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.logging.Logger;
 import org.jboss.modules.Module;
+import org.keycloak.provider.KeycloakDeploymentInfo;
 import org.keycloak.provider.ProviderManager;
 import org.keycloak.provider.ProviderManagerRegistry;
 
@@ -46,16 +47,14 @@ public class KeycloakProviderDeploymentProcessor implements DeploymentUnitProces
             return;
         }
 
-        if (!KeycloakProviderDependencyProcessor.isKeycloakProviderDeployment(deploymentUnit)) return;
-
-        logger.infov("Deploying Keycloak provider: {0}", deploymentUnit.getName());
-        final Module module = deploymentUnit.getAttachment(Attachments.MODULE);
-        ProviderManager pm = new ProviderManager(module.getClassLoader());
-        ProviderManagerRegistry.SINGLETON.deploy(pm);
-        deploymentUnit.putAttachment(ATTACHMENT_KEY, pm);
-
-
-
+        KeycloakDeploymentInfo info = KeycloakProviderDependencyProcessor.getKeycloakProviderDeploymentInfo(deploymentUnit);
+        if (info.isProvider()) {
+            logger.infov("Deploying Keycloak provider: {0}", deploymentUnit.getName());
+            final Module module = deploymentUnit.getAttachment(Attachments.MODULE);
+            ProviderManager pm = new ProviderManager(info, module.getClassLoader());
+            ProviderManagerRegistry.SINGLETON.deploy(pm);
+            deploymentUnit.putAttachment(ATTACHMENT_KEY, pm);
+        }
     }
 
     public KeycloakProviderDeploymentProcessor() {

@@ -15,21 +15,12 @@
  * limitations under the License.
  */
 
-package org.keycloak.provider;
+package org.keycloak.theme;
+
+import org.keycloak.provider.ProviderFactory;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class DefaultProviderLoaderFactory implements ProviderLoaderFactory {
-
-    @Override
-    public boolean supports(String type) {
-        return false;
-    }
-
-    @Override
-    public ProviderLoader create(KeycloakDeploymentInfo info, ClassLoader baseClassLoader, String resource) {
-        return new DefaultProviderLoader(info, baseClassLoader);
-    }
-
+public interface ThemeResourceProviderFactory extends ProviderFactory<ThemeResourceProvider> {
 }
