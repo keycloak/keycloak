@@ -55,4 +55,10 @@ public abstract class AbstractSamlTest extends AbstractAuthTest {
                 .protocolUrl(UriBuilder.fromUri(getAuthServerRoot()))
                 .build(realm, SamlProtocol.LOGIN_PROTOCOL);
     }
+
+    protected URI getAuthServerRealmBase(String realm) throws IllegalArgumentException, UriBuilderException {
+        return RealmsResource
+                .realmBaseUrl(UriBuilder.fromUri(getAuthServerRoot()))
+                .build(realm);
+    }
 }
