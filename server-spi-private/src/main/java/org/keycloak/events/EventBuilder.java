@@ -80,7 +80,7 @@ public class EventBuilder {
     }
 
     public EventBuilder realm(RealmModel realm) {
-        event.setRealmId(realm.getId());
+        event.setRealmId(realm == null ? null : realm.getId());
         return this;
     }
 
@@ -90,7 +90,7 @@ public class EventBuilder {
     }
 
     public EventBuilder client(ClientModel client) {
-        event.setClientId(client.getClientId());
+        event.setClientId(client == null ? null : client.getClientId());
         return this;
     }
 
@@ -100,7 +100,7 @@ public class EventBuilder {
     }
 
     public EventBuilder user(UserModel user) {
-        event.setUserId(user.getId());
+        event.setUserId(user == null ? null : user.getId());
         return this;
     }
 
@@ -110,7 +110,7 @@ public class EventBuilder {
     }
 
     public EventBuilder session(UserSessionModel session) {
-        event.setSessionId(session.getId());
+        event.setSessionId(session == null ? null : session.getId());
         return this;
     }
 
