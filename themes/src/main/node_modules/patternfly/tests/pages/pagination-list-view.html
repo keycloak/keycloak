@@ -1,0 +1,459 @@
+---
+categories: [Layouts]
+css-extra: false
+layout: layout
+resource: true
+listview: true
+full-page: true
+title: Pagination - List View
+url-js-extra: [ 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.2/js/bootstrap-select.min.js']
+
+---
+{% include widgets/layouts/navbar-primary.html %}
+{% include widgets/layouts/toolbar.html %}
+<div class="container-fluid">
+<!-- {% include widgets/list-view/list-view-standard-rows.html %} -->
+<div class="list-group list-view-pf list-view-pf-view">
+  <div class="list-group-item">
+    <div class="list-view-pf-checkbox">
+      <input type="checkbox">
+    </div>
+    <div class="list-view-pf-actions">
+      <button class="btn btn-default">Action</button>
+      {% include widgets/kebab.html dropmenuType="dropdown" dropmenuPosition="pull-right" dropmenuId="dropdownKebabRight11" dropdownPosition="dropdown-menu-right" dropmenuVariation="dropdown-kebab-pf" %}
+    </div>
+    <div class="list-view-pf-main-info">
+      <div class="list-view-pf-left">
+        <span class="fa fa-plane list-view-pf-icon-sm"></span>
+      </div>
+      <div class="list-view-pf-body">
+        <div class="list-view-pf-description">
+          <div class="list-group-item-heading">
+            Event One
+          </div>
+          <div class="list-group-item-text">
+            The following snippet of text is <a href="#">rendered as link text</a>.
+          </div>
+        </div>
+        <div class="list-view-pf-additional-info">
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-screen"></span>
+            <strong>8</strong> Hosts
+          </div>
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-cluster"></span>
+            <strong>6</strong> Clusters
+          </div>
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-container-node"></span>
+            <strong>10</strong> Nodes
+          </div>
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-image"></span>
+            <strong>8</strong> Images
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="list-group-item">
+    <div class="list-view-pf-checkbox">
+      <input type="checkbox">
+    </div>
+    <div class="list-view-pf-actions">
+      <button class="btn btn-default">Action</button>
+      {% include widgets/kebab.html dropmenuType="dropdown" dropmenuPosition="pull-right" dropmenuId="dropdownKebabRight12" dropdownPosition="dropdown-menu-right" dropmenuVariation="dropdown-kebab-pf" %}
+    </div>
+    <div class="list-view-pf-main-info">
+      <div class="list-view-pf-left">
+        <span class="fa fa-magic list-view-pf-icon-sm"></span>
+      </div>
+      <div class="list-view-pf-body">
+        <div class="list-view-pf-description">
+          <div class="list-group-item-heading">
+            Event Two
+          </div>
+          <div class="list-group-item-text">
+            The following snippet of text is <a href="#">rendered as link text</a>.
+          </div>
+        </div>
+        <div class="list-view-pf-additional-info">
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-screen"></span>
+            <strong>4</strong> Hosts
+          </div>
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-cluster"></span>
+            <strong>2</strong> Clusters
+          </div>
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-container-node"></span>
+            <strong>11</strong> Nodes
+          </div>
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-image"></span>
+            <strong>6</strong> Images
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="list-group-item">
+    <div class="list-view-pf-checkbox">
+      <input type="checkbox">
+    </div>
+    <div class="list-view-pf-actions">
+      <button class="btn btn-default">Action</button>
+      {% include widgets/kebab.html dropmenuType="dropdown" dropmenuPosition="pull-right" dropmenuId="dropdownKebabRight13" dropdownPosition="dropdown-menu-right" dropmenuVariation="dropdown-kebab-pf" %}
+    </div>
+    <div class="list-view-pf-main-info">
+      <div class="list-view-pf-left">
+        <span class="fa fa-gamepad list-view-pf-icon-sm"></span>
+      </div>
+      <div class="list-view-pf-body">
+        <div class="list-view-pf-description">
+          <div class="list-group-item-heading">
+            Event Three
+          </div>
+          <div class="list-group-item-text">
+            The following snippet of text is <a href="#">rendered as link text</a>.
+          </div>
+        </div>
+        <div class="list-view-pf-additional-info">
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-screen"></span>
+            <strong>4</strong> Hosts
+          </div>
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-cluster"></span>
+            <strong>2</strong> Clusters
+          </div>
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-container-node"></span>
+            <strong>10</strong> Nodes
+          </div>
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-image"></span>
+            <strong>6</strong> Images
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="list-group-item">
+    <div class="list-view-pf-checkbox">
+      <input type="checkbox">
+    </div>
+    <div class="list-view-pf-actions">
+      <button class="btn btn-default">Action</button>
+      {% include widgets/kebab.html dropmenuType="dropdown" dropmenuPosition="pull-right" dropmenuId="dropdownKebabRight14" dropdownPosition="dropdown-menu-right" dropmenuVariation="dropdown-kebab-pf" %}
+    </div>
+    <div class="list-view-pf-main-info">
+      <div class="list-view-pf-left">
+        <span class="fa fa-linux list-view-pf-icon-sm"></span>
+      </div>
+      <div class="list-view-pf-body">
+        <div class="list-view-pf-description">
+          <div class="list-group-item-heading">
+            Event Four
+          </div>
+          <div class="list-group-item-text">
+            The following snippet of text is <a href="#">rendered as link text</a>.
+          </div>
+        </div>
+        <div class="list-view-pf-additional-info">
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-screen"></span>
+            <strong>4</strong> Hosts
+          </div>
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-cluster"></span>
+            <strong>2</strong> Clusters
+          </div>
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-container-node"></span>
+            <strong>10</strong> Nodes
+          </div>
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-image"></span>
+            <strong>6</strong> Images
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="list-group-item">
+    <div class="list-view-pf-checkbox">
+      <input type="checkbox">
+    </div>
+    <div class="list-view-pf-actions">
+      <button class="btn btn-default">Action</button>
+      {% include widgets/kebab.html dropmenuType="dropdown" dropmenuPosition="pull-right" dropmenuId="dropdownKebabRight15" dropdownPosition="dropdown-menu-right" dropmenuVariation="dropdown-kebab-pf" %}
+    </div>
+    <div class="list-view-pf-main-info">
+      <div class="list-view-pf-left">
+        <span class="fa fa-briefcase list-view-pf-icon-sm"></span>
+      </div>
+      <div class="list-view-pf-body">
+        <div class="list-view-pf-description">
+          <div class="list-group-item-heading">
+            Event Five
+          </div>
+          <div class="list-group-item-text">
+            The following snippet of text is <a href="#">rendered as link text</a>.
+          </div>
+        </div>
+        <div class="list-view-pf-additional-info">
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-screen"></span>
+            <strong>4</strong> Hosts
+          </div>
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-cluster"></span>
+            <strong>2</strong> Clusters
+          </div>
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-container-node"></span>
+            <strong>10</strong> Nodes
+          </div>
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-image"></span>
+            <strong>6</strong> Images
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="list-group-item">
+    <div class="list-view-pf-checkbox">
+      <input type="checkbox">
+    </div>
+    <div class="list-view-pf-actions">
+      <button class="btn btn-default">Action</button>
+      {% include widgets/kebab.html dropmenuType="dropdown" dropmenuPosition="pull-right" dropmenuId="dropdownKebabRight16" dropdownPosition="dropdown-menu-right" dropmenuVariation="dropdown-kebab-pf" %}
+    </div>
+    <div class="list-view-pf-main-info">
+      <div class="list-view-pf-left">
+        <span class="fa fa-coffee list-view-pf-icon-sm"></span>
+      </div>
+      <div class="list-view-pf-body">
+        <div class="list-view-pf-description">
+          <div class="list-group-item-heading">
+            Event Six
+          </div>
+          <div class="list-group-item-text">
+            The following snippet of text is <a href="#">rendered as link text</a>.
+          </div>
+        </div>
+        <div class="list-view-pf-additional-info">
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-screen"></span>
+            <strong>4</strong> Hosts
+          </div>
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-cluster"></span>
+            <strong>2</strong> Clusters
+          </div>
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-container-node"></span>
+            <strong>10</strong> Nodes
+          </div>
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-image"></span>
+            <strong>6</strong> Images
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="list-group-item">
+    <div class="list-view-pf-checkbox">
+      <input type="checkbox">
+    </div>
+    <div class="list-view-pf-actions">
+      <button class="btn btn-default">Action</button>
+      {% include widgets/kebab.html dropmenuType="dropdown" dropmenuPosition="pull-right" dropmenuId="dropdownKebabRight17" dropdownPosition="dropdown-menu-right" dropmenuVariation="dropdown-kebab-pf" %}
+    </div>
+    <div class="list-view-pf-main-info">
+      <div class="list-view-pf-left">
+        <span class="fa fa-plane list-view-pf-icon-sm"></span>
+      </div>
+      <div class="list-view-pf-body">
+        <div class="list-view-pf-description">
+          <div class="list-group-item-heading">
+            Event One
+          </div>
+          <div class="list-group-item-text">
+            The following snippet of text is <a href="#">rendered as link text</a>.
+          </div>
+        </div>
+        <div class="list-view-pf-additional-info">
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-screen"></span>
+            <strong>8</strong> Hosts
+          </div>
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-cluster"></span>
+            <strong>6</strong> Clusters
+          </div>
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-container-node"></span>
+            <strong>10</strong> Nodes
+          </div>
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-image"></span>
+            <strong>8</strong> Images
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="list-group-item">
+    <div class="list-view-pf-checkbox">
+      <input type="checkbox">
+    </div>
+    <div class="list-view-pf-actions">
+      <button class="btn btn-default">Action</button>
+      {% include widgets/kebab.html dropmenuType="dropdown" dropmenuPosition="pull-right" dropmenuId="dropdownKebabRight18" dropdownPosition="dropdown-menu-right" dropmenuVariation="dropdown-kebab-pf" %}
+    </div>
+    <div class="list-view-pf-main-info">
+      <div class="list-view-pf-left">
+        <span class="fa fa-magic list-view-pf-icon-sm"></span>
+      </div>
+      <div class="list-view-pf-body">
+        <div class="list-view-pf-description">
+          <div class="list-group-item-heading">
+            Event Two
+          </div>
+          <div class="list-group-item-text">
+            The following snippet of text is <a href="#">rendered as link text</a>.
+          </div>
+        </div>
+        <div class="list-view-pf-additional-info">
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-screen"></span>
+            <strong>4</strong> Hosts
+          </div>
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-cluster"></span>
+            <strong>2</strong> Clusters
+          </div>
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-container-node"></span>
+            <strong>11</strong> Nodes
+          </div>
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-image"></span>
+            <strong>6</strong> Images
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="list-group-item">
+    <div class="list-view-pf-checkbox">
+      <input type="checkbox">
+    </div>
+    <div class="list-view-pf-actions">
+      <button class="btn btn-default">Action</button>
+      {% include widgets/kebab.html dropmenuType="dropdown" dropmenuPosition="pull-right" dropmenuId="dropdownKebabRight19" dropdownPosition="dropdown-menu-right" dropmenuVariation="dropdown-kebab-pf" %}
+    </div>
+    <div class="list-view-pf-main-info">
+      <div class="list-view-pf-left">
+        <span class="fa fa-gamepad list-view-pf-icon-sm"></span>
+      </div>
+      <div class="list-view-pf-body">
+        <div class="list-view-pf-description">
+          <div class="list-group-item-heading">
+            Event Three
+          </div>
+          <div class="list-group-item-text">
+            The following snippet of text is <a href="#">rendered as link text</a>.
+          </div>
+        </div>
+        <div class="list-view-pf-additional-info">
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-screen"></span>
+            <strong>4</strong> Hosts
+          </div>
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-cluster"></span>
+            <strong>2</strong> Clusters
+          </div>
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-container-node"></span>
+            <strong>10</strong> Nodes
+          </div>
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-image"></span>
+            <strong>6</strong> Images
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="list-group-item">
+    <div class="list-view-pf-checkbox">
+      <input type="checkbox">
+    </div>
+    <div class="list-view-pf-actions">
+      <button class="btn btn-default">Action</button>
+      {% include widgets/kebab.html dropmenuType="dropdown" dropmenuPosition="pull-right" dropmenuId="dropdownKebabRight20" dropdownPosition="dropdown-menu-right" dropmenuVariation="dropdown-kebab-pf" %}
+    </div>
+    <div class="list-view-pf-main-info">
+      <div class="list-view-pf-left">
+        <span class="fa fa-linux list-view-pf-icon-sm"></span>
+      </div>
+      <div class="list-view-pf-body">
+        <div class="list-view-pf-description">
+          <div class="list-group-item-heading">
+            Event Four
+          </div>
+          <div class="list-group-item-text">
+            The following snippet of text is <a href="#">rendered as link text</a>.
+          </div>
+        </div>
+        <div class="list-view-pf-additional-info">
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-screen"></span>
+            <strong>4</strong> Hosts
+          </div>
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-cluster"></span>
+            <strong>2</strong> Clusters
+          </div>
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-container-node"></span>
+            <strong>10</strong> Nodes
+          </div>
+          <div class="list-view-pf-additional-info-item">
+            <span class="pficon pficon-image"></span>
+            <strong>6</strong> Images
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% include widgets/pagination/pagination.html class1="list-view-pf-pagination" pagesize=10 %}
+</div>
+<script>
+  $(document).ready(function () {
+    // Row Checkbox Selection
+    $("input[type='checkbox']").change(function (e) {
+      if ($(this).is(":checked")) {
+        $(this).closest('.list-group-item').addClass("active");
+      } else {
+        $(this).closest('.list-group-item').removeClass("active");
+      }
+    });
+    // toggle dropdown menu
+    $('.list-view-pf-actions').on('show.bs.dropdown', function () {
+      var $this = $(this);
+      var $dropdown = $this.find('.dropdown');
+      var space = $(window).height() - $dropdown[0].getBoundingClientRect().top - $this.find('.dropdown-menu').outerHeight(true);
+      $dropdown.toggleClass('dropup', space < 10);
+    });
+  });
+</script>
+
+</div>

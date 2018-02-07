@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<!--[if IE 9]><html lang="en-us" class="ie9"><![endif]-->
+<!--[if gt IE 9]><!-->
+<html lang="en-us">
+<!--<![endif]-->
+  <head>
+    <title>Bar Charts - PatternFly</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="../img/favicon.ico">
+    <!-- iPad retina icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="../img/apple-touch-icon-precomposed-152.png">
+    <!-- iPad retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="../img/apple-touch-icon-precomposed-144.png">
+    <!-- iPad non-retina icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="76x76" href="../img/apple-touch-icon-precomposed-76.png">
+    <!-- iPad non-retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="../img/apple-touch-icon-precomposed-72.png">
+    <!-- iPhone 6 Plus icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="120x120" href="../img/apple-touch-icon-precomposed-180.png">
+    <!-- iPhone retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="../img/apple-touch-icon-precomposed-114.png">
+    <!-- iPhone non-retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="57x57" href="../img/apple-touch-icon-precomposed-57.png">
+    <link rel="stylesheet" href="../css/patternfly.min.css" >
+    <link rel="stylesheet" href="../css/patternfly-additions.min.css" >
+      <link href="tests.css" rel="stylesheet" media="screen, print">
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.4.11/c3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
+    <script src="../js/patternfly.min.js"></script>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="page-header">
+        <h1>Bar Charts</h1>
+      </div>
+      <div class="alert alert-warning">
+        <span class="pficon pficon-warning-triangle-o"></span>
+        These examples are included for development testing purposes.  For official documentation, see <a href="https://www.patternfly.org" class="alert-link">https://www.patternfly.org</a>, <a href="http://getbootstrap.com" class="alert-link">http://getbootstrap.com</a>, and <a href="http://c3js.org/">http://c3js.org/</a>
+      </div>
+      <hr>
+<h2>Vertical Bar Chart</h2>
+<div class="row">
+  <div class="col-lg-4 col-sm-6 col-xs-12">
+    <div id="verticalBarChart"></div>
+<script>
+  var c3ChartDefaults = $().c3ChartDefaults();
+
+  var chartUrls = [
+    'https://www.gogole.com',
+    'https://www.yahoo.com',
+    'https://www.bing.com/',
+    'https://duckduckgo.com/'
+  ];
+  var categories = ['Q1', 'Q2', 'Q3', 'Q4'];
+  var columnsData = [
+    ['data1', 400, 360, 320, 175]
+  ];
+
+  var verticalBarChartConfig = $().c3ChartDefaults().getDefaultBarConfig(categories);
+  verticalBarChartConfig.bindto = '#verticalBarChart';
+  verticalBarChartConfig.axis = {
+    x: {
+      categories: categories,
+      type: 'category'
+    }
+  };
+  verticalBarChartConfig.data = {
+    type: 'bar',
+    columns: columnsData,
+    // optional drilldown behavior
+    onclick: function (d, element) {
+      window.location = chartUrls[d.index];
+    }
+  };
+  var verticalBarChart = c3.generate(verticalBarChartConfig);
+</script>
+
+  </div>
+</div>
+<h2>Grouped Vertical Bar Chart</h2>
+<div class="row">
+  <div class="col-lg-4 col-sm-6 col-xs-12">
+    <div id="groupedVerticalBarChart"></div>
+<script>
+  var c3ChartDefaults = $().c3ChartDefaults();
+
+  var chartUrls = [
+    'https://www.gogole.com',
+    'https://www.yahoo.com',
+    'https://www.bing.com/',
+    'https://duckduckgo.com/'
+  ];
+  var categories = ['Q1', 'Q2', 'Q3', 'Q4'];
+  var columnsData = [
+    ['data1', 400, 360, 320, 175]
+  ];
+
+  var groupedcCategories = ['2013', '2014', '2015'];
+  var groupedColumnsData = [
+    ['Q1', 400, 250, 375],
+    ['Q2', 355, 305, 300],
+    ['Q3', 315, 340, 276],
+    ['Q4', 180, 390, 190]
+  ];
+  var groupedColors = {
+    pattern: [
+      $.pfPaletteColors.red,
+      $.pfPaletteColors.blue,
+      $.pfPaletteColors.orange,
+      $.pfPaletteColors.green
+    ]
+  };
+
+  var groupedVerticalBarChartConfig = $().c3ChartDefaults().getDefaultGroupedBarConfig();
+  groupedVerticalBarChartConfig.bindto = '#groupedVerticalBarChart';
+  groupedVerticalBarChartConfig.axis = {
+    x: {
+      categories: groupedcCategories,
+      type: 'category'
+    }
+  };
+  groupedVerticalBarChartConfig.data = {
+    type: 'bar',
+    columns: groupedColumnsData,
+    // optional drilldown behavior
+    onclick: function (d, element) {
+      window.location = chartUrls[d.index];
+    }
+  };
+  groupedVerticalBarChartConfig.color = groupedColors;
+  var groupedVerticalBarChart = c3.generate(groupedVerticalBarChartConfig);
+</script>
+
+  </div>
+</div>
+<h2>Stacked Vertical Bar Chart</h2>
+<div class="row">
+  <div class="col-lg-4 col-sm-6 col-xs-12">
+    <div id="stackedVerticalBarChart"></div>
+<script>
+  var c3ChartDefaults = $().c3ChartDefaults();
+
+  var chartUrls = [
+    'https://www.google.com',
+    'https://www.yahoo.com',
+    'https://www.bing.com/',
+    'https://duckduckgo.com/'
+  ];
+  var stackedColumnsData = [
+    ['Q1', 400, 250, 375],
+    ['Q2', 355, 305, 300],
+    ['Q3', 315, 340, 276],
+    ['Q4', 180, 390, 190]
+  ];
+  var stackedGroups = [['Q1', 'Q2', 'Q3', 'Q4']];
+  var stackedCategories = ['2013', '2014', '2015'];
+  var stackedColors = {
+    pattern: [
+      $.pfPaletteColors.red,
+      $.pfPaletteColors.blue,
+      $.pfPaletteColors.orange,
+      $.pfPaletteColors.green
+    ]
+  };
+
+  var stackedVerticalBarChartConfig = c3ChartDefaults.getDefaultStackedBarConfig();
+  stackedVerticalBarChartConfig.axis = {
+    x: {
+      categories: stackedCategories,
+      type: 'category'
+    }
+  };
+  stackedVerticalBarChartConfig.bindto = '#stackedVerticalBarChart';
+  stackedVerticalBarChartConfig.color = stackedColors;
+  stackedVerticalBarChartConfig.data = {
+    columns: stackedColumnsData,
+    groups: stackedGroups,
+    type: 'bar',
+    // optional drilldown behavior
+    onclick: function (d, element) {
+      window.location = chartUrls[d.index];
+    },
+    order: null
+  };
+  var stackedVerticalBarChart = c3.generate(stackedVerticalBarChartConfig);
+</script>
+
+  </div>
+</div>
+<h2>Horizontal Bar Chart</h2>
+<div class="row">
+  <div class="col-lg-4 col-sm-6 col-xs-12">
+    <div id="horizontalBarChart"></div>
+<script>
+  var c3ChartDefaults = $().c3ChartDefaults();
+
+  var chartUrls = [
+    'https://www.gogole.com',
+    'https://www.yahoo.com',
+    'https://www.bing.com/',
+    'https://duckduckgo.com/'
+  ];
+  var categories = ['Q1', 'Q2', 'Q3', 'Q4'];
+  var columnsData = [
+    ['data1', 400, 360, 320, 175]
+  ];
+
+  var horizontalBarChartConfig = $().c3ChartDefaults().getDefaultBarConfig(categories);
+  horizontalBarChartConfig.bindto = '#horizontalBarChart';
+  horizontalBarChartConfig.axis = {
+    rotated: true,
+    x: {
+      categories: categories,
+      type: 'category'
+    }
+  };
+  horizontalBarChartConfig.data = {
+    type: 'bar',
+    columns: columnsData,
+    // optional drilldown behavior
+    onclick: function (d, element) {
+      window.location = chartUrls[d.index];
+    }
+  };
+  var horizontalBarChart = c3.generate(horizontalBarChartConfig);
+</script>
+
+  </div>
+</div>
+<h2>Grouped Horizontal Bar Chart</h2>
+<div class="row">
+  <div class="col-lg-4 col-sm-6 col-xs-12">
+    <div id="groupedHorizontalBarChart"></div>
+<script>
+  var c3ChartDefaults = $().c3ChartDefaults();
+
+  var chartUrls = [
+    'https://www.gogole.com',
+    'https://www.yahoo.com',
+    'https://www.bing.com/',
+    'https://duckduckgo.com/'
+  ];
+  var categories = ['Q1', 'Q2', 'Q3', 'Q4'];
+  var columnsData = [
+    ['data1', 400, 360, 320, 175]
+  ];
+
+  var groupedcCategories = ['2013', '2014', '2015'];
+  var groupedColumnsData = [
+    ['Q1', 400, 250, 375],
+    ['Q2', 355, 305, 300],
+    ['Q3', 315, 340, 276],
+    ['Q4', 180, 390, 190]
+  ];
+  var groupedColors = {
+    pattern: [
+      $.pfPaletteColors.red,
+      $.pfPaletteColors.blue,
+      $.pfPaletteColors.orange,
+      $.pfPaletteColors.green
+    ]
+  };
+
+  var groupedHorizontalBarChartConfig = $().c3ChartDefaults().getDefaultGroupedBarConfig();
+  groupedHorizontalBarChartConfig.bindto = '#groupedHorizontalBarChart';
+  groupedHorizontalBarChartConfig.axis = {
+    rotated: true,
+    x: {
+      categories: groupedcCategories,
+      type: 'category'
+    }
+  };
+  groupedHorizontalBarChartConfig.data = {
+    type: 'bar',
+    columns: groupedColumnsData,
+    // optional drilldown behavior
+    onclick: function (d, element) {
+      window.location = chartUrls[d.index];
+    }
+  };
+  groupedHorizontalBarChartConfig.color = groupedColors;
+  var groupedHorizontalBarChart = c3.generate(groupedHorizontalBarChartConfig);
+</script>
+
+  </div>
+</div>
+<h2>Stacked Horizontal Bar Chart</h2>
+<div class="row">
+  <div class="col-lg-4 col-sm-6 col-xs-12">
+    <div id="stackedHorizontalBarChart"></div>
+<script>
+  var c3ChartDefaults = $().c3ChartDefaults();
+
+  var chartUrls = [
+    'https://www.google.com',
+    'https://www.yahoo.com',
+    'https://www.bing.com/',
+    'https://duckduckgo.com/'
+  ];
+  var stackedColumnsData = [
+    ['Q1', 400, 250, 375],
+    ['Q2', 355, 305, 300],
+    ['Q3', 315, 340, 276],
+    ['Q4', 180, 390, 190]
+  ];
+  var stackedGroups = [['Q1', 'Q2', 'Q3', 'Q4']];
+  var stackedCategories = ['2013', '2014', '2015'];
+  var stackedColors = {
+    pattern: [
+      $.pfPaletteColors.red,
+      $.pfPaletteColors.blue,
+      $.pfPaletteColors.orange,
+      $.pfPaletteColors.green
+    ]
+  };
+
+  var stackedHorizontalBarChartConfig = c3ChartDefaults.getDefaultStackedBarConfig();
+  stackedHorizontalBarChartConfig.axis = {
+    rotated: true,
+    x: {
+      categories: stackedCategories,
+      type: 'category'
+    }
+  };
+  stackedHorizontalBarChartConfig.bindto = '#stackedHorizontalBarChart';
+  stackedHorizontalBarChartConfig.color = stackedColors;
+  stackedHorizontalBarChartConfig.data = {
+    columns: stackedColumnsData,
+    groups: stackedGroups,
+    type: 'bar',
+    // optional drilldown behavior
+    onclick: function (d, element) {
+      window.location = chartUrls[d.index];
+    },
+    order: null
+  };
+  var stackedVerticalBarChart = c3.generate(stackedHorizontalBarChartConfig);
+</script>
+
+  </div>
+</div>
+
+    </div><!-- /container -->
+  </body>
+</html>

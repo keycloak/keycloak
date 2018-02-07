@@ -1,0 +1,84 @@
+{% include widgets/layouts/navbar-primary.html %}
+{% include widgets/layouts/toolbar.html %}
+<div class="container-fluid container-cards-pf" id="card-container">
+  <div class="row row-cards-pf">
+    <div class="col-xs-12 col-sm-4 col-md-3 col-lg-2">
+{% include widgets/cards/object-status.html class1="card-pf-view-select card-pf-view-multi-select" %}
+    </div>
+    <div class="col-xs-12 col-sm-4 col-md-3 col-lg-2">
+{% include widgets/cards/object-status.html class1="card-pf-view-select card-pf-view-multi-select" %}
+    </div>
+    <div class="col-xs-12 col-sm-4 col-md-3 col-lg-2">
+{% include widgets/cards/object-status.html class1="card-pf-view-select card-pf-view-multi-select" %}
+    </div>
+    <div class="col-xs-12 col-sm-4 col-md-3 col-lg-2">
+{% include widgets/cards/object-status.html class1="card-pf-view-select card-pf-view-multi-select" %}
+    </div>
+    <div class="col-xs-12 col-sm-4 col-md-3 col-lg-2">
+{% include widgets/cards/object-status.html class1="card-pf-view-select card-pf-view-multi-select" %}
+    </div>
+    <div class="col-xs-12 col-sm-4 col-md-3 col-lg-2">
+{% include widgets/cards/object-status.html class1="card-pf-view-select card-pf-view-multi-select" %}
+    </div>
+    <div class="col-xs-12 col-sm-4 col-md-3 col-lg-2">
+{% include widgets/cards/object-status.html class1="card-pf-view-select card-pf-view-multi-select" %}
+    </div>
+    <div class="col-xs-12 col-sm-4 col-md-3 col-lg-2">
+{% include widgets/cards/object-status.html class1="card-pf-view-select card-pf-view-multi-select" %}
+    </div>
+    <div class="col-xs-12 col-sm-4 col-md-3 col-lg-2">
+{% include widgets/cards/object-status.html class1="card-pf-view-select card-pf-view-multi-select" %}
+    </div>
+    <div class="col-xs-12 col-sm-4 col-md-3 col-lg-2">
+{% include widgets/cards/object-status.html class1="card-pf-view-select card-pf-view-multi-select" %}
+    </div>
+    <div class="col-xs-12 col-sm-4 col-md-3 col-lg-2">
+{% include widgets/cards/object-status.html class1="card-pf-view-select card-pf-view-multi-select" %}
+    </div>
+    <div class="col-xs-12 col-sm-4 col-md-3 col-lg-2">
+{% include widgets/cards/object-status.html class1="card-pf-view-select card-pf-view-multi-select" %}
+    </div>
+    <div class="col-xs-12 col-sm-4 col-md-3 col-lg-2">
+{% include widgets/cards/object-status.html class1="card-pf-view-select card-pf-view-multi-select" %}
+    </div>
+    <div class="col-xs-12 col-sm-4 col-md-3 col-lg-2">
+{% include widgets/cards/object-status.html class1="card-pf-view-select card-pf-view-multi-select" %}
+    </div>
+    <div class="col-xs-12 col-sm-4 col-md-3 col-lg-2">
+{% include widgets/cards/object-status.html class1="card-pf-view-select card-pf-view-multi-select" %}
+    </div>
+    <div class="col-xs-12 col-sm-4 col-md-3 col-lg-2">
+{% include widgets/cards/object-status.html class1="card-pf-view-select card-pf-view-multi-select" %}
+    </div>
+  </div>
+</div>
+<script>
+  $(function() {
+    // matchHeight the contents of each .card-pf and then the .card-pf itself
+    $(".row-cards-pf > [class*='col'] > .card-pf > .card-pf-body").matchHeight();
+  });
+  $(document).ready(function() {
+    // Card Multi Select
+    $('input[type=checkbox]').click(function() {
+      if ($(this).parent().parent().hasClass('active'))
+      { $(this).parent().parent().removeClass('active'); }
+      else
+      { $(this).parent().parent().addClass('active'); }
+    });
+    // allow users to select multiple cards with shift key
+    $('#card-container').on('click', '.card-pf-view-checkbox>input', function(event) {
+      var $cardsContainer = $('.container-cards-pf');
+      var prevIndex = $cardsContainer.data('prevIndex');
+      var $cards = $cardsContainer.find('.card-pf');
+      var $currentCard = $(this).closest('.card-pf');
+      if(event.shiftKey && prevIndex > -1 && this.checked) {
+        var currentIndex = $cards.index($currentCard);
+        var $selectScope = currentIndex - prevIndex > 0
+          ? $currentCard.parent().prevAll().not($cards.eq(prevIndex).parent().prevAll().addBack())
+          : $cards.eq(prevIndex).parent().prevAll().not($currentCard.parent().prevAll().addBack());
+        $selectScope.children().addClass('active').find('.card-pf-view-checkbox').children('input').prop('checked', true);
+      }
+      $cardsContainer.data('prevIndex', this.checked ? $cards.index($currentCard) : -1);
+    });
+  });
+</script>

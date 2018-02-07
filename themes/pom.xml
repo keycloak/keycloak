@@ -211,9 +211,12 @@
                                                 <exclude>**/examples/**</exclude>
                                                 <exclude>**/grunt/**</exclude>
                                                 <exclude>**/less/**</exclude>
+                                                <exclude>**/node_modules/**</exclude>
+                                                <exclude>**/sass/**</exclude>
                                                 <exclude>**/scss/**</exclude>
                                                 <exclude>**/src/**</exclude>
                                                 <exclude>**/test/**</exclude>
+                                                <exclude>**/tests/**</exclude>
                                                 <exclude>**/api.md</exclude>
                                                 <exclude>**/AUTHORS.txt</exclude>
                                                 <exclude>**/CHANGELOG.md</exclude>

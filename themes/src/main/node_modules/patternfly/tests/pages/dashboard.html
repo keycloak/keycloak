@@ -1,0 +1,218 @@
+---
+categories: [Layouts]
+css-extra: false
+layout: layout
+title: Dashboard
+resource: true
+full-page: true
+url-js-extra: ['https://cdnjs.cloudflare.com/ajax/libs/c3/0.4.11/c3.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js']
+weight: 3
+---
+{% include widgets/layouts/navbar-primary.html %}
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-sm-8 col-md-9">
+          <div class="page-header page-header-bleed-right">
+            <div class="actions pull-right">
+              <a href="#"><span class="pficon pficon-refresh"></span> Refresh Results</a>
+            </div>
+            <h1>{{ page.title }}</h1>
+          </div>
+          <h2 class="h4">Infrastructure Performance</h2>
+          <div id="chart"></div>
+          <hr>
+          <h2 class="h4">Resource Usage</h2>
+          <div class="row">
+            <div class="col-sm-6">
+                <div id="chart2"></div>
+            </div>
+            <div class="col-sm-6">
+              <img src="{{site.assets-base}}/{{site.url-img}}dashboard-3.png" alt="Placeholder graph" class="img-responsive" />
+            </div>
+          </div>
+          <hr>
+          <h2 class="h4">Infrastructure Capacity</h2>
+          <div class="row">
+            <div class="col-sm-6">
+              <div id="chart4"></div>
+            </div>
+            <div class="col-sm-6">
+              <table class="table">
+                <tr>
+                  <th>Status</th>
+                  <th>Location Data</th>
+                  <th>Hosts</th>
+                </tr>
+                <tr>
+                  <td><span class="label label-success">New</span></td>
+                  <td><strong>Fusce leo massa</strong><br>Created March 05, 2014 08:34:36 AM</td>
+                  <td><span class="label label-default">11</span></td>
+                </tr>
+                <tr>
+                  <td><span class="label label-success">New</span></td>
+                  <td><strong>Iaculis at dapibus eget</strong><br>Created March 03, 2014 20:32:12 AM</td>
+                  <td><span class="label label-default">9</span></td>
+                </tr>
+                <tr>
+                  <td><span class="label label-default">Disabled</span></td>
+                  <td><strong>Dapibus nec metus</strong><br>Created March 03, 2014 19:11:56 AM</td>
+                  <td><span class="label label-default">25</span></td>
+                </tr>
+              </table>
+              <p><a href="#">See more &raquo;</a></p>
+            </div>
+          </div>
+        </div><!-- /col -->
+        <div class="col-sm-4 col-md-3 sidebar-pf sidebar-pf-right">
+          <div class="sidebar-header sidebar-header-bleed-left sidebar-header-bleed-right">
+            <div class="actions pull-right">
+              <a href="#">Clear Messages</a>
+            </div>
+            <h2 class="h5">Latest Notifications</h2>
+          </div>
+          <ul class="list-group">
+            <li class="list-group-item">
+              <h3 class="list-group-item-heading">Duis eu augue lectus</h3>
+              <p class="list-group-item-text">Donec id elit non mi porta gravida at eget metus.</p>
+            </li>
+            <li class="list-group-item">
+              <h3 class="list-group-item-heading">Donec dictum odio eu turpis rutrum</h3>
+              <p class="list-group-item-text">Etiam sit amet ultricies ligula.</p>
+            </li>
+            <li class="list-group-item">
+              <h3 class="list-group-item-heading">At egestas nibh dictum</h3>
+              <p class="list-group-item-text">Maecenas vitae tempus mauris.</p>
+            </li>
+            <li class="list-group-item">
+              <h3 class="list-group-item-heading">Phasellus dictum posuere ante sit</h3>
+              <p class="list-group-item-text">Pellentesque rutrum justo in congue tristique.</p>
+            </li>
+            <li class="list-group-item">
+              <h3 class="list-group-item-heading">Amet commodo</h3>
+              <p class="list-group-item-text">Pellentesque in leo elit.</p>
+            </li>
+            <li class="list-group-item">
+              <h3 class="list-group-item-heading">Nunc viverra purus libero</h3>
+              <p class="list-group-item-text">Nulla lacinia lorem quis enim posuere dictum.</p>
+            </li>
+            <li class="list-group-item">
+              <h3 class="list-group-item-heading">Non faucibus augue dapibus at</h3>
+              <p class="list-group-item-text">Fusce id rutrum ante, eget vestibulum dolor</p>
+            </li>
+            <li class="list-group-item">
+              <h3 class="list-group-item-heading">Vivamus at semper</h3>
+              <p class="list-group-item-text">Duis sagittis vitae neque at vehicula.</p>
+            </li>
+            <li class="list-group-item">
+              <h3 class="list-group-item-heading">Sed sit amet dolor</h3>
+              <p class="list-group-item-text">Donec id elit non mi porta gravida at eget metus.</p>
+            </li>
+          </ul>
+          <p><a href="#">See all messages</a></p>
+        </div><!-- /col -->
+      </div><!-- /row -->
+    </div><!-- /container -->
+    <script>
+      var c3ChartDefaults = $().c3ChartDefaults();
+
+      var chart = c3.generate({
+        axis: {
+          x: {
+            tick: {
+              format: '%m-%d',
+              outer: false
+            },
+            type: 'timeseries'
+          },
+          y: {
+            tick: {
+              format: function(d) { return d + "%"; },
+              outer: false
+            }
+          }
+        },
+        bindto: '#chart',
+        color: c3ChartDefaults.getDefaultColors(),
+        data: {
+          columns: [
+            ['x', '2015-04-01', '2015-04-02', '2015-04-03', '2015-04-04', '2015-04-05', '2015-04-06', '2015-04-07'],
+            ['data1', 16, 44, 33, 88, 50, 76, 21]
+          ],
+          x: 'x'
+        },
+        grid: {
+          y: {
+            show: true
+          }
+        },
+        legend: {
+          hide: true
+        },
+        point: {
+          r: 4
+        },
+        size: {
+          height: 220
+        }
+      });
+
+      var donutChartConfig = c3ChartDefaults.getDefaultDonutConfig('29,210 Host');
+      donutChartConfig.bindto = '#chart2';
+      donutChartConfig.tooltip = {show: true};
+      donutChartConfig.data = {
+        colors: {
+          Cloud: '#006e9c',
+          Virtual: '#00a8e1',
+          Baremetal: '#969696'
+        },
+        columns: [
+          ['Cloud', 4,828],
+          ['Virtual', 13,258],
+          ['Baremetal', 11,1124]
+        ],
+        type : 'donut',
+        onclick: function (d, i) { console.log("onclick", d, i); },
+        onmouseover: function (d, i) { console.log("onmouseover", d, i); },
+        onmouseout: function (d, i) { console.log("onmouseout", d, i); }
+      };
+      var chart2 = c3.generate(donutChartConfig);
+
+      var chart4 = c3.generate({
+        axis: {
+          rotated: true,
+          x: {
+            categories: ['Location 1', 'Location 2', 'Location 3', 'Location 4'],
+            tick: {
+              outer: false
+            },
+            type: 'category'
+          },
+          y: {
+            tick: {
+              format: function(d) { return d + "%"; },
+              outer: false
+            }
+          }
+        },
+        bindto: '#chart4',
+        color: c3ChartDefaults.getDefaultColors(),
+        data: {
+          columns: [
+            ['Virtual Resources', 25, 35, 18, 78],
+            ['Physical Resources', 60, 40, 48, 8]
+          ],
+          groups: [
+            ['Virtual Resources', 'Physical Resources']
+          ],
+          type: 'bar'
+        },
+        grid: {
+          y: {
+            show: true
+          }
+        },
+        size: {
+          height: 200
+        }
+      });
+    </script>
