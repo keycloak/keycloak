@@ -29,6 +29,7 @@ import org.keycloak.models.UserSessionModel;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -157,6 +158,10 @@ public class EventBuilder {
     }
 
     public void error(String error) {
+        if (Objects.isNull(event.getType())) {
+            throw new IllegalStateException("Attempted to define event error without first setting the event type");
+        }
+
         if (!event.getType().name().endsWith("_ERROR")) {
             event.setType(EventType.valueOf(event.getType().name() + "_ERROR"));
         }
