@@ -322,56 +322,5 @@ The contents of `META-INF/keycloak-themes.json` in this case would be:
 
 A single archive can contain multiple themes and each theme can support one or more types.
 
-To deploy the archive to {project_name} you can either manually create a module in `modules` or use the `jboss-cli` command. It's simplest to use
-`jboss-cli` as it creates the required directories and module descriptor for you.
-
-To deploy `mytheme.zip` on Linux run:
-
-[source,bash]
-----
-bin/jboss-cli.sh --command="module add --name=org.example.mytheme --resources=mytheme.zip"
-----
-
-On Windows run:
-
-[source]
-----
-bin\jboss-cli.bat --command="module add --name=org.example.mytheme --resources=mytheme.zip"
-----
-
-This command creates `modules/org/example/mytheme/main` directory with the `mytheme.zip` archive and `module.xml`.
-
-To manually create the module create the directory `modules/org/keycloak/example/mytheme/main`, copy `mytheme.zip` to this directory and create the file
-`modules/org/keycloak/example/mytheme/main/module.xml` with the contents:
-
-[source,xml]
-----
-<?xml version="1.0" ?>
-<module xmlns="urn:jboss:module:1.3" name="org.keycloak.example.themes">
-    <resources>
-        <resource-root path="mytheme.zip"/>
-    </resources>
-</module>
-----
-
-You also need to register the module with {project_name}. This is done by editing `standalone.xml`, `standalone-ha.xml`, or `domain.xml`.
-For more information on where the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` file resides see the link:{installguide_link}[{installguide_name}].
-
-Then find the `theme` tag under `keycloak-server` subsystem and add the module to `theme/modules/module`. For example:
-
-[source,xml]
-----
-<theme>
-    ...
-    <modules>
-        <module>org.example.mytheme</module>
-    </modules>
-</theme>
-----
-
-If the server is running you need to restart the server after changing `standalone.xml`, `standalone-ha.xml`, or `domain.xml`.
-
-[NOTE]
-====
-If the same theme is deployed to both the `themes` directory and as a module the version in the `themes` directory is used.
-====
+To deploy the archive to {project_name} simply drop it into the `standalone/deployments/` directory of
+{project_name} and it will be automatically loaded.

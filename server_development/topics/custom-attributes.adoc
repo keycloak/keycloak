@@ -1,3 +1,4 @@
+[[_custom_user_attributes]]
 == Custom User Attributes
 
 You can add custom user attributes to the registration page and account management console with a custom theme. This chapter describes how to add attributes

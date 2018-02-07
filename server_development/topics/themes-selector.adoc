@@ -1,4 +1,5 @@
-= Theme Selector
+[[_theme_selector]]
+=== Theme Selector
 
 By default the theme configured for the realm is used, with the exception of clients being able to override the login
 theme. This behavior can be changed through the Theme Selector SPI.

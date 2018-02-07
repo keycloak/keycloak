@@ -160,9 +160,9 @@ The alternative approach is to deploy as a module.
 
 If you are creating a custom SPI you will need to deploy it as a module, otherwise we recommend using the {project_name} deployer approach.
 
-==== Using the {project_name} deployer Deployer
+==== Using the {project_name} Deployer
 
-If you copy your provider jar to the {project_name} deployer `deploy/` directory, your provider will automatically be deployed.
+If you copy your provider jar to the {project_name} `standalone/deployments/` directory, your provider will automatically be deployed.
 Hot deployment works too.  Additionally, your provider jar works similarly to other components deployed in a {appserver_name}
 environment in that they can use facilities like the `jboss-deployment-structure.xml` file.  This file allows you to
 set up dependencies on other components and load third-party jars and modules.
