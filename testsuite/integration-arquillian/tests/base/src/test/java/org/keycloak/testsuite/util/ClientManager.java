@@ -5,6 +5,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -49,6 +50,12 @@ public class ClientManager {
         public void enabled(Boolean enabled) {
             ClientRepresentation app = clientResource.toRepresentation();
             app.setEnabled(enabled);
+            clientResource.update(app);
+        }
+
+        public void setServiceAccountsEnabled(Boolean enabled) {
+            ClientRepresentation app = clientResource.toRepresentation();
+            app.setServiceAccountsEnabled(enabled);
             clientResource.update(app);
         }
 
@@ -131,6 +138,10 @@ public class ClientManager {
                 }
             }
             clientResource.update(app);
+        }
+
+        public UserRepresentation getServiceAccountUser() {
+            return clientResource.getServiceAccountUser();
         }
     }
 }
