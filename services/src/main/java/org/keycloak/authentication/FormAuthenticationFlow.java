@@ -266,7 +266,7 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
     public URI getActionUrl(String executionId, String code) {
         ClientModel client = processor.getAuthenticationSession().getClient();
         return LoginActionsService.registrationFormProcessor(processor.getUriInfo())
-                .queryParam(OAuth2Constants.CODE, code)
+                .queryParam(LoginActionsService.SESSION_CODE, code)
                 .queryParam(Constants.EXECUTION, executionId)
                 .queryParam(Constants.CLIENT_ID, client.getClientId())
                 .queryParam(Constants.TAB_ID, processor.getAuthenticationSession().getTabId())

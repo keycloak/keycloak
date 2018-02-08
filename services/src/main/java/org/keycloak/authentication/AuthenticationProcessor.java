@@ -489,7 +489,7 @@ public class AuthenticationProcessor {
         public URI getActionUrl(String code) {
             return LoginActionsService.loginActionsBaseUrl(getUriInfo())
                     .path(AuthenticationProcessor.this.flowPath)
-                    .queryParam(OAuth2Constants.CODE, code)
+                    .queryParam(LoginActionsService.SESSION_CODE, code)
                     .queryParam(Constants.EXECUTION, getExecution().getId())
                     .queryParam(Constants.CLIENT_ID, getAuthenticationSession().getClient().getClientId())
                     .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId())

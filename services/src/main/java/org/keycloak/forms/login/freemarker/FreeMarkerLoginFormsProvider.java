@@ -39,6 +39,7 @@ import org.keycloak.models.*;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.Urls;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.theme.BrowserSecurityHeaderSetup;
 import org.keycloak.theme.FreeMarkerException;
@@ -329,7 +330,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     protected void createCommonAttributes(Theme theme, Locale locale, Properties messagesBundle, UriBuilder baseUriBuilder, LoginFormsPages page) {
         URI baseUri = baseUriBuilder.build();
         if (accessCode != null) {
-            baseUriBuilder.queryParam(OAuth2Constants.CODE, accessCode);
+            baseUriBuilder.queryParam(LoginActionsService.SESSION_CODE, accessCode);
         }
         URI baseUriWithCodeAndClientId = baseUriBuilder.build();
 

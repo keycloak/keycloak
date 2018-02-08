@@ -115,6 +115,8 @@ public class LoginActionsService {
 
     public static final String FORWARDED_ERROR_MESSAGE_NOTE = "forwardedErrorMessage";
 
+    public static final String SESSION_CODE = "session_code";
+
     private RealmModel realm;
 
     @Context
@@ -235,7 +237,7 @@ public class LoginActionsService {
      */
     @Path(AUTHENTICATE_PATH)
     @GET
-    public Response authenticate(@QueryParam("code") String code,
+    public Response authenticate(@QueryParam(SESSION_CODE) String code,
                                  @QueryParam("execution") String execution,
                                  @QueryParam("client_id") String clientId,
                                  @QueryParam(Constants.TAB_ID) String tabId) {
@@ -305,7 +307,7 @@ public class LoginActionsService {
      */
     @Path(AUTHENTICATE_PATH)
     @POST
-    public Response authenticateForm(@QueryParam("code") String code,
+    public Response authenticateForm(@QueryParam(SESSION_CODE) String code,
                                      @QueryParam("execution") String execution,
                                      @QueryParam("client_id") String clientId,
                                      @QueryParam(Constants.TAB_ID) String tabId) {
@@ -314,7 +316,7 @@ public class LoginActionsService {
 
     @Path(RESET_CREDENTIALS_PATH)
     @POST
-    public Response resetCredentialsPOST(@QueryParam("code") String code,
+    public Response resetCredentialsPOST(@QueryParam(SESSION_CODE) String code,
                                          @QueryParam("execution") String execution,
                                          @QueryParam("client_id") String clientId,
                                          @QueryParam(Constants.TAB_ID) String tabId,
@@ -338,7 +340,7 @@ public class LoginActionsService {
      */
     @Path(RESET_CREDENTIALS_PATH)
     @GET
-    public Response resetCredentialsGET(@QueryParam("code") String code,
+    public Response resetCredentialsGET(@QueryParam(SESSION_CODE) String code,
                                         @QueryParam("execution") String execution,
                                         @QueryParam("client_id") String clientId,
                                         @QueryParam(Constants.TAB_ID) String tabId) {
@@ -617,7 +619,7 @@ public class LoginActionsService {
      */
     @Path(REGISTRATION_PATH)
     @GET
-    public Response registerPage(@QueryParam("code") String code,
+    public Response registerPage(@QueryParam(SESSION_CODE) String code,
                                  @QueryParam("execution") String execution,
                                  @QueryParam("client_id") String clientId,
                                  @QueryParam(Constants.TAB_ID) String tabId) {
@@ -633,7 +635,7 @@ public class LoginActionsService {
      */
     @Path(REGISTRATION_PATH)
     @POST
-    public Response processRegister(@QueryParam("code") String code,
+    public Response processRegister(@QueryParam(SESSION_CODE) String code,
                                     @QueryParam("execution") String execution,
                                     @QueryParam("client_id") String clientId,
                                     @QueryParam(Constants.TAB_ID) String tabId) {
@@ -663,7 +665,7 @@ public class LoginActionsService {
 
     @Path(FIRST_BROKER_LOGIN_PATH)
     @GET
-    public Response firstBrokerLoginGet(@QueryParam("code") String code,
+    public Response firstBrokerLoginGet(@QueryParam(SESSION_CODE) String code,
                                         @QueryParam("execution") String execution,
                                         @QueryParam("client_id") String clientId,
                                         @QueryParam(Constants.TAB_ID) String tabId) {
@@ -672,7 +674,7 @@ public class LoginActionsService {
 
     @Path(FIRST_BROKER_LOGIN_PATH)
     @POST
-    public Response firstBrokerLoginPost(@QueryParam("code") String code,
+    public Response firstBrokerLoginPost(@QueryParam(SESSION_CODE) String code,
                                          @QueryParam("execution") String execution,
                                          @QueryParam("client_id") String clientId,
                                          @QueryParam(Constants.TAB_ID) String tabId) {
@@ -681,7 +683,7 @@ public class LoginActionsService {
 
     @Path(POST_BROKER_LOGIN_PATH)
     @GET
-    public Response postBrokerLoginGet(@QueryParam("code") String code,
+    public Response postBrokerLoginGet(@QueryParam(SESSION_CODE) String code,
                                        @QueryParam("execution") String execution,
                                        @QueryParam("client_id") String clientId,
                                        @QueryParam(Constants.TAB_ID) String tabId) {
@@ -690,7 +692,7 @@ public class LoginActionsService {
 
     @Path(POST_BROKER_LOGIN_PATH)
     @POST
-    public Response postBrokerLoginPost(@QueryParam("code") String code,
+    public Response postBrokerLoginPost(@QueryParam(SESSION_CODE) String code,
                                         @QueryParam("execution") String execution,
                                         @QueryParam("client_id") String clientId,
                                         @QueryParam(Constants.TAB_ID) String tabId) {
@@ -783,7 +785,7 @@ public class LoginActionsService {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processConsent(final MultivaluedMap<String, String> formData) {
         event.event(EventType.LOGIN);
-        String code = formData.getFirst("code");
+        String code = formData.getFirst(SESSION_CODE);
         String clientId = uriInfo.getQueryParameters().getFirst(Constants.CLIENT_ID);
         String tabId = uriInfo.getQueryParameters().getFirst(Constants.TAB_ID);
         SessionCodeChecks checks = checksForCode(code, null, clientId, tabId, REQUIRED_ACTION);
@@ -874,7 +876,7 @@ public class LoginActionsService {
 
     @Path(REQUIRED_ACTION)
     @POST
-    public Response requiredActionPOST(@QueryParam("code") final String code,
+    public Response requiredActionPOST(@QueryParam(SESSION_CODE) final String code,
                                        @QueryParam("execution") String action,
                                        @QueryParam("client_id") String clientId,
                                        @QueryParam(Constants.TAB_ID) String tabId) {
@@ -883,7 +885,7 @@ public class LoginActionsService {
 
     @Path(REQUIRED_ACTION)
     @GET
-    public Response requiredActionGET(@QueryParam("code") final String code,
+    public Response requiredActionGET(@QueryParam(SESSION_CODE) final String code,
                                       @QueryParam("execution") String action,
                                       @QueryParam("client_id") String clientId,
                                       @QueryParam(Constants.TAB_ID) String tabId) {
