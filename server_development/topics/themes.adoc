@@ -310,7 +310,7 @@ For example for the `mytheme` theme create `mytheme.zip` with the contents:
 
 The contents of `META-INF/keycloak-themes.json` in this case would be:
 
-[source,javascript]
+[source,json]
 ----
 {
     "themes": [{

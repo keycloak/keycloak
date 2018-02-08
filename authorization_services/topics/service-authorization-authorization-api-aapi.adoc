@@ -6,7 +6,7 @@ This token consists of all the permissions granted to a user as a result of the 
 With an RPT, client applications can gain access to protected resources at the resource server.
 
 .UMA compliant Authorization API Endpoint
-```bash
+```
 http://${host}:${port}/auth/realms/${realm_name}/authz/authorize
 ```
 

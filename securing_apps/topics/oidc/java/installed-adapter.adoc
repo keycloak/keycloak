@@ -67,7 +67,7 @@ through the `KeycloakInstalled` constructor.
 In the example below, the client configuration for `desktop-app`
 uses the following `keycloak.json`:
 
-[source]
+[source,json]
 ----
 
 {
@@ -82,7 +82,7 @@ uses the following `keycloak.json`:
 ----
 
 the following sketch demonstrates working with the `KeycloakInstalled` adapter:
-[source]
+[source,java]
 ----
 
 // reads the configuration from classpath: META-INF/keycloak.json
@@ -111,7 +111,7 @@ login / logout requests via the `loginResponseWriter` and `logoutResponseWriter`
 
 The following provides an example for the configuration mentioned above.
 
-[source]
+[source,java]
 ----
 import java.util.Locale;
 import java.util.concurrent.Executors;

@@ -62,7 +62,7 @@ redirected back to the application and remain unauthenticated.
 
 To enable `login-required` set `onLoad` to `login-required` and pass to the init method:
 
-[source]
+[source,javascript]
 ----
 keycloak.init({ onLoad: 'login-required' })
 ----

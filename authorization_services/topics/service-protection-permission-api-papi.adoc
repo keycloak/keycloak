@@ -3,7 +3,7 @@
 
 Resource servers using the UMA protocol can use a specific endpoint to manage permission requests. This endpoint provides a UMA-compliant flow for registering permission requests and obtaining a permission ticket.
 
-```bash
+```
 http://${host}:${port}/auth/realms/${realm_name}/authz/protection/permission
 ```
 

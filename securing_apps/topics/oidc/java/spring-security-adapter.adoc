@@ -32,7 +32,7 @@ The implementation allows customization by overriding methods.
 While its use is not required, it greatly simplifies your security context configuration.
 
 
-[source]
+[source,java]
 ----
 
 
@@ -84,7 +84,7 @@ for the {project_name} adapter.
 While Spring Security's XML namespace simplifies configuration, customizing the configuration can be a bit verbose.
 
 
-[source]
+[source,xml]
 ----
 
 
@@ -171,7 +171,7 @@ To enable this feature your security configuration must add the `KeycloakRestTem
 Note that it must be scoped as a prototype to function correctly.
 
 For Java configuration:
-[source]
+[source,java]
 ----
 
 
@@ -196,7 +196,7 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
 ----
 
 For XML configuration:
-[source]
+[source,xml]
 ----
 
 
@@ -207,7 +207,7 @@ For XML configuration:
 
 Your application code can then use `KeycloakRestTemplate` any time it needs to make a call to another client.
 For example:
-[source]
+[source,java]
 ----
 
 
@@ -234,7 +234,7 @@ The Spring Boot and the Spring Security adapters can be combined.
 
 If you are using the Keycloak Spring Boot Starter to make use of the Spring Security adapter you just need to add the Spring Security starter :
 
-[source]
+[source,xml]
 ----
 
 <dependency>
@@ -248,7 +248,7 @@ If you are using the Keycloak Spring Boot Starter to make use of the Spring Secu
 
 By Default, the Spring Security Adapter looks for a `keycloak.json` configuration file. You can make sure it looks at the configuration provided by the Spring Boot Adapter by adding this bean :
 
-[source]
+[source,java]
 ----
 
 @Bean
@@ -264,7 +264,7 @@ Spring Boot attempts to eagerly register filter beans with the web application c
 Therefore, when running the Keycloak Spring Security adapter in a Spring Boot environment, it may be necessary to add two ``FilterRegistrationBean``s to your security configuration to prevent the Keycloak filters from being registered twice.
 
 
-[source]
+[source,java]
 ----
 
 

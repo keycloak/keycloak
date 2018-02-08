@@ -3,7 +3,7 @@
 
 Resource servers can manage their resources remotely using a UMA-compliant endpoint.
 
-```bash
+```
 http://${host}:${port}/auth/realms/${realm_name}/authz/protection/resource_set
 ```
 

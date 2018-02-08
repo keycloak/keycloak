@@ -60,7 +60,7 @@ Most applications should use the `onGrant` callback to retry a request after a 4
 
 The keycloak-authz.js library provides an `entitlement` function that you can use to obtain an RPT from the server using the Entitlement API.
 
-```json
+```javascript
 authorization.entitlement('my-resource-server-id').then(function (rpt) {
     // onGrant callback function.
     // If authorization was successful you'll receive an RPT

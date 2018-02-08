@@ -74,6 +74,7 @@ A successful response from an exchange invocation will return the HTTP 200 respo
 depends on the `requested-token-type` and `requested_issuer` the client asks for.  OAuth requested token types will return
 a JSON document as described in the link:https://www.ietf.org/id/draft-ietf-oauth-token-exchange-12.txt[OAuth Token Exchange] specification.
 
+[source,json]
 ----
 {
    "access_token" : ".....",
@@ -90,6 +91,7 @@ Error responses generally fall under the 400 HTTP response code category, but ot
 depending on the severity of the error.  Error responses may include content depending on the `requested_issuer`.
 OAuth based exchanges may return a JSON document as follows:
 
+[source,json]
 ----
 {
    "error" : "...."

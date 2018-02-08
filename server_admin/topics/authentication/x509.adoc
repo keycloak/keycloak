@@ -59,7 +59,7 @@ Enable mutual SSL in WildFly::
 See link:https://docs.jboss.org/author/display/WFLY10/Admin+Guide#AdminGuide-EnableSSL[Enable SSL] and link:https://docs.jboss.org/author/display/WFLY10/Admin+Guide#AdminGuide-%7B%7B%3Cssl%2F%3E%7D%7D[SSL] for the instructions how to enable SSL in Wildfly.
 
 * Open {project_dirref}/standalone/configuration/standalone.xml and add a new realm:
-```
+```xml
 <security-realms>
     <security-realm name="ssl-realm">
         <server-identities>

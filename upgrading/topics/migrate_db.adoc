@@ -10,6 +10,8 @@ database is automatically migrated when you start the new installation for the f
 To enable automatic upgrading of the database schema, set the migrationStrategy property value to "update" for the
 default connectionsJpa provider:
 
+[source,xml]
+----
  <spi name="connectionsJpa">
     <provider name="default" enabled="true">
         <properties>
@@ -18,6 +20,7 @@ default connectionsJpa provider:
         </properties>
     </provider>
 </spi>
+----
 
 Or run this CLI command:
 
@@ -34,6 +37,8 @@ in the new version.
 To enable manual upgrading of the database schema, set the migrationStrategy property value to "manual" for the default
 connectionsJpa provider:
 
+[source,xml]
+----
  <spi name="connectionsJpa">
     <provider name="default" enabled="true">
         <properties>
@@ -42,6 +47,7 @@ connectionsJpa provider:
         </properties>
     </provider>
 </spi>
+----
 
 Or run this CLI command:
 

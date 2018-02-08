@@ -78,7 +78,7 @@ a `org.jboss.logging.Logger` scoped to `ScriptBasedAuthenticator`
 Note that additional context information can be extracted from the `context` argument passed 
 to the `authenticate(context)` `action(context)` function.
 
-[source]
+[source,javascript]
 ----
 AuthenticationFlowError = Java.type("org.keycloak.authentication.AuthenticationFlowError");
 

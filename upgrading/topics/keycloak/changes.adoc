@@ -314,7 +314,7 @@ We added support for offline tokens in this release, which means that we are per
 If you are not using offline tokens, nothing will be persisted for you, so you don't need to care about worse performance for more DB writes.
 However in all cases, you will need to update `standalone/configuration/keycloak-server.json` and add `userSessionPersister` like this:
 
-[source]
+[source,json]
 ----
 "userSessionPersister": {
     "provider": "jpa"

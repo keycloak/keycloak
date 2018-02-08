@@ -20,7 +20,7 @@ There are some preconditions that must be met by the client application before i
 
 To initiate the login, the application must fabricate a URL and redirect the user's browser to this URL.  The URL looks like this:
 
-[source,java]
+[source]
 ----
 /{auth-server-root}/auth/realms/{realm}/broker/{provider}/link?client_id={id}&redirect_uri={uri}&nonce={nonce}&hash={hash}
 ----

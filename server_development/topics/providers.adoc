@@ -183,7 +183,7 @@ KEYCLOAK_HOME/bin/jboss-cli.sh --command="module add --name=org.acme.provider --
 Or to manually create it start by creating the folder `KEYCLOAK_HOME/modules/org/acme/provider/main`.
 Then copy `provider.jar` to this folder and create `module.xml` with the following content:
 
-[source]
+[source,xml]
 ----
 
 <?xml version="1.0" encoding="UTF-8"?>

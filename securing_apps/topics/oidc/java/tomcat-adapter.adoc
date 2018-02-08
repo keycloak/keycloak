@@ -52,7 +52,7 @@ Finally you must specify both a `login-config` and use standard servlet security
 Here's an example: 
 
 
-[source]
+[source,xml]
 ----
 
 

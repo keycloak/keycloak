@@ -157,7 +157,7 @@ Applications will need to deserialize the claim it receives from {project_name} 
 Once you deserialize the credential from the access token to the GSSCredential object, the GSSContext will need to be created with this credential
 passed to the method `GSSManager.createContext` for example like this:
 
-[source]
+[source,java]
 ----
 // Obtain accessToken in your application.
 KeycloakPrincipal keycloakPrincipal = (KeycloakPrincipal) servletReq.getUserPrincipal();

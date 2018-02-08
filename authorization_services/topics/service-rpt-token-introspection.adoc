@@ -12,7 +12,7 @@ There are two main use cases where token introspection can help you:
 
 The token introspection is essentially a https://tools.ietf.org/html/rfc7662[OAuth2 token introspection]-compliant endpoint from which you can obtain information about an RPT.
 
-```bash
+```
 http://${host}:${port}/auth/realms/${realm_name}/protocol/openid-connect/token/introspect
 ```
 

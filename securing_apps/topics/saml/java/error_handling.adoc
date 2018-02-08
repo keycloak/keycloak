@@ -22,7 +22,7 @@ This class can tell you exactly what happened.
 If this attribute is not set, then the adapter was not responsible for the error code. 
 
 
-[source,javascript]
+[source,java]
 ----
 public class SamlAuthenticationError implements AuthenticationError {
     public static enum Reason {

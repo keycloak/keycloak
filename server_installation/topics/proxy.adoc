@@ -27,7 +27,7 @@ If you do not specify a path to the proxy config file, the launcher will look in
 === Proxy Configuration
 
 Here's an example configuration file. 
-[source]
+[source,json]
 ----
 
 {
@@ -231,7 +231,7 @@ KEYCLOAK_ACCESS_TOKEN::
   Send the access token in this header if the proxy was configured to send it.
   This token can be used to make bearer token requests.             Header field names can be configured using a map of `header-names` in configuration file: 
 +
-[source]
+[source,json]
 ----
 
 {

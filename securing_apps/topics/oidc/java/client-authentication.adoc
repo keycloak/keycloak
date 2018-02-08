@@ -9,7 +9,7 @@ This is the traditional method described in the OAuth2 specification. The client
 You can generate the secret for a particular client in the {project_name} administration console, and then paste this secret into the `keycloak.json` file on the application side:
 
 
-[source]
+[source,json]
 ----
 "credentials": {
     "secret": "19666a4f-32dd-4049-b082-684c74115f28"
@@ -36,7 +36,7 @@ For more details on how to set up the {project_name} administration console see 
 
 For set up on the adapter side you need to have something like this in your `keycloak.json` file:
 
-[source]
+[source,json]
 ----
 "credentials": {
   "jwt": {
@@ -62,7 +62,7 @@ This is the same as Client Authentication with Signed JWT except for using the c
 
 The client has a secret, which needs to be known to both the adapter (application) and the {project_name} server. You need to choose `Signed JWT with Client Secret` as the method of authenticating your client in the tab `Credentials` in administration console, and then paste this secret into the `keycloak.json` file on the application side:
 
-[source]
+[source,json]
 ----
 "credentials": {
   "secret-jwt": {

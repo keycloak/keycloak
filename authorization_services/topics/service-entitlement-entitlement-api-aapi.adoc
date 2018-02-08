@@ -6,7 +6,7 @@ This token consists of all the entitlements (or permissions) for a user as a res
 With an RPT, client applications can gain access to protected resources at the resource server.
 
 .Entitlement API Endpoint
-```bash
+```
 http://${host}:${port}/auth/realms/${realm_name}/authz/entitlement/{client_id}
 ```
 

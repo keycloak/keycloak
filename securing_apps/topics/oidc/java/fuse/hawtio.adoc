@@ -115,7 +115,7 @@ To run Hawtio on the {fuseHawtioEAPVersion} server, complete the following steps
 
 . Restart the {fuseHawtioEAPVersion} server with Hawtio:
 +
-[source,xml]
+[source,bash]
 ----
 cd $EAP_HOME/bin
 ./standalone.sh -Djboss.socket.binding.port-offset=101

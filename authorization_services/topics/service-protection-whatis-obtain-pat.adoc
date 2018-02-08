@@ -18,7 +18,7 @@ curl -X POST \
 
 The example above is using the *client_credentials* grant type to obtain a PAT from the server. As a result, the server returns a response similar to the following:
 
-```bash
+```json
 {
   "access_token": ${PAT},
   "expires_in": 300,

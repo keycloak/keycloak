@@ -15,7 +15,7 @@ To configure _mod_auth_openidc_ you'll need
 
 An example configuration would look like the following.
 
-[source,xml]
+[source]
 ----
 LoadModule auth_openidc_module modules/mod_auth_openidc.so
 

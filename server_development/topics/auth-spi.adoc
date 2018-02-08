@@ -433,7 +433,7 @@ This jar does not have to be separate from other provider classes but it must co
 This file must list the fully qualified classname of each RequiredActionFactory implementation you have in the jar.
 For example: 
 
-[source,java]
+[source]
 ----
 org.keycloak.examples.authenticator.SecretQuestionRequiredActionFactory
 ----            
@@ -704,7 +704,7 @@ This jar must contain a file named  `org.keycloak.authentication.FormActionFacto
 This file must list the fully qualified classname of each FormActionFactory implementation you have in the jar.
 For example: 
 
-[source,java]
+[source]
 ----
 
 org.keycloak.authentication.forms.RegistrationProfile

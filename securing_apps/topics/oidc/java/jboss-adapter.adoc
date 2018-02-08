@@ -298,7 +298,7 @@ If you have multiple deployments secured by the same realm you can share the rea
 To propagate the security context to the EJB tier you need to configure it to use the "keycloak" security domain. This
 can be achieved with the @SecurityDomain annotation:
 
-[source]
+[source,java]
 ----
 
 import org.jboss.ejb3.annotation.SecurityDomain;

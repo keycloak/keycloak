@@ -122,7 +122,7 @@ Otherwise this configuration is optional.
 For example, if you have a JAX-RS service that is an EJB within your WEB-INF/classes directory,
 you'll want to annotate it with the `@SecurityDomain` annotation as follows:
 
-[source,xml]
+[source,java]
 ----
 
 import org.jboss.ejb3.annotation.SecurityDomain;
