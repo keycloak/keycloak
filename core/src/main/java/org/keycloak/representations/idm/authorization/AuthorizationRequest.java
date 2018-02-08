@@ -160,7 +160,7 @@ public class AuthorizationRequest {
     }
 
     public boolean isSubmitRequest() {
-        return submitRequest;
+        return submitRequest && ticket != null;
     }
 
     public static class Metadata {
