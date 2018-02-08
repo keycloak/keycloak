@@ -32,8 +32,8 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -573,11 +573,15 @@ public class ClientResource {
 
 
     private void updateClientFromRep(ClientRepresentation rep, ClientModel client, KeycloakSession session) throws ModelDuplicateException {
+        UserModel serviceAccount = this.session.users().getServiceAccount(client);
         if (TRUE.equals(rep.isServiceAccountsEnabled())) {
-            UserModel serviceAccount = this.session.users().getServiceAccount(client);
-
             if (serviceAccount == null) {
                 new ClientManager(new RealmManager(session)).enableServiceAccount(client);
+            }
+        }
+        else {
+            if (serviceAccount != null) {
+                new UserManager(session).removeUser(realm, serviceAccount);
             }
         }
 
